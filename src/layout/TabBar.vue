@@ -4,7 +4,7 @@
 
 <template>
   <div class="h-24 w-full bg-white flex justify-between items-center px-8 py-4">
-    <router-link to="/home" class="flex flex-col cursor-pointer gap-0.5 px-2">
+    <router-link to="/" class="flex flex-col cursor-pointer gap-0.5 px-2">
       <img src="~@/assets/icons/icon-tabbar-home.svg" alt="">
       <span>Tag</span>
     </router-link>
