@@ -1,0 +1,24 @@
+@import "element-plus/dist/index.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background: white;
+}
+
+#app {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: white;
+  background-image: url("@/assets/images/main-bg.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+.no-scroll-bar::-webkit-scrollbar {
+  display: none;
+}
