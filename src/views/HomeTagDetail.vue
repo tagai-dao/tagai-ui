@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import {ref, unref} from "vue";
 import MsgItem from "@/components/common/MsgItem.vue";
+import {useModalStore} from "@/stores/common";
+import {GlobalModalType} from "@/types";
 
 const tabOptions = ['group', 'content', 'credit', 'token']
 const activeTab = ref('group')
+const modalStore = useModalStore()
+const tweetTypeRef = ref()
+
+const onTweetType = (type: GlobalModalType) => {
+  tweetTypeRef.value.hide()
+  modalStore.setModalVisible(true, type)
+}
 </script>
 
 <template>
@@ -39,9 +48,21 @@ const activeTab = ref('group')
       <div class="flex items-center gap-3">
         <el-progress :percentage="65" :stroke-width="8" :show-text="false"
                      class="c-gradient-progress c-gradient-progress-purple w-full"/>
-        <button class="bg-black px-3 h-8 text-white text-sm rounded-full whitespace-nowrap">
-          Build & Earn
-        </button>
+        <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
+          <template #reference>
+            <button class="bg-black px-3 h-8 text-white text-sm rounded-full whitespace-nowrap">
+              Build & Earn
+            </button>
+          </template>
+          <template #default>
+            <div class="bg-black rounded-2xl px-3 py-4 w-[200px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
+              <button @click="onTweetType(GlobalModalType.CreateTweet)"
+                      class="whitespace-nowrap">Tweet on-chain</button>
+              <button @click="onTweetType(GlobalModalType.CreateTweetSpace)"
+                      class="whitespace-nowrap">Tweet an onchain Space</button>
+            </div>
+          </template>
+        </el-popover>
       </div>
       <div class="flex gap-6 text-white">
         <button class="flex-1 bg-gradient-primary rounded-full h-11">Buy</button>

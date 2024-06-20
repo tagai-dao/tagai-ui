@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import {useCreateCoinStore} from "@/stores/common";
+import {useModalStore} from "@/stores/common";
+import {GlobalModalType} from "@/types";
 
-const createCoinStore = useCreateCoinStore()
+const modalStore = useModalStore()
 </script>
 
 <template>
@@ -10,7 +11,7 @@ const createCoinStore = useCreateCoinStore()
       <img class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
       <span>Tag</span>
     </router-link>
-    <button class="mb-6" @click="createCoinStore.setModalVisible(true)">
+    <button class="mb-6" @click="modalStore.setModalVisible(true, GlobalModalType.CreateCoin)">
       <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
     </button>
     <router-link to="/profile" class="flex flex-col items-center cursor-pointer gap-0.5 px-2">

@@ -1,11 +1,19 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
+import {GlobalModalType} from "@/types";
 
-export const useCreateCoinStore = defineStore(
-  'createCoin', () => {
-  const createModalVisible = ref(false)
-  const setModalVisible = (visible: boolean) => {
-    createModalVisible.value = visible
+export const useModalStore = defineStore(
+  'globalModal', () => {
+  const modalVisible = ref(false)
+  const modalType = ref(GlobalModalType.CreateCoin)
+  const setModalVisible = (visible: boolean, type: GlobalModalType = GlobalModalType.CreateCoin) => {
+    modalVisible.value = visible
+    modalType.value = type
   }
-  return { createModalVisible, setModalVisible }
+
+  return {
+    modalType,
+    modalVisible,
+    setModalVisible
+  }
 })

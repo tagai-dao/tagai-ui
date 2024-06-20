@@ -3,7 +3,12 @@ import {RouterView} from "vue-router";
 import TopBar from "@/layout/TopBar.vue";
 import TabBar from "@/layout/TabBar.vue";
 import CreateCoinModal from "@/components/common/CreateCoinModal.vue";
+import {useModalStore} from "@/stores/common";
+import {GlobalModalType} from "@/types";
+import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
+import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 
+const modalStore = useModalStore()
 </script>
 
 <template>
@@ -13,7 +18,14 @@ import CreateCoinModal from "@/components/common/CreateCoinModal.vue";
       <RouterView/>
     </div>
     <TabBar/>
-    <CreateCoinModal/>
+    <el-dialog v-model="modalStore.modalVisible"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px]"
+               width="90%" :show-close="false" align-center destroy-on-close>
+      <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
+      <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet"/>
+      <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace"/>
+    </el-dialog>
   </main>
 </template>
 
