@@ -1,4 +1,4 @@
-@import "element-plus/dist/index.css";
+@import "element.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -21,4 +21,8 @@ html, body {
 }
 .no-scroll-bar::-webkit-scrollbar {
   display: none;
+}
+
+input {
+  outline: none;
 }

@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import {useCreateCoinStore} from "@/stores/common";
 
+const createCoinStore = useCreateCoinStore()
 </script>
 
 <template>
@@ -8,7 +10,7 @@
       <img src="~@/assets/icons/icon-tabbar-home.svg" alt="">
       <span>Tag</span>
     </router-link>
-    <button class="mb-6">
+    <button class="mb-6" @click="createCoinStore.setModalVisible(true)">
       <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
     </button>
     <router-link to="/profile" class="flex flex-col cursor-pointer gap-0.5 px-2">

@@ -1,0 +1,24 @@
+.el-dialog {
+    --el-dialog-border-radius: 24px!important;
+}
+
+.el-overlay.overlay-white {
+    background-color: #FCFCFD80;
+}
+.el-dialog__header {
+    display: none;
+}
+
+.el-select__wrapper, .el-select__wrapper.is-focused {
+    box-shadow: none!important;
+}
+
+.c-select .el-select-dropdown__item.is-selected {
+    color: black;
+}
+.c-select.el-popper {
+    border-radius: 12px;
+}
+.c-select.el-select-dropdown {
+    border-radius: 12px;
+}

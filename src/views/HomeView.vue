@@ -1,11 +1,14 @@
 <script setup lang="ts">
-
 import BannerTag from "@/components/common/BannerTag.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
+import {ref} from "vue";
+
+const listType = ref('trending')
+const typePopoverVisible = ref(false)
 </script>
 
 <template>
-  <div class="h-full overflow-auto py-2">
+  <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
     <div class="w-full flex gap-3 scroll-pl-3 overflow-x-auto no-scroll-bar">
       <div class="snap-start shrink-0 first:pl-3 ">
         <BannerTag/>
@@ -14,7 +17,15 @@ import TagListItem from "@/components/home/TagListItem.vue";
         <BannerTag/>
       </div>
     </div>
-    <div class="px-3 mt-3">
+    <div class="px-3 flex justify-end">
+      <el-select v-model="listType"
+                 class="border-[1px] border-gray-e5 rounded-full overflow-hidden max-w-[120px] c-select-popper"
+                 popper-class="c-select rounded-xl">
+        <el-option value="trending" label="Trending"/>
+        <el-option value="new" label="New"/>
+      </el-select>
+    </div>
+    <div class="flex-1 px-3 overflow-auto">
       <div class="flex flex-col gap-y-2">
         <TagListItem v-for="i of 10" :key="i"/>
       </div>

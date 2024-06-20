@@ -2,6 +2,8 @@
 import {RouterView} from "vue-router";
 import TopBar from "@/layout/TopBar.vue";
 import TabBar from "@/layout/TabBar.vue";
+import CreateCoinModal from "@/components/common/CreateCoinModal.vue";
+
 </script>
 
 <template>
@@ -11,6 +13,7 @@ import TabBar from "@/layout/TabBar.vue";
       <RouterView/>
     </div>
     <TabBar/>
+    <CreateCoinModal/>
   </main>
 </template>
 
