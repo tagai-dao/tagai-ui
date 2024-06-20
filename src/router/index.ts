@@ -12,7 +12,12 @@ const router = createRouter({
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('../views/ProfileView.vue')
+      component: () => import('@/views/ProfileView.vue')
+    },
+    {
+      path: '/tag-detail/:id',
+      name: 'tag-detail',
+      component: () => import('@/views/HomeTagDetail.vue')
     }
   ]
 })

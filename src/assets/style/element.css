@@ -22,3 +22,18 @@
 .c-select.el-select-dropdown {
     border-radius: 12px;
 }
+.c-popper.el-popper, .c-popper.el-popover {
+    background: transparent!important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+.c-popper.el-popover .el-popper__arrow {
+    display: none!important;
+}
+.c-gradient-progress .el-progress-bar__outer {
+    background-color: #DCDCDC;
+}
+.c-gradient-progress-purple .el-progress-bar__inner {
+    background: linear-gradient(108.72deg, #EA66FF 12.76%, #8F00D5 79.04%);
+}

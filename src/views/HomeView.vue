@@ -27,7 +27,7 @@ const typePopoverVisible = ref(false)
     </div>
     <div class="flex-1 px-3 overflow-auto">
       <div class="flex flex-col gap-y-2">
-        <TagListItem v-for="i of 10" :key="i"/>
+        <TagListItem v-for="i of 10" :key="i" @click="$router.push(`/tag-detail/${i}`)"/>
       </div>
     </div>
   </div>

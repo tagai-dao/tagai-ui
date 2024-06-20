@@ -1,11 +1,12 @@
 import "element-plus/dist/index.css"
-import './assets/style/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import './assets/style/main.css'
+
 
 const app = createApp(App)
 
