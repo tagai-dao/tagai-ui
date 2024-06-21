@@ -15,7 +15,7 @@ const {
   onPaste,
   selectEmoji,
   formatElToTextContent
-} = useCreateTweet({maxLength: 240})
+} = useCreateTweet()
 
 const tweetLoading = ref(false)
 const onPostTweet = () => {

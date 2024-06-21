@@ -1,4 +1,5 @@
 @import "element.css";
+@import "icons.scss";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,4 +34,23 @@ input {
 }
 .emoji-body .emojis-wrap .emoji-block {
   padding: 4px!important;
+}
+.text-gradient {
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  width: fit-content;
+}
+.multi-content {
+  word-break: break-word;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+.multi-content-2 {
+  -webkit-line-clamp: 2;
+}
+.multi-content-5 {
+  -webkit-line-clamp: 5;
 }

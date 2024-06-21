@@ -7,17 +7,19 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: HomeView,
+      meta: {tabbar: true}
     },
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('@/views/ProfileView.vue')
+      component: () => import('@/views/ProfileView.vue'),
+      meta: {tabbar: true}
     },
     {
       path: '/tag-detail/:id',
       name: 'tag-detail',
-      component: () => import('@/views/HomeTagDetail.vue')
+      component: () => import('@/views/tag-detail/HomeTagDetail.vue')
     }
   ]
 })

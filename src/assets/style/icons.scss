@@ -1,0 +1,46 @@
+.icon {
+  display: block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.btn-icon-like {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-like.svg");
+}
+
+.btn-icon-like-active {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-like-active.svg");
+}
+
+.btn-icon-retweet {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-retweet.svg");
+}
+
+.btn-icon-retweet-active {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-retweet-active.svg");
+}
+
+.btn-icon-quote {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-quote.svg");
+}
+
+.btn-icon-quote-active {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-quote-active.svg");
+}
+
+.btn-icon-reply {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-reply.svg");
+}
+
+.btn-icon-reply-active {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-reply-active.svg");
+}
