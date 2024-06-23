@@ -163,15 +163,17 @@ onMounted(() => {
                     v-if="tweet.retweetInfo && tweet.retweetInfo.length > 10 && !isIgnoreAccount"
                     :retweetInfo="tweet.retweetInfo"  is-reply/>
 
-        <!--img-1, img-2, img-3, img-4 -->
-        <div class="grid md:max-w-[35rem] overflow-hidden border-[1px] border-gray-e5 rounded-3xl "
-             :class="`img-` + (imgurls.length % 5)" v-if="!isIgnoreAccount && imgurls && imgurls.length > 0">
-          <div class="img-box" v-for="(url, index) of imgurls.slice(0, 4)" :key="url">
-            <img :src="url" alt="">
+        <div class="px-3">
+          <!--img-1, img-2, img-3, img-4 -->
+          <div class="grid md:max-w-[35rem] overflow-hidden border-[1px] border-gray-e5 rounded-3xl "
+               :class="`img-` + (imgurls.length % 5)" v-if="!isIgnoreAccount && imgurls && imgurls.length > 0">
+            <div class="img-box" v-for="(url, index) of imgurls.slice(0, 4)" :key="url">
+              <img :src="url" alt="">
+            </div>
           </div>
+          <slot name="tweet-mint"></slot>
+          <slot name="tweet-action-bar"></slot>
         </div>
-        <slot name="tweet-mint"></slot>
-        <slot name="tweet-action-bar"></slot>
       </div>
     </div>
   </div>
