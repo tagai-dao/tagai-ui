@@ -1,5 +1,5 @@
 <template>
-  <div class="flex justify-between py-2 items-center gap-88px flex-1 max-w-425px">
+  <div class="flex justify-between py-3 items-center gap-88px flex-1 max-w-425px">
     <!-- like-->
     <TweetBtnLike :post="post"/>
 
@@ -9,7 +9,7 @@
         <i v-else class="w-5 h-5 min-w-5"
           :class="post?.retweeted ? 'btn-icon-retweet-active' : 'btn-icon-retweet'"></i>
         <span class="text-sm"
-              :class="post.retweeted ? 'text-gradient bg-gradient-primary' : 'text-gray-a6'">
+              :class="post.retweeted ? 'text-gradient bg-gradient-primary' : 'text-grey-bd'">
           {{ (post.countRetweet ?? 0) + (post.countQuote ?? 0) }}</span>
       </button>
       <template #content>
@@ -25,6 +25,8 @@
 
     <!-- reply-->
     <TweetBtnReply :post="post"/>
+    <!-- dislike-->
+    <TweetBtnDislike :post="post"/>
   </div>
 </template>
 
@@ -40,6 +42,7 @@ import TweetBtnLike from "@/components/tweets/TweetBtnLike.vue";
 import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
 import TweetBtnReply from "@/components/tweets/TweetBtnReply.vue";
 import TweetBtnQuote from "@/components/tweets/TweetBtnQuote.vue";
+import TweetBtnDislike from "@/components/tweets/TweetBtnDislike.vue";
 
 const props = withDefaults(
   defineProps<{

@@ -25,15 +25,15 @@ const userInfo = ref<{userName: string}>({
     <div class="flex items-end gap-4"
          :class="userInfo.userName===msgData.sendUserName?'flex-row-reverse':''">
       <img class="min-w-9" v-if="msgData.profileImg" :src="msgData.profileImg" alt="">
-      <div v-else class="bg-gray-e5 h-9 w-9 min-w-9 rounded-full flex items-center justify-center">
+      <div v-else class="bg-grey-light-hover h-9 w-9 min-w-9 rounded-full flex items-center justify-center">
         <i-ep-avatar/>
       </div>
       <div class="rounded-t-2xl p-2.5 min-h-9 break-all"
-           :class="userInfo.userName===msgData.sendUserName?'rounded-bl-2xl bg-purple-c9':'rounded-br-2xl bg-gray-e5'">
+           :class="userInfo.userName===msgData.sendUserName?'rounded-bl-2xl bg-purple-c1':'rounded-br-2xl bg-grey-light-hover'">
         {{msgData.content}}
       </div>
     </div>
-    <div class="text-xs text-gray-8C text-center">{{dayjs(msgData.sendTime).format('HH:mm:ss')}}</div>
+    <div class="text-xs text-grey-normal-hover text-center">{{dayjs(msgData.sendTime).format('HH:mm:ss')}}</div>
   </div>
 </template>
 

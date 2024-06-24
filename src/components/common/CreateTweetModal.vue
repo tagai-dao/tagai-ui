@@ -34,7 +34,7 @@ const onPostTweet = () => {
         <div>Type your content here</div>
         <div :class="leftWordsLength < 0 ? 'text-red' : ''">{{ leftWordsLength }}</div>
       </div>
-      <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-gray-f0/90 rounded-2xl">
+      <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-normal-active/90 rounded-2xl">
         <div contenteditable
              class="outline-none flex-1 overflow-auto no-scroll-bar min-h-[56px] px-3 pt-2 whitespace-pre-line
                       text-lg z-10 relative"
@@ -63,8 +63,8 @@ const onPostTweet = () => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-bb px-2 h-5 text-sm rounded-md">onchain</button>
-            <button class="bg-gray-d6 px-2 h-5 text-sm rounded-md">KATC</button>
+            <button class="bg-green-b6 px-2 h-5 text-sm rounded-md">onchain</button>
+            <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button>
           </div>
         </div>
       </div>

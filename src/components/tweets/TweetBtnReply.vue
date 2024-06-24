@@ -81,12 +81,13 @@ async function userReply() {
 </script>
 
 <template>
-  <button @click.stop="preReply" :disabled="isRepling"
-          class="flex justify-center items-center gap-2">
+  <button class="flex justify-center items-center gap-2"
+          @click.stop="preReply"
+          :disabled="isRepling">
     <i-ep-loading v-if="isRepling" class="animate-spin w-5 h-5"/>
     <i v-else class="w-5 h-5 min-w-5" :class="post.replied ? 'btn-icon-reply-active' : 'btn-icon-reply'"></i>
-    <span class="text-sm"
-          :class="post.commentCount ? 'text-gradient bg-gradient-primary' : 'text-gray-a6'">
+    <span class="text-sm font-bold"
+          :class="post.commentCount ? 'text-red-ff' : 'text-grey-bd'">
         {{ post.commentCount ?? 0 }}</span>
   </button>
 
@@ -107,7 +108,7 @@ async function userReply() {
                     {{ post.twitterName }}
                   </span>
               </div>
-              <div class="flex flex-wrap items-center gap-1 text-gray-8C text-sm">
+              <div class="flex flex-wrap items-center gap-1 text-grey-normal-hover text-sm">
                 <span class="">
                   @{{ post.twitterUsername }}
                 </span>

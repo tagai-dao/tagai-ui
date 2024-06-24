@@ -19,32 +19,33 @@ const createLoading = ref(false)
 <template>
   <div class="px-1 flex flex-col gap-y-10">
     <div class="flex justify-between items-center">
-      <span class="text-2xl font-medium text-black-23">Creat Coin</span>
+      <span class="text-h2 text-grey-normal-hover">Creat Coin</span>
       <img class="cursor-pointer"
            @click="modalStore.setModalVisible(false, GlobalModalType.CreateCoin)"
            src="~@/assets/icons/icon-modal-close.svg"
            alt="">
     </div>
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-1">
-        <label for="name" class="leading-6 text-lg font-light text-black">Name:</label>
-        <input class="border-b-[1px] border-gray-e6 leading-6 text-base"
+        <label for="name" class="leading-6 text-lg font-medium text-black">Name:</label>
+        <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
                v-model="createForm.name"
                type="text" id="name" placeholder="KATC">
       </div>
       <div class="flex flex-col gap-1">
-        <label for="desc" class="leading-6 text-lg font-light text-black">Description:</label>
-        <input class="border-b-[1px] border-gray-e6 leading-6 text-base"
+        <label for="desc" class="leading-6 text-lg font-medium text-black">Description:</label>
+        <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
                v-model="createForm.desc"
                type="text" id="desc" placeholder="LOOK AT THE CEOWD">
       </div>
-      <div class="flex justify-between gap-1 border-b-[1px] border-gray-e6 pb-2">
-        <label for="logo" class="leading-6 text-lg font-light text-black">Logo:</label>
+      <div class="flex gap-4">
+        <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
         <div class="flex items-center gap-2">
-          <img v-if="createForm.logoUrl" :src="createForm.logoUrl" class="avatar" alt=""/>
-          <div v-else class="w-12 h-12 min-w-12 min-h-12 bg-gray-e5 rounded-full"></div>
+          <img v-if="createForm.logoUrl" :src="createForm.logoUrl"
+               class="w-8 h-8 min-w-8 min-h-8" alt=""/>
+          <div v-else class="w-8 h-8 min-w-8 min-h-8 bg-grey-light-hover rounded-full"></div>
           <el-upload
-              class="avatar-uploader"
+              class="avatar-uploader w-6 h-6 min-w-6 min-h-6"
               action="#"
               :show-file-list="false"
               :http-request="(options: UploadRequestOptions)=> addUploadImg(options, 'logo')">
@@ -53,10 +54,10 @@ const createLoading = ref(false)
         </div>
       </div>
       <div class="flex flex-col gap-1">
-        <label for="tags" class="leading-6 text-lg font-light text-black">Onchain Tag </label>
+        <label for="tags" class="leading-6 text-lg ">Onchain Tag </label>
         <div class="flex flex-wrap gap-4 mt-1">
           <span class="font-medium underline text-black">#onchain</span>
-          <button class="h-7 bg-yellow-ff px-3 rounded-full text-black font-medium">Auto</button>
+          <button class="h-7 bg-yellow-fa px-3 rounded-full text-black font-medium">Auto</button>
         </div>
       </div>
     </div>
@@ -67,9 +68,9 @@ const createLoading = ref(false)
         <span>Create Coin</span>
         <i-ep-loading v-if="createLoading" class="animate-spin"/>
       </button>
-      <div class="flex items-center justify-center gap-2 mt-2 text-lg">
-        <span class="text-gray-77">cost to deploy：</span>
-        <span class="text-red-ef">~ 0.00005 BTC</span>
+      <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
+        <span class="text-grey-normal">cost to deploy：</span>
+        <span class="text-red-ff italic">~ 0.00005 BTC</span>
       </div>
     </div>
   </div>

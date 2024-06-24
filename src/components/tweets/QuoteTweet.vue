@@ -53,10 +53,10 @@ onMounted(() => {
               <a class="c-text-black text-left leading-1.1rem mr-3 light:text-blueDark">{{
                   tweet.author.name }}</a>
               <!-- <img class="w-1rem h-1rem mx-0.5rem" src="~@/assets/icon-checked.svg" alt=""> -->
-              <span class="text-colorA6 light:text-color7D">@{{ tweet.author.username }}</span>
+              <span class="text-grey-bd">@{{ tweet.author.username }}</span>
             </div>
             <span
-                class="whitespace-nowrap overflow-ellipsis overflow-x-hidden text-colorA6 light:text-color7D text-0.7rem leading-1.5rem">
+                class="whitespace-nowrap overflow-ellipsis overflow-x-hidden text-grey-bd text-0.7rem leading-1.5rem">
                             {{ parseTimestamp(tweet.createdAt) }}
                         </span>
           </div>

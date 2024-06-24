@@ -19,11 +19,12 @@ const userRetweet = async () => {
 </script>
 
 <template>
-  <button @click.stop="userRetweet"
-          :disabled="isRetweeting || post.retweeted"
-          class="flex items-center gap-2">
+  <button class="flex justify-center items-center gap-2"
+          @click.stop="userRetweet"
+          :disabled="isRetweeting || post.retweeted">
     <i-ep-loading v-if="isRetweeting" class="animate-spin w-5 h-5 "/>
-    <span class="text-sm" :class="post.retweeted ? 'text-gradient bg-gradient-primary' : 'text-gray-a6'">
+    <span class="text-sm font-bold"
+          :class="post.retweeted ? 'text-red-ff' : 'text-grey-bd'">
       {{ $t("postView.retweet") }} {{ post.retweetCount ?? 0 }}</span>
   </button>
 </template>

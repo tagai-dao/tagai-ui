@@ -38,7 +38,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="text-left border-[1px] border-gray-e5 rounded-xl overflow-hidden md:max-w-[35rem]"
+  <div class="text-left border-[1px] border-grey-light-hover rounded-xl overflow-hidden md:max-w-[35rem]"
        :class="imgPosition==='left'?'flex':''">
     <template v-if="imgPosition==='left'">
       <div class="flex-0.3 img-left-box">

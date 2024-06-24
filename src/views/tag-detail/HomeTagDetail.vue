@@ -25,16 +25,16 @@ const onTweetType = (type: GlobalModalType) => {
 <template>
   <div class="h-full overflow-auto py-2 flex flex-col gap-3 px-3 relative">
     <div class="bg-white rounded-2xl py-5 px-3.5 flex gap-3">
-      <div class="w-20 h-20 rounded-2xl bg-black-21 shadow-tag-logo flex items-center justify-center">
+      <div class="w-20 h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo flex items-center justify-center">
         <img class="w-15" src="../../assets/logo-v.svg" alt="">
       </div>
       <div class="flex-1 py-1">
         <div class="flex gap-4 items-center">
-          <span class="text-black text-xl font-bold leading-6">LATC</span>
+          <span class="text-black text-h2">LATC</span>
           <img class="w-4 h-4" src="../../assets/icons/icon-circle-x.svg" alt="">
-          <div class="w-4 h-4 min-w-4 min-h-4 bg-purple-a4 rounded-full"></div>
+          <div class="w-4 h-4 min-w-4 min-h-4 bg-purple-c1 rounded-full"></div>
         </div>
-        <div class="whitespace-pre-line font-normal text-black leading-5 mt-1">
+        <div class="whitespace-pre-line text-h5 mt-1">
           Look at the crowd <br>
           Biden stands no chance
         </div>
@@ -53,7 +53,7 @@ const onTweetType = (type: GlobalModalType) => {
         </el-popover>
       </div>
       <div class="flex items-center gap-3">
-        <el-progress :percentage="65" :stroke-width="8" :show-text="false"
+        <el-progress :percentage="65" :stroke-width="10" :show-text="false"
                      class="c-gradient-progress c-gradient-progress-purple w-full"/>
         <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
           <template #reference>
@@ -71,15 +71,14 @@ const onTweetType = (type: GlobalModalType) => {
           </template>
         </el-popover>
       </div>
-      <div class="flex gap-6 text-white">
-        <button class="flex-1 bg-gradient-primary rounded-full h-11">Buy</button>
-        <button class="flex-1 bg-black rounded-full h-11">Sell</button>
+      <div class="flex justify-center text-white">
+        <button class="w-1/2 bg-gradient-primary text-h5 rounded-full h-11">Trade</button>
       </div>
     </div>
-    <div class="bg-white rounded-2xl p-4 flex justify-between gap-2 sticky -top-2 z-50">
+    <div class="flex justify-between gap-2">
       <button v-for="tab of tabOptions" :key="tab.key"
-              class="px-3 rounded-full h-8 text-base font-medium"
-              :class="tab.key===activeTab?'bg-black text-white':'text-black-3f'"
+              class="px-3 rounded-full h-6 text-h3"
+              :class="tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f'"
               @click="activeTab=tab.key">{{tab.label}}</button>
     </div>
     <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/>

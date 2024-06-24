@@ -55,28 +55,22 @@ const userQuote = () => {
 </script>
 
 <template>
-  <button @click.stop="preQuote"
-          :disabled="isQuoting"
-          class="flex items-center">
+  <button class="flex justify-center items-center gap-2"
+          @click.stop="preQuote"
+          :disabled="isQuoting">
     <i-ep-loading v-if="isQuoting" class="animate-spin w-5 h-5"/>
-    <span class="px-8px font text-14px"
-          :class="post.quoted ? 'text-gradient-primary' : 'text-colorA6'">
+    <span class="text-sm font-bold"
+          :class="post.quoted ? 'text-red-ff' : 'text-grey-bd'">
               {{ $t("postView.quote") }} {{ post.quoteCount ?? 0 }}</span>
   </button>
   <el-dialog v-model="quoteVisible" width="700" align-center title="" destroy-on-close>
-    <div
-        class="bg-color1C px-20px min-h-40vh sm:min-h-300px sm:pt-40px max-h-80vh relative"
-    >
+    <div class="bg-color1C px-20px min-h-40vh sm:min-h-300px sm:pt-40px max-h-80vh relative">
       <div class="modal-close-line text-center text-center">
-        <button
-            class="w-50px h-6px rounded-full bg-colorA6"
-            @click="quoteVisible = false"
-        ></button>
+        <button class="w-50px h-6px rounded-full bg-colorA6"
+                @click="quoteVisible = false"></button>
       </div>
-      <i-ep-close
-          class="modal-close-icon text-colorA6 w-24px h-24px absolute right-20px top-20px"
-          @click="quoteVisible = false"
-      />
+      <i-ep-close class="modal-close-icon text-colorA6 w-24px h-24px absolute right-20px top-20px"
+                  @click="quoteVisible = false"/>
       <div class="flex-1 overflow-hidden py-20px flex">
         <img class="mr-10px md:mr-1rem rounded-full gradient-border w-40px h-40px"
              :src="headerProfileImg()" alt=""/>
@@ -97,22 +91,18 @@ const userQuote = () => {
               <img class="rounded-full gradient-border w-1.6rem h-1.6rem mr-5px min-w-1.6rem"
                    :src="profileImg" alt=""/>
               <div class="flex items-center flex-wrap">
-                  <span
-                      class="c-text-black text-left mr-3 cursor-pointer text-14px leading-18px"
-                  >
+                  <span class="c-text-black text-left mr-3 cursor-pointer text-14px leading-18px">
                     {{ post.authorName }}
                   </span>
               </div>
               <div class="flex items-center id-time">
-                  <span class="text-sm leading-18px text-colorA6 light:text-color7D">
+                  <span class="text-sm leading-18px text-grey-bd">
                     @{{ post.authorUsername }}
                   </span>
-                <span class="mx-4px text-colorA6 light:text-color7D"> · </span>
-                <span
-                    class="whitespace-nowrap text-sm leading-18px 2xl:text-14px 2xl:leading-18px text-colorA6 light:text-color7D"
-                >
-                    {{ parseTimestamp(post.postTime) }}
-                  </span>
+                <span class="mx-4px text-grey-bd"> · </span>
+                <span class="whitespace-nowrap">
+                  {{ parseTimestamp(post.postTime) }}
+                </span>
               </div>
             </div>
             <div class="text-left font-400 mt-0.5rem">

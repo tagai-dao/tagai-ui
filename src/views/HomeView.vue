@@ -19,8 +19,9 @@ const typePopoverVisible = ref(false)
     </div>
     <div class="px-3 flex justify-end">
       <el-select v-model="listType"
-                 class="border-[1px] border-gray-e5 rounded-full overflow-hidden max-w-[120px] c-select-popper"
-                 popper-class="c-select rounded-xl">
+                 class="bg-white rounded-full overflow-hidden max-w-[120px] c-select h-10 flex items-center
+                        text-h3 text-black"
+                 popper-class="c-select-popper rounded-xl">
         <el-option value="trending" label="Trending"/>
         <el-option value="new" label="New"/>
       </el-select>

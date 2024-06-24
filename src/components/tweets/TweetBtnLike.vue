@@ -44,8 +44,8 @@ const userLike = async () => {
     <i-ep-loading v-if="isLiking" class="animate-spin w-5 h-5"/>
     <i v-else class="w-5 h-5 min-w-5"
        :class="post.liked ? 'btn-icon-like-active' : 'btn-icon-like'"></i>
-    <span class="text-sm text-gray-a6"
-          :class="post.liked ? 'text-gradient-primary' : 'text-colorA6'">
+    <span class="text-sm font-bold"
+          :class="post.liked ? 'text-red-ff' : 'text-grey-bd'">
         {{ post.likeCount ?? 0 }}</span>
   </button>
 </template>

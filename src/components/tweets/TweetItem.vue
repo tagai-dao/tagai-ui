@@ -118,7 +118,7 @@ onMounted(() => {
 
 <template>
   <div ref="blogRef">
-    <div class="bg-gray-fc rounded-2xl p-3">
+    <div class="bg-gray-fc rounded-2xl py-4 px-3">
       <div class="flex gap-2 items-stretch">
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
                     :btc-address="tweet.btcAddress" :eth-address="tweet.ethAddress" :bitip="tweet.bitip"
@@ -142,11 +142,14 @@ onMounted(() => {
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
           </div>
-          <div class="text-sm text-gray-8C flex gap-4">
+          <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">
             <span>@{{tweet.twitterName}}</span>
             <span>{{ parseTimestamp(tweet.postTime) }}</span>
           </div>
         </div>
+        <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
+          $10.01
+        </button>
       </div>
       <div class="flex-1 overflow-hidden flex flex-col gap-2">
         <div @click.stop="clickContent"
@@ -163,9 +166,9 @@ onMounted(() => {
                     v-if="tweet.retweetInfo && tweet.retweetInfo.length > 10 && !isIgnoreAccount"
                     :retweetInfo="tweet.retweetInfo"  is-reply/>
 
-        <div class="px-3">
+        <div class="px-3 md:pl-12">
           <!--img-1, img-2, img-3, img-4 -->
-          <div class="grid md:max-w-[35rem] overflow-hidden border-[1px] border-gray-e5 rounded-3xl "
+          <div class="grid md:max-w-[35rem] h-[132px] md:h-auto overflow-hidden border-[1px] border-grey-light-hover rounded-2xl "
                :class="`img-` + (imgurls.length % 5)" v-if="!isIgnoreAccount && imgurls && imgurls.length > 0">
             <div class="img-box" v-for="(url, index) of imgurls.slice(0, 4)" :key="url">
               <img :src="url" alt="">

@@ -19,7 +19,7 @@ function newComment(tweetId: string, commentId: string, text: string) {
 <template>
   <div>
     <div v-for="(tweet, index) of testTweets" :key="index" class="mb-2">
-      <TweetItem :tweet="tweet">
+      <TweetItem class="bg-white rounded-2xl" :tweet="tweet">
         <!--        <template #tweet-mint>-->
         <!--          <TweetMint @click.stop :goods="tweet.goods" :tweet-id="tweet.tweetId"/>-->
         <!--        </template>-->
