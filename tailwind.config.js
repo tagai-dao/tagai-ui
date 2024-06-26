@@ -28,6 +28,11 @@ export default {
         'grey-e6': "#E6E8EC",
         'grey-3f': "#3F3F3F",
         'grey-bd': "#BDBDBD",
+        'grey-6f': "#6F6F6F",
+        'grey-e7': "#E7E7E7",
+        'grey-93': "#9395A4",
+        'grey-c9': "#C9C9C9",
+        'black-19': "#191C32"
       },
       backgroundImage: theme => ({
         'gradient-primary': 'linear-gradient(213.44deg, #FEB14C -14.77%, #FE2C1A 116.22%);',
@@ -36,7 +41,8 @@ export default {
       }),
       boxShadow: theme => ({
         'tag-logo': '0px 3px 10px 0px #FFFFFF7D inset',
-        'popper-tip': '0px 0px 12px rgba(0,0,0,0.12)'
+        'popper-tip': '0px 0px 12px rgba(0,0,0,0.12)',
+        'tab': '0px 20px 40px 0px #373E7D1A'
       })
     },
     fontSize: {
@@ -51,6 +57,7 @@ export default {
       'h1': ['32px', {lineHeight: '36px', fontWeight: '800',}],
       'h2': ['22px', {lineHeight: '26px', fontWeight: '700', letterSpacing: '-0.05em'}],
       'h3': ['16px', {lineHeight: '20px', fontWeight: '700', letterSpacing: '-0.02em'}],
+      'h4': ['14px', {lineHeight: '16px', fontWeight: '400', letterSpacing: '-0.02em'}],
       'h5': ['14px', {lineHeight: '16px', fontWeight: '700', letterSpacing: '-0.02em'}],
     }
   },

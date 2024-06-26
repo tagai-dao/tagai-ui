@@ -5,6 +5,8 @@ import {useModalStore} from "@/stores/common";
 import {GlobalModalType} from "@/types";
 import TagGroup from "@/views/tag-detail/TagGroup.vue";
 import TagContent from "@/views/tag-detail/TagContent.vue";
+import TagCredit from "@/views/tag-detail/TagCredit.vue";
+import TagToken from "@/views/tag-detail/TagToken.vue";
 
 const tabOptions = [
   {label: 'Group', key: 'group'},
@@ -12,7 +14,7 @@ const tabOptions = [
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
-const activeTab = ref('content')
+const activeTab = ref('token')
 const modalStore = useModalStore()
 const tweetTypeRef = ref()
 
@@ -83,6 +85,8 @@ const onTweetType = (type: GlobalModalType) => {
     </div>
     <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/>
     <TagContent v-if="activeTab==='content'"/>
+    <TagCredit v-if="activeTab==='credit'"/>
+    <TagToken v-if="activeTab==='token'"/>
   </div>
 </template>
 
