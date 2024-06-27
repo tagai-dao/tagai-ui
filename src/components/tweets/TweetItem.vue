@@ -9,6 +9,7 @@ import UserAvatar from "@/components/common/UserAvatar.vue";
 import LinkPreview from "@/components/tweets/LinkPreview.vue";
 import QuoteTweet from "@/components/tweets/QuoteTweet.vue";
 import {useTweet} from "@/composables/useTweet";
+import TweetSpaceCard from "@/components/tweets/TweetSpaceCard.vue";
 
 const props = withDefaults(defineProps<{
   tweet: any
@@ -151,22 +152,22 @@ onMounted(() => {
           $10.01
         </button>
       </div>
-      <div class="flex-1 overflow-hidden flex flex-col gap-2">
+      <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">
         <div @click.stop="clickContent"
              class="cursor-pointer text-base xl:text-lg tracking-0.2 pl-12">
           <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all" target="_blank">{{''}}</a>
           <div class="whitespace-pre-line break-words multi-content multi-content-2"
                v-else v-html="formatEmojiText(content)"></div>
         </div>
-        <!--       foreign page -->
-        <LinkPreview @click.stop="clickLinkView()" class="cursor-pointer"
-                     v-if="showPageInfo && !isIgnoreAccount" :pageInfo="tweet.pageInfo" />
-        <!--       retweet  -->
-        <QuoteTweet class="mt-10px" @click.stop="clickRetweetView()"
-                    v-if="tweet.retweetInfo && tweet.retweetInfo.length > 10 && !isIgnoreAccount"
-                    :retweetInfo="tweet.retweetInfo"  is-reply/>
-
         <div class="px-3 md:pl-12">
+          <TweetSpaceCard :post="tweet" @click.stop="$router.push(`/space-detail/${tweet.tweetId}`)"/>
+          <!--       foreign page -->
+          <LinkPreview @click.stop="clickLinkView()" class="cursor-pointer"
+                       v-if="showPageInfo && !isIgnoreAccount" :pageInfo="tweet.pageInfo" />
+          <!--       retweet  -->
+          <QuoteTweet class="mt-10px" @click.stop="clickRetweetView()"
+                      v-if="tweet.retweetInfo && tweet.retweetInfo.length > 10 && !isIgnoreAccount"
+                      :retweetInfo="tweet.retweetInfo"  is-reply/>
           <!--img-1, img-2, img-3, img-4 -->
           <div class="grid md:max-w-[35rem] h-[132px] md:h-auto overflow-hidden border-[1px] border-grey-light-hover rounded-2xl "
                :class="`img-` + (imgurls.length % 5)" v-if="!isIgnoreAccount && imgurls && imgurls.length > 0">

@@ -15,7 +15,7 @@ const tabOptions = [
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
-const activeTab = ref('token')
+const activeTab = ref('content')
 const modalStore = useModalStore()
 const tweetTypeRef = ref()
 

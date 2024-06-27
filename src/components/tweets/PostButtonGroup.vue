@@ -46,10 +46,10 @@ import TweetBtnDislike from "@/components/tweets/TweetBtnDislike.vue";
 
 const props = withDefaults(
   defineProps<{
-    post: Tweet;
+    post: Tweet|null;
   }>(),
   {
-    post: {},
+    post: null,
   }
 );
 const isRetweeting = ref(false);

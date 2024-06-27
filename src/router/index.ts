@@ -25,6 +25,11 @@ const router = createRouter({
       path: '/buy-sell/:id',
       name: 'buy-sell',
       component: () => import('@/views/buy-sell/BuyAndSellView.vue')
+    },
+    {
+      path: '/space-detail/:id',
+      name: 'space-detail',
+      component: () => import('@/views/space-detail/TweetSpaceDetail.vue')
     }
   ]
 })
