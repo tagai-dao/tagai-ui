@@ -136,16 +136,16 @@ const progressData = ref([
       </div>
       <div class="flex flex-col gap-1">
         <label for="reward" class="text-h4 text-grey-93">Unclaimed Reward:</label>
-        <div class="border-[1px] border-grey-c9 rounded-xl h-11 flex items-center gap-2 px-2">
-          <input class="flex-1 text-h3"
+        <div class="border-[1px] border-grey-c9 rounded-xl h-11 flex items-center gap-2 px-5">
+          <input class="flex-1 text-h3" :value="123"
                  type="text" id="reward">
           <span class="text-h3">$ LATC</span>
         </div>
       </div>
       <div class="flex flex-col gap-1">
         <label for="reward" class="text-h4 text-grey-93">Pool Contract:</label>
-        <div class="border-[1px] border-grey-c9 rounded-xl h-11 flex items-center gap-2 px-2">
-          <input class="flex-1 text-h3" type="text" id="reward">
+        <div class="border-[1px] border-grey-c9 rounded-xl h-11 flex items-center gap-2 px-5">
+          <input class="flex-1 text-h3" :value="'0x3475...3880'" disabled type="text" id="reward">
         </div>
       </div>
     </div>

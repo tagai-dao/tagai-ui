@@ -40,3 +40,10 @@
 .c-gradient-progress-purple .el-progress-bar__inner {
     background: linear-gradient(213.44deg, #FEB14C -14.77%, #FE2C1A 116.22%);
 }
+.c-radio .el-radio__input.is-checked .el-radio__inner {
+    background: linear-gradient(213.44deg, #FEB14C -14.77%, #FE2C1A 116.22%);
+    border: none;
+}
+.c-radio .el-radio__input.is-checked+.el-radio__label {
+    color: black;
+}

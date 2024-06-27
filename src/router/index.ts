@@ -20,6 +20,11 @@ const router = createRouter({
       path: '/tag-detail/:id',
       name: 'tag-detail',
       component: () => import('@/views/tag-detail/HomeTagDetail.vue')
+    },
+    {
+      path: '/buy-sell/:id',
+      name: 'buy-sell',
+      component: () => import('@/views/buy-sell/BuyAndSellView.vue')
     }
   ]
 })

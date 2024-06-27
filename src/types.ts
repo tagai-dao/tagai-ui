@@ -33,3 +33,27 @@ export type Tweet = {
   asset?: string,
   goods?: any
 }
+
+export type IPShareHolder = {
+  assetId?: bigint | string,
+  holder?: string,
+  amount?: bigint | string,
+  supply?: bigint | string | number,
+}
+
+export type IPShare = {
+  assetId?: bigint | string,
+  assetType?: bigint | string | number,
+  ownerBtc?: string,
+  ownerEth?: string,
+  insId?: bigint | string | number,
+  supply?: bigint | string | number,
+  l1Address?: string,
+  l2Address?: string,
+  price?: number,
+  formatPrice?: string,
+  feeAmount?: string | bigint,
+  createAtBlock?: number,
+  createTime?: number,
+  holders?: Array<IPShareHolder>
+}

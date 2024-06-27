@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, unref} from "vue";
+import {onMounted, ref, unref} from "vue";
 import MsgItem from "@/components/common/MsgItem.vue";
 import {useModalStore} from "@/stores/common";
 import {GlobalModalType} from "@/types";
@@ -7,6 +7,7 @@ import TagGroup from "@/views/tag-detail/TagGroup.vue";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
+import {useRoute} from "vue-router";
 
 const tabOptions = [
   {label: 'Group', key: 'group'},
@@ -22,6 +23,7 @@ const onTweetType = (type: GlobalModalType) => {
   tweetTypeRef.value.hide()
   modalStore.setModalVisible(true, type)
 }
+
 </script>
 
 <template>
@@ -74,7 +76,8 @@ const onTweetType = (type: GlobalModalType) => {
         </el-popover>
       </div>
       <div class="flex justify-center text-white">
-        <button class="w-1/2 bg-gradient-primary text-h5 rounded-full h-11">Trade</button>
+        <button class="w-1/2 bg-gradient-primary text-h5 rounded-full h-11"
+                @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">Trade</button>
       </div>
     </div>
     <div class="flex justify-between gap-2">

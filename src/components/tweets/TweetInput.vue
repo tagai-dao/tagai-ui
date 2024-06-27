@@ -27,7 +27,7 @@ const onPostTweet = () => {
       <div>Type your content here</div>
       <div :class="leftWordsLength < 0 ? 'text-red' : ''">{{ leftWordsLength }}</div>
     </div>
-    <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-normal-active/90 rounded-2xl">
+    <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
       <div contenteditable
            class="outline-none flex-1 overflow-auto no-scroll-bar min-h-[56px] px-3 pt-2 whitespace-pre-line
                       text-lg z-10 relative"

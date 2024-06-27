@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import {GlobalModalType} from "@/types";
+import {GlobalModalType, type IPShare} from "@/types";
 
 export const useModalStore = defineStore(
   'globalModal', () => {

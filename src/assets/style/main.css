@@ -54,3 +54,6 @@ input {
 .multi-content-5 {
   -webkit-line-clamp: 5;
 }
+button:disabled {
+  opacity: 0.5;
+}
