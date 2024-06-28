@@ -66,10 +66,10 @@ async function userReply() {
 
   try{
     isRepling.value = true
-    const commented = true // await newComment(props.post.tweetId, text)
+    const commented = true // await newComment(props.tweet.tweetId, text)
     if (commented) {
       replyVisible.value = false
-      emits('newComment', props.post.tweetId, commented.id, text)
+      emits('newComment', props.tweet.tweetId, commented.id, text)
     }
   } catch (e) {
     handleTransError(e)

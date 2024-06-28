@@ -30,6 +30,11 @@ const router = createRouter({
       path: '/space-detail/:id',
       name: 'space-detail',
       component: () => import('@/views/space-detail/TweetSpaceDetail.vue')
+    },
+    {
+      path: '/post-detail/:id',
+      name: 'post-detail',
+      component: () => import('@/views/post-detail/TweetPostDetail.vue')
     }
   ]
 })

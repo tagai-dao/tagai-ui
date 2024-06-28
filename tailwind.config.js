@@ -43,7 +43,8 @@ export default {
       boxShadow: theme => ({
         'tag-logo': '0px 3px 10px 0px #FFFFFF7D inset',
         'popper-tip': '0px 0px 12px rgba(0,0,0,0.12)',
-        'tab': '0px 20px 40px 0px #373E7D1A'
+        'tab': '0px 20px 40px 0px #373E7D1A',
+        'insert-white': '1px 1000px 2px #ffffff inset;'
       })
     },
     fontSize: {

@@ -55,7 +55,7 @@ const props = withDefaults(
 const isRetweeting = ref(false);
 const clickRetweetView = () => {
   try {
-    const info = JSON.parse(props.post.retweetInfo);
+    const info = JSON.parse(props.tweet.retweetInfo);
     window.open(`https://twitter.com/${info.author.username}/status/${info.id}`);
   } catch (error) {}
 };

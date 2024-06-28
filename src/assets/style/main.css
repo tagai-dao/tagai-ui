@@ -57,3 +57,10 @@ input {
 button:disabled {
   opacity: 0.5;
 }
+
+.gradient-border {
+  border-style: solid;
+  border-color: transparent;
+  background-origin: border-box;
+  box-sizing: border-box;
+}

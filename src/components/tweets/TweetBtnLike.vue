@@ -21,8 +21,8 @@ const userLike = async () => {
         return;
       }
       isLiking.value = true;
-      await newLike(props.post.tweetId);
-      emits('newLike', props.post.tweetId)
+      await newLike(props.tweet.tweetId);
+      emits('newLike', props.tweet.tweetId)
     } catch (e: any) {
       handleServerError(e);
     } finally {

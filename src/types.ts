@@ -32,6 +32,9 @@ export type Tweet = {
   assetType?: string,
   asset?: string,
   goods?: any
+  postId?: string
+  longContentStatus?: number
+  spaceId?: string
 }
 
 export type IPShareHolder = {

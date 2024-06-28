@@ -5,7 +5,7 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const listData = ref<number []>([])
-const scroller = document.querySelector('#space-detail-scroller')
+const scroller = document.querySelector('#comment-list-scroller')
 const onLoad = () => {
   if(loading.value || finished.value) return
   // loading.value = true
@@ -20,7 +20,6 @@ const onRefresh = () => {
 
 <template>
   <div>
-    <div class="text-h5 mb-2 mt-2 px-3">Space Comments</div>
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
                       loading-text="Loading"
                       pulling-text="Pull to refresh data"
@@ -35,14 +34,14 @@ const onRefresh = () => {
         <div class="bg-white px-5 py-4 rounded-2xl">
           <div class="flex gap-2">
             <img class="h-10 w-10 min-w-10 rounded-full"
-                 src="~@/assets/icons/icon-default-coin.svg" alt="">
+                 src="../../assets/icons/icon-default-coin.svg" alt="">
             <div class="flex-1 min-h-10 flex flex-col">
               <div class="text-h3">Musk</div>
               <div class="w-full flex items-center flex-wrap gap-x-2 text-sm font-normal">
                 <span class="">@asmonmy</span>
                 <span class="mx-4px"> · </span>
                 <button>
-                  <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
+                  <img class="w-3 h-3" src="../../assets/icons/icon-x.svg" alt="">
                 </button>
               </div>
             </div>

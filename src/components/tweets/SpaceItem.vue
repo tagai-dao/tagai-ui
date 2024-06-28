@@ -1,13 +1,7 @@
 <script setup lang="ts">
 import {computed, defineProps, onMounted, type PropType, ref, withDefaults} from 'vue'
-import { IgnoreAuthor } from '@/config'
-import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { parseTimestamp } from '@/utils/helper';
-import { useRouter } from 'vue-router';
-// import { buildAssetId } from '@/utils/eth/ipShare'
 import UserAvatar from "@/components/common/UserAvatar.vue";
-import LinkPreview from "@/components/tweets/LinkPreview.vue";
-import QuoteTweet from "@/components/tweets/QuoteTweet.vue";
 import {useTweet} from "@/composables/useTweet";
 import TweetSpaceCard from "@/components/tweets/TweetSpaceCard.vue";
 import {usePost} from "@/composables/usePost";
@@ -21,15 +15,12 @@ const {formatEmojiText} = useTweet()
 const {
   blogRef,
   profileImg,
-  imgurls,
   content,
   isIgnoreAccount,
   steemUrl,
   replaceEmptyImg,
   gotoTweet,
   clickContent,
-  clickLinkView,
-  clickRetweetView
 } = usePost(props)
 
 const showPageInfo = computed(() => {
@@ -83,9 +74,6 @@ const onUserAvatar = () => {
             <span>{{ parseTimestamp(tweet.postTime) }}</span>
           </div>
         </div>
-        <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
-          $10.01
-        </button>
       </div>
       <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">
         <div @click.stop="clickContent"
@@ -95,26 +83,7 @@ const onUserAvatar = () => {
                v-else v-html="formatEmojiText(content)"></div>
         </div>
         <div class="px-3 md:pl-12">
-          <!--       foreign page -->
-          <LinkPreview @click.stop="clickLinkView()" class="cursor-pointer"
-                       v-if="showPageInfo && !isIgnoreAccount" :pageInfo="tweet.pageInfo" />
-          <!--       retweet  -->
-          <QuoteTweet class="mt-10px" @click.stop="clickRetweetView()"
-                      v-if="tweet.retweetInfo && tweet.retweetInfo.length > 10 && !isIgnoreAccount"
-                      :retweetInfo="tweet.retweetInfo"  is-reply/>
-          <!--img-1, img-2, img-3, img-4 -->
-          <div class="grid md:max-w-[35rem] h-[132px] md:h-auto overflow-hidden border-[1px] border-grey-light-hover rounded-2xl "
-               :class="`img-` + (imgurls.length % 5)" v-if="!isIgnoreAccount && imgurls && imgurls.length > 0">
-            <el-image v-for="(url, index) of imgurls.slice(0, 4)" :key="url"
-                      class="max-h-[300px]"
-                      :src="imgurls[index]"
-                      :zoom-rate="1.2"
-                      :max-scale="7"
-                      :min-scale="0.2"
-                      :preview-src-list="imgurls.slice(0, 4)"
-                      :initial-index="index"
-                      fit="cover"/>
-          </div>
+          <TweetSpaceCard v-if="tweet.spaceId" :post="tweet"/>
           <slot name="tweet-mint"></slot>
           <slot name="tweet-action-bar"></slot>
         </div>
@@ -124,41 +93,4 @@ const onUserAvatar = () => {
 </template>
 
 <style scoped>
-.img-1 {
-  grid-template-columns: repeat(1, 1fr);
-}
-
-.img-2 {
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2px;
-}
-
-.img-3 {
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 2px;
-
-  :nth-child(2) {
-    grid-column: 2 / 2;
-    grid-row: 1 / 3;
-  }
-}
-
-.img-4 {
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 2px;
-}
-
-@media (max-width: 500px) {
-  .img-3 {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-
-    :nth-child(2) {
-      grid-column: 2 / 2;
-      grid-row: 1 / 3;
-    }
-  }
-}
 </style>

@@ -4,7 +4,8 @@ import BackHeader from "@/layout/BackHeader.vue";
 import {testTweets} from "@/assets/test-data";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
-import SpaceComments from "@/views/space-detail/SpaceComments.vue";
+import Comments from "@/components/tweets/Comments.vue";
+import SpaceItem from "@/components/tweets/SpaceItem.vue";
 
 </script>
 
@@ -17,7 +18,7 @@ import SpaceComments from "@/views/space-detail/SpaceComments.vue";
         </div>
       </template>
     </BackHeader>
-    <div class="flex-1 overflow-auto px-3 pb-3 flex flex-col gap-2" id="space-detail-scroller">
+    <div class="flex-1 overflow-auto px-3 pb-3 flex flex-col gap-2" id="comment-list-scroller">
       <div class="flex items-center gap-2">
         <div class="w-4 h-4 bg-green-b6 rounded-full"></div>
         <div class="text-base flex-1">
@@ -28,11 +29,11 @@ import SpaceComments from "@/views/space-detail/SpaceComments.vue";
         </button>
       </div>
       <div class="bg-white rounded-2xl py-2">
-        <TweetItem :tweet="testTweets[0]">
+        <SpaceItem :tweet="testTweets[1]">
           <template #tweet-action-bar>
-            <PostButtonGroup :post="testTweets[0]"/>
+            <PostButtonGroup :post="testTweets[1]"/>
           </template>
-        </TweetItem>
+        </SpaceItem>
       </div>
       <div class="bg-white rounded-2xl py-4 px-3 flex flex-col gap-4">
         <div class="flex items-center gap-2">
@@ -101,7 +102,8 @@ import SpaceComments from "@/views/space-detail/SpaceComments.vue";
           </button>
         </div>
       </div>
-      <SpaceComments/>
+      <div class="text-h5 mt-2 px-3">Space Comments</div>
+      <Comments/>
     </div>
 </div>
 </template>
