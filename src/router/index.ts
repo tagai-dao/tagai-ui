@@ -11,12 +11,6 @@ const router = createRouter({
       meta: {tabbar: true}
     },
     {
-      path: '/profile',
-      name: 'profile',
-      component: () => import('@/views/ProfileView.vue'),
-      meta: {tabbar: true}
-    },
-    {
       path: '/tag-detail/:id',
       name: 'tag-detail',
       component: () => import('@/views/tag-detail/HomeTagDetail.vue')
@@ -35,6 +29,11 @@ const router = createRouter({
       path: '/post-detail/:id',
       name: 'post-detail',
       component: () => import('@/views/post-detail/TweetPostDetail.vue')
+    },
+    {
+      path: '/profile/:user',
+      name: 'profile',
+      component: () => import('@/views/profile/ProfileView.vue')
     }
   ]
 })

@@ -20,7 +20,7 @@ const modalStore = useModalStore()
     <button class="mb-6" @click="modalStore.setModalVisible(true, GlobalModalType.CreateCoin)">
       <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
     </button>
-    <router-link to="/profile" class="flex flex-col items-center cursor-pointer gap-0.5 px-2">
+    <router-link to="/profile/1" class="flex flex-col items-center cursor-pointer gap-0.5 px-2">
       <template v-if="$route.name==='profile'">
         <img class="w-6 h-6" src="~@/assets/icons/icon-tabbar-profile-active.svg" alt="">
         <span class="text-gradient bg-gradient-primary text-h5">Tag</span>

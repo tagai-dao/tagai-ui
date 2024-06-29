@@ -1,0 +1,10 @@
+{
+  "buy": "购买",
+  "sell": "出售",
+  "tips": "打赏",
+  "profileView": {
+    "holdCoin": "Hold Coin",
+    "post": "Tweet/Space",
+    "createCoin": "Create Coin"
+  }
+}

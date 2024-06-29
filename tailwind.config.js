@@ -33,6 +33,7 @@ export default {
         'grey-93': "#9395A4",
         'grey-c9': "#C9C9C9",
         'grey-f0': "#F0F0F0",
+        'grey-8d': "#8D8D8D",
         'black-19': "#191C32"
       },
       backgroundImage: theme => ({
