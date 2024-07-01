@@ -1,7 +1,8 @@
 export enum GlobalModalType {
   CreateCoin,
   CreateTweet ,
-  CreateTweetSpace
+  CreateTweetSpace,
+  SearchBar
 }
 
 export type Tweet = {

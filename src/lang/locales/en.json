@@ -4,5 +4,10 @@
     "holdCoin": "Hold Coin",
     "post": "Tweet/Space",
     "createCoin": "Create Coin"
+  },
+  "notificationView": {
+    "ipShare": "IPShare",
+    "social": "Social",
+    "tips": "Tips"
   }
 }

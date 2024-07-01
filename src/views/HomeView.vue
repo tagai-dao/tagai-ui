@@ -4,11 +4,24 @@ import TagListItem from "@/components/home/TagListItem.vue";
 import {ref} from "vue";
 
 const listType = ref('trending')
-const typePopoverVisible = ref(false)
+const refreshing = ref(false)
+const loading = ref(false)
+const finished = ref(false)
+const listData = ref<number []>([])
+const onLoad = () => {
+  if(loading.value || finished.value) return
+  // loading.value = true
+};
+
+const onRefresh = () => {
+  finished.value = false;
+  onLoad();
+};
+
 </script>
 
 <template>
-  <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
+  <div class="h-full overflow-hidden flex flex-col gap-3">
     <div class="w-full flex gap-3 scroll-pl-3 overflow-x-auto no-scroll-bar">
       <div class="snap-start shrink-0 first:pl-3 ">
         <BannerTag/>
@@ -26,10 +39,23 @@ const typePopoverVisible = ref(false)
         <el-option value="new" label="New"/>
       </el-select>
     </div>
-    <div class="flex-1 px-3 overflow-auto">
-      <div class="flex flex-col gap-y-2">
-        <TagListItem v-for="i of 10" :key="i" @click="$router.push(`/tag-detail/${i}`)"/>
-      </div>
+    <div class="flex-1 px-3 pb-2 overflow-auto">
+      <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
+                        class="min-h-full"
+                        loading-text="Loading"
+                        pulling-text="Pull to refresh data"
+                        loosing-text="Release to refresh">
+        <van-list :loading="loading"
+                  :finished="finished"
+                  :immediate-check="false"
+                  finished-text="No more"
+                  :offset="50"
+                  @load="onLoad">
+          <div class="flex flex-col gap-y-2">
+            <TagListItem v-for="i of 10" :key="i" @click="$router.push(`/tag-detail/${i}`)"/>
+          </div>
+        </van-list>
+      </van-pull-refresh>
     </div>
   </div>
 </template>
