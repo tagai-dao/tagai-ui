@@ -25,11 +25,13 @@
             Biden stands no chance
           </div>
         </div>
-        <div class="h-20 flex items-center">
-          <button class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full">
-            Buy
-          </button>
-        </div>
+        <slot name="default-btn">
+          <div class="h-20 flex items-center">
+            <button class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full">
+              Buy
+            </button>
+          </div>
+        </slot>
       </div>
       <div class="font-extralight flex flex-wrap gap-2 mt-2">
         <button class="bg-green-b6 px-2 h-5 text-xs rounded-md">onchain</button>

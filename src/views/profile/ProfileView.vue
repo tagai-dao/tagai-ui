@@ -2,9 +2,10 @@
 import {ref} from "vue";
 import TabHoldCoin from "@/views/profile/TabHoldCoin.vue";
 import TabPost from "@/views/profile/TabPost.vue";
+import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 
 const tabOptions = ['holdCoin', 'post', 'createCoin']
-const activeTab = ref('post')
+const activeTab = ref('createCoin')
 </script>
 
 <template>
@@ -43,9 +44,10 @@ const activeTab = ref('post')
               :class="tab===activeTab?'text-gradient bg-gradient-primary':'text-grey-normal'"
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
     </div>
-    <div class="flex-1 overflow-auto px-3" id="profile-tab-scroller">
+    <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <TabHoldCoin v-if="activeTab==='holdCoin'"/>
       <TabPost v-if="activeTab==='post'"/>
+      <TabCreateCoin v-if="activeTab==='createCoin'"/>
     </div>
   </div>
 </template>

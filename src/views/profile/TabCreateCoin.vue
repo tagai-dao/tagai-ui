@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {ref} from "vue";
+import TagListItem from "@/components/home/TagListItem.vue";
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -32,23 +33,25 @@ const onRefresh = () => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <div v-for="i of 10" :key="i"
-             class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3.5 flex gap-3 mb-2">
-          <div class="w-16 min-w-16 h-16 rounded-2xl bg-grey-normal-active shadow-tag-logo flex items-center justify-center
-                relative overflow-hidden">
-            <img class="w-15" src="~@/assets/logo-v.svg" alt="">
-          </div>
-          <div class="flex-1">
-            <div class="flex gap-2 items-center">
-              <span class="text-grey-normal text-h2 font-bold leading-6">LATC</span>
-              <img class="w-15" src="~@/assets/icons/icon-circle-x.svg" alt="">
-            </div>
-            <div class="whitespace-pre-line text-grey-normal text-h5 mt-1">
-              Look at the crowd <br>
-              Biden stands no chance
-            </div>
-          </div>
+        <div class="flex items-center gap-1 px-3 mb-2">
+          <span class="font-normal text-sm">流入 Coin 部署者的交易手续费</span>
+          <el-popover popper-class="c-popper">
+            <template #reference>
+              <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
+            </template>
+            <template #default>
+              <div class="bg-white rounded-xl p-2 shadow-popper-tip">tips</div>
+            </template>
+          </el-popover>
         </div>
+        <button class="bg-gradient-primary h-14 w-full rounded-xl flex items-center justify-center gap-1 text-white mb-2">
+          <span class="text-h2 mr-2">$ 3409.36</span>
+          <img src="~@/assets/icons/icon-up.svg" alt="">
+          <span>+2%</span>
+        </button>
+        <TagListItem v-for="i of 10" :key="i" @click="$router.push(`/tag-detail/${i}`)">
+          <template #default-btn><div></div></template>
+        </TagListItem>
       </van-list>
     </van-pull-refresh>
   </div>
