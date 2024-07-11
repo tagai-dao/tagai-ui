@@ -39,3 +39,7 @@ export const getHolderList = async (token: string, pages?: number) =>
 
 export const isTokenExist = async (tick: string) =>
   get(BACKEND_API_URL + '/community/isTokenExist', { tick })
+
+/************************************ curation **********************************/
+export const getOnlineSpaces = async () =>
+  get(BACKEND_API_URL + '/space/onlineSpaces')

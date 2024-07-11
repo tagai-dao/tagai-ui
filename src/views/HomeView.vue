@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import BannerTag from "@/components/common/BannerTag.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import { ref } from "vue";
-import { ListType, type Community } from '@/types'
-import { getCommunitiesByNew, getCommunitiesByTrending } from "@/apis/api";
+import { ref, onActivated } from "vue";
+import { ListType, type Community, type Space } from '@/types'
+import { getCommunitiesByNew, getCommunitiesByTrending, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
+import { useCurationStore } from '@/stores/curation'
 import { handleTransError } from '@/utils/notify'
-
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
+const curationStore = useCurationStore();
 const refreshing = ref(false);
 const loading = ref(false);
 
@@ -62,16 +63,30 @@ async function loadMore() {
     loading.value = false
   }
 }
+
+async function getSpaces() {
+  try{
+    let spaces = await getOnlineSpaces() as Space[];
+    if (spaces && spaces.length === 0) {
+      curationStore.allSpaces = spaces;
+    }else {
+      curationStore.allSpaces = [];
+    }
+  } catch(e) {
+    handleTransError(e)
+  }
+}
+
+onActivated(async () => {
+  getSpaces()
+})
 </script>
 
 <template>
   <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
-    <div class="w-full flex gap-3 scroll-pl-3 overflow-x-auto no-scroll-bar">
-      <div class="snap-start shrink-0 first:pl-3">
-        <BannerTag />
-      </div>
-      <div class="snap-start shrink-0 first:pl-3 last:pr-4">
-        <BannerTag />
+    <div v-if="curationStore.allSpaces.length > 0" class="w-full flex gap-3 scroll-pl-3 overflow-x-auto no-scroll-bar">
+      <div v-for="space of curationStore.allSpaces" class="snap-start shrink-0 first:pl-3">
+        <BannerTag :space/>
       </div>
     </div>
     <div class="px-3 flex justify-end">
@@ -85,8 +100,17 @@ async function loadMore() {
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto">
-      <div class="flex flex-col gap-y-2">
-        <TagListItem v-for="i of 10" :key="i" @click="$router.push(`/tag-detail/${i}`)" />
+      <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
+        <div v-if="comStore.trendingCommunities.length == 0">
+
+        </div>
+        <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="$router.push(`/tag-detail/${community.tick}`)" />
+      </div>
+      <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
+        <div v-if="comStore.newCommunities.length == 0">
+
+        </div>
+        <TagListItem v-else v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="$router.push(`/tag-detail/${community.tick}`)" />
       </div>
     </div>
   </div>

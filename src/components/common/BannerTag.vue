@@ -1,5 +1,8 @@
 <script setup lang="ts">
-
+import { type Space } from '@/types';
+const props = defineProps<{
+  space: Space
+}>();
 </script>
 
 <template>

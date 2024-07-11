@@ -1,5 +1,8 @@
 <script setup lang="ts">
-
+import { type Community } from '@/types';
+const props = defineProps<{
+  community: Community
+}>()
 </script>
 
 <template>
