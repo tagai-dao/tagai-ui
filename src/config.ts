@@ -18,8 +18,8 @@ export const DEFAULT_BITIP_FEE = 0;
 // export const BLOCK_CYPHER_API_URL = 'https://api.blockcypher.com/v1/btc/test3'
 // export const BLOCK_MEMEPOOL_API_URL = 'https://mempool.space/testnet/api' 
 // export const TX_BROWSER = 'https://mempool.space/testnet/tx/'
-export const BACKEND_API_URL = 'https://api-test.bitip.social'
-// export const BACKEND_API_URL = 'http://localhost:3100'
+// export const BACKEND_API_URL = 'https://api-test.bitip.social'
+export const BACKEND_API_URL = 'http://localhost:3000'
 // export const GRAPH_URL = 'https://graph-test.bitip.social/subgraphs/name/donut/bitip'
 
 

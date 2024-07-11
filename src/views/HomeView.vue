@@ -2,9 +2,19 @@
 import BannerTag from "@/components/common/BannerTag.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {ref} from "vue";
+import { ListType } from '@/types'
+import { getCommunitiesByNew, getCommunitiesByTrending } from "@/apis/api";
 
-const listType = ref('trending')
+const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
+
+async function refresh() {
+
+}
+
+async function loadMore() {
+
+}
 </script>
 
 <template>
@@ -22,8 +32,8 @@ const typePopoverVisible = ref(false)
                  class="bg-white rounded-full overflow-hidden max-w-[120px] c-select h-10 flex items-center
                         text-h3 text-black"
                  popper-class="c-select-popper rounded-xl">
-        <el-option value="trending" label="Trending"/>
-        <el-option value="new" label="New"/>
+        <el-option :value="ListType.Trending" label="Trending"/>
+        <el-option :value="ListType.New" label="New"/>
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto">

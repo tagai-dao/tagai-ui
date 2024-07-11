@@ -1,5 +1,6 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
+import { useAccountStore } from '@/stores/web3';
 
 axiosRetry(axios, { retries: 3 });
 
@@ -7,9 +8,10 @@ axios.defaults.timeout = 30000;
 
 axios.interceptors.request.use(
   config => {
-    const jwtToken = localStorage.getItem('jwtToken')
-    if (jwtToken && jwtToken.length > 0) {
-      config.headers['Authorization'] = 'Bearer ' + jwtToken
+    const accStore = useAccountStore();
+    const accountInfo = accStore.getAccountInfo;
+    if (accountInfo && accountInfo.accessToken) {
+      config.headers['AccessToken'] = accountInfo.accessToken;
     }
     return config;
   },

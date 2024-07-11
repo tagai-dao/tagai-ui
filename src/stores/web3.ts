@@ -1,12 +1,6 @@
 import { defineStore } from 'pinia'
-import type { Inscriptions, IPShare, MingingPool, MyHolding, Trade, Twitter } from '@/types'
-
-export enum WalletState {
-    Disconnect,
-    Okx,
-    Unisat,
-    WrongAddress
-}
+import type { IPShare, Account } from '@/types'
+import { ref } from 'vue'
 
 export enum EthWalletState {
     Disconnect,
@@ -18,49 +12,49 @@ export enum EthWalletState {
 export const useAccountStore = defineStore('account', {
     actions: {
         clear() {
-            this.account = ''
-            this.ethAddress = ''
+            this.setAccount(null);
             this.ethBalance = 0
-            this.twitter = {}
-            this.steemId = ''
             this.ipshare = {}
-            this.holdings = []
-            this.trades = []
             this.pubKey = ''
-            this.inscriptions = {} as Inscriptions
-            this.utxos = [] as UTXOs,
-            this.wallet = null as any,
-            this.connectState = WalletState.Disconnect,
             this.ethWalletType = 'none' // metamask, okx, none
             this.ethConnectState = EthWalletState.Disconnect
             this.ethConnectAddress = ''
-            this.miningPool = undefined
             localStorage.removeItem('jwtToken')
         }
     },
     state() {
+        const account = ref<Account | null>(null);
+        const setAccount = (acc: Account | null) => {
+            account.value = acc;
+            if (!acc) {
+                localStorage.removeItem('accountInfo')
+            }else {
+                localStorage.setItem('accountInfo', JSON.stringify(acc))
+            }
+        }
+        
         return {
-            account: '',
-            ethAddress: '',
+            account,
+            setAccount,
             ethBalance: 0,
             ipshare: {} as IPShare,
-            twitter: {} as Twitter,
-            steemId: '',
-            holdings: [] as Array<MyHolding>,
-            trades: [] as Array<Trade>,
             pubKey: '',
-            inscriptions: {} as Inscriptions,
-            utxos: [] as UTXOs,
-            wallet: null as any,  // btc
-            connectState: WalletState.Disconnect,
             ethWalletType: '',
             ethConnectState: EthWalletState.Disconnect,
-            ethConnectAddress: '',
-            miningPool: {} as MingingPool | undefined
+            ethConnectAddress: ''
         }
     },
     getters:{
-
+        getAccountInfo: (state) => {
+            let acc = state.account;
+            if (!acc) {
+                let accStr = localStorage.getItem('accountInfo')
+                if (accStr){
+                    acc = typeof(accStr) === 'string' ? JSON.parse(accStr) : accStr
+                }
+            }
+            return acc
+        }
     }
 })
 
@@ -68,9 +62,7 @@ export const useAccountStore = defineStore('account', {
 export const useIpshareData = defineStore('ipshareData', {
     state() {
         return {
-            ipshareListBySupply: [] as Array<IPShare>,
-            ipshareTradeList: {} as {[property: string]: Array<Trade>},
-            allTradingList: [] as Array<Trade>
+            ipshareListBySupply: [] as Array<IPShare>
         }
     }
 })
