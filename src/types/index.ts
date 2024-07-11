@@ -75,6 +75,7 @@ export type Space = Account & {
   spaceId?: string;
   title?: string;
   logo?: string;
+  tick?: string;
   hostIds?: string | undefined | null;
   speakerIds?: string | undefined | null;
   state?: number | undefined | null;
@@ -143,7 +144,7 @@ export type Community = {
   name: string;
   description: string;
   logo: string;
-  creator: string;
+  creator: string; // ethAddr
   tick: string;
   token: string;
   twitter?: string | undefined | null;
