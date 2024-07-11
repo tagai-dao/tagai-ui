@@ -74,6 +74,7 @@ export type Account = {
 export type Space = Account & {
   spaceId?: string;
   title?: string;
+  logo?: string;
   hostIds?: string | undefined | null;
   speakerIds?: string | undefined | null;
   state?: number | undefined | null;

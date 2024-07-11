@@ -78,7 +78,7 @@ async function getSpaces() {
 }
 
 onActivated(async () => {
-  getSpaces()
+  // getSpaces()
 })
 </script>
 
