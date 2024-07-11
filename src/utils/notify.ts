@@ -1,109 +1,184 @@
-import i18n from '@/lang'
-import errCode from '@/errCode'
-import { ElNotification } from 'element-plus'
+import i18n from "@/lang";
+import errCode from "@/errCode";
+import { ElNotification } from "element-plus";
 
-
-const t = i18n.global.t
+const t = i18n.global.t;
 
 export const handleTransError = (e: any) => {
-    if (!e) {
-        console.log('Null error')
-        return;
-    }
-    if (typeof(e) === "number") {
-        return handleServerError(e)
-    }
+  if (!e) {
+    console.log("Null error");
+    return;
+  }
+  if (typeof e === "number") {
+    return handleServerError(e);
+  }
 
-    if (e.message.indexOf("insufficient funds for intrinsic transaction cost") !== -1) {
-        notify({message: 'Insufficient gas, please charge BTC to your Donut address', type: 'info', duration: 5000})
-        return t('tip.insufficientFee')
-    } else if (e.message.indexOf('User denied transaction signature') !== -1) {
-        notify({message: 'User canceled the transaction', type: 'info', duration: 5000})
-        return t('tip.userCanceled')
-    } else if (e.message.indexOf('user rejected action') !== -1) {
-        notify({message: 'User canceled the signature', type: 'info', duration: 5000})
-        return t('tip.userCanceled')
-    } else if (e.message.indexOf('User has ipshare') !== -1){
-        notify({message: 'User has created IPShare', type: 'info'})
-        return 'User has created IPShare'
-    } else if (e.message.indexOf('IPShare already created') !== -1) {
-        notify({message: 'IPShare already created', type: 'info'})
-        return 'IPShare already created'
-    } else if((e.message.indexOf('invalid nonce') !== -1) || (e.message.indexOf('invalid signature') !== -1)) {
-        notify({message: 'Invalid signature', type: 'info'})
-        return 'Invalid signature'
-    } else if(e.message.indexOf('Cannot sell the last 10 share') !== -1) {
-        notify({message: 'Cannot sell the last 10 shares', type: 'info'})
-        return 'Cannot sell the last 10 shares'
-    } else {
-        notify({message: "Transaction fail!", type: 'error'})
-        return t('tip.transFail')
-    }
-}
+  if (
+    e.message.indexOf("insufficient funds for intrinsic transaction cost") !==
+    -1
+  ) {
+    notify({
+      message: "Insufficient gas, please charge BTC to your Donut address",
+      type: "info",
+      duration: 5000,
+    });
+    return t("tip.insufficientFee");
+  } else if (e.message.indexOf("User denied transaction signature") !== -1) {
+    notify({
+      message: "User canceled the transaction",
+      type: "info",
+      duration: 5000,
+    });
+    return t("tip.userCanceled");
+  } else if (e.message.indexOf("user rejected action") !== -1) {
+    notify({
+      message: "User canceled the signature",
+      type: "info",
+      duration: 5000,
+    });
+    return t("tip.userCanceled");
+  } else if (e.message.indexOf("User has ipshare") !== -1) {
+    notify({ message: "User has created IPShare", type: "info" });
+    return "User has created IPShare";
+  } else if (e.message.indexOf("IPShare already created") !== -1) {
+    notify({ message: "IPShare already created", type: "info" });
+    return "IPShare already created";
+  } else if (
+    e.message.indexOf("invalid nonce") !== -1 ||
+    e.message.indexOf("invalid signature") !== -1
+  ) {
+    notify({ message: "Invalid signature", type: "info" });
+    return "Invalid signature";
+  } else if (e.message.indexOf("Cannot sell the last 10 share") !== -1) {
+    notify({ message: "Cannot sell the last 10 shares", type: "info" });
+    return "Cannot sell the last 10 shares";
+  } else {
+    notify({ message: "Transaction fail!", type: "error" });
+    return t("tip.transFail");
+  }
+};
 
 export const handleServerError = (code: number) => {
-    // TODO - showing server error tips
-    switch(code) {
-        case errCode.DB_ERROR_CREATE_FAIL:
-            notify({message: 'Create fail', type: 'error'})
-            break;
-        case errCode.DB_ERROR_READ_FAIL:
-            notify({message: 'Get data fail', type: 'error'})
-            break;
-        case errCode.INSUFFICIENT_BALANCE:
-            notify({message: 'Insufficient balance', type: 'info'})
-            break;
-        case errCode.PARAMS_INVALID:
-            notify({message: 'Server error', type: 'error'})
-            break;
-        case errCode.ACCOUNT_MISMATCH:
-            notify({message: 'Account mismatch, please chose the binded address', type: 'info'})
-            break;
-        case errCode.INVALID_ADDRESS_FORMAT:
-            notify({message: 'Not supported address format', type: 'info'})
-            break;
-        case errCode.JWT_AUTH_FAIL:
-        case errCode.SIWE_AUTH_FAIL:
-        case errCode.BTC_AUTH_FAIL:
-            notify({message: "Auththorize fail", type: 'error'})
-            break;
-        case errCode.SERVER_ERROR:
-            notify({message: 'Server error', type: 'error'})
-            break;
-        case errCode.ASSET_CREATED_SHARE:
-            notify({message: 'IPShare has been created', type: 'info'})
-            break;
-        case errCode.ASSET_ID_NOT_CREATED:
-            notify({message: 'IPShare not exists', type: 'info'})
-            break;
-        case errCode.TWEET_NOT_FOUND:
-            notify({message: 'The tweet has been deleted', type: 'info'})
-            break;
-        case errCode.TWITTER_ERROR:
-            notify({message: 'Twitter api issue', type: 'info'})
-            break;
-        default:
-            notify({message: 'Unknown error', type: 'error'})
-            break;
-    }
-}
+  switch (code) {
+    case errCode.IDENTITY_HAS_USED:
+      notify({ message: t("errMessage.idUsed"), type: "info" });
+      break;
+    case errCode.BTC_AUTH_FAIL:
+      notify({ message: t("errMessage.btcAuthFail"), type: "error" });
+      break;
+    case errCode.ENS_MISMATCH:
+      notify({ message: t("errMessage.ensMismatch"), type: "info" });
+      break;
+    case errCode.TRANSACTION_INVALID:
+      notify({ message: t("errMessage.transInvalid"), type: "error" });
+      break;
+    case errCode.NOT_BOND_ETH:
+      notify({ message: t("errMessage.noBondEth"), type: "info" });
+      break;
+    case errCode.PARAMS_ERROR:
+      notify({ message: t("errMessage.paramsError"), type: "info" });
+      break;
+    case errCode.CURATION_NOT_EXIST:
+      notify({ message: t("errMessage.curationNotExsist"), type: "error" });
+      break;
+    case errCode.INSUFFICIENT_CONTENT:
+      notify({ message: t("errMessage.insufficientContent"), type: "error" });
+      break;
+    case errCode.INSUFFICIENT_OP:
+      notify({ message: t("errMessage.insufficientOp"), type: "error" });
+      break;
+    case errCode.INSUFFICIENT_VP:
+      notify({ message: t("errMessage.insufficientVp"), type: "error" });
+      break;
+    case errCode.IS_LIKED:
+      notify({ message: t("errMessage.isLiked"), type: "info" });
+      break;
+    case errCode.IS_UNLIKED:
+      notify({ message: t("errMessage.isUnliked"), type: "info" });
+      break;
+    case errCode.IS_RETWEETED:
+      notify({ message: t("errMessage.isRetweeted"), type: "info" });
+      break;
+    case errCode.NOT_COMMUNITY_OWNER:
+      notify({ message: t("errMessage.notCommunityOwner"), type: "info" });
+      break;
+    case errCode.DB_ERROR:
+      notify({ message: t("errMessage.dbErr"), type: "info" });
+      break;
+    case errCode.BLOCK_CHAIN_ERROR:
+      notify({ message: t("errMessage.blockChainErr"), type: "info" });
+      break;
+    case errCode.INVALID_TRANSACTION:
+      notify({ message: t("errMessage.invalidTransaction"), type: "info" });
+      break;
+    case errCode.USER_NOT_REGISTERED:
+      notify({ message: t("errMessage.userNotRegisterd"), type: "info" });
+      break;
+    case errCode.USER_ORDER_PENDING:
+      notify({ message: t("errMessage.userOrderPending"), type: "info" });
+      break;
+    case errCode.NO_REWARD_TO_CLAIM:
+      notify({ message: t("errMessage.noRewardToClaim"), type: "info" });
+      break;
+    case errCode.TICK_HAS_EXISTS:
+      notify({ message: t("errMessage.existTick"), type: "info" });
+      break;
+    case errCode.TWEET_NOT_FOUND:
+      notify({ message: t("errMessage.tweetNotFound"), type: "info" });
+      break;
+    case errCode.InvalidAccessToken:
+      notify({ message: t("errMessage.invalidAccessToken"), type: "info" });
+      break;
+    case errCode.TokenExpired:
+      notify({ message: t("errMessage.tokenExpired"), type: "info" });
+      break;
+    case errCode.TWEET_NOT_FOUND:
+      notify({ message: t("errMessage.tweetNotFound"), type: "info" });
+      break;
+    case errCode.InvalidAccessToken:
+      notify({ message: t("errMessage.invalidAccessToken"), type: "info" });
+      break;
+    case errCode.InvalidSignature:
+      notify({ message: t("errMessage.invalideSignatre"), type: "info" });
+      break;
+    case errCode.InvalidState:
+      notify({ message: t("errMessage.invalidState"), type: "info" });
+      break;
+    case errCode.UserCancelAuth:
+      notify({ message: t("errMessage.userCancelAuth"), type: "info" });
+      break;
+    case errCode.RegisterOutTime:
+      notify({ message: t("errMessage.registerOutTime"), type: "info" });
+      break;
+    case errCode.HasRegistered:
+      notify({ message: t("errMessage.hasRegisted"), type: "info" });
+      break;
+    default:
+      notify({ message: t("errMessage.unknownError"), type: "error" });
+      break;
+  }
+};
 
 interface NotifyOptions {
-    title?: string;
-    message?: string;
-    type?: 'success' | 'warning' | 'error' | 'info';
-    duration?: number
+  title?: string;
+  message?: string;
+  type?: "success" | "warning" | "error" | "info";
+  duration?: number;
 }
 
 export const notify = (options: Partial<NotifyOptions> = {}) => {
-    const defaultTitle = 'Warning';
-    const defaultMessage = 'This is a Warning message';
-    const defaultType: NotifyOptions['type'] = 'warning';
+  const defaultTitle = "Warning";
+  const defaultMessage = "This is a Warning message";
+  const defaultType: NotifyOptions["type"] = "warning";
 
-    const { title = defaultTitle, message = defaultMessage, type = defaultType } = options;
-    ElNotification({
-        title,
-        message,
-        type
-    });
-}
+  const {
+    title = defaultTitle,
+    message = defaultMessage,
+    type = defaultType,
+  } = options;
+  ElNotification({
+    title,
+    message,
+    type,
+  });
+};
