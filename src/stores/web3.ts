@@ -19,7 +19,6 @@ export const useAccountStore = defineStore('account', {
             this.ethWalletType = 'none' // metamask, okx, none
             this.ethConnectState = EthWalletState.Disconnect
             this.ethConnectAddress = ''
-            localStorage.removeItem('jwtToken')
         }
     },
     state() {
@@ -41,7 +40,8 @@ export const useAccountStore = defineStore('account', {
             pubKey: '',
             ethWalletType: '',
             ethConnectState: EthWalletState.Disconnect,
-            ethConnectAddress: ''
+            ethConnectAddress: '',
+            chainId: 0
         }
     },
     getters:{

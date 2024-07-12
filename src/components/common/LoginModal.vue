@@ -53,6 +53,8 @@ async function login() {
                     useModalStore().setModalVisible(false);
                     emitter.emit('login', true);
                 }
+                count++;
+                await sleep(1)
             }
         }else {
             if (userInfo.code === 3) {
@@ -73,5 +75,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div></div>
+  <div>
+    <button @click="login">
+        Login
+    </button>
+  </div>
 </template>

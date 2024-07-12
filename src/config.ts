@@ -2,69 +2,39 @@
 
 export const network: "livenet" | "testnet" | "regtest" = 'livenet'
 
-export const DEFAULT_PROTOCOL_FEE = 0.015;
-export const DEFAULT_SUBJECT_FEE = 0.055;
-export const DEFAULT_BITIP_FEE = 0;
-
 // testnet
-// export const InscriptionMeta = {
-//     fee: 2000,
-//     dust: 546,
-//     size: 200,
-//     inviteSize: 15,
-//     feeAddress: 'tb1p4q3q0gys5ccmmfhace3jp2lhwfx0jv700egtvewv4nftcy35esfqhh75ry'
-// }
-// export const BLOCK_STREAM_API_URL = 'https://blockstream.info/testnet/api';
-// export const BLOCK_CYPHER_API_URL = 'https://api.blockcypher.com/v1/btc/test3'
-// export const BLOCK_MEMEPOOL_API_URL = 'https://mempool.space/testnet/api' 
 // export const TX_BROWSER = 'https://mempool.space/testnet/tx/'
 // export const BACKEND_API_URL = 'https://api-test.bitip.social'
 export const BACKEND_API_URL = 'http://localhost:3000'
 // export const GRAPH_URL = 'https://graph-test.bitip.social/subgraphs/name/donut/bitip'
 
 
-// mainnet
-export const InscriptionMeta = {
-    fee: 2000,
-    dust: 546,
-    size: 180,
-    inviteSize: 15,
-    feeAddress: 'bc1p0h28zu2xg8nuavz9fyuwjz0796clngp3p7qgf7m2qx2rlr4xdcusljc9hx'
-}
-export const BLOCK_STREAM_API_URL = 'https://blockstream.info/api';
-export const BLOCK_CYPHER_API_URL = 'https://api.blockcypher.com/v1/btc/main'
-export const BLOCK_MEMEPOOL_API_URL = 'https://mempool.space/api' 
-// export const BACKEND_API_URL = 'https://api.bitip.social'
-export const TX_BROWSER = 'https://mempool.space/tx/'
 export const GRAPH_URL = 'https://graph.bitip.social/subgraphs/name/donut/bitip'
 
-
-
-// merlin main net
+// test chain chapel
 export const ChainConfig = {
-    name: "Merlin-main",
-    rpc: 'https://rpc.merlinchain.io',
-    chainId: 4200,
-    symbol: 'BTC',
-    browser: 'https://scan.merlinchain.io/',
+    name: "Chapel",
+    rpc: 'https://data-seed-prebsc-1-s1.bnbchain.org:8545',
+    chainId: 97,
+    symbol: 'BNB',
+    browser: 'https://testnet.bscscan.com/',
     decimals: 18,
     multiConfig: {
-        rpcUrl: 'https://rpc.merlinchain.io',
-        multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
+        rpcUrl: 'https://data-seed-prebsc-1-s1.bnbchain.org:8545',
+        multicallAddress: '0xae11C5B5f29A6a25e955F0CB8ddCc416f522AF5C',
         interval: 3000
     }
 }
-
-// merlin test net
+// merlin main net
 // export const ChainConfig = {
-//     name: "Merlin-test",
-//     rpc: 'https://testnet-rpc.merlinchain.io',
-//     chainId: 686868,
+//     name: "Merlin-main",
+//     rpc: 'https://rpc.merlinchain.io',
+//     chainId: 4200,
 //     symbol: 'BTC',
-//     browser: 'https://testnet-scan.merlinchain.io/',
+//     browser: 'https://scan.merlinchain.io/',
 //     decimals: 18,
 //     multiConfig: {
-//         rpcUrl: 'https://testnet-rpc.merlinchain.io',
+//         rpcUrl: 'https://rpc.merlinchain.io',
 //         multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
 //         interval: 3000
 //     }

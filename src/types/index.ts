@@ -3,7 +3,8 @@ export enum GlobalModalType {
   CreateTweet,
   CreateTweetSpace,
   Login,
-  Register
+  Register,
+  BondEth
 }
 
 export enum ListType {

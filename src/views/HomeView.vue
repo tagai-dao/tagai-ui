@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import BannerTag from "@/components/common/BannerTag.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import { ref, onActivated } from "vue";
+import { ref, onActivated, onMounted } from "vue";
 import { ListType, type Community, type Space } from '@/types'
 import { getCommunitiesByNew, getCommunitiesByTrending, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import { useCurationStore } from '@/stores/curation'
 import { handleTransError } from '@/utils/notify'
+import { initPlugin } from "@/utils/wallets";
+import { useRouter } from "vue-router";
+
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
 const curationStore = useCurationStore();
 const refreshing = ref(false);
 const loading = ref(false);
+const router = useRouter();
 
 async function refresh() {
   try{
@@ -78,7 +82,12 @@ async function getSpaces() {
 }
 
 onActivated(async () => {
-  // getSpaces()
+  getSpaces()
+})
+
+onMounted(async () => {
+  await router.isReady();
+  initPlugin();
 })
 </script>
 
