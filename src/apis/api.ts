@@ -2,8 +2,15 @@ import { get, post, put } from "./axios"
 import { BACKEND_API_URL } from '@/config'
 import type { CreateCommunity } from '@/types'
 
+/************************************ twitter auth **********************************/
 export const checkAccessToken = async () =>
   post(BACKEND_API_URL + '/auth/checkAccessToken')
+
+export const twitterAuth = async (referee?: string | null | undefined) => 
+  get(BACKEND_API_URL + '/auth/login', { referee })
+
+export const twitterLogin = async (state: string) =>
+  get(BACKEND_API_URL + '/user/login', { state })
 
 /************************************ tweets **********************************/
 export const getTweetsByNew = async (twitterId?: string | null, postTime?: any) =>

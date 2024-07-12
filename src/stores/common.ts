@@ -24,6 +24,12 @@ export enum MintState {
   Inscribed
 }
 
+export enum IdType {
+  BitIp,
+  ENS,
+  PayToken
+}
+
 export const useStateStore = defineStore('state', {
   state (){
     return {
@@ -38,7 +44,9 @@ export const useStateStore = defineStore('state', {
       selectedIPShare: {} as IPShare,
       globalLoginTip: false,
       showTwitterLogin: false,
-      loginTipType: 'mint' as 'mint' | 'comment'
+      loginTipType: 'mint' as 'mint' | 'comment',
+      referee: '' as string | null | undefined,
+      idType: IdType.ENS 
     }
   },
 
