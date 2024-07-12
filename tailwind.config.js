@@ -19,6 +19,7 @@ export default {
         'orange-normal': "#fe913f",
         'orange-normal-hover': "#e58339",
         'orange-normal-active': "#cb7432",
+        'green-hover': '#6D8C7F',
         'green-b6': "#b6ead3",
         'yellow-fa': "#faedaa",
         'red-ff': "#ff3d55",
@@ -34,7 +35,8 @@ export default {
         'grey-c9': "#C9C9C9",
         'grey-f0': "#F0F0F0",
         'grey-8d': "#8D8D8D",
-        'black-19': "#191C32"
+        'black-19': "#191C32",
+        'blue-active': "#575873"
       },
       backgroundImage: theme => ({
         'gradient-primary': 'linear-gradient(213.44deg, #FEB14C -14.77%, #FE2C1A 116.22%);',

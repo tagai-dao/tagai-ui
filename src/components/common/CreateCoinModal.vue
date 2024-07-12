@@ -7,12 +7,14 @@ import {GlobalModalType} from "@/types";
 
 const modalStore = useModalStore()
 const {addUploadImg} = useUploadImg()
-const createForm = reactive({
+const createForm = reactive<{name: string, desc: string, logoUrl: string, tags: string[]}>({
   name: '',
   desc: '',
-  logoUrl: ''
+  logoUrl: '',
+  tags: []
 })
 const createLoading = ref(false)
+const inputTag = ref('')
 
 </script>
 
@@ -34,9 +36,9 @@ const createLoading = ref(false)
       </div>
       <div class="flex flex-col gap-1">
         <label for="desc" class="leading-6 text-lg font-medium text-black">Description:</label>
-        <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
-               v-model="createForm.desc"
-               type="text" id="desc" placeholder="LOOK AT THE CEOWD">
+        <textarea class="border-b-[1px] border-grey-e6 leading-6 text-base"
+                  v-model="createForm.desc"
+                  id="desc" placeholder="LOOK AT THE CEOWD"/>
       </div>
       <div class="flex gap-4">
         <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
@@ -55,9 +57,17 @@ const createLoading = ref(false)
       </div>
       <div class="flex flex-col gap-1">
         <label for="tags" class="leading-6 text-lg ">Onchain Tag </label>
-        <div class="flex flex-wrap gap-4 mt-1">
-          <span class="font-medium underline text-black">#onchain</span>
-          <button class="h-7 bg-yellow-fa px-3 rounded-full text-black font-medium">Auto</button>
+        <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
+          <input class=" leading-6 text-base flex-1"
+                 v-model="inputTag"
+                 type="text" id="name" placeholder="KATC">
+          <button class="border-[1px] border-orange-light-active rounded-md px-2"
+                  @click="createForm.tags.push(inputTag)">
+            <span class="text-gradient bg-gradient-primary">Confirm</span>
+          </button>
+        </div>
+        <div v-if="createForm.tags.length>0" class="flex flex-wrap gap-4 mt-1">
+          <span class="bg-green-b6 px-2 rounded-md text-green-hover">#onchain</span>
         </div>
       </div>
     </div>
