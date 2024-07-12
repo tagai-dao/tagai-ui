@@ -37,10 +37,9 @@ async function createCoin() {
       <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
     </button>
     <router-link to="/profile/1" class="flex flex-col items-center cursor-pointer gap-0.5 px-2">
-      <template>
-        <img class="w-6 h-6" :src="accStore.getAccountInfo ? accStore.getAccountInfo.profile.replace('normal', '200x200') : '~@/assets/icons/icon-tabbar-profile.svg'" alt="">
-        <span class="text-h5 text-grey-normal">Profile</span>
-      </template>
+      <img v-if="accStore.getAccountInfo" class="w-6 h-6" :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
+      <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-profile.svg" alt="">
+      <span class="text-h5 text-grey-normal">Profile</span>
     </router-link>
   </div>
 </template>

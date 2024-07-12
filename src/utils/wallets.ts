@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 
-const accStore = useAccountStore();
+
 
 
 // this.ethWalletType = 'none' // metamask, okx, none
@@ -23,6 +23,7 @@ export const getProvider = () => provider
 export const getProviderInfo = () => providerInfo
 
 const detectEip6963 = () => {
+    const accStore = useAccountStore();
     let walletType = accStore.ethWalletType;
     window.addEventListener('eip6963:announceProvider', (event: any) => {
       if (event.detail.info.uuid) {
@@ -41,6 +42,7 @@ const detectEip6963 = () => {
 export const setActiveProviderDetail = (providerDetail: any) => {
     provider = providerDetail.provider;
     providerInfo = providerDetail.info;
+    const accStore = useAccountStore();
     accStore.ethWalletType = providerInfo.name
     initializeProvider();
 };
@@ -88,6 +90,7 @@ const handleNewProviderDetail = (newProviderDetail: any) => {
 
 const handleNewAccounts = async (accounts: any) => {
     accounts = accounts
+    const accStore = useAccountStore();
     if (!accounts || accounts.length == 0) {
         accStore.ethConnectState = EthWalletState.Disconnect
         accStore.ethWalletType = 'none'
@@ -107,7 +110,7 @@ const handleNewAccounts = async (accounts: any) => {
 export const closeProvider = () => {
     handleNewAccounts([]);
     provider.removeListener('accountsChanged', handleNewAccounts)
-
+    const accStore = useAccountStore();
     accStore.ethConnectState = EthWalletState.Disconnect;
     accStore.ethConnectAddress = '';
     provider = undefined;

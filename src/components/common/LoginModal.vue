@@ -52,6 +52,7 @@ async function login() {
                     accStore.setAccount(userInfo.account as Account)
                     useModalStore().setModalVisible(false);
                     emitter.emit('login', true);
+                    break;
                 }
                 count++;
                 await sleep(1)

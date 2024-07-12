@@ -1,14 +1,13 @@
 import { ChainConfig, MainToken } from "@/config"
 import { useAccountStore } from "@/stores/web3";
 
-const accStore = useAccountStore()
 
 export const setupNetwork = async (ethereum: any) => {
+    const accStore = useAccountStore()
     try {
         const chainInfo = await ethereum.request({
             method: 'eth_chainId'
         })
-
         if (parseInt(chainInfo) == ChainConfig.chainId) {
             accStore.chainId = ChainConfig.chainId;
             return true;
