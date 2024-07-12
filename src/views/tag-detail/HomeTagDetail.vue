@@ -15,7 +15,7 @@ const tabOptions = [
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
-const activeTab = ref('content')
+const activeTab = ref('group')
 const modalStore = useModalStore()
 const tweetTypeRef = ref()
 
@@ -23,6 +23,12 @@ const onTweetType = (type: GlobalModalType) => {
   tweetTypeRef.value.hide()
   modalStore.setModalVisible(true, type)
 }
+
+const progressData = ref([
+  {value: 10, background: '#FF3D54', desc: 'Bongding'},
+  {value: 70, background: '#FE913F', desc: 'Bongding'},
+  {value: 20, background: '#FFCC00', desc: 'Bongding'}
+])
 
 </script>
 
@@ -57,8 +63,22 @@ const onTweetType = (type: GlobalModalType) => {
         </el-popover>
       </div>
       <div class="flex items-center gap-3">
-        <el-progress :percentage="65" :stroke-width="10" :show-text="false"
-                     class="c-gradient-progress c-gradient-progress-purple w-full"/>
+<!--        <el-progress :percentage="65" :stroke-width="10" :show-text="false"-->
+<!--                     class="c-gradient-progress c-gradient-progress-purple w-full"/>-->
+        <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full">
+          <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
+                      placement="top-start">
+            <template #content>
+              <div class="flex gap-1">
+                <span class="text-sm">{{data.desc}}</span>
+                <span class="font-semibold text-base">{{data.value}}%</span>
+              </div>
+            </template>
+            <div class="h-full"
+                 :style="{background: data.background, width:`${data.value}%`}" >
+            </div>
+          </el-tooltip>
+        </div>
         <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
           <template #reference>
             <button class="bg-black px-3 h-8 text-white text-sm rounded-full whitespace-nowrap">

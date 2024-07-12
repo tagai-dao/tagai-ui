@@ -17,6 +17,7 @@ const curationStore = useCurationStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const router = useRouter();
+const finished = ref(false)
 
 async function refresh() {
   try{
@@ -92,12 +93,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
-    <div v-if="curationStore.allSpaces.length > 0" class="w-full flex gap-3 scroll-pl-3 overflow-x-auto no-scroll-bar">
-      <div v-for="space of curationStore.allSpaces" class="snap-start shrink-0 first:pl-3">
+  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3">
+    <van-swipe :loop="true" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">
+      <van-swipe-item v-for="space of curationStore.allSpaces">
         <BannerTag :space/>
-      </div>
-    </div>
+      </van-swipe-item>
+    </van-swipe>
     <div class="px-3 flex justify-end">
       <el-select
         v-model="listType"
@@ -109,18 +110,34 @@ onMounted(async () => {
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto">
-      <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
-        <div v-if="comStore.trendingCommunities.length == 0">
+      <van-pull-refresh v-model="refreshing" @refresh="refresh"
+                        class="min-h-full"
+                        loading-text="Loading"
+                        pulling-text="Pull to refresh data"
+                        loosing-text="Release to refresh">
+        <van-list :loading="loading"
+                  :finished="finished"
+                  :immediate-check="false"
+                  finished-text="No more"
+                  :offset="50"
+                  @load="loadMore">
+          <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
+            <div v-if="comStore.trendingCommunities.length == 0">
+            </div>
+            <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="$router.push(`/tag-detail/${community.tick}`)" />
+          </div>
+          <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
+            <div v-if="comStore.newCommunities.length == 0">
+            </div>
+            <TagListItem v-else v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="$router.push(`/tag-detail/${community.tick}`)" />
+          </div>
+        </van-list>
+      </van-pull-refresh>
 
-        </div>
-        <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="$router.push(`/tag-detail/${community.tick}`)" />
-      </div>
-      <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
-        <div v-if="comStore.newCommunities.length == 0">
-
-        </div>
-        <TagListItem v-else v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="$router.push(`/tag-detail/${community.tick}`)" />
-      </div>
     </div>
   </div>
 </template>
+
+<style lang="scss">
+
+</style>
