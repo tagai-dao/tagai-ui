@@ -130,3 +130,4 @@ dist
 .pnp.*
 /auto-imports.d.ts
 /components.d.ts
+.DS_Store
