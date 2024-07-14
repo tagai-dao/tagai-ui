@@ -15,6 +15,7 @@ const createForm = reactive<{name: string, desc: string, logoUrl: string, tags: 
 })
 const createLoading = ref(false)
 const inputTag = ref('')
+const uploading = ref(false)
 
 </script>
 
@@ -40,18 +41,22 @@ const inputTag = ref('')
                   v-model="createForm.desc"
                   id="desc" placeholder="LOOK AT THE CEOWD"/>
       </div>
-      <div class="flex gap-4">
+      <div class="flex items-center gap-4">
         <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
         <div class="flex items-center gap-2">
           <img v-if="createForm.logoUrl" :src="createForm.logoUrl"
-               class="w-8 h-8 min-w-8 min-h-8" alt=""/>
-          <div v-else class="w-8 h-8 min-w-8 min-h-8 bg-grey-light-hover rounded-full"></div>
+               class="w-11 h-11 min-w-11 min-h-11" alt=""/>
+          <div v-else
+               class="w-11 h-11 min-w-11 min-h-11 bg-grey-f0 rounded-full flex items-center justify-center">
+            <img class="w-3 h-3" src="~@/assets/icons/icon-img.svg" alt="">
+          </div>
           <el-upload
-              class="avatar-uploader w-6 h-6 min-w-6 min-h-6"
+              class="avatar-uploader w-7 h-6 min-w-7 min-h-7 bg-grey-f0 rounded-full flex items-center justify-center"
               action="#"
               :show-file-list="false"
               :http-request="(options: UploadRequestOptions)=> addUploadImg(options, 'logo')">
-            <img src="~@/assets/icons/icon-upload.svg" alt="">
+            <img v-if="uploading" class="animate-spin" src="~@/assets/icons/loading.svg" alt="">
+            <img v-else src="~@/assets/icons/icon-upload.svg" alt="">
           </el-upload>
         </div>
       </div>
