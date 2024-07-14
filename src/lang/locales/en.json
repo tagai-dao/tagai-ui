@@ -2,6 +2,12 @@
   "buy": "Buy",
   "sell": "Sell",
   "tips": "Tips",
+  "loginView": {
+    "loginWithTwitter": "Login with Twitter",
+    "p1": "uses progressive web app technolog)that combines the best features of traditional websites and platform-specific apps",
+    "createWallet": "Create Wallet",
+    "bindAddress": "绑定钱包"
+  },
   "profileView": {
     "holdCoin": "Hold Coin",
     "post": "Tweet/Space",

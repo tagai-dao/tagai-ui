@@ -7,7 +7,7 @@ import {useModalStore} from "@/stores/common";
 import {GlobalModalType} from "@/types";
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
-import LoginModal from '@/components/common/LoginModal.vue'
+import LoginModal from '@/components/login/LoginModal.vue'
 import BondEthModal from '@/components/common/BondEthModal.vue'
 
 const modalStore = useModalStore()

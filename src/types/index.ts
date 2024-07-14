@@ -170,3 +170,13 @@ export type CreateCommunity = {
   salt?: string,
   identityInfo?: string
 }
+
+export enum WalletType {
+  Okx,
+  Unisat,
+}
+
+export enum ConnectState {
+  Disconnect,
+  WrongAddress
+}
