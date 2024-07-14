@@ -8,16 +8,18 @@ const modalStore = useModalStore()
 
 async function createCoin() {
   const acc = accStore.getAccountInfo;
-  if (!acc) {
-    modalStore.setModalVisible(true, GlobalModalType.Login)
-    return
-  }else if (!acc.ethAddr) {
-    modalStore.setModalVisible(true, GlobalModalType.BondEth)
-    return
-  }else {
-    modalStore.setModalVisible(true, GlobalModalType.CreateCoin)
-    return
-  }
+  modalStore.setModalVisible(true, GlobalModalType.CreateCoin)
+
+  // if (!acc) {
+  //   modalStore.setModalVisible(true, GlobalModalType.Login)
+  //   return
+  // }else if (!acc.ethAddr) {
+  //   modalStore.setModalVisible(true, GlobalModalType.BondEth)
+  //   return
+  // }else {
+  //   modalStore.setModalVisible(true, GlobalModalType.CreateCoin)
+  //   return
+  // }
 }
 </script>
 

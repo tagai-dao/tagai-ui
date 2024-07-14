@@ -14,8 +14,25 @@ const createForm = reactive<{name: string, desc: string, logoUrl: string, tags: 
   tags: []
 })
 const createLoading = ref(false)
-const inputTag = ref('')
 const uploading = ref(false)
+
+const inputTag = ref('')
+const addTagTip = ref('')
+const onAddTags = () => {
+  if(createForm.tags.includes(inputTag.value)) {
+    addTagTip.value = `#${inputTag.value} The tag has been used.`
+    inputTag.value = addTagTip.value
+  } else {
+    createForm.tags.push(inputTag.value)
+  }
+}
+
+const onFocusTagInput = () => {
+  if(addTagTip.value) {
+    addTagTip.value = ''
+    inputTag.value = ''
+  }
+}
 
 </script>
 
@@ -63,16 +80,19 @@ const uploading = ref(false)
       <div class="flex flex-col gap-1">
         <label for="tags" class="leading-6 text-lg ">Onchain Tag </label>
         <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
-          <input class=" leading-6 text-base flex-1"
+          <input class="leading-6 text-base flex-1"
+                 :class="addTagTip?'text-red-ff':''"
                  v-model="inputTag"
+                 @focus="onFocusTagInput"
                  type="text" id="name" placeholder="KATC">
-          <button class="border-[1px] border-orange-light-active rounded-md px-2"
-                  @click="createForm.tags.push(inputTag)">
+          <button class="border-[1px] border-orange-light-active rounded-md px-2 flex items-center gap-1"
+                  @click="onAddTags">
             <span class="text-gradient bg-gradient-primary">Confirm</span>
           </button>
         </div>
         <div v-if="createForm.tags.length>0" class="flex flex-wrap gap-4 mt-1">
-          <span class="bg-green-b6 px-2 rounded-md text-green-hover">#onchain</span>
+          <span v-for="tag of createForm.tags" :key="tag"
+                class="bg-green-b6 px-2 rounded-md text-green-hover">#{{tag}}</span>
         </div>
       </div>
     </div>
