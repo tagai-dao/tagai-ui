@@ -47,6 +47,9 @@ export const MainToken = {
     decimals: 18
 }
 
+// also create coin or create social account will cost 0.00005 BTC
+export const CreateFee = '50000000000000'
+
 export const BondEthMessage = JSON.stringify({
     project: 'tiptag',
     method: 'bond-eth'

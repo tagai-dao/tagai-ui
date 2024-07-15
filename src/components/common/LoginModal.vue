@@ -7,11 +7,10 @@ import { useTimer } from '@/composables/useTools';
 import { useStateStore, useModalStore } from '@/stores/common';
 import { sleep } from '@/utils/helper'
 import emitter from '@/utils/emitter';
-import { handleServerError, handleErrorTip } from '@/utils/notify';
+import { handleErrorTip } from '@/utils/notify';
 
 const accStore = useAccountStore();
 const stateStore = useStateStore();
-const setTimer = useTimer();
 const loging = ref(false);
 
 async function login() {

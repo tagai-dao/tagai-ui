@@ -4,6 +4,7 @@ import {reactive, ref} from "vue";
 import {useUploadImg} from "@/composables/useUploadImg";
 import type {UploadRequestOptions} from "element-plus";
 import {GlobalModalType} from "@/types";
+import { CreateFee } from "@/config";
 
 const modalStore = useModalStore()
 const {addUploadImg} = useUploadImg()
@@ -19,12 +20,14 @@ const uploading = ref(false)
 const inputTag = ref('')
 const addTagTip = ref('')
 const onAddTags = () => {
-  if(createForm.tags.includes(inputTag.value)) {
-    addTagTip.value = `#${inputTag.value} The tag has been used.`
-    inputTag.value = addTagTip.value
-  } else {
-    createForm.tags.push(inputTag.value)
+  if (createForm.tags.length === 3) {
+    return;
   }
+  if (createForm.tags.find(tag => tag === inputTag.value)) {
+    return;
+  }
+   createForm.tags.push(inputTag.value)
+  inputTag.value = ''
 }
 
 const onFocusTagInput = () => {
@@ -32,6 +35,7 @@ const onFocusTagInput = () => {
     addTagTip.value = ''
     inputTag.value = ''
   }
+  inputTag.value = ''
 }
 
 </script>
@@ -78,10 +82,9 @@ const onFocusTagInput = () => {
         </div>
       </div>
       <div class="flex flex-col gap-1">
-        <label for="tags" class="leading-6 text-lg ">Onchain Tag </label>
+        <label for="tags" class="leading-6 text-lg ">Community Tag </label>
         <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
           <input class="leading-6 text-base flex-1"
-                 :class="addTagTip?'text-red-ff':''"
                  v-model="inputTag"
                  @focus="onFocusTagInput"
                  type="text" id="name" placeholder="KATC">
@@ -104,8 +107,8 @@ const onFocusTagInput = () => {
         <i-ep-loading v-if="createLoading" class="animate-spin"/>
       </button>
       <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
-        <span class="text-grey-normal">cost to deploy：</span>
-        <span class="text-red-ff italic">~ 0.00005 BTC</span>
+        <span class="text-grey-normal">Cost to deploy：</span>
+        <span class="text-red-ff italic">~ {{ (CreateFee as any) / 1e18 }} BTC</span>
       </div>
     </div>
   </div>
