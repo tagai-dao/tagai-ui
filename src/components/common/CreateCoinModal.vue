@@ -1,26 +1,36 @@
 <script setup lang="ts">
 import {useModalStore} from "@/stores/common";
-import {reactive, ref} from "vue";
-import {useUploadImg} from "@/composables/useUploadImg";
-import type {UploadRequestOptions} from "element-plus";
+import {reactive, ref, computed} from "vue";
 import {GlobalModalType} from "@/types";
-import { CreateFee, BACKEND_API_URL } from "@/config";
+import { CreateFee, BACKEND_API_URL, RegisterSteemMessage } from "@/config";
+import { EthWalletState, useAccountStore } from "@/stores/web3";
+import ChoseWallet from "../login/ChoseWallet.vue";
+import { useAccount } from "@/composables/useAccount";
+import { box, generateSteemAuth } from "@/utils/web3";
+import { signMessage } from "@/utils/wallets";
+import { ethers } from "ethers";
+import { bytesToHex } from '@/utils/helper'
 
 const modalStore = useModalStore()
-const {addUploadImg} = useUploadImg()
-const createForm = reactive<{name: string, desc: string, logoUrl: string, tags: string[]}>({
+const createForm = reactive<{name: string, desc: string, logoUrl: string, tags: string[], token: string, pwd?: string, sendNonce?: string, sendPubKey?: string, ethAddr: string, salt?: string}>({
   name: '',
   desc: '',
   logoUrl: '',
-  tags: []
+  tags: [],
+  token: '',
+  ethAddr: ''
 })
 const createLoading = ref(false)
 const uploading = ref(false)
 const showOnlyPic = ref(false)
 const showPicSizeLimit = ref(false)
 
+const accStore = useAccountStore()
 const inputTag = ref('')
 const addTagTip = ref('')
+
+const { accountMismatch } = useAccount()
+
 const onAddTags = () => {
   if (createForm.tags.length === 3) {
     return;
@@ -33,11 +43,12 @@ const onAddTags = () => {
 }
 
 const uploadSuccess = (res: any, file: any) => {
-  createForm.logoUrl = URL.createObjectURL(file.raw);
-  console.log(11, createForm)
+  createForm.logoUrl = res.url
+  uploading.value = false
 }
 
 const beforeUpload = (file: any) => {
+  uploading.value = true
   const isPic = file.type.startsWith('image/')
   const isLt1M = file.size / 1024/ 1024 < 1;
   showOnlyPic.value = !isPic;
@@ -52,10 +63,32 @@ const onFocusTagInput = () => {
   inputTag.value = ''
 }
 
+const create = async () => {
+  const account = accStore.getAccountInfo
+  // check params
+
+  // check steem
+  if (!account?.steemId) {
+    // generate steem account
+    const signature = await signMessage(RegisterSteemMessage)
+    const salt = bytesToHex(ethers.randomBytes(4))
+    const steemAccount = generateSteemAuth(signature.replace('0x', '') + salt)
+    let params = box(steemAccount)
+    createForm.pwd = params.pwd;
+    createForm.sendNonce = params.sendNonce;
+    createForm.sendPubKey = params.sendPubKey;
+    createForm.ethAddr = account!.ethAddr!;
+  }
+
+  // create token
+  
+}
+
 </script>
 
 <template>
-  <div class="px-1 flex flex-col gap-y-10">
+  <chose-wallet v-if="accStore.ethConnectState !== EthWalletState.Connected"/>
+  <div v-else class="px-1 flex flex-col gap-y-10">
     <div class="flex justify-between items-center">
       <span class="text-h2 text-grey-normal-hover">Creat Coin</span>
       <img class="cursor-pointer"
@@ -117,10 +150,14 @@ const onFocusTagInput = () => {
     <div class="pb-2">
       <button class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg
                        flex items-center justify-center gap-2 disabled:opacity-30"
-              :disabled="createLoading">
+              @click="create"
+              :disabled="createLoading || accountMismatch">
         <span>Create Coin</span>
         <i-ep-loading v-if="createLoading" class="animate-spin"/>
       </button>
+      <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-ff">
+        {{ $t('web3.addressMismatch', { address: accStore.getAccountInfo?.ethAddr }) }}
+      </div>
       <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
         <span class="text-grey-normal">Cost to deploy：</span>
         <span class="text-red-ff italic">~ {{ (CreateFee as any) / 1e18 }} BTC</span>

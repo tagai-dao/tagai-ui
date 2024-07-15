@@ -92,6 +92,7 @@ const handleNewProviderDetail = (newProviderDetail: any) => {
 const handleNewAccounts = async (accounts: any) => {
     accounts = accounts
     const accStore = useAccountStore();
+    console.log(62, accStore)
     if (!accounts || accounts.length == 0) {
         accStore.ethConnectState = EthWalletState.Disconnect
         accStore.ethWalletType = 'none'
