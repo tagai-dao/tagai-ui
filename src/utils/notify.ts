@@ -4,11 +4,12 @@ import { ElNotification } from "element-plus";
 
 const t = i18n.global.t;
 
-export const handleTransError = (e: any) => {
+export const handleErrorTip = (e: any) => {
   if (!e) {
     console.log("Null error");
     return;
   }
+  console.error(e)
   if (typeof e === "number") {
     return handleServerError(e);
   }

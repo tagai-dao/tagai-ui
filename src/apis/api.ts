@@ -12,6 +12,13 @@ export const twitterAuth = async (referee?: string | null | undefined) =>
 export const twitterLogin = async (state: string) =>
   get(BACKEND_API_URL + '/user/login', { state })
 
+export const bondEth = async (ethAddr: string, twitterId: string, signature: string, infoStr: string) =>
+  post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
+
+/************************************ user api **********************************/
+export const checkEthUsed = async (ethAddr: string) =>
+  get(BACKEND_API_URL + '/user/checkEthUsed', { ethAddr })
+
 /************************************ tweets **********************************/
 export const getTweetsByNew = async (twitterId?: string | null, postTime?: any) =>
   get(BACKEND_API_URL + '/tweets/getTweetsByNew' ,{postTime, twitterId})

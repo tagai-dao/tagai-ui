@@ -47,6 +47,11 @@ export const MainToken = {
     decimals: 18
 }
 
+export const BondEthMessage = JSON.stringify({
+    project: 'tiptag',
+    method: 'bond-eth'
+  }, null, 4)
+
 export const TwitterLoginCode = {
     success: 1,
     accountMismatch: 2,

@@ -32,6 +32,7 @@ const detectEip6963 = () => {
                 setActiveProviderDetail(event.detail)
             }
         }
+        
         handleNewProviderDetail(event.detail);
         initialized = true;
       }
@@ -114,6 +115,13 @@ export const closeProvider = () => {
     accStore.ethConnectState = EthWalletState.Disconnect;
     accStore.ethConnectAddress = '';
     provider = undefined;
+}
+
+export const signMessage = async (message: string) => {
+    let eth = getProvider();
+    const provider = new ethers.BrowserProvider(eth);
+    const signer = await provider.getSigner();
+    return await signer.signMessage(message);
 }
 
 export async function initPlugin() {

@@ -7,13 +7,15 @@ import {twitterAuth, twitterLogin} from "@/apis/api";
 import {sleep} from "@/utils/helper";
 import type {Account} from "@/types";
 import emitter from "@/utils/emitter";
-import {handleTransError} from "@/utils/notify";
+import {handleErrorTip} from "@/utils/notify";
 import {LoginStepType, useLoginStore} from "@/stores/login";
+import { useRoute } from "vue-router";
 
 const accStore = useAccountStore();
 const stateStore = useStateStore();
 const setTimer = useTimer();
 const logging = ref(false);
+const route = useRoute();
 
 async function login() {
   try{
@@ -32,6 +34,11 @@ async function login() {
       }
     }
     if (!state) return;
+
+    let currentRoute = route.fullPath
+    if (!currentRoute.startsWith('/login')) {
+      localStorage.setItem('current-route', route.fullPath)
+    }
 
     if (isIOS || isAndroid) {
       setTimeout(() => {
@@ -66,7 +73,7 @@ async function login() {
       }
     }
   } catch (e) {
-    handleTransError(e);
+    handleErrorTip(e);
     useLoginStore().setLoginStep(LoginStepType.CreateWallet)
   } finally {
     logging.value = false

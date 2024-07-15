@@ -34,6 +34,11 @@ const router = createRouter({
       path: '/profile/:user',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue')
+    },
+    {
+      path: '/login',
+      name: 'login-call-back',
+      component: () => import('@/views/LoginCallBack.vue')
     }
   ]
 })

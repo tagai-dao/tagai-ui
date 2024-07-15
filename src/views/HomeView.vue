@@ -6,7 +6,7 @@ import { ListType, type Community, type Space } from '@/types'
 import { getCommunitiesByNew, getCommunitiesByTrending, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import { useCurationStore } from '@/stores/curation'
-import { handleTransError } from '@/utils/notify'
+import { handleErrorTip } from '@/utils/notify'
 import { initPlugin } from "@/utils/wallets";
 import { useRouter } from "vue-router";
 
@@ -35,7 +35,7 @@ async function refresh() {
       }
     }
   } catch (e) {
-    handleTransError(e)
+    handleErrorTip(e)
   } finally {
     refreshing.value = false
   }
@@ -63,7 +63,7 @@ async function loadMore() {
       }
     }
   } catch (e) {
-    handleTransError(e)
+    handleErrorTip(e)
   } finally {
     loading.value = false
   }
@@ -78,7 +78,7 @@ async function getSpaces() {
       curationStore.allSpaces = [];
     }
   } catch(e) {
-    handleTransError(e)
+    handleErrorTip(e)
   }
 }
 
@@ -123,11 +123,13 @@ onMounted(async () => {
                   @load="loadMore">
           <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
             <div v-if="comStore.trendingCommunities.length == 0">
+              no data
             </div>
             <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="$router.push(`/tag-detail/${community.tick}`)" />
           </div>
           <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
             <div v-if="comStore.newCommunities.length == 0">
+            no data
             </div>
             <TagListItem v-else v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="$router.push(`/tag-detail/${community.tick}`)" />
           </div>

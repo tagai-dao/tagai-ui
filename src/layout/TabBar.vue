@@ -8,7 +8,6 @@ const modalStore = useModalStore()
 
 async function createCoin() {
   const acc = accStore.getAccountInfo;
-
   if (!acc) {
     modalStore.setModalVisible(true, GlobalModalType.Login)
     return

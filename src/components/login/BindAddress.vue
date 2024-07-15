@@ -1,5 +1,50 @@
 <script setup lang="ts">
+import { EthWalletState, useAccountStore } from "@/stores/web3";
+import { computed, ref, watch } from "vue";
+import { ethers } from "ethers";
+import { checkEthUsed, bondEth } from '@/apis/api'
+import { BondEthMessage } from '@/config'
+import { signMessage } from "@/utils/wallets";
+import { handleErrorTip } from "@/utils/notify";
+import { useModalStore } from "@/stores/common";
 
+const accStore = useAccountStore();
+const loading = ref(false);
+const ethAddrUsed = ref(false);
+
+watch(() => accStore.ethConnectAddress, (address) => {
+    if (ethers.isAddress(address)) {
+      loading.value = true
+      // check if address been bonded
+      checkEthUsed(address).then((acc: any) => {
+        if (acc.twitterId) {
+          ethAddrUsed.value = true
+        }else {
+          ethAddrUsed.value = false
+        }
+      }).catch(console.error).finally(() => {
+        loading.value = false
+      })
+    }
+})
+
+async function confirm() {
+  try{
+    loading.value = true;
+    const signature = await signMessage(BondEthMessage);
+    await bondEth(accStore.ethConnectAddress, accStore.getAccountInfo!.twitterId, signature, BondEthMessage)
+    accStore.getAccountInfo!.ethAddr = accStore.ethConnectAddress
+    accStore.setAccount({
+      ...accStore.getAccountInfo!,
+      ethAddr: accStore.ethConnectAddress
+    })
+    useModalStore().setModalVisible(false)
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -8,15 +53,19 @@
       {{$t('loginView.bindAddress')}}
     </div>
     <div class="flex flex-col w-full items-center px-8">
-      <div class="text-base text-center text-red-ff">钱包地址不匹配，请重新绑定</div>
       <div class="text-base text-center text-red-ff break-all">
-        0xaf05ce8a2cef336006e933c02fc89887f5b3c726
+        {{ accStore.ethConnectAddress }}
       </div>
     </div>
     <div class="px-5">
-      <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-4">
+      <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-4"
+        @click="confirm"
+        :disabled="loading">
         <span class="text-h5 text-white">Confirm</span>
+        <i-ep-loading v-if="loading" class="animate-spin text-white"/>
       </button>
+      <div v-show="ethAddrUsed" class="text-base text-center text-red-ff mt-3">{{ $t('loginView.addressUsed') }}</div>
+      <!-- <div class="text-base text-center text-red-ff mt-3">钱包地址不匹配，请重新绑定</div> -->
     </div>
   </div>
 </template>

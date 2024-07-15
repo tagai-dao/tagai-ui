@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import { EthWalletState, useAccountStore } from "@/stores/web3";
-import { computed, ref, watch } from "vue";
-import ChoseWallet from '@/components/common/ChoseWallet.vue'
-import { ethers } from "ethers";
+import { ref } from "vue";
+import ChoseWallet from '@/components/login/ChoseWallet.vue';
+import BindAddress from '@/components/login/BindAddress.vue';
 
 const accStore = useAccountStore();
-const loading = ref(false);
 const step = ref('selectAddress')
-
-watch(() => accStore.ethConnectAddress, (address) => {
-    if (ethers.isAddress(address)) {
-        // check if address been bonded
-    }
-})
 
 </script>
 
@@ -22,7 +15,7 @@ watch(() => accStore.ethConnectAddress, (address) => {
   </div>
   <div v-else>
         <div v-if="step === 'selectAddress'">
-            {{ accStore.ethConnectAddress }}
+            <BindAddress />
         </div>
   </div>
 </template>
