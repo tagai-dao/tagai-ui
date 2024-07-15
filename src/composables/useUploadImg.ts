@@ -6,6 +6,8 @@ import errCode from "@/errCode";
 
 export const useUploadImg = () => {
   const uploadType = ref<string>('logo')
+  const uploading = ref(false)
+  const completedImgUrl = ref('')
 
   const addUploadImg = async (options: UploadRequestOptions, type: string) => {
     return new Promise(async (resolve, reject) => {
@@ -33,6 +35,8 @@ export const useUploadImg = () => {
   }
 
   return {
+    uploading,
+    completedImgUrl,
     addUploadImg
   }
 }
