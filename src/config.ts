@@ -55,6 +55,18 @@ export const BondEthMessage = JSON.stringify({
     method: 'bond-eth'
   }, null, 4)
 
+export const RegisterSteemMessage = JSON.stringify({
+    project: 'tiptag',
+    method: 'generate-social-account'
+}, null, 4)
+
+export const SendPubKey = new Uint8Array([
+    197, 251,  61,  64, 103,  59,  66, 126,
+    109, 154,   9, 122,   8, 175, 171,  78,
+     84,  46,  68, 151,  75, 141, 239, 205,
+    114,  11, 116, 116, 135,  39, 207,  48
+  ])
+
 export const TwitterLoginCode = {
     success: 1,
     accountMismatch: 2,

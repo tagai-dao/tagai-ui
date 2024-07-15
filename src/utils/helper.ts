@@ -17,6 +17,14 @@ export const sleep2 = async (time: number, callback: any, step = 1) => {
   }
 }
 
+export var bytesToHex = function (bytes: any) {
+  for (var hex = [], i = 0; i < bytes.length; i++) {
+      hex.push((bytes[i] >>> 4).toString(16));
+      hex.push((bytes[i] & 0xF).toString(16));
+  }
+  return hex.join("");
+}
+
 export const u8arryToHex = (buffer: any) => {
   return [...new Uint8Array(buffer)]
       .map(x => x.toString(16).padStart(2, '0'))

@@ -1,6 +1,10 @@
-import { ChainConfig, MainToken } from "@/config"
+import { ChainConfig, MainToken, SendPubKey } from "@/config"
 import { useAccountStore } from "@/stores/web3";
-
+import nacl from 'tweetnacl'
+import { hexTou8array, stringToHex, u8arryToHex } from "./helper";
+import { sha256 } from "js-sha256";
+import base58 from 'bs58'
+import steem from "steem"
 
 export const setupNetwork = async (ethereum: any) => {
     const accStore = useAccountStore()
@@ -42,3 +46,92 @@ export const setupNetwork = async (ethereum: any) => {
         }
     }
 }
+
+export const createKeypair = async () => {
+    return new Promise((resolve) => {
+        const pair = nacl.box.keyPair()
+        resolve({
+            publicKey: u8arryToHex(pair.publicKey),
+            privateKey: u8arryToHex(pair.secretKey)
+        })
+    })
+}
+
+export const randomNaclNonce = async () => {
+    const nonce = nacl.randomBytes(nacl.box.nonceLength)
+    return u8arryToHex(nonce)
+}
+
+// data is a hex like string
+export const box = (data: string) => {
+    const pair = nacl.box.keyPair();
+    const nonce = nacl.randomBytes(nacl.box.nonceLength)
+    const res = nacl.box(hexTou8array(data), nonce, SendPubKey, pair.secretKey)
+
+    return {
+        pwd: u8arryToHex(res),
+        sendNonce: u8arryToHex(nonce),
+        sendPubKey: u8arryToHex(pair.publicKey)
+    }
+}
+
+export const generateSteemAuth = (pk: string) => {
+    const pass = generateBrainKey(pk);
+    const account = generateKeys('tiptag', pass)
+    const keys = {
+        postingPub: account.auth.posting,
+        postingPri: account.key.posting.posting,
+        owner: account.auth.owner,
+        active: account.auth.active,
+        memo: account.auth.memo
+    }
+    return stringToHex(JSON.stringify(keys))
+}
+
+export const generateBrainKey = (pk: string) => {
+    pk = '0x80' + pk;
+    var checksum = sha256(pk)
+    checksum = sha256(checksum)
+    checksum = checksum.slice(0, 4)
+    const private_wif = pk + checksum;
+    return 'P' + base58.encode(hexTou8array(private_wif))
+}
+
+const generateAuth = (user: string, pass: string, type: string) => {
+    const key = steem.auth.getPrivateKeys(user, pass, [type]);
+
+    const publicKey = steem.auth.wifToPublic(Object.values(key)[0]);
+    if (type == "memo") {
+      return {
+        key: key,
+        auth: publicKey
+      };
+    } else {
+      return {
+        key: key,
+        auth: publicKey
+      };
+    }
+  };
+
+const generateKeys = (username: string, pass: string) => {
+    const owner = generateAuth(username, pass, "owner");
+    const active = generateAuth(username, pass, "active");
+    const posting = generateAuth(username, pass, "posting");
+    const memo = generateAuth(username, pass, "memo");
+
+    return {
+        key: {
+            owner: owner.key,
+            active: active.key,
+            posting: posting.key,
+            memo: memo.key
+        },
+        auth: {
+            owner: owner.auth,
+            active: active.auth,
+            posting: posting.auth,
+            memo: memo.auth
+        }
+    };
+};
