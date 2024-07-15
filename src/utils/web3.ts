@@ -4,6 +4,7 @@ import nacl from 'tweetnacl'
 import { hexTou8array, stringToHex, u8arryToHex } from "./helper";
 import { sha256 } from "js-sha256";
 import base58 from 'bs58'
+import { ethers } from "ethers";
 import steem from "steem"
 
 export const setupNetwork = async (ethereum: any) => {
@@ -45,6 +46,10 @@ export const setupNetwork = async (ethereum: any) => {
             console.log('setup chain fail', error)
         }
     }
+}
+
+export const getReadOnlyProvider = () => {
+    return new ethers.JsonRpcProvider(ChainConfig.rpc)
 }
 
 export const createKeypair = async () => {
