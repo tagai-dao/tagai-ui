@@ -3,6 +3,8 @@ import type {UploadRequestOptions} from "element-plus";
 
 export const useUploadImg = () => {
   const uploadType = ref<string>('logo')
+  const uploading = ref(false)
+  const completedImgUrl = ref('')
 
   const addUploadImg = async (options: UploadRequestOptions, type: string) => {
     uploadType.value = type
@@ -36,6 +38,8 @@ export const useUploadImg = () => {
   }
 
   return {
+    uploading,
+    completedImgUrl,
     addUploadImg
   }
 }
