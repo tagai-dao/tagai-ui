@@ -4,7 +4,7 @@ import {reactive, ref} from "vue";
 import {useUploadImg} from "@/composables/useUploadImg";
 import type {UploadRequestOptions} from "element-plus";
 import {GlobalModalType} from "@/types";
-import { CreateFee } from "@/config";
+import { CreateFee, BACKEND_API_URL } from "@/config";
 
 const modalStore = useModalStore()
 const {addUploadImg} = useUploadImg()
@@ -16,6 +16,8 @@ const createForm = reactive<{name: string, desc: string, logoUrl: string, tags: 
 })
 const createLoading = ref(false)
 const uploading = ref(false)
+const showOnlyPic = ref(false)
+const showPicSizeLimit = ref(false)
 
 const inputTag = ref('')
 const addTagTip = ref('')
@@ -28,6 +30,18 @@ const onAddTags = () => {
   }
    createForm.tags.push(inputTag.value)
   inputTag.value = ''
+}
+
+const uploadSuccess = (res: any, file: any) => {
+  createForm.logoUrl = URL.createObjectURL(file.raw);
+  console.log(11, createForm)
+}
+
+const beforeUpload = (file: any) => {
+  const isPic = file.type.startsWith('image/')
+  const isLt1M = file.size / 1024/ 1024 < 1;
+  showOnlyPic.value = !isPic;
+  showPicSizeLimit.value = !isLt1M;
 }
 
 const onFocusTagInput = () => {
@@ -73,9 +87,10 @@ const onFocusTagInput = () => {
           </div>
           <el-upload
               class="avatar-uploader w-7 h-6 min-w-7 min-h-7 bg-grey-f0 rounded-full flex items-center justify-center"
-              action="#"
+              :action="BACKEND_API_URL + '/qiniu/upload'"
+              :on-success="uploadSuccess"
               :show-file-list="false"
-              :http-request="(options: UploadRequestOptions)=> addUploadImg(options, 'logo')">
+              :before-upload="beforeUpload">
             <img v-if="uploading" class="animate-spin" src="~@/assets/icons/loading.svg" alt="">
             <img v-else src="~@/assets/icons/icon-upload.svg" alt="">
           </el-upload>
