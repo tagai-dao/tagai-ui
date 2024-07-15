@@ -12,6 +12,7 @@ import { ethers } from "ethers";
 import { bytesToHex } from "@/utils/helper";
 import { createCoin } from "@/utils/pump";
 import { handleErrorTip } from "@/utils/notify";
+import { createCommunity } from '@/apis/api'
 
 const modalStore = useModalStore();
 
@@ -104,9 +105,19 @@ const create = async () => {
     }
 
     // create token
-    const hash = await createCoin(createForm);
-
+    const {createHash, token} = await createCoin(createForm);
+    createForm.createHash = createHash;
+    createForm.token = token;
     // upload community info
+    await createCommunity(createForm);
+
+    // created token: prepare local data
+
+    // add steem account
+    accStore.setAccount({
+      ...account!,
+      steemId: account?.twitterUsername
+    })
     
   } catch (e) {
     handleErrorTip(e)

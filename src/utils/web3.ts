@@ -52,6 +52,12 @@ export const getReadOnlyProvider = () => {
     return new ethers.JsonRpcProvider(ChainConfig.rpc)
 }
 
+export const getTransactionReceipt = async (hash: string) => {
+    const provider = getReadOnlyProvider();
+    const tx = await provider.getTransactionReceipt(hash);
+    return tx;
+}
+
 export const createKeypair = async () => {
     return new Promise((resolve) => {
         const pair = nacl.box.keyPair()
