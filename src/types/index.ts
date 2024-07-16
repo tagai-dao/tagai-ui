@@ -150,6 +150,7 @@ export type Community = {
   creator: string; // ethAddr
   tick: string;
   token: string;
+  tags?: string | string[];
   twitter?: string | undefined | null;
   telegram?: string | undefined | null;
   official?: string | undefined | null;
