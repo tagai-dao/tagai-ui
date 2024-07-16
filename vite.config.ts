@@ -10,6 +10,7 @@ import { ElementPlusResolver, VantResolver } from 'unplugin-vue-components/resol
 import Icons from 'unplugin-icons/vite'
 import IconsResolver from 'unplugin-icons/resolver'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
+import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -43,6 +44,7 @@ export default defineConfig({
       // locale messages resource pre-compile option
       include: resolve(dirname(fileURLToPath(import.meta.url)), './src/lang/locales/**'),
     }),
+    viteCommonjs()
   ],
   resolve: {
     alias: {
