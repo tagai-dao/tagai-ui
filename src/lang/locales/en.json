@@ -14,8 +14,10 @@
   },
   "profileView": {
     "holdCoin": "Hold Coin",
-    "post": "Tweet/Space",
-    "createCoin": "Create Coin"
+    "post": "Tweet/Space"
+  },
+  "createCommunity": {
+    "createCommunity": "Create Community"
   },
   "errorMessage": {
     "idUsed": "Identify has been used",

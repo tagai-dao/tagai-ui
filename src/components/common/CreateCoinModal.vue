@@ -131,7 +131,7 @@ const create = async () => {
   <chose-wallet v-if="accStore.ethConnectState !== EthWalletState.Connected" />
   <div v-else class="px-1 flex flex-col gap-y-10">
     <div class="flex justify-between items-center">
-      <span class="text-h2 text-grey-normal-hover">Creat Coin</span>
+      <span class="text-h2 text-grey-normal-hover">{{ $t('createCommunity.createCommunity') }}</span>
       <img
         class="cursor-pointer"
         @click="modalStore.setModalVisible(false, GlobalModalType.CreateCoin)"
@@ -208,7 +208,7 @@ const create = async () => {
             class="border-[1px] border-orange-light-active rounded-md px-2 flex items-center gap-1"
             @click="onAddTags"
           >
-            <span class="text-gradient bg-gradient-primary">Confirm</span>
+            <span class="text-gradient bg-gradient-primary">Add</span>
           </button>
         </div>
         <div v-if="createForm.tags!.length > 0" class="flex flex-wrap gap-4 mt-1">
@@ -227,7 +227,7 @@ const create = async () => {
         @click="create"
         :disabled="createLoading || accountMismatch"
       >
-        <span>Create Coin</span>
+        <span>Create</span>
         <i-ep-loading v-if="createLoading" class="animate-spin" />
       </button>
       <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-ff">
