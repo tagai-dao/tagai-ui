@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BannerTag from "@/components/common/BannerTag.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import { ref, onActivated, onMounted } from "vue";
+import { ref, onActivated, onMounted, watch } from "vue";
 import { ListType, type Community, type Space } from '@/types'
 import { getCommunitiesByNew, getCommunitiesByTrending, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
@@ -9,6 +9,7 @@ import { useCurationStore } from '@/stores/curation'
 import { handleErrorTip } from '@/utils/notify'
 import { initPlugin } from "@/utils/wallets";
 import { useRouter } from "vue-router";
+import { getTokenCap } from '@/utils/pump'
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -19,6 +20,10 @@ const loading = ref(false);
 const router = useRouter();
 const finished = ref(false)
 
+watch(listType, (val) => {
+  refresh()
+})
+
 async function refresh() {
   try{
     if (refreshing.value) return;
@@ -26,12 +31,13 @@ async function refresh() {
     if (listType.value == ListType.New) {
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.newCommunities = communities
+        comStore.newCommunities = await getTokenCap(communities)
       }
     }else if(listType.value == ListType.Trending) {
       let communities = await getCommunitiesByTrending() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.trendingCommunities = communities
+        getTokenCap(communities);
+        comStore.trendingCommunities = await getTokenCap(communities)
       }
     }
   } catch (e) {
@@ -51,7 +57,7 @@ async function loadMore() {
       }
       let communities = await getCommunitiesByNew((comStore.newCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.newCommunities = comStore.newCommunities.concat(communities)
+        comStore.newCommunities = comStore.newCommunities.concat(await getTokenCap(communities))
       }
     }else if(listType.value == ListType.Trending) {
       if (!comStore.trendingCommunities || comStore.trendingCommunities.length == 0) {
@@ -59,7 +65,7 @@ async function loadMore() {
       }
       let communities = await getCommunitiesByTrending((comStore.trendingCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.trendingCommunities = comStore.trendingCommunities.concat(communities)
+        comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenCap(communities))
       }
     }
   } catch (e) {
@@ -89,6 +95,7 @@ onActivated(async () => {
 onMounted(async () => {
   await router.isReady();
   initPlugin();
+  refresh();
 })
 </script>
 

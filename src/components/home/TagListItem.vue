@@ -2,6 +2,7 @@
 import { type Community } from '@/types';
 import { ref, computed } from 'vue'
 import { useCurationStore } from '@/stores/curation';
+import { formatPrice } from '@/utils/helper';
 
 const curationStore = useCurationStore()
 const props = defineProps<{
@@ -27,7 +28,7 @@ const onlineSpace = computed(() => {
           <div class="flex gap-2 items-end">
             <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
             <span class="font-normal italic text-grey-64 leading-6 text-sm">market cap</span>
-            <span class="font-normal italic text-grey-64 leading-6 text-sm">88.23M</span>
+            <span class="font-normal italic text-grey-64 leading-6 text-sm">{{ formatPrice(community.marketCap ?? '0') }}</span>
           </div>
           <!-- <div class="text-grey-64 font-light text-sm">
             created by  @0XSarah

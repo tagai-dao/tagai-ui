@@ -1,10 +1,11 @@
 import { getContract } from "./contract";
-import { type CreateCommunity } from "@/types";
-import { CreateFee } from "@/config";
+import { type Community, type CreateCommunity } from "@/types";
+import { CreateFee, ChainConfig } from "@/config";
 import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract, Ether } from "@/config";
 import { abis } from './abis'
+import { aggregate } from '@makerdao/multicall'
 
 export const checkTickUsed = async (tick: string) => {
     const pump = await getContract('Pump')
@@ -28,6 +29,28 @@ export const createCoin = async (createParms: CreateCommunity) => {
 export const calculateInitBtc = (amount: bigint) => {
     const price = amount * amount * amount / BigInt(3e36) / (320n * Ether)
     return price * 10000n / (10000n - 100n - 100n);
+}
+
+export const getTokenCap = async (communities: Community[]) => {
+    if (communities.length == 0) return [];
+    let calls = communities.map(com => ({
+        target: com.token,
+        call: [
+            'getBuyPrice(uint256)(uint256)',
+            '1000000000000000000'
+        ],
+        returns: [
+            [com.tick, (val: any) => BigInt(val)]
+        ]
+    }))
+
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const prices = res.results.transformed
+    for(let com of communities) {
+        // @ts-ignore
+        com.marketCap = (prices[com.tick] * 10000000n).toString() / 1e18
+    }
+    return communities
 }
 
 const getCreateTokenEventByHash = async (hash: string) => {
