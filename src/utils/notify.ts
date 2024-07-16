@@ -154,6 +154,9 @@ export const handleServerError = (code: number) => {
     case errCode.HasRegistered:
       notify({ message: t("errMessage.hasRegisted"), type: "info" });
       break;
+    case errCode.SERVER_ERR:
+      notify({ message: t('errMessage.serverErr'), type: 'error'})
+      break;
     default:
       notify({ message: t("errMessage.unknownError"), type: "error" });
       break;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useModalStore } from "@/stores/common";
-import { reactive, ref, computed } from "vue";
+import { reactive, ref, computed, watch } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
 import { CreateFee, BACKEND_API_URL, RegisterSteemMessage } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -9,8 +9,8 @@ import { useAccount } from "@/composables/useAccount";
 import { box, generateSteemAuth } from "@/utils/web3";
 import { signMessage } from "@/utils/wallets";
 import { ethers } from "ethers";
-import { bytesToHex } from "@/utils/helper";
-import { createCoin } from "@/utils/pump";
+import { bytesToHex, formatPrice } from "@/utils/helper";
+import { createCoin, calculateInitBtc } from "@/utils/pump";
 import { handleErrorTip } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
 
@@ -29,12 +29,31 @@ const uploading = ref(false);
 const showOnlyPic = ref(false);
 const showPicSizeLimit = ref(false);
 const showInvalidName = ref(false);
+const showMaxAmount = ref(false);
 
 const accStore = useAccountStore();
 const inputTag = ref("");
 const addTagTip = ref("");
 
 const { accountMismatch } = useAccount();
+
+const showingInitAmount = ref<number|undefined>()
+const showingInitBtc = ref<string|undefined>('$0')
+
+watch(() => showingInitAmount.value, (val) => {
+  if (val && val > 0) {
+    if (val > 7000000) {
+      showMaxAmount.value = true
+      createForm.initAmount = 0n
+      createForm.initBtc = 0n
+      return;
+    }
+    showMaxAmount.value = false
+    createForm.initAmount = ethers.parseEther(val.toString())
+    createForm.initBtc = calculateInitBtc(createForm.initAmount)
+    showingInitBtc.value = formatPrice((createForm.initBtc as any).toString() / 1e18)
+  }
+})
 
 const onAddTags = () => {
   if (createForm.tags!.length === 3) {
@@ -69,7 +88,7 @@ const onFocusTagInput = () => {
 };
 
 const testTick = (name: string) => {
-  if (createForm.tick.match(/[a-z][A-Z]{1,12}$/)) {
+  if (createForm.tick.match(/[a-zA-Z]{1,16}$/)) {
     showInvalidName.value = false;
     return true;
   }
@@ -102,16 +121,20 @@ const create = async () => {
       createForm.sendNonce = params.sendNonce;
       createForm.sendPubKey = params.sendPubKey;
       createForm.ethAddr = account!.ethAddr!;
+      createForm.salt = salt
     }
 
     // create token
     const {createHash, token} = await createCoin(createForm);
     createForm.createHash = createHash;
     createForm.token = token;
+    createForm.twitterId = account?.twitterId;
     // upload community info
+    delete createForm.initAmount
+    delete createForm.initBtc
     await createCommunity(createForm);
 
-    // created token: prepare local data
+    // created token: prepair local data
 
     // add steem account
     accStore.setAccount({
@@ -120,6 +143,7 @@ const create = async () => {
     })
     
   } catch (e) {
+    console.error('create community fail', e)
     handleErrorTip(e)
   } finally {
     createLoading.value = false;
@@ -140,6 +164,7 @@ const create = async () => {
       />
     </div>
     <div class="flex flex-col gap-4">
+    <!-- name -->
       <div class="flex flex-col gap-1">
         <label for="name" class="leading-6 text-lg font-medium text-black">Name:</label>
         <input
@@ -147,9 +172,13 @@ const create = async () => {
           v-model="createForm.tick"
           type="text"
           id="name"
-          placeholder="KATC"
+          :placeholder="$t('createCommunity.invalidTickTip')"
         />
+        <div class="text-red-ff text-sm" v-show="showInvalidName">
+          {{ $t('createCommunity.invalidTickTip') }}
+        </div>
       </div>
+      <!-- desc -->
       <div class="flex flex-col gap-1">
         <label for="desc" class="leading-6 text-lg font-medium text-black"
           >Description:</label
@@ -161,6 +190,7 @@ const create = async () => {
           placeholder="LOOK AT THE CEOWD"
         />
       </div>
+      <!-- logo -->
       <div class="flex items-center gap-4">
         <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
         <div class="flex items-center gap-2">
@@ -193,6 +223,7 @@ const create = async () => {
           </el-upload>
         </div>
       </div>
+      <!-- tag -->
       <div class="flex flex-col gap-1">
         <label for="tags" class="leading-6 text-lg">Community Tag </label>
         <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
@@ -218,6 +249,25 @@ const create = async () => {
             class="bg-green-b6 px-2 rounded-md text-green-hover"
             >#{{ tag }}</span
           >
+        </div>
+      </div>
+      <!-- amount -->
+      <div class="flex flex-col gap-1">
+        <label for="desc" class="leading-6 text-lg font-medium text-black"
+          >Premint amount:</label
+        >
+        <input
+          class="border-b-[1px] border-grey-e6 leading-6 text-base"
+          v-model="showingInitAmount"
+          type="number"
+          id="initamount"
+          :placeholder="$t('createCommunity.initAmountTip')"
+        />
+        <div class="text-red-ff text-sm" v-show="showMaxAmount">
+            {{ $t("createCommunity.maxAmountTip") }}
+        </div>
+        <div class="text-right">
+          {{ $t('createCommunity.initBtc', {amount: showingInitBtc}) }}
         </div>
       </div>
     </div>

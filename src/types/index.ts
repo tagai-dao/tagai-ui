@@ -162,6 +162,7 @@ export type CreateCommunity = {
   tick: string,
   token: string,
   createHash?: string,
+  twitterId?: string,
   twitter?: string,
   sendPubKey?: string,
   sendNonce?: string,
@@ -170,7 +171,8 @@ export type CreateCommunity = {
   tags?: Array<string>,
   identityInfo?: string,
   ethAddr?: string,
-  initAmount?: bigint // this is btc amount
+  initAmount?: bigint // this is token amount
+  initBtc?: bigint // this is btc amount
 }
 
 export enum WalletType {

@@ -27,6 +27,7 @@ export default {
   RegisterOutTime: 406,
   HasRegistered: 407,
 
+  SERVER_ERR: 500,
   DB_ERROR: 501,
   BLOCK_CHAIN_ERROR: 502,
   INVALID_TRANSACTION: 503,

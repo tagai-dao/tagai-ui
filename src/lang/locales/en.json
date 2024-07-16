@@ -17,9 +17,13 @@
     "post": "Tweet/Space"
   },
   "createCommunity": {
-    "createCommunity": "Create Community"
+    "createCommunity": "Create Community",
+    "initAmountTip": "Input how many token you wanna buy first.",
+    "initBtc": "Pay {amount} BTC",
+    "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
+    "maxAmountTip" : "Please input less than 7000000"
   },
-  "errorMessage": {
+  "errMessage": {
     "idUsed": "Identify has been used",
     "btcAuthFail": "BTC auth fail",
     "ensMismatch": "ENS mismatch",

@@ -5,8 +5,8 @@ import { getReadOnlyProvider } from "./web3";
 import { PumpContract, IPShareContract } from '@/config'
 
 const ContractAddress = {
-    PumpContract,
-    IPShareContract
+    Pump: PumpContract,
+    IPShare: IPShareContract
 }
 
 export const getContract = async (contractName: string, address?: string, readOnly = false): Promise<any> => {

@@ -63,6 +63,8 @@ export const RegisterSteemMessage = JSON.stringify({
 export const PumpContract = '0x9846Cd626C2f6549978aA190eD884993D4AA86BB';
 export const IPShareContract = '0xc610d07F7B40a0ee0bDaA40D188699d4a72B615F';
 
+export const Ether = BigInt(1e18);
+
 export const SendPubKey = new Uint8Array([
     197, 251,  61,  64, 103,  59,  66, 126,
     109, 154,   9, 122,   8, 175, 171,  78,
