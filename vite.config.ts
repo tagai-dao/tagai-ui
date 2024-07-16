@@ -11,6 +11,7 @@ import Icons from 'unplugin-icons/vite'
 import IconsResolver from 'unplugin-icons/resolver'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -44,12 +45,30 @@ export default defineConfig({
       // locale messages resource pre-compile option
       include: resolve(dirname(fileURLToPath(import.meta.url)), './src/lang/locales/**'),
     }),
-    viteCommonjs()
+    viteCommonjs(),
+    nodePolyfills({
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true
+      }
+    }),
   ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '~@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  },
+  build: {
+    target: "es2022"
+  },
+  esbuild: {
+    target: "es2022"
+  },
+  optimizeDeps:{
+    esbuildOptions: {
+      target: "es2022",
     }
   }
 })
