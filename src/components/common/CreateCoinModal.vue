@@ -10,7 +10,7 @@ import { box, generateSteemAuth } from "@/utils/web3";
 import { signMessage } from "@/utils/wallets";
 import { ethers } from "ethers";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitBtc } from "@/utils/pump";
+import { createCoin, calculateInitBtc, checkTickUsed } from "@/utils/pump";
 import { handleErrorTip } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
 
@@ -29,6 +29,7 @@ const uploading = ref(false);
 const showOnlyPic = ref(false);
 const showPicSizeLimit = ref(false);
 const showInvalidName = ref(false);
+const showTickUsed = ref(false);
 const showMaxAmount = ref(false);
 
 const accStore = useAccountStore();
@@ -87,9 +88,15 @@ const onFocusTagInput = () => {
   inputTag.value = "";
 };
 
-const testTick = (name: string) => {
+const testTick = async () => {
+  showInvalidName.value = false;
+  showTickUsed.value = false;
   if (createForm.tick.match(/[a-zA-Z]{1,16}$/)) {
-    showInvalidName.value = false;
+    const created = await checkTickUsed(createForm.tick);
+    if (created) {
+      showTickUsed.value = true
+      return false
+    }
     return true;
   }
   showInvalidName.value = true
@@ -102,7 +109,7 @@ const create = async () => {
     // check params
     showInvalidName.value = false
 
-    if (!testTick(createForm.tick)) {
+    if (!(await testTick())) {
       return;
     }
 
@@ -176,6 +183,9 @@ const create = async () => {
         />
         <div class="text-red-ff text-sm" v-show="showInvalidName">
           {{ $t('createCommunity.invalidTickTip') }}
+        </div>
+        <div class="text-red-ff text-sm" v-show="showTickUsed">
+          {{ $t('createCommunity.tickUsed') }}
         </div>
       </div>
       <!-- desc -->

@@ -21,7 +21,8 @@
     "initAmountTip": "Input how many token you wanna buy first.",
     "initBtc": "Pay {amount} BTC",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
-    "maxAmountTip" : "Please input less than 7000000"
+    "maxAmountTip" : "Please input less than 7000000",
+    "tickUsed": "This name has been registed, please change to another one"
   },
   "errMessage": {
     "idUsed": "Identify has been used",

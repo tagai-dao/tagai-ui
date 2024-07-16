@@ -5,7 +5,12 @@ import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract, Ether } from "@/config";
 import { abis } from './abis'
-import { createHash } from "crypto";
+
+export const checkTickUsed = async (tick: string) => {
+    const pump = await getContract('Pump')
+    const created = await pump.createdTicks(tick)
+    return created
+}
 
 export const createCoin = async (createParms: CreateCommunity) => {
     const pump = await getContract('Pump')
