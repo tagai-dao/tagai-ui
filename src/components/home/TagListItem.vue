@@ -3,8 +3,14 @@ import { type Community } from '@/types';
 import { ref, computed } from 'vue'
 import { useCurationStore } from '@/stores/curation';
 import { formatPrice } from '@/utils/helper';
+import { useAccountStore } from '@/stores/web3';
+import { useRouter } from 'vue-router';
+import { useCommunityStore } from '@/stores/community';
 
 const curationStore = useCurationStore()
+const accStore = useAccountStore()
+const comStore = useCommunityStore()
+const router = useRouter()
 const props = defineProps<{
   community: Community
 }>()
@@ -13,6 +19,11 @@ const onlineSpace = computed(() => {
   const spaces = curationStore.allSpaces;
   return !!spaces.find(sp => sp.tick == props.community.tick)
 })
+
+async function trade() {
+  comStore.currentSelectedCommunity = props.community
+  router.push('/buy-sell/' + props.community.tick)
+}
 </script>
 
 <template>
@@ -39,7 +50,7 @@ const onlineSpace = computed(() => {
         </div>
         <slot name="default-btn">
           <div class="h-20 flex items-center">
-            <button class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full">
+            <button @click.stop="trade" class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full">
               Trade
             </button>
           </div>

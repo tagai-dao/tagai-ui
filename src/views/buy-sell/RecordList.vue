@@ -1,32 +1,40 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
+import { getTokenTradeList } from "@/apis/api";
+import { useCommunityStore } from "@/stores/community";
+import type { TokenTrade } from "@/types";
+import { formatAddress, formatAmount } from "@/utils/helper";
+import { handleErrorTip } from "@/utils/notify";
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const listData = ref<number []>([])
+const comStore = useCommunityStore()
+const listData = ref<TokenTrade []>([])
 const scroller = document.querySelector('#trade-record-scroller')
 const onLoad = () => {
   if(loading.value || finished.value) return
   loading.value = true
-  setTimeout(() => {
-    for (let i = 0; i < 10; i++) {
-      listData.value.push(listData.value.length + 1);
-    }
-    loading.value = false;
-    if (listData.value.length >= 20) {
-      finished.value = true;
-    }
-  }, 1000);
+  
 };
 
-const onRefresh = () => {
-  finished.value = false;
-  onLoad();
+const onRefresh = async () => {
+  try{
+    if (refreshing.value = true || !comStore.currentSelectedCommunity?.token) {
+      return;
+    }
+    refreshing.value = true;
+    const list = await getTokenTradeList(comStore.currentSelectedCommunity!.token)
+    listData.value = list as TokenTrade[]
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    refreshing.value = false
+  }
 };
 
 onMounted(() => {
-  onLoad()
+  onRefresh()
 })
 </script>
 
@@ -44,20 +52,20 @@ onMounted(() => {
                 :offset="50"
                 @load="onLoad">
         <div class="grid grid-cols-5 gap-x-2 text-h5 h-10 items-center">
-          <span class="col-span-2 pl-8">Account</span>
+          <span class="col-span-2 pl-8">Address</span>
           <span class="col-span-1 text-center">buy/sell</span>
           <span class="col-span-1 text-center">$BTC</span>
-          <span class="col-span-1 text-right">$TRUMP</span>
+          <span class="col-span-1 text-right">${{ comStore.currentSelectedCommunity?.tick }}</span>
         </div>
         <div class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
-             v-for="i of listData" :key="i">
+             v-for="(token, i) of listData" :key="i">
           <div class="col-span-2 truncate flex items-center gap-1">
             <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt="">
-            <span class="truncate">0x……F263</span>
+            <span class="truncate">{{ formatAddress(token.trader) }}</span>
           </div>
-          <span class="col-span-1 text-center">buy 1s</span>
-          <span class="col-span-1 text-center">0.102</span>
-          <span class="col-span-1 text-right">10.02M</span>
+          <span class="col-span-1 text-center">{{ token.isBuy ? 'Buy' : "Sell" }}</span>
+          <span class="col-span-1 text-center">{{ formatAmount((token.ethAmount as any) / 1e18) }}</span>
+          <span class="col-span-1 text-right">{{ formatAmount((token.amount as any) / 1e18) }}</span>
         </div>
       </van-list>
     </van-pull-refresh>

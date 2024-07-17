@@ -51,6 +51,9 @@ export const getCommunityDetail = async (tick: string) =>
 export const getHolderList = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/holderList', { token, pages })
 
+export const getTokenTradeList = async (token: string, pages?: number) =>
+  get(BACKEND_API_URL + '/community/tradeList', { token, pages })
+
 export const isTokenExist = async (tick: string) =>
   get(BACKEND_API_URL + '/community/isTokenExist', { tick })
 

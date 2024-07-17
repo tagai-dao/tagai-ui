@@ -26,9 +26,57 @@ export const createCoin = async (createParms: CreateCommunity) => {
     return {createHash: tx.hash}
 }
 
+export const buyToken = async (token: string, amount: bigint) => {
+    const pump = await getContract('Pump')
+
+}
+
+export const sellToken = async (token: string, amount: bigint) => {
+    const pump = await getContract('Pump')
+}
+
 export const calculateInitBtc = (amount: bigint) => {
     const price = amount * amount * amount / BigInt(3e36) / (320n * Ether)
     return price * 10000n / (10000n - 100n - 100n);
+}
+
+export const getTokenInfo = async (token: string) => {
+    if (!ethers.isAddress(token)) return;
+    let calls = [
+        {
+            target: token,
+            call: [
+                'bondingCurveSupply()(uint256)'
+            ],
+            returns: [
+                ['bondingCurveSupply']
+            ]
+        },{
+            target: token,
+            call: [
+                'listed()(bool)'
+            ],
+            returns: [
+                ['listed']
+            ]
+        }
+    ]
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed
+}
+
+export const getBuyAmountWithBTCAfterFee = async (token: string | undefined, amount: bigint) => {
+    if (!token) return 0n
+    const tc = await getContract('Token', token, true);
+    const receive = await tc.getBuyAmountByValue(amount);
+    return receive
+}
+
+export const getReceivedAmountSellBTCAfterFee = async (token: string | undefined, amount: bigint) => {
+    if (!token) return 0n
+    const tc = await getContract('Token', token, true);
+    const receive = await tc.getSellPriceAfterFee(amount);
+    return receive
 }
 
 export const getTokenCap = async (communities: Community[]) => {

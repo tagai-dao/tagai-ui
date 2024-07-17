@@ -7,11 +7,11 @@ export const useCommunityStore = defineStore(
         const allCommunities = ref<Community[]>([])
         const trendingCommunities = ref<Community[]>([])
         const newCommunities = ref<Community[]>([])
-        const currentSelectedCommunities = ref<Community | null>(null)
+        const currentSelectedCommunity = ref<Community | null>(null)
         return {
             allCommunities,
             trendingCommunities,
             newCommunities,
-            currentSelectedCommunities
+            currentSelectedCommunity
         }
     })

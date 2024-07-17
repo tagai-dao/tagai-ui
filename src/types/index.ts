@@ -4,7 +4,8 @@ export enum GlobalModalType {
   CreateTweetSpace,
   Login,
   Register,
-  BondEth
+  BondEth,
+  ChoseWallet
 }
 
 export enum ListType {
@@ -175,6 +176,15 @@ export type CreateCommunity = {
   ethAddr?: string,
   initAmount?: bigint // this is token amount
   initBtc?: bigint // this is btc amount
+}
+
+export type TokenTrade = {
+  tick: string,
+  trader: string,
+  amount: string,
+  timestamp: number | string | Date,
+  ethAmount: string,
+  isBuy: boolean
 }
 
 export enum WalletType {
