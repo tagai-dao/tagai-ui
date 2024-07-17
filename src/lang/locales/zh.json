@@ -12,6 +12,11 @@
     "post": "Tweet/Space",
     "createCoin": "Create Coin"
   },
+  "notificationView": {
+    "ipShare": "IPShare",
+    "social": "Social",
+    "tips": "Tips"
+  },
   "errorMessage": {
     "idUsed": "Identify has been used",
     "btcAuthFail": "BTC auth fail",

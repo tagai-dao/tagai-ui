@@ -16,6 +16,11 @@
     "holdCoin": "Hold Coin",
     "post": "Tweet/Space"
   },
+  "notificationView": {
+    "ipShare": "IPShare",
+    "social": "Social",
+    "tips": "Tips"
+  },
   "createCommunity": {
     "createCommunity": "Create Community",
     "initAmountTip": "Input how many token you wanna buy first.",
