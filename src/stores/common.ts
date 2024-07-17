@@ -18,27 +18,17 @@ export const useModalStore = defineStore(
   }
 })
 
-export enum MintState {
-  Payment,
-  Inscribing,
-  Inscribed
+export enum IdType {
+  BitIp,
+  ENS,
+  PayToken
 }
 
 export const useStateStore = defineStore('state', {
   state (){
     return {
-      selectedBlks: [] as Array<number>,
-      selectedAddresses: [] as Array<string>,
-      selectedInsSats: 546,
-      connector: 0,
-      mintedBlk: [] as Array<number>,
-      mintState: MintState.Payment,
-      showBtcLogin: false,
-      totalMinted: 0,
-      selectedIPShare: {} as IPShare,
-      globalLoginTip: false,
-      showTwitterLogin: false,
-      loginTipType: 'mint' as 'mint' | 'comment'
+      referee: '' as string | null | undefined,
+      idType: IdType.ENS 
     }
   },
 

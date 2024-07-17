@@ -24,9 +24,12 @@ const userInfo = ref<{userName: string}>({
   <div>
     <div class="flex items-end gap-4"
          :class="userInfo.userName===msgData.sendUserName?'flex-row-reverse':''">
-      <img class="min-w-9" v-if="msgData.profileImg" :src="msgData.profileImg" alt="">
-      <div v-else class="bg-grey-light-hover h-9 w-9 min-w-9 rounded-full flex items-center justify-center">
-        <i-ep-avatar/>
+      <div class="">
+        <img class="min-w-9" v-if="msgData.profileImg" :src="msgData.profileImg" alt="">
+        <div v-else class="bg-grey-light-hover h-9 w-9 min-w-9 rounded-full flex items-center justify-center">
+          <i-ep-avatar/>
+        </div>
+        <div class="text-xs text-grey-8e text-center">{{userInfo.userName}}</div>
       </div>
       <div class="rounded-t-2xl p-2.5 min-h-9 break-all"
            :class="userInfo.userName===msgData.sendUserName?'rounded-bl-2xl bg-purple-c1':'rounded-br-2xl bg-grey-light-hover'">

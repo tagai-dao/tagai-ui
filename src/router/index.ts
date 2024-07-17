@@ -17,7 +17,7 @@ const router = createRouter({
       meta: {tabBar: true, topBar: true}
     },
     {
-      path: '/buy-sell/:id',
+      path: '/buy-sell/:id/:sellsman?',
       name: 'buy-sell',
       component: () => import('@/views/buy-sell/BuyAndSellView.vue')
     },
@@ -34,13 +34,18 @@ const router = createRouter({
     {
       path: '/profile/:user',
       name: 'profile',
-      component: () => import('@/views/ProfileView.vue'),
+      component: () => import('@/views/profile/ProfileView.vue')
       meta: {tabBar: true, topBar: true}
     },
     {
       path: '/notification',
       name: 'notification',
       component: () => import('@/views/notification/NotificationView.vue')
+    },
+    {
+      path: '/login',
+      name: 'login-call-back',
+      component: () => import('@/views/LoginCallBack.vue')
     }
   ]
 })

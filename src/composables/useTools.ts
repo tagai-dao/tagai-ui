@@ -39,6 +39,17 @@ export const useTimer = () => {
   }
 }
 
+export const useInterval = () => {
+  const interval = ref<number|undefined>();
+  const setInter = (cb: Function, int=1) => {
+    interval.value = setInterval(cb, int);
+  }
+  onUnmounted(() => {
+    clearInterval(interval.value)
+  })
+  return setInter
+}
+
 export const usePageRouter = () => {
   const router = useRouter()
   const goBack = async () => {

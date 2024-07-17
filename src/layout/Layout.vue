@@ -7,6 +7,9 @@ import {useModalStore} from "@/stores/common";
 import {GlobalModalType} from "@/types";
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
+import AuthTwitter from "@/components/login/AuthTwitter.vue";
+import BondEthModal from "@/components/login/BondEthModal.vue";
+import ChoseWallet from "@/components/login/ChoseWallet.vue";
 
 const modalStore = useModalStore()
 </script>
@@ -25,6 +28,9 @@ const modalStore = useModalStore()
       <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
       <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet"/>
       <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace"/>
+      <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
+      <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
+      <ChoseWallet v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
     </el-dialog>
   </main>
 </template>

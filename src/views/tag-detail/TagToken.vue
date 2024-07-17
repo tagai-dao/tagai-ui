@@ -149,6 +149,26 @@ const progressData = ref([
         </div>
       </div>
     </div>
+    <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
+      <div class="text-h2 mb-2">Token List</div>
+      <div class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
+           v-for="i of 4" :key="i">
+        <el-tooltip placement="top">
+          <template #content>
+            <div class="flex gap-1">
+              用户信息
+            </div>
+          </template>
+          <div class="col-span-3 truncate flex items-center gap-1">
+            <span class="min-w-4">{{i+1}}</span>
+            <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt="">
+            <span class="">0x ……F263</span>
+            <span class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">deployer</span>
+          </div>
+        </el-tooltip>
+        <span class="col-span-2 text-right">680M / 6.11%</span>
+      </div>
+    </div>
   </div>
 </template>
 

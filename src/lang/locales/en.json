@@ -1,13 +1,62 @@
 {
+  "buy": "Buy",
+  "sell": "Sell",
   "tips": "Tips",
+  "loginView": {
+    "loginWithTwitter": "Login with Twitter",
+    "p1": "uses progressive web app technolog)that combines the best features of traditional websites and platform-specific apps",
+    "createWallet": "Create Wallet",
+    "bindAddress": "Bind ETH address",
+    "addressUsed": "This address has been used by other twitter, please change another one in your wallet."
+  },
+  "web3": {
+    "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet."
+  },
   "profileView": {
     "holdCoin": "Hold Coin",
-    "post": "Tweet/Space",
-    "createCoin": "Create Coin"
+    "post": "Tweet/Space"
   },
-  "notificationView": {
-    "ipShare": "IPShare",
-    "social": "Social",
-    "tips": "Tips"
+  "createCommunity": {
+    "createCommunity": "Create Community",
+    "initAmountTip": "Input how many token you wanna buy first.",
+    "initBtc": "Pay {amount} BTC",
+    "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
+    "maxAmountTip" : "Please input less than 7000000",
+    "tickUsed": "This name has been registed, please change to another one"
+  },
+  "errMessage": {
+    "idUsed": "Identify has been used",
+    "btcAuthFail": "BTC auth fail",
+    "ensMismatch": "ENS mismatch",
+    "transInvalid": "Invalide transaction",
+    "noBondEth": "ETH address not bound",
+    "paramsError": "Invalid params",
+    "curationNotExsist": "Curation is not exists",
+    "insufficientContent": "Please write something",
+    "insufficientOp": "Insufficient of OP",
+    "insufficientVp": "Insufficient of VP",
+    "isLiked": "You have liked this tweet",
+    "isUnliked": "You have unliked this tweet",
+    "notCommunityOwner": "You are not the community manager",
+    "isRetweeted": "You have retweeted the tweet",
+    "dbErr": "Server error",
+    "blockChainErr": "Blockchain issue",
+    "invalidTransaction": "The tx is invalid",
+    "serverErr": "Server error",
+    "twitterErr": "Twitter api error",
+    "invalideTwitterId": "Invalid twitter id",
+    "userNotRegisterd": "You havn't registed",
+    "userOrderPending": "You have a pending order now",
+    "noRewardToClaim": "No reward to claim",
+    "existTick": "The tick is exists",
+    "tweetNotFound": "Tweet not exists now",
+    "invalidAccessToken": "Invalid access token",
+    "tokenExpired": "Token has expired",
+    "invalideSignatre": "Invalid signature",
+    "invalidState": "Invalid state",
+    "userCancelAuth": "User canceld",
+    "registerOutTime": "Register out of time",
+    "hasRegisted": "The account has been registed",
+    "unknownError": "Unknown error"
   }
 }

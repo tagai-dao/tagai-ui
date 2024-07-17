@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {parseTimestamp} from "@/utils/helper";
 import {checkAccessToken} from "@/apis/api";
-import {handleTransError, notify} from "@/utils/notify";
+import {handleErrorTip, notify} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import {useTweetTip} from "@/composables/useTweetTips";
 import {ref} from "vue";
@@ -72,7 +72,7 @@ async function userReply() {
       emits('newComment', props.tweet.tweetId, commented.id, text)
     }
   } catch (e) {
-    handleTransError(e)
+    handleErrorTip(e)
   } finally {
     isRepling.value = false
   }

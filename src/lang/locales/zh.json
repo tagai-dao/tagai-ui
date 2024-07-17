@@ -2,14 +2,48 @@
   "buy": "购买",
   "sell": "出售",
   "tips": "打赏",
+  "loginView": {
+    "loginWithTwitter": "Login with Twitter",
+    "p1": "uses progressive web app technolog)that combines the best features of traditional websites and platform-specific apps",
+    "createWallet": "Create Wallet"
+  },
   "profileView": {
     "holdCoin": "Hold Coin",
     "post": "Tweet/Space",
     "createCoin": "Create Coin"
   },
-  "notificationView": {
-    "ipShare": "IPShare",
-    "social": "Social",
-    "tips": "Tips"
+  "errorMessage": {
+    "idUsed": "Identify has been used",
+    "btcAuthFail": "BTC auth fail",
+    "ensMismatch": "ENS mismatch",
+    "transInvalid": "Invalide transaction",
+    "noBondEth": "ETH address not bound",
+    "paramsError": "",
+    "curationNotExsist": "",
+    "insufficientContent": "",
+    "insufficientOp": "",
+    "insufficientVp": "",
+    "isLiked": "",
+    "isUnliked": "",
+    "notCommunityOwner": "",
+    "isRetweeted": "",
+    "dbErr": "",
+    "blockChainErr": "",
+    "invalidTransaction": "",
+    "serverErr": "",
+    "twitterErr": "",
+    "invalideTwitterId": "",
+    "userNotRegisterd": "",
+    "userOrderPending": "",
+    "noRewardToClaim": "",
+    "existTick": "",
+    "tweetNotFound": "",
+    "invalidAccessToken": "",
+    "tokenExpired": "",
+    "invalideSignatre": "",
+    "invalidState": "",
+    "userCancelAuth": "",
+    "registerOutTime": "",
+    "hasRegisted": ""
   }
 }
