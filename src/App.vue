@@ -5,6 +5,7 @@ import { useStateStore, useModalStore } from "./stores/common";
 import { useAccountStore } from "./stores/web3";
 import { onMounted } from "vue";
 import { GlobalModalType } from "./types";
+import { initPlugin } from "./utils/wallets";
 
 const stateStore = useStateStore();
 const route = useRoute();
@@ -12,6 +13,7 @@ const router = useRouter();
 
 onMounted(async () => {
   await router.isReady();
+  initPlugin();
   const { referee } = route.query;
   if (referee) {
     stateStore.referee = referee as string;

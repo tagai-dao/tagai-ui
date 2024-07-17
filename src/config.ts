@@ -60,8 +60,8 @@ export const RegisterSteemMessage = JSON.stringify({
     method: 'generate-social-account'
 }, null, 4)
 
-export const PumpContract = '0x9846Cd626C2f6549978aA190eD884993D4AA86BB';
-export const IPShareContract = '0xc610d07F7B40a0ee0bDaA40D188699d4a72B615F';
+export const PumpContract = '0xc3D1f54025B7Bd059b800E4C6b2e9Efe8a860CA5';
+export const IPShareContract = '0xeBB703Be7B200027e0Ef4185ccE7aEE293b2B4ab';
 
 export const Ether = BigInt(1e18);
 

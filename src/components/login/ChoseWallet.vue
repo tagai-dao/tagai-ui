@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
-import { computed, ref } from "vue";
+import { computed, ref, defineEmits } from "vue";
 
 const loading = ref(false);
 const providers = computed(() => {
   return getProviders() ?? [];
 });
 
+const emits = defineEmits(['chosedWallet'])
+
 async function onSelectWalletMeta(wallet: any) {
   setActiveProviderDetail(wallet);
+  emits('chosedWallet')
 }
 </script>
 

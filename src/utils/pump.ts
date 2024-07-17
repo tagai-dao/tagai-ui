@@ -6,6 +6,7 @@ import { ethers } from 'ethers'
 import { PumpContract, Ether } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
+import errCode from "@/errCode";
 
 export const checkTickUsed = async (tick: string) => {
     const pump = await getContract('Pump')
@@ -26,13 +27,42 @@ export const createCoin = async (createParms: CreateCommunity) => {
     return {createHash: tx.hash}
 }
 
-export const buyToken = async (token: string, amount: bigint) => {
-    const pump = await getContract('Pump')
-
+export const buyToken = async (token: string, amount: bigint, ethAmount: bigint, sellsman: ethers.AddressLike, slippage = 0) => {
+    if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
+    if (!ethers.isAddress(sellsman)) {
+        sellsman = ethers.ZeroAddress;
+    }
+    const tc = await getContract('Token', token)
+    const tx = await tc.buyToken(amount, sellsman, slippage, ethers.ZeroAddress, {
+        value: ethAmount
+    })
+    await tx.wait();
+    return tx.hash;
 }
 
-export const sellToken = async (token: string, amount: bigint) => {
-    const pump = await getContract('Pump')
+export const sellToken = async (token: string, amount: bigint, receiveEth: bigint, sellsman: ethers.AddressLike, slippage = 0) => {
+    if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
+    if (!ethers.isAddress(sellsman)) {
+        sellsman = ethers.ZeroAddress;
+    }
+    try {
+        const tc = await getContract('Token', token)
+        const tx = await tc.sellToken(amount, receiveEth, sellsman, slippage);
+        await tx.wait();
+        return tx.hash;
+    } catch (error: any) {
+        try {
+            const iface = new ethers.Interface(abis.Token);
+            const ipface = new ethers.Interface(abis.IPShare);
+            const ipump = new ethers.Interface(abis.Pump);
+            const decodedError1 = iface.parseError(error.data);
+            const decodedError2 = ipface.parseError(error.data);
+            const decodedError3 = ipump.parseError(error.data);
+            console.log('custom error', decodedError1, decodedError2, decodedError3)
+        } catch (error) {
+            
+        }
+    }
 }
 
 export const calculateInitBtc = (amount: bigint) => {
@@ -68,7 +98,7 @@ export const getTokenInfo = async (token: string) => {
 export const getBuyAmountWithBTCAfterFee = async (token: string | undefined, amount: bigint) => {
     if (!token) return 0n
     const tc = await getContract('Token', token, true);
-    const receive = await tc.getBuyAmountByValue(amount);
+    const receive = await tc.getBuyAmountByValue(amount * 9800n / 10000n);
     return receive
 }
 

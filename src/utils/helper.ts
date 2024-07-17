@@ -122,7 +122,7 @@ export const formatPrice = (value: number | string, abb = false) => {
   return "$" + integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fraction + unit;
 };
 
-export const formatAmount = function (value: number | string) {
+export const formatAmount = function (value: number | string | undefined) {
   if (!value) return "0.00";
   let unit = ''
   let digit = 3

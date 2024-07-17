@@ -5,13 +5,18 @@ import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
+import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import { useRoute } from "vue-router";
 import { getCommunityDetail, getTokenTradeList } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
-import { getBuyAmountWithBTCAfterFee, getReceivedAmountSellBTCAfterFee, getTokenInfo } from '@/utils/pump'
+import { getBuyAmountWithBTCAfterFee, getReceivedAmountSellBTCAfterFee, getTokenInfo,
+  buyToken, sellToken
+ } from '@/utils/pump'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore } from "@/stores/common";
+import { handleErrorTip } from "@/utils/notify";
+import errCode from "@/errCode";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -19,6 +24,8 @@ const tradeType = ref('buy')
 const route = useRoute()
 const tokenInfo = ref()
 const trading = ref(false)
+const sellsman = ref()
+const needChoseWallet = ref(false)
 
 const payBtc = ref()
 const sellAmount = ref()
@@ -41,6 +48,7 @@ const {
 
 const isPostTweet = ref(false)
 
+
 watch(payBtc, (val) => {
   updateBuyAmount(val)
 })
@@ -50,11 +58,12 @@ watch(sellAmount, (val) => {
 })
 
 const updateBuyAmount = debounce(async (val: any) => {
+  if (!val) return;
   const amount = BigInt(val * 1e18)
-  
+
  try {
    const receive = await getBuyAmountWithBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
-   receiveAmount.value = formatAmount(receive.toString() / 1e18)
+   receiveAmount.value = receive
  } catch (error) {
     console.log(33, error)
  }
@@ -62,9 +71,10 @@ const updateBuyAmount = debounce(async (val: any) => {
 
 const updateSellAmount = debounce(async (val: any) => {
   try {
+    if (!val) return;
     const amount = BigInt(val * 1e18)
     const receive = await getReceivedAmountSellBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
-    receiveBtc.value = formatAmount(receive.toString() / 1e18)
+    receiveBtc.value = receive
   } catch (error) {
     receiveBtc.value = '0.00'
   }
@@ -78,13 +88,37 @@ async function confirm() {
   }
   // check wallet connect
   if (accStore.ethConnectState !== EthWalletState.Connected) {
-    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    needChoseWallet.value = true
     return;
   }
-  if (tradeType.value === 'buy') {
-
-  }else {
-
+  try{
+    trading.value = true
+    const token = comStore.currentSelectedCommunity
+    if (!token) return;
+    if (tradeType.value === 'buy') {
+      if (!payBtc.value) return
+      
+      const tx = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value);
+      if (tx) {
+        payBtc.value = undefined
+        receiveAmount.value = undefined
+      }else{
+        handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
+      }
+    }else {
+      if (!sellAmount.value) return;
+      const tx = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value)
+      if (tx) {
+        sellAmount.value = undefined
+        receiveBtc.value = undefined
+      }else {
+        handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
+      }
+    }
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    trading.value = false
   }
 }
 
@@ -94,6 +128,7 @@ onMounted(async () => {
     const community = (await getCommunityDetail(tick)) as Community
     comStore.currentSelectedCommunity = community
   }
+  sellsman.value = route.params.sellsman
   tokenInfo.value = await getTokenInfo(comStore.currentSelectedCommunity.token)
 })
 </script>
@@ -148,7 +183,7 @@ onMounted(async () => {
             <span class="text-h5"
               >Receive ${{ comStore.currentSelectedCommunity?.tick }}</span
             >
-            <span class="text-h3">{{ receiveAmount }}</span>
+            <span class="text-h3">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
           </div>
         </template>
         <template v-else>
@@ -166,10 +201,8 @@ onMounted(async () => {
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
           >
-            <span class="text-h5"
-              >Receive $BTC</span
-            >
-            <span class="text-h3">{{ receiveBtc }}</span>
+            <span class="text-h5">Receive $BTC</span>
+            <span class="text-h3">{{ formatAmount(receiveBtc?.toString() / 1e18) }}</span>
           </div></template
         >
 
@@ -209,15 +242,22 @@ onMounted(async () => {
         <button
           class="w-full h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="tokenInfo?.listed"
+          :disabled="tokenInfo?.listed || trading"
         >
-          <span>{{ tokenInfo?.listed ? 'Token lised' : 'Confirm' }}</span>
+          <span>{{ tokenInfo?.listed ? "Token lised" : "Confirm" }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
       </div>
       <RecordList v-if="comStore.currentSelectedCommunity?.token" />
     </div>
   </div>
+
+  <el-dialog v-model="needChoseWallet"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px]"
+               width="90%" :show-close="false" align-center destroy-on-close>
+      <ChoseWallet @chosedWallet="needChoseWallet = false"/>
+  </el-dialog>
 </template>
 
 <style scoped></style>

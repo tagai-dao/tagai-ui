@@ -7,7 +7,6 @@ import { getCommunitiesByNew, getCommunitiesByTrending, getOnlineSpaces } from "
 import { useCommunityStore } from "@/stores/community";
 import { useCurationStore } from '@/stores/curation'
 import { handleErrorTip } from '@/utils/notify'
-import { initPlugin } from "@/utils/wallets";
 import { useRouter } from "vue-router";
 import { getTokenCap } from '@/utils/pump'
 
@@ -93,8 +92,6 @@ onActivated(async () => {
 })
 
 onMounted(async () => {
-  await router.isReady();
-  initPlugin();
   refresh();
 })
 </script>

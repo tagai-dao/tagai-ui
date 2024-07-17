@@ -12,20 +12,35 @@ const finished = ref(false)
 const comStore = useCommunityStore()
 const listData = ref<TokenTrade []>([])
 const scroller = document.querySelector('#trade-record-scroller')
-const onLoad = () => {
-  if(loading.value || finished.value) return
+const onLoad = async () => {
+  if(loading.value || finished.value || listData.value.length == 0) return
   loading.value = true
+  try{
+    const list = (await getTokenTradeList(comStore.currentSelectedCommunity!.token, Math.floor((listData.value.length - 1) / 30) + 1)) as TokenTrade[]
+    listData.value = listData.value.concat(list)
+    if (list.length < 30) {
+      finished.value = true
+    }
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    loading.value = false
+  }
   
 };
 
 const onRefresh = async () => {
   try{
-    if (refreshing.value = true || !comStore.currentSelectedCommunity?.token) {
+    if (refreshing.value === true || !comStore.currentSelectedCommunity?.token) {
       return;
     }
     refreshing.value = true;
+    finished.value = false;
     const list = await getTokenTradeList(comStore.currentSelectedCommunity!.token)
     listData.value = list as TokenTrade[]
+    if (listData.value.length < 30) {
+      finished.value = true;
+    }
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -54,18 +69,22 @@ onMounted(() => {
         <div class="grid grid-cols-5 gap-x-2 text-h5 h-10 items-center">
           <span class="col-span-2 pl-8">Address</span>
           <span class="col-span-1 text-center">buy/sell</span>
-          <span class="col-span-1 text-center">$BTC</span>
-          <span class="col-span-1 text-right">${{ comStore.currentSelectedCommunity?.tick }}</span>
+          <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
+          <span class="col-span-1 text-right">$BTC</span>
         </div>
-        <div class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
+
+        <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">
+          No trade data
+        </div>
+        <div v-else class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
              v-for="(token, i) of listData" :key="i">
           <div class="col-span-2 truncate flex items-center gap-1">
             <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt="">
             <span class="truncate">{{ formatAddress(token.trader) }}</span>
           </div>
           <span class="col-span-1 text-center">{{ token.isBuy ? 'Buy' : "Sell" }}</span>
-          <span class="col-span-1 text-center">{{ formatAmount((token.ethAmount as any) / 1e18) }}</span>
-          <span class="col-span-1 text-right">{{ formatAmount((token.amount as any) / 1e18) }}</span>
+          <span class="col-span-1 text-center">{{ formatAmount((token.amount as any) / 1e18) }}</span>
+          <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any) / 1e18) }}</span>
         </div>
       </van-list>
     </van-pull-refresh>

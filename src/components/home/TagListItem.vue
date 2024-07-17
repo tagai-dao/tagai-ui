@@ -56,8 +56,8 @@ async function trade() {
           </div>
         </slot>
       </div>
-      <div class="font-extralight flex flex-wrap gap-2 mt-2">
-        <button class="bg-green-b6 px-2 h-5 text-xs rounded-md">{{ community.tick }}</button>
+      <div v-if="community.tags" class="font-extralight flex flex-wrap gap-2 mt-2">
+        <button v-for="tag of JSON.parse(community.tags as string)" :key="tag" class="bg-green-b6 px-2 h-5 text-xs rounded-md">{{ tag }}</button>
       </div>
     </div>
   </div>
