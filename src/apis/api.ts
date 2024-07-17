@@ -2,6 +2,10 @@ import { get, post, put } from "./axios"
 import { BACKEND_API_URL } from '@/config'
 import type { CreateCommunity } from '@/types'
 
+/************************************ common **********************************/
+export const getBtcPrice = async () =>
+  get('https://bevm-api.dnt.social/donut/getETHPrice')
+
 /************************************ twitter auth **********************************/
 export const checkAccessToken = async () =>
   post(BACKEND_API_URL + '/auth/checkAccessToken')

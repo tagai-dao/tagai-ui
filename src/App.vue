@@ -6,10 +6,13 @@ import { useAccountStore } from "./stores/web3";
 import { onMounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
+import { getBtcPrice } from "@/apis/api"
+import { useInterval } from "./composables/useTools";
 
 const stateStore = useStateStore();
 const route = useRoute();
 const router = useRouter();
+const setInter = useInterval();
 
 onMounted(async () => {
   await router.isReady();
@@ -21,6 +24,14 @@ onMounted(async () => {
       useModalStore().setModalVisible(true, GlobalModalType.Login)
     }
   }
+  getBtcPrice().then((p: any) => {
+      stateStore.btcPrice = p
+    })
+  setInter(() => {
+    getBtcPrice().then((p: any) => {
+      stateStore.btcPrice = parseFloat(p)
+    })
+  }, 10000)
 })
 </script>
 

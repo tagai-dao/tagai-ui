@@ -6,10 +6,12 @@ import { formatPrice } from '@/utils/helper';
 import { useAccountStore } from '@/stores/web3';
 import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
+import { useStateStore } from '@/stores/common';
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
 const comStore = useCommunityStore()
+const stateStore = useStateStore()
 const router = useRouter()
 const props = defineProps<{
   community: Community
@@ -39,7 +41,7 @@ async function trade() {
           <div class="flex gap-2 items-end">
             <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
             <span class="font-normal italic text-grey-64 leading-6 text-sm">market cap</span>
-            <span class="font-normal italic text-grey-64 leading-6 text-sm">{{ formatPrice(community.marketCap ?? '0') }}</span>
+            <span class="font-normal italic text-grey-64 leading-6 text-sm">{{ formatPrice(parseFloat(community.marketCap as any) * stateStore.btcPrice) }}</span>
           </div>
           <!-- <div class="text-grey-64 font-light text-sm">
             created by  @0XSarah
