@@ -1,14 +1,16 @@
 .el-dialog {
     --el-dialog-border-radius: 24px!important;
 }
-
 .el-overlay.overlay-white {
     background-color: #FCFCFD80;
+    backdrop-filter: blur(16px);
 }
 .el-dialog__header {
     display: none;
 }
-
+.c-modal-fullscreen .el-dialog {
+    background: transparent;
+}
 .el-select__wrapper, .el-select__wrapper.is-focused {
     flex: 1;
     box-shadow: none!important;

@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
-import {GlobalModalType, type IPShare} from "@/types";
+import {GlobalModalType} from "@/types";
 
 export const useModalStore = defineStore(
   'globalModal', () => {
@@ -28,7 +28,7 @@ export const useStateStore = defineStore('state', {
   state (){
     return {
       referee: '' as string | null | undefined,
-      idType: IdType.ENS 
+      idType: IdType.ENS
     }
   },
 

@@ -8,12 +8,13 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-      meta: {tabbar: true}
+      meta: {tabBar: true, topBar: true}
     },
     {
       path: '/tag-detail/:id',
       name: 'tag-detail',
-      component: () => import('@/views/tag-detail/HomeTagDetail.vue')
+      component: () => import('@/views/tag-detail/HomeTagDetail.vue'),
+      meta: {tabBar: true, topBar: true}
     },
     {
       path: '/buy-sell/:id/:sellsman?',
@@ -33,7 +34,13 @@ const router = createRouter({
     {
       path: '/profile/:user',
       name: 'profile',
-      component: () => import('@/views/profile/ProfileView.vue')
+      component: () => import('@/views/profile/ProfileView.vue'),
+      meta: {tabBar: true, topBar: true}
+    },
+    {
+      path: '/notification',
+      name: 'notification',
+      component: () => import('@/views/notification/NotificationView.vue')
     },
     {
       path: '/login',

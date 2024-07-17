@@ -16,11 +16,11 @@ const modalStore = useModalStore()
 
 <template>
   <main class="w-full h-full flex flex-col max-w-[1200px] mx-auto">
-    <TopBar/>
+    <TopBar v-show="$route.meta.topBar"/>
     <div class="flex-1 overflow-hidden">
       <RouterView/>
     </div>
-    <TabBar/>
+    <TabBar v-if="$route.meta.tabBar"/>
     <el-dialog v-model="modalStore.modalVisible"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
