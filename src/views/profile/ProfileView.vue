@@ -5,22 +5,22 @@ import TabPost from "@/views/profile/TabPost.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 
 const tabOptions = ['holdCoin', 'post', 'createCoin']
-const activeTab = ref('holdCoin')
+const activeTab = ref('createCoin')
 </script>
 
 <template>
-  <div class="h-full overflow-hidden flex flex-col gap-3">
+  <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
     <div class="bg-white py-3 px-4 rounded-2xl mx-3">
       <div class="flex gap-4 items-center">
         <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-             src="../assets/icons/icon-default-avatar.svg" alt="">
+             src="~@/assets/icons/icon-default-avatar.svg" alt="">
         <div class="h-full flex-1">
           <div class="text-h3">Username</div>
           <div class="flex items-center gap-1 leading-5">
             <span class="text-grey-8d">@asmonmy</span>
             <span class="mx-4px"> · </span>
             <button>
-              <img class="w-3 h-3" src="../assets/icons/icon-x.svg" alt="">
+              <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
           </div>
         </div>

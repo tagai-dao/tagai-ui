@@ -34,7 +34,7 @@ const router = createRouter({
     {
       path: '/profile/:user',
       name: 'profile',
-      component: () => import('@/views/profile/ProfileView.vue')
+      component: () => import('@/views/profile/ProfileView.vue'),
       meta: {tabBar: true, topBar: true}
     },
     {
