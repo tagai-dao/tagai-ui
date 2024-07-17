@@ -20,6 +20,7 @@ import errCode from "@/errCode";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
+const modalStore = useModalStore()
 const tradeType = ref('buy')
 const route = useRoute()
 const tokenInfo = ref()
@@ -79,6 +80,22 @@ const updateSellAmount = debounce(async (val: any) => {
     receiveBtc.value = '0.00'
   }
 }, 500)
+
+async function checkTweet() {
+  if (isPostTweet.value) {
+    const account = accStore.getAccountInfo
+    if (!account || account.twitterId) {
+      modalStore.setModalVisible(true, GlobalModalType.Login)
+      isPostTweet.value = false
+    }else if (!account.ethAddr) {
+      modalStore.setModalVisible(true, GlobalModalType.BondEth)
+      isPostTweet.value = false
+    }else if(!account.steemId) {
+      modalStore.setModalVisible(true, GlobalModalType.Register)
+      isPostTweet.value = false
+    }
+  }
+}
 
 async function confirm() {
   // checkout login
@@ -234,7 +251,7 @@ onMounted(async () => {
           </div>
         </div>
         <div class="flex justify-center">
-          <el-radio-group v-model="isPostTweet" class="c-radio gap-8">
+          <el-radio-group v-model="isPostTweet" @change="checkTweet" class="c-radio gap-8">
             <el-radio :value="false">None</el-radio>
             <el-radio :value="true">tweet & Earn</el-radio>
           </el-radio-group>
