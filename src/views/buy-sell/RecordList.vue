@@ -3,7 +3,7 @@ import {onMounted, ref} from "vue";
 import { getTokenTradeList } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import type { TokenTrade } from "@/types";
-import { formatAddress, formatAmount } from "@/utils/helper";
+import { formatAddress, formatAmount, formatPastTime, parseTimestamp } from "@/utils/helper";
 import { handleErrorTip } from "@/utils/notify";
 
 const refreshing = ref(false)
@@ -66,9 +66,9 @@ onMounted(() => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <div class="grid grid-cols-5 gap-x-2 text-h5 h-10 items-center">
-          <span class="col-span-2 pl-8">Address</span>
-          <span class="col-span-1 text-center">buy/sell</span>
+        <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">
+          <span class="col-span-1 text-left">Address</span>
+          <span class="col-span-1 text-center">Buy/Sell</span>
           <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
           <span class="col-span-1 text-right">$BTC</span>
         </div>
@@ -76,13 +76,13 @@ onMounted(() => {
         <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">
           No trade data
         </div>
-        <div v-else class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
+        <div v-else class="grid grid-cols-4 gap-x-2 h-8 items-center text-h4"
              v-for="(token, i) of listData" :key="i">
-          <div class="col-span-2 truncate flex items-center gap-1">
-            <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt="">
-            <span class="truncate">{{ formatAddress(token.trader) }}</span>
+          <div class="col-span-1 truncate flex items-center gap-1">
+            <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
+            <span class="truncate">{{ formatAddress(token.trader, 5, 4) }}</span>
           </div>
-          <span class="col-span-1 text-center">{{ token.isBuy ? 'Buy' : "Sell" }}</span>
+          <span class="col-span-1 text-center">{{ token.isBuy ? 'Buy' : "Sell" }} {{ formatPastTime(token.timestamp as number) }}</span>
           <span class="col-span-1 text-center">{{ formatAmount((token.amount as any) / 1e18) }}</span>
           <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any) / 1e18) }}</span>
         </div>

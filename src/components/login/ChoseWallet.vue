@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
-import { computed, ref, defineEmits } from "vue";
+import { computed, ref } from "vue";
 
 const loading = ref(false);
 const providers = computed(() => {

@@ -17,6 +17,8 @@ import { formatAmount } from "@/utils/helper";
 import { useModalStore } from "@/stores/common";
 import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
+import { useAccount } from "@/composables/useAccount";
+import { useTweet } from "@/composables/useTweet";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -27,9 +29,11 @@ const tokenInfo = ref()
 const trading = ref(false)
 const sellsman = ref()
 const needChoseWallet = ref(false)
+const { userTweet } = useTweet();
 
 const payBtc = ref()
 const sellAmount = ref()
+const {replaceEmptyProfile} = useAccount()
 
 const account = computed(() => {
   return accStore.getAccountInfo
@@ -45,6 +49,8 @@ const {
   contentInput,
   getBlur,
   onPaste,
+  formatElToTextContent, 
+  leftWordsLength
 } = useCreateTweet()
 
 const isPostTweet = ref(false)
@@ -84,7 +90,7 @@ const updateSellAmount = debounce(async (val: any) => {
 async function checkTweet() {
   if (isPostTweet.value) {
     const account = accStore.getAccountInfo
-    if (!account || account.twitterId) {
+    if (!account || !account.twitterId) {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       isPostTweet.value = false
     }else if (!account.ethAddr) {
@@ -108,6 +114,16 @@ async function confirm() {
     needChoseWallet.value = true
     return;
   }
+
+  if (isPostTweet.value){
+    if (leftWordsLength.value < 0){
+      return;
+    }
+    trading.value = true
+    let content = formatElToTextContent(contentRef.value)
+    userTweet(content, comStore.currentSelectedCommunity!.tick).catch(handleErrorTip)
+  }
+
   try{
     trading.value = true
     const token = comStore.currentSelectedCommunity
@@ -225,9 +241,11 @@ onMounted(async () => {
 
         <div v-show="isPostTweet" class="border-[1px] border-grey-c9 rounded-xl">
           <div class="flex items-center gap-2 px-3 pt-3">
+
             <img
               class="h-6 w-6 min-w-6 rounded-full"
-              src="~@/assets/icons/icon-default-avatar.svg"
+              :src="account?.profile"
+              @error="replaceEmptyProfile"
               alt=""
             />
             <span class="text-h3">{{ account?.twitterUsername }}</span>
@@ -246,7 +264,10 @@ onMounted(async () => {
               v-if="!showClear"
               class="absolute top-3 left-3 text-14px leading-24px z-0 opacity-30"
             >
-              写点 Trump 的内容，将被铭刻至链上，并根据社区互动获得奖励
+            {{ $t('curation.tweetWithTickTip', {tick: "$" + comStore.currentSelectedCommunity?.tick}) }}
+            </div>
+            <div class="text-right">
+            {{ leftWordsLength }}
             </div>
           </div>
         </div>

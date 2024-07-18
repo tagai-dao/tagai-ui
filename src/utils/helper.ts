@@ -191,6 +191,23 @@ export function getDateString(now: any, timezone: any, extra = 0) {
   return now.toISOString().replace("T", " ").substring(0, 19);
 }
 
+export function formatPastTime(timeSecond: number) {
+  const now = Math.ceil(Date.now() / 1000);
+  if (timeSecond > now) return '0s'
+  let diff = now - timeSecond;
+  if (diff < 60) {
+    return diff + 's'
+  }else if(diff < 3600) {
+    return Math.floor(diff / 60) + 'm'
+  }else if (diff < 86400 * 2) {
+    return Math.floor(diff / 3600) + 'h'
+  }else if (diff < 86400 * 30) {
+    return Math.floor(diff / 86400) + 'd'
+  }else {
+    return Math.floor(diff / 86400 / 30) + 'M'
+  }
+}
+
 export function parseTimestamp(time: any) {
   if (!time) {
     return ''

@@ -23,20 +23,12 @@ export const usePost = (props: {tweet: Tweet}) => {
   });
 
   const steemUrl = computed(() => {
-    return `https://steemit.com/wormhole3/@${props.tweet.steemId}/${props.tweet.postId}`;
+    return `https://steemit.com/wormhole3/@${props.tweet.steemId}/${props.tweet.tweetId}`;
   });
 
   const content = computed(() => {
     let content = "";
-    if (props.tweet.longContentStatus === 1) {
-      for (let c of JSON.parse(props.tweet.content??'{}')) {
-        if (c && c !== "null" && c !== "undefined") {
-          content += c + "\n";
-        }
-      }
-    } else {
-      content = props.tweet.content??'';
-    }
+    content = props.tweet.content??'';
     content = content.replace(reg, "");
     for (let url of urls.value) {
       content = content.replace(

@@ -53,7 +53,7 @@ export const useAccountStore = defineStore('account', {
                     acc = typeof(accStr) === 'string' ? JSON.parse(accStr) : accStr
                 }
             }
-            return acc
+            return acc as Account
         }
     }
 })

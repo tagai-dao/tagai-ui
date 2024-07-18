@@ -1,3 +1,8 @@
+import { useAccountStore } from "@/stores/web3";
+import { useAccount } from "./useAccount";
+import { tweet } from "@/apis/api";
+import errCode from "@/errCode";
+
 export const useTweet = () => {
   const formatEmojiText = (str: string) => {
     if (!str || str.trim().length===0) return ''
@@ -10,9 +15,18 @@ export const useTweet = () => {
     return str
   }
 
-
+  const userTweet = async (text: string, tick: string) => {
+    // check access token
+    const accessToken = await useAccount().checkoutAccessToken()
+    if (!accessToken) {
+      throw errCode.InvalidAccessToken;
+    }
+    await tweet(useAccountStore().getAccountInfo.twitterId, text, tick);
+    return true;
+  }
 
   return {
-    formatEmojiText
+    formatEmojiText,
+    userTweet
   }
 }

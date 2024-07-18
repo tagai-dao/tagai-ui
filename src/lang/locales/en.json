@@ -29,6 +29,12 @@
     "maxAmountTip" : "Please input less than 7000000",
     "tickUsed": "This name has been registed, please change to another one"
   },
+  "buyAndSell": {
+
+  }, 
+  "curation": {
+    "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet."
+  },
   "errMessage": {
     "idUsed": "Identify has been used",
     "btcAuthFail": "BTC auth fail",
