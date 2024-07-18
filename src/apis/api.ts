@@ -36,6 +36,9 @@ export const checkEns = async (ethAddr: string) =>
 export const tweet = async (twitterId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/tweet', {twitterId, text, tick})
 
+export const newLike = async (twitterId: string, tweetId: string, tick: string) =>
+  post(BACKEND_API_URL + '/curation/like', {twitterId, tweetId, tick})
+
 /************************************ community **********************************/
 export const createCommunity = async (params: CreateCommunity) => 
   post(BACKEND_API_URL + '/community/createCommunity', params)
