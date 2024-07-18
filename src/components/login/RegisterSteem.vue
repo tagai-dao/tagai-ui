@@ -29,14 +29,15 @@ const identityInfo = reactive<{
 }>({});
 
 const step = computed(() => {
-  if (
-    !accStore.getAccountInfo.ethAddr ||
-    accStore.ethConnectState !== EthWalletState.Connected
-  ) {
-    return 1;
-  } else if (!accStore.getAccountInfo.steemId) {
-    return 2;
-  }
+  return 2
+  // if (
+  //   !accStore.getAccountInfo.ethAddr ||
+  //   accStore.ethConnectState !== EthWalletState.Connected
+  // ) {
+  //   return 1;
+  // } else if (!accStore.getAccountInfo.steemId) {
+  //   return 2;
+  // }
 });
 
 function resetTips() {
@@ -88,42 +89,33 @@ onMounted(() => {});
 <template>
   <BondEthModal v-if="step === 1" />
   <div v-else-if="step === 2" class="p-6">
-    <div class="">{{ $t("loginView.registerRequire") }}</div>
+    <div class="text-center text-base text-black font-normal mb-8">{{ $t("loginView.registerRequire") }}</div>
     <div class="flex flex-col items-center gap-4 mt-1.5rem">
-      <button
-        class="w-full flex justify-center items-center align-center max-w-300px h-48px font-bold text-16px border-1 gradient-border rounded-full hover:shadow-none"
-        @click="payToken"
-         :disabled="loading"
-      >
-        <span>
-            Pay {{ parseInt(CreateFee) / 1e18 }} BTC
-        </span>
+      <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
+              @click="payToken"
+              :disabled="loading">
+        <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} BTC</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button>
       <div class="w-full">
-        <button
-          class="w-full flex justify-center items-center align-center max-w-300px h-48px font-bold text-16px border-1 gradient-border rounded-full hover:shadow-none"
-          @click="choseEns"
-          :disabled="loading"
-        >
-          <div class="flex justify-center align-center items-center">
-            <span> I have ENS </span>
-            <i-ep-loading v-show="loading" class="animate-spin" />
-          </div>
-          <div v-show="accountMismatch">
-          {{ $t('web3.addressMismatch', { address: accStore.getAccountInfo.ethAddr }) }}
-          </div>
-          <div v-show="showNoEns" class="text-red-ff text-sm">
-            {{ $t('loginView.noEns') }}
-          </div>
+        <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
+                :class="showNoEns?'bg-grey-light':''"
+                @click="choseEns"
+                :disabled="loading">
+          <span class="text-white font-semibold"> I have ENS </span>
+          <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
+        <div v-show="showNoEns" class="text-center text-sm text-red-ff">
+          {{ $t('loginView.noEns') }}
+        </div>
+        <div v-show="accountMismatch" class="text-center text-sm text-red-ff">
+          {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
+        </div>
       </div>
-      <button
-        class="w-full flex justify-center items-center align-center max-w-300px h-48px font-bold text-16px border-1 gradient-border rounded-full hover:shadow-none"
-        @click="choseBitip"
-         :disabled="loading"
-      >
-        <span class="">I have BitIp</span>
+      <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
+              @click="choseBitip"
+              :disabled="loading">
+        <span class="text-white font-semibold">I have BitIp</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button>
     </div>
