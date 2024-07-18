@@ -124,6 +124,18 @@ export const signMessage = async (message: string) => {
     return await signer.signMessage(message);
 }
 
+export const transferBtcTo = async (to: string, value: bigint) => {
+    let eth = getProvider();
+    const provider = new ethers.BrowserProvider(eth);
+    const signer = await provider.getSigner();
+    const tx = await signer.sendTransaction({
+        to,
+        value
+    })
+    await tx.wait();
+    return tx.hash;
+}
+
 export async function initPlugin() {
     detectEip6963()
 }

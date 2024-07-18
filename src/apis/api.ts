@@ -29,6 +29,9 @@ export const bondEth = async (ethAddr: string, twitterId: string, signature: str
 export const checkEthUsed = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/checkEthUsed', { ethAddr })
 
+export const checkEns = async (ethAddr: string) => 
+  get(BACKEND_API_URL + '/user/getENS', {ethAddr})
+
 /************************************ tweets **********************************/
 export const tweet = async (twitterId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/tweet', {twitterId, text, tick})

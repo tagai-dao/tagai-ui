@@ -10,6 +10,7 @@ import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import AuthTwitter from "@/components/login/AuthTwitter.vue";
 import BondEthModal from "@/components/login/BondEthModal.vue";
 import ChoseWallet from "@/components/login/ChoseWallet.vue";
+import RegisterSteem from "@/components/login/RegisterSteem.vue";
 
 const modalStore = useModalStore()
 </script>
@@ -31,6 +32,7 @@ const modalStore = useModalStore()
       <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
       <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
       <ChoseWallet v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
+      <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
     </el-dialog>
   </main>
 </template>

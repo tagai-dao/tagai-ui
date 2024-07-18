@@ -93,10 +93,7 @@ async function checkTweet() {
     if (!account || !account.twitterId) {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       isPostTweet.value = false
-    }else if (!account.ethAddr) {
-      modalStore.setModalVisible(true, GlobalModalType.BondEth)
-      isPostTweet.value = false
-    }else if(!account.steemId) {
+    }else if (!account.steemId) {
       modalStore.setModalVisible(true, GlobalModalType.Register)
       isPostTweet.value = false
     }
