@@ -4,10 +4,10 @@
     <TweetBtnLike :tweet="tweet"/>
     <!-- retweet -->
     <TweetBtnRetweet :tweet="tweet"/>
-    <!-- quote-->
-    <TweetBtnQuote :tweet="tweet"/>
     <!-- reply-->
     <TweetBtnReply :tweet="tweet"/>
+    <!-- quote-->
+    <TweetBtnQuote :tweet="tweet"/>
   </div>
 </template>
 

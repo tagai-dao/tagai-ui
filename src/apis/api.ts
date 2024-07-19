@@ -42,8 +42,8 @@ export const checkEns = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/getENS', {ethAddr})
 
 /************************************ tweets **********************************/
-export const getCommunityNewTweets = async (tick: string, pages?: number) =>
-  get(BACKEND_API_URL + '/curation/communityTweets', {tick, pages})
+export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
+  get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})
 
 export const tweet = async (twitterId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/tweet', {twitterId, text, tick})

@@ -46,7 +46,7 @@ async function updateProgress() {
     progressData.value = [
       {...progressData.value[0], value: (ti.totalClaimedSocialRewards.toString() / 1e18 / 10000)},
       {...progressData.value[1], value: (ti.bondingCurveSupply.toString() / 1e18 / 70000)},
-      {...progressData.value[2], value: 20, desc: ti.listed ? 'Listed' : 'Pending List'}
+      {...progressData.value[2], value: 100, desc: ti.listed ? 'Listed' : 'Pending List'}
     ]
   }).catch(e => {
     console.error(2, e)
@@ -106,12 +106,12 @@ onMounted(async () => {
             <template #content>
               <div class="flex gap-1">
                 <span class="text-sm">{{data.desc}}</span>
-                <span class="font-semibold text-base">{{data.value}}%</span>
+                <span class="font-semibold text-base">{{data.value.toFixed(2)}}%</span>
               </div>
             </template>
             <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
               <div class="h-full"
-                   :style="{background: data.background, width:`${data.value}%`}" >
+                   :style="{background: data.background, width:`${data.value.toFixed(2)}%`}" >
               </div>
             </div>
           </el-tooltip>

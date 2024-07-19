@@ -4,6 +4,7 @@ import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import {testTweets} from "@/assets/test-data";
 import {useTweetsStore} from "@/stores/tweets";
+import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import { getCommunityNewTweets } from "@/apis/api";
 import { computed, onMounted, ref } from "vue";
@@ -12,6 +13,7 @@ import { sleep } from "@/utils/helper";
 import type { Tweet } from "@/types";
 
 const tweetsStore = useTweetsStore()
+const accStore = useAccountStore()
 const refreshing = ref(false)
 const loading = ref(false)
 const comStore = useCommunityStore()
@@ -35,8 +37,7 @@ async function refresh() {
   try{
     if (refreshing.value) return;
     refreshing.value = true
-    const list = await getCommunityNewTweets(comStore.currentSelectedCommunity!.tick)
-    console.log(545, list)
+    let list : any = await getCommunityNewTweets(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId)
     if (!tweetsStore.communityTweets){
       tweetsStore.communityTweets = {}
     }

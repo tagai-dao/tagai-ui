@@ -55,9 +55,11 @@ const userQuote = () => {
           @click.stop="preQuote"
           :disabled="isQuoting">
     <i-ep-loading v-if="isQuoting" class="animate-spin w-5 h-5"/>
+    <i v-else class="w-5 h-5 min-w-5"
+       :class="tweet.quoted ? 'btn-icon-quote-active' : 'btn-icon-quote'"></i>
     <span class="text-sm font-bold"
           :class="tweet.quoted ? 'text-red-ff' : 'text-grey-bd'">
-              {{ $t("postView.quote") }} {{ tweet.quoteCount ?? 0 }}</span>
+              {{ tweet.quoteCount ?? 0 }}</span>
   </button>
   <el-dialog v-model="quoteVisible" width="700" align-center title="" destroy-on-close>
     <div class="bg-color1C px-20px min-h-40vh sm:min-h-300px sm:pt-40px max-h-80vh relative">

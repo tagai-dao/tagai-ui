@@ -16,12 +16,13 @@ const userRetweet = async () => {
 
 <template>
   <button class="flex justify-center items-center gap-2"
-          @click.stop="userRetweet"
-          :disabled="isRetweeting || (tweet.retweeted ?? 0) > 0">
+          @click.stop="userRetweet">
     <i-ep-loading v-if="isRetweeting" class="animate-spin w-5 h-5 "/>
+    <i v-else class="w-5 h-5 min-w-5"
+       :class="(tweet.retweeted ?? 0) > 0 ? 'btn-icon-retweet-active' : 'btn-icon-retweet'"></i>
     <span class="text-sm font-bold"
           :class="tweet.retweeted ? 'text-red-ff' : 'text-grey-bd'">
-      {{ $t("postView.retweet") }} {{ tweet.retweetCount ?? 0 }}</span>
+     {{ tweet.retweetCount ?? 0 }}</span>
   </button>
 </template>
 
