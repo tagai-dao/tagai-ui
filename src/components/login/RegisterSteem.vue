@@ -3,13 +3,18 @@ import { ref, onMounted, computed, reactive } from "vue";
 import BondEthModal from "@/components/login/BondEthModal.vue";
 import { useAccountStore } from "@/stores/web3";
 import { EthWalletState } from "@/stores/web3";
-import { CreateFee, ChainConfig, FeeAddress } from "@/config";
-import { checkEns } from "@/apis/api";
+import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } from "@/config";
+import { checkEns, registerSteem } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
-import { transferBtcTo, getBalance } from "@/utils/wallets";
+import { transferBtcTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
-import { getUserBitip } from "@/apis/api";
+import { getUserBitip, checkRegister } from "@/apis/api";
+import { bytesToHex, sleep } from "@/utils/helper";
+import { box, generateSteemAuth } from "@/utils/web3";
+import { ethers } from 'ethers';
+import type { Account } from "@/types";
+import { useModalStore } from "@/stores/common";
 
 const accStore = useAccountStore();
 
@@ -145,7 +150,26 @@ async function choseBitip(bitip: string) {
 }
 
 async function register() {
-
+    const signature = await ethSignMessage(RegisterSteemMessage)
+    const account = accStore.getAccountInfo
+    const salt = bytesToHex(ethers.randomBytes(4));
+      const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
+      let params = box(steemAccount);
+      let createForm = {
+        twitterId: account.twitterId,
+        pwd: params.pwd,
+        sendNonce: params.sendNonce,
+        SendPubKey: params.sendPubKey,
+        ethAddr: account.ethAddr,
+        salt
+      }
+      await registerSteem(createForm);
+      await sleep(3)
+      const acc: any = await checkRegister(account.twitterId)
+      if (acc.code == 3) {
+        accStore.setAccount(acc.account as Account)
+      }
+    useModalStore().setModalVisible(false)
 }
 
 const openDonut = () => {
@@ -192,7 +216,7 @@ onMounted(() => {});
   <div v-if="step===3" class="flex flex-col min-h-[240px] gap-4">
     <div class="h-10 flex items-center justify-center relative">
       <button class="absolute top-0 left-0 h-10 w-10 min-w-10 bg-white rounded-full flex items-center justify-center"
-              @click="step=2">
+              @click="chosingBitip=false">
         <img src="~@/assets/icons/icon-back.svg" alt="">
       </button>
       <div class="text-h3 text-black text-center">
@@ -201,7 +225,7 @@ onMounted(() => {});
     </div>
         <div class="flex flex-wrap w-full space-x-5 px-3rem py-6">
           <button @click="choseBitip(bitip)" v-for="bitip of bitips" :key="bitip" :disabled="loading"
-                  class="h-12 w-24 bg-gradient-primary text-black rounded-full flex justify-center items-center gap-2 mt-5">
+                  class="h-12 bg-gradient-primary text-black rounded-full flex justify-center items-center gap-2 mt-5 px-6">
             <span class="">{{ bitip }}</span>
             <i-ep-loading v-show="loading" class="animate-spin" />
           </button>
