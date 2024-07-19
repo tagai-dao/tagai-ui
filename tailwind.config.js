@@ -42,16 +42,17 @@ export default {
         'blue-active': "#575873"
       },
       backgroundImage: theme => ({
-        'gradient-primary': 'linear-gradient(213.44deg, #FEB14C -14.77%, #FE2C1A 116.22%);',
+        'gradient-primary': 'linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%)',
         'img-home': 'url("@/assets/images/main-bg.svg")',
-        'img-common': 'url("@/assets/images/main-bg1.svg")'
+        'img-common': 'url("@/assets/images/main-bg1.svg")',
+        'gradient-tab': 'linear-gradient(181.87deg, #FEFEFE -41.52%, #FEFEFE 114.96%)'
       }),
       boxShadow: theme => ({
         'tag-logo': '0px 3px 10px 0px #FFFFFF7D inset',
         'popper-tip': '0px 0px 12px rgba(0,0,0,0.12)',
         'tab': '0px 20px 40px 0px #373E7D1A',
         'insert-white': '1px 1000px 2px #ffffff inset;'
-      })
+    })
     },
     fontSize: {
       'xs': ['10px', '14px'],
