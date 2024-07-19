@@ -213,11 +213,17 @@ onMounted(() => {});
       </button>
     </div>
   </div>
-  <div v-if="step===3" class="flex justify-center items-center flex-col min-h-40vh">
-        <div class="text-xl mx-auto">
-          {{$t('loginView.selectBitipTip')}}
-        </div>
-        <div class="flex flex-wrap w-full space-x-5 px-3rem py-5">
+  <div v-if="step===3" class="flex flex-col min-h-[240px] gap-4">
+    <div class="h-10 flex items-center justify-center relative">
+      <button class="absolute top-0 left-0 h-10 w-10 min-w-10 bg-white rounded-full flex items-center justify-center"
+              @click="chosingBitip=false">
+        <img src="~@/assets/icons/icon-back.svg" alt="">
+      </button>
+      <div class="text-h3 text-black text-center">
+        {{$t('loginView.selectBitipTip')}}
+      </div>
+    </div>
+        <div class="flex flex-wrap w-full space-x-5 px-3rem py-6">
           <button @click="choseBitip(bitip)" v-for="bitip of bitips" :key="bitip" :disabled="loading"
                   class="h-12 bg-gradient-primary text-black rounded-full flex justify-center items-center gap-2 mt-5 px-6">
             <span class="">{{ bitip }}</span>
