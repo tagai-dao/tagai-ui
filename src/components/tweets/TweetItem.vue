@@ -57,7 +57,7 @@ const onUserAvatar = () => {
     <div class="bg-gray-fc rounded-2xl py-4 px-3">
       <div class="flex gap-2 items-stretch">
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
-                    :btc-address="tweet.btcAddress" :eth-address="tweet.ethAddress" :bitip="tweet.bitip"
+                    :eth-address="tweet.ethAddr"
                     :steem-id="tweet.steemId" :teleported="true">
           <template #avatar-img>
             <img v-if="profileImg"
@@ -80,7 +80,7 @@ const onUserAvatar = () => {
           </div>
           <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">
             <span>@{{tweet.twitterName}}</span>
-            <span>{{ parseTimestamp(tweet.postTime) }}</span>
+            <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
         <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
@@ -97,7 +97,7 @@ const onUserAvatar = () => {
         <div class="px-3 md:pl-12">
           <!--       foreign page -->
           <LinkPreview @click.stop="clickLinkView()" class="cursor-pointer"
-                       v-if="showPageInfo && !isIgnoreAccount" :pageInfo="tweet.pageInfo" />
+                       v-if="showPageInfo && !isIgnoreAccount" :pageInfo="tweet.pageInfo ?? ''" />
           <!--       retweet  -->
           <QuoteTweet class="mt-10px" @click.stop="clickRetweetView()"
                       v-if="tweet.retweetInfo && tweet.retweetInfo.length > 10 && !isIgnoreAccount"

@@ -2,12 +2,16 @@
 import {onMounted, ref, unref} from "vue";
 import MsgItem from "@/components/common/MsgItem.vue";
 import {useModalStore} from "@/stores/common";
-import {GlobalModalType} from "@/types";
+import { useCommunityStore } from "@/stores/community";
+import {GlobalModalType, type Community} from "@/types";
 import TagGroup from "@/views/tag-detail/TagGroup.vue";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
-import {useRoute} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
+import { getCommunityDetail } from "@/apis/api";
+import { getTokenInfo } from '@/utils/pump'
+import { useInterval } from "@/composables/useTools";
 
 const tabOptions = [
   {label: 'Group', key: 'group'},
@@ -17,7 +21,12 @@ const tabOptions = [
 ]
 const activeTab = ref('group')
 const modalStore = useModalStore()
+const comStore = useCommunityStore()
 const tweetTypeRef = ref()
+const route = useRoute()
+const router = useRouter()
+const tokenInfo = ref()
+const { setInter } = useInterval()
 
 const onTweetType = (type: GlobalModalType) => {
   tweetTypeRef.value.hide()
@@ -25,40 +34,67 @@ const onTweetType = (type: GlobalModalType) => {
 }
 
 const progressData = ref([
-  {value: 10, background: '#FF3D54', desc: 'Bongding'},
-  {value: 70, background: '#FE913F', desc: 'Bongding'},
-  {value: 20, background: '#FFCC00', desc: 'Bongding'}
+  {value: 10, background: '#FF3D54', desc: 'Social Distributed'},
+  {value: 70, background: '#FE913F', desc: 'Bongding Curve'},
+  {value: 20, background: '#FFCC00', desc: 'Listed'}
 ])
 
+async function updateProgress() {
+  getTokenInfo(comStore.currentSelectedCommunity!.token).then((ti: any) => {
+    if (!ti) return;
+    tokenInfo.value = ti
+    progressData.value = [
+      {value: (ti.totalClaimedSocialRewards.toString() / 1e18 / 10000), background: '#FF3D54', desc: 'Social Distributed'},
+      {value: (ti.bondingCurveSupply.toString() / 1e18 / 70000), background: '#FE913F', desc: 'Bongding Curve'},
+      {value: 20, background: '#FFCC00', desc: ti.listed ? 'Listed' : 'Pending List'}
+    ]
+  }).catch(e => {
+    console.error(2, e)
+  })
+}
+
+onMounted(async () => {
+  if (!comStore.currentSelectedCommunity?.tick){
+    const tick = route.params.id;
+    if (typeof(tick) !== 'string') {
+      router.replace('/')
+      return;
+    }
+    comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
+  }
+  setInter(updateProgress, 3000);
+  
+})
 </script>
 
 <template>
   <div class="h-full overflow-auto py-2 flex flex-col gap-3 px-3 relative">
     <div class="bg-white rounded-2xl py-5 px-3.5 flex gap-3">
       <div class="w-20 h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo flex items-center justify-center">
-        <img class="w-15" src="../../assets/logo-v.svg" alt="">
+        <img class="w-15" :src="comStore.currentSelectedCommunity?.logo" alt="">
       </div>
       <div class="flex-1 py-1">
         <div class="flex gap-4 items-center">
-          <span class="text-black text-h2">LATC</span>
-          <img class="w-4 h-4" src="../../assets/icons/icon-circle-x.svg" alt="">
-          <div class="w-4 h-4 min-w-4 min-h-4 bg-purple-c1 rounded-full"></div>
+          <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
+          <!-- <img class="w-4 h-4" src="../../assets/icons/icon-circle-x.svg" alt="">
+          <div class="w-4 h-4 min-w-4 min-h-4 bg-purple-c1 rounded-full"></div> -->
         </div>
         <div class="whitespace-pre-line text-h5 mt-1">
-          Look at the crowd <br>
-          Biden stands no chance
+          {{ comStore.currentSelectedCommunity?.description }}
         </div>
       </div>
     </div>
     <div class="bg-white rounded-2xl py-5 px-3.5 flex flex-col gap-3">
       <div class="text-base font-medium flex items-center gap-1">
-        <span>Bonding curve progress：65%</span>
+        <span>Bonding curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
         <el-popover popper-class="c-popper">
           <template #reference>
             <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
           </template>
           <template #default>
-            <div class="bg-white rounded-xl p-2 shadow-popper-tip">tips</div>
+            <div class="bg-white rounded-xl p-2 shadow-popper-tip">
+              {{ $t('community.distributionTip') }}
+            </div>
           </template>
         </el-popover>
       </div>

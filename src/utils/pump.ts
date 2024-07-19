@@ -89,6 +89,15 @@ export const getTokenInfo = async (token: string) => {
             returns: [
                 ['listed']
             ]
+        },
+        {
+            target: token,
+            call: [
+                'totalClaimedSocialRewards()(uint256)'
+            ],
+            returns: [
+                ['totalClaimedSocialRewards']
+            ]
         }
     ]
     const res = await aggregate(calls, ChainConfig.multiConfig)
