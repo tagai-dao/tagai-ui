@@ -9,8 +9,9 @@
     "bindAddress": "Bind ETH address",
     "addressUsed": "This address has been used by other twitter, please change another one in your wallet.",
     "registerRequire": "We will help you create a web3 social account and delegate posting key permissions to our account. Due to the cost of registering a web3 social account, we will cost your fee for registration. If you have ENS or Bitip, we will help you register for free.",
-    "noEns": "No ENS in your address"
-
+    "noEns": "No ENS in your address",
+    "noBitip": "Not yet have one? Click here to ",
+    "selectBitipTip": "Select BitIP as identity"
   },
   "web3": {
     "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet."

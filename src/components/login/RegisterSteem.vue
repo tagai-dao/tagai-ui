@@ -7,12 +7,18 @@ import { CreateFee, ChainConfig, FeeAddress } from "@/config";
 import { checkEns } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
-import { transferBtcTo } from "@/utils/wallets";
+import { transferBtcTo, getBalance } from "@/utils/wallets";
+import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
+import { getUserBitip } from "@/apis/api";
 
 const accStore = useAccountStore();
 
 const loading = ref(false);
+const showInsufficientBalance = ref(false);
 const showNoEns = ref(false);
+const chosingBitip = ref(false);
+const bitips = ref([]);
+const btcWallet = ref<BtcWallet>();
 
 const { accountMismatch } = useAccount();
 
@@ -25,31 +31,43 @@ const identityInfo = reactive<{
     chainName?: string,
     type?: string,
     assetId?: string,
-    datetime?: string
+    datetime?: number
 }>({});
 
 const step = computed(() => {
-  return 2
-  // if (
-  //   !accStore.getAccountInfo.ethAddr ||
-  //   accStore.ethConnectState !== EthWalletState.Connected
-  // ) {
-  //   return 1;
-  // } else if (!accStore.getAccountInfo.steemId) {
-  //   return 2;
-  // }
+    if (chosingBitip.value) {
+        return 3;
+    }
+  if (
+    !accStore.getAccountInfo.ethAddr ||
+    accStore.ethConnectState !== EthWalletState.Connected
+  ) {
+    return 1;
+  } else if (!accStore.getAccountInfo.steemId) {
+    return 2;
+  }
 });
 
 function resetTips() {
     showNoEns.value = false;
+    showInsufficientBalance.value = false;
+    chosingBitip.value = false;
 }
 
 async function payToken() {
     resetTips()
     try {
         loading.value = true
+        const balance = await getBalance(accStore.getAccountInfo!.ethAddr!);
+        if (balance <= BigInt(CreateFee)) {
+            showInsufficientBalance.value = true;
+            return;
+        }
         const hash = await transferBtcTo(FeeAddress, BigInt(CreateFee))
-        console.log(3, hash)
+        identityInfo.assetId = hash;
+        identityInfo.chainName = ChainConfig.name;
+        identityInfo.type = 'payToken'
+        await register();
     } catch (error) {
         handleErrorTip(error)
     }finally{
@@ -68,6 +86,7 @@ async function choseEns() {
             identityInfo.assetId = name as string;
             showNoEns.value = false
             // resister
+            await register();
         }else {
             showNoEns.value = true
         }
@@ -79,8 +98,58 @@ async function choseEns() {
     }
 }
 
-async function choseBitip() {
+async function selectBitip() {
     resetTips()
+    loading.value = true
+    try{
+        const wallet = await connectUnisat()
+        if (!wallet) return
+        btcWallet.value = wallet
+        const res: any = await getUserBitip(wallet.btcAddr)
+        console.log(233, res, wallet.btcAddr)
+        if (res && res.length > 0) {
+            bitips.value = res.map((b: any) => b.content)
+        }
+        chosingBitip.value = true
+    } catch (e) {
+        handleErrorTip(e)
+    } finally {
+        loading.value = false
+    }
+}
+
+async function choseBitip(bitip: string) {
+    try{
+        loading.value = true
+        const message = JSON.stringify({
+            bitip,
+            btcAddr: btcWallet.value?.btcAddr,
+            version: 1,
+            datetime: Date.now()
+        }, null, 4)
+        const signature = await signMessage(message);
+        identityInfo.chainName = 'BTC';
+        identityInfo.type = 'bitip';
+        identityInfo.assetId = bitip
+        identityInfo.btcAddr = btcWallet.value?.btcAddr;
+        identityInfo.btcPubkey = btcWallet.value?.btcPubkey;
+        identityInfo.version = 1;
+        identityInfo.signature = signature
+        await register()
+
+    } catch (e) {
+        handleErrorTip(e)
+    } finally {
+        loading.value =false
+    }
+}
+
+async function register() {
+    
+}
+
+const openDonut = () => {
+    window.open('https://bitip.social', '_blank')
 }
 
 onMounted(() => {});
@@ -113,11 +182,33 @@ onMounted(() => {});
         </div>
       </div>
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
-              @click="choseBitip"
+              @click="selectBitip"
               :disabled="loading">
         <span class="text-white font-semibold">I have BitIp</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button>
     </div>
   </div>
+  <div v-if="step===3" class="flex justify-center items-center flex-col min-h-40vh">
+        <div class="c-text-black break-word text-1.8rem leading-2.3rem gradient-text bg-purple-white light:bg-text-color17 mx-auto mt-1.4rem mb-1rem">
+            
+          {{$t('loginView.selectBitipTip')}}
+        </div>
+        <div class="flex flex-wrap w-full space-x-5 px-3rem py-6">
+          <button @click="choseBitip(bitip)" v-for="bitip of bitips" :key="bitip" :disabled="loading"
+                  class="h-12 w-24 bg-gradient-primary text-black rounded-full flex justify-center items-center gap-2 mt-5">
+            <span class="">{{ bitip }}</span>
+            <i-ep-loading v-show="loading" class="animate-spin" />
+          </button>
+        </div>
+
+        <div v-show="bitips.length == 0" class="mx-auto my-3 text-1rem">
+          <span class="break-word gradient-text bg-purple-white light:bg-text-color17 ">
+            {{$t('loginView.noBitip')}}
+          </span>
+          <span @click="openDonut" class="text-orange-normal cursor-pointer">
+            Mint
+          </span>
+        </div>
+      </div>
 </template>

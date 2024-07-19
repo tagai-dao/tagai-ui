@@ -6,6 +6,9 @@ import type { CreateCommunity } from '@/types'
 export const getBtcPrice = async () =>
   get('https://bevm-api.dnt.social/donut/getETHPrice')
 
+export const getUserBitip = async (btcAddress: string) =>
+  get("https://api.bitip.social/inscription/listByHolder", {btcAddress})
+
 /************************************ twitter auth **********************************/
 export const checkAccessToken = async (twitterId: string) =>
   post(BACKEND_API_URL + '/auth/checkAccessToken', {twitterId})
@@ -21,6 +24,9 @@ export const twitterLogin = async (state: string) =>
 
 export const twitterLogout = async (twitterId: string) =>
   get(BACKEND_API_URL + '/auth/logout', {twitterId})
+
+export const registerSteem = async (params: any) => 
+  post(BACKEND_API_URL + '/register', params)
 
 export const bondEth = async (ethAddr: string, twitterId: string, signature: string, infoStr: string) =>
   post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
