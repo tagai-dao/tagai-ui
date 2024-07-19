@@ -28,6 +28,9 @@ export const twitterLogout = async (twitterId: string) =>
 export const registerSteem = async (params: any) => 
   post(BACKEND_API_URL + '/register', params)
 
+export const checkRegister = async (twitterId: string) =>
+  post(BACKEND_API_URL + '/register/check', { twitterId })
+
 export const bondEth = async (ethAddr: string, twitterId: string, signature: string, infoStr: string) =>
   post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
 
