@@ -3,19 +3,20 @@ import {parseTimestamp} from "@/utils/helper";
 import {checkAccessToken} from "@/apis/api";
 import {handleErrorTip, notify} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
-import {useTweetTip} from "@/composables/useTweetTips";
 import {ref} from "vue";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import {useTweet} from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
+import { type Tweet } from "@/types";
 
-const props = defineProps(['post'])
+const props = defineProps<{
+    tweet: Tweet;
+  }>()
 const emits = defineEmits(['newComment'])
-const { content, imgurls, profileImg } = usePost(props);
+const { content, imgurls, profileImg } = usePost(props.tweet);
 
 const stateStore = useStateStore()
-const { postCondition } = useTweetTip("mint")
 const isRepling = ref(false)
 const replyVisible = ref(false)
 const {formatEmojiText} = useTweet()
@@ -28,22 +29,22 @@ const {
 const preReply = async () => {
   replyVisible.value = true
 
-  if (postCondition.value === 0) {
-    console.log(6)
-    // check access token
-    const v = await checkAccessToken();
-    if (!v) {
-      stateStore.showTwitterLogin = true;
-      return;
-    }
-    console.log(55)
-    replyVisible.value = true
-  } else if (postCondition.value == 1) {
-    stateStore.showBtcLogin = true
-  } else {
-    stateStore.loginTipType = "comment";
-    stateStore.globalLoginTip = true;
-  }
+  // if (postCondition.value === 0) {
+  //   console.log(6)
+  //   // check access token
+  //   const v = await checkAccessToken();
+  //   if (!v) {
+  //     stateStore.showTwitterLogin = true;
+  //     return;
+  //   }
+  //   console.log(55)
+  //   replyVisible.value = true
+  // } else if (postCondition.value == 1) {
+  //   stateStore.showBtcLogin = true
+  // } else {
+  //   stateStore.loginTipType = "comment";
+  //   stateStore.globalLoginTip = true;
+  // }
 };
 
 async function userReply() {
@@ -66,11 +67,11 @@ async function userReply() {
 
   try{
     isRepling.value = true
-    const commented = true // await newComment(props.tweet.tweetId, text)
-    if (commented) {
-      replyVisible.value = false
-      emits('newComment', props.tweet.tweetId, commented.id, text)
-    }
+    // const commented: any = await newComment(props.tweet.tweetId, text)
+    // if (commented) {
+    //   replyVisible.value = false
+    //   emits('newComment', props.tweet.tweetId, commented.id, text)
+    // }
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -85,10 +86,10 @@ async function userReply() {
           @click.stop="preReply"
           :disabled="isRepling">
     <i-ep-loading v-if="isRepling" class="animate-spin w-5 h-5"/>
-    <i v-else class="w-5 h-5 min-w-5" :class="post.replied ? 'btn-icon-reply-active' : 'btn-icon-reply'"></i>
+    <i v-else class="w-5 h-5 min-w-5" :class="tweet.replied ? 'btn-icon-reply-active' : 'btn-icon-reply'"></i>
     <span class="text-sm font-bold"
-          :class="post.commentCount ? 'text-red-ff' : 'text-grey-bd'">
-        {{ post.commentCount ?? 0 }}</span>
+          :class="tweet.replyCount ? 'text-red-ff' : 'text-grey-bd'">
+        {{ tweet.replyCount ?? 0 }}</span>
   </button>
 
   <!--    reply-->
@@ -105,16 +106,16 @@ async function userReply() {
             <div class="flex-1 flex items-center flex-wrap">
               <div class="flex items-center flex-wrap">
                   <span class="font-bold text-left mr-3 cursor-pointer text-lg text-black">
-                    {{ post.twitterName }}
+                    {{ tweet.twitterName }}
                   </span>
               </div>
               <div class="flex flex-wrap items-center gap-1 text-grey-normal-hover text-sm">
                 <span class="">
-                  @{{ post.twitterUsername }}
+                  @{{ tweet.twitterUsername }}
                 </span>
                 <span> · </span>
                 <span class="whitespace-nowrap">
-                  {{ parseTimestamp(post.postTime) }}
+                  {{ parseTimestamp(tweet.tweetTime) }}
                 </span>
               </div>
             </div>

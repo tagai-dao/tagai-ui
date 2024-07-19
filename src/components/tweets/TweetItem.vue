@@ -30,7 +30,7 @@ const {
   clickContent,
   clickLinkView,
   clickRetweetView
-} = usePost(props)
+} = usePost(props.tweet)
 
 const showPageInfo = computed(() => {
   if (props.tweet.pageInfo && props.tweet.pageInfo.length > 10) {

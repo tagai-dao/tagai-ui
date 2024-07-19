@@ -67,13 +67,13 @@ onMounted(async () => {
       <SpaceItem v-if="tweet.spaceId" class="bg-white rounded-2xl" :tweet="tweet"
                  @click.stop="$router.push(`/space-detail/${tweet.spaceId}`)">
         <template #tweet-action-bar>
-          <PostButtonGroup @click.stop @newLike="newLike" @newComment="newComment" :post="tweet"/>
+          <PostButtonGroup @click.stop @newLike="newLike" @newComment="newComment" :tweet="tweet"/>
         </template>
       </SpaceItem>
       <TweetItem v-else class="bg-white rounded-2xl" :tweet="tweet"
                  @click.stop="$router.push(`/post-detail/${tweet.tweetId}`)">
         <template #tweet-action-bar>
-          <PostButtonGroup @click.stop @newLike="newLike" @newComment="newComment" :post="tweet"/>
+          <PostButtonGroup @click.stop @newLike="newLike" @newComment="newComment" :tweet="tweet"/>
         </template>
       </TweetItem>
     </div>

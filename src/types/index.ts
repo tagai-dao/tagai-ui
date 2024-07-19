@@ -126,6 +126,10 @@ export type Tweet = Space &
     replyCount: number;
     quoteCount: number;
     dayNumber: number;
+    quoted?: number;
+    retweeted?: number;
+    replied?: number;
+    liked?: number;
   };
 
 export type Comment = {

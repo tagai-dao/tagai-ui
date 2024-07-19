@@ -12,7 +12,7 @@ import { useInterval } from "./composables/useTools";
 const stateStore = useStateStore();
 const route = useRoute();
 const router = useRouter();
-const setInter = useInterval();
+const { setInter } = useInterval();
 
 onMounted(async () => {
   await router.isReady();
