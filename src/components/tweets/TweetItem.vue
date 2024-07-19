@@ -57,7 +57,7 @@ const onUserAvatar = () => {
     <div class="bg-gray-fc rounded-2xl py-4 px-3">
       <div class="flex gap-2 items-stretch">
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
-                    :eth-address="tweet.ethAddr"
+                    :eth-addr="tweet.ethAddr"
                     :steem-id="tweet.steemId" :teleported="true">
           <template #avatar-img>
             <img v-if="profileImg"

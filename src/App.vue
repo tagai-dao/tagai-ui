@@ -8,11 +8,13 @@ import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
 import { getBtcPrice } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
+import { useAccount } from "./composables/useAccount";
 
 const stateStore = useStateStore();
 const route = useRoute();
 const router = useRouter();
 const { setInter } = useInterval();
+const { updateVPOP } = useAccount();
 
 onMounted(async () => {
   await router.isReady();
@@ -31,6 +33,7 @@ onMounted(async () => {
     getBtcPrice().then((p: any) => {
       stateStore.btcPrice = parseFloat(p)
     })
+    updateVPOP();
   }, 10000)
 })
 </script>

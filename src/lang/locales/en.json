@@ -77,6 +77,8 @@
     "userCancelAuth": "User canceld",
     "registerOutTime": "Register out of time",
     "hasRegisted": "The account has been registed",
-    "unknownError": "Unknown error"
+    "unknownError": "Unknown error",
+    "cantLikeSelf": "Can't like yourself tweet",
+    "cantRetweetSelf": "Can't retweet your self tweet"
   }
 }

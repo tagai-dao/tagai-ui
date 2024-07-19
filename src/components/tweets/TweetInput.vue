@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import {ref} from "vue";
+import { EmojiPicker } from 'vue3-twemoji-picker-final'
 
 const {
   contentRef,

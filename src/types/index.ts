@@ -140,8 +140,8 @@ export type Comment = {
   supply?: number;
   commentTime?: string;
   twitterId?: string;
-  btcAddress?: string;
-  ethAddress?: string;
+  btcAddr?: string;
+  ethAddr?: string;
   assetId?: string;
   twitterName?: string;
   twitterUsername?: string;

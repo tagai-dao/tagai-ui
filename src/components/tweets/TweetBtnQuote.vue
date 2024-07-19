@@ -7,6 +7,7 @@ import {usePost} from "@/composables/usePost";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import {useTweet} from "@/composables/useTweet";
 import { type Tweet } from "@/types";
+import { EmojiPicker } from 'vue3-twemoji-picker-final'
 
 const props = defineProps<{
     tweet: Tweet;

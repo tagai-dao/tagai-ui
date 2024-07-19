@@ -41,6 +41,9 @@ export const checkEthUsed = async (ethAddr: string) =>
 export const checkEns = async (ethAddr: string) => 
   get(BACKEND_API_URL + '/user/getENS', {ethAddr})
 
+export const getVPOP = async (twitterId: string) => 
+  post(BACKEND_API_URL + '/user/getVPOP', {twitterId})
+
 /************************************ tweets **********************************/
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})

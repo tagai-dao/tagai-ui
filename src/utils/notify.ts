@@ -157,6 +157,12 @@ export const handleServerError = (code: number) => {
     case errCode.SERVER_ERR:
       notify({ message: t('errMessage.serverErr'), type: 'error'})
       break;
+    case errCode.CANT_LIKE_SELF:
+      notify({ message: t('errMessage.cantLikeSelf'), type: 'error'})
+      break;
+    case errCode.CANT_RETWEET_SELF:
+      notify({ message: t('errMessage.cantRetweetSelf'), type: 'error'})
+      break;
     default:
       notify({ message: t("errMessage.unknownError"), type: "error" });
       break;

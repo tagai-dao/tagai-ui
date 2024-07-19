@@ -21,7 +21,7 @@ const {
   replaceEmptyImg,
   gotoTweet,
   clickContent,
-} = usePost(props)
+} = usePost(props.tweet)
 
 const showPageInfo = computed(() => {
   if (props.tweet.pageInfo && props.tweet.pageInfo.length > 10) {
@@ -48,7 +48,7 @@ const onUserAvatar = () => {
     <div class="bg-gray-fc rounded-2xl py-4 px-3">
       <div class="flex gap-2 items-stretch">
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
-                    :btc-address="tweet.btcAddress" :eth-address="tweet.ethAddress" :bitip="tweet.bitip"
+                    :eth-addr="tweet.ethAddr"
                     :steem-id="tweet.steemId" :teleported="true">
           <template #avatar-img>
             <img v-if="profileImg"
@@ -71,7 +71,7 @@ const onUserAvatar = () => {
           </div>
           <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">
             <span>@{{tweet.twitterName}}</span>
-            <span>{{ parseTimestamp(tweet.postTime) }}</span>
+            <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
       </div>
