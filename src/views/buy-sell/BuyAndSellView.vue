@@ -19,6 +19,8 @@ import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { useTweet } from "@/composables/useTweet";
+import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
+import TweetBtnQuote from "@/components/tweets/TweetBtnQuote.vue";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -42,6 +44,8 @@ const account = computed(() => {
 const receiveAmount = ref()
 const receiveBtc = ref()
 
+const maxSlippage = ref(2)
+
 const {
   contentRef,
   showClear,
@@ -49,7 +53,7 @@ const {
   contentInput,
   getBlur,
   onPaste,
-  formatElToTextContent, 
+  formatElToTextContent,
   leftWordsLength
 } = useCreateTweet()
 
@@ -127,7 +131,7 @@ async function confirm() {
     if (!token) return;
     if (tradeType.value === 'buy') {
       if (!payBtc.value) return
-      
+
       const tx = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value);
       if (tx) {
         payBtc.value = undefined
@@ -178,7 +182,7 @@ onMounted(async () => {
     >
       <div class="bg-white py-5 px-4 rounded-2xl flex flex-col gap-3">
         <div
-          class="flex rounded-full overflow-hidden h-9 text-white bg-grey-normal text-h5"
+          class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >
           <button
             class="h-full flex-1"
@@ -235,7 +239,23 @@ onMounted(async () => {
             <span class="text-h3">{{ formatAmount(receiveBtc?.toString() / 1e18) }}</span>
           </div></template
         >
-
+        <div class="flex items-center justify-between">
+          <div class="font-light text-base">{{$t('buyAndSell.setMaxSlippage')}}</div>
+          <div class="w-[100px] flex items-center justify-between border-[1px] border-grey-light-active rounded-lg h-9 px-3">
+            <div class="flex-1 flex items-center gpa-1">
+              <input class="w-8 overflow-hidden text-right text-orange-normal" type="number" v-model="maxSlippage">
+              <span class="text-orange-normal">%</span>
+            </div>
+            <div class="flex flex-col gap-1 ml-4">
+              <button :disabled="maxSlippage>=100" @click="maxSlippage+=1">
+                <img class="w-2" src="~@/assets/icons/icon-input-add.svg" alt="">
+              </button>
+              <button :disabled="maxSlippage<=0" @click="maxSlippage-=1">
+                <img class="w-2 transform rotate-180" src="~@/assets/icons/icon-input-add.svg" alt="">
+              </button>
+            </div>
+          </div>
+        </div>
         <div v-show="isPostTweet" class="border-[1px] border-grey-c9 rounded-xl">
           <div class="flex items-center gap-2 px-3 pt-3">
 
@@ -271,7 +291,19 @@ onMounted(async () => {
         <div class="flex justify-center">
           <el-radio-group v-model="isPostTweet" @change="checkTweet" class="c-radio gap-8">
             <el-radio :value="false">None</el-radio>
-            <el-radio :value="true">tweet & Earn</el-radio>
+            <el-radio :value="true">
+              <div class="flex items-center gap-1.5">
+                <span>tweet & Earn</span>
+                <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
+                  <button @click.stop class="">
+                    <img class="w-3" src="~@/assets/icons/icon-warning-gray.svg" alt="">
+                  </button>
+                  <template #content>
+                    <div class="text-red-ff py-1">需注册社交账号才能发推</div>
+                  </template>
+                </el-tooltip>
+              </div>
+            </el-radio>
           </el-radio-group>
         </div>
         <button

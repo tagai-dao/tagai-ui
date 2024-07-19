@@ -20,7 +20,7 @@ import SpaceItem from "@/components/tweets/SpaceItem.vue";
     </BackHeader>
     <div class="flex-1 overflow-auto px-3 pb-3 flex flex-col gap-2" id="comment-list-scroller">
       <div class="flex items-center gap-2">
-        <div class="w-4 h-4 bg-green-b6 rounded-full"></div>
+        <div class="w-4 h-4 bg-green-normal rounded-full"></div>
         <div class="text-base flex-1">
           #trump • Market cap $50,409.00
         </div>
@@ -92,7 +92,7 @@ import SpaceItem from "@/components/tweets/SpaceItem.vue";
           </div>
         </div>
         <div class="flex justify-center gap-10">
-          <button class="bg-green-b6 h-9 rounded-full px-3 flex items-center justify-center gap-2">
+          <button class="bg-green-normal h-9 rounded-full px-3 flex items-center justify-center gap-2">
             <span class="text-h5">Curator</span>
             <img src="~@/assets/icons/icon-arrow-forward.svg" alt="">
           </button>

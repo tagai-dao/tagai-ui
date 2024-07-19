@@ -56,11 +56,11 @@ const onRefresh = () => {
         <div class="px-3">
           <div v-for="tweet of testTweets" :key="tweet.postId">
             <div class="flex items-center gap-2 py-3">
-              <div class="w-4 h-4 bg-green-b6 rounded-full"></div>
+              <div class="w-4 h-4 bg-green-normal rounded-full"></div>
               <div class="text-base flex-1">
                 #trump • Market cap $50,409.00
               </div>
-              <button class="bg-green-b6 h-8 px-3 min-w-16 rounded-full text-sm">
+              <button class="bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
                 Buy
               </button>
             </div>
