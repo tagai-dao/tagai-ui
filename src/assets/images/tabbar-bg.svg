@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="375px" height="76px" viewBox="0 0 375 76" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>tabbar-bg</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="tabbar-bg" transform="translate(0, -0)" fill="#FEFEFE">
+            <path d="M129.284,0 C137.643,0 145.624,3.48779 151.301,9.62284 L164.982,24.4052 C176.857,37.2356 197.143,37.2356 209.018,24.4052 L222.699,9.62285 C228.376,3.48779 236.357,0 244.716,0 L375,0 L375,76 L0,76 L0,0 L129.284,0 Z" id="路径"></path>
+        </g>
+    </g>
+</svg>
