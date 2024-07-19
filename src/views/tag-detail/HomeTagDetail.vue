@@ -34,9 +34,9 @@ const onTweetType = (type: GlobalModalType) => {
 }
 
 const progressData = ref([
-  {value: 10, background: '#FF3D54', desc: 'Social Distributed'},
-  {value: 70, background: '#FE913F', desc: 'Bongding Curve'},
-  {value: 20, background: '#FFCC00', desc: 'Listed'}
+  {trackWidth: 10, value: 0, background: '#FF3D54', desc: 'Social Distributed'},
+  {trackWidth: 70, value: 0, background: '#FE913F', desc: 'Bongding Curve'},
+  {trackWidth: 20, value: 0, background: '#FFCC00', desc: 'Listed'}
 ])
 
 async function updateProgress() {
@@ -44,9 +44,9 @@ async function updateProgress() {
     if (!ti) return;
     tokenInfo.value = ti
     progressData.value = [
-      {value: (ti.totalClaimedSocialRewards.toString() / 1e18 / 10000), background: '#FF3D54', desc: 'Social Distributed'},
-      {value: (ti.bondingCurveSupply.toString() / 1e18 / 70000), background: '#FE913F', desc: 'Bongding Curve'},
-      {value: 20, background: '#FFCC00', desc: ti.listed ? 'Listed' : 'Pending List'}
+      {...progressData.value[0], value: (ti.totalClaimedSocialRewards.toString() / 1e18 / 10000)},
+      {...progressData.value[1], value: (ti.bondingCurveSupply.toString() / 1e18 / 70000)},
+      {...progressData.value[2], value: 20, desc: ti.listed ? 'Listed' : 'Pending List'}
     ]
   }).catch(e => {
     console.error(2, e)
@@ -63,7 +63,7 @@ onMounted(async () => {
     comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
   }
   setInter(updateProgress, 3000);
-  
+
 })
 </script>
 
@@ -99,9 +99,8 @@ onMounted(async () => {
         </el-popover>
       </div>
       <div class="flex items-center gap-3">
-<!--        <el-progress :percentage="65" :stroke-width="10" :show-text="false"-->
-<!--                     class="c-gradient-progress c-gradient-progress-purple w-full"/>-->
-        <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full">
+        <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
+                    bg-white gap-[2px]">
           <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
                       placement="top-start">
             <template #content>
@@ -110,8 +109,10 @@ onMounted(async () => {
                 <span class="font-semibold text-base">{{data.value}}%</span>
               </div>
             </template>
-            <div class="h-full"
-                 :style="{background: data.background, width:`${data.value}%`}" >
+            <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
+              <div class="h-full"
+                   :style="{background: data.background, width:`${data.value}%`}" >
+              </div>
             </div>
           </el-tooltip>
         </div>
