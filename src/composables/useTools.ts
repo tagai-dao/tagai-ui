@@ -47,7 +47,9 @@ export const useInterval = () => {
   onUnmounted(() => {
     clearInterval(interval.value)
   })
-  return setInter
+  return {
+    setInter
+  }
 }
 
 export const usePageRouter = () => {

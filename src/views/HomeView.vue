@@ -87,6 +87,11 @@ async function getSpaces() {
   }
 }
 
+function gotoDetail(com: Community) {
+  comStore.currentSelectedCommunity = com
+  router.push(`/tag-detail/${com.tick}`)
+}
+
 onActivated(async () => {
   getSpaces()
 })
@@ -126,16 +131,16 @@ onMounted(async () => {
                   :offset="50"
                   @load="loadMore">
           <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
-            <div v-if="comStore.trendingCommunities.length == 0">
+            <div v-if="comStore.trendingCommunities.length == 0" class="flex items-center justify-center">
               no data
             </div>
-            <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="$router.push(`/tag-detail/${community.tick}`)" />
+            <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
           </div>
           <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
-            <div v-if="comStore.newCommunities.length == 0">
+            <div v-if="comStore.newCommunities.length == 0" class="flex items-center justify-center">
             no data
             </div>
-            <TagListItem v-else v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="$router.push(`/tag-detail/${community.tick}`)" />
+            <TagListItem v-else v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
           </div>
         </van-list>
       </van-pull-refresh>

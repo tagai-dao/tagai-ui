@@ -36,6 +36,9 @@
   "buyAndSell": {
 
   }, 
+  "community": {
+    "distributionTip": "The total amount of tokens is distributed through three parts, including 10% for social distribution, 70% for bonding curve sales, and 20% for entering the liquidity pool"
+  },
   "curation": {
     "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet."
   },
