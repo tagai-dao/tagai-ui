@@ -13,6 +13,7 @@ import { bytesToHex, formatPrice } from "@/utils/helper";
 import { createCoin, calculateInitBtc, checkTickUsed } from "@/utils/pump";
 import { handleErrorTip } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
+import {tagBgColors, tagTextColors} from "@/composables/useTags";
 
 const modalStore = useModalStore();
 
@@ -66,6 +67,10 @@ const onAddTags = () => {
   createForm.tags!.push(inputTag.value);
   inputTag.value = "";
 };
+
+const onRemoveTags = (tag: string) => {
+  createForm.tags = createForm.tags?.filter(item => item!==tag)
+}
 
 const uploadSuccess = (res: any, file: any) => {
   createForm.logoUrl = res.url;
@@ -253,30 +258,31 @@ const create = async () => {
           </button>
         </div>
         <div v-if="createForm.tags!.length > 0" class="flex flex-wrap gap-4 mt-1">
-          <span
-            v-for="tag of createForm.tags"
-            :key="tag"
-            class="bg-green-b6 px-2 rounded-md text-green-hover"
-            >#{{ tag }}</span
-          >
+          <button v-for="(tag, index) of createForm.tags" :key="tag"
+                  @click="onRemoveTags(tag)"
+                  :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                  class="px-2 rounded-md">#{{ tag }}</button>
         </div>
       </div>
       <!-- amount -->
       <div class="flex flex-col gap-1">
-        <label for="desc" class="leading-6 text-lg font-medium text-black"
-          >Premint amount:</label
-        >
-        <input
-          class="border-b-[1px] border-grey-e6 leading-6 text-base"
-          v-model="showingInitAmount"
-          type="number"
-          id="initamount"
-          :placeholder="$t('createCommunity.initAmountTip')"
-        />
+        <label for="initamount" class="font-medium text-black text-lg">
+          Choose how many 【COIN】 you want to buy (optional)
+        </label>
+        <div class="flex items-center border-b-[1px] border-grey-e6 gap-2">
+          <input
+              class="flex-1 leading-6 text-base"
+              v-model="showingInitAmount"
+              type="number"
+              id="initamount"
+              :placeholder="$t('createCommunity.initAmountTip')"
+          />
+          <span class="italic text-red-ff">COIN</span>
+        </div>
         <div class="text-red-ff text-sm" v-show="showMaxAmount">
             {{ $t("createCommunity.maxAmountTip") }}
         </div>
-        <div class="text-right">
+        <div class="text-left text-grey-normal">
           {{ $t('createCommunity.initBtc', {amount: showingInitBtc}) }}
         </div>
       </div>

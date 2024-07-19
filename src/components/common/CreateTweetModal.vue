@@ -63,7 +63,7 @@ const onPostTweet = () => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-b6 px-2 h-5 text-sm rounded-md">onchain</button>
+            <button class="bg-green-normal px-2 h-5 text-sm rounded-md">onchain</button>
             <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button>
           </div>
         </div>

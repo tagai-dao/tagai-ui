@@ -18,7 +18,7 @@ import Comments from "@/components/tweets/Comments.vue";
     </BackHeader>
     <div class="flex-1 overflow-auto px-3 pb-3 flex flex-col gap-2" id="comment-list-scroller">
       <div class="flex items-center gap-2">
-        <div class="w-4 h-4 bg-green-b6 rounded-full"></div>
+        <div class="w-4 h-4 bg-green-normal rounded-full"></div>
         <div class="text-base flex-1">
           #trump • Market cap $50,409.00
         </div>

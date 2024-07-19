@@ -29,7 +29,7 @@ const emit = defineEmits(['onClose'])
       </div>
       <div class="px-3 font-medium text-lg text-black mt-4 mb-1">Tag</div>
       <div class="flex flex-wrap gap-2">
-        <button class="h-6 px-3 rounded-md bg-green-b6 text-sm"
+        <button class="h-6 px-3 rounded-md bg-green-normal text-sm"
                 v-for="i of 4" :key="i">
           onChain
         </button>
