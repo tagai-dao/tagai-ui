@@ -3,6 +3,7 @@ import {useCreateTweet} from "@/composables/useCreateTweet";
 import {ref} from "vue";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 
+const props = defineProps(['maxLength', 'tick'])
 const {
   contentRef,
   showClear,
@@ -13,7 +14,7 @@ const {
   onPaste,
   selectEmoji,
   formatElToTextContent
-} = useCreateTweet()
+} = useCreateTweet(props.maxLength)
 
 const tweetLoading = ref(false)
 const onPostTweet = () => {
@@ -56,9 +57,9 @@ const onPostTweet = () => {
             </div>
           </template>
         </el-popover>
-        <div class="font-extralight flex flex-wrap gap-2 mt-2">
-          <button class="bg-green-normal px-2 h-5 text-sm rounded-md">onchain</button>
-          <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button>
+        <div v-if="tick" class="font-extralight flex flex-wrap gap-2 mt-2">
+          <button class="bg-green-normal px-2 h-5 text-sm rounded-md">{{ tick }}</button>
+          <!-- <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button> -->
         </div>
       </div>
     </div>

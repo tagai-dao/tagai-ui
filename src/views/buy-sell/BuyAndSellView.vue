@@ -53,7 +53,7 @@ const {
   onPaste,
   formatElToTextContent,
   leftWordsLength
-} = useCreateTweet()
+} = useCreateTweet(280 - (comStore.currentSelectedCommunity?.tick.length ?? 0) - 2)
 
 const isPostTweet = ref(false)
 

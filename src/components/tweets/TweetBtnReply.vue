@@ -131,7 +131,7 @@ async function userReply() {
           </div>
         </div>
         <div class="border-1 border-gray-400 rounded-md">
-          <TweetInput ref="tweetInput" :max-length="280">
+          <TweetInput ref="tweetInput" :max-length="280" :tick="tweet.tick">
             <template #placeholder>
               Write comment to the tweet here
             </template>
