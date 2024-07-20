@@ -63,7 +63,7 @@ const userQuote = () => {
               {{ tweet.quoteCount ?? 0 }}</span>
   </button>
   <el-dialog v-model="quoteVisible" width="700" align-center title="" destroy-on-close>
-    <div class="bg-color1C px-20px min-h-40vh sm:min-h-300px sm:pt-40px max-h-80vh relative">
+    <div class="bg-color1C px-5 min-h-40vh sm:min-h-[300px] sm:pt-40px max-h-80vh relative">
       <div class="modal-close-line text-center text-center">
         <button class="w-50px h-6px rounded-full bg-colorA6"
                 @click="quoteVisible = false"></button>
@@ -148,11 +148,11 @@ const userQuote = () => {
                 </template>
               </el-popover>
             </div>
-            <button class="border-1 gradient-border shadow-shadow2A px-10px text-white w-120px min-w-120px h-40px
-                           rounded-full flex justify-center items-center gap-x-4px"
+            <button class="h-12 px-3 bg-gradient-primary text-white font-bold rounded-full text-lg
+                           flex items-center justify-center gap-2 disabled:opacity-30"
                     :disabled="isQuoting"
                     @click="userQuote">
-                <span class="text-gradient bg-gradient-primary">
+                <span class="text-white text-h5">
                   {{isDefaultQuote ? $t("curation.tweet") : $t("postView.createNewCuration")}}
                 </span>
               <i-ep-loading v-if="isQuoting" class="animate-spin w-18px h-18px text-white"/>
