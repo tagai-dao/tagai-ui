@@ -8,7 +8,7 @@ import { useCommunityStore } from "@/stores/community";
 import { useCurationStore } from '@/stores/curation'
 import { handleErrorTip } from '@/utils/notify'
 import { useRouter } from "vue-router";
-import { getTokenCap } from '@/utils/pump'
+import { getTokenCap, getTokenInfo } from '@/utils/pump'
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -30,13 +30,12 @@ async function refresh() {
     if (listType.value == ListType.New) {
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.newCommunities = await getTokenCap(communities)
+        comStore.newCommunities = await getTokenInfo(communities)
       }
     }else if(listType.value == ListType.Trending) {
       let communities = await getCommunitiesByTrending() as Array<Community>;
       if (communities && communities.length > 0) {
-        getTokenCap(communities);
-        comStore.trendingCommunities = await getTokenCap(communities)
+        comStore.trendingCommunities = await getTokenInfo(communities)
       }
     }
   } catch (e) {
@@ -56,7 +55,7 @@ async function loadMore() {
       }
       let communities = await getCommunitiesByNew((comStore.newCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.newCommunities = comStore.newCommunities.concat(await getTokenCap(communities))
+        comStore.newCommunities = comStore.newCommunities.concat(await getTokenInfo(communities))
       }
     }else if(listType.value == ListType.Trending) {
       if (!comStore.trendingCommunities || comStore.trendingCommunities.length == 0) {
@@ -64,7 +63,7 @@ async function loadMore() {
       }
       let communities = await getCommunitiesByTrending((comStore.trendingCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenCap(communities))
+        comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
       }
     }
   } catch (e) {

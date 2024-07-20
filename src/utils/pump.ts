@@ -7,6 +7,7 @@ import { PumpContract, Ether } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
+import { compile } from "vue";
 
 export const checkTickUsed = async (tick: string) => {
     const pump = await getContract('Pump')
@@ -70,38 +71,70 @@ export const calculateInitBtc = (amount: bigint) => {
     return price * 10000n / (10000n - 100n - 100n);
 }
 
-export const getTokenInfo = async (token: string) => {
-    if (!ethers.isAddress(token)) return;
-    let calls = [
-        {
-            target: token,
-            call: [
-                'bondingCurveSupply()(uint256)'
-            ],
-            returns: [
-                ['bondingCurveSupply']
-            ]
-        },{
-            target: token,
-            call: [
-                'listed()(bool)'
-            ],
-            returns: [
-                ['listed']
-            ]
-        },
-        {
-            target: token,
-            call: [
-                'totalClaimedSocialRewards()(uint256)'
-            ],
-            returns: [
-                ['totalClaimedSocialRewards']
-            ]
-        }
-    ]
+export const getTokenInfo = async (communities: Community[]) => {
+    let calls: any = []
+    for (let community of communities) {
+        const token = community.token;
+        if (!ethers.isAddress(token)) continue;
+        calls = calls.concat([
+            {
+                target: token,
+                call: [
+                    'bondingCurveSupply()(uint256)'
+                ],
+                returns: [
+                    [token + '-bondingCurveSupply', (val: any) => BigInt(val)]
+                ]
+            },{
+                target: token,
+                call: [
+                    'listed()(bool)'
+                ],
+                returns: [
+                    [token + '-listed']
+                ]
+            },
+            {
+                target: token,
+                call: [
+                    'totalClaimedSocialRewards()(uint256)'
+                ],
+                returns: [
+                    [token + '-totalClaimedSocialRewards', (val: any) => BigInt(val)]
+                ]
+            },
+            {
+                target: token,
+                call: [
+                    'getBuyPrice(uint256)(uint256)',
+                    '1000000000000000000'
+                ],
+                returns: [
+                    [token + '-price', (val: any) => BigInt(val)]
+                ]
+            }
+        ])
+    }
     const res = await aggregate(calls, ChainConfig.multiConfig)
-    return res.results.transformed
+    let info = res.results.transformed
+    let result: any = {}
+    for (let [key, value] of Object.entries(info)) {
+        const [token, type] = key.split('-')
+        if (!result[token]) {
+            result[token] = {}
+        }
+        result[token][type] = value;
+    }
+    for( let community of communities) {
+        const tokenInfo = result[community.token]
+        community.listed = tokenInfo.listed;
+        community.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
+        community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
+        community.price = tokenInfo.price.toString() / 1e18;
+        community.marketCap = community.price * 10000000;
+    }
+    
+    return communities;
 }
 
 export const getBuyAmountWithBTCAfterFee = async (token: string | undefined, amount: bigint) => {
@@ -116,6 +149,10 @@ export const getReceivedAmountSellBTCAfterFee = async (token: string | undefined
     const tc = await getContract('Token', token, true);
     const receive = await tc.getSellPriceAfterFee(amount);
     return receive
+}
+
+export const calculateCapticalLocal = async (supply: number) => {
+    return supply * supply * 1000000 / 320e18
 }
 
 export const getTokenCap = async (communities: Community[]) => {

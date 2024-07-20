@@ -160,11 +160,11 @@ async function confirm() {
 onMounted(async () => {
   if (!comStore.currentSelectedCommunity?.tick) {
     const tick = route.params.id as string
-    const community = (await getCommunityDetail(tick)) as Community
+    const community = (await getCommunityDetail(tick)) as Community  
+    comStore.currentSelectedCommunity = (await getTokenInfo([community]))[0]
     comStore.currentSelectedCommunity = community
   }
   sellsman.value = route.params.sellsman
-  tokenInfo.value = await getTokenInfo(comStore.currentSelectedCommunity.token)
 })
 </script>
 
@@ -310,9 +310,9 @@ onMounted(async () => {
         <button
           class="w-full h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="tokenInfo?.listed || trading"
+          :disabled="comStore.currentSelectedCommunity?.listed || trading"
         >
-          <span>{{ tokenInfo?.listed ? "Token lised" : "Confirm" }}</span>
+          <span>{{ comStore.currentSelectedCommunity?.listed ? "Token lised" : "Confirm" }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
       </div>

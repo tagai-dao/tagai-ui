@@ -160,7 +160,11 @@ export type Community = {
   telegram?: string | undefined | null;
   official?: string | undefined | null;
   createAt?: string | number | null | undefined;
-  marketCap?: string | number
+  marketCap?: number;
+  listed?: boolean;
+  bondingCurveSupply?: number;
+  totalClaimedSocialRewards?: number;
+  price?: number
 };
 
 export type CreateCommunity = {

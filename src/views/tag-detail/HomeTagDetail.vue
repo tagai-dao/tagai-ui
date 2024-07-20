@@ -40,13 +40,13 @@ const progressData = ref([
 ])
 
 async function updateProgress() {
-  getTokenInfo(comStore.currentSelectedCommunity!.token).then((ti: any) => {
-    if (!ti) return;
-    tokenInfo.value = ti
+  getTokenInfo([comStore.currentSelectedCommunity!]).then((coms: any) => {
+    const com = coms[0]
+    comStore.currentSelectedCommunity = coms[0]
     progressData.value = [
-      {...progressData.value[0], value: (ti.totalClaimedSocialRewards.toString() / 1e18 / 10000)},
-      {...progressData.value[1], value: (ti.bondingCurveSupply.toString() / 1e18 / 70000)},
-      {...progressData.value[2], value: 100, desc: ti.listed ? 'Listed' : 'Pending List'}
+      {...progressData.value[0], value: (com.totalClaimedSocialRewards / 10000)},
+      {...progressData.value[1], value: (com.bondingCurveSupply / 70000)},
+      {...progressData.value[2], value: 100, desc: com.listed ? 'Listed' : 'Pending List'}
     ]
   }).catch(e => {
     console.error(2, e)
@@ -62,8 +62,8 @@ onMounted(async () => {
     }
     comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
   }
+  updateProgress();
   setInter(updateProgress, 3000);
-
 })
 </script>
 
