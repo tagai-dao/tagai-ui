@@ -4,7 +4,6 @@ import {checkAccessToken} from "@/apis/api";
 import {handleErrorTip, notify} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
-import {useCreateTweet} from "@/composables/useCreateTweet";
 import {OperateType, useTweet} from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
@@ -16,17 +15,12 @@ const props = defineProps<{
 const emits = defineEmits(['newComment'])
 const { content, imgurls, profileImg } = usePost(props.tweet);
 
+const tweetInput = ref()
+
 const stateStore = useStateStore()
 const isRepling = ref(false)
 const replyVisible = ref(false)
 const {formatEmojiText, preCheckCuration, userReply} = useTweet()
-
-const {
-  contentRef,
-  tweetLength,
-  formatElToTextContent,
-  leftWordsLength
-} = useCreateTweet(280)
 
 const preReply = async () => {
   try{
@@ -43,8 +37,9 @@ const preReply = async () => {
 };
 
 async function reply() {
-  const text = formatElToTextContent(contentRef.value)
-  if (leftWordsLength.value < 0 || tweetLength.value == 0) {
+  const text = tweetInput.value.formatElToTextContent(tweetInput.value.contentRef)
+
+  if (tweetInput.value.leftWordsLength.value < 0 || tweetInput.value.tweetLength.value == 0) {
     return;
   }
   try{

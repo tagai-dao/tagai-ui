@@ -21,6 +21,8 @@ const onPostTweet = () => {
   tweetLoading.value = true
   const tweetContent = formatElToTextContent(contentRef.value)
 }
+
+defineExpose({contentEl, contentRef, leftWordsLength, formatElToTextContent})
 </script>
 
 <template>
