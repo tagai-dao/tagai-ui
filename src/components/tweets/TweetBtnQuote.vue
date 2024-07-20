@@ -5,9 +5,10 @@ import {parseTimestamp} from "@/utils/helper";
 import {useAccountStore} from "@/stores/web3";
 import {usePost} from "@/composables/usePost";
 import {useCreateTweet} from "@/composables/useCreateTweet";
-import {useTweet} from "@/composables/useTweet";
+import {OperateType, useTweet} from "@/composables/useTweet";
 import { type Tweet } from "@/types";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
+import { handleErrorTip } from "@/utils/notify";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -20,7 +21,7 @@ const quoteVisible = ref(false);
 const isDefaultQuote = ref(false);
 
 const {profileImg, isIgnoreAccount, steemUrl, imgurls, content} = usePost(props.tweet)
-const {formatEmojiText} = useTweet()
+const {formatEmojiText, preCheckCuration} = useTweet()
 const {
   contentEl,
   contentRef,
@@ -41,7 +42,15 @@ const headerProfileImg = () => {
   }
 }
 
-const preQuote = () => {
+const preQuote = async () => {
+  try{
+    isQuoting.value = true
+    await preCheckCuration(OperateType.QUOTE, props.tweet)
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    isQuoting.value = false
+  }
   quoteVisible.value = true
 };
 
