@@ -19,10 +19,9 @@ const stateStore = useStateStore()
 const accStore = useAccountStore();
 const isQuoting = ref(false);
 const quoteVisible = ref(false);
-const isDefaultQuote = ref(false);
 
 const {profileImg, isIgnoreAccount, steemUrl, imgurls, content} = usePost(props.tweet)
-const {formatEmojiText, preCheckCuration} = useTweet()
+const {formatEmojiText, preCheckCuration, userQuote} = useTweet()
 const {
   contentEl,
   contentRef,
@@ -30,7 +29,10 @@ const {
   onPaste,
   selectEmoji,
   contentInput,
-  showClear
+  showClear,
+  leftWordsLength,
+  tweetLength,
+  formatElToTextContent
 } = useCreateTweet()
 
 const headerProfileImg = () => {
@@ -56,8 +58,21 @@ const preQuote = async () => {
   quoteVisible.value = true
 };
 
-const userQuote = () => {
-
+const quote = async () => {
+  try{
+    if (leftWordsLength.value < 0 || tweetLength.value == 0) {
+      return;
+    }
+    const text = formatElToTextContent(contentRef.value);
+    isQuoting.value = true;
+    await userQuote(props.tweet, text, props.tweet.tick!)
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    isQuoting.value = false
+    props.tweet.quoteCount += 1;
+    props.tweet.quoted = 1;
+  }
 }
 
 </script>
@@ -81,7 +96,7 @@ const userQuote = () => {
       <div class="flex items-center gap-2">
         <img class="w-8 h-8 rounded-full"
              :src="headerProfileImg()" alt=""/>
-        <div class="text-h3 text-black">Username</div>
+        <div class="text-h3 text-black">{{ useAccountStore().getAccountInfo.twitterName }}</div>
       </div>
       <div class="bg-grey-f0/90 rounded-2xl px-4 pb-4">
         <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90">
@@ -94,7 +109,10 @@ const userQuote = () => {
                @paste="onPaste"
                v-html="contentEl"></div>
           <div v-if="!showClear" class="absolute top-3 left-0 text-14px leading-24px z-0 opacity-30">
-            Please input
+            {{ $t('curation.tweetWithTickTip', {tick: '$' + tweet.tick}) }}
+          </div>
+          <div class="text-right text-sm">
+            {{ leftWordsLength }}
           </div>
         </div>
         <div class="my-3 bg-white border-[1px] border-grey-light rounded-xl p-3">
@@ -147,9 +165,9 @@ const userQuote = () => {
           <button class="h-10 px-5 bg-gradient-primary text-white font-bold rounded-full text-lg
                          flex items-center justify-center gap-2 disabled:opacity-30"
                   :disabled="isQuoting"
-                  @click="userQuote">
+                  @click="quote">
                 <span class="text-white text-h5">
-                  {{isDefaultQuote ? $t("curation.tweet") : $t("postView.createNewCuration")}}
+                  {{ $t("curation.tweet") }}
                 </span>
             <i-ep-loading v-if="isQuoting" class="animate-spin w-18px h-18px text-white"/>
           </button>
