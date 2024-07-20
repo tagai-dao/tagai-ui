@@ -57,9 +57,9 @@ export const useTweet = () => {
     if (!accessToken) {
       throw errCode.InvalidAccessToken;
     }
-    // if (t.twitterId === account.twitterId) {
-    //   throw errCode.CANT_LIKE_SELF
-    // }
+    if (t.twitterId === account.twitterId) {
+      throw errCode.CANT_LIKE_SELF
+    }
     // check vp op
     
     if (op.value < OP_CONSUME.RETWEET){
