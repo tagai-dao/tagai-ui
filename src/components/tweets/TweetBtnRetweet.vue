@@ -1,31 +1,47 @@
 <script setup lang="ts">
 
 import {useStateStore} from "@/stores/common";
-import {useTweetTip} from "@/composables/useTweetTips";
 import {ref} from "vue";
+import { type Tweet } from "@/types";
+import { OperateType, useTweet } from "@/composables/useTweet";
+import { handleErrorTip } from "@/utils/notify";
 
-const props = defineProps(['post'])
+const props = defineProps<{
+    tweet: Tweet;
+  }>()
 const stateStore = useStateStore()
-const { postCondition } = useTweetTip("mint");
 
 const isRetweeting = ref(false);
-const userRetweet = async () => {
-  if (postCondition.value === 0) {
-  } else {
-    stateStore.loginTipType = "comment";
-    stateStore.globalLoginTip = true;
+const { preCheckCuration, userRetweet } = useTweet()
+
+async function retweet() {
+  try{
+    isRetweeting.value = true
+    if (!await preCheckCuration(OperateType.RETWEET, props.tweet)) {
+      return;
+    }
+    const res = await userRetweet(props.tweet, props.tweet.tick!)
+
+    
+    props.tweet.retweetCount += 1;
+    props.tweet.retweeted = 1;
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    isRetweeting.value = false
   }
-};
+}
 </script>
 
 <template>
   <button class="flex justify-center items-center gap-2"
-          @click.stop="userRetweet"
-          :disabled="isRetweeting || post.retweeted">
+          @click.stop="retweet">
     <i-ep-loading v-if="isRetweeting" class="animate-spin w-5 h-5 "/>
+    <i v-else class="w-5 h-5 min-w-5"
+       :class="(tweet.retweeted ?? 0) > 0 ? 'btn-icon-retweet-active' : 'btn-icon-retweet'"></i>
     <span class="text-sm font-bold"
-          :class="post.retweeted ? 'text-red-ff' : 'text-grey-bd'">
-      {{ $t("postView.retweet") }} {{ post.retweetCount ?? 0 }}</span>
+          :class="tweet.retweeted ? 'text-red-ff' : 'text-grey-bd'">
+     {{ tweet.retweetCount ?? 0 }}</span>
   </button>
 </template>
 

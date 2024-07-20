@@ -18,9 +18,7 @@ import { useModalStore } from "@/stores/common";
 import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
-import { useTweet } from "@/composables/useTweet";
-import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
-import TweetBtnQuote from "@/components/tweets/TweetBtnQuote.vue";
+import { OperateType, useTweet } from "@/composables/useTweet";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -31,7 +29,7 @@ const tokenInfo = ref()
 const trading = ref(false)
 const sellsman = ref()
 const needChoseWallet = ref(false)
-const { userTweet } = useTweet();
+const { preCheckCuration, userTweet } = useTweet();
 
 const payBtc = ref()
 const sellAmount = ref()
@@ -44,7 +42,7 @@ const account = computed(() => {
 const receiveAmount = ref()
 const receiveBtc = ref()
 
-const maxSlippage = ref(2)
+const maxSlippage = ref(5)
 
 const {
   contentRef,
@@ -55,7 +53,7 @@ const {
   onPaste,
   formatElToTextContent,
   leftWordsLength
-} = useCreateTweet()
+} = useCreateTweet(280 - (comStore.currentSelectedCommunity?.tick.length ?? 0) - 2)
 
 const isPostTweet = ref(false)
 
@@ -106,10 +104,10 @@ async function checkTweet() {
 
 async function confirm() {
   // checkout login
-  if (!accStore.getAccountInfo?.twitterId) {
-    useModalStore().setModalVisible(true, GlobalModalType.Login)
-    return;
-  }
+  // if (!accStore.getAccountInfo?.twitterId) {
+  //   useModalStore().setModalVisible(true, GlobalModalType.Login)
+  //   return;
+  // }
   // check wallet connect
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     needChoseWallet.value = true
@@ -121,6 +119,9 @@ async function confirm() {
       return;
     }
     trading.value = true
+    if (!(await preCheckCuration(OperateType.TWEET))) {
+      return;
+    }
     let content = formatElToTextContent(contentRef.value)
     userTweet(content, comStore.currentSelectedCommunity!.tick).catch(handleErrorTip)
   }
@@ -132,7 +133,7 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payBtc.value) return
 
-      const tx = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value);
+      const tx = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value, Math.ceil(maxSlippage.value * 100));
       if (tx) {
         payBtc.value = undefined
         receiveAmount.value = undefined
@@ -141,7 +142,7 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      const tx = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value)
+      const tx = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value, Math.ceil(maxSlippage.value * 100))
       if (tx) {
         sellAmount.value = undefined
         receiveBtc.value = undefined
@@ -243,11 +244,11 @@ onMounted(async () => {
           <div class="font-light text-base">{{$t('buyAndSell.setMaxSlippage')}}</div>
           <div class="w-[100px] flex items-center justify-between border-[1px] border-grey-light-active rounded-lg h-9 px-3">
             <div class="flex-1 flex items-center gpa-1">
-              <input class="w-8 overflow-hidden text-right text-orange-normal" type="number" v-model="maxSlippage">
+              <input class="w-12 overflow-hidden text-right text-orange-normal" type="number" v-model="maxSlippage">
               <span class="text-orange-normal">%</span>
             </div>
             <div class="flex flex-col gap-1 ml-4">
-              <button :disabled="maxSlippage>=100" @click="maxSlippage+=1">
+              <button @click="maxSlippage+=1">
                 <img class="w-2" src="~@/assets/icons/icon-input-add.svg" alt="">
               </button>
               <button :disabled="maxSlippage<=0" @click="maxSlippage-=1">
@@ -299,7 +300,7 @@ onMounted(async () => {
                     <img class="w-3" src="~@/assets/icons/icon-warning-gray.svg" alt="">
                   </button>
                   <template #content>
-                    <div class="text-red-ff py-1">需注册社交账号才能发推</div>
+                    <div class="text-red-ff py-1">{{  $t('buyAndSell.buyAndSell') }}</div>
                   </template>
                 </el-tooltip>
               </div>

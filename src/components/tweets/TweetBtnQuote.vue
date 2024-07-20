@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import {useStateStore} from "@/stores/common";
-import {useTweetTip} from "@/composables/useTweetTips";
 import {ref} from "vue";
 import {parseTimestamp} from "@/utils/helper";
 import {useAccountStore} from "@/stores/web3";
 import {usePost} from "@/composables/usePost";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import {useTweet} from "@/composables/useTweet";
+import { type Tweet } from "@/types";
+import { EmojiPicker } from 'vue3-twemoji-picker-final'
 
-const props = defineProps(['post'])
+const props = defineProps<{
+    tweet: Tweet;
+  }>()
 const emits = defineEmits(['newLike'])
 const stateStore = useStateStore()
 const accStore = useAccountStore();
-const { postCondition } = useTweetTip("mint");
 const isQuoting = ref(false);
 const quoteVisible = ref(false);
 const isDefaultQuote = ref(false);
 
-const {profileImg, isIgnoreAccount, steemUrl, imgurls, content} = usePost(props)
+const {profileImg, isIgnoreAccount, steemUrl, imgurls, content} = usePost(props.tweet)
 const {formatEmojiText} = useTweet()
 const {
   contentEl,
@@ -29,23 +31,18 @@ const {
 } = useCreateTweet()
 
 const headerProfileImg = () => {
-  console.log(666, accStore)
-  if (!accStore.twitter) return null;
-  if (accStore.twitter?.profile) {
-    return accStore.twitter?.profile?.replace("normal", "200x200");
+  if (!accStore.getAccountInfo) return '';
+  if (accStore.getAccountInfo?.profile) {
+    return accStore.getAccountInfo?.profile?.replace("normal", "200x200");
   } else {
     return (
-        "https://profile-images.heywallet.com/" + accStore.twitter?.twitterId
+        "https://profile-images.heywallet.com/" + accStore.getAccountInfo?.twitterId
     );
   }
 }
 
 const preQuote = () => {
-  if (postCondition.value === 0) {
-  } else {
-    stateStore.loginTipType = "comment";
-    stateStore.globalLoginTip = true;
-  }
+  
 };
 
 const userQuote = () => {
@@ -59,9 +56,11 @@ const userQuote = () => {
           @click.stop="preQuote"
           :disabled="isQuoting">
     <i-ep-loading v-if="isQuoting" class="animate-spin w-5 h-5"/>
+    <i v-else class="w-5 h-5 min-w-5"
+       :class="tweet.quoted ? 'btn-icon-quote-active' : 'btn-icon-quote'"></i>
     <span class="text-sm font-bold"
-          :class="post.quoted ? 'text-red-ff' : 'text-grey-bd'">
-              {{ $t("postView.quote") }} {{ post.quoteCount ?? 0 }}</span>
+          :class="tweet.quoted ? 'text-red-ff' : 'text-grey-bd'">
+              {{ tweet.quoteCount ?? 0 }}</span>
   </button>
   <el-dialog v-model="quoteVisible" width="700" align-center title="" destroy-on-close>
     <div class="bg-color1C px-20px min-h-40vh sm:min-h-300px sm:pt-40px max-h-80vh relative">
@@ -92,16 +91,16 @@ const userQuote = () => {
                    :src="profileImg" alt=""/>
               <div class="flex items-center flex-wrap">
                   <span class="c-text-black text-left mr-3 cursor-pointer text-14px leading-18px">
-                    {{ post.authorName }}
+                    {{ tweet.twitterName }}
                   </span>
               </div>
               <div class="flex items-center id-time">
                   <span class="text-sm leading-18px text-grey-bd">
-                    @{{ post.authorUsername }}
+                    @{{ tweet.twitterUsername }}
                   </span>
                 <span class="mx-4px text-grey-bd"> · </span>
                 <span class="whitespace-nowrap">
-                  {{ parseTimestamp(post.postTime) }}
+                  {{ parseTimestamp(tweet.tweetTime) }}
                 </span>
               </div>
             </div>

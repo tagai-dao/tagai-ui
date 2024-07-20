@@ -35,21 +35,30 @@ export const bondEth = async (ethAddr: string, twitterId: string, signature: str
   post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
 
 /************************************ user api **********************************/
+export const getUserProfile = (twitterId: string) =>
+  get(BACKEND_API_URL + '/user/getUserProfile', {twitterId})
+
 export const checkEthUsed = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/checkEthUsed', { ethAddr })
 
 export const checkEns = async (ethAddr: string) => 
   get(BACKEND_API_URL + '/user/getENS', {ethAddr})
 
+export const getVPOP = async (twitterId: string) => 
+  post(BACKEND_API_URL + '/user/getVPOP', {twitterId})
+
 /************************************ tweets **********************************/
-export const getCommunityNewTweets = async (tick: string, pages?: number) =>
-  get(BACKEND_API_URL + '/curation/communityTweets', {tick, pages})
+export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
+  get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})
 
 export const tweet = async (twitterId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/tweet', {twitterId, text, tick})
 
 export const newLike = async (twitterId: string, tweetId: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/like', {twitterId, tweetId, tick})
+
+export const newRetweet = async (twitterId: string, tweetId: string, tick: string) =>
+  post(BACKEND_API_URL + '/curation/retweet', {twitterId, tweetId, tick})
 
 /************************************ community **********************************/
 export const createCommunity = async (params: CreateCommunity) => 

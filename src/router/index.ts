@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useAccountStore } from '@/stores/web3'
+import { useModalStore } from '@/stores/common'
+import { GlobalModalType } from '@/types'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,7 +38,7 @@ const router = createRouter({
       path: '/profile/:user',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),
-      meta: {tabBar: true, topBar: true}
+      meta: {tabBar: true, topBar: true, gotoHome: true}
     },
     {
       path: '/notification',
@@ -48,6 +51,18 @@ const router = createRouter({
       component: () => import('@/views/LoginCallBack.vue')
     }
   ]
+})
+
+router.beforeEach(async (to, from, next) => {
+  const account = useAccountStore().getAccountInfo
+  if (to.meta.gotoHome && !account?.twitterId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Login)
+    next({
+      path: from.fullPath
+    })
+    return
+  }
+  next();
 })
 
 export default router

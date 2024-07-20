@@ -8,19 +8,15 @@ const props = withDefaults(defineProps<{
     profileImg: string | null,
     name: string | null,
     username: string | null,
-    bitip: string | number | null,
     steemId: string | null,
-    btcAddress: string,
-    ethAddress: string | null,
+    ethAddr: string | null,
     teleported: boolean
 }>(), {
     profileImg: '',
     name: '',
     username: '',
-    bitip: '',
     steemId: '',
-    btcAddress: '',
-    ethAddress: '',
+    ethAddr: '',
     teleported: false
 })
 
@@ -65,16 +61,8 @@ function replaceEmptyImg(e: any) {
         </div>
         <div class="pl-10 mt-2 text-grey-normal">
           <div class="flex gap-x-2 whitespace-nowrap" @click="onCopy(btcAddress)">
-            <span>BTC Address</span>
-            <span class="text-gradient bg-gradient-primary">{{ formatAddress(btcAddress) }}</span>
-          </div>
-          <div class="flex gap-x-2 whitespace-nowrap" @click="onCopy(ethAddress ?? '')">
             <span>ETH Address</span>
-            <span class="text-gradient bg-gradient-primary">{{ formatAddress(ethAddress ?? '') }}</span>
-          </div>
-          <div class="whitespace-nowrap flex gap-x-2">
-            <span>BIT IP</span>
-            <span class="text-gradient bg-gradient-primary"> {{ bitip }}.bitip</span>
+            <span class="text-gradient bg-gradient-primary">{{ formatAddress(ethAddr ?? '') }}</span>
           </div>
         </div>
 

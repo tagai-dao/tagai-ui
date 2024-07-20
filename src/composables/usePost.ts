@@ -2,7 +2,7 @@ import { ref, computed, onMounted } from "vue";
 import { IgnoreAuthor } from "@/config";
 import type {Tweet} from "@/types";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
-export const usePost = (props: {tweet: Tweet}) => {
+export const usePost = (tweet: Tweet) => {
   const urlReg =
     /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_#@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/g;
   const reg =
@@ -12,23 +12,23 @@ export const usePost = (props: {tweet: Tweet}) => {
   const blogRef = ref()
 
   const profileImg = computed(() => {
-    if (!props.tweet.profile) return null;
-    if (props.tweet.profile) {
-      return props.tweet.profile?.replace("normal", "200x200");
+    if (!tweet.profile) return '';
+    if (tweet.profile) {
+      return tweet.profile?.replace("normal", "200x200");
     } else {
       return (
-        "https://profile-images.heywallet.com/" + props.tweet.twitterId
+        "https://profile-images.heywallet.com/" + tweet.twitterId
       );
     }
   });
 
   const steemUrl = computed(() => {
-    return `https://steemit.com/wormhole3/@${props.tweet.steemId}/${props.tweet.tweetId}`;
+    return `https://steemit.com/wormhole3/@${tweet.steemId}/${tweet.tweetId}`;
   });
 
   const content = computed(() => {
     let content = "";
-    content = props.tweet.content??'';
+    content = tweet.content??'';
     content = content.replace(reg, "");
     for (let url of urls.value) {
       content = content.replace(
@@ -40,7 +40,7 @@ export const usePost = (props: {tweet: Tweet}) => {
   });
 
   const isIgnoreAccount = computed(() => {
-    return IgnoreAuthor.indexOf(props.tweet?.twitterId??'') > 0;
+    return IgnoreAuthor.indexOf(tweet?.twitterId??'') > 0;
   });
 
   const replaceEmptyImg = (e: any) => {
@@ -49,7 +49,7 @@ export const usePost = (props: {tweet: Tweet}) => {
 
   const gotoTweet = (e: any) => {
     e.stopPropagation();
-    window.open(`https://twitter.com/${props.tweet.twitterUsername}/status/${props.tweet.tweetId}`)
+    window.open(`https://twitter.com/${tweet.twitterUsername}/status/${tweet.tweetId}`)
   }
 
   const clickContent = (e: any) => {
@@ -62,7 +62,7 @@ export const usePost = (props: {tweet: Tweet}) => {
 
   const clickLinkView = () => {
     try {
-      const info = JSON.parse(props.tweet?.pageInfo??'{}')
+      const info = JSON.parse(tweet?.pageInfo??'{}')
       if(!info.url) return
       window.open(info.url, '__blank')
     } catch (e) {
@@ -71,7 +71,7 @@ export const usePost = (props: {tweet: Tweet}) => {
 
   const clickRetweetView = () => {
     try {
-      const info = JSON.parse(props.tweet?.retweetInfo??'{}');
+      const info = JSON.parse(tweet?.retweetInfo??'{}');
       if(!info.id) return
       window.open(`https://twitter.com/${info.author.username}/status/${info.id}`)
     } catch (e) {
@@ -80,12 +80,12 @@ export const usePost = (props: {tweet: Tweet}) => {
   }
 
   onMounted(() => {
-    if (!props.tweet || !props.tweet.content) return;
-    const urlsTemp = props.tweet.content?.replace(" ", "")
+    if (!tweet || !tweet.content) return;
+    const urlsTemp = tweet.content?.replace(" ", "")
       .replace("\r", "")
       .replace("\t", "")
       .match(urlReg) || [];
-    imgurls.value = props.tweet.content?.replace(" ", "")
+    imgurls.value = tweet.content?.replace(" ", "")
       .replace("\r", "")
       .replace("\t", "")
       .match(reg) || [];
