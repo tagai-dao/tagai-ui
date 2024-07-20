@@ -51,30 +51,30 @@ function replaceEmptyImg(e: any) {
                 :show-after="500"
                 :persistent="true"
                 :show-arrow="false">
-      <div class="border-1 border-colorA6/30 bg-glass p-20px rounded-14px min-w-240px w-max">
-        <div class="flex items-center gap-x-6px">
-          <img class="w-38px h-38px object-cover rounded-full border-1 border-colorA6/10"
+      <div class="border-1 border-grey-light-active bg-grey-light p-5 rounded-2xl min-w-[240px] w-max">
+        <div class="flex items-center gap-x-1">
+          <img class="w-9 h-9 object-cover rounded-full"
                @error="replaceEmptyImg"
                :src="profile" alt="">
           <div class="flex-1 flex flex-col gap-y-4px">
             <div class="flex items-end whitespace-nowrap">
-              <span class="font-700 text-white leading-16px text-14px">{{name}}</span>
-              <span class="text-12px italic leading-16px">@{{username}}</span>
+              <span class="font-semibold text-black text-lg">{{name}}</span>
+              <span class="text-sm italic leading-[16px]">@{{username}}</span>
             </div>
           </div>
         </div>
-        <div class="pl-40px mt-8px text-colorA6">
-          <div class="flex gap-x-10px whitespace-nowrap" @click="onCopy(btcAddress)">
+        <div class="pl-10 mt-2 text-grey-normal">
+          <div class="flex gap-x-2 whitespace-nowrap" @click="onCopy(btcAddress)">
             <span>BTC Address</span>
-            <span class="text-gradient-primary">{{ formatAddress(btcAddress) }}</span>
+            <span class="text-gradient bg-gradient-primary">{{ formatAddress(btcAddress) }}</span>
           </div>
-          <div class="flex gap-x-10px whitespace-nowrap" @click="onCopy(ethAddress ?? '')">
+          <div class="flex gap-x-2 whitespace-nowrap" @click="onCopy(ethAddress ?? '')">
             <span>ETH Address</span>
-            <span class="text-gradient-primary">{{ formatAddress(ethAddress ?? '') }}</span>
+            <span class="text-gradient bg-gradient-primary">{{ formatAddress(ethAddress ?? '') }}</span>
           </div>
-          <div class="whitespace-nowrap flex gap-x-10px">
+          <div class="whitespace-nowrap flex gap-x-2">
             <span>BIT IP</span>
-            <span class="text-gradient-primary"> {{ bitip }}.bitip</span>
+            <span class="text-gradient bg-gradient-primary"> {{ bitip }}.bitip</span>
           </div>
         </div>
 
