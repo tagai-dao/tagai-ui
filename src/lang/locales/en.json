@@ -45,6 +45,9 @@
   "curation": {
     "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet."
   },
+  "postView": {
+    "createNewCuration": "Create"
+  },
   "errMessage": {
     "idUsed": "Identify has been used",
     "btcAuthFail": "BTC auth fail",
