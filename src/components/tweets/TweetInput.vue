@@ -22,13 +22,13 @@ const onPostTweet = () => {
   const tweetContent = formatElToTextContent(contentRef.value)
 }
 
-defineExpose({contentRef, formatElToTextContent, leftWordsLength})
+defineExpose({contentEl, contentRef, leftWordsLength, formatElToTextContent})
 </script>
 
 <template>
   <div>
     <div class="flex justify-between items-center px-2">
-      <div>Type your content here</div>
+      <div></div>
       <div :class="leftWordsLength < 0 ? 'text-red' : ''">{{ leftWordsLength }}</div>
     </div>
     <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
@@ -41,9 +41,7 @@ defineExpose({contentRef, formatElToTextContent, leftWordsLength})
            @paste="onPaste"
            v-html="contentEl"></div>
       <div v-if="!showClear" class="absolute top-3 left-3 text-14px leading-24px z-0 opacity-30">
-        <slot name="placeholder">
-          Please input
-        </slot>
+        Please input
       </div>
       <div class="flex justify-between items-center px-3 py-2">
         <el-popover ref="emojiPopover" trigger="click" width="300" :teleported="true" :persistent="false">

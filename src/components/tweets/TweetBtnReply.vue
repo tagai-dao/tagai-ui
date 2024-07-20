@@ -4,70 +4,50 @@ import {checkAccessToken} from "@/apis/api";
 import {handleErrorTip, notify} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
-import {useTweet} from "@/composables/useTweet";
+import {OperateType, useTweet} from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
 import { type Tweet } from "@/types";
 
-const props = defineProps<{ tweet: Tweet}>()
+const props = defineProps<{
+    tweet: Tweet;
+  }>()
 const emits = defineEmits(['newComment'])
 const { content, imgurls, profileImg } = usePost(props.tweet);
+
+const tweetInput = ref()
 
 const stateStore = useStateStore()
 const isRepling = ref(false)
 const replyVisible = ref(false)
-const {formatEmojiText} = useTweet()
+const {formatEmojiText, preCheckCuration, userReply} = useTweet()
 
 const preReply = async () => {
-  replyVisible.value = true
-
-  // if (postCondition.value === 0) {
-  //   console.log(6)
-  //   // check access token
-  //   const v = await checkAccessToken();
-  //   if (!v) {
-  //     stateStore.showTwitterLogin = true;
-  //     return;
-  //   }
-  //   console.log(55)
-  //   replyVisible.value = true
-  // } else if (postCondition.value == 1) {
-  //   stateStore.showBtcLogin = true
-  // } else {
-  //   stateStore.loginTipType = "comment";
-  //   stateStore.globalLoginTip = true;
-  // }
-};
-
-const tweetInputRef = ref()
-async function userReply() {
-  console.log(tweetInputRef.value.leftWordsLength)
-  console.log(tweetInputRef.value.contentRef)
-  const text = tweetInputRef.value.formatElToTextContent(tweetInputRef.value.contentRef)
-  const tweetLength = 280 - tweetInputRef.value.leftWordsLength??0
-  // check text
-  if (tweetLength > 280) {
-    notify({
-      message: "The length of content is too long.",
-      type: 'info'
-    })
-    return
-  }
-  // checkout twitter login
-  if (tweetLength == 0) {
-    notify({
-      message: 'Please write something.'
-    })
-    return;
-  }
-
   try{
     isRepling.value = true
-    // const commented: any = await newComment(props.tweet.tweetId, text)
-    // if (commented) {
-    //   replyVisible.value = false
-    //   emits('newComment', props.tweet.tweetId, commented.id, text)
-    // }
+    if (!(await preCheckCuration(OperateType.REPLY, props.tweet))) {
+      return;
+    }
+    replyVisible.value = true
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    isRepling.value = false
+  }
+};
+
+async function reply() {
+  const text = tweetInput.value.formatElToTextContent(tweetInput.value.contentRef)
+
+  if (tweetInput.value.leftWordsLength.value < 0 || tweetInput.value.tweetLength.value == 0) {
+    return;
+  }
+  try{
+    isRepling.value = true
+    await userReply(props.tweet, text, props.tweet.tick!)
+    props.tweet.replied = 1;
+    props.tweet.replyCount += 1;
+    replyVisible.value = false
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -124,7 +104,7 @@ async function userReply() {
         </div>
       </div>
       <div class="mt-3">
-        <TweetInput ref="tweetInputRef" :max-length="280" :tick="tweet.tick">
+        <TweetInput ref="tweetInput" :max-length="280" :tick="tweet.tick">
           <template #placeholder>
             Write comment to the tweet here
           </template>
@@ -134,7 +114,7 @@ async function userReply() {
         <button class="h-10 px-5 bg-gradient-primary text-white font-bold rounded-full text-lg
                          flex items-center justify-center gap-2 disabled:opacity-30"
                 :disabled="isRepling"
-                @click="userReply">
+                @click="reply">
           <span class="text-white text-h5">Reply</span>
           <i-ep-loading v-if="isRepling" class="w-4 h-4"/>
         </button>
