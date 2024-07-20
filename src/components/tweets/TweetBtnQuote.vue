@@ -42,7 +42,7 @@ const headerProfileImg = () => {
 }
 
 const preQuote = () => {
-  
+  quoteVisible.value = true
 };
 
 const userQuote = () => {
