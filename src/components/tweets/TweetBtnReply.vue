@@ -142,7 +142,7 @@ async function userReply() {
                   flex justify-center items-center space-x-2"
                   :disabled="isRepling"
                   @click="userReply">
-            <span class="text-gradient bg-primaryGradient text-18px">Comment</span>
+            <span class="text-gradient bg-primaryGradient text-lg">Reply</span>
             <i-ep-loading v-if="isRepling" class="w-4 h-4"/>
           </button>
         </div>
