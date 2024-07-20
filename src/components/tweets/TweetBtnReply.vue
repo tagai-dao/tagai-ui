@@ -4,15 +4,12 @@ import {checkAccessToken} from "@/apis/api";
 import {handleErrorTip, notify} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
-import {useCreateTweet} from "@/composables/useCreateTweet";
 import {useTweet} from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
 import { type Tweet } from "@/types";
 
-const props = defineProps<{
-    tweet: Tweet;
-  }>()
+const props = defineProps<{ tweet: Tweet}>()
 const emits = defineEmits(['newComment'])
 const { content, imgurls, profileImg } = usePost(props.tweet);
 
@@ -20,11 +17,6 @@ const stateStore = useStateStore()
 const isRepling = ref(false)
 const replyVisible = ref(false)
 const {formatEmojiText} = useTweet()
-const {
-  contentRef,
-  tweetLength,
-  formatElToTextContent
-} = useCreateTweet(280)
 
 const preReply = async () => {
   replyVisible.value = true
@@ -47,10 +39,14 @@ const preReply = async () => {
   // }
 };
 
+const tweetInputRef = ref()
 async function userReply() {
-  const text = formatElToTextContent(contentRef.value)
+  console.log(tweetInputRef.value.leftWordsLength)
+  console.log(tweetInputRef.value.contentRef)
+  const text = tweetInputRef.value.formatElToTextContent(tweetInputRef.value.contentRef)
+  const tweetLength = 280 - tweetInputRef.value.leftWordsLength??0
   // check text
-  if (tweetLength.value > 280) {
+  if (tweetLength > 280) {
     notify({
       message: "The length of content is too long.",
       type: 'info'
@@ -58,7 +54,7 @@ async function userReply() {
     return
   }
   // checkout twitter login
-  if (tweetLength.value == 0) {
+  if (tweetLength == 0) {
     notify({
       message: 'Please write something.'
     })
@@ -128,7 +124,7 @@ async function userReply() {
         </div>
       </div>
       <div class="mt-3">
-        <TweetInput ref="tweetInput" :max-length="280" :tick="tweet.tick">
+        <TweetInput ref="tweetInputRef" :max-length="280" :tick="tweet.tick">
           <template #placeholder>
             Write comment to the tweet here
           </template>

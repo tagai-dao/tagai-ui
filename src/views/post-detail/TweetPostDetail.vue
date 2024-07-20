@@ -33,11 +33,11 @@ import Comments from "@/components/tweets/Comments.vue";
           </template>
         </TweetItem>
       </div>
-      <button class="h-11 min-h-11 bg-gradient-primary rounded-full text-white text-h5">
+      <button class="h-[50px] min-h-[50px] bg-gradient-primary rounded-full text-white text-h5 mt-3">
         {{$t('tips')}}
       </button>
-      <div class="border-[1px] gradient-border bg-gradient-primary shadow-insert-white h-11 min-h-11 rounded-full
-                  flex items-center justify-between px-4">
+      <div class="border-[1px] gradient-border bg-gradient-primary shadow-insert-white h-[50px] min-h-[50px] rounded-full
+                  flex items-center justify-between px-4 mt-3">
         <span>8 guys has curated</span>
         <div class="flex items-center gap-2">
           <div class="flex">
