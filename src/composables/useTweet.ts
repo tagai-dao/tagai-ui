@@ -1,6 +1,6 @@
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "./useAccount";
-import { tweet, newLike, newRetweet } from "@/apis/api";
+import { tweet, newLike, newRetweet, newReply } from "@/apis/api";
 import errCode from "@/errCode";
 import { GlobalModalType, type Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
@@ -105,11 +105,18 @@ export const useTweet = () => {
     updateUserVpLocal(VP_CONSUME.RETWEET);
   };
 
+  const userReply = async (t: Tweet, text: string, tick: string) => {
+    const account = useAccountStore().getAccountInfo;
+    await newReply(account.twitterId, t.tweetId, text, tick);
+    udpateUserOPLocal(OP_CONSUME.REPLY);
+  }
+
   return {
     formatEmojiText,
     preCheckCuration,
     userTweet,
     userLike,
     userRetweet,
+    userReply
   };
 };

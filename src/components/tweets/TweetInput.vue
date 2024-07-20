@@ -26,7 +26,7 @@ const onPostTweet = () => {
 <template>
   <div>
     <div class="flex justify-between items-center px-2">
-      <div>Type your content here</div>
+      <div></div>
       <div :class="leftWordsLength < 0 ? 'text-red' : ''">{{ leftWordsLength }}</div>
     </div>
     <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
