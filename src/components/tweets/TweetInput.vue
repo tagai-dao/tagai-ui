@@ -41,7 +41,7 @@ defineExpose({contentEl, contentRef, leftWordsLength, formatElToTextContent})
            @paste="onPaste"
            v-html="contentEl"></div>
       <div v-if="!showClear" class="absolute top-3 left-3 text-14px leading-24px z-0 opacity-30">
-        Please input
+        <slot name="placeholder"></slot>
       </div>
       <div class="flex justify-between items-center px-3 py-2">
         <el-popover ref="emojiPopover" trigger="click" width="300" :teleported="true" :persistent="false">
