@@ -111,8 +111,24 @@ const quote = async () => {
           <div v-if="!showClear" class="absolute top-3 left-0 text-14px leading-24px z-0 opacity-30">
             {{ $t('curation.tweetWithTickTip', {tick: '$' + tweet.tick}) }}
           </div>
-          <div class="text-right text-sm">
-            {{ leftWordsLength }}
+          <div class="flex justify-between items-center mt-5">
+            <div class="flex justify-between items-center">
+            <el-popover ref="emojiPopover" trigger="click" width="300" :teleported="true" :persistent="false">
+              <template #reference>
+                <img class="w-8 h-8"
+                     src="~@/assets/icons/icon-emoji.svg" alt=""/>
+              </template>
+              <template #default>
+                <div class="h-[310px] lg:h-[400px]">
+                  <EmojiPicker :options="{ imgSrc: '/emoji/', locals: 'en',hasSkinTones: false, hasGroupIcons: false}"
+                               @select="(e: any) => selectEmoji(e)"/>
+                </div>
+              </template>
+            </el-popover>
+          </div>
+            <div class="text-right text-sm">
+              {{ leftWordsLength }}
+            </div>
           </div>
         </div>
         <div class="my-3 bg-white border-[1px] border-grey-light rounded-xl p-3">
@@ -147,27 +163,13 @@ const quote = async () => {
             </div>
           </div>
         </div>
-        <div class="flex justify-between ">
-          <div class="flex justify-between items-center">
-            <el-popover ref="emojiPopover" trigger="click" width="300" :teleported="true" :persistent="false">
-              <template #reference>
-                <img class="w-10 h-10"
-                     src="~@/assets/icons/icon-emoji.svg" alt=""/>
-              </template>
-              <template #default>
-                <div class="h-[310px] lg:h-[400px]">
-                  <EmojiPicker :options="{ imgSrc: '/emoji/', locals: 'en',hasSkinTones: false, hasGroupIcons: false}"
-                               @select="(e: any) => selectEmoji(e)"/>
-                </div>
-              </template>
-            </el-popover>
-          </div>
+        <div class="flex justify-end ">
           <button class="h-10 px-5 bg-gradient-primary text-white font-bold rounded-full text-lg
                          flex items-center justify-center gap-2 disabled:opacity-30"
                   :disabled="isQuoting"
                   @click="quote">
                 <span class="text-white text-h5">
-                  {{ $t("curation.tweet") }}
+                  {{ $t("curation.quote") }}
                 </span>
             <i-ep-loading v-if="isQuoting" class="animate-spin w-18px h-18px text-white"/>
           </button>
