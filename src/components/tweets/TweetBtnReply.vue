@@ -97,55 +97,51 @@ async function userReply() {
              modal-class="overlay-white"
              class="max-w-[500px] rounded-[20px]"
              width="90%" :show-close="false" align-center destroy-on-close>
-    <div class="min-h-[40vh] sm:min-h-[300px] sm:pt-5 max-h-[80vh] relative">
-      <div class="flex-1 overflow-auto no-scroll-bar py-2.5">
-        <div class="flex justify-start items-stretch gap-2">
-          <img class="rounded-full gradient-border w-10 h-10 min-w-10"
-               :src="profileImg" alt=""/>
+    <div class="flex-1 overflow-hidden py-5 max-h-[80vh]">
+      <div class="flex justify-start items-stretch gap-2">
+        <img v-if="profileImg" class="w-8 h-8 min-w-8 min-h-8 rounded-full"
+             :src="profileImg" alt=""/>
+        <img v-else class="w-8 h-8 min-w-8 min-h-8 rounded-full"
+             src="~@/assets/icons/icon-default-avatar.svg" alt="">
+        <div class="flex-1">
           <div class="flex-1">
-            <div class="flex-1 flex items-center flex-wrap">
-              <div class="flex items-center flex-wrap">
-                  <span class="font-bold text-left mr-3 cursor-pointer text-lg text-black">
-                    {{ tweet.twitterName }}
-                  </span>
-              </div>
-              <div class="flex flex-wrap items-center gap-1 text-grey-normal-hover text-sm">
-                <span class="">
-                  @{{ tweet.twitterUsername }}
-                </span>
-                <span> · </span>
-                <span class="whitespace-nowrap">
-                  {{ parseTimestamp(tweet.tweetTime) }}
-                </span>
-              </div>
+            <div class="text-base font-semibold leading-4">
+              {{ tweet.twitterName??'Username' }}
             </div>
-            <div class="text-left font-400 mt-0.5rem">
-              <div class="text-black-3f font-medium text-base">
-                <div class="whitespace-pre-line break-word multi-content"
-                    v-html="formatEmojiText(content)"></div>
-              </div>
-              <div v-if="imgurls" class="text-colorD9 light:text-color46">
-                  <span v-for="(url, index) of imgurls.slice(0, 4)" :key="index" :title="url">[Pic]</span>
-              </div>
+            <div class="flex items-center gap-1 text-grey-light-active leading-3">
+                <span class="text-sm">
+                  @{{ tweet.twitterUsername??'username' }}
+                </span>
+              <span class=""> · </span>
+              <span class="whitespace-nowrap">
+                  {{ parseTimestamp(tweet.tweetTime)??'**' }}
+                </span>
+            </div>
+          </div>
+          <div class="text-left font-normal mt-2">
+            <div class="text-sm leading-5 whitespace-pre-line break-word multi-content"
+                 v-html="formatEmojiText(content)"></div>
+            <div v-if="imgurls" class="">
+              <span v-for="(url, index) of imgurls.slice(0, 4)" :key="index" :title="url">[Pic]</span>
             </div>
           </div>
         </div>
-        <div class="border-1 border-gray-400 rounded-md">
-          <TweetInput ref="tweetInput" :max-length="280" :tick="tweet.tick">
-            <template #placeholder>
-              Write comment to the tweet here
-            </template>
-          </TweetInput>
-        </div>
-        <div class="flex justify-end my-1rem">
-          <button class="h-11 px-10 border-1 gradient-border shadow-shadow1C rounded-full
-                  flex justify-center items-center space-x-2"
-                  :disabled="isRepling"
-                  @click="userReply">
-            <span class="text-gradient bg-primaryGradient text-lg">Reply</span>
-            <i-ep-loading v-if="isRepling" class="w-4 h-4"/>
-          </button>
-        </div>
+      </div>
+      <div class="mt-3">
+        <TweetInput ref="tweetInput" :max-length="280" :tick="tweet.tick">
+          <template #placeholder>
+            Write comment to the tweet here
+          </template>
+        </TweetInput>
+      </div>
+      <div class="flex justify-end mt-3">
+        <button class="h-10 px-5 bg-gradient-primary text-white font-bold rounded-full text-lg
+                         flex items-center justify-center gap-2 disabled:opacity-30"
+                :disabled="isRepling"
+                @click="userReply">
+          <span class="text-white text-h5">Reply</span>
+          <i-ep-loading v-if="isRepling" class="w-4 h-4"/>
+        </button>
       </div>
     </div>
   </el-dialog>
