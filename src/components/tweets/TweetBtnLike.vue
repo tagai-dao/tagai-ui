@@ -4,7 +4,7 @@ import {checkAccessToken, newLike} from "@/apis/api";
 import {handleErrorTip, handleServerError} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import { type Tweet } from "@/types";
-import { useTweet } from "@/composables/useTweet";
+import { OperateType, useTweet } from "@/composables/useTweet";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -13,14 +13,15 @@ const emits = defineEmits(['newLike'])
 const stateStore = useStateStore()
 const isLiking = ref(false);
 
-const { userLike } = useTweet()
+const { preCheckCuration, userLike } = useTweet()
 
 async function like() {
   try{
     isLiking.value = true
+    if (!(await preCheckCuration(OperateType.LIKE, props.tweet))) {
+      return;
+    }
     const res = await userLike(props.tweet, props.tweet.tick!)
-
-    
     props.tweet.likeCount += 1;
     props.tweet.liked = 1;
   } catch (e) {

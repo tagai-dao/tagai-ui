@@ -18,7 +18,7 @@ import { useModalStore } from "@/stores/common";
 import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
-import { useTweet } from "@/composables/useTweet";
+import { OperateType, useTweet } from "@/composables/useTweet";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -29,7 +29,7 @@ const tokenInfo = ref()
 const trading = ref(false)
 const sellsman = ref()
 const needChoseWallet = ref(false)
-const { userTweet } = useTweet();
+const { preCheckCuration, userTweet } = useTweet();
 
 const payBtc = ref()
 const sellAmount = ref()
@@ -119,6 +119,9 @@ async function confirm() {
       return;
     }
     trading.value = true
+    if (!(await preCheckCuration(OperateType.TWEET))) {
+      return;
+    }
     let content = formatElToTextContent(contentRef.value)
     userTweet(content, comStore.currentSelectedCommunity!.tick).catch(handleErrorTip)
   }

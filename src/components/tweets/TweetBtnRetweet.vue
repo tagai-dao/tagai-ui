@@ -3,7 +3,7 @@
 import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
 import { type Tweet } from "@/types";
-import { useTweet } from "@/composables/useTweet";
+import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip } from "@/utils/notify";
 
 const props = defineProps<{
@@ -12,11 +12,14 @@ const props = defineProps<{
 const stateStore = useStateStore()
 
 const isRetweeting = ref(false);
-const { userRetweet } = useTweet()
+const { preCheckCuration, userRetweet } = useTweet()
 
 async function retweet() {
   try{
     isRetweeting.value = true
+    if (!await preCheckCuration(OperateType.RETWEET, props.tweet)) {
+      return;
+    }
     const res = await userRetweet(props.tweet, props.tweet.tick!)
 
     
