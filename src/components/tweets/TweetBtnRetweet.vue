@@ -3,6 +3,8 @@
 import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
 import { type Tweet } from "@/types";
+import { useTweet } from "@/composables/useTweet";
+import { handleErrorTip } from "@/utils/notify";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -10,13 +12,27 @@ const props = defineProps<{
 const stateStore = useStateStore()
 
 const isRetweeting = ref(false);
-const userRetweet = async () => {
-};
+const { userRetweet } = useTweet()
+
+async function retweet() {
+  try{
+    isRetweeting.value = true
+    const res = await userRetweet(props.tweet, props.tweet.tick!)
+
+    
+    props.tweet.retweetCount += 1;
+    props.tweet.retweeted = 1;
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    isRetweeting.value = false
+  }
+}
 </script>
 
 <template>
   <button class="flex justify-center items-center gap-2"
-          @click.stop="userRetweet">
+          @click.stop="retweet">
     <i-ep-loading v-if="isRetweeting" class="animate-spin w-5 h-5 "/>
     <i v-else class="w-5 h-5 min-w-5"
        :class="(tweet.retweeted ?? 0) > 0 ? 'btn-icon-retweet-active' : 'btn-icon-retweet'"></i>

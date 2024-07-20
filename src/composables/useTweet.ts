@@ -1,6 +1,6 @@
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "./useAccount";
-import { tweet, newLike } from "@/apis/api";
+import { tweet, newLike, newRetweet } from "@/apis/api";
 import errCode from "@/errCode";
 import type { Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
@@ -34,9 +34,9 @@ export const useTweet = () => {
     if (!accessToken) {
       throw errCode.InvalidAccessToken;
     }
-    // if (t.twitterId === account.twitterId) {
-    //   throw errCode.CANT_LIKE_SELF
-    // }
+    if (t.twitterId === account.twitterId) {
+      throw errCode.CANT_LIKE_SELF
+    }
     // check vp op
     
     if (op.value < OP_CONSUME.LIKE){
@@ -51,9 +51,33 @@ export const useTweet = () => {
     updateUserVpLocal(VP_CONSUME.LIKE)
   }
 
+  const userRetweet = async (t: Tweet, tick: string) => {
+    const accessToken = await useAccount().checkoutAccessToken()
+    const account = useAccountStore().getAccountInfo;
+    if (!accessToken) {
+      throw errCode.InvalidAccessToken;
+    }
+    // if (t.twitterId === account.twitterId) {
+    //   throw errCode.CANT_LIKE_SELF
+    // }
+    // check vp op
+    
+    if (op.value < OP_CONSUME.RETWEET){
+      throw errCode.INSUFFICIENT_OP
+    }
+    if (vp.value < VP_CONSUME.RETWEET) {
+      throw errCode.INSUFFICIENT_VP
+    }
+    
+    await newRetweet(account.twitterId, t.tweetId, tick)
+    udpateUserOPLocal(OP_CONSUME.RETWEET)
+    updateUserVpLocal(VP_CONSUME.RETWEET)
+  }
+
   return {
     formatEmojiText,
     userTweet,
-    userLike
+    userLike,
+    userRetweet
   }
 }
