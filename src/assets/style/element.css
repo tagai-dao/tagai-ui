@@ -39,8 +39,11 @@
 .c-gradient-progress .el-progress-bar__outer {
     background-color: #DCDCDC;
 }
-.c-gradient-progress-purple .el-progress-bar__inner {
+.c-gradient-progress-orange .el-progress-bar__inner {
     background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
+}
+.c-gradient-progress-green .el-progress-bar__inner {
+    background: #34C759;
 }
 .c-radio .el-radio__input.is-checked .el-radio__inner {
     background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);

@@ -18,7 +18,8 @@
   },
   "profileView": {
     "holdCoin": "Hold Coin",
-    "post": "Tweet/Space"
+    "post": "Tweet/Space",
+    "createCoin": "Create Coin"
   },
   "notificationView": {
     "ipShare": "IPShare",
