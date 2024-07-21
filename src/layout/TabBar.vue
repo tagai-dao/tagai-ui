@@ -3,9 +3,13 @@ import {useModalStore} from "@/stores/common";
 import {GlobalModalType} from "@/types";
 import { useAccountStore } from "@/stores/web3";
 import HalfCircleProgress from "@/components/common/HalfCircleProgress.vue";
+import { useAccount } from "@/composables/useAccount";
+import { MAX_OP, MAX_VP } from "@/config";
 
 const accStore = useAccountStore()
 const modalStore = useModalStore()
+
+const { vp, op } = useAccount()
 
 async function createCoin() {
   const acc = accStore.getAccountInfo;
@@ -47,11 +51,12 @@ async function createCoin() {
         <div v-if="accStore.getAccountInfo"  class="w-7 h-7 relative">
 <!--          OP-->
           <HalfCircleProgress class="c-progress-dashboard w-full h-full relative"
+                              :style="{transform: 'scale(-1, 1)'}"
                               type="dashboard"
                               color="#34C759"
                               :stroke-width="2"
                               :width="24"
-                              :percentage="50">
+                              :percentage="op * 100 / MAX_OP">
             <template #default>
               <img class="w-full h-full rounded-full"
                    :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
@@ -65,7 +70,7 @@ async function createCoin() {
                                 color="#FE913F"
                                 :stroke-width="2"
                                 :width="24"
-                                :percentage="80">
+                                :percentage="vp * 100 / MAX_VP">
               <template #default></template>
             </HalfCircleProgress>
           </div>

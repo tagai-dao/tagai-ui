@@ -10,10 +10,10 @@ import emitter from "@/utils/emitter";
 import {handleErrorTip} from "@/utils/notify";
 import {LoginStepType, useLoginStore} from "@/stores/login";
 import { useRoute } from "vue-router";
+import { onUnmounted } from "vue";
 
 const accStore = useAccountStore();
 const stateStore = useStateStore();
-const setTimer = useTimer();
 const logging = ref(false);
 const route = useRoute();
 
@@ -54,7 +54,7 @@ async function login() {
     let count = 0;
     let userInfo: any = await twitterLogin(state);
     if (userInfo.code === 1) {
-      while(count < 80) {
+      while(count < 80 && logging.value) {
         userInfo = await twitterLogin(state);
         if (userInfo.code === 3) {
           accStore.setAccount(userInfo.account as Account)
@@ -79,6 +79,10 @@ async function login() {
     logging.value = false
   }
 }
+
+onUnmounted(() => {
+  logging.value = false
+})
 </script>
 
 <template>
