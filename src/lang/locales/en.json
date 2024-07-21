@@ -17,9 +17,9 @@
     "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet."
   },
   "profileView": {
-    "holdCoin": "Hold Coin",
+    "holdCoin": "Hold Tags",
     "post": "Tweet/Space",
-    "createCoin": "Create Coin"
+    "createCoin": "Created Tags"
   },
   "notificationView": {
     "ipShare": "IPShare",

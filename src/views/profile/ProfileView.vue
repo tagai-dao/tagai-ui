@@ -3,9 +3,14 @@ import {ref} from "vue";
 import TabHoldCoin from "@/views/profile/TabHoldCoin.vue";
 import TabPost from "@/views/profile/TabPost.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
+import { useAccountStore } from "@/stores/web3";
+import { useAccount } from "@/composables/useAccount";
+import { MAX_OP, MAX_VP } from "@/config";
 
+const accStore = useAccountStore()
 const tabOptions = ['holdCoin', 'post', 'createCoin']
 const activeTab = ref('createCoin')
+const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
 </script>
 
 <template>
@@ -13,13 +18,13 @@ const activeTab = ref('createCoin')
     <div class="bg-white py-3 px-3 rounded-2xl mx-3">
       <div class="flex gap-2 items-center">
         <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-             src="~@/assets/icons/icon-default-avatar.svg" alt="">
+             :src="profile" @error="replaceEmptyProfile" alt="">
         <div class="h-full flex-1">
-          <div class="text-h3">Username</div>
+          <div class="text-h3">{{ accStore.getAccountInfo.twitterName }}</div>
           <div class="flex items-center gap-1 leading-5">
-            <span class="text-grey-8d">@asmonmy</span>
+            <span class="text-grey-8d">@{{ accStore.getAccountInfo.twitterUsername }}</span>
             <span class="mx-4px"> · </span>
-            <button>
+            <button @click="gotoTwitter" >
               <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
           </div>
@@ -27,7 +32,7 @@ const activeTab = ref('createCoin')
         <div class="flex items-center gap-2">
           <div class="w-[65px] flex flex-col items-center gap-1">
             <div class="w-full flex justify-between text-sm px-1 text-grey-normal">
-              <span>36%</span>
+              <span>{{ (op * 100 / MAX_OP).toFixed(2) }}%</span>
               <span>OP</span>
             </div>
             <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
@@ -40,7 +45,7 @@ const activeTab = ref('createCoin')
           </div>
           <div class="w-[65px] flex flex-col items-center gap-1">
             <div class="w-full flex justify-between text-sm px-1 text-grey-normal">
-              <span>80%</span>
+              <span>{{ (vp * 100 / MAX_VP).toFixed(2) }}%</span>
               <span>VP</span>
             </div>
             <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
@@ -54,8 +59,8 @@ const activeTab = ref('createCoin')
         </div>
       </div>
       <div class="pl-14 flex items-center gap-4 mt-2">
-        <span>28 正在关注</span>
-        <span>28 关注者</span>
+        <span>{{ accStore.getAccountInfo.followings }} 正在关注</span>
+        <span>{{ accStore.getAccountInfo.followers }} 关注者</span>
       </div>
     </div>
     <div class="flex justify-between gap-2 px-3">
@@ -65,9 +70,9 @@ const activeTab = ref('createCoin')
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
     </div>
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
-      <TabHoldCoin v-if="activeTab==='holdCoin'"/>
+      <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/>
       <TabPost v-if="activeTab==='post'"/>
-      <TabCreateCoin v-if="activeTab==='createCoin'"/>
+      <TabCreateCoin v-if="activeTab==='createCoin'"/> -->
     </div>
   </div>
 </template>

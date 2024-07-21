@@ -47,7 +47,7 @@ async function createCoin() {
       <button class="mb-9" @click="createCoin">
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
       </button>
-      <router-link to="/profile/1" class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
+      <router-link to="/profile/" class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
         <div v-if="accStore.getAccountInfo"  class="w-7 h-7 relative">
 <!--          OP-->
           <HalfCircleProgress class="c-progress-dashboard w-full h-full relative"

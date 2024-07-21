@@ -14,8 +14,17 @@ export const useAccount = () => {
         return accStore.getAccountInfo?.ethAddr != accStore.ethConnectAddress
     })
 
+    const profile = computed(() => {
+        const account = useAccountStore().getAccountInfo
+        return account.profile.replace('normal', '200x200')
+    })
+
     const replaceEmptyProfile = (e: any) => {
         e.target.src = emptyProfile
+    }
+
+    const gotoTwitter = () => {
+        window.open('https://x.com/' + useAccountStore().getAccountInfo.twitterId, '__blank')
     }
 
     const refreshToken = async () => {
@@ -142,6 +151,8 @@ export const useAccount = () => {
     return {
         accountMismatch,
         replaceEmptyProfile,
+        profile,
+        gotoTwitter,
         checkoutAccessToken,
         updateVPOP,
         updateUserVpLocal,
