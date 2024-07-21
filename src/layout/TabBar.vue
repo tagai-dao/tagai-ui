@@ -2,6 +2,7 @@
 import {useModalStore} from "@/stores/common";
 import {GlobalModalType} from "@/types";
 import { useAccountStore } from "@/stores/web3";
+import HalfCircleProgress from "@/components/common/HalfCircleProgress.vue";
 
 const accStore = useAccountStore()
 const modalStore = useModalStore()
@@ -43,9 +44,33 @@ async function createCoin() {
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
       </button>
       <router-link to="/profile/1" class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
-        <img v-if="accStore.getAccountInfo" class="w-6 h-6 min-w-6 min-h-6 rounded-full"
-             :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-profile.svg" alt="">
+        <div v-if="accStore.getAccountInfo"  class="w-7 h-7 relative">
+<!--          OP-->
+          <HalfCircleProgress class="c-progress-dashboard w-full h-full relative"
+                              type="dashboard"
+                              color="#34C759"
+                              :stroke-width="2"
+                              :width="24"
+                              :percentage="50">
+            <template #default>
+              <img class="w-full h-full rounded-full"
+                   :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
+            </template>
+          </HalfCircleProgress>
+          <div class="absolute top-0 left-0 right-0 bottom-0">
+<!--            VP-->
+            <HalfCircleProgress class="c-progress-dashboard w-full h-full relative"
+                                :style="{transform: 'scale(1, -1)'}"
+                                type="dashboard"
+                                color="#FE913F"
+                                :stroke-width="2"
+                                :width="24"
+                                :percentage="80">
+              <template #default></template>
+            </HalfCircleProgress>
+          </div>
+        </div>
+        <img v-else class="w-7 h-7 rounded-full" src="~@/assets/icons/icon-tabbar-profile.svg" alt="">
         <span class="text-h5 text-grey-normal">Profile</span>
       </router-link>
     </div>
