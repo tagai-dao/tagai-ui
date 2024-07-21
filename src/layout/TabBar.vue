@@ -57,7 +57,7 @@ async function createCoin() {
                               :width="24"
                               :percentage="op * 100 / MAX_OP">
             <template #default>
-              <div class="absolute top-0 left-0 right-0 bottom-0 p-[2px]">
+              <div class="absolute top-0 left-0 right-0 bottom-0 p-[3px]">
                 <img class="w-full h-full rounded-full"
                      :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
               </div>
@@ -75,6 +75,8 @@ async function createCoin() {
               <template #default></template>
             </HalfCircleProgress>
           </div>
+          <div class="w-[3px] h-[0.5px] bg-white absolute left-0 top-1/2 transform -translate-y-1/2"></div>
+          <div class="w-[3px] h-[0.5px] bg-white absolute right-0 top-1/2 transform -translate-y-1/2"></div>
         </div>
         <img v-else class="w-7 h-7 rounded-full" src="~@/assets/icons/icon-tabbar-profile.svg" alt="">
         <span class="text-h5 text-grey-normal">Profile</span>
