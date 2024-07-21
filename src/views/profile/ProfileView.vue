@@ -63,7 +63,7 @@ const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
         <span>{{ accStore.getAccountInfo.followers }} {{ $t('profileView.followers') }}</span>
       </div>
     </div>
-    <div class="flex justify-between gap-2 px-3">
+    <div class="flex justify-between gap-2 px-3 bg-white rounded-xl py-3">
       <button v-for="tab of tabOptions" :key="tab"
               class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
               :class="tab===activeTab?'text-gradient bg-gradient-primary':'text-grey-normal'"
