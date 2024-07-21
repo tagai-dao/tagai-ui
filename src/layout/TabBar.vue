@@ -47,7 +47,7 @@ async function createCoin() {
       <button class="mb-9" @click="createCoin">
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
       </button>
-      <router-link to="/profile/" class="w-16 flex flex-col items-center cursor-pointer gap-0.5 p-[2px]">
+      <router-link to="/profile/" class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
         <div v-if="accStore.getAccountInfo"  class="w-7 h-7 relative">
 <!--          OP-->
           <HalfCircleProgress class="c-progress-dashboard w-full h-full relative"
@@ -57,8 +57,10 @@ async function createCoin() {
                               :width="24"
                               :percentage="op * 100 / MAX_OP">
             <template #default>
-              <img class="w-full h-full rounded-full"
-                   :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
+              <div class="absolute top-0 left-0 right-0 bottom-0 p-[2px]">
+                <img class="w-full h-full rounded-full"
+                     :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
+              </div>
             </template>
           </HalfCircleProgress>
           <div class="absolute top-0 left-0 right-0 bottom-0">
