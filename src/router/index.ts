@@ -35,7 +35,7 @@ const router = createRouter({
       component: () => import('@/views/post-detail/TweetPostDetail.vue')
     },
     {
-      path: '/profile/:user',
+      path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),
       meta: {tabBar: true, topBar: true, gotoHome: true}

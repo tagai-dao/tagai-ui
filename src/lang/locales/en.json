@@ -19,7 +19,9 @@
   "profileView": {
     "holdCoin": "Hold Tags",
     "post": "Tweet/Space",
-    "createCoin": "Created Tags"
+    "createCoin": "Created Tags",
+    "followings": "Followings",
+    "followers": "Followers"
   },
   "notificationView": {
     "ipShare": "IPShare",
@@ -45,7 +47,9 @@
   },
   "curation": {
     "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet.",
-    "quote": "Quote"
+    "quote": "Quote",
+    "vpDesc": "Like/Retweet a tweet will cost you vp(voting power). And you can earn tag after 3 days.",
+    "opDesc": "All tweet operation(like/retweet/quote/reply will cost you op(operation power) because of all the operation will sync to the blockchain."
   },
   "postView": {
     "createNewCuration": "Create"

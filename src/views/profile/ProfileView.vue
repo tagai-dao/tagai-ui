@@ -36,10 +36,10 @@ const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
               <span>OP</span>
             </div>
             <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
-              <el-progress :percentage="80" :stroke-width="6" :show-text="false"
+              <el-progress :percentage="op * 100 / MAX_OP" :stroke-width="6" :show-text="false"
                            class="c-gradient-progress c-gradient-progress-green w-full"/>
               <template #content>
-                <div class="text-grey-normal py-1">OP 描述</div>
+                <div class="text-grey-normal py-1">{{ $t('curaiton.opDesc') }}</div>
               </template>
             </el-tooltip>
           </div>
@@ -49,18 +49,18 @@ const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
               <span>VP</span>
             </div>
             <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
-              <el-progress :percentage="80" :stroke-width="6" :show-text="false"
+              <el-progress :percentage="vp * 100 / MAX_VP" :stroke-width="6" :show-text="false"
                            class="c-gradient-progress c-gradient-progress-orange w-full"/>
               <template #content>
-                <div class="text-grey-normal py-1">VP 描述</div>
+                <div class="text-grey-normal py-1">{{  $t('curation.vpDesc')  }}</div>
               </template>
             </el-tooltip>
           </div>
         </div>
       </div>
       <div class="pl-14 flex items-center gap-4 mt-2">
-        <span>{{ accStore.getAccountInfo.followings }} 正在关注</span>
-        <span>{{ accStore.getAccountInfo.followers }} 关注者</span>
+        <span>{{ accStore.getAccountInfo.followings }} {{ $t('profileView.followings') }}</span>
+        <span>{{ accStore.getAccountInfo.followers }} {{ $t('profileView.followers') }}</span>
       </div>
     </div>
     <div class="flex justify-between gap-2 px-3">
