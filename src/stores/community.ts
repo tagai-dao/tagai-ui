@@ -14,4 +14,5 @@ export const useCommunityStore = defineStore(
             newCommunities,
             currentSelectedCommunity
         }
-    })
+    }
+)

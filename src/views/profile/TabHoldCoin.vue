@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {ref} from "vue";
+import { getHoldingList } from '@/apis/api'
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -12,8 +13,16 @@ const onLoad = () => {
 };
 
 const onRefresh = () => {
-  finished.value = false;
-  onLoad();
+  if (refreshing.value) return;
+  try{
+    refreshing.value = true
+    finished.value = false;
+    
+  } catch(e) {
+    
+  } finally {
+    refreshing.value = false
+  }
 };
 
 </script>

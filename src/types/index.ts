@@ -186,6 +186,12 @@ export type CreateCommunity = {
   initBtc?: bigint // this is btc amount
 }
 
+export type TokenHoldingList = {
+  community: Community,
+  account: Account,
+  amount: number
+}
+
 export type TokenTrade = {
   tick: string,
   trader: string,
