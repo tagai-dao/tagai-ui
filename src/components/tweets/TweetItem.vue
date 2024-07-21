@@ -115,6 +115,7 @@ const onUserAvatar = () => {
                       :initial-index="index"
                       fit="cover"/>
           </div>
+          <slot name="tweet-trade"></slot>
           <slot name="tweet-mint"></slot>
           <slot name="tweet-action-bar"></slot>
         </div>

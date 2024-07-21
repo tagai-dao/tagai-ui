@@ -126,6 +126,10 @@ onMounted(async () => {
             :tweet="tweet"
             @click.stop="$router.push(`/post-detail/${tweet.tweetId}`)"
           >
+<!--            trade button-->
+            <template #tweet-trade>
+              <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3">Trade</button>
+            </template>
             <template #tweet-action-bar>
               <PostButtonGroup
                 @click.stop
