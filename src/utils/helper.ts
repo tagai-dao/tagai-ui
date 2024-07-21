@@ -215,7 +215,7 @@ export function parseTimestamp(time: any) {
   let timestamp = new Date(time).getTime() / 1000
   if (typeof(time) === 'string' && !time.match(/^[0-9]$/)) {
     let local = new Date().getTimezoneOffset()
-    timestamp = timestamp - local * 60
+    timestamp = timestamp + local * 60
   }
 
   let nowStamp = new Date().getTime() / 1000
