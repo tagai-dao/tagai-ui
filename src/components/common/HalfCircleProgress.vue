@@ -6,7 +6,6 @@
               :d="trackPath"
               :stroke="trackColor"
               fill="none"
-              stroke-linecap="round"
               :stroke-width="relativeStrokeWidth"
               :style="trailPathStyle"></path>
         <path class="el-progress-circle__path"
@@ -14,7 +13,6 @@
               :stroke="color"
               fill="none"
               :opacity="percentage?1:0"
-              stroke-linecap="round"
               :stroke-width="relativeStrokeWidth"
               :style="circlePathStyle"></path>
       </svg>
