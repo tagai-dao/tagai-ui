@@ -1,6 +1,6 @@
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "./useAccount";
-import { tweet, newLike, newRetweet, newReply } from "@/apis/api";
+import { tweet, newLike, newRetweet, newReply, newQuote } from "@/apis/api";
 import errCode from "@/errCode";
 import { GlobalModalType, type Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
@@ -19,8 +19,8 @@ export const useTweet = () => {
     useAccount();
   const formatEmojiText = (str: string) => {
     if (!str || str.trim().length === 0) return "";
-    const regStr =
-      /[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF][\u200D|\uFE0F]|[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF]|[0-9|*|#]\uFE0F\u20E3|[0-9|#]\u20E3|[\u203C-\u3299]\uFE0F\u200D|[\u203C-\u3299]\uFE0F|[\u2122-\u2B55]|\u303D|[\A9|\AE]\u3030|\uA9|\uAE|\u3030/gi;
+    // @ts-ignore
+    const regStr = /[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF][\u200D|\uFE0F]|[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF]|[0-9|*|#]\uFE0F\u20E3|[0-9|#]\u20E3|[\u203C-\u3299]\uFE0F\u200D|[\u203C-\u3299]\uFE0F|[\u2122-\u2B55]|\u303D|[\A9|\AE]\u3030|\uA9|\uAE|\u3030/gi;
     str = str.replace(regStr, (char: any) => {
       let code = char?.codePointAt(char)?.toString(16);
       if (code.length < 4) code = code + "-20e3";
@@ -111,12 +111,19 @@ export const useTweet = () => {
     udpateUserOPLocal(OP_CONSUME.REPLY);
   }
 
+  const userQuote = async (t: Tweet, text: string, tick: string) => {
+    const account = useAccountStore().getAccountInfo;
+    await newQuote(account.twitterId, t.tweetId, text, tick);
+    udpateUserOPLocal(OP_CONSUME.QUOTE)
+  }
+
   return {
     formatEmojiText,
     preCheckCuration,
     userTweet,
     userLike,
     userRetweet,
-    userReply
+    userReply,
+    userQuote
   };
 };

@@ -63,6 +63,9 @@ export const newRetweet = async (twitterId: string, tweetId: string, tick: strin
 export const newReply = async (twitterId: string, tweetId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/reply', { twitterId, tweetId, text, tick })
 
+export const newQuote = async (twitterId: string, tweetId: string, text: string, tick: string) =>
+  post(BACKEND_API_URL + '/curation/quote', { twitterId, tweetId, text, tick })
+
 /************************************ community **********************************/
 export const createCommunity = async (params: CreateCommunity) => 
   post(BACKEND_API_URL + '/community/createCommunity', params)
