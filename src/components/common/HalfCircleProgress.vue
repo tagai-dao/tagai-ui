@@ -2,8 +2,9 @@
   <div class="el-progress el-progress--dashboard w-full h-full">
     <div class="el-progress-circle w-full h-full relative">
       <svg viewBox="0 0 100 100">
-        <path class="el-progress-circle__track"
+        <path class="el-progress-circle__track bg-grey-light-active"
               :d="trackPath"
+              :stroke="trackColor"
               fill="none"
               stroke-linecap="round"
               :stroke-width="relativeStrokeWidth"
@@ -32,7 +33,8 @@ const props = defineProps({
   type: {type: String, default: 'dashboard'},
   width: {type: Number, default: 50},
   percentage:{type: Number, default: 0},
-  color: {type: String, default: '#6246EA'}
+  color: {type: String, default: '#FE913F'},
+  trackColor: {type: String, default: '#c2c2c2'}
 })
 const relativeStrokeWidth = computed(() => (props.strokeWidth / props.width * 100).toFixed(1));
 const radius = computed(() => {
