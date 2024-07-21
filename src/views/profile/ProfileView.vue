@@ -9,7 +9,7 @@ import { MAX_OP, MAX_VP } from "@/config";
 
 const accStore = useAccountStore()
 const tabOptions = ['holdCoin', 'post', 'createCoin']
-const activeTab = ref('createCoin')
+const activeTab = ref('holdCoin')
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
 </script>
 
@@ -39,7 +39,7 @@ const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
               <el-progress :percentage="op * 100 / MAX_OP" :stroke-width="6" :show-text="false"
                            class="c-gradient-progress c-gradient-progress-green w-full"/>
               <template #content>
-                <div class="text-grey-normal py-1">{{ $t('curaiton.opDesc') }}</div>
+                <div class="text-grey-normal py-1">{{ $t('curation.opDesc') }}</div>
               </template>
             </el-tooltip>
           </div>
@@ -70,9 +70,9 @@ const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
     </div>
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
-      <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/>
+      <TabHoldCoin v-if="activeTab==='holdCoin'"/>
       <TabPost v-if="activeTab==='post'"/>
-      <TabCreateCoin v-if="activeTab==='createCoin'"/> -->
+      <TabCreateCoin v-if="activeTab==='createCoin'"/>
     </div>
   </div>
 </template>
