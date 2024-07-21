@@ -188,7 +188,7 @@ export type CreateCommunity = {
 
 export type TokenHoldingList = {
   community: Community,
-  account: Account,
+  ethAddr: string,
   amount: number
 }
 
