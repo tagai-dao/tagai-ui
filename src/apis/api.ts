@@ -54,6 +54,9 @@ export const getHoldingList = async (twitterId: string, ethAddr: string, pages?:
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})
 
+export const getUserTweets = async (twitterId: string, pages?: number) =>
+  get(BACKEND_API_URL + '/curation/userTweets', {twitterId, pages})
+
 export const tweet = async (twitterId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/tweet', {twitterId, text, tick})
 
@@ -81,6 +84,9 @@ export const getCommunitiesByNew = async (pages?: number) =>
 
 export const getCommunityDetail = async (tick: string) =>
   get(BACKEND_API_URL + '/community/detail', { tick })
+
+export const getCreatedList = async (twitterId: string, ethAddr: string) =>
+  post(BACKEND_API_URL + '/community/createdList', {twitterId, ethAddr})
 
 export const getHolderList = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/holderList', { token, pages })

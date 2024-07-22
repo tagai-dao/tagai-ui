@@ -1,25 +1,65 @@
 <script setup lang="ts">
 import CreativeIncomeItem from "@/components/profile/CreativeIncomeItem.vue";
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import {testTweets} from "@/assets/test-data";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
+import { getUserTweets } from '@/apis/api'
+import { handleErrorTip } from "@/utils/notify";
+import { useAccountStore } from "@/stores/web3";
+
+const accStore = useAccountStore()
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const listData = ref<number []>([])
 const scroller = document.querySelector('#profile-tab-scroller')
-const onLoad = () => {
-  if(loading.value || finished.value) return
+
+const onLoad = async () => {
+  if(loading.value || finished.value || refreshing.value || accStore.tokenHoldingList.length == 0) return
   // loading.value = true
+  try{
+    loading.value = true;
+    let list : any = await getUserTweets(accStore.getAccountInfo.twitterId, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
+    if (list && list.length > 0) {
+      accStore.tokenHoldingList
+    }
+  } catch (e) {
+    
+  } finally {
+    
+  }
 };
 
-const onRefresh = () => {
-  finished.value = false;
-  onLoad();
+const onRefresh = async () => {
+  if (refreshing.value || loading.value) {
+    return;
+  }
+  try{
+    refreshing.value = true
+    finished.value = false
+    const list: any = await getUserTweets(accStore.getAccountInfo.twitterId)
+    if (list && list.length > 0) {
+      accStore.tweetsList = list
+      if (list.length < 30) finished.value = true
+    }
+    console.log(53, list)
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    refreshing.value = false
+  }
 };
+
+const trade = async() => {
+
+}
+
+onMounted(() => {
+  onRefresh()
+})
 
 </script>
 
@@ -54,25 +94,25 @@ const onRefresh = () => {
           </div>
         </div>
         <div class="px-3">
-          <div v-for="tweet of testTweets" :key="tweet.postId">
+          <div v-for="tweet of accStore.tweetsList" :key="tweet.tweetId">
             <div class="flex items-center gap-2 py-3">
               <div class="w-4 h-4 bg-green-normal rounded-full"></div>
               <div class="text-base flex-1">
-                #trump • Market cap $50,409.00
+                #{{ tweet.tick }} • Market cap $50,409.00
               </div>
-              <button class="bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
-                Buy
-              </button>
+              <router-link :to="`/buy-sell/${tweet.tick}`" class="justify-center flex items-center bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
+                Trade
+              </router-link>
             </div>
             <div class="bg-white rounded-2xl mb-3">
               <SpaceItem v-if="tweet.spaceId" :tweet="tweet">
                 <template #tweet-action-bar>
-                  <PostButtonGroup :post="tweet"/>
+                  <PostButtonGroup :tweet="tweet"/>
                 </template>
               </SpaceItem>
               <TweetItem v-else :tweet="tweet">
                 <template #tweet-action-bar>
-                  <PostButtonGroup :post="tweet"/>
+                  <PostButtonGroup :tweet="tweet"/>
                 </template>
               </TweetItem>
             </div>
