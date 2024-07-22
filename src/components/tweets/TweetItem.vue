@@ -12,6 +12,7 @@ import {useTweet} from "@/composables/useTweet";
 import TweetSpaceCard from "@/components/tweets/TweetSpaceCard.vue";
 import {usePost} from "@/composables/usePost";
 import type {Tweet} from "@/types";
+import {tagBgColors, tagTextColors} from "@/composables/useTags";
 
 const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,}
@@ -88,11 +89,18 @@ const onUserAvatar = () => {
         </button>
       </div>
       <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">
-        <div @click.stop="clickContent"
-             class="cursor-pointer text-base xl:text-lg tracking-0.2 pl-12">
-          <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all" target="_blank">{{''}}</a>
-          <div class="whitespace-pre-line break-words multi-content multi-content-2"
-               v-else v-html="formatEmojiText(content)"></div>
+        <div class="pl-12">
+          <div @click.stop="clickContent"
+               class="cursor-pointer text-base tracking-0.2">
+            <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all" target="_blank">{{''}}</a>
+            <div class="whitespace-pre-line break-words multi-content multi-content-2"
+                 v-else v-html="formatEmojiText(content)"></div>
+          </div>
+          <div class="flex flex-wrap gap-4 mt-1">
+            <button v-for="(tag, index) of ['tag1', 'tag2']" :key="tag"
+                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                    class="px-2 text-base rounded-md">#{{ tag }}</button>
+          </div>
         </div>
         <div class="px-3 md:pl-12">
           <!--       foreign page -->
