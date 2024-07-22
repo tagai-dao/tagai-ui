@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { IPShare, Account, TokenHoldingList } from '@/types'
+import type { IPShare, Account, TokenHoldingList, Tweet, Community } from '@/types'
 import { ref } from 'vue'
 
 export enum EthWalletState {
@@ -14,6 +14,8 @@ export const useAccountStore = defineStore('account', {
         clear() {
             this.setAccount(null);
             this.tokenHoldingList = [];// ref<TokenHoldingList[]>([])
+            this.tweetsList = [];
+            this.createdTokenList = [];
             this.ethBalance = 0
             this.ipshare = {}
             this.pubKey = ''
@@ -37,6 +39,8 @@ export const useAccountStore = defineStore('account', {
         return {
             account,
             tokenHoldingList,
+            tweetsList: [] as Tweet[],
+            createdTokenList: [] as Community[],
             setAccount,
             ethBalance: 0,
             ipshare: {} as IPShare,
