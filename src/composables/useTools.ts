@@ -24,7 +24,7 @@ export const useTools = () => {
 
 
 export const useTimer = () => {
-  const timer = ref<number|undefined>(undefined)
+  const timer = ref<ReturnType<typeof setTimeout>|undefined>(undefined)
   const setTimer = (cb: Function, delay=0) => {
     timer.value = setTimeout(() => {
       cb()

@@ -1,27 +1,4 @@
-<template>
-  <div class="el-progress el-progress--dashboard w-full h-full">
-    <div class="el-progress-circle w-full h-full relative">
-      <svg viewBox="0 0 100 100">
-        <path class="el-progress-circle__track bg-grey-light-active"
-              :d="trackPath"
-              :stroke="trackColor"
-              fill="none"
-              :stroke-width="relativeStrokeWidth"
-              :style="trailPathStyle"></path>
-        <path class="el-progress-circle__path"
-              :d="trackPath"
-              :stroke="color"
-              fill="none"
-              :opacity="percentage?1:0"
-              :stroke-width="relativeStrokeWidth"
-              :style="circlePathStyle"></path>
-      </svg>
-      <slot name="default"></slot>
-    </div>
-  </div>
-</template>
-
-<script setup>
+<script setup lang="ts">
 import {computed, ref} from "vue";
 
 const props = defineProps({
@@ -66,6 +43,30 @@ const circlePathStyle = computed(() => ({
   transition: "stroke-dasharray 0.6s ease 0s, stroke 0.6s ease, opacity ease 0.6s"
 }));
 </script>
+
+
+<template>
+  <div class="el-progress el-progress--dashboard w-full h-full">
+    <div class="el-progress-circle w-full h-full relative">
+      <svg viewBox="0 0 100 100">
+        <path class="el-progress-circle__track bg-grey-light-active"
+              :d="trackPath"
+              :stroke="trackColor"
+              fill="none"
+              :stroke-width="relativeStrokeWidth"
+              :style="trailPathStyle"></path>
+        <path class="el-progress-circle__path"
+              :d="trackPath"
+              :stroke="color"
+              fill="none"
+              :opacity="percentage?1:0"
+              :stroke-width="relativeStrokeWidth"
+              :style="circlePathStyle"></path>
+      </svg>
+      <slot name="default"></slot>
+    </div>
+  </div>
+</template>
 
 <style scoped lang="scss">
 .progress-pointer {

@@ -21,7 +21,7 @@ const modalStore = useModalStore()
     <div class="flex-1 overflow-hidden">
       <RouterView/>
     </div>
-    <TabBar v-if="$route.meta.tabBar"/>
+    <TabBar class="web:hidden" v-if="$route.meta.tabBar"/>
     <el-dialog v-model="modalStore.modalVisible"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"

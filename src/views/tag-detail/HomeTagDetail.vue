@@ -70,7 +70,7 @@ onMounted(async () => {
 <template>
   <div class="h-full overflow-auto py-2 flex flex-col gap-3 px-3 relative">
     <div class="bg-white rounded-2xl py-5 px-3.5 flex gap-3">
-      <div class="w-20 h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo flex items-center justify-center">
+      <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center">
         <img class="w-15" :src="comStore.currentSelectedCommunity?.logo" alt="">
       </div>
       <div class="flex-1 py-1">

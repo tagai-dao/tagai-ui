@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+const defaultTheme = require('tailwindcss/defaultTheme')
 export default {
   content: [
     "./index.html",
@@ -85,6 +86,10 @@ export default {
       'h3': ['16px', {lineHeight: '20px', fontWeight: '700', letterSpacing: '-0.02em'}],
       'h4': ['14px', {lineHeight: '16px', fontWeight: '400', letterSpacing: '-0.02em'}],
       'h5': ['14px', {lineHeight: '16px', fontWeight: '700', letterSpacing: '-0.02em'}],
+    },
+    screens: {
+      'web': '1104px',
+      ...defaultTheme.screens,
     }
   },
   plugins: [],
