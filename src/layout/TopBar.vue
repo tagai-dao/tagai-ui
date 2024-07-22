@@ -2,6 +2,7 @@
 import {ref} from "vue";
 import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
+import CreateBtn from "@/layout/CreateBtn.vue";
 
 const modalVisible = ref(false)
 
@@ -28,10 +29,7 @@ const modalVisible = ref(false)
            @click="modalVisible=true">
       <img class="w-6 cursor-pointer" src="~@/assets/icons/icon-lang-en.svg" alt="">
       <ProfileBtn class="hidden web:flex"/>
-      <button class="h-12 bg-gradient-primary px-6 rounded-full hidden web:flex items-center gap-2">
-        <span class="text-white font-bold">{{$t('createCoin')}}</span>
-        <img src="~@/assets/icons/icon-add.svg" alt="">
-      </button>
+      <CreateBtn/>
     </div>
     <el-dialog v-model="modalVisible"
                modal-class="overlay-white c-modal-fullscreen" fullscreen

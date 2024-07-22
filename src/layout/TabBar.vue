@@ -5,25 +5,14 @@ import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP } from "@/config";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
+import CreateBtn from "@/layout/CreateBtn.vue";
 
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 
 const { vp, op } = useAccount()
 
-async function createCoin() {
-  const acc = accStore.getAccountInfo;
-  if (!acc) {
-    modalStore.setModalVisible(true, GlobalModalType.Login)
-    return
-  }else if (!acc.ethAddr) {
-    modalStore.setModalVisible(true, GlobalModalType.BondEth)
-    return
-  }else {
-    modalStore.setModalVisible(true, GlobalModalType.CreateCoin)
-    return
-  }
-}
+
 </script>
 
 <template>
@@ -44,9 +33,7 @@ async function createCoin() {
           <span class="text-h5 text-grey-normal">Tag</span>
         </template>
       </router-link>
-      <button class="mb-9" @click="createCoin">
-        <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
-      </button>
+      <CreateBtn/>
       <ProfileBtn class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
       </ProfileBtn>
     </div>
