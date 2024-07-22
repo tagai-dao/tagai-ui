@@ -121,15 +121,14 @@ onMounted(async () => {
             :tweet="tweet"
             @click.stop="$router.push(`/post-detail/${tweet.tweetId}`)"
           >
+          <template #tweet-trade v-if="tweet.commerceId">
+             <CommerceBtn></CommerceBtn>
+            </template>
             <template #tweet-action-bar>
               <PostButtonGroup
                 @click.stop
                 :tweet="tweet"
               />
-            </template>
-
-            <template #tweet-trade v-if="tweet.commerceId">
-             <CommerceBtn></CommerceBtn>
             </template>
           </TweetItem>
         </div>

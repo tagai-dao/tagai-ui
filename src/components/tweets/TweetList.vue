@@ -5,7 +5,7 @@
 <!--          <TweetMint @click.stop :goods="tweet.goods" :tweet-id="tweet.tweetId"/>-->
 <!--        </template>-->
         <template #tweet-action-bar>
-          <PostButtonGroup @click.stop @newLike="newLike" @newComment="newComment" :post="tweet"/>
+          <PostButtonGroup @click.stop :post="tweet"/>
         </template>
       </TweetItem>
     </div>

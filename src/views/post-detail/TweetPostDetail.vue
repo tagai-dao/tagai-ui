@@ -5,6 +5,10 @@ import {testTweets} from "@/assets/test-data";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import Comments from "@/components/tweets/Comments.vue";
+import {ref} from "vue";
+import CuratorsList from "@/components/tweets/CuratorsList.vue";
+
+const curatorsModalVisible = ref(false)
 </script>
 
 <template>
@@ -36,7 +40,7 @@ import Comments from "@/components/tweets/Comments.vue";
       <button class="h-[50px] min-h-[50px] bg-gradient-primary rounded-full text-white text-h5 mt-3">
         {{$t('tips')}}
       </button>
-      <div class="border-[1px] gradient-border bg-gradient-primary shadow-insert-white h-[50px] min-h-[50px] rounded-full
+      <div class="border-[1px] gradient-border bg-gradient-purple shadow-insert-white h-[50px] min-h-[50px] rounded-full
                   flex items-center justify-between px-4 mt-3">
         <span>8 guys has curated</span>
         <div class="flex items-center gap-2">
@@ -51,7 +55,7 @@ import Comments from "@/components/tweets/Comments.vue";
               <img src="" alt="">
             </div>
           </div>
-          <button class="flex items-center gap-1.5">
+          <button class="flex items-center gap-1.5" @click="curatorsModalVisible=true">
             <span>more</span>
             <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-arrow-forward.svg" alt="">
           </button>
@@ -60,6 +64,12 @@ import Comments from "@/components/tweets/Comments.vue";
       <div class="text-h5 mt-2 px-3">Comments</div>
       <Comments/>
     </div>
+    <el-dialog v-model="curatorsModalVisible"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px] bg-grey-f4"
+               width="90%" :show-close="false" align-center destroy-on-close>
+      <CuratorsList/>
+    </el-dialog>
   </div>
 </template>
 

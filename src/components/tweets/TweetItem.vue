@@ -84,7 +84,8 @@ const onUserAvatar = () => {
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
-        <button v-if="tweet.amount" class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
+        <button v-if="tweet.amount" class="h-6 rounded-full px-3 text-white text-sm font-semibold"
+        :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
           {{ formatPrice((tweet.price ?? 0) * (tweet.amount ?? 0)) }}
         </button>
       </div>
