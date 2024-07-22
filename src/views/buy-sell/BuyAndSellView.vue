@@ -160,7 +160,7 @@ async function confirm() {
 onMounted(async () => {
   if (!comStore.currentSelectedCommunity?.tick) {
     const tick = route.params.id as string
-    const community = (await getCommunityDetail(tick)) as Community  
+    const community = (await getCommunityDetail(tick)) as Community
     comStore.currentSelectedCommunity = (await getTokenInfo([community]))[0]
     comStore.currentSelectedCommunity = community
   }
@@ -297,10 +297,10 @@ onMounted(async () => {
                 <span>tweet & Earn</span>
                 <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
                   <button @click.stop class="">
-                    <img class="w-3" src="~@/assets/icons/icon-warning-gray.svg" alt="">
+                    <img class="w-3" src="~@/assets/icons/icon-warning-primary.svg" alt="">
                   </button>
                   <template #content>
-                    <div class="text-red-ff py-1">{{  $t('buyAndSell.buyAndSell') }}</div>
+                    <div class="text-orange-normal py-1">{{  $t('buyAndSell.buyAndSell') }}</div>
                   </template>
                 </el-tooltip>
               </div>

@@ -84,7 +84,8 @@ const onUserAvatar = () => {
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
-        <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
+        <button class="h-6 rounded-full px-3 text-white text-sm font-semibold"
+                :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
           $10.01
         </button>
       </div>

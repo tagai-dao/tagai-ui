@@ -128,7 +128,7 @@ onMounted(async () => {
           >
 <!--            trade button-->
             <template #tweet-trade>
-              <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3">Trade</button>
+              <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white mt-3">Trade</button>
             </template>
             <template #tweet-action-bar>
               <PostButtonGroup
