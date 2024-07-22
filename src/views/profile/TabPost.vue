@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CreativeIncomeItem from "@/components/profile/CreativeIncomeItem.vue";
+import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import {onMounted, ref} from "vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import {testTweets} from "@/assets/test-data";
@@ -114,6 +115,9 @@ onMounted(() => {
                 </template>
               </SpaceItem>
               <TweetItem v-else :tweet="tweet">
+                <template #tweet-trade v-if="tweet.commerceId">
+                  <CommerceBtn :tweet="tweet"></CommerceBtn>
+                </template>
                 <template #tweet-action-bar>
                   <PostButtonGroup :tweet="tweet"/>
                 </template>

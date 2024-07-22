@@ -49,13 +49,15 @@ const headerProfileImg = () => {
 const preQuote = async () => {
   try{
     isQuoting.value = true
-    await preCheckCuration(OperateType.QUOTE, props.tweet)
+    if (await preCheckCuration(OperateType.QUOTE, props.tweet)) {
+      quoteVisible.value = true
+    }
   } catch (e) {
+    console.log(344, e)
     handleErrorTip(e)
   } finally {
     isQuoting.value = false
   }
-  quoteVisible.value = true
 };
 
 const quote = async () => {
@@ -66,6 +68,7 @@ const quote = async () => {
     const text = formatElToTextContent(contentRef.value);
     isQuoting.value = true;
     await userQuote(props.tweet, text, props.tweet.tick!)
+    quoteVisible.value = false
   } catch (e) {
     handleErrorTip(e)
   } finally {

@@ -1,7 +1,13 @@
 <script lang="ts" setup>
+import type { Tweet } from '@/types';
 
+const props = defineProps<{
+    tweet: Tweet
+}>()
 </script>
 
 <template>
-    <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3">Trade</button>
+    <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3">
+        Trade
+    </button>
 </template>
