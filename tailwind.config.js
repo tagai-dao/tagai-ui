@@ -52,12 +52,14 @@ export default {
         'grey-8d': "#8D8D8D",
         'grey-d1': "#D1D1D1",
         'grey-8e': "#8E8E93",
+        'grey-f4': "#F4F4F4",
         'black-19': "#191C32",
         'orange-fa': "#FACA83",
         'blue-active': "#575873"
       },
       backgroundImage: theme => ({
         'gradient-primary': 'linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%)',
+        'gradient-purple': 'linear-gradient(90deg, #F98282 11.46%, #A65BFA 98.96%)',
         'img-home': 'url("@/assets/images/main-bg.svg")',
         'img-common': 'url("@/assets/images/main-bg1.svg")',
         'gradient-tab': 'linear-gradient(181.87deg, #FEFEFE -41.52%, #FEFEFE 114.96%)'
