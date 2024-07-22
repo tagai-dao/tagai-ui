@@ -108,7 +108,7 @@ export type Commerce = Account & {
   feeAmount?: number;
 };
 
-export type Tweet = Space &
+export type Tweet = OnchainTokenInfo & Space &
   Curation &
   Commerce & {
     tweetId: string;
@@ -148,7 +148,15 @@ export type Comment = {
   profile?: string;
 };
 
-export type Community = {
+export type OnchainTokenInfo = {
+  marketCap?: number;
+  listed?: boolean;
+  bondingCurveSupply?: number;
+  totalClaimedSocialRewards?: number;
+  price?: number
+}
+
+export type Community = OnchainTokenInfo & {
   name: string;
   description: string;
   logo: string;
@@ -160,11 +168,6 @@ export type Community = {
   telegram?: string | undefined | null;
   official?: string | undefined | null;
   createAt?: string | number | null | undefined;
-  marketCap?: number;
-  listed?: boolean;
-  bondingCurveSupply?: number;
-  totalClaimedSocialRewards?: number;
-  price?: number
 };
 
 export type CreateCommunity = {

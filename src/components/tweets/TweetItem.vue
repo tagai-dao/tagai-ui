@@ -2,7 +2,7 @@
 import {computed, defineProps, onMounted, type PropType, ref, withDefaults} from 'vue'
 import { IgnoreAuthor } from '@/config'
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
-import { parseTimestamp } from '@/utils/helper';
+import { formatPrice, parseTimestamp } from '@/utils/helper';
 import { useRouter } from 'vue-router';
 // import { buildAssetId } from '@/utils/eth/ipShare'
 import UserAvatar from "@/components/common/UserAvatar.vue";
@@ -73,19 +73,19 @@ const onUserAvatar = () => {
         <div class="flex-1">
           <div class="w-full flex items-center flex-wrap gap-x-2">
             <a class="font-bold text-lg"
-               @click.stop="onUserAvatar()">{{ tweet.twitterUsername }}</a>
+               @click.stop="onUserAvatar()">{{ tweet.twitterName }}</a>
             <span class="mx-4px"> · </span>
             <button @click="gotoTweet($event)">
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
           </div>
           <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">
-            <span>@{{tweet.twitterName}}</span>
+            <span>@{{tweet.twitterUsername}}</span>
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
-        <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
-          $10.01
+        <button v-if="tweet.amount" class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
+          {{ formatPrice((tweet.price ?? 0) * (tweet.amount ?? 0)) }}
         </button>
       </div>
       <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">
@@ -96,8 +96,8 @@ const onUserAvatar = () => {
             <div class="whitespace-pre-line break-words multi-content multi-content-2"
                  v-else v-html="formatEmojiText(content)"></div>
           </div>
-          <div class="flex flex-wrap gap-4 mt-1">
-            <button v-for="(tag, index) of ['tag1', 'tag2']" :key="tag"
+          <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">
+            <button v-for="(tag, index) of JSON.parse(tweet.tags!)" :key="tag"
                     :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
                     class="px-2 text-base rounded-md">#{{ tag }}</button>
           </div>

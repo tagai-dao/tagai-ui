@@ -8,8 +8,12 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import { getUserTweets } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
+import { getTokenInfoOfTweets } from '@/utils/pump'
+import { formatPrice } from "@/utils/helper";
+import { useStateStore } from "@/stores/common";
 
 const accStore = useAccountStore()
+const stateStore = useStateStore()
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -18,13 +22,13 @@ const listData = ref<number []>([])
 const scroller = document.querySelector('#profile-tab-scroller')
 
 const onLoad = async () => {
-  if(loading.value || finished.value || refreshing.value || accStore.tokenHoldingList.length == 0) return
+  if(loading.value || finished.value || refreshing.value || accStore.tweetsList.length == 0) return
   // loading.value = true
   try{
     loading.value = true;
     let list : any = await getUserTweets(accStore.getAccountInfo.twitterId, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
     if (list && list.length > 0) {
-      accStore.tokenHoldingList
+      accStore.tweetsList = accStore.tweetsList.concat(await getTokenInfoOfTweets(list))
     }
   } catch (e) {
     
@@ -42,10 +46,9 @@ const onRefresh = async () => {
     finished.value = false
     const list: any = await getUserTweets(accStore.getAccountInfo.twitterId)
     if (list && list.length > 0) {
-      accStore.tweetsList = list
+      accStore.tweetsList = await getTokenInfoOfTweets(list)
       if (list.length < 30) finished.value = true
     }
-    console.log(53, list)
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -97,12 +100,12 @@ onMounted(() => {
           <div v-for="tweet of accStore.tweetsList" :key="tweet.tweetId">
             <div class="flex items-center gap-2 py-3">
               <div class="w-4 h-4 bg-green-normal rounded-full"></div>
-              <div class="text-base flex-1">
-                #{{ tweet.tick }} • Market cap $50,409.00
-              </div>
-              <router-link :to="`/buy-sell/${tweet.tick}`" class="justify-center flex items-center bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
-                Trade
+              <router-link :to="`/tag-detail/${tweet.tick}`" class="text-base flex-1">
+                #{{ tweet.tick }} • Market cap {{ formatPrice((tweet.marketCap ?? 0) * stateStore.btcPrice) }}
               </router-link>
+              <!-- <router-link :to="`/buy-sell/${tweet.tick}`" class="justify-center flex items-center bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
+                Trade
+              </router-link> -->
             </div>
             <div class="bg-white rounded-2xl mb-3">
               <SpaceItem v-if="tweet.spaceId" :tweet="tweet">

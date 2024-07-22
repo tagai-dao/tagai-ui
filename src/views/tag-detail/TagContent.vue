@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
+import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
 import { testTweets } from "@/assets/test-data";
 import { useTweetsStore } from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
@@ -29,10 +30,6 @@ const showingTweets = computed(() => {
   }
   return [] as Tweet[];
 });
-
-function newLike(tweetId: string) {}
-
-function newComment(tweetId: string, commentId: string, text: string) {}
 
 async function onRefresh() {
   try {
@@ -114,8 +111,6 @@ onMounted(async () => {
             <template #tweet-action-bar>
               <PostButtonGroup
                 @click.stop
-                @newLike="newLike"
-                @newComment="newComment"
                 :tweet="tweet"
               />
             </template>
@@ -126,17 +121,15 @@ onMounted(async () => {
             :tweet="tweet"
             @click.stop="$router.push(`/post-detail/${tweet.tweetId}`)"
           >
-<!--            trade button-->
-            <template #tweet-trade>
-              <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3">Trade</button>
-            </template>
             <template #tweet-action-bar>
               <PostButtonGroup
                 @click.stop
-                @newLike="newLike"
-                @newComment="newComment"
                 :tweet="tweet"
               />
+            </template>
+
+            <template #tweet-trade v-if="tweet.commerceId">
+             <CommerceBtn></CommerceBtn>
             </template>
           </TweetItem>
         </div>
