@@ -1,5 +1,5 @@
 import { getContract } from "./contract";
-import { type Community, type CreateCommunity } from "@/types";
+import type { Community, CreateCommunity, Tweet } from "@/types";
 import { CreateFee, ChainConfig } from "@/config";
 import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
@@ -7,7 +7,7 @@ import { PumpContract, Ether } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
-import { compile } from "vue";
+import _ from 'lodash'
 
 export const checkTickUsed = async (tick: string) => {
     const pump = await getContract('Pump')
@@ -135,6 +135,72 @@ export const getTokenInfo = async (communities: Community[]) => {
     }
     
     return communities;
+}
+
+export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
+    let calls: any = []
+    const tokens = _.union(tweets.map(t => t.token))
+    for (let token of tokens) {
+        if (!ethers.isAddress(token)) continue;
+        calls = calls.concat([
+            {
+                target: token,
+                call: [
+                    'bondingCurveSupply()(uint256)'
+                ],
+                returns: [
+                    [token + '-bondingCurveSupply', (val: any) => BigInt(val)]
+                ]
+            },{
+                target: token,
+                call: [
+                    'listed()(bool)'
+                ],
+                returns: [
+                    [token + '-listed']
+                ]
+            },
+            {
+                target: token,
+                call: [
+                    'totalClaimedSocialRewards()(uint256)'
+                ],
+                returns: [
+                    [token + '-totalClaimedSocialRewards', (val: any) => BigInt(val)]
+                ]
+            },
+            {
+                target: token,
+                call: [
+                    'getBuyPrice(uint256)(uint256)',
+                    '1000000000000000000'
+                ],
+                returns: [
+                    [token + '-price', (val: any) => BigInt(val)]
+                ]
+            }
+        ])
+    }
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    let info = res.results.transformed
+    let result: any = {}
+    for (let [key, value] of Object.entries(info)) {
+        const [token, type] = key.split('-')
+        if (!result[token]) {
+            result[token] = {}
+        }
+        result[token][type] = value;
+    }
+    for( let tweet of tweets) {
+        if (!tweet.token) continue
+        const tokenInfo = result[tweet.token]
+        tweet.listed = tokenInfo.listed;
+        tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
+        tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
+        tweet.price = tokenInfo.price.toString() / 1e18;
+        tweet.marketCap = tweet.price * 10000000;
+    }
+    return tweets;
 }
 
 export const getBuyAmountWithBTCAfterFee = async (token: string | undefined, amount: bigint) => {

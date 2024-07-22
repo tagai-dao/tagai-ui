@@ -32,7 +32,6 @@ const onRefresh = async () => {
       accStore.createdTokenList = list
       if (list.length < 30) finished.value = true
     }
-    console.log(53, list)
   } catch (e) {
     handleErrorTip(e)
   } finally {

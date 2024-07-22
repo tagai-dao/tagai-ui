@@ -14,12 +14,12 @@ import { getTokenInfo } from '@/utils/pump'
 import { useInterval } from "@/composables/useTools";
 
 const tabOptions = [
-  {label: 'Group', key: 'group'},
+  // {label: 'Group', key: 'group'},
   {label: 'Content', key: 'content'},
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
-const activeTab = ref('group')
+const activeTab = ref('content')
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
 const tweetTypeRef = ref()
@@ -143,7 +143,7 @@ onMounted(async () => {
               :class="tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f'"
               @click="activeTab=tab.key">{{tab.label}}</button>
     </div>
-    <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/>
+    <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
     <TagContent v-if="activeTab==='content'"/>
     <TagCredit v-if="activeTab==='credit'"/>
     <TagToken v-if="activeTab==='token'"/>
