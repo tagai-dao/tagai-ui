@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { Space } from "@/types";
+import type { Space, Tweet } from "@/types";
 import { ref } from "vue";
 
 export const useCurationStore = defineStore(
@@ -8,6 +8,7 @@ export const useCurationStore = defineStore(
         const currentSelectedSpace = ref<Space | null>(null)
         return {
             allSpaces,
-            currentSelectedSpace
+            currentSelectedSpace,
+            currentSelectedTweet: null as Tweet | null
         }
     })
