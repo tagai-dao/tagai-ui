@@ -70,75 +70,77 @@ onMounted(async () => {
 
 <template>
   <div class="h-full overflow-auto py-2 flex flex-col gap-3 px-3 relative">
-    <div class="bg-white rounded-2xl py-5 px-3.5 flex gap-3">
-      <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center">
-        <img class="w-15" :src="comStore.currentSelectedCommunity?.logo" alt="">
-      </div>
-      <div class="flex-1 py-1">
-        <div class="flex gap-4 items-center">
-          <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
-          <!-- <img class="w-4 h-4" src="../../assets/icons/icon-circle-x.svg" alt="">
-          <div class="w-4 h-4 min-w-4 min-h-4 bg-purple-c1 rounded-full"></div> -->
+    <div class="grid grid-cols-1 web:grid-cols-5 gap-3">
+      <div class="col-span-1 web:col-span-2 bg-white rounded-2xl py-5 px-3.5 flex gap-3">
+        <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center">
+          <img class="w-15" :src="comStore.currentSelectedCommunity?.logo" alt="">
         </div>
-        <div class="whitespace-pre-line text-h5 mt-1">
-          {{ comStore.currentSelectedCommunity?.description }}
+        <div class="flex-1 py-1">
+          <div class="flex gap-4 items-center">
+            <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
+            <!-- <img class="w-4 h-4" src="../../assets/icons/icon-circle-x.svg" alt="">
+            <div class="w-4 h-4 min-w-4 min-h-4 bg-purple-c1 rounded-full"></div> -->
+          </div>
+          <div class="whitespace-pre-line text-h5 mt-1">
+            {{ comStore.currentSelectedCommunity?.description }}
+          </div>
         </div>
       </div>
-    </div>
-    <div class="bg-white rounded-2xl py-5 px-3.5 flex flex-col gap-3">
-      <div class="text-base font-medium flex items-center gap-1">
-        <span>Bonding curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
-        <el-popover popper-class="c-popper">
-          <template #reference>
-            <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
-          </template>
-          <template #default>
-            <div class="bg-white rounded-xl p-2 shadow-popper-tip">
-              {{ $t('community.distributionTip') }}
-            </div>
-          </template>
-        </el-popover>
-      </div>
-      <div class="flex items-center gap-3">
-        <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
-                    bg-white gap-[2px]">
-          <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
-                      placement="top-start">
-            <template #content>
-              <div class="flex gap-1">
-                <span class="text-sm">{{data.desc}}</span>
-                <span class="font-semibold text-base">{{data.value.toFixed(2)}}%</span>
+      <div class="col-span-1 web:col-span-3 bg-white rounded-2xl py-5 px-3.5 flex flex-col gap-3">
+        <div class="text-base font-medium flex items-center gap-1">
+          <span>Bonding curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
+          <el-popover popper-class="c-popper">
+            <template #reference>
+              <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
+            </template>
+            <template #default>
+              <div class="bg-white rounded-xl p-2 shadow-popper-tip">
+                {{ $t('community.distributionTip') }}
               </div>
             </template>
-            <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
-              <div class="h-full"
-                   :style="{background: data.background, width:`${data.value.toFixed(2)}%`}" >
-              </div>
-            </div>
-          </el-tooltip>
+          </el-popover>
         </div>
-        <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
-          <template #reference>
-            <button class="bg-black px-3 h-8 text-white text-sm rounded-full whitespace-nowrap">
-              Build & Earn
-            </button>
-          </template>
-          <template #default>
-            <div class="bg-black rounded-2xl px-3 py-4 w-[200px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
-              <button @click="onTweetType(GlobalModalType.CreateTweet)"
-                      class="whitespace-nowrap">Tweet on-chain</button>
-              <button @click="onTweetType(GlobalModalType.CreateTweetSpace)"
-                      class="whitespace-nowrap">Tweet an onchain Space</button>
-            </div>
-          </template>
-        </el-popover>
-      </div>
-      <div class="flex justify-center text-white">
-        <button class="w-1/2 bg-gradient-primary text-h5 rounded-full h-11"
-                @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">Trade</button>
+        <div class="flex items-center gap-3">
+          <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
+                    bg-white gap-[2px]">
+            <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
+                        placement="top-start">
+              <template #content>
+                <div class="flex gap-1">
+                  <span class="text-sm">{{data.desc}}</span>
+                  <span class="font-semibold text-base">{{data.value.toFixed(2)}}%</span>
+                </div>
+              </template>
+              <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
+                <div class="h-full"
+                     :style="{background: data.background, width:`${data.value.toFixed(2)}%`}" >
+                </div>
+              </div>
+            </el-tooltip>
+          </div>
+          <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
+            <template #reference>
+              <button class="bg-black px-3 h-8 text-white text-sm rounded-full whitespace-nowrap">
+                Build & Earn
+              </button>
+            </template>
+            <template #default>
+              <div class="bg-black rounded-2xl px-3 py-4 w-[200px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
+                <button @click="onTweetType(GlobalModalType.CreateTweet)"
+                        class="whitespace-nowrap">Tweet on-chain</button>
+                <button @click="onTweetType(GlobalModalType.CreateTweetSpace)"
+                        class="whitespace-nowrap">Tweet an onchain Space</button>
+              </div>
+            </template>
+          </el-popover>
+        </div>
+        <div class="flex justify-center text-white">
+          <button class="w-1/2 bg-gradient-primary text-h5 rounded-full h-11"
+                  @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">Trade</button>
+        </div>
       </div>
     </div>
-    <div class="flex justify-between gap-2">
+    <div class="flex justify-between items-center gap-2 web:bg-white web:h-12 web:px-4 rounded-2xl">
       <button v-for="tab of tabOptions" :key="tab.key"
               class="px-3 rounded-full h-6 text-h3"
               :class="tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f'"
