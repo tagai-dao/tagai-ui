@@ -9,6 +9,7 @@ import { useCurationStore } from '@/stores/curation'
 import { handleErrorTip } from '@/utils/notify'
 import { useRouter } from "vue-router";
 import { getTokenCap, getTokenInfo } from '@/utils/pump'
+import SearchBar from "@/components/common/SearchBar.vue";
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -107,10 +108,11 @@ onMounted(async () => {
         <BannerTag :space/>
       </van-swipe-item>
     </van-swipe>
-    <div class="px-3 flex justify-end">
+    <div class="px-3 flex justify-end gap-6">
+      <SearchBar class="hidden web:flex"/>
       <el-select
         v-model="listType"
-        class="bg-white rounded-full overflow-hidden max-w-[120px] c-select h-10 flex items-center text-h3 text-black"
+        class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
         popper-class="c-select-popper rounded-xl"
       >
         <el-option :value="ListType.Trending" label="Trending" />
@@ -129,13 +131,15 @@ onMounted(async () => {
                   finished-text="No more"
                   :offset="50"
                   @load="loadMore">
-          <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
+          <div v-show="listType == ListType.Trending"
+               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
             <div v-if="comStore.trendingCommunities.length == 0" class="flex items-center justify-center">
               no data
             </div>
             <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
           </div>
-          <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
+          <div v-show="listType == ListType.New"
+               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
             <div v-if="comStore.newCommunities.length == 0" class="flex items-center justify-center">
             no data
             </div>

@@ -30,9 +30,9 @@ async function trade() {
 
 <template>
   <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 flex gap-3">
-    <div class="w-20 h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo flex items-center justify-center
-                relative overflow-hidden">
-      <img class="w-15" :src="community.logo" alt="">
+    <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo
+                flex items-center justify-center relative overflow-hidden">
+      <img class="w-full h-full object-center object-cover" :src="community.logo" alt="">
       <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
     </div>
     <div class="flex-1">
