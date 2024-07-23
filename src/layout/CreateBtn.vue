@@ -21,14 +21,16 @@ async function createCoin() {
 </script>
 
 <template>
-  <button class="h-12 bg-gradient-primary px-6 rounded-full hidden web:flex items-center gap-2"
-          @click="createCoin">
-    <span class="text-white font-bold">{{$t('createCoin')}}</span>
-    <img src="~@/assets/icons/icon-add.svg" alt="">
-  </button>
-  <button class="web:hidden mb-9" @click="createCoin">
-    <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
-  </button>
+  <div>
+    <button class="h-12 bg-gradient-primary px-6 rounded-full hidden web:flex items-center gap-2"
+            @click="createCoin">
+      <span class="text-white font-bold">{{$t('createCoin')}}</span>
+      <img src="~@/assets/icons/icon-add.svg" alt="">
+    </button>
+    <button class="web:hidden mb-9" @click="createCoin">
+      <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
+    </button>
+  </div>
 </template>
 
 <style scoped>

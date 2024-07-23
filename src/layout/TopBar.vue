@@ -29,7 +29,7 @@ const modalVisible = ref(false)
            @click="modalVisible=true">
       <img class="w-6 cursor-pointer" src="~@/assets/icons/icon-lang-en.svg" alt="">
       <ProfileBtn class="hidden web:flex"/>
-      <CreateBtn/>
+      <CreateBtn class="hidden web:block"/>
     </div>
     <el-dialog v-model="modalVisible"
                modal-class="overlay-white c-modal-fullscreen" fullscreen
