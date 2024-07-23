@@ -1,5 +1,15 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import { useCommunityStore } from "@/stores/community";
+import {onMounted, ref} from "vue";
+import { formatAddress, formatAmount, formatPrice, sleep } from "@/utils/helper";
+import { useStateStore } from "@/stores/common";
+import { type TokenHoldingList } from "@/types";
+import { getHolderList } from "@/apis/api";
+import { handleErrorTip } from "@/utils/notify";
+
+const comStore = useCommunityStore()
+
+const holdingList = ref<TokenHoldingList[]>([])
 
 const chartOptions = ref({
   chart: {
@@ -62,11 +72,75 @@ const progressData = ref([
   {amount: 20, stopHeight: 80, background: '#83DDFA'},
   {amount: 20, stopHeight: 100, background: '#9B83FA'},
 ])
+
+
+const refreshing = ref(false);
+const loading = ref(false);
+const finished = ref(false);
+
+async function onRefresh() {
+  if (refreshing.value || loading.value) return;
+  refreshing.value = true;
+  finished.value = false;
+  try{
+    let list: any = await getHolderList(comStore.currentSelectedCommunity!.token)
+    if (list && list.length > 0) {
+      list = list.map((h: any) => {
+        return {
+          community: comStore.currentSelectedCommunity,
+          amount: h.amount.toString() / 1e18,
+          ethAddr: h.holder
+        }
+      })
+      holdingList.value = list as TokenHoldingList[];
+    }
+    if (list.length < 30) {
+      finished.value = true
+    }
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    refreshing.value = false
+  }
+}
+
+async function onLoad() {
+  if (refreshing.value || loading.value || finished.value || holdingList.value.length == 0) return;
+  loading.value = true;
+  try{
+    let list: any = await getHolderList(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
+
+    if (list && list.length > 0) {
+      list = list.map((h: any) => {
+        return {
+          community: comStore.currentSelectedCommunity,
+          amount: h.amount.toString() / 1e18,
+          ethAddr: h.holder
+        }
+      })
+      holdingList.value = holdingList.value.concat(list as TokenHoldingList[]);
+    }
+    if (list.length < 30) {
+      finished.value = true
+    }
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    refreshing.value = false
+  }
+}
+
+onMounted(async () => {
+  while(!comStore.currentSelectedCommunity?.tick) {
+    await sleep(0.3)
+  }
+  onRefresh()
+})
 </script>
 
 <template>
-  <div class="">
-    <div class="bg-white p-3 rounded-2xl">
+  <div class="" v-if="comStore.currentSelectedCommunity?.tick">
+    <!-- <div class="bg-white p-3 rounded-2xl">
       <div class="flex justify-between items-center">
         <div class="flex items-end gap-1">
           <span class="text-lg font-bold leading-5">LATC</span>
@@ -82,35 +156,31 @@ const progressData = ref([
                 class="h-full flex-1 rounded-full text-h5"
                 :class="activeTab===tab?'bg-white shadow-tab':'text-grey-6f'">{{tab}}</button>
       </div>
-    </div>
+    </div> -->
     <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
       <div class="text-h2 mb-2">Token info</div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Price</span>
-        <span class="text-h5 text-black-19">$0.0038</span>
+        <span class="text-h5 text-black-19">{{ formatPrice((comStore.currentSelectedCommunity.price ?? 0) * useStateStore().btcPrice) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">bonding curve sell</span>
-        <span class="text-h5 text-black-19">16.76M</span>
+        <span class="text-h5 text-black-19">{{ formatAmount(comStore.currentSelectedCommunity.bondingCurveSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Supply</span>
-        <span class="text-h5 text-black-19">15,280,000,000</span>
+        <span class="text-h4 text-grey-93">Total Supply</span>
+        <span class="text-h5 text-black-19">10,000,000</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Dex Liquidity</span>
-        <span class="text-h5 text-black-19">3.87M</span>
+        <span class="text-h5 text-black-19">2,000,000</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Cap</span>
-        <span class="text-h5 text-black-19">$231,233</span>
-      </div>
-      <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Tweet Pool</span>
-        <span class="text-h5 text-black-19">2.1M</span>
+        <span class="text-h5 text-black-19">{{ formatPrice((comStore.currentSelectedCommunity.marketCap ?? 0) * useStateStore().btcPrice) }}</span>
       </div>
     </div>
-    <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
+    <!-- <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
       <div class="text-h2 mb-2">Tweet Pool</div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Content and Interaction</span>
@@ -148,26 +218,45 @@ const progressData = ref([
           <input class="flex-1 text-h3" :value="'0x3475...3880'" disabled type="text" id="reward">
         </div>
       </div>
-    </div>
+    </div> -->
     <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
-      <div class="text-h2 mb-2">Token List</div>
+      <div class="text-h2 mb-2">Holder List</div>
+      <van-pull-refresh
+      v-model="refreshing"
+      @refresh="onRefresh"
+      loading-text="Loading"
+      pulling-text="Pull to refresh data"
+      loosing-text="Release to refresh"
+    >
+      <van-list
+        :loading="loading"
+        :finished="finished"
+        :immediate-check="false"
+        finished-text="No more"
+        :offset="50"
+        @load="onLoad"
+      >
       <div class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
-           v-for="i of 4" :key="i">
+           v-for="(holder, i) of holdingList" :key="i">
         <el-tooltip placement="top">
-          <template #content>
+          <!-- <template #content>
             <div class="flex gap-1">
               用户信息
             </div>
-          </template>
+          </template> -->
           <div class="col-span-3 truncate flex items-center gap-1">
-            <span class="min-w-4">{{i+1}}</span>
-            <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt="">
-            <span class="">0x ……F263</span>
-            <span class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">deployer</span>
+            <span class="min-w-4">{{i}}</span>
+            <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
+            <span class="">{{ formatAddress(holder.ethAddr) }}</span>
+            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Contract</span>
+            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Deployer</span>
           </div>
         </el-tooltip>
-        <span class="col-span-2 text-right">680M / 6.11%</span>
+        <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 10000000).toFixed(2) }}%</span>
       </div>
+      </van-list>
+    </van-pull-refresh>
+     
     </div>
   </div>
 </template>
