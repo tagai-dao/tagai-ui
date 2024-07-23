@@ -131,13 +131,15 @@ onMounted(async () => {
                   finished-text="No more"
                   :offset="50"
                   @load="loadMore">
-          <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
+          <div v-show="listType == ListType.Trending"
+               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
             <div v-if="comStore.trendingCommunities.length == 0 && loading" class="flex items-center justify-center">
               no data
             </div>
             <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
           </div>
-          <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
+          <div v-show="listType == ListType.New"
+               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
             <div v-if="comStore.newCommunities.length == 0 && loading" class="flex items-center justify-center">
             no data
             </div>
