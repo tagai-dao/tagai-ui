@@ -7,7 +7,8 @@ const props = defineProps<{
 </script>
 
 <template>
-    <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3">
+    <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3"
+        v-if="tweet.commerceId">
         Trade
     </button>
 </template>

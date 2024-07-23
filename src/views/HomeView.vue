@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BannerTag from "@/components/common/BannerTag.vue";
+import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import { ref, onActivated, onMounted, watch } from "vue";
 import { ListType, type Community, type Space } from '@/types'
@@ -104,7 +104,7 @@ onMounted(async () => {
   <div class="h-full overflow-hidden pb-2 flex flex-col gap-3">
     <van-swipe :loop="true" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">
       <van-swipe-item v-for="space of curationStore.allSpaces">
-        <BannerTag :space/>
+        <OnlineSpace :space/>
       </van-swipe-item>
     </van-swipe>
     <div class="px-3 flex justify-end">
@@ -130,13 +130,13 @@ onMounted(async () => {
                   :offset="50"
                   @load="loadMore">
           <div v-show="listType == ListType.Trending" class="flex flex-col gap-y-2">
-            <div v-if="comStore.trendingCommunities.length == 0" class="flex items-center justify-center">
+            <div v-if="comStore.trendingCommunities.length == 0 && loading" class="flex items-center justify-center">
               no data
             </div>
             <TagListItem v-else v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
           </div>
           <div v-show="listType == ListType.New" class="flex flex-col gap-y-2">
-            <div v-if="comStore.newCommunities.length == 0" class="flex items-center justify-center">
+            <div v-if="comStore.newCommunities.length == 0 && loading" class="flex items-center justify-center">
             no data
             </div>
             <TagListItem v-else v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />

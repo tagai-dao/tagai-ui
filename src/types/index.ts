@@ -128,6 +128,8 @@ export type Tweet = OnchainTokenInfo & Space &
     retweeted?: number;
     replied?: number;
     liked?: number;
+    curateCount?: number;
+    spaceCurateCount?: number
   };
 
 export type Comment = {

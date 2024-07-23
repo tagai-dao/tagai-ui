@@ -54,12 +54,13 @@ async function updateProgress() {
 }
 
 onMounted(async () => {
-  if (!comStore.currentSelectedCommunity?.tick){
-    const tick = route.params.id;
+  const tick = route.params.id;
+  if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){
     if (typeof(tick) !== 'string') {
       router.replace('/')
       return;
     }
+    comStore.currentSelectedCommunity = null
     comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
   }
   updateProgress();
