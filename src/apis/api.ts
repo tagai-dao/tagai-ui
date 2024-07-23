@@ -100,3 +100,7 @@ export const isTokenExist = async (tick: string) =>
 /************************************ curation **********************************/
 export const getOnlineSpaces = async () =>
   get(BACKEND_API_URL + '/space/onlineSpaces')
+
+/************************************ ipshare **********************************/
+export const getIpshareInfo = async (ethAddr: string) =>
+  get(BACKEND_API_URL + '/user/ipshare', {ethAddr})

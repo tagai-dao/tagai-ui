@@ -1,16 +1,38 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import TabHoldCoin from "@/views/profile/TabHoldCoin.vue";
 import TabPost from "@/views/profile/TabPost.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP } from "@/config";
+import { getIpshareInfo } from '@/apis/api'
+import { useInterval } from "@/composables/useTools";
 
 const accStore = useAccountStore()
 const tabOptions = ['holdCoin', 'post', 'createCoin']
 const activeTab = ref('holdCoin')
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
+const { setInter } = useInterval()
+
+async function updateIPShare() {
+  const acc = useAccountStore().getAccountInfo;
+  
+  try {
+    if (acc.ethAddr) {
+      const ipshare: any = await getIpshareInfo(acc.ethAddr);
+      useAccountStore().ipshare = ipshare;
+    }
+  } catch (error) {
+    
+  }
+}
+
+onMounted(() => {
+  updateIPShare()
+  setInter(updateIPShare, 100000)
+})
+
 </script>
 
 <template>
