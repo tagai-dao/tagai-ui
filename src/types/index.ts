@@ -14,25 +14,23 @@ export enum ListType {
 }
 
 export type IPShareHolder = {
-  assetId?: bigint | string;
+  ethAddr?: string;
   holder?: string;
-  amount?: bigint | string;
-  supply?: bigint | string | number;
+  amount?: bigint | string | number;
+  shareSupply?: bigint | string | number;
 };
 
 export type IPShare = {
-  assetId?: bigint | string;
-  assetType?: bigint | string | number;
-  ownerBtc?: string;
-  ownerEth?: string;
-  insId?: bigint | string | number;
-  supply?: bigint | string | number;
-  l1Address?: string;
-  l2Address?: string;
+  ethAddr?: string;
+  shareSupply?: bigint | string | number;
   price?: number;
   formatPrice?: string;
-  feeAmount?: string | bigint;
-  createAtBlock?: number;
+  holdersCount?: number;
+  holdingsCount?: number;
+  stakedCount?: number,
+  feeAmount?: number | bigint | string,
+  totalCaptured?: string | bigint | number,
+  totalStaked?: string | bigint | number,
   createTime?: number;
   holders?: Array<IPShareHolder>;
 };
