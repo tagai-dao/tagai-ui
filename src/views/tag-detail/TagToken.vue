@@ -242,21 +242,14 @@ onMounted(async () => {
       >
       <div class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
            v-for="(holder, i) of holdingList" :key="i">
-        <el-tooltip placement="top">
-          <!-- <template #content>
-            <div class="flex gap-1">
-              用户信息
-            </div>
-          </template> -->
           <div class="col-span-3 truncate flex items-center gap-1">
-            <span class="min-w-4">{{i}}</span>
+            <span class="min-w-4">{{i + 1}}</span>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
             <span class="">{{ formatAddress(holder.ethAddr) }}</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Contract</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Deployer</span>
           </div>
-        </el-tooltip>
-        <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 10000000).toFixed(2) }}%</span>
+        <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 100000).toFixed(2) }}%</span>
       </div>
       </van-list>
     </van-pull-refresh>
