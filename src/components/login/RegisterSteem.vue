@@ -159,9 +159,10 @@ async function register() {
         twitterId: account.twitterId,
         pwd: params.pwd,
         sendNonce: params.sendNonce,
-        SendPubKey: params.sendPubKey,
+        sendPubKey: params.sendPubKey,
         ethAddr: account.ethAddr,
-        salt
+        salt,
+        identityInfo
       }
       await registerSteem(createForm);
       await sleep(3)

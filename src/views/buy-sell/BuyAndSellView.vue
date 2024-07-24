@@ -7,7 +7,7 @@ import { useCommunityStore } from "@/stores/community";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import { useRoute } from "vue-router";
-import { getCommunityDetail, getTokenTradeList } from '@/apis/api'
+import { getCommunityDetail, trade } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithBTCAfterFee, getReceivedAmountSellBTCAfterFee, getTokenInfo,
   buyToken, sellToken
@@ -137,6 +137,7 @@ async function confirm() {
       if (tx) {
         payBtc.value = undefined
         receiveAmount.value = undefined
+        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId).catch()
       }else{
         handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
       }
@@ -146,6 +147,7 @@ async function confirm() {
       if (tx) {
         sellAmount.value = undefined
         receiveBtc.value = undefined
+        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId).catch()
       }else {
         handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
       }

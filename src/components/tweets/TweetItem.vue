@@ -13,6 +13,7 @@ import TweetSpaceCard from "@/components/tweets/TweetSpaceCard.vue";
 import {usePost} from "@/composables/usePost";
 import type {Tweet} from "@/types";
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
+import { useStateStore } from '@/stores/common';
 
 const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,}
@@ -86,7 +87,7 @@ const onUserAvatar = () => {
         </div>
         <button v-if="tweet.amount" class="h-6 rounded-full px-3 text-white text-sm font-semibold"
         :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
-          {{ formatPrice((tweet.price ?? 0) * (tweet.amount ?? 0)) }}
+          {{ formatPrice((tweet.price ?? 0) * useStateStore().btcPrice * (tweet.amount ?? 0)) }}
         </button>
       </div>
       <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">

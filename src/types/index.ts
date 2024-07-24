@@ -132,6 +132,12 @@ export type Tweet = OnchainTokenInfo & Space &
     spaceCurateCount?: number
   };
 
+export type CurateRecord = Account & {
+  tweetId: string,
+  curateRecord: number,
+  amount: number,
+}
+
 export type Comment = {
   replyId?: string;
   parentId?: string;

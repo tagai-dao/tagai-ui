@@ -13,6 +13,7 @@ import { useRoute, useRouter } from "vue-router";
 import { getTweetById } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
+import { getTokenInfoOfTweets } from "@/utils/pump";
 
 const curatorsModalVisible = ref(false)
 const router = useRouter()
@@ -30,7 +31,12 @@ onMounted(async () => {
     }
     curationStore.currentSelectedTweet = null
     curationStore.currentSelectedTweet = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId) as any
+    if (!curationStore.currentSelectedTweet) return
+    let ts = await getTokenInfoOfTweets([curationStore.currentSelectedTweet!])
+    curationStore.currentSelectedTweet = ts[0]
   }
+
+
 })
 
 </script>
@@ -66,7 +72,7 @@ onMounted(async () => {
         <span>{{ curationStore.currentSelectedTweet.curateCount }} guys has curated</span>
         <div class="flex items-center gap-2">
           <div class="flex">
-            <div class="border-[1px] border-white rounded-full bg-gray-400 w-8 h-8 z-30">
+            <!-- <div class="border-[1px] border-white rounded-full bg-gray-400 w-8 h-8 z-30">
               <img src="" alt="">
             </div>
             <div class="border-[1px] border-white rounded-full bg-gray-400 w-8 h-8 z-20 -ml-2">
@@ -74,7 +80,7 @@ onMounted(async () => {
             </div>
             <div class="border-[1px] border-white rounded-full bg-gray-400 w-8 z-10 -ml-2">
               <img src="" alt="">
-            </div>
+            </div> -->
           </div>
           <button class="flex items-center gap-1.5" @click="curatorsModalVisible=true">
             <span>more</span>
@@ -89,7 +95,7 @@ onMounted(async () => {
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px] bg-grey-f4"
                width="90%" :show-close="false" align-center destroy-on-close>
-      <CuratorsList/>
+      <CuratorsList :tweet="curationStore.currentSelectedTweet"/>
     </el-dialog>
   </div>
 </template>

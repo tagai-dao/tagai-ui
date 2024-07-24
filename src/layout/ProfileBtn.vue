@@ -7,7 +7,7 @@ import HalfCircleProgress from "@/components/common/HalfCircleProgress.vue";
 import BannerTag from "@/components/common/OnlineSpace.vue";
 
 const accStore = useAccountStore()
-const { vp, op } = useAccount()
+const { vp, op, profile, replaceEmptyProfile } = useAccount()
 </script>
 
 <template>
@@ -23,7 +23,7 @@ const { vp, op } = useAccount()
         <template #default>
           <div class="absolute top-0 left-0 right-0 bottom-0 p-[3px]">
             <img class="w-full h-full rounded-full"
-                 :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" alt="">
+                 :src="profile" @error="replaceEmptyProfile" alt="">
           </div>
         </template>
       </HalfCircleProgress>

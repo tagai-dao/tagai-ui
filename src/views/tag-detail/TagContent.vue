@@ -12,6 +12,7 @@ import { useCommunityStore } from "@/stores/community";
 import { sleep } from "@/utils/helper";
 import type { Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
+import { getTokenInfoOfTweets } from "@/utils/pump";
 
 const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
@@ -39,12 +40,18 @@ async function onRefresh() {
       comStore.currentSelectedCommunity!.tick,
       accStore.getAccountInfo?.twitterId
     );
+    
     if (!tweetsStore.communityTweets) {
       tweetsStore.communityTweets = {};
     }
     tweetsStore.communityTweets[
       comStore.currentSelectedCommunity!.tick
     ] = list as Tweet[];
+    tweetsStore.communityTweets[
+      comStore.currentSelectedCommunity!.tick
+    ] = await getTokenInfoOfTweets(tweetsStore.communityTweets[
+      comStore.currentSelectedCommunity!.tick
+    ])
     if (list.length < 30) {
       finished.value = true
     }
@@ -65,6 +72,11 @@ async function onLoad() {
     tweetsStore.communityTweets![
       comStore.currentSelectedCommunity!.tick
     ] = showingTweets.value.concat(list as Tweet[])
+    tweetsStore.communityTweets![
+      comStore.currentSelectedCommunity!.tick
+    ] = await getTokenInfoOfTweets(tweetsStore.communityTweets![
+      comStore.currentSelectedCommunity!.tick
+    ])
     if (list.length < 30) {
       finished.value = true
     }
