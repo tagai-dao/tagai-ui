@@ -27,7 +27,7 @@ async function createCoin() {
       <span class="text-white font-bold">{{$t('createCoin')}}</span>
       <img src="~@/assets/icons/icon-add.svg" alt="">
     </button>
-    <button class="web:hidden mb-9" @click="createCoin">
+    <button class="web:hidden absolute left-1/2 -top-5 transform -translate-x-1/2" @click="createCoin">
       <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
     </button>
   </div>

@@ -53,13 +53,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="px-3 min-h-full">
+  <div class="h-full">
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                      class="min-h-full"
+                      class="min-h-full h-full overflow-auto"
                       loading-text="Loading"
                       pulling-text="Pull to refresh data"
                       loosing-text="Release to refresh">
-      <van-list :loading="loading"
+      <van-list class="px-3"
+                :loading="loading"
                 :finished="finished"
                 :immediate-check="false"
                 finished-text="No more"

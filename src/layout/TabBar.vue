@@ -16,7 +16,7 @@ const { vp, op } = useAccount()
 </script>
 
 <template>
-  <div class="relative">
+  <div class="relative h-[76px]">
     <div class="absolute h-[76px] left-0 right-0 bottom-0 flex items-center justify-center rounded-md overflow-hidden">
       <div class="flex-1 h-full bg-gradient-tab"></div>
       <img class="h-full object-cover object-center" src="~@/assets/images/tabbar-bg.svg" alt="">
