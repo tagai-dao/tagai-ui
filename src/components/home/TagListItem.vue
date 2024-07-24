@@ -35,7 +35,7 @@ async function trade() {
       <img class="w-full h-full object-center object-cover" :src="community.logo" alt="">
       <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
     </div>
-    <div class="flex-1">
+    <div class="flex-1 truncate">
       <div class="w-full flex justify-between">
         <div class="flex-1 truncate">
           <div class="flex gap-2 items-end">
