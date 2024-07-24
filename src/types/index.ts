@@ -138,13 +138,13 @@ export type CurateRecord = Account & {
   amount: number,
 }
 
-export type Comment = {
+export type Reply = {
   replyId?: string;
   parentId?: string;
   steemId?: string;
   content?: string;
   supply?: number;
-  commentTime?: string;
+  operateTime?: string;
   twitterId?: string;
   btcAddr?: string;
   ethAddr?: string;

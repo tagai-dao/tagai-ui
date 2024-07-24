@@ -89,7 +89,7 @@ onMounted(async () => {
         </div>
       </div>
       <div class="text-h5 mt-2 px-3">Comments</div>
-      <Comments/>
+      <Comments />
     </div>
     <el-dialog v-model="curatorsModalVisible"
                modal-class="overlay-white"

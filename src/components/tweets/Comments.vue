@@ -1,21 +1,70 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import { useCurationStore } from "@/stores/curation";
+import { sleep, getRequestPages } from "@/utils/helper";
+import {onMounted, ref} from "vue";
+import { getReplyOfTweet } from '@/apis/api'
+import { handleErrorTip } from "@/utils/notify";
+import type { Reply } from "@/types";
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const listData = ref<number []>([])
+const listData = ref<Reply[]>([])
 const scroller = document.querySelector('#comment-list-scroller')
-const onLoad = () => {
-  if(loading.value || finished.value) return
-  // loading.value = true
+const curationStore = useCurationStore()
+
+const onLoad = async () => {
+  if(refreshing.value || finished.value || listData.value.length == 0) return
+  try{
+    if (!curationStore.currentSelectedTweet?.tweetId) return;
+    let list: any = await getReplyOfTweet(curationStore.currentSelectedTweet.tweetId, getRequestPages(listData.value.length))
+    if (list && list.length > 0) {
+      listData.value = list
+    }
+    if (list.length < 30) {
+      finished.value = true
+    }
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    loading.value = false
+  }
 };
 
-const onRefresh = () => {
-  finished.value = false;
-  onLoad();
+const onRefresh = async () => {
+  try{
+    finished.value = false;
+    if (!curationStore.currentSelectedTweet?.tweetId) return;
+    refreshing.value = true;
+    let list: any = await getReplyOfTweet(curationStore.currentSelectedTweet.tweetId)
+    if (list && list.length > 0) {
+      listData.value = list
+    }
+    if (list.length < 30) {
+      finished.value = true
+    }
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    refreshing.value = false
+  }
 };
 
+const gotoTwitterProfile = (reply: Reply) => {
+  
+  window.open(`https://x.com/${reply.twitterUsername}`, '__blank')
+}
+
+function gotoReply(reply: Reply) {
+  window.open(`https://x.com/${curationStore.currentSelectedTweet?.twitterUsername}/status/${reply.replyId}`, '__blank')
+}
+
+onMounted(async () => {
+  while(!curationStore.currentSelectedTweet?.tweetId) {
+    await sleep(0.2)
+  }
+  onRefresh()
+})
 </script>
 
 <template>
@@ -31,26 +80,26 @@ const onRefresh = () => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <div class="bg-white px-5 py-4 rounded-2xl">
-          <div class="flex gap-2">
+        <div v-for="reply of listData" :key="reply.replyId" class="bg-white px-5 py-4 rounded-2xl">
+          <div class="flex gap-2" @click="gotoReply(reply)">
             <img class="h-10 w-10 min-w-10 rounded-full"
-                 src="../../assets/icons/icon-default-coin.svg" alt="">
+                 :src="reply.profile" alt="">
             <div class="flex-1 min-h-10 flex flex-col">
-              <div class="text-h3">Musk</div>
+              <div class="text-h3">{{ reply.twitterName }}</div>
               <div class="w-full flex items-center flex-wrap gap-x-2 text-sm font-normal">
-                <span class="">@asmonmy</span>
+                <span class="">@{{ reply.twitterUsername }}</span>
                 <span class="mx-4px"> · </span>
-                <button>
+                <button @click.stop="gotoTwitterProfile(reply)">
                   <img class="w-3 h-3" src="../../assets/icons/icon-x.svg" alt="">
                 </button>
               </div>
             </div>
-            <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
+            <!-- <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
               $10.01
-            </button>
+            </button> -->
           </div>
           <div class="pl-12 mt-2">
-            MemeCoin is the futrue！
+            {{ reply.content }}
           </div>
         </div>
       </van-list>
