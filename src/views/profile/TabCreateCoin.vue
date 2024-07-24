@@ -27,10 +27,11 @@ const capturedFee = computed(() => {
 
 const onLoad = async () => {
   if(loading.value || finished.value || !accStore.getAccountInfo.ethAddr || accStore.createdTokenList.length == 0) return
+  loading.value = false
 };
 
 const onRefresh = async () => {
-  if (refreshing.value || loading.value || !accStore.getAccountInfo.ethAddr) {
+  if (loading.value || !accStore.getAccountInfo.ethAddr) {
     return;
   }
   try{

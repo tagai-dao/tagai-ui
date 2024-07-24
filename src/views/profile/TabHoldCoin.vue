@@ -14,12 +14,12 @@ const showingNoEth = computed(() => {
 
 const scroller = document.querySelector('#profile-tab-scroller')
 const onLoad = async () => {
-  if(loading.value || finished.value || refreshing.value || accStore.tokenHoldingList.length == 0 || showingNoEth.value) return
-  // loading.value = true
+  if(finished.value || refreshing.value || accStore.tokenHoldingList.length == 0 || showingNoEth.value) return
   try{
     loading.value = true
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
     accStore.tokenHoldingList = accStore.tokenHoldingList.concat(list)
+    if (list.length == 0) finished.value = true;
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -28,7 +28,7 @@ const onLoad = async () => {
 };
 
 const onRefresh = async () => {
-  if (refreshing.value || showingNoEth.value) return;
+  if (showingNoEth.value) return;
   try{
     refreshing.value = true
     finished.value = false;
@@ -36,7 +36,7 @@ const onRefresh = async () => {
     if (list && list.length > 0) {
       accStore.tokenHoldingList = list
     }
-    if (list.length < 30) {
+    if (list.length === 0) {
       finished.value = true
     }
   } catch(e) {
@@ -67,18 +67,19 @@ onMounted(async () => {
                 :offset="50"
                 @load="onLoad">
         <div v-for="(holding, i) of accStore.tokenHoldingList" :key="i"
+            v-show="holding.community"
              class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3.5 flex gap-3 mb-2">
           <div class="w-16 min-w-16 h-16 rounded-2xl bg-grey-normal-active shadow-tag-logo flex items-center justify-center
                 relative overflow-hidden">
-            <img class="w-15" :src="holding.community.logo" alt="">
+            <img class="w-15" :src="holding.community?.logo" alt="">
           </div>
           <div class="flex-1">
             <div class="flex gap-2 items-center">
-              <span class="text-grey-normal text-h2 font-bold leading-6">{{ holding.community.tick }}</span>
+              <span class="text-grey-normal text-h2 font-bold leading-6">{{ holding.community?.tick }}</span>
               <!-- <img class="w-15" src="~@/assets/icons/icon-circle-x.svg" alt=""> -->
             </div>
             <div class="whitespace-pre-line text-grey-normal text-h5 mt-1">
-              {{ holding.community.description }}
+              {{ holding.community?.description }}
             </div>
           </div>
         </div>

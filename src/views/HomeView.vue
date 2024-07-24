@@ -10,6 +10,7 @@ import { handleErrorTip } from '@/utils/notify'
 import { useRouter } from "vue-router";
 import { getTokenCap, getTokenInfo } from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
+import emitter from "@/utils/emitter";
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -26,8 +27,6 @@ watch(listType, (val) => {
 
 async function refresh() {
   try{
-    if (refreshing.value) return;
-    refreshing.value = true
     if (listType.value == ListType.New) {
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
@@ -48,7 +47,7 @@ async function refresh() {
 
 async function loadMore() {
   try{
-    if (refreshing.value || loading.value) return;
+    if (finished.value) return;
     loading.value = true
     if (listType.value == ListType.New) {
       if (!comStore.newCommunities || comStore.newCommunities.length == 0) {
@@ -98,6 +97,7 @@ onActivated(async () => {
 
 onMounted(async () => {
   refresh();
+  emitter.on('newCommunity', refresh);
 })
 </script>
 

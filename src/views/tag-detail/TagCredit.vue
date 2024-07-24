@@ -14,7 +14,7 @@ const finished = ref(false);
 const holdingList = ref<TokenHoldingList[]>([]);
 
 async function onRefresh() {
-  if (refreshing.value || loading.value) return;
+  if (loading.value) return;
   refreshing.value = true;
   finished.value = false;
   try{
@@ -40,7 +40,7 @@ async function onRefresh() {
 }
 
 async function onLoad() {
-  if (refreshing.value || loading.value || finished.value || holdingList.value.length == 0) return;
+  if (refreshing.value || finished.value || holdingList.value.length == 0) return;
   loading.value = true;
   try{
     let list: any = await getHolderList(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);

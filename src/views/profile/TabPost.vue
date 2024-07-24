@@ -23,7 +23,7 @@ const listData = ref<number []>([])
 const scroller = document.querySelector('#profile-tab-scroller')
 
 const onLoad = async () => {
-  if(loading.value || finished.value || refreshing.value || accStore.tweetsList.length == 0) return
+  if(finished.value || refreshing.value || accStore.tweetsList.length == 0) return
   // loading.value = true
   try{
     loading.value = true;
@@ -39,7 +39,7 @@ const onLoad = async () => {
 };
 
 const onRefresh = async () => {
-  if (refreshing.value || loading.value) {
+  if (loading.value) {
     return;
   }
   try{
