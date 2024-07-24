@@ -14,6 +14,7 @@ import { createCoin, calculateInitBtc, checkTickUsed } from "@/utils/pump";
 import { handleErrorTip } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
+import emitter from '@/utils/emitter'
 
 const modalStore = useModalStore();
 
@@ -147,7 +148,7 @@ const create = async () => {
     await createCommunity(createForm);
 
     // created token: prepair local data
-
+    emitter.emit('newCommunity', createForm);
     // add steem account
     accStore.setAccount({
       ...account!,

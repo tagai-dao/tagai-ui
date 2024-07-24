@@ -13,8 +13,8 @@ const comStore = useCommunityStore()
 const listData = ref<TokenTrade []>([])
 const scroller = document.querySelector('#trade-record-scroller')
 const onLoad = async () => {
-  if(loading.value || finished.value || listData.value.length == 0) return
-  loading.value = true
+  if(finished.value || listData.value.length == 0) return
+  
   try{
     const list = (await getTokenTradeList(comStore.currentSelectedCommunity!.token, Math.floor((listData.value.length - 1) / 30) + 1)) as TokenTrade[]
     listData.value = listData.value.concat(list)
@@ -31,10 +31,10 @@ const onLoad = async () => {
 
 const onRefresh = async () => {
   try{
-    if (refreshing.value === true || !comStore.currentSelectedCommunity?.token) {
+    if (!comStore.currentSelectedCommunity?.token) {
       return;
     }
-    refreshing.value = true;
+    
     finished.value = false;
     const list = await getTokenTradeList(comStore.currentSelectedCommunity!.token)
     listData.value = list as TokenTrade[]

@@ -33,7 +33,6 @@ const showingTweets = computed(() => {
 
 async function onRefresh() {
   try {
-    if (refreshing.value) return;
     finished.value = false;
     refreshing.value = true;
     let list: any = await getCommunityNewTweets(
@@ -58,7 +57,7 @@ async function onRefresh() {
 
 async function onLoad() {
   try{
-    if (refreshing.value || finished.value || loading.value || showingTweets.value.length === 0) {
+    if (refreshing.value || finished.value || showingTweets.value.length === 0) {
       return;
     }
     loading.value = true
