@@ -1,0 +1,54 @@
+import { getContract } from "./contract";
+import type { Community, CreateCommunity, Tweet, IPShare } from "@/types";
+import { CreateFee, ChainConfig } from "@/config";
+import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
+import { ethers } from 'ethers'
+import { PumpContract, IPShareContract, Ether } from "@/config";
+import { abis } from './abis'
+import { aggregate } from '@makerdao/multicall'
+import errCode from "@/errCode";
+import _ from 'lodash'
+
+// ethAddr?: string;
+//   shareSupply?: bigint | string | number;
+//   created?: boolean,
+//   price?: number;
+//   formatPrice?: string;
+//   holdersCount?: number;
+//   holdingsCount?: number;
+//   stakedCount?: number,
+//   feeAmount?: number | bigint | string,
+//   totalCaptured?: string | bigint | number,
+//   totalStaked?: string | bigint | number,
+//   createTime?: number;
+//   holders?: Array<IPShareHolder>;
+
+export const getIPShareInfo = async (ethAddr: string) => {
+    if (!ethers.isAddress(ethAddr)) {
+        return {}
+    }
+    let calls = [{
+        target: IPShareContract,
+        call: [
+            ''
+        ]
+    }]
+}
+
+export const ipshareCreated = async (ethAddr: string) => {
+    if (!ethers.isAddress(ethAddr)) {
+        return {}
+    }
+    let calls = [{
+        target: IPShareContract,
+        call: [
+            'ipshareCreated(address)(bool)',
+            ethAddr
+        ],
+        returns: [
+            ['created']
+        ]
+    }]
+    const res = await aggregate(calls, ChainConfig.multiConfig);
+    return res.results.transformed.created;
+}

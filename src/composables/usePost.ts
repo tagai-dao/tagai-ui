@@ -2,6 +2,7 @@ import { ref, computed, onMounted } from "vue";
 import { IgnoreAuthor } from "@/config";
 import type {Tweet} from "@/types";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
+import { useRoute } from "vue-router";
 export const usePost = (tweet: Tweet) => {
   const urlReg =
     /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_#@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/g;
@@ -31,10 +32,15 @@ export const usePost = (tweet: Tweet) => {
     content = tweet.content??'';
     content = content.replace(reg, "");
     for (let url of urls.value) {
-      content = content.replace(
-        url,
-        `<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`
-      );
+      if (url.startsWith(window.location.origin)) {
+        content = content.replace(url, '');
+      }else {
+        content = content.replace(
+          url,
+          `<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`
+        );
+
+      }
     }
     return content;
   });

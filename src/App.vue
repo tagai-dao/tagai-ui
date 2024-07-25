@@ -6,7 +6,7 @@ import { useAccountStore } from "./stores/web3";
 import { onMounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
-import { getBtcPrice, getUserProfile } from "@/apis/api"
+import { getBtcPrice, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 
@@ -26,6 +26,13 @@ onMounted(async () => {
     if (!account?.twitterId) {
       useModalStore().setModalVisible(true, GlobalModalType.Login)
     }
+  }
+  if (typeof(route.params.commerceid) === 'string') {
+    redirectTweet(route.params.commerceid).then((tweetId: any) => {
+      if (tweetId) {
+        router.replace('/post-detail/' + tweetId)
+      }
+    })
   }
   // update userinfo
   if (account?.twitterId) {

@@ -2,10 +2,11 @@ export enum GlobalModalType {
   CreateCoin,
   CreateTweet,
   CreateTweetSpace,
+  CreateIPShare,
   Login,
   Register,
   BondEth,
-  ChoseWallet
+  ChoseWallet,
 }
 
 export enum ListType {
@@ -23,6 +24,7 @@ export type IPShareHolder = {
 export type IPShare = {
   ethAddr?: string;
   shareSupply?: bigint | string | number;
+  created?: boolean,
   price?: number;
   formatPrice?: string;
   holdersCount?: number;

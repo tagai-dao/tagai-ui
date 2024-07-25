@@ -46,7 +46,7 @@ onMounted(async () => {
     <BackHeader class="px-3">
       <template #title>
         <div class="text-lg font-semibold text-black-19 ">
-          {{ curationStore.currentSelectedTweet.tick }}
+          #{{ curationStore.currentSelectedTweet.tick }}
         </div>
       </template>
     </BackHeader>

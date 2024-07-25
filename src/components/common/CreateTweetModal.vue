@@ -1,26 +1,46 @@
 <script setup lang="ts">
-import {useModalStore} from "@/stores/common";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
-import {onUnmounted, ref, watch} from "vue";
+import { ref } from "vue";
+import { newCommerce } from '@/apis/api'
+import { OperateType, useTweet } from "@/composables/useTweet";
+import { handleErrorTip } from "@/utils/notify";
+import { useAccountStore } from "@/stores/web3";
+import { useCommunityStore } from "@/stores/community";
 
-const modalStore = useModalStore()
 const {
   contentRef,
   showClear,
   contentEl,
   leftWordsLength,
+  tweetLength,
   contentInput,
   getBlur,
   onPaste,
   selectEmoji,
   formatElToTextContent
 } = useCreateTweet()
+const { preCheckCuration } = useTweet();
 
 const tweetLoading = ref(false)
-const onPostTweet = () => {
-  tweetLoading.value = true
-  const tweetContent = formatElToTextContent(contentRef.value)
+
+const onPostTweet = async () => {
+  try{
+    if (leftWordsLength.value < 0){
+      return;
+    }
+    if (tweetLength.value === 0) return;
+    tweetLoading.value = true
+    if (!(await preCheckCuration(OperateType.TWEET))) {
+      return;
+    }
+    let content = formatElToTextContent(contentRef.value)
+    await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!)
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    tweetLoading.value = false
+  }
 }
 </script>
 
@@ -32,7 +52,7 @@ const onPostTweet = () => {
     <div>
       <div class="flex justify-between items-center px-2">
         <div>Type your content here</div>
-        <div :class="leftWordsLength < 0 ? 'text-red' : ''">{{ leftWordsLength }}</div>
+        <div :class="leftWordsLength < 0 ? 'text-red-ff' : ''">{{ leftWordsLength }}</div>
       </div>
       <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
         <div contenteditable
@@ -63,8 +83,8 @@ const onPostTweet = () => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-normal px-2 h-5 text-sm rounded-md">onchain</button>
-            <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button>
+            <button class="bg-green-normal px-2 h-5 text-sm rounded-md">{{ useCommunityStore().currentSelectedCommunity?.tick }}</button>
+            <!-- <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button> -->
           </div>
         </div>
       </div>

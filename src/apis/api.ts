@@ -106,6 +106,14 @@ export const getTokenTradeList = async (token: string, pages?: number) =>
 export const isTokenExist = async (tick: string) =>
   get(BACKEND_API_URL + '/community/isTokenExist', { tick })
 
+
+/************************************ commerce **********************************/
+export const newCommerce = async (text: string, twitterId: string, tick: string, token: string) => 
+  post(BACKEND_API_URL + '/commerce/newCommerce', {text, twitterId, tick, token})
+
+export const redirectTweet = async (commerceId: string) =>
+  get(BACKEND_API_URL + '/commerce/redirectTweet', { commerceId})
+
 /************************************ curation **********************************/
 export const getOnlineSpaces = async () =>
   get(BACKEND_API_URL + '/space/onlineSpaces')

@@ -8,7 +8,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
+      path: '/:commerceid?',
       name: 'home',
       component: HomeView,
       meta: {tabBar: true, topBar: true}
