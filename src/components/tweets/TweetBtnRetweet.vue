@@ -22,7 +22,7 @@ async function retweet() {
     }
     const res = await userRetweet(props.tweet, props.tweet.tick!)
 
-    
+
     props.tweet.retweetCount += 1;
     props.tweet.retweeted = 1;
   } catch (e) {
@@ -37,10 +37,10 @@ async function retweet() {
   <button class="flex justify-center items-center gap-2"
           @click.stop="retweet">
     <i-ep-loading v-if="isRetweeting" class="animate-spin w-5 h-5 "/>
-    <i v-else class="w-5 h-5 min-w-5"
+    <i v-else class="w-6 h-6 min-w-6"
        :class="(tweet.retweeted ?? 0) > 0 ? 'btn-icon-retweet-active' : 'btn-icon-retweet'"></i>
     <span class="text-sm font-bold"
-          :class="tweet.retweeted ? 'text-red-ff' : 'text-grey-bd'">
+          :class="tweet.retweeted ? 'text-green-34' : 'text-grey-bd'">
      {{ tweet.retweetCount ?? 0 }}</span>
   </button>
 </template>

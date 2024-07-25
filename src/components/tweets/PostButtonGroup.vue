@@ -1,11 +1,11 @@
 <template>
   <div class="flex justify-between py-3 items-center gap-88px flex-1 max-w-425px border-t-[1px] mt-3">
-    <!-- like-->
-    <TweetBtnLike :tweet="tweet"/>
-    <!-- retweet -->
-    <TweetBtnRetweet :tweet="tweet"/>
     <!-- reply-->
     <TweetBtnReply :tweet="tweet"/>
+    <!-- retweet -->
+    <TweetBtnRetweet :tweet="tweet"/>
+    <!-- like-->
+    <TweetBtnLike :tweet="tweet"/>
     <!-- quote-->
     <TweetBtnQuote :tweet="tweet"/>
   </div>

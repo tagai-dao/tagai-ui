@@ -64,7 +64,7 @@ async function reply() {
     <i-ep-loading v-if="isRepling" class="animate-spin w-5 h-5"/>
     <i v-else class="w-5 h-5 min-w-5" :class="tweet.replied ? 'btn-icon-reply-active' : 'btn-icon-reply'"></i>
     <span class="text-sm font-bold"
-          :class="tweet.replied ? 'text-red-ff' : 'text-grey-bd'">
+          :class="tweet.replied ? 'text-blue-32' : 'text-grey-bd'">
         {{ tweet.replyCount ?? 0 }}</span>
   </button>
 

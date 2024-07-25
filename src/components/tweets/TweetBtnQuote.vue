@@ -88,7 +88,7 @@ const quote = async () => {
     <i v-else class="w-5 h-5 min-w-5"
        :class="tweet.quoted ? 'btn-icon-quote-active' : 'btn-icon-quote'"></i>
     <span class="text-sm font-bold"
-          :class="tweet.quoted ? 'text-red-ff' : 'text-grey-bd'">
+          :class="tweet.quoted ? 'text-orange-normal' : 'text-grey-bd'">
               {{ tweet.quoteCount ?? 0 }}</span>
   </button>
   <el-dialog v-model="quoteVisible"

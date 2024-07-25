@@ -31,6 +31,7 @@ export default {
         'green-dark-active': '#52695F',
         'green-darker': '#40524A',
         'green-hover': '#6D8C7F',
+        'green-34': "#34C759",
         'yellow-fa': "#faedaa",
         'red-ff': "#E6374D",
         'red-light': '#FFECEE',
@@ -56,7 +57,8 @@ export default {
         'grey-f4': "#F4F4F4",
         'black-19': "#191C32",
         'orange-fa': "#FACA83",
-        'blue-active': "#575873"
+        'blue-active': "#575873",
+        'blue-32': "#32ADE6"
       },
       backgroundImage: theme => ({
         'gradient-primary': 'linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%)',
