@@ -54,8 +54,8 @@ onMounted(async () => {
 
 <template>
   <div class="h-full">
-    <div v-if="showingNoEth" class="p-3 bg-white rounded-2xl mx-3">
-      <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white">
+    <div v-if="showingNoEth" class="p-3 bg-white rounded-2xl mx-3 text-center">
+      <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
         {{$t('profileView.bindEthAddress')}}
       </button>
     </div>

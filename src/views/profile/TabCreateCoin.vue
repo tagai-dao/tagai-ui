@@ -94,8 +94,8 @@ onMounted(() => {
             <template #default-btn><div></div></template>
           </TagListItem>
         </template>
-        <div v-else class="p-3 bg-white rounded-2xl">
-          <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white">
+        <div v-else class="p-3 bg-white rounded-2xl text-center">
+          <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
             {{$t('profileView.createYourCoin')}}
           </button>
         </div>
