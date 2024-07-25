@@ -19,6 +19,7 @@ import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
+import { useCurationStore } from "@/stores/curation";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -133,21 +134,21 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payBtc.value) return
 
-      const tx = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value, Math.ceil(maxSlippage.value * 100));
-      if (tx) {
+      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value, Math.ceil(maxSlippage.value * 100));
+      if (hash) {
         payBtc.value = undefined
         receiveAmount.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId).catch()
+        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
       }else{
         handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
       }
     }else {
       if (!sellAmount.value) return;
-      const tx = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value, Math.ceil(maxSlippage.value * 100))
-      if (tx) {
+      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value, Math.ceil(maxSlippage.value * 100))
+      if (hash) {
         sellAmount.value = undefined
         receiveBtc.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId).catch()
+        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
       }else {
         handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
       }
@@ -167,6 +168,7 @@ onMounted(async () => {
     comStore.currentSelectedCommunity = community
   }
   sellsman.value = route.params.sellsman
+  console.log(53, sellsman.value)
 })
 </script>
 

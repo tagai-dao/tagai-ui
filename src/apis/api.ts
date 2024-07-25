@@ -82,8 +82,8 @@ export const newQuote = async (twitterId: string, tweetId: string, text: string,
 export const createCommunity = async (params: CreateCommunity) => 
   post(BACKEND_API_URL + '/community/createCommunity', params)
 
-export const trade = async (tick: string, twitterId: string) =>
-  post(BACKEND_API_URL + '/community/trade', {tick, twitterId})
+export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
+  post(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
 
 export const getCommunitiesByTrending = async (pages?: number) =>
   get(BACKEND_API_URL + '/community/communitiesByTrending', { pages })
@@ -120,6 +120,9 @@ export const getOnlineSpaces = async () =>
 
 export const getTweetCurateList = async (tweetId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/tweetCurateList', {tweetId, pages})
+
+export const getMyCurationRewards = async (twitterId: string) =>
+  post(BACKEND_API_URL + '/curation/userCurationRewards', {twitterId})
 
 /************************************ ipshare **********************************/
 export const getIpshareInfo = async (ethAddr: string) =>

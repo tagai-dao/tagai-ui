@@ -101,6 +101,13 @@ export type Curation = Account & {
   dayNumber?: number;
 };
 
+export type CurationReward = {
+  logo: string,
+  tick: string,
+  token: string,
+  amount: number
+}
+
 export type Commerce = Account & {
   commerceId?: string;
   token?: string;

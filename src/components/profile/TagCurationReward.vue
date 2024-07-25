@@ -1,0 +1,53 @@
+<script setup lang="ts">
+import { useAccount } from '@/composables/useAccount';
+import { useModalStore } from '@/stores/common';
+import { EthWalletState, useAccountStore } from '@/stores/web3';
+import { GlobalModalType, type CurationReward } from '@/types';
+import { formatAmount } from '@/utils/helper';
+import { handleErrorTip } from '@/utils/notify';
+import { ref } from 'vue'
+const props = defineProps<{reward: CurationReward}>()
+const claiming = ref(false)
+const accStore = useAccountStore()
+const modalStore = useModalStore()
+
+const { accountMismatch } = useAccount();
+
+async function claim() {
+  if (accStore.ethConnectState != EthWalletState.Connected) {
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
+  try{
+    claiming.value = true
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    claiming.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="bg-white px-4 py-5 rounded-xl">
+    <div class="flex items-center gap-2">
+      <img class="w-8 h-8 min-w-8 rounded-full"
+           :src="reward.logo" alt="">
+      <div class="flex flex-col gap-2">
+        <div class="text-h3">#{{ reward.tick }}</div>
+        <div class="text-h5">{{ formatAmount(reward.amount) }}（$1000.00）</div>
+      </div>
+    </div>
+    <button @click="claim" class="bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
+      Claim
+      <i-ep-loading v-if="claiming" class="animate-spin" />
+    </button>
+    <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected" class="text-red-ff w-full text-sm">
+      {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
+    </div>
+  </div>
+</template>
+
+<style scoped>
+
+</style>

@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import CreativeIncomeItem from "@/components/profile/CreativeIncomeItem.vue";
+import TagCurationReward from "@/components/profile/TagCurationReward.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import {onMounted, ref} from "vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
-import {testTweets} from "@/assets/test-data";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import { getUserTweets } from '@/apis/api'
@@ -12,6 +11,8 @@ import { useAccountStore } from "@/stores/web3";
 import { getTokenInfoOfTweets } from '@/utils/pump'
 import { formatPrice } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
+import { getMyCurationRewards } from '@/apis/api'
+import { type CurationReward } from "@/types";
 
 const accStore = useAccountStore()
 const stateStore = useStateStore()
@@ -19,8 +20,8 @@ const stateStore = useStateStore()
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const listData = ref<number []>([])
 const scroller = document.querySelector('#profile-tab-scroller')
+const listData = ref<CurationReward[]>([])
 
 const onLoad = async () => {
   if(finished.value || refreshing.value || accStore.tweetsList.length == 0) return
@@ -31,10 +32,13 @@ const onLoad = async () => {
     if (list && list.length > 0) {
       accStore.tweetsList = accStore.tweetsList.concat(await getTokenInfoOfTweets(list))
     }
+    if (list.length  === 0) {
+      finished.value = true
+    }
   } catch (e) {
-    
+    handleErrorTip(e)
   } finally {
-    
+    loading.value = false
   }
 };
 
@@ -63,6 +67,9 @@ const trade = async() => {
 
 onMounted(() => {
   onRefresh()
+  getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
+    listData.value = list ?? []
+  })
 })
 
 </script>
@@ -81,20 +88,20 @@ onMounted(() => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <div class="flex items-center gap-1 px-3">
-          <span class="font-normal text-sm">创作 or Space 收入</span>
+        <div class="flex items-center gap-1 px-3" v-if="listData.length > 0">
+          <span class="font-normal text-sm">Curation or Space Rewards</span>
           <el-popover popper-class="c-popper">
             <template #reference>
               <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
             </template>
             <template #default>
-              <div class="bg-white rounded-xl p-2 shadow-popper-tip">tips</div>
+              <div class="bg-white rounded-xl p-2 shadow-popper-tip">{{ $t('curation.curationTip') }}</div>
             </template>
           </el-popover>
         </div>
         <div class="w-full flex gap-3 scroll-pl-3 overflow-x-auto no-scroll-bar mt-1 snap-x">
-          <div class="snap-start shrink-0 first:pl-3 last:pr-3" v-for="i of 4" :key="i">
-            <CreativeIncomeItem/>
+          <div class="snap-start shrink-0 first:pl-3 last:pr-3" v-for="reward of listData" :key="reward.tick">
+            <TagCurationReward :reward/>
           </div>
         </div>
         <div class="px-3">

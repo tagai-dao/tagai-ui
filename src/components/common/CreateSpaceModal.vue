@@ -10,12 +10,13 @@ const {
   showClear,
   contentEl,
   leftWordsLength,
+  tweetLength,
   contentInput,
   getBlur,
   onPaste,
   selectEmoji,
   formatElToTextContent
-} = useCreateTweet()
+} = useCreateTweet(200)
 
 const tweetLoading = ref(false)
 const onPostTweet = () => {
