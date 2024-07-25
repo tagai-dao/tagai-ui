@@ -29,7 +29,7 @@ async function claim() {
 </script>
 
 <template>
-  <div class="bg-white px-4 py-5 rounded-xl">
+  <div class="bg-white px-4 py-5 rounded-xl w-[260px]">
     <div class="flex items-center gap-2">
       <img class="w-8 h-8 min-w-8 rounded-full"
            :src="reward.logo" alt="">
@@ -42,7 +42,8 @@ async function claim() {
       Claim
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>
-    <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected" class="text-red-ff w-full text-sm">
+    <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected"
+         class="text-red-ff w-full text-sm ">
       {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
     </div>
   </div>
