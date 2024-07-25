@@ -40,7 +40,7 @@ async function onRefresh() {
       comStore.currentSelectedCommunity!.tick,
       accStore.getAccountInfo?.twitterId
     );
-    
+
     if (!tweetsStore.communityTweets) {
       tweetsStore.communityTweets = {};
     }

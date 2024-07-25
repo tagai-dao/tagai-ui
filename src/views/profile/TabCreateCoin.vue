@@ -88,10 +88,17 @@ onMounted(() => {
           <span class="text-sm">($BTC {{ formatAmount(capturedFee) }})</span>
         </button>
         </template>
-        <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i" @click="$router.push(`/tag-detail/${community.tick}`)"
-            :community>
-          <template #default-btn><div></div></template>
-        </TagListItem>
+        <template v-if="accStore.createdTokenList.length>0">
+          <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i" @click="$router.push(`/tag-detail/${community.tick}`)"
+                       :community>
+            <template #default-btn><div></div></template>
+          </TagListItem>
+        </template>
+        <div v-else class="p-3 bg-white rounded-2xl">
+          <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white">
+            {{$t('profileView.createYourCoin')}}
+          </button>
+        </div>
       </van-list>
     </van-pull-refresh>
   </div>

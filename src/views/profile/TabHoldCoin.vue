@@ -54,7 +54,12 @@ onMounted(async () => {
 
 <template>
   <div class="h-full">
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
+    <div v-if="showingNoEth" class="p-3 bg-white rounded-2xl mx-3">
+      <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white">
+        {{$t('profileView.bindEthAddress')}}
+      </button>
+    </div>
+    <van-pull-refresh v-else v-model="refreshing" @refresh="onRefresh"
                       class="min-h-full h-full overflow-auto"
                       loading-text="Loading"
                       pulling-text="Pull to refresh data"
@@ -68,20 +73,23 @@ onMounted(async () => {
                 :offset="50"
                 @load="onLoad">
         <div v-for="(holding, i) of accStore.tokenHoldingList" :key="i"
-            v-show="holding.community"
-             class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3.5 flex gap-3 mb-2">
-          <div class="w-16 min-w-16 h-16 rounded-2xl bg-grey-normal-active shadow-tag-logo flex items-center justify-center
-                relative overflow-hidden">
+             v-show="holding.community"
+             class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3.5 flex items-center gap-3 mb-2">
+          <div class="w-10 min-w-10 h-10 rounded-full bg-grey-normal-active shadow-tag-logo
+                      flex items-center justify-center relative overflow-hidden">
             <img class="w-15" :src="holding.community?.logo" alt="">
           </div>
           <div class="flex-1">
             <div class="flex gap-2 items-center">
-              <span class="text-grey-normal text-h2 font-bold leading-6">{{ holding.community?.tick }}</span>
-              <!-- <img class="w-15" src="~@/assets/icons/icon-circle-x.svg" alt=""> -->
+              <span class="text-grey-normal text-h3 leading-6">{{ holding.community?.tick }}</span>
             </div>
-            <div class="whitespace-pre-line text-grey-normal text-h5 mt-1">
+            <div class="whitespace-pre-line text-grey-normal text-h4 leading-6">
               {{ holding.community?.description }}
             </div>
+          </div>
+          <div class="flex flex-col items-end">
+            <div class="leading-6 font-bold">0.001</div>
+            <button class="h-6 bg-gradient-primary rounded-full px-3 text-white text-h4">Trade</button>
           </div>
         </div>
       </van-list>
