@@ -40,8 +40,8 @@ async function trade() {
         <div class="flex-1 truncate">
           <div class="flex gap-2 items-end">
             <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
-            <span class="font-normal italic text-grey-64 leading-6 text-sm">market cap</span>
-            <span class="font-normal italic text-grey-64 leading-6 text-sm">{{ formatPrice(parseFloat(community.marketCap as any) * stateStore.btcPrice) }}</span>
+            <span v-if="community.marketCap"lass="font-normal italic text-grey-64 leading-6 text-sm">market cap</span>
+            <span v-if="community.marketCap"class="font-normal italic text-grey-64 leading-6 text-sm">{{ formatPrice(parseFloat(community.marketCap as any) * stateStore.btcPrice) }}</span>
           </div>
           <!-- <div class="text-grey-64 font-light text-sm">
             created by  @0XSarah

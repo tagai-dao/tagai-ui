@@ -168,7 +168,6 @@ onMounted(async () => {
     comStore.currentSelectedCommunity = community
   }
   sellsman.value = route.params.sellsman
-  console.log(53, sellsman.value)
 })
 </script>
 

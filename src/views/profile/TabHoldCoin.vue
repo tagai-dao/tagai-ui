@@ -3,6 +3,9 @@ import {computed, onMounted, ref} from "vue";
 import { getHoldingList } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
+import { useModalStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
+import { formatAmount } from "@/utils/helper";
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -55,7 +58,7 @@ onMounted(async () => {
 <template>
   <div class="h-full">
     <div v-if="showingNoEth" class="p-3 bg-white rounded-2xl mx-3 text-center">
-      <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
+      <button @click="useModalStore().setModalVisible(true, GlobalModalType.BondEth)" class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
         {{$t('profileView.bindEthAddress')}}
       </button>
     </div>
@@ -88,8 +91,8 @@ onMounted(async () => {
             </div>
           </div>
           <div class="flex flex-col items-end">
-            <div class="leading-6 font-bold">0.001</div>
-            <button class="h-6 bg-gradient-primary rounded-full px-3 text-white text-h4">Trade</button>
+            <div class="leading-6 font-bold">{{ formatAmount((holding.amount.toString() as any) / 1e18) }}</div>
+            <button @click="$router.push('/buy-sell/' + holding.community.tick)" class="h-6 bg-gradient-primary rounded-full px-3 text-white text-h4">Trade</button>
           </div>
         </div>
       </van-list>
