@@ -27,7 +27,7 @@ onMounted(async () => {
       useModalStore().setModalVisible(true, GlobalModalType.Login)
     }
   }
-  if (typeof(route.params.commerceid) === 'string') {
+  if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {
     redirectTweet(route.params.commerceid).then((tweetId: any) => {
       if (tweetId) {
         router.replace('/post-detail/' + tweetId)

@@ -3,7 +3,7 @@ export const network: "livenet" | "testnet" | "regtest" = "livenet";
 // testnet
 // export const TX_BROWSER = 'https://mempool.space/testnet/tx/'
 // export const BACKEND_API_URL = 'https://api-test.bitip.social'
-export const BACKEND_API_URL = "http://localhost:3000";
+export const BACKEND_API_URL = "https://alpha-api.tiptag.fun";
 // export const GRAPH_URL = 'https://graph-test.bitip.social/subgraphs/name/donut/bitip'
 
 export const GRAPH_URL =
