@@ -85,6 +85,9 @@ export const createCommunity = async (params: CreateCommunity) =>
 export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
   post(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
 
+export const search = async (tick: string) =>
+  get(BACKEND_API_URL + '/community/search', { tick })
+
 export const getCommunitiesByTrending = async (pages?: number) =>
   get(BACKEND_API_URL + '/community/communitiesByTrending', { pages })
 

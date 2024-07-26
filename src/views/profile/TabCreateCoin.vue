@@ -6,7 +6,8 @@ import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfo } from "@/utils/pump";
 import { formatAmount, formatPrice } from "@/utils/helper";
-import { useStateStore } from "@/stores/common";
+import { useModalStore, useStateStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
 
 const accStore = useAccountStore()
 
@@ -95,7 +96,7 @@ onMounted(() => {
           </TagListItem>
         </template>
         <div v-else class="p-3 bg-white rounded-2xl text-center">
-          <button class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
+          <button @click="useModalStore().setModalVisible(true, GlobalModalType.CreateCoin)" class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
             {{$t('profileView.createYourCoin')}}
           </button>
         </div>
