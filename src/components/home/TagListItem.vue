@@ -7,6 +7,7 @@ import { useAccountStore } from '@/stores/web3';
 import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
 import { useStateStore } from '@/stores/common';
+import {tagBgColors, tagTextColors} from "@/composables/useTags";
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
@@ -35,23 +36,27 @@ async function trade() {
       <img class="w-full h-full object-center object-cover" :src="community.logo" alt="">
       <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
     </div>
-    <div class="flex-1 truncate">
-      <div class="w-full flex justify-between">
+    <div class="flex-1 flex flex-col justify-between truncate">
+      <div class="flex gap-x-2 items-end flex-wrap">
+        <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
+        <div v-if="community.marketCap" class="flex items-center">
+          <span class="font-normal italic text-grey-64 leading-6 text-sm">market cap</span>
+          <span class="font-normal italic text-grey-64 leading-6 text-sm">
+            {{ formatPrice(parseFloat(community.marketCap as any) * stateStore.btcPrice) }}
+          </span>
+        </div>
+      </div>
+      <div class="flex-1 w-full flex justify-between pt-1">
         <div class="flex-1 truncate">
-          <div class="flex gap-2 items-end">
-            <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
-            <span v-if="community.marketCap"lass="font-normal italic text-grey-64 leading-6 text-sm">market cap</span>
-            <span v-if="community.marketCap"class="font-normal italic text-grey-64 leading-6 text-sm">{{ formatPrice(parseFloat(community.marketCap as any) * stateStore.btcPrice) }}</span>
-          </div>
           <!-- <div class="text-grey-64 font-light text-sm">
             created by  @0XSarah
           </div> -->
-          <div class="whitespace-pre-line text-grey-normal text-h5 mt-1">
+          <div class="whitespace-pre-line text-grey-normal text-h5 multi-content multi-content-2">
             {{ community.description }}
           </div>
         </div>
         <slot name="default-btn">
-          <div class="h-20 flex items-center">
+          <div class="flex items-center">
             <button @click.stop="trade" class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full">
               Trade
             </button>
@@ -59,7 +64,11 @@ async function trade() {
         </slot>
       </div>
       <div v-if="community.tags" class="font-extralight flex flex-wrap gap-2 mt-2">
-        <button v-for="tag of JSON.parse(community.tags as string)" :key="tag" class="bg-green-normal px-2 h-5 text-xs rounded-md">{{ tag }}</button>
+        <button v-for="(tag, index) of JSON.parse(community.tags as string)" :key="tag"
+                class="px-2 h-5 text-xs rounded-md"
+                :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
+          {{ tag }}
+        </button>
       </div>
     </div>
   </div>
