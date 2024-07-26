@@ -29,11 +29,11 @@ import SpaceItem from "@/components/tweets/SpaceItem.vue";
         </button>
       </div>
       <div class="bg-white rounded-2xl py-2">
-        <SpaceItem :tweet="testTweets[1]">
+        <!-- <SpaceItem :tweet="testTweets[1]">
           <template #tweet-action-bar>
             <PostButtonGroup :post="testTweets[1]"/>
           </template>
-        </SpaceItem>
+        </SpaceItem> -->
       </div>
       <div class="bg-white rounded-2xl py-4 px-3 flex flex-col gap-4">
         <div class="flex items-center gap-2">

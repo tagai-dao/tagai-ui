@@ -1,23 +1,19 @@
 <template>
   <div class="flex justify-between py-3 items-center gap-88px flex-1 max-w-425px border-t-[1px] mt-3">
     <!-- reply-->
-    <TweetBtnReply :tweet="tweet"/>
+    <TweetBtnReply :tweet/>
     <!-- retweet -->
-    <TweetBtnRetweet :tweet="tweet"/>
+    <TweetBtnRetweet :tweet/>
     <!-- like-->
-    <TweetBtnLike :tweet="tweet"/>
+    <TweetBtnLike :tweet/>
     <!-- quote-->
-    <TweetBtnQuote :tweet="tweet"/>
+    <TweetBtnQuote :tweet/>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useTimer } from "@/composables/useTools";
-import { usePost } from "@/composables/usePost";
-import { computed, defineProps, ref, withDefaults } from "vue";
+import { defineProps } from "vue";
 import type { Tweet } from "@/types";
-import {useTweet} from "@/composables/useTweet";
-import {useCreateTweet} from "@/composables/useCreateTweet";
 import TweetBtnLike from "@/components/tweets/TweetBtnLike.vue";
 import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
 import TweetBtnReply from "@/components/tweets/TweetBtnReply.vue";

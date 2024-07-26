@@ -25,6 +25,7 @@ onMounted(() => {
   allurls.value = urlsTem
   imgurls.value = tweet.value.images
   if (urls && imgurls.value) {
+    // @ts-ignore
       urls.value = urlsTem.filter((u: string) => imgurls.value.indexOf(u) < 0)
   } else if (urls.value) {
       urls.value = urlsTem
