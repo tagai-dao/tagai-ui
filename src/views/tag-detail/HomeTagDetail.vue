@@ -50,14 +50,14 @@ const onTweetType =  async (type: CommerceType) => {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       return;
     }
-    if (!accStore.getAccountInfo?.steemId){
-      modalStore.setModalVisible(true, GlobalModalType.Register);
-      return;
-    }
-    if (!(await ipshareCreated(accStore.getAccountInfo.ethAddr!))) {
-      modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
-      return;
-    }
+    // if (!accStore.getAccountInfo?.steemId){
+    //   modalStore.setModalVisible(true, GlobalModalType.Register);
+    //   return;
+    // }
+    // if (!(await ipshareCreated(accStore.getAccountInfo.ethAddr!))) {
+    //   modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
+    //   return;
+    // }
     commerType.value = type;
     tweetTypeRef.value.hide()
     showModal.value = true
@@ -198,7 +198,7 @@ onMounted(async () => {
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
                width="90%" :show-close="false" align-center destroy-on-close>
-      <CreateTweetModal v-if="commerType == CommerceType.TWEET" />
+      <CreateTweetModal @close="showModal = false" v-if="commerType == CommerceType.TWEET" />
       <CreateSpaceModal v-if="commerType == CommerceType.SPACE" />
   </el-dialog>
 </template>

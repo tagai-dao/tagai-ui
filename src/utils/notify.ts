@@ -1,6 +1,9 @@
 import i18n from "@/lang";
 import errCode from "@/errCode";
 import { ElNotification } from "element-plus";
+import { ethers } from 'ethers'
+import { abis } from './abis'
+import _ from 'lodash';
 
 const t = i18n.global.t;
 
@@ -14,6 +17,23 @@ export const handleErrorTip = (e: any) => {
     return handleServerError(e);
   }
 
+  const errorData = e.transaction?.data;
+  if (errorData) {
+    const errorInterface: any = abis.errors;
+    const iface = new ethers.Interface(['error CreateDexPoolFail()']);
+    try {
+      const decodeError = iface.parseError(errorData);
+      notify({
+        message: decodeError?.name,
+        type: 'error',
+        duration: 5000
+      })
+      return;
+    } catch (error) {
+      console.log(453, error)
+    }
+  }
+  
   if (
     e.message.indexOf("insufficient funds for intrinsic transaction cost") !==
     -1

@@ -24,6 +24,8 @@ const { preCheckCuration } = useTweet();
 
 const tweetLoading = ref(false)
 
+const emit = defineEmits(['close'])
+
 const onPostTweet = async () => {
   try{
     if (leftWordsLength.value < 0){
@@ -36,6 +38,7 @@ const onPostTweet = async () => {
     }
     let content = formatElToTextContent(contentRef.value)
     await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!)
+    emit('close')
   } catch (e) {
     handleErrorTip(e)
   } finally {
