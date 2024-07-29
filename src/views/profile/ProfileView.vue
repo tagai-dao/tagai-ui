@@ -80,9 +80,14 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="pl-14 flex items-center gap-4 mt-2">
-        <span>{{ accStore.getAccountInfo.followings }} {{ $t('profileView.followings') }}</span>
-        <span>{{ accStore.getAccountInfo.followers }} {{ $t('profileView.followers') }}</span>
+      <div class="pl-14 flex justify-between items-center gap-3a mt-2">
+        <div class="flex-1 flex items-center flex-wrap gap-4">
+          <span>{{ accStore.getAccountInfo.followings }} {{ $t('profileView.followings') }}</span>
+          <span>{{ accStore.getAccountInfo.followers }} {{ $t('profileView.followers') }}</span>
+        </div>
+        <button>
+          <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
+        </button>
       </div>
     </div>
     <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
