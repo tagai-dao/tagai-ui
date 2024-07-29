@@ -64,14 +64,29 @@ onMounted(async () => {
                 :offset="50"
                 @load="onLoad">
         <div v-for="(curate, i) of curateList" :key="i"
-             class="bg-white rounded-2xl py-3 px-3.5 flex gap-3 mb-2">
-          <div class="flex-1 flex items-center gap-2">
-            <img class="w-6 h-6 rounded-full" :src="curate.profile" alt="">
+             class="bg-white rounded-2xl py-3 px-3.5 flex items-stretch gap-3 mb-2">
+          <div class="py-2">
+            <!--            like-->
+            <img src="~@/assets/icons/icon-like-active.svg" alt="">
+            <!--            retweet-->
+            <!--            <img src="~@/assets/icons/btn-retweet-active.svg" alt="">-->
+            <!--            reply-->
+            <!--            <img src="~@/assets/icons/btn-reply-active.svg" alt="">-->
+            <!--            quote-->
+            <!--            <img src="~@/assets/icons/btn-quote-active.svg" alt="">-->
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <img class="w-6 h-6 min-w-6 min-h-6 rounded-full" :src="curate.profile" alt="">
+            </div>
             <!-- <span class="text-grey-normal text-h5">Username</span> -->
             <span class="text-grey-8d font-normal">@{{ curate.twitterUsername }}</span>
           </div>
-          <div class="whitespace-pre-line text-grey-normal font-normal">
-            {{ formatAmount(curate.amount) }}
+          <div class="flex flex-col items-end">
+            <div class="whitespace-pre-line text-grey-normal font-normal">
+              {{ formatAmount(curate.amount) }}
+            </div>
+            <div class="text-sm text-grey-light-active">2 minutes ago</div>
           </div>
         </div>
       </van-list>
