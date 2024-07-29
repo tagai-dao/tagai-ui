@@ -89,16 +89,14 @@ onMounted(async () => {
           </div>
           <div class="flex-1">
             <div class="flex gap-2 items-center">
-              <span class="text-grey-normal text-h3 leading-6">{{ holding.community?.tick }}</span>
+              <span class="text-grey-normal text-h3 leading-5">{{ holding.community?.tick }}</span>
             </div>
-            <div class="whitespace-pre-line text-grey-normal text-h4 leading-6">
-              {{ holding.community?.description }}
+            <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary">
+              {{ formatAmount((holding.amount.toString() as any) / 1e18) }}
             </div>
           </div>
-          <div class="flex flex-col items-end">
-            <div class="leading-6 font-bold">{{ formatAmount((holding.amount.toString() as any) / 1e18) }}</div>
-            <button @click="$router.push('/buy-sell/' + holding.community.tick)" class="h-6 bg-gradient-primary rounded-full px-3 text-white text-h4">Trade</button>
-          </div>
+          <button @click="$router.push('/buy-sell/' + holding.community.tick)"
+                  class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">Trade</button>
         </div>
       </van-list>
     </van-pull-refresh>
