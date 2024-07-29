@@ -75,10 +75,10 @@ onMounted(async () => {
 
 <template>
   <div class="bg-white rounded-2xl p-3" v-if="comStore.currentSelectedCommunity?.tick">
-    <div class="grid grid-cols-5 gap-x-2 text-h5 h-10 items-center">
-      <span class="col-span-3 pl-8">Account</span>
-      <span class="col-span-1">#{{ comStore.currentSelectedCommunity.tick }}</span>
-      <span class="col-span-1 text-right">Credit</span>
+    <div class="grid grid-cols-8 gap-x-2 text-h5 h-10 items-center">
+      <span class="col-span-4 pl-8">Account</span>
+      <span class="col-span-2">#{{ comStore.currentSelectedCommunity.tick }}</span>
+      <span class="col-span-2 text-right">Credit</span>
     </div>
     <van-pull-refresh
       v-model="refreshing"
@@ -96,17 +96,17 @@ onMounted(async () => {
         @load="onLoad"
       >
         <div
-          class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
+          class="grid grid-cols-8 gap-x-2 h-8 items-center text-h4"
           v-for="(holder, i) of holdingList"
           :key="i"
         >
-          <div class="col-span-3 truncate flex items-center gap-1">
+          <div class="col-span-4 truncate flex items-center gap-1">
             <span class="min-w-4">{{ i + 1 }}</span>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
-            <span class="truncate">{{ formatAddress(holder.ethAddr) }}</span>
+            <span class="truncate font-mono">{{ formatAddress(holder.ethAddr) }}</span>
           </div>
-          <span class="col-span-1">{{ formatAmount(holder.amount) }}</span>
-          <span class="col-span-1 text-right">{{ formatAmount(holder.amount) }}</span>
+          <span class="col-span-2">{{ formatAmount(holder.amount) }}</span>
+          <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }}</span>
         </div>
       </van-list>
     </van-pull-refresh>

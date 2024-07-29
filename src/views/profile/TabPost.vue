@@ -75,9 +75,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-full">
+  <div class="min-h-full h-full">
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                      class="min-h-full"
+                      class="min-h-full h-full overflow-auto"
                       loading-text="Loading"
                       pulling-text="Pull to refresh data"
                       loosing-text="Release to refresh">
@@ -131,6 +131,10 @@ onMounted(() => {
               </TweetItem>
             </div>
           </div>
+        </div>
+        <div v-if="!loading && !refreshing && accStore.tweetsList.length===0"
+             class="flex justify-center py-6 w-full">
+          <img src="~@/assets/images/empty-data.svg" alt="">
         </div>
       </van-list>
     </van-pull-refresh>

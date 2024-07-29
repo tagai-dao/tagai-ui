@@ -183,9 +183,9 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <div class="flex justify-between items-center gap-2 web:bg-white web:h-12 web:px-4 rounded-2xl">
+    <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl">
       <button v-for="tab of tabOptions" :key="tab.key"
-              class="px-3 rounded-full h-6 text-h3"
+              class="px-3 rounded-full h-8 text-h3"
               :class="tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f'"
               @click="activeTab=tab.key">{{tab.label}}</button>
     </div>
