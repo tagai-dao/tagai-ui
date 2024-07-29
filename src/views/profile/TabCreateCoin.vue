@@ -58,9 +58,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="px-3 min-h-full">
+  <div class="min-h-full h-full">
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                      class="min-h-full"
+                      class="min-h-full h-full overflow-auto"
                       loading-text="Loading"
                       pulling-text="Pull to refresh data"
                       loosing-text="Release to refresh">
@@ -73,33 +73,39 @@ onMounted(() => {
                 @load="onLoad">
         <template v-if="accStore.ipshare.ethAddr">
           <div class="flex items-center gap-1 px-3 mb-2">
-          <span class="font-normal text-sm">{{ $t('profileView.captureTitle') }}</span>
-          <el-popover popper-class="c-popper">
-            <template #reference>
-              <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
-            </template>
-            <template #default>
-              <div class="bg-white rounded-xl p-2 shadow-popper-tip">{{ $t('profileView.captureDesc') }}</div>
-            </template>
-          </el-popover>
-        </div>
-        <button class="bg-gradient-primary h-16 w-full rounded-xl flex items-center justify-center gap-1 text-white mb-2">
-          <span class="text-h1 mr-2">{{ formatPrice(capturedFee * useStateStore().btcPrice) }}</span>
-          <!-- <img src="~@/assets/icons/icon-up.svg" alt=""> -->
-          <span class="text-sm">($BTC {{ formatAmount(capturedFee) }})</span>
-        </button>
+            <span class="font-normal text-sm">{{ $t('profileView.captureTitle') }}</span>
+            <el-popover popper-class="c-popper">
+              <template #reference>
+                <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
+              </template>
+              <template #default>
+                <div class="bg-white rounded-xl p-2 shadow-popper-tip">{{ $t('profileView.captureDesc') }}</div>
+              </template>
+            </el-popover>
+          </div>
+          <button class="bg-gradient-primary h-16 w-full rounded-xl flex items-center justify-center gap-1 text-white mb-2">
+            <span class="text-h1 mr-2">{{ formatPrice(capturedFee * useStateStore().btcPrice) }}</span>
+            <!-- <img src="~@/assets/icons/icon-up.svg" alt=""> -->
+            <span class="text-sm">($BTC {{ formatAmount(capturedFee) }})</span>
+          </button>
         </template>
-        <template v-if="accStore.createdTokenList.length>0">
-          <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i" @click="$router.push(`/tag-detail/${community.tick}`)"
+        <div v-if="accStore.createdTokenList.length>0" class="px-3">
+          <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i"
+                       @click="$router.push(`/tag-detail/${community.tick}`)"
                        :community>
             <template #default-btn><div></div></template>
           </TagListItem>
-        </template>
-        <div v-else class="p-3 bg-white rounded-2xl text-center">
-          <button @click="useModalStore().setModalVisible(true, GlobalModalType.CreateCoin)" class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
-            {{$t('profileView.createYourCoin')}}
-          </button>
         </div>
+        <template v-else>
+          <div class="p-3 bg-white rounded-2xl text-center mx-3">
+            <button @click="useModalStore().setModalVisible(true, GlobalModalType.CreateCoin)" class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
+              {{$t('profileView.createYourCoin')}}
+            </button>
+          </div>
+          <div class="flex justify-center py-6 w-full">
+            <img src="~@/assets/images/empty-data.svg" alt="">
+          </div>
+        </template>
       </van-list>
     </van-pull-refresh>
   </div>
