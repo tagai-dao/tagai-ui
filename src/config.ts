@@ -67,8 +67,8 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const PumpContract = "0x4121c2B1B2d508f72B8419362A247d8DeBeDEAE0";
-export const IPShareContract = "0x501b8A1aa5b1E70a4C2E8BdE90379d3929987248";
+export const PumpContract = "0x8956853dC7E4031676de0948B7dE2A2621cD7ca3";
+export const IPShareContract = "0x33Fb817e89b502C4a6e4274222389F6185A67ad9";
 
 export const Ether = BigInt(1e18);
 
