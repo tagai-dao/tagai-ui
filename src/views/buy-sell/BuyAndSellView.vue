@@ -303,7 +303,7 @@ onMounted(async () => {
                     <img class="w-3" src="~@/assets/icons/icon-warning-primary.svg" alt="">
                   </button>
                   <template #content>
-                    <div class="text-orange-normal py-1">{{  $t('buyAndSell.buyAndSell') }}</div>
+                    <div class="text-orange-normal py-1">{{  $t('buyAndSell.tweetTip') }}</div>
                   </template>
                 </el-tooltip>
               </div>
