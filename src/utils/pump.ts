@@ -20,8 +20,11 @@ export const createCoin = async (createParms: CreateCommunity) => {
     const tx = await pump.createToken(createParms.tick, {
         value: (createParms.initBtc ?? 0n) + BigInt(CreateFee)
     })
+    console.log(1, tx.hash)
     await tx.wait();
+    console.log(2)
     const event: any = await getCreateTokenEventByHash(tx.hash);
+    console.log(3, event)
     if (event && event.length == 3 && event[0] == createParms.tick) {
         return {token: event[1], createHash: tx.hash}
     }
