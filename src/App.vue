@@ -9,6 +9,7 @@ import { initPlugin } from "./utils/wallets";
 import { getBtcPrice, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
+import emitter from "./utils/emitter";
 
 const stateStore = useStateStore();
 const route = useRoute();
@@ -52,6 +53,8 @@ onMounted(async () => {
     })
     updateVPOP();
   }, 10000)
+
+  emitter.on('login', updateVPOP);
 })
 </script>
 

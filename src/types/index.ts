@@ -145,6 +145,7 @@ export type CurateRecord = Account & {
   tweetId: string,
   curateRecord: number,
   amount: number,
+  createAt: string,
 }
 
 export type Reply = {

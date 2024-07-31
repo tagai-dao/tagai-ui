@@ -9,6 +9,7 @@ const {
   showClear,
   contentEl,
   leftWordsLength,
+  tweetLength,
   contentInput,
   getBlur,
   onPaste,
@@ -22,7 +23,7 @@ const onPostTweet = () => {
   const tweetContent = formatElToTextContent(contentRef.value)
 }
 
-defineExpose({contentEl, contentRef, leftWordsLength, formatElToTextContent})
+defineExpose({contentEl, contentRef, leftWordsLength, tweetLength, formatElToTextContent})
 </script>
 
 <template>
