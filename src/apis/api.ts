@@ -19,6 +19,9 @@ export const twitterRefreshAccessToken = async (twitterId: string) =>
 export const twitterAuth = async (referee?: string | null | undefined) => 
   get(BACKEND_API_URL + '/auth/login', { referee })
 
+export const needLogin = async (twitterId: string) =>
+  post(BACKEND_API_URL + '/auth/needLogin', {twitterId})
+
 export const twitterLogin = async (state: string) =>
   get(BACKEND_API_URL + '/user/login', { state })
 

@@ -2,8 +2,11 @@ import {computed, reactive, ref, withDefaults, defineProps} from "vue";
 import {stringLength} from "@/utils/helper";
 import { useAccountStore } from "@/stores/web3";
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
-import { twitterRefreshAccessToken, twitterLogout, getVPOP } from '@/apis/api'
+import { twitterRefreshAccessToken, twitterLogout, getVPOP, needLogin } from '@/apis/api'
 import { VP_CONSUME, OP_CONSUME, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY } from '@/config'
+import errCode from "@/errCode";
+import { useModalStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
 
 export const useAccount = () => {
     const accountMismatch = computed(() => {
@@ -111,6 +114,26 @@ export const useAccount = () => {
         })
     }
 
+    const checkLogin = async () => {
+        const accStore = useAccountStore();
+        const acc = accStore.getAccountInfo;
+        if (acc && acc.accessToken) {
+            try {
+                await needLogin(acc.twitterId)
+                return true;
+            } catch (error) {
+                if (error === errCode.InvalidAccessToken) {
+                    logout()
+                    useModalStore().setModalVisible(true, GlobalModalType.Login);
+                    return;
+                }
+                throw error;
+            }
+        }else {
+            useModalStore().setModalVisible(true, GlobalModalType.Login);
+        }
+    }
+
     const checkoutAccessToken = async () => {
         const accStore = useAccountStore();
         const acc = accStore.getAccountInfo;
@@ -161,6 +184,7 @@ export const useAccount = () => {
         op,
         addBackOp,
         addBackVp,
+        checkLogin,
         logout
     }
 }

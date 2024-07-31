@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { useCurationStore } from '@/stores/curation';
 import type { Tweet } from '@/types';
 import { useRouter } from 'vue-router';
 
@@ -9,6 +10,7 @@ const props = defineProps<{
 const router = useRouter()
 
 function gotoTrade() {
+    useCurationStore().currentSelectedTweet = props.tweet;
     router.push(`/buy-sell/${props.tweet.tick}/${props.tweet.ethAddr}`)
 }
 </script>

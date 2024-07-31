@@ -38,7 +38,7 @@ const accStore = useAccountStore();
 const inputTag = ref("");
 const addTagTip = ref("");
 
-const { accountMismatch } = useAccount();
+const { accountMismatch, checkLogin } = useAccount();
 
 const showingInitAmount = ref<number|undefined>()
 const showingInitBtc = ref<string|undefined>('$0')
@@ -122,10 +122,13 @@ const create = async () => {
       return;
     }
 
-    // if (!createForm.logoUrl || createForm.logoUrl.length === 0) {
-    //   return;
-    // }
-    createForm.logoUrl = ''
+    if (!(await checkLogin())){
+      return;
+    }
+
+    if (!createForm.logoUrl || createForm.logoUrl.length === 0) {
+      return;
+    }
 
     // check steem
     if (!account?.steemId) {
