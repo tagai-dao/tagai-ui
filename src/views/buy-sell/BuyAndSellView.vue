@@ -7,7 +7,7 @@ import { useCommunityStore } from "@/stores/community";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import { useRoute } from "vue-router";
-import { getCommunityDetail, trade } from '@/apis/api'
+import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithBTCAfterFee, getReceivedAmountSellBTCAfterFee, getTokenInfo,
   buyToken, sellToken
@@ -54,7 +54,7 @@ const {
   onPaste,
   formatElToTextContent,
   leftWordsLength
-} = useCreateTweet(280 - (comStore.currentSelectedCommunity?.tick.length ?? 0) - 2)
+} = useCreateTweet(240)
 
 const isPostTweet = ref(false)
 
@@ -100,6 +100,16 @@ async function checkTweet() {
       modalStore.setModalVisible(true, GlobalModalType.Register)
       isPostTweet.value = false
     }
+    
+    
+    if (accStore.getAccountInfo.ethAddr) {
+      const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
+      accStore.ipshare = ipshare;
+    }
+    if (!accStore.ipshare.ethAddr) {
+      modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
+      isPostTweet.value = false
+    }
   }
 }
 
@@ -124,7 +134,9 @@ async function confirm() {
       return;
     }
     let content = formatElToTextContent(contentRef.value)
-    userTweet(content, comStore.currentSelectedCommunity!.tick).catch(handleErrorTip)
+    newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!).catch();
+
+    // userTweet(content, comStore.currentSelectedCommunity!.tick).catch(handleErrorTip)
   }
 
   try{
@@ -297,13 +309,13 @@ onMounted(async () => {
             <el-radio :value="false">None</el-radio>
             <el-radio :value="true">
               <div class="flex items-center gap-1.5">
-                <span>tweet & Earn</span>
+                <span>Blink</span>
                 <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
                   <button @click.stop class="">
                     <img class="w-3" src="~@/assets/icons/icon-warning-primary.svg" alt="">
                   </button>
                   <template #content>
-                    <div class="text-orange-normal py-1">{{  $t('buyAndSell.tweetTip') }}</div>
+                    <div class="text-orange-normal py-1 max-w-40">{{  $t('buyAndSell.blinkTip') }}</div>
                   </template>
                 </el-tooltip>
               </div>

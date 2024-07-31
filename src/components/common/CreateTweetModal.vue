@@ -7,7 +7,9 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
 import { useCommunityStore } from "@/stores/community";
+import { useAccount } from "@/composables/useAccount";
 
+const comStore = useCommunityStore()
 const {
   contentRef,
   showClear,
@@ -19,8 +21,9 @@ const {
   onPaste,
   selectEmoji,
   formatElToTextContent
-} = useCreateTweet()
-const { preCheckCuration } = useTweet();
+} = useCreateTweet(280 - (comStore.currentSelectedCommunity?.tick.length ?? 0) - 2)
+
+const { preCheckCuration, userTweet } = useTweet();
 
 const tweetLoading = ref(false)
 
@@ -37,7 +40,9 @@ const onPostTweet = async () => {
       return;
     }
     let content = formatElToTextContent(contentRef.value)
-    await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!)
+    userTweet(content, useCommunityStore().currentSelectedCommunity!.tick!).catch(handleErrorTip)
+
+    // await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!)
     emit('close')
   } catch (e) {
     handleErrorTip(e)

@@ -46,7 +46,8 @@
   },
   "buyAndSell": {
     "setMaxSlippage": "Set max. slippage (%)",
-    "tweetTip": "You must create social account to tweet."
+    "tweetTip": "You must create social account to tweet.",
+    "blinkTip": "You can make blink to Twitter if you have created IPShare, user trade tag from your blink can bring you reward."
   },
   "community": {
     "distributionTip": "The total amount of tokens is distributed through three parts, including 10% for social distribution, 70% for bonding curve sales, and 20% for entering the liquidity pool"
