@@ -18,9 +18,10 @@ export const handleErrorTip = (e: any) => {
   }
 
   const errorData = e.transaction?.data;
+  
   if (errorData) {
     const errorInterface: any = abis.errors;
-    const iface = new ethers.Interface(['error CreateDexPoolFail()']);
+    const iface = new ethers.Interface(abis.errors);
     try {
       const decodeError = iface.parseError(errorData);
       notify({
@@ -43,21 +44,21 @@ export const handleErrorTip = (e: any) => {
       type: "info",
       duration: 5000,
     });
-    return t("tip.insufficientFee");
+    return t("errMessage.insufficientFee");
   } else if (e.message.indexOf("User denied transaction signature") !== -1) {
     notify({
       message: "User canceled the transaction",
       type: "info",
       duration: 5000,
     });
-    return t("tip.userCanceled");
+    return t("errMessage.invalidTransaction");
   } else if (e.message.indexOf("user rejected action") !== -1) {
     notify({
       message: "User canceled the signature",
       type: "info",
       duration: 5000,
     });
-    return t("tip.userCanceled");
+    return t("errMessage.userCanceled");
   } else if (e.message.indexOf("User has ipshare") !== -1) {
     notify({ message: "User has created IPShare", type: "info" });
     return "User has created IPShare";
@@ -75,7 +76,7 @@ export const handleErrorTip = (e: any) => {
     return "Cannot sell the last 10 shares";
   } else {
     notify({ message: "Transaction fail!", type: "error" });
-    return t("tip.transFail");
+    return t("errMessage.invalidTransaction");
   }
 };
 

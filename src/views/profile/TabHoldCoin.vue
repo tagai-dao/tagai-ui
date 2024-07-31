@@ -6,11 +6,14 @@ import { handleErrorTip } from "@/utils/notify";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { formatAmount } from "@/utils/helper";
+import { useRouter } from "vue-router";
+import errCode from "@/errCode";
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const accStore = useAccountStore()
+const router = useRouter()
 const showingNoEth = computed(() => {
   return !accStore.getAccountInfo.ethAddr
 })
@@ -44,6 +47,10 @@ const onRefresh = async () => {
     }
   } catch(e) {
     handleErrorTip(e)
+    if (e === errCode.InvalidAccessToken) {
+      accStore.setAccount(null);
+      router.replace('/')
+    }
   } finally {
     refreshing.value = false
   }

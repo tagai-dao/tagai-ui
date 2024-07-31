@@ -55,6 +55,9 @@ watch(() => showingInitAmount.value, (val) => {
     createForm.initAmount = ethers.parseEther(val.toString())
     createForm.initBtc = calculateInitBtc(createForm.initAmount)
     showingInitBtc.value = formatPrice((createForm.initBtc as any).toString() / 1e18)
+  }else {
+    createForm.initAmount = 0n
+    createForm.initBtc = 0n
   }
 })
 
@@ -119,9 +122,10 @@ const create = async () => {
       return;
     }
 
-    if (!createForm.logoUrl || createForm.logoUrl.length === 0) {
-      return;
-    }
+    // if (!createForm.logoUrl || createForm.logoUrl.length === 0) {
+    //   return;
+    // }
+    createForm.logoUrl = ''
 
     // check steem
     if (!account?.steemId) {
