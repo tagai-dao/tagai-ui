@@ -27,7 +27,7 @@ export const useAccount = () => {
     }
 
     const gotoTwitter = () => {
-        window.open('https://x.com/' + useAccountStore().getAccountInfo.twitterId, '__blank')
+        window.open('https://x.com/' + useAccountStore().getAccountInfo.twitterUsername, '__blank')
     }
 
     const refreshToken = async () => {

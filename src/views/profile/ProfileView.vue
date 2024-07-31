@@ -12,7 +12,7 @@ import { useInterval } from "@/composables/useTools";
 const accStore = useAccountStore()
 const tabOptions = ['holdCoin', 'post', 'createCoin']
 const activeTab = ref('holdCoin')
-const { profile, replaceEmptyProfile, gotoTwitter, vp, op } = useAccount();
+const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout } = useAccount();
 const { setInter } = useInterval()
 
 async function updateIPShare() {
@@ -85,7 +85,7 @@ onMounted(() => {
           <span>{{ accStore.getAccountInfo.followings }} {{ $t('profileView.followings') }}</span>
           <span>{{ accStore.getAccountInfo.followers }} {{ $t('profileView.followers') }}</span>
         </div>
-        <button>
+        <button @click="logout();$router.replace('/')">
           <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
         </button>
       </div>
