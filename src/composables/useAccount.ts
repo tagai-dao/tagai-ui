@@ -52,7 +52,11 @@ export const useAccount = () => {
                     ...account,
                     ...vpop
                 })
-            }).catch(console.error)
+            }).catch((e: any) => {
+                if (e === errCode.InvalidAccessToken) {
+                    logout()
+                }
+            })
         }
     }
 
