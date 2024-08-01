@@ -69,6 +69,9 @@ export const getReplyOfTweet = async (tweetId: string, pages?: number) =>
 export const tweet = async (twitterId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/tweet', {twitterId, text, tick})
 
+export const tweetWithSpace = async (twitterId: string, text: string, tick: string, spaceId: string) =>
+  post(BACKEND_API_URL + '/curation/tweetWithSpace', {twitterId, text, tick, spaceId})
+
 export const newLike = async (twitterId: string, tweetId: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/like', {twitterId, tweetId, tick})
 
@@ -123,6 +126,9 @@ export const redirectTweet = async (commerceId: string) =>
 /************************************ curation **********************************/
 export const getOnlineSpaces = async () =>
   get(BACKEND_API_URL + '/space/onlineSpaces')
+
+export const getSpaceInfoById = async (twitterId: string, spaceId: string) =>
+  post(BACKEND_API_URL + '/space/getSpaceInfoById', {twitterId, spaceId})
 
 export const getTweetCurateList = async (tweetId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/tweetCurateList', {tweetId, pages})

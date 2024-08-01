@@ -3,8 +3,19 @@ import {useModalStore} from "@/stores/common";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import {onUnmounted, ref, watch} from "vue";
+import { useCommunityStore } from "@/stores/community";
+import debounce from 'lodash.debounce'
+import { getSpaceInfoById } from '@/apis/api'
+import { useAccountStore } from "@/stores/web3";
+import { useSpace, InvalidSpaceCurationType } from "@/composables/useSpace"; 
+import { handleErrorTip } from "@/utils/notify";
+import { OperateType, useTweet } from "@/composables/useTweet";
+import type { Space } from "@/types";
+import { SPACE_STATE } from "@/config";
 
-const modalStore = useModalStore()
+const modalStore = useModalStore();
+const comStore = useCommunityStore();
+const accStore = useAccountStore();
 const {
   contentRef,
   showClear,
@@ -16,13 +27,65 @@ const {
   onPaste,
   selectEmoji,
   formatElToTextContent
-} = useCreateTweet(200)
+} = useCreateTweet(240)
+
+const emit = defineEmits(['close'])
+
+const { getSpaceIdFromUrl, userTweetWithSpace } = useSpace();
+const { preCheckCuration } = useTweet();
+
+const invalidSpaceType = ref<InvalidSpaceCurationType>(InvalidSpaceCurationType.OK);
 
 const tweetLoading = ref(false)
-const onPostTweet = () => {
-  tweetLoading.value = true
-  const tweetContent = formatElToTextContent(contentRef.value)
+const spaceLink = ref('');
+const space = ref<Space|null>(null);
+
+const onPostTweet = async () => {
+  try{
+    tweetLoading.value = true
+    invalidSpaceType.value = InvalidSpaceCurationType.OK;
+    const tweetContent = formatElToTextContent(contentRef.value)
+    if (tweetLength.value == 0 || leftWordsLength.value < 0) {
+      return;
+    }
+    if (!(await preCheckCuration(OperateType.TWEET))) {
+      return;
+    }
+    const spaceId = getSpaceIdFromUrl(spaceLink.value);
+    if (!spaceId) {
+      invalidSpaceType.value = InvalidSpaceCurationType.INVALID_LINK
+      return
+    }
+    const res: any = await getSpaceInfoById(accStore.getAccountInfo.twitterId, spaceId);
+    if (!res) {
+      invalidSpaceType.value = InvalidSpaceCurationType.INVALID_LINK
+    }
+    space.value = res;
+    if (space.value!.tweetId){
+      invalidSpaceType.value = InvalidSpaceCurationType.HAS_CREATED;
+      return;
+    }
+    if (space.value!.state !== 1) {
+      invalidSpaceType.value = InvalidSpaceCurationType.SPACE_IS_STARTED
+      return;
+    }
+    if (space.value!.twitterId != accStore.getAccountInfo.twitterId) {
+      invalidSpaceType.value = InvalidSpaceCurationType.NOT_YOUR_SPACE
+      return;
+    }
+    await userTweetWithSpace(`${tweetContent}\n${spaceLink.value}`, comStore.currentSelectedCommunity!.tick, spaceId)
+    emit('close')
+  } catch (e) {
+    console.log(e);
+    handleErrorTip(e);
+  } finally {
+    tweetLoading.value = false
+  }
 }
+
+const checkSpace = debounce(async () => {
+
+}, 10000)
 </script>
 
 <template>
@@ -64,14 +127,13 @@ const onPostTweet = () => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-normal px-2 h-5 text-sm rounded-md">onchain</button>
-            <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button>
+            <button class="bg-green-normal px-2 h-5 text-sm rounded-md">{{ comStore.currentSelectedCommunity?.tick }}</button>
           </div>
         </div>
       </div>
       <div class="mt-4">Space Link</div>
       <div class="bg-grey-normal-active/90 rounded-2xl h-12 px-3">
-        <input class="bg-transparent outline-none h-full w-full" type="text">
+        <input v-model="spaceLink" @input="checkSpace" class="bg-transparent outline-none h-full w-full" type="text">
       </div>
     </div>
     <div class="flex justify-center">
@@ -82,10 +144,6 @@ const onPostTweet = () => {
         <span class="text-white font-bold text-lg">GoTweet</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>
       </button>
-    </div>
-    <div class="text-sm text-grey-normal text-center">
-      Credit 排名 10/30 的用户点赞/转发此推文，<br>
-      该 Space 参与者可获得 $LATC 奖励。
     </div>
   </div>
 </template>

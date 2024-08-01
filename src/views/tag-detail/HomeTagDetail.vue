@@ -199,7 +199,7 @@ onMounted(async () => {
                class="max-w-[500px] rounded-[20px]"
                width="90%" :show-close="false" align-center destroy-on-close>
       <CreateTweetModal @close="showModal = false" v-if="commerType == CommerceType.TWEET" />
-      <CreateSpaceModal v-if="commerType == CommerceType.SPACE" />
+      <CreateSpaceModal @close="showModal = false" v-if="commerType == CommerceType.SPACE" />
   </el-dialog>
 </template>
 

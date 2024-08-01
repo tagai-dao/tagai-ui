@@ -1,4 +1,5 @@
-
+import type { Space } from '@/types';
+import { dayjs } from 'element-plus';
 
 export const sleep = async (time: number) => {
   time = time * 1000
@@ -258,5 +259,35 @@ export function parseTimestamp(time: any) {
     } else {
       return getDateString(null, null, timestamp - nowStamp)
     }
+  }
+}
+
+export function parseSpaceStartTime(time: any) {
+  let monthMap = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ]
+  const local = localStorage.getItem('language')
+  let d1 = new Date(time)
+  if (local === 'zh') {
+    return dayjs(time).locale('zh-cn').format('MMMDo HH:mm')
+  }else {
+    return dayjs(time).locale('en').format('MMM Do HH:mm')
+    // return `${d1.getUTCHours() >= 12 ? prefixInteger(d1.getUTCHours() - 12, 2) + ":" + prefixInteger(d1.getMinutes(), 2) + 'PM' : prefixInteger(d1.getUTCHours(), 2) + ':' + prefixInteger(d1.getMinutes(), 2) + 'AM'}(UTC),${monthMap[d1.getUTCMonth()]} ${d1.getUTCDate()}`;
+  }
+}
+
+export function parseSpaceLastTime(space: Space) {
+  const start = space.startedAt;
+  const end = space.endedAt;
+  if (!start || !end) return '';
+  let diff = new Date(end).getTime() - new Date(start).getTime();
+  if (diff < 0) return '';
+  diff = Math.ceil(diff / 1000)
+  if (diff < 60) {
+    return diff + ' S';
+  }else if (diff < 3600) {
+    return `${Math.floor(diff / 60)} M ${diff % 60} S`;
+  }else {
+    return `${Math.floor(diff / 3600)} H ${Math.ceil(diff % 3600 / 60)} M`
   }
 }

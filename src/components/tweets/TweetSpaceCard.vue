@@ -1,33 +1,85 @@
 <script setup lang="ts">
-import { withDefaults, defineProps } from 'vue'
+import { withDefaults, defineProps, computed } from 'vue'
 import type {Tweet} from "@/types";
+import {usePost} from "@/composables/usePost";
+import { parseSpaceStartTime, parseSpaceLastTime, parseTimestamp } from '@/utils/helper';
 
-const props = withDefaults(
-  defineProps<{post: Tweet|null}>(),
-  {
-    post: null,
+const props = defineProps<{tweet: Tweet}>();
+
+const {
+  blogRef,
+  profileImg,
+  content,
+  isIgnoreAccount,
+  steemUrl,
+  replaceEmptyImg,
+  gotoTweet,
+  clickContent,
+} = usePost(props.tweet)
+
+const stateString = computed(() => {
+  switch(props.tweet.state) {
+    case 1:
+      return 'Reminder';
+    case 2:
+      return 'Living';
+    case 3:
+      return 'Playing record';
+    case 4:
+      return 'Canceld';
+    default:
+      return 'Reminder'
   }
-);
+})
+
+const desc = computed(() => {
+  switch(props.tweet.state) {
+    case 1:
+      return parseSpaceStartTime(props.tweet.scheduledStart || props.tweet.startedAt);
+    case 2:
+      return 'Living | ' + props.tweet.participantCount;
+    case 3:
+      return `${parseTimestamp(props.tweet.endedAt)} | ${parseSpaceLastTime(props.tweet)} | ${props.tweet.participantCount ?? 0} listeners`;
+    case 4:
+      return 'Canceld';
+    default:
+      return 'Reminder'
+  }
+})
+
+const gotoSpace = () => {
+  switch(props.tweet.state) {
+    case 1:
+    case 2:
+    case 3:
+      window.open(`https://x.com/${props.tweet.twitterUsername}/status/${props.tweet.tweetId}`)
+    case 4:
+    default:
+      return 'Reminder'
+  }
+}
+
 </script>
 
 <template>
   <div class="bg-gradient-primary py-5 px-5 rounded-2xl flex flex-col gap-4">
     <div class="flex items-center gap-2">
       <img class="w-6 h-6 rounded-full"
-           src="~@/assets/icons/icon-default-avatar.svg" alt="">
-      <span class="text-h5 text-grey-normal flex-1 truncate">Username</span>
-      <button class="bg-white rounded-md h-5 px-2 text-sm">Host</button>
+           :src="profileImg" alt="">
+      <span class="text-h5 text-grey-normal flex-1 truncate">{{ tweet.twitterName }}</span>
+      <!-- <button class="bg-white rounded-md h-5 px-2 text-sm">Host</button> -->
     </div>
     <div>
       <div class="text-h5">
-        Make America Great again！
+      {{ tweet.title }}
       </div>
       <div class="text-sm font-normal">
-        Jun 6six 18:00 | 30 Min 30 Sec | 100 listeners
+      {{ desc }}
+        <!-- Jun 6six 18:00 | 30 Min 30 Sec | {{ tweet.participantCount ?? 0 }} listeners -->
       </div>
     </div>
-    <button class="text-h5 h-9 bg-black rounded-full text-white">
-      Play recording
+    <button @click.stop="gotoSpace" class="text-h5 h-9 bg-black rounded-full text-white">
+      {{ stateString }}
     </button>
   </div>
 </template>

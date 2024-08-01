@@ -63,14 +63,14 @@ const onUserAvatar = () => {
         <div class="flex-1">
           <div class="w-full flex items-center flex-wrap gap-x-2">
             <a class="font-bold text-lg"
-               @click.stop="onUserAvatar()">{{ tweet.twitterUsername }}</a>
+               @click.stop="onUserAvatar()">{{ tweet.twitterName }}</a>
             <span class="mx-4px"> · </span>
             <button @click="gotoTweet($event)">
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
           </div>
           <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">
-            <span>@{{tweet.twitterName}}</span>
+            <span>@{{tweet.twitterUsername}}</span>
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
@@ -83,7 +83,7 @@ const onUserAvatar = () => {
                v-else v-html="formatEmojiText(content)"></div>
         </div>
         <div class="px-3 md:pl-12">
-          <TweetSpaceCard v-if="tweet.spaceId" :post="tweet"/>
+          <TweetSpaceCard v-if="tweet.spaceId" :tweet="tweet"/>
           <slot name="tweet-mint"></slot>
           <slot name="tweet-action-bar"></slot>
         </div>

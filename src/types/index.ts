@@ -77,6 +77,7 @@ export type Account = {
 
 export type Space = Account & {
   spaceId?: string;
+  tweetId?: string;
   title?: string;
   logo?: string;
   tick?: string;

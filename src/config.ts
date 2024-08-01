@@ -38,6 +38,14 @@ export const ChainConfig = {
 //     }
 // }
 
+
+export const SPACE_STATE = {
+  1: 'scheduled',
+  2: 'live',
+  3: 'ended',
+  4: 'canceled'
+}
+
 export const MainToken = {
   name: "BTC",
   symbol: "BTC",
