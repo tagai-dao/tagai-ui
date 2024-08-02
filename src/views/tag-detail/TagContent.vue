@@ -13,6 +13,7 @@ import { sleep } from "@/utils/helper";
 import type { Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfoOfTweets } from "@/utils/pump";
+import { useCurationStore } from "@/stores/curation";
 
 const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
@@ -20,6 +21,7 @@ const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
 const comStore = useCommunityStore();
+const curationStore = useCurationStore()
 
 const showingTweets = computed(() => {
   if (
@@ -117,7 +119,7 @@ onMounted(async () => {
             v-if="tweet.spaceId"
             class="bg-white rounded-2xl"
             :tweet="tweet"
-            @click.stop="$router.push(`/space-detail/${tweet.spaceId}`)"
+            @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
           >
             <template #tweet-action-bar>
               <PostButtonGroup
@@ -130,7 +132,7 @@ onMounted(async () => {
             v-else
             class="bg-white rounded-2xl"
             :tweet="tweet"
-            @click.stop="$router.push(`/post-detail/${tweet.tweetId}`)"
+            @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
           >
             <template #tweet-trade v-if="tweet.commerceId">
               <CommerceBtn :tweet="tweet"/>

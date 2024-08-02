@@ -1,11 +1,59 @@
 <script setup lang="ts">
 
 import BackHeader from "@/layout/BackHeader.vue";
-import {testTweets} from "@/assets/test-data";
-import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import Comments from "@/components/tweets/Comments.vue";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
+import SpaceCurateList from "@/components/tweets/SpaceCurateList.vue";
+import type { Tweet } from "@/types";
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useCurationStore } from "@/stores/curation";
+import { useAccountStore } from "@/stores/web3";
+import { getTweetById } from "@/apis/api";
+import { getTokenInfoOfTweets } from "@/utils/pump";
+import { formatAmount, formatPrice } from "@/utils/helper";
+
+enum CurationType {
+  Curate,
+  Host,
+  CoHost,
+  Speaker
+}
+const curatorsModalVisible = ref(false)
+const curationType = ref(CurationType.Curate)
+const router = useRouter()
+const route = useRoute()
+
+
+const curationStore = useCurationStore()
+const accStore = useAccountStore()
+
+const everyCurationAmount = computed(() => {
+  return(curationStore.currentSelectedTweet?.amount ?? 0) / 4
+})
+
+const tag = computed(() => {
+  return curationStore.currentSelectedTweet?.tick
+})
+
+onMounted(async () => {
+  const tweetId = route.params.id;
+  if (!curationStore.currentSelectedTweet?.tweetId || curationStore.currentSelectedTweet?.tweetId != tweetId){
+    if (typeof(tweetId) !== 'string') {
+      router.replace('/')
+      return;
+    }
+    curationStore.currentSelectedTweet = null
+    curationStore.currentSelectedTweet = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId) as any
+    if (!curationStore.currentSelectedTweet) return
+  }
+  if (!curationStore.currentSelectedTweet.spaceId) {
+    router.replace('/post-detail/' + tweetId)
+  }
+  let ts = await getTokenInfoOfTweets([curationStore.currentSelectedTweet!])
+  curationStore.currentSelectedTweet = ts[0]
+})
 
 </script>
 
@@ -14,26 +62,29 @@ import SpaceItem from "@/components/tweets/SpaceItem.vue";
     <BackHeader class="px-3">
       <template #title>
         <div class="text-lg font-semibold text-black-19 ">
-          It is my time, follow me！
+          {{ curationStore?.currentSelectedTweet?.tick }}
         </div>
       </template>
     </BackHeader>
     <div class="flex-1 overflow-auto px-3 pb-3 flex flex-col gap-2" id="comment-list-scroller">
-      <div class="flex items-center gap-2">
+      <!-- <div class="flex items-center gap-2">
         <div class="w-4 h-4 bg-green-normal rounded-full"></div>
         <div class="text-base flex-1">
-          #trump • Market cap $50,409.00
+          #{{ tweet.tick }} • Market cap
         </div>
         <button class="bg-yellow-fa h-8 px-3 rounded-full text-sm">
           Buy $trump
         </button>
-      </div>
-      <div class="bg-white rounded-2xl py-2">
-        <!-- <SpaceItem :tweet="testTweets[1]">
+      </div> -->
+      <div v-if="curationStore.currentSelectedTweet" class="bg-white rounded-2xl py-2">
+        <SpaceItem :tweet="curationStore.currentSelectedTweet">
           <template #tweet-action-bar>
-            <PostButtonGroup :post="testTweets[1]"/>
+            <PostButtonGroup :tweet="curationStore.currentSelectedTweet"/>
           </template>
-        </SpaceItem> -->
+        </SpaceItem>
+      </div>
+      <div v-if="curationStore.currentSelectedTweet?.amount === 0">
+        No curation rewards
       </div>
       <div class="bg-white rounded-2xl py-4 px-3 flex flex-col gap-4">
         <div class="flex items-center gap-2">
@@ -41,57 +92,61 @@ import SpaceItem from "@/components/tweets/SpaceItem.vue";
             Rewards
           </div>
           <button class="bg-yellow-fa h-8 px-3 rounded-full text-sm">
-            Settled
+            {{ curationStore.currentSelectedTweet?.isSettled ? "Settled" : "On Curation" }}
           </button>
         </div>
         <div class="flex items-center justify-end">
           <div class="border-[1px] border-grey-c9 rounded-xl h-8 px-3 w-max flex items-center">
-            4.76 M $LATC（$100）
+            {{ curationStore.currentSelectedTweet?.amount }} #{{ tag }} ({{ formatPrice((curationStore.currentSelectedTweet?.amount ?? 0) * (curationStore.currentSelectedTweet?.price ?? 0)) }})
           </div>
         </div>
         <div class="grid grid-cols-2 gap-y-3 gap-x-1">
-          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2">
+          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+            @click="curationType = CurationType.Curate; curatorsModalVisible = true">
             <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
-                <div class="flex-1">Curator</div>
-                <span>1</span>
+                <div class="flex-1">Curation</div>
+                <span>{{ curationStore.currentSelectedTweet?.spaceCurateCount ?? 0 }}</span>
               </div>
-              <div class="text-h5">1.19M $LATC</div>
+              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
             </div>
           </div>
-          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2">
+          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+              @click="curationType = CurationType.Host; curatorsModalVisible = true">
             <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">Host</div>
-                <span>1</span>
+                <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length : 0 }}</span>
               </div>
-              <div class="text-h5">1</div>
+              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
             </div>
           </div>
-          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2">
+          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+          @click="curationType = CurationType.CoHost; curatorsModalVisible = true">
             <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">Co-Host</div>
-                <span>1</span>
+                <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length - 1 : 0 }}</span>
               </div>
-              <div class="text-h5">1.19M $LATC</div>
+              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
             </div>
           </div>
-          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2">
+          <div class="col-span-1 cursor-pointer border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+          @click="curationType = CurationType.Speaker; curatorsModalVisible = true">
             <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">Speaker</div>
-                <span>1</span>
+                <span>{{ curationStore.currentSelectedTweet?.speakerIds ? JSON.parse(curationStore.currentSelectedTweet?.speakerIds).length : 0 }}</span>
               </div>
-              <div class="text-h5">1.19M $LATC</div>
+              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
             </div>
           </div>
         </div>
-        <div class="flex justify-center gap-10">
+        <!-- <div class="flex justify-center gap-10">
           <button class="bg-green-normal h-9 rounded-full px-3 flex items-center justify-center gap-2">
             <span class="text-h5">Curator</span>
             <img src="~@/assets/icons/icon-arrow-forward.svg" alt="">
@@ -100,11 +155,17 @@ import SpaceItem from "@/components/tweets/SpaceItem.vue";
             <span class="text-h5">Space</span>
             <img src="~@/assets/icons/icon-arrow-forward.svg" alt="">
           </button>
-        </div>
+        </div> -->
       </div>
       <div class="text-h5 mt-2 px-3">Space Comments</div>
       <Comments/>
     </div>
+    <el-dialog v-model="curatorsModalVisible"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px] bg-grey-f4"
+               width="90%" :show-close="false" align-center destroy-on-close>
+      <SpaceCurateList v-if="curationType === CurationType.Curate" :tweet="curationStore.currentSelectedTweet!"/>
+    </el-dialog>
 </div>
 </template>
 

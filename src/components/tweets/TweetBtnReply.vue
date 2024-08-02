@@ -8,6 +8,7 @@ import {OperateType, useTweet} from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
 import { type Tweet } from "@/types";
+import emitter from "@/utils/emitter";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -48,6 +49,7 @@ async function reply() {
     props.tweet.replied = 1;
     props.tweet.replyCount += 1;
     replyVisible.value = false
+    emitter.emit('newReply')
   } catch (e) {
     handleErrorTip(e)
   } finally {

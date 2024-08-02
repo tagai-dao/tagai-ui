@@ -24,19 +24,22 @@ const accStore = useAccountStore()
 
 onMounted(async () => {
   const tweetId = route.params.id;
-  if (!curationStore.currentSelectedTweet?.tweetId || curationStore.currentSelectedTweet?.tweetId != tweetId){
-    if (typeof(tweetId) !== 'string') {
-      router.replace('/')
-      return;
-    }
+  if (typeof(tweetId) !== 'string') {
+    router.replace('/')
+    return;
+  }
+  if (curationStore.currentSelectedTweet?.tweetId !== tweetId) {
     curationStore.currentSelectedTweet = null
-    curationStore.currentSelectedTweet = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId) as any
-    if (!curationStore.currentSelectedTweet) return
-    let ts = await getTokenInfoOfTweets([curationStore.currentSelectedTweet!])
-    curationStore.currentSelectedTweet = ts[0]
+  }
+  curationStore.currentSelectedTweet = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId) as any
+  if (!curationStore.currentSelectedTweet) return
+
+  if (curationStore.currentSelectedTweet.spaceId) {
+    router.replace('/space-detail/' + tweetId)
   }
 
-
+  let ts = await getTokenInfoOfTweets([curationStore.currentSelectedTweet!])
+  curationStore.currentSelectedTweet = ts[0]
 })
 
 </script>

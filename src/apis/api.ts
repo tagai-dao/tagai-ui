@@ -133,6 +133,12 @@ export const getSpaceInfoById = async (twitterId: string, spaceId: string) =>
 export const getTweetCurateList = async (tweetId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/tweetCurateList', {tweetId, pages})
 
+export const getSpaceCurateList = async (tweetId: string, pages?: number) =>
+  get(BACKEND_API_URL + '/curation/spaceCurateList', {tweetId, pages})
+
+export const getSpaceCurationList = async (tweetId: string) =>
+  get(BACKEND_API_URL + '/curation/spaceCurationList', {tweetId})
+
 export const getMyCurationRewards = async (twitterId: string) =>
   post(BACKEND_API_URL + '/curation/userCurationRewards', {twitterId})
 

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useCurationStore } from "@/stores/curation";
-import { sleep, getRequestPages } from "@/utils/helper";
+import { sleep, getRequestPages, parseTimestamp } from "@/utils/helper";
 import {onMounted, ref} from "vue";
 import { getReplyOfTweet } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import type { Reply } from "@/types";
+import emitter from "@/utils/emitter";
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -64,6 +65,7 @@ onMounted(async () => {
     await sleep(0.2)
   }
   onRefresh()
+  emitter.on('newReply', onRefresh);
 })
 </script>
 
@@ -94,9 +96,9 @@ onMounted(async () => {
                 </button>
               </div>
             </div>
-            <!-- <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
-              $10.01
-            </button> -->
+            <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
+              {{ parseTimestamp(reply.operateTime) }}
+            </button>
           </div>
           <div class="pl-12 mt-2">
             {{ reply.content }}

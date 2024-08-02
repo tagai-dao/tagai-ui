@@ -13,9 +13,11 @@ import { formatPrice } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { getMyCurationRewards } from '@/apis/api'
 import { type CurationReward } from "@/types";
+import { useCurationStore } from "@/stores/curation";
 
 const accStore = useAccountStore()
 const stateStore = useStateStore()
+const curationStore = useCurationStore()
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -116,12 +118,14 @@ onMounted(() => {
               </router-link> -->
             </div>
             <div class="bg-white rounded-2xl mb-3">
-              <SpaceItem v-if="tweet.spaceId" :tweet="tweet">
+              <SpaceItem v-if="tweet.spaceId" :tweet="tweet"
+                @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)">
                 <template #tweet-action-bar>
                   <PostButtonGroup :tweet="tweet"/>
                 </template>
               </SpaceItem>
-              <TweetItem v-else :tweet="tweet">
+              <TweetItem v-else :tweet="tweet"
+                @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)">
                 <template #tweet-trade v-if="tweet.commerceId">
                   <CommerceBtn :tweet="tweet"></CommerceBtn>
                 </template>
