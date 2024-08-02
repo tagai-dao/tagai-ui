@@ -11,6 +11,7 @@ import { useRouter } from "vue-router";
 import { getTokenCap, getTokenInfo } from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
+import { useInterval } from "@/composables/useTools";
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -20,6 +21,7 @@ const refreshing = ref(false);
 const loading = ref(false);
 const router = useRouter();
 const finished = ref(false)
+const { setInter } = useInterval()
 
 watch(listType, (val) => {
   refresh()
@@ -76,8 +78,9 @@ async function loadMore() {
 async function getSpaces() {
   try{
     let spaces = await getOnlineSpaces() as Space[];
-    if (spaces && spaces.length === 0) {
-      curationStore.allSpaces = spaces;
+    
+    if (spaces && spaces.length > 0) {
+      curationStore.allSpaces = spaces
     }else {
       curationStore.allSpaces = [];
     }
@@ -91,12 +94,11 @@ function gotoDetail(com: Community) {
   router.push(`/tag-detail/${com.tick}`)
 }
 
-onActivated(async () => {
-  getSpaces()
-})
 
 onMounted(async () => {
   refresh();
+  getSpaces();
+  setInter(getSpaces, 10000);
   emitter.on('newCommunity', refresh);
 })
 </script>
@@ -105,7 +107,7 @@ onMounted(async () => {
   <div class="h-full overflow-hidden pb-2 flex flex-col gap-3">
     <van-swipe :loop="true" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">
       <van-swipe-item v-for="space of curationStore.allSpaces">
-        <OnlineSpace :space/>
+        <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
       </van-swipe-item>
     </van-swipe>
     <div class="px-3 flex justify-end gap-6">

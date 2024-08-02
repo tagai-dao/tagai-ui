@@ -11,7 +11,7 @@ const router = createRouter({
       path: '/:commerceid?',
       name: 'home',
       component: HomeView,
-      meta: {tabBar: true, topBar: true}
+      meta: {tabBar: true, topBar: true, keepAlive: true}
     },
     {
       path: '/tag-detail/:id',
@@ -38,7 +38,7 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: () => import('@/views/profile/ProfileView.vue'),
-      meta: {tabBar: true, topBar: true, gotoHome: true}
+      meta: {tabBar: true, topBar: true, gotoHome: true, keepAlive: true}
     },
     {
       path: '/notification',
