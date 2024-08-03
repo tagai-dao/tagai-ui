@@ -5,7 +5,12 @@ import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { GlobalModalType, type CurationReward } from '@/types';
 import { formatAmount, formatPrice } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
+import { getClaimSignature, setOrderClaimed } from '@/apis/api'
+import { claimReward } from '@/utils/pump'
 import { ref } from 'vue'
+import emitter from '@/utils/emitter';
+import { ethers } from 'ethers';
+
 const props = defineProps<{reward: CurationReward}>()
 const claiming = ref(false)
 const accStore = useAccountStore()
@@ -20,6 +25,14 @@ async function claim() {
   }
   try{
     claiming.value = true
+    const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
+    if (res) {
+      const {signature, orderId, amount} = res;
+      console.log(33, res)
+      const hash = await claimReward(props.reward.token, BigInt(orderId), ethers.parseEther(amount.toString()), signature);
+      setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash).catch(console.error);
+      emitter.emit('claimedReward')
+    }
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -38,7 +51,8 @@ async function claim() {
         <div class="text-h5">{{ formatAmount(reward.amount) }} ({{ formatPrice(reward.amount * reward.price) }})</div>
       </div>
     </div>
-    <button @click="claim" class="bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
+    <button @click="claim" :disabled="claiming"
+     class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
       Claim
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>

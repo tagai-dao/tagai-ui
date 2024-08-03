@@ -142,6 +142,12 @@ export const getSpaceCurationList = async (tweetId: string) =>
 export const getMyCurationRewards = async (twitterId: string) =>
   post(BACKEND_API_URL + '/curation/userCurationRewards', {twitterId})
 
+export const getClaimSignature = async (twitterId: string, tick: string) =>
+  post(BACKEND_API_URL + '/curation/getUserClaimTagRewardSignature', {twitterId, tick})
+
+export const setOrderClaimed = async (twitterId: string, orderId: string, hash: string) =>
+  post(BACKEND_API_URL + '/curation/setOrderClaimed', {twitterId, orderId, hash})
+
 /************************************ ipshare **********************************/
 export const getIpshareInfo = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/ipshare', {ethAddr})

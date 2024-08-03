@@ -3,7 +3,7 @@ import type { Community, CreateCommunity, Tweet } from "@/types";
 import { CreateFee, ChainConfig } from "@/config";
 import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
-import { PumpContract, Ether } from "@/config";
+import { PumpContract, Ether, ClaimFee } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
@@ -46,24 +46,21 @@ export const sellToken = async (token: string, amount: bigint, receiveEth: bigin
     if (!ethers.isAddress(sellsman)) {
         sellsman = ethers.ZeroAddress;
     }
-    try {
-        const tc = await getContract('Token', token)
-        const tx = await tc.sellToken(amount, receiveEth, sellsman, slippage);
-        await tx.wait();
-        return tx.hash;
-    } catch (error: any) {
-        try {
-            const iface = new ethers.Interface(abis.Token);
-            const ipface = new ethers.Interface(abis.IPShare);
-            const ipump = new ethers.Interface(abis.Pump);
-            const decodedError1 = iface.parseError(error.data);
-            const decodedError2 = ipface.parseError(error.data);
-            const decodedError3 = ipump.parseError(error.data);
-            console.log('custom error', decodedError1, decodedError2, decodedError3)
-        } catch (error) {
-            
-        }
-    }
+    const tc = await getContract('Token', token)
+    const tx = await tc.sellToken(amount, receiveEth, sellsman, slippage);
+    await tx.wait();
+    return tx.hash;
+}
+
+export const claimReward = async (token: string, orderId: BigInt, amount: BigInt, signature: string) => {
+    if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
+    console.log(3, token, orderId, amount, signature)
+    const tc = await getContract('Token', token)
+    const tx = await tc.userClaim(token, orderId, amount, signature, {
+        value: ClaimFee
+    });
+    await tx.wait();
+    return tx.hash;
 }
 
 export const calculateInitBtc = (amount: bigint) => {

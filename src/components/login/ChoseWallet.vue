@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
 import { computed, ref } from "vue";
 
@@ -11,6 +12,7 @@ const emits = defineEmits(['chosedWallet'])
 
 async function onSelectWalletMeta(wallet: any) {
   setActiveProviderDetail(wallet);
+  useModalStore().setModalVisible(false)
   emits('chosedWallet')
 }
 </script>

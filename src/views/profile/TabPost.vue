@@ -14,6 +14,7 @@ import { useStateStore } from "@/stores/common";
 import { getMyCurationRewards } from '@/apis/api'
 import { type CurationReward } from "@/types";
 import { useCurationStore } from "@/stores/curation";
+import emitter from "@/utils/emitter";
 
 const accStore = useAccountStore()
 const stateStore = useStateStore()
@@ -63,8 +64,7 @@ const onRefresh = async () => {
   }
 };
 
-onMounted(() => {
-  onRefresh()
+function updateReward() {
   getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
     if (list && list.length > 0) {
       getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
@@ -76,6 +76,12 @@ onMounted(() => {
       })
     }
   })
+}
+
+onMounted(() => {
+  onRefresh()
+  updateReward();
+  emitter.on('claimedReward', updateReward)
 })
 
 </script>

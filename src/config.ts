@@ -3,7 +3,8 @@ export const network: "livenet" | "testnet" | "regtest" = "livenet";
 // testnet
 // export const TX_BROWSER = 'https://mempool.space/testnet/tx/'
 // export const BACKEND_API_URL = 'https://api-test.bitip.social'
-export const BACKEND_API_URL = "https://alpha-api.tiptag.fun";
+// export const BACKEND_API_URL = "https://alpha-api.tiptag.fun";
+export const BACKEND_API_URL = "http://localhost:3000";
 // export const GRAPH_URL = 'https://graph-test.bitip.social/subgraphs/name/donut/bitip'
 
 export const GRAPH_URL =
@@ -56,6 +57,7 @@ export const MainToken = {
 // also create coin or create social account will cost 0.00005 BTC
 export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
 export const CreateFee = "50000000000000";
+export const ClaimFee = "5000000000000";
 
 export const BondEthMessage = JSON.stringify(
   {

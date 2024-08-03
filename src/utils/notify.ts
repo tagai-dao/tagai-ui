@@ -17,10 +17,8 @@ export const handleErrorTip = (e: any) => {
     return handleServerError(e);
   }
 
-  const errorData = e.transaction?.data;
-  
+  const errorData = e.data;
   if (errorData) {
-    const errorInterface: any = abis.errors;
     const iface = new ethers.Interface(abis.errors);
     try {
       const decodeError = iface.parseError(errorData);
