@@ -106,7 +106,8 @@ export type CurationReward = {
   logo: string,
   tick: string,
   token: string,
-  amount: number
+  amount: number,
+  price: number
 }
 
 export type Commerce = Account & {
@@ -166,6 +167,8 @@ export type Reply = {
 };
 
 export type OnchainTokenInfo = {
+  tick?: string,
+  token?: string,
   marketCap?: number;
   listed?: boolean;
   bondingCurveSupply?: number;
@@ -178,9 +181,9 @@ export type Community = OnchainTokenInfo & {
   description: string;
   logo: string;
   creator: string; // ethAddr
-  tick: string;
-  token: string;
   tags?: string | string[];
+  token: string,
+  tick: string,
   twitter?: string | undefined | null;
   telegram?: string | undefined | null;
   official?: string | undefined | null;

@@ -69,7 +69,7 @@ watch(sellAmount, (val) => {
 
 const updateBuyAmount = debounce(async (val: any) => {
   if (!val) return;
-  const amount = BigInt(val * 1e18)
+  const amount = BigInt((val * 1e18).toFixed(0))
 
  try {
    const receive = await getBuyAmountWithBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
@@ -82,7 +82,7 @@ const updateBuyAmount = debounce(async (val: any) => {
 const updateSellAmount = debounce(async (val: any) => {
   try {
     if (!val) return;
-    const amount = BigInt(val * 1e18)
+    const amount = BigInt((val * 1e18).toFixed(0))
     const receive = await getReceivedAmountSellBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
     receiveBtc.value = receive
   } catch (error) {

@@ -8,7 +8,7 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import { getUserTweets } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
-import { getTokenInfoOfTweets } from '@/utils/pump'
+import { getTokenInfo, getTokenInfoOfTweets, getTokenOnchainInfo } from '@/utils/pump'
 import { formatPrice } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { getMyCurationRewards } from '@/apis/api'
@@ -63,14 +63,18 @@ const onRefresh = async () => {
   }
 };
 
-const trade = async() => {
-
-}
-
 onMounted(() => {
   onRefresh()
   getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
-    listData.value = list ?? []
+    if (list && list.length > 0) {
+      getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
+        for (let t of list) {
+          t.price = tokeninfo[t.token + '-price']
+          t.price = t.price ? t.price.toString() / 1e18 * useStateStore().btcPrice : 0
+        }
+        listData.value = list
+      })
+    }
   })
 })
 
