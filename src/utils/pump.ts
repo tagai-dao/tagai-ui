@@ -68,6 +68,40 @@ export const calculateInitBtc = (amount: bigint) => {
     return price * 10000n / (10000n - 100n - 100n);
 }
 
+export const getUserTokenInfo = async (token: string, ethAddr: string) => {
+    let calls = [
+        {
+            target: token,
+            call: [
+                'balanceOf(address)(uint256)',
+                ethAddr
+            ],
+            returns: [
+                ['balance', (val: any) => val.toString() / 1e18]
+            ]
+        },
+        {
+            target: token,
+            call: [
+                'userLockedInBondingCurve(address)(uint256)',
+                ethAddr
+            ],
+            returns: [
+                ['locked', (val: any) => val.toString() / 1e18]
+            ]
+        },
+        {
+            call: [
+              'getEthBalance(address)(uint256)', 
+              ethAddr
+            ],
+            returns: [['btcBalance', (val: any) => val / 10 ** 18]]
+          }
+    ]
+    const res = await aggregate(calls, ChainConfig.multiConfig);
+    return res.results.transformed;
+}
+
 export const getTokenInfo = async (communities: Community[]) => {
     let info = await getTokenOnchainInfo(communities.map(com => com.token))
     let result: any = {}

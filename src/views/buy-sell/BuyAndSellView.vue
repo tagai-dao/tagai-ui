@@ -10,7 +10,7 @@ import { useRoute } from "vue-router";
 import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithBTCAfterFee, getReceivedAmountSellBTCAfterFee, getTokenInfo,
-  buyToken, sellToken
+  buyToken, sellToken, getUserTokenInfo
  } from '@/utils/pump'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
@@ -21,6 +21,7 @@ import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { useCurationStore } from "@/stores/curation";
 import { ethers } from "ethers";
+import emitter from "@/utils/emitter";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -45,6 +46,9 @@ const receiveAmount = ref()
 const receiveBtc = ref()
 
 const maxSlippage = ref(5)
+const lockedAmount = ref(0)
+const tokenBalance = ref(0)
+const btcBalance = ref(0)
 
 const {
   contentRef,
@@ -152,6 +156,8 @@ async function confirm() {
         payBtc.value = undefined
         receiveAmount.value = undefined
         trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        emitter.emit('newTrade')
+        updateUserTokenInfo()
       }else{
         handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
       }
@@ -162,6 +168,8 @@ async function confirm() {
         sellAmount.value = undefined
         receiveBtc.value = undefined
         trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        emitter.emit('newTrade')
+        updateUserTokenInfo()
       }else {
         handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
       }
@@ -173,6 +181,19 @@ async function confirm() {
   }
 }
 
+async function updateUserTokenInfo () {
+  try {
+    if (ethers.isAddress(accStore.ethConnectAddress)) {
+      let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
+      lockedAmount.value = info.locked;
+      tokenBalance.value = info.balance;
+      btcBalance.value = info.btcBalance;
+    }
+  } catch (error) {
+    console.error('get users token info fail', error)
+  } 
+}
+
 onMounted(async () => {
   if (!comStore.currentSelectedCommunity?.tick) {
     const tick = route.params.id as string
@@ -181,6 +202,7 @@ onMounted(async () => {
     comStore.currentSelectedCommunity = community
   }
   sellsman.value = route.params.sellsman
+  updateUserTokenInfo()
 })
 </script>
 
@@ -228,6 +250,9 @@ onMounted(async () => {
             />
             <span class="text-h5">$ BTC</span>
           </div>
+          <div class="text-right text-sm">
+            Balance: {{ formatAmount(btcBalance) }}
+          </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
           >
@@ -248,6 +273,10 @@ onMounted(async () => {
               class="bg-transparent h-full flex-1 text-h3"
             />
             <span class="text-h5">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
+          </div>
+          <div class="text-sm flex justify-end">
+            Balance: {{ formatAmount(tokenBalance) }}
+            <span class="text-red-ff" v-if="lockedAmount > 0 && !comStore.currentSelectedCommunity?.listed">(Locked: {{ formatAmount(lockedAmount) }})</span>
           </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"

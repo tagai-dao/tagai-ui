@@ -3,8 +3,8 @@ export const network: "livenet" | "testnet" | "regtest" = "livenet";
 // testnet
 // export const TX_BROWSER = 'https://mempool.space/testnet/tx/'
 // export const BACKEND_API_URL = 'https://api-test.bitip.social'
-// export const BACKEND_API_URL = "https://alpha-api.tiptag.fun";
-export const BACKEND_API_URL = "http://localhost:3000";
+export const BACKEND_API_URL = "https://alpha-api.tiptag.fun";
+// export const BACKEND_API_URL = "http://localhost:3000";
 // export const GRAPH_URL = 'https://graph-test.bitip.social/subgraphs/name/donut/bitip'
 
 export const GRAPH_URL =
@@ -77,8 +77,8 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const PumpContract = "0x8956853dC7E4031676de0948B7dE2A2621cD7ca3";
-export const IPShareContract = "0x33Fb817e89b502C4a6e4274222389F6185A67ad9";
+export const IPShareContract = "0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0";
+export const PumpContract = "0xa77253Ac630502A35A6FcD210A01f613D33ba7cD";
 
 export const Ether = BigInt(1e18);
 

@@ -1569,6 +1569,11 @@ export const abis = {
       },
       {
         "inputs": [],
+        "name": "CanntSellLockedToken",
+        "type": "error"
+      },
+      {
+        "inputs": [],
         "name": "ClaimOrderExist",
         "type": "error"
       },
@@ -1977,6 +1982,25 @@ export const abis = {
         "type": "function"
       },
       {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "name": "claimedOrder",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "inputs": [],
         "name": "decimals",
         "outputs": [
@@ -2343,6 +2367,29 @@ export const abis = {
         "type": "function"
       },
       {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "_WETH",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_uniswapV2Factory",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "_uniswapV2Router02",
+            "type": "address"
+          }
+        ],
+        "name": "setUniForTest",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
         "inputs": [],
         "name": "startTime",
         "outputs": [
@@ -2476,6 +2523,25 @@ export const abis = {
         "type": "function"
       },
       {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "name": "userLockedInBondingCurve",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "stateMutability": "payable",
         "type": "receive"
       }
@@ -2529,5 +2595,6 @@ export const abis = {
         "error InsufficientFund()",
         "error RefundFail()",
         "error CostFeeFail()",
+        "error CanntSellLockedToken()",
       ]
 }

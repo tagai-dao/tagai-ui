@@ -5,6 +5,7 @@ import { useCommunityStore } from "@/stores/community";
 import type { TokenTrade } from "@/types";
 import { formatAddress, formatAmount, formatPastTime, parseTimestamp } from "@/utils/helper";
 import { handleErrorTip } from "@/utils/notify";
+import emitter from "@/utils/emitter";
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -50,6 +51,7 @@ const onRefresh = async () => {
 
 onMounted(() => {
   onRefresh()
+  emitter.on('newTrade', onRefresh);
 })
 </script>
 
