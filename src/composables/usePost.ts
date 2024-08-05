@@ -33,7 +33,7 @@ export const usePost = (tweet: Tweet) => {
     content = content.replace(reg, "");
     for (let url of urls.value) {
       if (url.startsWith(window.location.origin) || url.startsWith('https://x.com') || url.startsWith('https://twitter.com')) {
-        content = content.replace(url, '');
+        content = content.replaceAll(url, '');
       }else {
         content = content.replace(
           url,
@@ -87,14 +87,8 @@ export const usePost = (tweet: Tweet) => {
 
   onMounted(() => {
     if (!tweet || !tweet.content) return;
-    const urlsTemp = tweet.content?.replace(" ", "")
-      .replace("\r", "")
-      .replace("\t", "")
-      .match(urlReg) || [];
-    imgurls.value = tweet.content?.replace(" ", "")
-      .replace("\r", "")
-      .replace("\t", "")
-      .match(reg) || [];
+    const urlsTemp = tweet.content?.match(urlReg) || [];
+    imgurls.value = tweet.content?.match(reg) || [];
     if (urlsTemp && imgurls.value) {
       urls.value = urlsTemp.filter((u: string) => imgurls.value.indexOf(u) < 0);
     } else if (urls) {
