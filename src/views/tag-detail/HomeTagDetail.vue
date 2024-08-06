@@ -107,8 +107,11 @@ onMounted(async () => {
   <div class="h-full overflow-auto py-2 flex flex-col gap-3 px-3 relative">
     <div class="grid grid-cols-1 web:grid-cols-5 gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
-        <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center">
-          <img class="w-12 rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
+        <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
+          <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
+          <img class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+          <div class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
         </div>
         <div class="flex-1 py-1">
           <div class="flex flex-wrap justify-between gap-x-4 items-center">
