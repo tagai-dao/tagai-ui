@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import {onMounted, ref, unref} from "vue";
-import MsgItem from "@/components/common/MsgItem.vue";
-import {useModalStore} from "@/stores/common";
+import {onMounted, ref, computed} from "vue";
+import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType, type Community} from "@/types";
-import TagGroup from "@/views/tag-detail/TagGroup.vue";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
@@ -12,11 +10,12 @@ import {useRoute, useRouter} from "vue-router";
 import { getCommunityDetail } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import { useInterval } from "@/composables/useTools";
-import { ipshareCreated } from '@/utils/ipshare'
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
+import { useCurationStore } from "@/stores/curation";
+import { formatPrice } from "@/utils/helper";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -41,6 +40,12 @@ const commerType = ref(CommerceType.TWEET);
 const accStore = useAccountStore();
 const { setInter } = useInterval()
 
+const onlineSpace = computed(() => {
+  const spaces = useCurationStore().allSpaces;
+  if (!spaces || spaces.length == 0) return false;
+  if (!comStore.currentSelectedCommunity?.tick) return false;
+  return !!spaces.find(sp => sp.tick == comStore.currentSelectedCommunity!.tick)
+})
 
 const onTweetType =  async (type: CommerceType) => {
   // check ipshare
@@ -109,8 +114,8 @@ onMounted(async () => {
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
           <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
-          <img class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
-          <div class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
+          <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+          <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
         </div>
         <div class="flex-1 py-1">
@@ -118,7 +123,7 @@ onMounted(async () => {
             <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
             <div class="text-base flex gap-1">
               <span class="font-semibold text-grey-64">market cap</span>
-              <span class="text-gradient bg-gradient-primary font-semibold">88.23M</span>
+              <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().btcPrice) }}</span>
             </div>
           </div>
           <div class="whitespace-pre-line text-h5 mt-1">
@@ -130,7 +135,7 @@ onMounted(async () => {
         <div class="flex items-center gap-2">
           <span class="text-sm font-semibold">CA</span>
           <div class="bg-white text-grey-light-active text-xs h-4 flex items-center flex-1 rounded-[3px]">
-            23H8EP88jEucn8aa2cpikwe8tsPSN2aE2HrFTjVSpump
+            {{ comStore.currentSelectedCommunity?.token }}
           </div>
           <button>
             <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
