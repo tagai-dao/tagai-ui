@@ -158,6 +158,10 @@ export type CurateRecord = Account & {
   tweetId: string,
   curateRecord: number,
   amount: number,
+  hostAmount?: number,
+  cohostAmount?: number,
+  speakerAmount?: number,
+  speakerTime?: number,
   createAt: string,
 }
 
