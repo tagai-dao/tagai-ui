@@ -29,15 +29,20 @@ watch(listType, (val) => {
 
 async function refresh() {
   try{
+    finished.value = false
     if (listType.value == ListType.New) {
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = await getTokenInfo(communities)
+      } else {
+        finished.value = true
       }
     }else if(listType.value == ListType.Trending) {
       let communities = await getCommunitiesByTrending() as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = await getTokenInfo(communities)
+      } else {
+        finished.value = true
       }
     }
   } catch (e) {
@@ -58,6 +63,8 @@ async function loadMore() {
       let communities = await getCommunitiesByNew((comStore.newCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = comStore.newCommunities.concat(await getTokenInfo(communities))
+      } else {
+        finished.value = true
       }
     }else if(listType.value == ListType.Trending) {
       if (!comStore.trendingCommunities || comStore.trendingCommunities.length == 0) {
@@ -66,6 +73,8 @@ async function loadMore() {
       let communities = await getCommunitiesByTrending((comStore.trendingCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
+      } else {
+        finished.value = true
       }
     }
   } catch (e) {
