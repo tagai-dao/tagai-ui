@@ -18,7 +18,7 @@ const {
 } = usePost(props.tweet)
 
 const isEnd = computed(() => {
-  return !!(props.tweet?.isSettled)
+  return !!(props.tweet?.state == 4)
 })
 
 const stateString = computed(() => {
@@ -80,7 +80,6 @@ const gotoSpace = () => {
       </div>
       <div class="text-sm font-normal">
       {{ desc }}
-        <!-- Jun 6six 18:00 | 30 Min 30 Sec | {{ tweet.participantCount ?? 0 }} listeners -->
       </div>
     </div>
     <button @click.stop="gotoSpace"

@@ -39,15 +39,15 @@ const tag = computed(() => {
 
 onMounted(async () => {
   const tweetId = route.params.id;
-  if (!curationStore.currentSelectedTweet?.tweetId || curationStore.currentSelectedTweet?.tweetId != tweetId){
     if (typeof(tweetId) !== 'string') {
       router.replace('/')
       return;
     }
-    curationStore.currentSelectedTweet = null
+    if (curationStore.currentSelectedTweet?.tweetId != tweetId){
+      curationStore.currentSelectedTweet = null
+    }
     curationStore.currentSelectedTweet = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId) as any
     if (!curationStore.currentSelectedTweet) return
-  }
   if (!curationStore.currentSelectedTweet.spaceId) {
     router.replace('/post-detail/' + tweetId)
   }

@@ -97,15 +97,15 @@ const onUserAvatar = () => {
             <div class="text-white text-sm px-2">
               <div class="flex justify-between items-center h-7">
                 <span>Author</span>
-                <span class="font-semibold">$6.28</span>
+                <span class="font-semibold">{{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().btcPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
                 <span>Curator</span>
-                <span class="font-semibold">$6.28</span>
+                <span class="font-semibold">{{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().btcPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7">
                 <span>End time:</span>
-                <span class="font-semibold">16:59:08</span>
+                <span class="font-semibold">{{ parseTimestamp(new Date((tweet.dayNumber + 3) * 86400000)) }}</span>
               </div>
             </div>
           </template>
