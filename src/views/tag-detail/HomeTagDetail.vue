@@ -104,7 +104,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto py-2 flex flex-col gap-3 px-3 relative">
+  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative">
     <div class="grid grid-cols-1 web:grid-cols-5 gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">

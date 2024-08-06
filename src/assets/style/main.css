@@ -25,6 +25,16 @@ html, body {
   display: none;
 }
 
+::-webkit-scrollbar-thumb {
+  background-color: rgba(194, 194, 194, 0.5);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  background-color: transparent;
+}
+
 input {
   outline: none;
 }

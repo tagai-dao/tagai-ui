@@ -22,10 +22,15 @@ const modalVisible = ref(false)
              src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
       </router-link>
-      <img class="w-6 cursor-pointer"
-           src="~@/assets/icons/icon-notification.svg" alt=""
-           @click="$router.push('/notification')">
-           {{ useAccountStore().unreadMessageCount }}
+      <div class="relative">
+        <img class="w-6 cursor-pointer"
+             src="~@/assets/icons/icon-notification.svg" alt=""
+             @click="$router.push('/notification')">
+        <div class="bg-red-e6 h-[12px] w-[12px] min-w-[12px] rounded-full text-[10px] text-white
+                    absolute bottom-[2px] right-0 flex justify-center items-center">
+          {{ useAccountStore().unreadMessageCount }}
+        </div>
+      </div>
       <img class="w-6 cursor-pointer web:hidden"
            src="~@/assets/icons/icon-search.svg" alt=""
            @click="modalVisible=true">
