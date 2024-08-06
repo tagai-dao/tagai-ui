@@ -15,7 +15,7 @@ const stateStore = useStateStore();
 const route = useRoute();
 const router = useRouter();
 const { setInter } = useInterval();
-const { updateVPOP } = useAccount();
+const { updateVPOP, updateUnreadMessageCount } = useAccount();
 
 onMounted(async () => {
   await router.isReady();
@@ -47,14 +47,17 @@ onMounted(async () => {
   getBtcPrice().then((p: any) => {
       stateStore.btcPrice = p
     })
+  let count = 0
   setInter(() => {
     getBtcPrice().then((p: any) => {
       stateStore.btcPrice = parseFloat(p)
     })
     updateVPOP();
+    if (count++ % 6 == 0)
+      updateUnreadMessageCount();
   }, 10000)
-
   emitter.on('login', updateVPOP);
+  emitter.on('login', updateUnreadMessageCount);
 })
 </script>
 

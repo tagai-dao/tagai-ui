@@ -53,6 +53,14 @@ export const getVPOP = async (twitterId: string) =>
 export const getHoldingList = async (twitterId: string, ethAddr: string, pages?: number) =>
   post(BACKEND_API_URL + '/community/holdingList', { twitterId, ethAddr, pages })
 
+export const getNewMessageCount = async (twitterId: string, lastReadMessageTime?: string) =>
+  post(BACKEND_API_URL + '/user/getNewMessageCount', { twitterId, lastReadMessageTime})
+
+export const getMessages = async (twitterId: string) =>
+  post(BACKEND_API_URL + '/user/getMessages', { twitterId })
+
+export const readAllMessage = async (twitterId: string) =>
+  post(BACKEND_API_URL + '/user/readAllMessage', {twitterId})
 /************************************ tweets **********************************/
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})
