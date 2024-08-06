@@ -73,7 +73,7 @@ onMounted(async () => {
       <div class="relative">
         <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">
         <div class="bg-gradient-primary text-white text-xs font-medium rounded-full h-4 flex justify-center items-center
-                    px-2 absolute transform -translate-x-1/2 -translate-y-1/2 left-2 top-1 rotate-[-30deg]">Host</div>
+                    px-2 absolute transform -translate-x-1/2 -translate-y-1/2 left-2 top-1 rotate-[-30deg]">Cohost</div>
       </div>
       <span class="flex-1 text-grey-normal font-bold truncate">@{{ curate.twitterUsername }}</span>
       <div class="whitespace-pre-line text-grey-normal font-normal">
@@ -85,9 +85,14 @@ onMounted(async () => {
       <div class="relative">
         <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">
         <div class="bg-gradient-primary text-white text-xs font-medium rounded-full h-4 flex justify-center items-center
-                    px-2 absolute transform -translate-x-1/2 -translate-y-1/2 left-2 top-1 rotate-[-30deg]">Host</div>
+                    px-2 absolute transform -translate-x-1/2 -translate-y-1/2 left-2 top-1 rotate-[-30deg]">Speaker</div>
       </div>
-      <span class="flex-1 text-grey-normal font-bold truncate">@{{ curate.twitterUsername }}</span>
+      <div class="flex-1">
+        <div class="text-grey-normal font-bold truncate">@{{ curate.twitterUsername }}</div>
+        <div>
+          {{ curate.speakerTime }} Min
+        </div>
+      </div>
       <div class="whitespace-pre-line text-grey-normal font-normal">
         {{ formatAmount(curate.speakerAmount) }}
       </div>

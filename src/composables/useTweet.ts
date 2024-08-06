@@ -58,6 +58,10 @@ export const useTweet = () => {
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_LIKE_SELF
         }
+        if (!account.steemId) {
+          useModalStore().setModalVisible(true, GlobalModalType.Register)
+          return false;
+        }
         break;
       case OperateType.RETWEET:
         if (tweet && tweet.retweeted) {
@@ -71,6 +75,10 @@ export const useTweet = () => {
         }
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_RETWEET_SELF
+        }
+        if (!account.steemId) {
+          useModalStore().setModalVisible(true, GlobalModalType.Register)
+          return false;
         }
         break;
       case OperateType.QUOTE:
