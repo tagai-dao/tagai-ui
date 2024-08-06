@@ -9,7 +9,7 @@ import TagToken from "@/views/tag-detail/TagToken.vue";
 import {useRoute, useRouter} from "vue-router";
 import { getCommunityDetail } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
-import { useInterval } from "@/composables/useTools";
+import {useInterval, useTools} from "@/composables/useTools";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
@@ -39,6 +39,7 @@ const showModal = ref(false);
 const commerType = ref(CommerceType.TWEET);
 const accStore = useAccountStore();
 const { setInter } = useInterval()
+const {onCopy} = useTools()
 
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
@@ -137,7 +138,8 @@ onMounted(async () => {
           <div class="bg-white text-grey-light-active text-xs h-4 flex items-center flex-1 rounded-[3px]">
             {{ comStore.currentSelectedCommunity?.token }}
           </div>
-          <button>
+          <button @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
+                  :disabled="!(comStore.currentSelectedCommunity?.token)">
             <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
         </div>
