@@ -248,7 +248,7 @@ onMounted(async () => {
               type="number"
               class="bg-transparent h-full flex-1 text-h3"
             />
-            <span class="text-h5">$ BTC</span>
+            <span class="text-h5 whitespace-nowrap">$ BTC</span>
           </div>
           <div class="text-right text-sm">
             Balance: {{ formatAmount(btcBalance) }}
@@ -270,9 +270,9 @@ onMounted(async () => {
             <input
               v-model="sellAmount"
               type="number"
-              class="bg-transparent h-full flex-1 text-h3"
+              class="bg-transparent h-full flex-1 w-[120px] text-h3"
             />
-            <span class="text-h5">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
+            <span class="text-h5 whitespace-nowrap min-w">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
           <div class="text-sm flex justify-end">
             Balance: {{ formatAmount(tokenBalance) }}

@@ -85,10 +85,32 @@ const onUserAvatar = () => {
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
-        <button v-if="tweet.amount" class="h-6 rounded-full px-3 text-white text-sm font-semibold"
-        :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
-          {{ formatPrice((tweet.price ?? 0) * useStateStore().btcPrice * (tweet.amount ?? 0)) }}
-        </button>
+        <el-popover v-if="tweet.amount" popper-class="c-arrow-popper rounded-sm"
+                    trigger="click" width="130" :teleported="true" :persistent="false">
+          <template #reference>
+            <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold"
+                    :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
+              {{ formatPrice((tweet.price ?? 0) * useStateStore().btcPrice * (tweet.amount ?? 0)) }}
+            </button>
+          </template>
+          <template #default>
+            <div class="text-white text-sm px-2">
+              <div class="flex justify-between items-center h-7">
+                <span>Author</span>
+                <span class="font-semibold">$6.28</span>
+              </div>
+              <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
+                <span>Curator</span>
+                <span class="font-semibold">$6.28</span>
+              </div>
+              <div class="flex justify-between items-center h-7">
+                <span>End time:</span>
+                <span class="font-semibold">16:59:08</span>
+              </div>
+            </div>
+          </template>
+        </el-popover>
+
       </div>
       <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">
         <div class="pl-12">

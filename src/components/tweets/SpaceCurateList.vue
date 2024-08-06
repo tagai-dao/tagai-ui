@@ -78,20 +78,23 @@ onMounted(async () => {
             <!--            quote-->
             <!--            <img src="~@/assets/icons/btn-quote-active.svg" alt="">-->
           </div>
-          <div class="flex-1 items-center flex">
-            <div class="flex items-center gap-2">
-              <img class="w-8 h-8 min-w-8 min-h-8 rounded-full" :src="curate.profile" alt="">
-            <span class="text-grey-8d font-normal">@{{ curate.twitterUsername }}</span>
+          <div class="flex-1">
+            <div class="flex-1 justify-between items-center flex">
+              <div class="flex items-center gap-2">
+                <img class="w-6 h-6 min-w-6 min-h-6 rounded-full" :src="curate.profile" alt="">
+<!--                <span class="font-normal text-grey-normal">@{{ curate.twitterUsername }}</span>-->
+              </div>
+              <!-- <span class="text-grey-normal text-h5">Username</span> -->
+              <div class="flex flex-col items-end">
+                <div class="whitespace-pre-line text-grey-normal font-normal">
+                  {{ formatAmount(curate.amount) }}
+                </div>
+                <div class="text-sm text-grey-light-active">
+                  {{ parseTimestamp(curate.createAt) }}
+                </div>
+              </div>
             </div>
-            <!-- <span class="text-grey-normal text-h5">Username</span> -->
-          </div>
-          <div class="flex flex-col items-end">
-            <div class="whitespace-pre-line text-grey-normal font-normal">
-              {{ formatAmount(curate.amount) }}
-            </div>
-            <div class="text-sm text-grey-light-active">
-              {{ parseTimestamp(curate.createAt) }}
-            </div>
+            <div class="font-medium text-grey-normal">@{{ curate.twitterUsername }}</div>
           </div>
         </div>
       </van-list>

@@ -132,7 +132,7 @@ const checkSpace = debounce(async () => {
         </div>
       </div>
       <div class="mt-4">Space Link</div>
-      <div class="bg-grey-normal-active/90 rounded-2xl h-12 px-3">
+      <div class="bg-grey-f0/90 rounded-2xl h-12 px-3">
         <input v-model="spaceLink" @input="checkSpace" class="bg-transparent outline-none h-full w-full" type="text">
       </div>
     </div>
