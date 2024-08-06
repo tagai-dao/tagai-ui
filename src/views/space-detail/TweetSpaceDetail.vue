@@ -13,6 +13,7 @@ import { useAccountStore } from "@/stores/web3";
 import { getTweetById } from "@/apis/api";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import { formatAmount, formatPrice } from "@/utils/helper";
+import SpaceSpeaker from "@/components/tweets/SpaceSpeaker.vue";
 
 enum CurationType {
   Curate,
@@ -181,6 +182,7 @@ onMounted(async () => {
                width="90%" :show-close="false" align-center destroy-on-close>
       <SpaceCurateList v-if="curationType === CurationType.Curate"
                        :tweet="curationStore.currentSelectedTweet!"/>
+      <SpaceSpeaker v-else :tweet="curationStore.currentSelectedTweet!"/>
     </el-dialog>
 </div>
 </template>
