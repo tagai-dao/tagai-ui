@@ -284,7 +284,7 @@ onMounted(async () => {
           </div>
           <div class="text-sm flex justify-end">
             Balance: {{ formatAmount(tokenBalance) }}
-            <span class="text-red-ff" v-if="lockedAmount > 0 && !comStore.currentSelectedCommunity?.listed">(Locked: {{ formatAmount(lockedAmount) }})</span>
+            <span class="text-red-e6" v-if="lockedAmount > 0 && !comStore.currentSelectedCommunity?.listed">(Locked: {{ formatAmount(lockedAmount) }})</span>
           </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
@@ -350,10 +350,10 @@ onMounted(async () => {
                 <span>Blink</span>
                 <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
                   <button @click.stop class="">
-                    <img class="w-3" src="~@/assets/icons/icon-warning-primary.svg" alt="">
+                    <img class="w-4" src="~@/assets/icons/icon-warning-primary.svg" alt="">
                   </button>
                   <template #content>
-                    <div class="text-orange-normal py-1 max-w-40">{{  $t('buyAndSell.blinkTip') }}</div>
+                    <div class="text-white px-3 py-1 max-w-[200px] font-medium">{{  $t('buyAndSell.blinkTip') }}</div>
                   </template>
                 </el-tooltip>
               </div>

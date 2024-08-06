@@ -89,8 +89,8 @@ onMounted(() => {
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
             <span class="truncate">{{ formatAddress(token.trader, 5, 4) }}</span>
           </div>
-          <span class="col-span-1 text-center" :class="token.isBuy?'text-green-normal':'text-red-ff'">
-            {{ token.isBuy ? 'Buy' : "Sell" }} {{ tradeTime(token) }}
+          <span class="col-span-1 text-center" :class="token.isBuy?'text-green-normal':'text-red-e6'">
+            {{ token.isBuy ? 'Buy' : "Sell" }} {{ formatPastTime(token.timestamp as number) }}
           </span>
           <span class="col-span-1 text-center">{{ formatAmount((token.amount as any) / 1e18) }}</span>
           <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any) / 1e18) }}</span>

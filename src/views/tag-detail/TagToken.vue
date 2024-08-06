@@ -146,7 +146,7 @@ onMounted(async () => {
           <span class="text-lg font-bold leading-5">LATC</span>
           <span class="text-xs text-grey-6f leading-4">Chart</span>
         </div>
-        <div class="text-red-ff text-base">0.2886 $</div>
+        <div class="text-red-e6 text-base">0.2886 $</div>
       </div>
       <apexchart type="line" height="200" ref="chart"
                  :options="chartOptions"

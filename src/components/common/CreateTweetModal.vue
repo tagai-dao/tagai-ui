@@ -60,7 +60,7 @@ const onPostTweet = async () => {
     <div>
       <div class="flex justify-between items-center px-2">
         <div>Type your content here</div>
-        <div :class="leftWordsLength < 0 ? 'text-red-ff' : ''">{{ leftWordsLength }}</div>
+        <div :class="leftWordsLength < 0 ? 'text-red-e6' : ''">{{ leftWordsLength }}</div>
       </div>
       <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
         <div contenteditable

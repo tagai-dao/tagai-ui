@@ -57,7 +57,7 @@ async function claim() {
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>
     <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected"
-         class="text-red-ff w-full text-sm break-words">
+         class="text-red-e6 w-full text-sm break-words">
       {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
     </div>
   </div>

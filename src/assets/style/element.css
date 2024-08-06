@@ -54,12 +54,12 @@
 }
 
 .c-arrow-popper.el-popper {
-    stroke: #E2E2E2;
-    background: #E2E2E2;
-    border-radius: 12px;
+    stroke: #3B3B3B;
+    background: #3B3B3B;
+    border-radius: 30px;
     border: none;
 }
 .c-arrow-popper.el-popper .el-popper__arrow::before {
-    background: #E2E2E2 ;
+    background: #3B3B3B ;
     border: none;
 }

@@ -106,22 +106,33 @@ onMounted(async () => {
 <template>
   <div class="h-full overflow-auto py-2 flex flex-col gap-3 px-3 relative">
     <div class="grid grid-cols-1 web:grid-cols-5 gap-3">
-      <div class="col-span-1 web:col-span-2 bg-white rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
+      <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center">
-          <img class="w-15 rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
+          <img class="w-12 rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
         </div>
         <div class="flex-1 py-1">
-          <div class="flex gap-4 items-center">
+          <div class="flex flex-wrap justify-between gap-x-4 items-center">
             <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
-            <!-- <img class="w-4 h-4" src="../../assets/icons/icon-circle-x.svg" alt="">
-            <div class="w-4 h-4 min-w-4 min-h-4 bg-purple-c1 rounded-full"></div> -->
+            <div class="text-base flex gap-1">
+              <span class="font-semibold text-grey-64">market cap</span>
+              <span class="text-gradient bg-gradient-primary font-semibold">88.23M</span>
+            </div>
           </div>
           <div class="whitespace-pre-line text-h5 mt-1">
             {{ comStore.currentSelectedCommunity?.description }}
           </div>
         </div>
       </div>
-      <div class="col-span-1 web:col-span-3 bg-white rounded-2xl py-5 px-3.5 flex flex-col gap-3">
+      <div class="col-span-1 web:col-span-3 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold">CA</span>
+          <div class="bg-white text-grey-light-active text-xs h-4 flex items-center flex-1 rounded-[3px]">
+            23H8EP88jEucn8aa2cpikwe8tsPSN2aE2HrFTjVSpump
+          </div>
+          <button>
+            <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
+          </button>
+        </div>
         <div class="text-base font-medium flex items-center gap-1">
           <span>Bonding curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
           <el-popover popper-class="c-popper">
@@ -137,9 +148,9 @@ onMounted(async () => {
         </div>
         <div class="flex items-center gap-3">
           <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
-                    bg-white gap-[2px]">
+                      bg-white gap-[2px]">
             <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
-                        placement="top-start">
+                        placement="top" popper-class="c-arrow-popper">
               <template #content>
                 <div class="flex gap-1">
                   <span class="text-sm">{{data.desc}}</span>
@@ -155,12 +166,12 @@ onMounted(async () => {
           </div>
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
-              <button class="bg-black px-3 h-8 text-white text-sm rounded-full whitespace-nowrap">
+              <button class="bg-grey-normal px-3 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold">
                 Build & Earn
               </button>
             </template>
             <template #default>
-              <div class="bg-black rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
+              <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
                 <button @click="onTweetType(CommerceType.TWEET)"
                         :disabled="checkingAccount"
                         class="whitespace-nowrap flex items-center space-x-3">

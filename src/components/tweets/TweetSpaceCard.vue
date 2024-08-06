@@ -17,6 +17,10 @@ const {
   clickContent,
 } = usePost(props.tweet)
 
+const isEnd = computed(() => {
+  return !!(props.tweet?.isSettled)
+})
+
 const stateString = computed(() => {
   switch(props.tweet.state) {
     case 1:
@@ -62,7 +66,8 @@ const gotoSpace = () => {
 </script>
 
 <template>
-  <div class="bg-gradient-primary py-5 px-5 rounded-2xl flex flex-col gap-4">
+  <div class="py-5 px-5 rounded-2xl flex flex-col gap-4"
+       :class="isEnd?'bg-grey-light-active':'bg-gradient-primary'">
     <div class="flex items-center gap-2">
       <img class="w-6 h-6 rounded-full"
            :src="profileImg" alt="">
@@ -78,8 +83,12 @@ const gotoSpace = () => {
         <!-- Jun 6six 18:00 | 30 Min 30 Sec | {{ tweet.participantCount ?? 0 }} listeners -->
       </div>
     </div>
-    <button @click.stop="gotoSpace" class="text-h5 h-9 bg-black rounded-full text-white">
-      {{ stateString }}
+    <button @click.stop="gotoSpace"
+            class="text-h5 h-9 rounded-full bg-white disabled:opacity-100"
+            :disabled="isEnd">
+      <span :class="isEnd?'text-grey-normal':'text-gradient bg-gradient-primary'">
+        {{ stateString }}
+      </span>
     </button>
   </div>
 </template>

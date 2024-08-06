@@ -199,10 +199,10 @@ onMounted(() => {});
           <span class="text-white font-semibold"> I have ENS </span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
-        <div v-show="showNoEns" class="text-center text-sm text-red-ff">
+        <div v-show="showNoEns" class="text-center text-sm text-red-e6">
           {{ $t('loginView.noEns') }}
         </div>
-        <div v-show="accountMismatch" class="text-center text-sm text-red-ff">
+        <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
           {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
         </div>
       </div>

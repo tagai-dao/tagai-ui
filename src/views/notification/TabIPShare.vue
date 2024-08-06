@@ -48,7 +48,7 @@ const onRefresh = () => {
                 <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
               </button>
             </div>
-            <span class="text-red-ff font-medium">Sell</span>
+            <span class="text-red-e6 font-medium">Sell</span>
 <!--            <span class="text-green-500 font-medium">Buy</span>-->
           </div>
         </div>
