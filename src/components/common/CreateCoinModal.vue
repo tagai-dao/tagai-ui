@@ -194,10 +194,10 @@ const create = async () => {
           id="name"
           :placeholder="$t('createCommunity.invalidTickTip')"
         />
-        <div class="text-red-ff text-sm" v-show="showInvalidName">
+        <div class="text-red-e6 text-sm" v-show="showInvalidName">
           {{ $t('createCommunity.invalidTickTip') }}
         </div>
-        <div class="text-red-ff text-sm" v-show="showTickUsed">
+        <div class="text-red-e6 text-sm" v-show="showTickUsed">
           {{ $t('createCommunity.tickUsed') }}
         </div>
       </div>
@@ -285,9 +285,9 @@ const create = async () => {
               id="initamount"
               :placeholder="$t('createCommunity.initAmountTip')"
           />
-          <span class="italic text-red-ff">COIN</span>
+          <span class="italic text-red-e6">COIN</span>
         </div>
-        <div class="text-red-ff text-sm" v-show="showMaxAmount">
+        <div class="text-red-e6 text-sm" v-show="showMaxAmount">
             {{ $t("createCommunity.maxAmountTip") }}
         </div>
         <div class="text-left text-grey-normal">
@@ -304,12 +304,12 @@ const create = async () => {
         <span>Create</span>
         <i-ep-loading v-if="createLoading" class="animate-spin" />
       </button>
-      <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-ff">
+      <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
         {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
       </div>
       <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
         <span class="text-grey-normal">Cost to deploy：</span>
-        <span class="text-red-ff italic">~ {{ (CreateFee as any) / 1e18 }} BTC</span>
+        <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} BTC</span>
       </div>
     </div>
   </div>

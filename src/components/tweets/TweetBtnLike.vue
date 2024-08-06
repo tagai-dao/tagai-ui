@@ -41,7 +41,7 @@ async function like() {
     <i v-else class="w-5 h-5 min-w-5"
        :class="tweet.liked ? 'btn-icon-like-active' : 'btn-icon-like'"></i>
     <span class="text-sm font-bold"
-          :class="tweet.liked ? 'text-red-ff' : 'text-grey-bd'">
+          :class="tweet.liked ? 'text-red-e6' : 'text-grey-bd'">
         {{ tweet.likeCount ?? 0 }}</span>
   </button>
 </template>

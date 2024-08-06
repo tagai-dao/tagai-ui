@@ -98,8 +98,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    <van-pull-refresh
+  <div class="flex-1">
+    <van-pull-refresh class="h-full min-h-full"
       v-model="refreshing"
       @refresh="onRefresh"
       loading-text="Loading"

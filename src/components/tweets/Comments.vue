@@ -89,14 +89,14 @@ onMounted(async () => {
             <div class="flex-1 min-h-10 flex flex-col">
               <div class="text-h3">{{ reply.twitterName }}</div>
               <div class="w-full flex items-center flex-wrap gap-x-2 text-sm font-normal">
-                <span class="">@{{ reply.twitterUsername }}</span>
+                <span class="text-grey-8d">@{{ reply.twitterUsername }}</span>
                 <span class="mx-4px"> · </span>
                 <button @click.stop="gotoTwitterProfile(reply)">
                   <img class="w-3 h-3" src="../../assets/icons/icon-x.svg" alt="">
                 </button>
               </div>
             </div>
-            <button class="bg-gradient-primary h-6 rounded-full px-3 text-white text-sm font-semibold">
+            <button class="text-grey-normal text-sm font-light italic">
               {{ parseTimestamp(reply.operateTime) }}
             </button>
           </div>

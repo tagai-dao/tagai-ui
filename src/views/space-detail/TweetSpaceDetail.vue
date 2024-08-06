@@ -91,58 +91,73 @@ onMounted(async () => {
           <div class="text-base flex-1 text-h5">
             Rewards
           </div>
-          <button class="bg-yellow-fa h-8 px-3 rounded-full text-sm">
+          <button class="h-6 px-3 text-sm rounded-lg"
+                  :class="curationStore.currentSelectedTweet?.isSettled?'bg-grey-light-hover':'bg-yellow-fa'">
             {{ curationStore.currentSelectedTweet?.isSettled ? "Settled" : "On Curation" }}
           </button>
         </div>
-        <div class="flex items-center justify-end">
-          <div class="border-[1px] border-grey-c9 rounded-xl h-8 px-3 w-max flex items-center">
-            {{ curationStore.currentSelectedTweet?.amount }} #{{ tag }} ({{ formatPrice((curationStore.currentSelectedTweet?.amount ?? 0) * (curationStore.currentSelectedTweet?.price ?? 0)) }})
-          </div>
+        <div class="h-12 rounded-xl bg-grey-normal px-3 text-white font-medium flex justify-center items-center">
+          {{ curationStore.currentSelectedTweet?.amount }} #{{ tag }} ({{ formatPrice((curationStore.currentSelectedTweet?.amount ?? 0) * (curationStore.currentSelectedTweet?.price ?? 0)) }})
         </div>
         <div class="grid grid-cols-2 gap-y-3 gap-x-1">
-          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+          <div class="col-span-1 bg-yellow-fa rounded-xl px-3 py-3 flex gap-2"
             @click="curationType = CurationType.Curate; curatorsModalVisible = true">
-            <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">Curation</div>
                 <span>{{ curationStore.currentSelectedTweet?.spaceCurateCount ?? 0 }}</span>
               </div>
-              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+              <div class="flex justify-between items-center gap-1">
+                <div class="text-h5 flex-1 truncate">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+                <button>
+                  <img src="~@/assets/icons/icon-arrow-forward.svg" alt="">
+                </button>
+              </div>
             </div>
           </div>
-          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+          <div class="col-span-1 bg-green-b6 rounded-xl px-3 py-3 flex gap-2"
               @click="curationType = CurationType.Host; curatorsModalVisible = true">
-            <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">Host</div>
                 <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length : 0 }}</span>
               </div>
-              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+              <div class="flex justify-between items-center gap-1">
+                <div class="text-h5 flex-1 truncate">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+                <button>
+                  <img src="~@/assets/icons/icon-arrow-forward.svg" alt="">
+                </button>
+              </div>
             </div>
           </div>
-          <div class="col-span-1 border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+          <div class="col-span-1 bg-purple-c1 rounded-xl px-3 py-3 flex gap-2"
           @click="curationType = CurationType.CoHost; curatorsModalVisible = true">
-            <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">Co-Host</div>
                 <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length - 1 : 0 }}</span>
               </div>
-              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+              <div class="flex justify-between items-center gap-1">
+                <div class="text-h5 flex-1 truncate">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+                <button>
+                  <img src="~@/assets/icons/icon-arrow-forward.svg" alt="">
+                </button>
+              </div>
             </div>
           </div>
-          <div class="col-span-1 cursor-pointer border-[1px] border-grey-c9 rounded-xl px-3 py-4 flex gap-2"
+          <div class="col-span-1 cursor-pointer bg-red-ff rounded-xl px-3 py-3 flex gap-2"
           @click="curationType = CurationType.Speaker; curatorsModalVisible = true">
-            <div class="w-4 h-4 bg-grey-bd/80 rounded-full"></div>
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">Speaker</div>
                 <span>{{ curationStore.currentSelectedTweet?.speakerIds ? JSON.parse(curationStore.currentSelectedTweet?.speakerIds).length : 0 }}</span>
               </div>
-              <div class="text-h5">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+              <div class="flex justify-between items-center gap-1">
+                <div class="text-h5 flex-1 truncate">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
+                <button>
+                  <img src="~@/assets/icons/icon-arrow-forward.svg" alt="">
+                </button>
+              </div>
             </div>
           </div>
         </div>

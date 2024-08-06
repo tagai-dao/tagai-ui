@@ -53,7 +53,7 @@ async function confirm() {
       {{$t('loginView.bindAddress')}}
     </div>
     <div class="flex flex-col w-full items-center px-8">
-      <div class="text-base text-center text-red-ff break-all">
+      <div class="text-base text-center text-red-e6 break-all">
         {{ accStore.ethConnectAddress }}
       </div>
     </div>
@@ -64,8 +64,8 @@ async function confirm() {
         <span class="text-h5 text-white">Confirm</span>
         <i-ep-loading v-if="loading" class="animate-spin text-white"/>
       </button>
-      <div v-show="ethAddrUsed" class="text-base text-center text-red-ff mt-3">{{ $t('loginView.addressUsed') }}</div>
-      <!-- <div class="text-base text-center text-red-ff mt-3">钱包地址不匹配，请重新绑定</div> -->
+      <div v-show="ethAddrUsed" class="text-base text-center text-red-e6 mt-3">{{ $t('loginView.addressUsed') }}</div>
+      <!-- <div class="text-base text-center text-red-e6 mt-3">钱包地址不匹配，请重新绑定</div> -->
     </div>
   </div>
 </template>
