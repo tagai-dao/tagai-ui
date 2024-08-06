@@ -71,8 +71,8 @@ onMounted(() => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <template v-if="accStore.ipshare.ethAddr">
-          <div class="flex items-center gap-1 px-3 mb-2">
+        <div v-if="accStore.ipshare.ethAddr" class="px-3">
+          <div class="flex items-center gap-1 mb-2">
             <span class="font-normal text-sm">{{ $t('profileView.captureTitle') }}</span>
             <el-popover popper-class="c-popper">
               <template #reference>
@@ -88,7 +88,7 @@ onMounted(() => {
             <!-- <img src="~@/assets/icons/icon-up.svg" alt=""> -->
             <span class="text-sm">($BTC {{ formatAmount(capturedFee) }})</span>
           </button>
-        </template>
+        </div>
         <div v-if="accStore.createdTokenList.length>0" class="px-3">
           <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i"
                        @click="$router.push(`/tag-detail/${community.tick}`)"

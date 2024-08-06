@@ -99,7 +99,7 @@ onMounted(async () => {
         <div class="h-12 rounded-xl bg-grey-normal px-3 text-white font-medium flex justify-center items-center">
           {{ curationStore.currentSelectedTweet?.amount }} #{{ tag }} ({{ formatPrice((curationStore.currentSelectedTweet?.amount ?? 0) * (curationStore.currentSelectedTweet?.price ?? 0)) }})
         </div>
-        <div class="grid grid-cols-2 gap-y-3 gap-x-1">
+        <div class="grid grid-cols-2 gap-y-2 gap-x-1">
           <div class="col-span-1 bg-yellow-fa rounded-xl px-3 py-3 flex gap-2"
             @click="curationType = CurationType.Curate; curatorsModalVisible = true">
             <div class="flex-1 flex flex-col gap-1.5">
@@ -179,7 +179,8 @@ onMounted(async () => {
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px] bg-grey-f4"
                width="90%" :show-close="false" align-center destroy-on-close>
-      <SpaceCurateList v-if="curationType === CurationType.Curate" :tweet="curationStore.currentSelectedTweet!"/>
+      <SpaceCurateList v-if="curationType === CurationType.Curate"
+                       :tweet="curationStore.currentSelectedTweet!"/>
     </el-dialog>
 </div>
 </template>
