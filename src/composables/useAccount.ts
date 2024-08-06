@@ -1,12 +1,14 @@
-import {computed, reactive, ref, withDefaults, defineProps} from "vue";
-import {stringLength} from "@/utils/helper";
+import { computed } from "vue";
 import { useAccountStore } from "@/stores/web3";
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
-import { twitterRefreshAccessToken, twitterLogout, getVPOP, needLogin } from '@/apis/api'
-import { VP_CONSUME, OP_CONSUME, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY } from '@/config'
+import { twitterRefreshAccessToken, twitterLogout, getVPOP, needLogin,
+    getNewMessageCount, getMessages as gm, readAllMessage
+ } from '@/apis/api'
+import { MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY } from '@/config'
 import errCode from "@/errCode";
+import { formatDate } from '@/utils/helper'
 import { useModalStore } from "@/stores/common";
-import { GlobalModalType } from "@/types";
+import { GlobalModalType, type SocialMessage } from "@/types";
 
 export const useAccount = () => {
     const accountMismatch = computed(() => {
@@ -51,6 +53,48 @@ export const useAccount = () => {
                 useAccountStore().setAccount({
                     ...account,
                     ...vpop
+                })
+            }).catch((e: any) => {
+                if (e === errCode.InvalidAccessToken) {
+                    logout()
+                }
+            })
+        }
+    }
+
+    const updateUnreadMessageCount = async () => {
+        const account = useAccountStore().getAccountInfo
+        if (account?.twitterId) {
+            getNewMessageCount(account.twitterId, account.lastReadMessageTime).then((count: any) => {
+                useAccountStore().unreadMessageCount = count ?? 0;
+            }).catch((e: any) => {
+                if (e === errCode.InvalidAccessToken) {
+                    logout()
+                }
+            })
+        }
+    }
+
+    const getMessages = async () => {
+        const account = useAccountStore().getAccountInfo
+        if (account?.twitterId) {
+            gm(account.twitterId).then((messages: any) => {
+                useAccountStore().socialMessages = messages;
+            }).catch((e: any) => {
+                if (e === errCode.InvalidAccessToken) {
+                    logout()
+                }
+            })
+        }
+    }
+
+    const setMessageReaded = async () => {
+        const account = useAccountStore().getAccountInfo
+        if (account?.twitterId) {
+            readAllMessage(account.twitterId).then((messages: any) => {
+                useAccountStore().setAccount({
+                    ...account,
+                    lastReadMessageTime: formatDate()
                 })
             }).catch((e: any) => {
                 if (e === errCode.InvalidAccessToken) {
@@ -178,6 +222,9 @@ export const useAccount = () => {
     return {
         accountMismatch,
         replaceEmptyProfile,
+        updateUnreadMessageCount,
+        getMessages,
+        setMessageReaded,
         profile,
         gotoTwitter,
         checkoutAccessToken,

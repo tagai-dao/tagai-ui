@@ -3,6 +3,7 @@ import {ref} from "vue";
 import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
 import CreateBtn from "@/layout/CreateBtn.vue";
+import { useAccountStore } from "@/stores/web3";
 
 const modalVisible = ref(false)
 
@@ -21,9 +22,10 @@ const modalVisible = ref(false)
              src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
       </router-link>
-      <!-- <img class="w-6 cursor-pointer"
+      <img class="w-6 cursor-pointer"
            src="~@/assets/icons/icon-notification.svg" alt=""
-           @click="$router.push('/notification')"> -->
+           @click="$router.push('/notification')">
+           {{ useAccountStore().unreadMessageCount }}
       <img class="w-6 cursor-pointer web:hidden"
            src="~@/assets/icons/icon-search.svg" alt=""
            @click="modalVisible=true">

@@ -42,6 +42,10 @@ const account = computed(() => {
   return accStore.getAccountInfo
 })
 
+watch(() => accStore.ethConnectAddress, (val) => {
+  updateUserTokenInfo()
+})
+
 const receiveAmount = ref()
 const receiveBtc = ref()
 
@@ -155,7 +159,9 @@ async function confirm() {
       if (hash) {
         payBtc.value = undefined
         receiveAmount.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        if (accStore.getAccountInfo?.twitterId) {
+          trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        }
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else{
@@ -167,7 +173,9 @@ async function confirm() {
       if (hash) {
         sellAmount.value = undefined
         receiveBtc.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        if (accStore.getAccountInfo?.twitterId) {
+          trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        }
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else {
@@ -357,7 +365,7 @@ onMounted(async () => {
           @click="confirm"
           :disabled="comStore.currentSelectedCommunity?.listed || trading"
         >
-          <span>{{ comStore.currentSelectedCommunity?.listed ? "Token lised" : "Confirm" }}</span>
+          <span>{{ comStore.currentSelectedCommunity?.listed ? "Token lised" : (accStore.ethConnectAddress ? "Confirm": 'Connect') }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
       </div>

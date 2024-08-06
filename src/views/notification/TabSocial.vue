@@ -1,79 +1,139 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import { useAccount } from "@/composables/useAccount";
+import { useAccountStore } from "@/stores/web3";
+import { parseTimestamp } from "@/utils/helper";
+import { onMounted, onUnmounted, ref } from "vue";
 
-const refreshing = ref(false)
-const loading = ref(false)
-const finished = ref(false)
-const listData = ref<number []>([])
+const refreshing = ref(false);
+const loading = ref(false);
+const finished = ref(false);
+const { getMessages, setMessageReaded } = useAccount();
 const onLoad = () => {
-  if(loading.value || finished.value) return
-  loading.value = true
+  loading.value = false;
+  finished.value = true;
 };
 
 const onRefresh = () => {
-  finished.value = false;
-  onLoad();
+  finished.value = true;
+  refreshing.value = false;
 };
 
+function updatedProfile(profile: string) {
+  return profile?.replace("normal", "200x200");
+}
+
+onMounted(() => {
+  getMessages();
+});
+
+onUnmounted(() => {
+  setMessageReaded().catch()
+})
 </script>
 
 <template>
-  <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                    loading-text="Loading"
-                    pulling-text="Pull to refresh data"
-                    loosing-text="Release to refresh">
-    <van-list :loading="loading"
-              :finished="finished"
-              :immediate-check="false"
-              finished-text="No more"
-              :offset="50"
-              @load="onLoad">
-      <!--reply-->
-      <div class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
-        <img class="h-6 w-6 min-h-6 rounded-full"
-             src="~@/assets/icons/icon-default-avatar.svg" alt="">
-        <div class="flex-1 flex-col gap-1.5">
-          <div class="flex items-center gap-1 text-grey-8d leading-5 text-lg">
-            <span>@username</span>
-            <span> · </span>
-            <span>5days ago</span>
+  <van-pull-refresh
+    v-model="refreshing"
+    @refresh="onRefresh"
+    loading-text="Loading"
+    pulling-text="Pull to refresh data"
+    loosing-text="Release to refresh"
+  >
+    <van-list
+      :loading="loading"
+      :finished="finished"
+      :immediate-check="false"
+      finished-text="No more"
+      :offset="50"
+      @load="onLoad"
+    >
+      <div v-if="useAccountStore().socialMessages.length == 0">No message</div>
+      <!-- 1quote 2like 3retweet 4reply -->
+      <div v-else v-for="(message, i) of useAccountStore().socialMessages" :key="i">
+        <!-- quote -->
+        <div v-if="message.type === 1"class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
+          <img
+            class="h-6 w-6 min-h-6 rounded-full"
+            :src="updatedProfile(message.profile)"
+            alt=""
+          />
+          <div class="flex-1 flex-col gap-1.5">
+            <div class="flex items-center gap-1 text-grey-8d leading-5 text-lg">
+              <span>@{{ message.twitterUsername }}</span>
+              <span> · </span>
+              <span>{{ parseTimestamp(message.operateTime) }}</span>
+            </div>
+            <div class="text-base">Quote your tweet</div>
+            <div class="text-base">{{ message.content }}</div>
           </div>
-          <div class="text-base">Reply @elonmusk</div>
-          <div class="text-base">@wormhole_3 We all will be there for you！</div>
         </div>
-      </div>
-      <!--like-->
-      <div class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
-        <div class="px-1 opacity-70">
-          <img class="h-4 w-4 min-h-4 rounded-full"
-               src="~@/assets/icons/btn-like-active.svg" alt="">
-        </div>
-        <div class="flex-1 flex-col gap-1.5">
-          <div class="flex items-center gap-2">
-            <img class="h-10 w-10 min-h-10 rounded-full"
-                 src="~@/assets/icons/icon-default-avatar.svg" alt="">
+        <!--reply-->
+        <div v-if="message.type === 4"class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
+          <img
+            class="h-6 w-6 min-h-6 rounded-full"
+            :src="updatedProfile(message.profile)"
+            alt=""
+          />
+          <div class="flex-1 flex-col gap-1.5">
+            <div class="flex items-center gap-1 leading-5 text-lg">
+              <span>{{ message.twitterName }}</span>
+              <span class="text-grey-bd">@{{ message.twitterUsername }}</span>
+              <span> · </span>
+              <span>{{ parseTimestamp(message.operateTime) }}</span>
+            </div>
+            <div class="text-base text-grey-bd">Reply your tweet</div>
+            <div class="text-base mt-2">{{ message.content }}</div>
           </div>
-          <div class="text-base">@readonlm liked your curation</div>
         </div>
-      </div>
-      <!--retweet-->
-      <div class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
-        <div class="px-1 opacity-70">
-          <img class="h-4 w-4 min-h-4 rounded-full"
-               src="~@/assets/icons/btn-retweet-active.svg" alt="">
-        </div>
-        <div class="flex-1 flex-col gap-1.5">
-          <div class="flex items-center gap-2">
-            <img class="h-10 w-10 min-h-10 rounded-full"
-                 src="~@/assets/icons/icon-default-avatar.svg" alt="">
+        <!--like-->
+        <div v-if="message.type === 2" class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
+          <div class="px-1 opacity-70">
+            <img
+              class="h-4 w-4 min-h-4 rounded-full"
+              src="~@/assets/icons/btn-like-active.svg"
+              alt=""
+            />
           </div>
-          <div class="text-base">@readonlm retweeted your curation</div>
+          <div class="flex-1 flex-col gap-1.5">
+            <div class="flex items-center gap-2">
+              <img
+                class="h-10 w-10 min-h-10 rounded-full"
+                :src="updatedProfile(message.profile)"
+                alt=""
+              />
+            </div>
+            <div class="text-base">@{{ message.twitterName }} liked your tweet</div>
+            <div class="text-grey-bd mt-2">
+              {{ message.content }}
+            </div>
+          </div>
+        </div>
+        <!--retweet-->
+        <div v-if="message.type === 3" class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
+          <div class="px-1 opacity-70">
+            <img
+              class="h-4 w-4 min-h-4 rounded-full"
+              src="~@/assets/icons/btn-retweet-active.svg"
+              alt=""
+            />
+          </div>
+          <div class="flex-1 flex-col gap-1.5">
+            <div class="flex items-center gap-2">
+              <img
+                class="h-10 w-10 min-h-10 rounded-full"
+                :src="updatedProfile(message.profile)"
+                alt=""
+              />
+            </div>
+            <div class="text-base">@{{ message.twitterUsername }} retweeted your tweet</div>
+            <div class="text-gray">
+              {{ message.content }}
+            </div>
+          </div>
         </div>
       </div>
     </van-list>
   </van-pull-refresh>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

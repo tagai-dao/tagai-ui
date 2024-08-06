@@ -1,5 +1,7 @@
 import type { Space } from '@/types';
 import { dayjs } from 'element-plus';
+import utc from 'dayjs/plugin/utc';
+dayjs.extend(utc)
 
 export const sleep = async (time: number) => {
   time = time * 1000
@@ -274,6 +276,10 @@ export function parseSpaceStartTime(time: any) {
     return dayjs(time).locale('en').format('MMM Do HH:mm')
     // return `${d1.getUTCHours() >= 12 ? prefixInteger(d1.getUTCHours() - 12, 2) + ":" + prefixInteger(d1.getMinutes(), 2) + 'PM' : prefixInteger(d1.getUTCHours(), 2) + ':' + prefixInteger(d1.getMinutes(), 2) + 'AM'}(UTC),${monthMap[d1.getUTCMonth()]} ${d1.getUTCDate()}`;
   }
+}   
+
+export function formatDate() {
+  return dayjs.utc().format("YYYY-MM-DD HH:mm:ss");
 }
 
 export function parseSpaceLastTime(space: Space) {

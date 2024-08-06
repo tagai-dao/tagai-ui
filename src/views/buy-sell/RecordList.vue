@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 import { getTokenTradeList } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import type { TokenTrade } from "@/types";
@@ -13,6 +13,11 @@ const finished = ref(false)
 const comStore = useCommunityStore()
 const listData = ref<TokenTrade []>([])
 const scroller = document.querySelector('#trade-record-scroller')
+
+function tradeTime (token: TokenTrade) {
+  return formatPastTime(token.timestamp as number)
+}
+
 const onLoad = async () => {
   if(finished.value || listData.value.length == 0) return
   

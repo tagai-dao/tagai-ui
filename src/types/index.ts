@@ -69,11 +69,22 @@ export type Account = {
   btcAddr?: string | null | undefined;
   ethAddr?: string | null | undefined;
   steemId?: string | null | undefined;
+  lastReadMessageTime?: string,
   vp?: number;
   lastUpdateVpStamp?: number;
   op?: number;
   lastUpdateOpStamp?: number;
 };
+
+export type SocialMessage = {
+  twitterId: string;
+  twitterName: string;
+  twitterUsername: string;
+  profile: string;
+  type: number;
+  content: string;
+  operateTime: string;
+}
 
 export type Space = Account & {
   spaceId?: string;
