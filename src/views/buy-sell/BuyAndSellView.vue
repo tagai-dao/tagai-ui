@@ -105,13 +105,14 @@ async function checkTweet() {
     if (!account || !account.twitterId) {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       isPostTweet.value = false
-    }else if (!account.steemId) {
+      return;
+    }else if (!account.steemId || account.steemId.length == 0) {
       modalStore.setModalVisible(true, GlobalModalType.Register)
       isPostTweet.value = false
+      return;
     }
     
-    
-    if (accStore.getAccountInfo.ethAddr) {
+    if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
       const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
       accStore.ipshare = ipshare;
     }

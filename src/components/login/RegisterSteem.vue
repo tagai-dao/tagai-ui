@@ -177,7 +177,8 @@ const openDonut = () => {
     window.open('https://bitip.social', '_blank')
 }
 
-onMounted(() => {});
+onMounted(() => {
+});
 </script>
 
 <template>
