@@ -49,7 +49,7 @@ onUnmounted(() => {
     >
       <div v-if="useAccountStore().socialMessages.length == 0">No message</div>
       <!-- 1quote 2like 3retweet 4reply -->
-      <div v-else v-for="(message, i) of useAccountStore().socialMessages" :key="i">
+      <div @click="$router.push('/post-detail/' + message.tweetId)" v-else v-for="(message, i) of useAccountStore().socialMessages" :key="i">
         <!-- quote -->
         <div v-if="message.type === 1"class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
           <img

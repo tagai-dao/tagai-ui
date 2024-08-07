@@ -62,6 +62,12 @@ export const getTransactionReceipt = async (hash: string) => {
   return tx;
 };
 
+export const getBalance = async (ethAddr: string) => {
+  const provider = getReadOnlyProvider();
+  const balance = await provider.getBalance(ethAddr);
+  return balance
+}
+
 export const createKeypair = async () => {
   return new Promise((resolve) => {
     const pair = nacl.box.keyPair();

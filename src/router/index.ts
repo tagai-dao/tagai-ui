@@ -41,6 +41,12 @@ const router = createRouter({
       meta: {tabBar: true, topBar: true, gotoHome: true, keepAlive: true}
     },
     {
+      path: '/wallet',
+      name: 'wallet',
+      component: () => import('@/views/wallet/WalletView.vue'),
+      meta: {tabBar: true, topBar: true, gotoHome: true, keepAlive: true}
+    },
+    {
       path: '/notification',
       name: 'notification',
       component: () => import('@/views/notification/NotificationView.vue')

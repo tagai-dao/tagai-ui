@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from "vue";
+import { onMounted, ref } from "vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import { getCreatedList } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";

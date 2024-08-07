@@ -84,10 +84,7 @@ onMounted(async () => {
           </template>
         </SpaceItem>
       </div>
-      <div v-if="curationStore.currentSelectedTweet?.amount === 0">
-        No curation rewards
-      </div>
-      <div class="bg-white rounded-2xl py-4 px-3 flex flex-col gap-4">
+      <div v-if="curationStore.currentSelectedTweet?.state != 4" class="bg-white rounded-2xl py-4 px-3 flex flex-col gap-4">
         <div class="flex items-center gap-2">
           <div class="text-base flex-1 text-h5">
             Rewards

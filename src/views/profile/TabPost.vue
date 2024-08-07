@@ -8,7 +8,7 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import { getUserTweets } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
-import { getTokenInfo, getTokenInfoOfTweets, getTokenOnchainInfo } from '@/utils/pump'
+import { getTokenInfoOfTweets, getTokenOnchainInfo } from '@/utils/pump'
 import { formatPrice } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { getMyCurationRewards } from '@/apis/api'

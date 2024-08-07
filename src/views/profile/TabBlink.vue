@@ -7,10 +7,9 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import { getUserBlinks } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
-import { getTokenInfo, getTokenInfoOfTweets, getTokenOnchainInfo } from '@/utils/pump'
+import { getTokenInfoOfTweets } from '@/utils/pump'
 import { formatPrice, formatAmount } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
-import { type CurationReward } from "@/types";
 import { useCurationStore } from "@/stores/curation";
 
 const accStore = useAccountStore()
@@ -58,7 +57,6 @@ const onRefresh = async () => {
     refreshing.value = true
     finished.value = false
     const list: any = await getUserBlinks(accStore.getAccountInfo.twitterId)
-    console.log(63, list)
     if (list && list.length > 0) {
       accStore.blinksList = await getTokenInfoOfTweets(list)
       if (list.length < 30) finished.value = true

@@ -8,7 +8,9 @@ import { MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY } from '@/config'
 import errCode from "@/errCode";
 import { formatDate } from '@/utils/helper'
 import { useModalStore } from "@/stores/common";
-import { GlobalModalType, type SocialMessage } from "@/types";
+import { GlobalModalType } from "@/types";
+import { ethers } from "ethers";
+import { getBalance } from '@/utils/web3'
 
 export const useAccount = () => {
     const accountMismatch = computed(() => {
@@ -214,6 +216,15 @@ export const useAccount = () => {
         }
     }
 
+    const updateBalance = () => {
+        if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
+            getBalance(useAccountStore().getAccountInfo.ethAddr!).then(balance => {
+                // @ts-ignore
+                useAccountStore().ethBalance = balance.toString() / 1e18
+            }).catch()
+        }
+    }
+
     const logout = () => {
         twitterLogout(useAccountStore().getAccountInfo.twitterId).catch()
         useAccountStore().clear();
@@ -236,6 +247,7 @@ export const useAccount = () => {
         addBackOp,
         addBackVp,
         checkLogin,
+        updateBalance,
         logout
     }
 }

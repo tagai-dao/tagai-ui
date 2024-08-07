@@ -2,7 +2,7 @@
 import {useModalStore} from "@/stores/common";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
-import {onUnmounted, ref, watch} from "vue";
+import {computed, onUnmounted, ref, watch} from "vue";
 import { useCommunityStore } from "@/stores/community";
 import debounce from 'lodash.debounce'
 import { getSpaceInfoById } from '@/apis/api'
@@ -11,7 +11,8 @@ import { useSpace, InvalidSpaceCurationType } from "@/composables/useSpace";
 import { handleErrorTip } from "@/utils/notify";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import type { Space } from "@/types";
-import { SPACE_STATE } from "@/config";
+import i18n from "@/lang";
+const t = i18n.global.t;
 
 const modalStore = useModalStore();
 const comStore = useCommunityStore();
@@ -39,6 +40,21 @@ const invalidSpaceType = ref<InvalidSpaceCurationType>(InvalidSpaceCurationType.
 const tweetLoading = ref(false)
 const spaceLink = ref('');
 const space = ref<Space|null>(null);
+
+const invalidTip = computed(() => {
+  if (invalidSpaceType.value !== InvalidSpaceCurationType.OK) {
+    switch (invalidSpaceType.value) {
+      case InvalidSpaceCurationType.HAS_CREATED:
+        return t('community.spaceHasCreated');
+      case InvalidSpaceCurationType.INVALID_LINK:
+        return t('community.spaceInvalidLink')
+      case InvalidSpaceCurationType.NOT_YOUR_SPACE:
+        return t('community.spaceNotYours')
+      case InvalidSpaceCurationType.SPACE_IS_STARTED:
+        return t('community.spaceHasStarted')
+    }
+  }
+})
 
 const onPostTweet = async () => {
   try{
@@ -144,6 +160,9 @@ const checkSpace = debounce(async () => {
         <span class="text-white font-bold text-lg">GoTweet</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>
       </button>
+    </div>
+    <div v-if="invalidSpaceType !== InvalidSpaceCurationType.OK" class="text-red-ff text-center">
+      {{ invalidTip }}
     </div>
   </div>
 </template>

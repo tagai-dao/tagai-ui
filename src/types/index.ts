@@ -77,6 +77,7 @@ export type Account = {
 };
 
 export type SocialMessage = {
+  tweetId: string;
   twitterId: string;
   twitterName: string;
   twitterUsername: string;
