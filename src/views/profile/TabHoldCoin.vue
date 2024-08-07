@@ -48,7 +48,7 @@ const onRefresh = async () => {
   } catch(e) {
     handleErrorTip(e)
     if (e === errCode.InvalidAccessToken) {
-      accStore.setAccount(null);
+      accStore.clear();
       router.replace('/')
     }
   } finally {

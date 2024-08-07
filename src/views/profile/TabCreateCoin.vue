@@ -5,8 +5,7 @@ import { getCreatedList } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfo } from "@/utils/pump";
-import { formatAmount, formatPrice } from "@/utils/helper";
-import { useModalStore, useStateStore } from "@/stores/common";
+import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 
 const accStore = useAccountStore()
@@ -14,17 +13,7 @@ const accStore = useAccountStore()
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const listData = ref<number []>([])
 const scroller = document.querySelector('#profile-tab-scroller')
-
-const capturedFee = computed(() => {
-  let captured: any = accStore.ipshare.totalCaptured
-  if (typeof(captured) == 'string' || typeof(captured) === 'bigint') {
-    // @ts-ignore
-    return captured.toString() / 1e18
-  }
-  return captured
-})
 
 const onLoad = async () => {
   if(loading.value || finished.value || !accStore.getAccountInfo.ethAddr || accStore.createdTokenList.length == 0) return
@@ -71,24 +60,6 @@ onMounted(() => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <div v-if="accStore.ipshare.ethAddr" class="px-3">
-          <div class="flex items-center gap-1 mb-2">
-            <span class="font-normal text-sm">{{ $t('profileView.captureTitle') }}</span>
-            <el-popover popper-class="c-popper">
-              <template #reference>
-                <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
-              </template>
-              <template #default>
-                <div class="bg-white rounded-xl p-2 shadow-popper-tip">{{ $t('profileView.captureDesc') }}</div>
-              </template>
-            </el-popover>
-          </div>
-          <button class="bg-gradient-primary h-16 w-full rounded-xl flex items-center justify-center gap-1 text-white mb-2">
-            <span class="text-h1 mr-2">{{ formatPrice(capturedFee * useStateStore().btcPrice) }}</span>
-            <!-- <img src="~@/assets/icons/icon-up.svg" alt=""> -->
-            <span class="text-sm">($BTC {{ formatAmount(capturedFee) }})</span>
-          </button>
-        </div>
         <div v-if="accStore.createdTokenList.length>0" class="px-3">
           <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i"
                        @click="$router.push(`/tag-detail/${community.tick}`)"

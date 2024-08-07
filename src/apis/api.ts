@@ -68,6 +68,9 @@ export const getCommunityNewTweets = async (tick: string, twitterId?: string, pa
 export const getUserTweets = async (twitterId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/userTweets', {twitterId, pages})
 
+export const getUserBlinks = async (twitterId: string, pages?: number) =>
+  get(BACKEND_API_URL + '/curation/userBlinks', {twitterId, pages})
+
 export const getTweetById = async (tweetId: string, twitterId?: string) =>
   get(BACKEND_API_URL + '/curation/getTweetById', {tweetId, twitterId})
 

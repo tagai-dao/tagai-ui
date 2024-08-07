@@ -15,6 +15,7 @@ export const useAccountStore = defineStore('account', {
             this.setAccount(null);
             this.tokenHoldingList = [];// ref<TokenHoldingList[]>([])
             this.tweetsList = [];
+            this.blinksList = [];
             this.createdTokenList = [];
             this.ethBalance = 0
             this.ipshare = {}
@@ -42,6 +43,7 @@ export const useAccountStore = defineStore('account', {
             account,
             tokenHoldingList,
             tweetsList: [] as Tweet[],
+            blinksList: [] as Tweet[],
             createdTokenList: [] as Community[],
             setAccount,
             ethBalance: 0,

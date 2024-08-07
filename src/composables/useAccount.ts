@@ -216,7 +216,7 @@ export const useAccount = () => {
 
     const logout = () => {
         twitterLogout(useAccountStore().getAccountInfo.twitterId).catch()
-        useAccountStore().setAccount(null);
+        useAccountStore().clear();
     }
 
     return {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
-import TabHoldCoin from "@/views/profile/TabHoldCoin.vue";
+import TabBlink from "@/views/profile/TabBlink.vue";
 import TabPost from "@/views/profile/TabPost.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import { useAccountStore } from "@/stores/web3";
@@ -10,8 +10,8 @@ import { getIpshareInfo } from '@/apis/api'
 import { useInterval } from "@/composables/useTools";
 
 const accStore = useAccountStore()
-const tabOptions = ['holdCoin', 'post', 'createCoin']
-const activeTab = ref('holdCoin')
+const tabOptions = ['post', 'blink', 'createCoin']
+const activeTab = ref('post')
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout } = useAccount();
 const { setInter } = useInterval()
 
@@ -97,8 +97,9 @@ onMounted(() => {
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
     </div>
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
-      <TabHoldCoin v-if="activeTab==='holdCoin'"/>
+      <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabPost v-if="activeTab==='post'"/>
+      <TabBlink v-if="activeTab==='blink'"/>
       <TabCreateCoin v-if="activeTab==='createCoin'"/>
     </div>
   </div>
