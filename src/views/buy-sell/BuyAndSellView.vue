@@ -10,7 +10,8 @@ import { useRoute } from "vue-router";
 import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithBTCAfterFee, getReceivedAmountSellBTCAfterFee, getTokenInfo,
-  buyToken, sellToken, getUserTokenInfo
+  buyToken, sellToken, getUserTokenInfo,
+  getBuyAmountUseBtc, getSellAmountUseToken
  } from '@/utils/pump'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
@@ -53,6 +54,19 @@ const maxSlippage = ref(5)
 const lockedAmount = ref(0)
 const tokenBalance = ref(0)
 const btcBalance = ref(0)
+const isUnlocked = computed(() => {
+  if (comStore.currentSelectedCommunity?.unlockTime) {
+    return comStore.currentSelectedCommunity?.unlockTime < (Date.now() / 1000)
+  }
+  return false
+})
+const listed = computed(() => {
+  const listed = comStore.currentSelectedCommunity?.listed
+  if (listed) {
+    maxSlippage.value = 1
+  }
+  return listed
+})
 
 const {
   contentRef,
@@ -81,10 +95,16 @@ const updateBuyAmount = debounce(async (val: any) => {
   const amount = ethers.parseEther(val.toString())
 
  try {
+  if (listed.value) {
+    const receive = await getBuyAmountUseBtc(comStore.currentSelectedCommunity!.token, amount)
+    receiveAmount.value = receive
+  }else {
    const receive = await getBuyAmountWithBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
    receiveAmount.value = receive
+  }
  } catch (error) {
     console.log(33, error)
+    receiveAmount.value = '0.00'
  }
 }, 500)
 
@@ -92,8 +112,13 @@ const updateSellAmount = debounce(async (val: any) => {
   try {
     if (!val) return;
     const amount = ethers.parseEther(val.toString())
-    const receive = await getReceivedAmountSellBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
-    receiveBtc.value = receive
+    if (listed.value) {
+      const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
+      receiveBtc.value = receive
+    }else {
+      const receive = await getReceivedAmountSellBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
+      receiveBtc.value = receive
+    }
   } catch (error) {
     receiveBtc.value = '0.00'
   }
@@ -124,11 +149,6 @@ async function checkTweet() {
 }
 
 async function confirm() {
-  // checkout login
-  // if (!accStore.getAccountInfo?.twitterId) {
-  //   useModalStore().setModalVisible(true, GlobalModalType.Login)
-  //   return;
-  // }
   // check wallet connect
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     needChoseWallet.value = true
@@ -156,11 +176,11 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payBtc.value) return
 
-      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payBtc.value = undefined
         receiveAmount.value = undefined
-        if (accStore.getAccountInfo?.twitterId) {
+        if (listed.value && accStore.getAccountInfo?.twitterId) {
           trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
         }
         emitter.emit('newTrade')
@@ -170,11 +190,11 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value, Math.ceil(maxSlippage.value * 100))
+      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
         receiveBtc.value = undefined
-        if (accStore.getAccountInfo?.twitterId) {
+        if (listed.value && accStore.getAccountInfo?.twitterId) {
           trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
         }
         emitter.emit('newTrade')
@@ -285,7 +305,7 @@ onMounted(async () => {
           </div>
           <div class="text-sm flex justify-end">
             Balance: {{ formatAmount(tokenBalance) }}
-            <span class="text-red-e6" v-if="lockedAmount > 0 && !comStore.currentSelectedCommunity?.listed">(Locked: {{ formatAmount(lockedAmount) }})</span>
+            <span class="text-red-e6" v-if="!isUnlocked && lockedAmount > 0 && !comStore.currentSelectedCommunity?.listed">(Locked: {{ formatAmount(lockedAmount) }})</span>
           </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
@@ -364,9 +384,9 @@ onMounted(async () => {
         <button
           class="w-full h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="comStore.currentSelectedCommunity?.listed || trading"
+          :disabled="trading"
         >
-          <span>{{ comStore.currentSelectedCommunity?.listed ? "Token lised" : (accStore.ethConnectAddress ? "Confirm": 'Connect') }}</span>
+          <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
       </div>

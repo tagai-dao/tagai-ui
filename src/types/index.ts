@@ -189,7 +189,9 @@ export type OnchainTokenInfo = {
   listed?: boolean;
   bondingCurveSupply?: number;
   totalClaimedSocialRewards?: number;
-  price?: number
+  price?: number;
+  unlockTime?: number;
+  pair?: string;
 }
 
 export type Community = OnchainTokenInfo & {

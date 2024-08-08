@@ -69,8 +69,8 @@ function updateReward() {
     if (list && list.length > 0) {
       getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
         for (let t of list) {
-          t.price = tokeninfo[t.token + '-price']
-          t.price = t.price ? t.price.toString() / 1e18 * useStateStore().btcPrice : 0
+          t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().btcPrice;
+          // t.price = t.price ? t.price.toString() / 1e18 * useStateStore().btcPrice : 0
         }
         listData.value = list
       })

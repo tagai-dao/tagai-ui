@@ -80,6 +80,11 @@ export const RegisterSteemMessage = JSON.stringify(
 export const IPShareContract = "0x0B6e5e9544DED2a3bB5be553E6b570E2eA97B77e";
 export const PumpContract = "0xd64a6FA17AdcD5E1be23e1378E35F64f47926Dd7";
 
+export const WETH = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd';
+export const uniswapV2Factory = '0x6725F303b657a9451d8BA641348b6761A6CC7a17';
+export const uniswapV2Router02 = '0xD99D1c33F9fC3444f8101754aBC46c52416550D1';
+export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
+
 export const Ether = BigInt(1e18);
 
 export const SendPubKey = new Uint8Array([

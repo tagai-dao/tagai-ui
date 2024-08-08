@@ -248,6 +248,7 @@ onMounted(async () => {
             <span class="">{{ formatAddress(holder.ethAddr) }}</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Contract</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Deployer</span>
+            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.pair" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">DEX</span>
           </div>
         <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 100000).toFixed(2) }}%</span>
       </div>

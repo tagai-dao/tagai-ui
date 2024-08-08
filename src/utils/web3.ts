@@ -1,4 +1,4 @@
-import { ChainConfig, MainToken, SendPubKey } from "@/config";
+import { ChainConfig, MainToken, SendPubKey, uniswapV2Factory, WETH, uniswapV2InitCode } from "@/config";
 import { useAccountStore } from "@/stores/web3";
 import nacl from "tweetnacl";
 import { hexTou8array, stringToHex, u8arryToHex } from "./helper";
@@ -6,6 +6,7 @@ import { sha256 } from "js-sha256";
 import base58 from "bs58";
 import { ethers } from "ethers";
 import steem from "steem";
+import { aggregate } from '@makerdao/multicall'
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
@@ -156,3 +157,17 @@ const generateKeys = (username: string, pass: string) => {
     },
   };
 };
+
+export const getPair = (tokenA: string) => {
+  let tokenB = WETH;
+  const [token0, token1] = tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA];
+  const encoded = new ethers.AbiCoder().encode(['address', 'address'], [token0, token1]);
+  const salt = ethers.keccak256(encoded);
+
+  const pairAddress = ethers.getCreate2Address(
+    uniswapV2Factory,
+    salt,
+    uniswapV2InitCode
+  )
+  return pairAddress;
+}

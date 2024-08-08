@@ -2581,55 +2581,178 @@ export const abis = {
         "type": "receive"
       }
     ],
-      "errors": [
-        "error OnlyHumanAllowed()",
-        "error IllegalRatios()",
-        "error GameIsNotStarted()",
-        "error IPShareNotExist()",
-        "error InvalidCurrency()",
-        "error DonutNotSet()",
-        "error PendingTradeNow()",
-        "error OnlyDonut()",
-        "error OnlyStaker()",
-        "error FeePercentIsTooLarge()",
-        "error TooMuchFee()",
-        "error CanntPauseNow()",
-        "error CanntUnpauseNow()",
-        "error IPShareAlreadyCreated()",
-        "error InsufficientPay()",
-        "error RefundFail()",
-        "error PayCreateFeeFail()",
-        "error IPShareNotExist()",
-        "error CostTradeFeeFail()",
-        "error CanntSellLast10Shares()",
-        "error UnableToSendFunds()",
-        "error NoFunds()",
-        "error InsufficientShares()",
-        "error InUnstakingPeriodNow()",
-        "error WrongAmountOrInsufficientStakeAmount()",
-        "error NoIPShareToRedeem()",
-        "error IPShareIsInlockingPeriodNow()",
-        "error NoProfitToClaim()",
-        "error TickHasBeenCreated()",
-        "error CantBeZeroAddress()",
-        "error CantSetSocialDistributionMoreThanTotalSupply()",
-        "error TooMuchFee()",
-        "error InsufficientCreateFee()",
-        "error PreMineTokenFail()",
-        "error RefundFail()",
-        "error TokenNotListed()",
-        "error TokenListed()",
-        "error IPShareNotCreated()",
-        "error TokenInitialized()",
-        "error ClaimOrderExist()",
-        "error InvalidSignature()",
-        "error InvalidClaimAmount()",
-        "error InvalidClaimer()",
-        "error OutOfSlippage()",
-        "error CreateDexPoolFail()",
-        "error InsufficientFund()",
-        "error RefundFail()",
-        "error CostFeeFail()",
-        "error CanntSellLockedToken()",
-      ]
+    "UniswapRouter": [
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amountOut",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
+          }
+        ],
+        "name": "getAmountsIn",
+        "outputs": [
+          {
+            "internalType": "uint256[]",
+            "name": "amounts",
+            "type": "uint256[]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
+          }
+        ],
+        "name": "getAmountsOut",
+        "outputs": [
+          {
+            "internalType": "uint256[]",
+            "name": "amounts",
+            "type": "uint256[]"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amountIn",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amountOutMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "name": "swapExactTokensForETH",
+        "outputs": [
+          {
+            "internalType": "uint256[]",
+            "name": "amounts",
+            "type": "uint256[]"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amountOutMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address[]",
+            "name": "path",
+            "type": "address[]"
+          },
+          {
+            "internalType": "address",
+            "name": "to",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "name": "swapExactETHForTokens",
+        "outputs": [
+          {
+            "internalType": "uint256[]",
+            "name": "amounts",
+            "type": "uint256[]"
+          }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+      }
+    ],
+    "errors": [
+      "error OnlyHumanAllowed()",
+      "error IllegalRatios()",
+      "error GameIsNotStarted()",
+      "error IPShareNotExist()",
+      "error InvalidCurrency()",
+      "error DonutNotSet()",
+      "error PendingTradeNow()",
+      "error OnlyDonut()",
+      "error OnlyStaker()",
+      "error FeePercentIsTooLarge()",
+      "error TooMuchFee()",
+      "error CanntPauseNow()",
+      "error CanntUnpauseNow()",
+      "error IPShareAlreadyCreated()",
+      "error InsufficientPay()",
+      "error RefundFail()",
+      "error PayCreateFeeFail()",
+      "error IPShareNotExist()",
+      "error CostTradeFeeFail()",
+      "error CanntSellLast10Shares()",
+      "error UnableToSendFunds()",
+      "error NoFunds()",
+      "error InsufficientShares()",
+      "error InUnstakingPeriodNow()",
+      "error WrongAmountOrInsufficientStakeAmount()",
+      "error NoIPShareToRedeem()",
+      "error IPShareIsInlockingPeriodNow()",
+      "error NoProfitToClaim()",
+      "error TickHasBeenCreated()",
+      "error CantBeZeroAddress()",
+      "error CantSetSocialDistributionMoreThanTotalSupply()",
+      "error TooMuchFee()",
+      "error InsufficientCreateFee()",
+      "error PreMineTokenFail()",
+      "error RefundFail()",
+      "error TokenNotListed()",
+      "error TokenListed()",
+      "error IPShareNotCreated()",
+      "error TokenInitialized()",
+      "error ClaimOrderExist()",
+      "error InvalidSignature()",
+      "error InvalidClaimAmount()",
+      "error InvalidClaimer()",
+      "error OutOfSlippage()",
+      "error CreateDexPoolFail()",
+      "error InsufficientFund()",
+      "error RefundFail()",
+      "error CostFeeFail()",
+      "error CanntSellLockedToken()",
+    ]
 }

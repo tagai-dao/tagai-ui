@@ -1,6 +1,6 @@
 import { getContract } from "./contract";
-import type { Community, CreateCommunity, Tweet } from "@/types";
-import { CreateFee, ChainConfig } from "@/config";
+import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02 } from "@/config";
 import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract, Ether, ClaimFee } from "@/config";
@@ -8,6 +8,8 @@ import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
 import _ from 'lodash'
+import { getPair } from "./web3";
+import { useAccountStore } from "@/stores/web3";
 
 export const checkTickUsed = async (tick: string) => {
     const pump = await getContract('Pump')
@@ -31,28 +33,62 @@ export const createCoin = async (createParms: CreateCommunity) => {
     return {createHash: hash}
 }
 
-export const buyToken = async (token: string, amount: bigint, ethAmount: bigint, sellsman: ethers.AddressLike, slippage = 0) => {
+export const buyToken = async (token: string, amount: bigint, ethAmount: bigint, sellsman: ethers.AddressLike, listed: boolean, slippage = 0) => {
     if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!ethers.isAddress(sellsman)) {
         sellsman = ethers.ZeroAddress;
     }
-    const tc = await getContract('Token', token)
-    const tx = await tc.buyToken(amount, sellsman, slippage, ethers.ZeroAddress, {
-        value: ethAmount
-    })
-    await tx.wait();
-    return tx.hash;
+    if (listed) {
+        const router = await getContract('UniswapRouter');
+        const tx = await router.swapExactETHForTokens(
+            amount * BigInt(slippage) / 10000n,
+            [WETH, token],
+            useAccountStore().ethConnectAddress,
+            Math.floor(Date.now() / 1000) + 300,
+            {
+                value: ethAmount
+            }
+        )
+        await tx.wait();
+        return tx.hash;
+    }else {
+        const tc = await getContract('Token', token)
+        const tx = await tc.buyToken(amount, sellsman, slippage, ethers.ZeroAddress, {
+            value: ethAmount
+        })
+        await tx.wait();
+        return tx.hash;
+    }
 }
 
-export const sellToken = async (token: string, amount: bigint, receiveEth: bigint, sellsman: ethers.AddressLike, slippage = 0) => {
+export const sellToken = async (token: string, amount: bigint, receiveEth: bigint, sellsman: ethers.AddressLike, listed: boolean, slippage = 0) => {
     if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!ethers.isAddress(sellsman)) {
         sellsman = ethers.ZeroAddress;
     }
     const tc = await getContract('Token', token)
-    const tx = await tc.sellToken(amount, receiveEth, sellsman, slippage);
-    await tx.wait();
-    return tx.hash;
+    if (listed) {
+        // checkout approve
+        const allowance = await tc.allowance(useAccountStore().ethConnectAddress, uniswapV2Router02);
+        if (allowance < amount) {
+            const res = await tc.approve(uniswapV2Router02, ethers.MaxInt256);
+            await res.wait();
+        }
+        const router = await getContract('UniswapRouter');
+        const tx = await router.swapExactTokensForETH(
+            amount,
+            receiveEth * BigInt(slippage) / 10000n,
+            [token, WETH],
+            useAccountStore().ethConnectAddress,
+            Math.floor(Date.now() / 1000) + 300
+        )
+        await tx.wait();
+        return tx.hash;
+    }else {
+        const tx = await tc.sellToken(amount, receiveEth, sellsman, slippage);
+        await tx.wait();
+        return tx.hash;
+    }
 }
 
 export const claimReward = async (token: string, orderId: BigInt, amount: BigInt, signature: string) => {
@@ -106,45 +142,35 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
 }
 
 export const getTokenInfo = async (communities: Community[]) => {
-    let info = await getTokenOnchainInfo(communities.map(com => com.token))
-    let result: any = {}
-    for (let [key, value] of Object.entries(info)) {
-        const [token, type] = key.split('-')
-        if (!result[token]) {
-            result[token] = {}
-        }
-        result[token][type] = value;
-    }
+    let result = await getTokenOnchainInfo(communities.map(com => com.token))
+    
     for( let community of communities) {
         const tokenInfo = result[community.token]
         community.listed = tokenInfo.listed;
         community.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
         community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
-        community.price = tokenInfo.price.toString() / 1e18;
-        community.marketCap = community.price * 10000000;
+        community.price = tokenInfo.price;
+        community.marketCap = (community.price ?? 0) * 10000000;
+        community.unlockTime = tokenInfo.unlockTime;
+        community.pair = tokenInfo.pair;
     }
     
     return communities;
 }
 
 export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
-    let info = await getTokenOnchainInfo(tweets.map(t => t.token ?? ''))
-    let result: any = {}
-    for (let [key, value] of Object.entries(info)) {
-        const [token, type] = key.split('-')
-        if (!result[token]) {
-            result[token] = {}
-        }
-        result[token][type] = value;
-    }
+    let result = await getTokenOnchainInfo(tweets.map(t => t.token ?? ''))
+    
     for( let tweet of tweets) {
         if (!tweet.token) continue
         const tokenInfo = result[tweet.token]
         tweet.listed = tokenInfo.listed;
         tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
         tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
-        tweet.price = tokenInfo.price.toString() / 1e18;
-        tweet.marketCap = tweet.price * 10000000;
+        tweet.price = tokenInfo.price;
+        tweet.marketCap = (tweet.price ?? 0) * 10000000;
+        tweet.unlockTime = tokenInfo.unlockTime;
+        tweet.pair = tokenInfo.pair;
     }
     return tweets;
 }
@@ -189,13 +215,85 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
                     '1000000000000000000'
                 ],
                 returns: [
-                    [token + '-price', (val: any) => BigInt(val)]
+                    [token + '-price', (val: any) => (val).toString() / 1e18]
+                ]
+            },
+            {
+                target: token,
+                call: [
+                    'unlockTime()(uint256)'
+                ],
+                returns: [
+                    [token + '-unlockTime', (val: any) => parseInt(val)]
+                ]
+            },
+            {
+                target: uniswapV2Factory,
+                call: [
+                    'getPair(address,address)(address)',
+                    token,
+                    WETH
+                ],
+                returns: [
+                    [token + '-pair']
                 ]
             }
         ])
     }
+    
     const res = await aggregate(calls, ChainConfig.multiConfig)
-    return res.results.transformed
+    let infos = res.results.transformed
+    let result: any = {}
+    
+    for (let [key, value] of Object.entries(infos)) {
+        const [token, type] = key.split('-')
+        if (!result[token]) {
+            result[token] = {}
+        }
+        result[token][type] = value;
+    }
+    calls = []
+    for (let p of Object.entries(result)) {
+        const token = p[0]
+        let info: any = p[1]
+        if (info.listed) {
+            calls.push({
+                target: info.pair,
+                call: [
+                    'getReserves()(uint256, uint256)'
+                ],
+                returns: [
+                    [token + '-1', (val: any) => (val).toString() / 1e18],
+                    [token + '-2', (val: any) => (val).toString() / 1e18]
+                ]
+            })
+            calls.push({
+                target: info.pair,
+                call: [
+                    'token0()(address)',
+                ],
+                returns: [
+                    [token + '-token0']
+                ]
+            })
+        }
+    }
+    if (calls.length > 0) {
+        let res = await aggregate(calls, ChainConfig.multiConfig);
+        res = res.results.transformed;
+        for (let [key, value] of Object.entries(result)) {
+            // @ts-ignore
+            if (value.listed) {
+                if (res[key + '-token0'] === key) {
+                    result[key].price = res[key + '-2'] / res[key + '-1']
+                }else {
+                    result[key].price = res[key + '-1'] / res[key + '-2']
+                }
+            }
+        }
+    }
+    
+    return result
 }
 
 export const getBuyAmountWithBTCAfterFee = async (token: string | undefined, amount: bigint) => {
@@ -252,4 +350,16 @@ const getCreateTokenEventByHash = (tx: any) => {
         }
     });
     return event
+}
+
+export const getBuyAmountUseBtc = async (token: string, btcAmount: BigInt) => {
+    let contract = await getContract('UniswapRouter', undefined, true);
+    const amount = await contract.getAmountsOut(btcAmount, [WETH, token]);
+    return amount[1];
+}
+
+export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) => {
+    let contract = await getContract('UniswapRouter', undefined, true);
+    const amount = await contract.getAmountsOut(tokenAmount, [token, WETH]);
+    return amount[1];
 }
