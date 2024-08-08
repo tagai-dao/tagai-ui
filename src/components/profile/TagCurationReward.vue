@@ -3,7 +3,7 @@ import { useAccount } from '@/composables/useAccount';
 import { useModalStore } from '@/stores/common';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { GlobalModalType, type CurationReward } from '@/types';
-import { formatAmount, formatPrice } from '@/utils/helper';
+import { formatAmount, formatPrice, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
 import { getClaimSignature, setOrderClaimed } from '@/apis/api'
 import { claimReward } from '@/utils/pump'
@@ -28,9 +28,9 @@ async function claim() {
     const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
     if (res) {
       const {signature, orderId, amount} = res;
-      console.log(33, res)
       const hash = await claimReward(props.reward.token, BigInt(orderId), ethers.parseEther(amount.toString()), signature);
       setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash).catch(console.error);
+      await sleep(1)
       emitter.emit('claimedReward')
     }
   } catch (e) {

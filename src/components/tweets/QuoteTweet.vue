@@ -19,6 +19,7 @@ function replaceEmptyImg(e: any) {
 
 onMounted(() => {
   tweet.value = JSON.parse(props.retweetInfo)
+  if (!tweet.value.text) return;
   const urlreg = /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_#@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/g
   const reg = /(https?:[^:<>"]*\/)([^:<>"]*)(\.((png!thumbnail)|(png)|(jpg)|(webp)))/g
   const urlsTem = tweet.value.text.replace(' ', '').replace('\r', '').replace('\t', '').match(urlreg)

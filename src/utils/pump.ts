@@ -17,15 +17,18 @@ export const checkTickUsed = async (tick: string) => {
 
 export const createCoin = async (createParms: CreateCommunity) => {
     const pump = await getContract('Pump')
-    const tx = await pump.createToken(createParms.tick, {
+    let tx: any = await pump.createToken(createParms.tick, {
         value: (createParms.initBtc ?? 0n) + BigInt(CreateFee)
     })
     await tx.wait();
-    const event: any = await getCreateTokenEventByHash(tx.hash);
+    // tx: any = await getTransactionReceipt(hash);
+    const hash = tx.hash;
+    tx = await getTransactionReceipt(hash)
+    const event: any = getCreateTokenEventByHash(tx);
     if (event && event.length == 3 && event[0] == createParms.tick) {
         return {token: event[1], createHash: tx.hash}
     }
-    return {createHash: tx.hash}
+    return {createHash: hash}
 }
 
 export const buyToken = async (token: string, amount: bigint, ethAmount: bigint, sellsman: ethers.AddressLike, slippage = 0) => {
@@ -235,8 +238,7 @@ export const getTokenCap = async (communities: Community[]) => {
     return communities
 }
 
-const getCreateTokenEventByHash = async (hash: string) => {
-    let tx: any = await getTransactionReceipt(hash);
+const getCreateTokenEventByHash = (tx: any) => {
     let contract = new ethers.Contract(PumpContract, abis.Pump)
     let event;
     tx.logs.forEach((log: any) => {

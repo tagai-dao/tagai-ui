@@ -36,7 +36,7 @@
     "tips": "Tips"
   },
   "createCommunity": {
-    "createCommunity": "Create Community",
+    "createCommunity": "Create Tag",
     "initAmountTip": "Input how many token you wanna buy first.",
     "initBtc": "Pay {amount} BTC",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
