@@ -144,7 +144,7 @@ onMounted(async () => {
           </button>
         </div>
         <div class="text-base font-medium flex items-center gap-1">
-          <span>Bonding curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
+          <span>Bonding Curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
           <el-popover popper-class="c-popper">
             <template #reference>
               <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
