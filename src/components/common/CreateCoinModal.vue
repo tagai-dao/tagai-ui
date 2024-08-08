@@ -254,6 +254,7 @@ const create = async () => {
             class="leading-6 text-base flex-1"
             v-model="inputTag"
             @focus="onFocusTagInput"
+            @keydown="(e) => {if (e.key === 'Enter' || e.key === 'Enter' || e.keyCode===13) { onAddTags()}}"
             type="text"
             id="name"
             placeholder="KATC"
