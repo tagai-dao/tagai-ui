@@ -75,9 +75,9 @@ const onTweetType =  async (type: CommerceType) => {
 }
 
 const progressData = ref([
-  {trackWidth: 10, value: 0, background: '#FF3D54', desc: 'Social Distributed'},
-  {trackWidth: 70, value: 0, background: '#FE913F', desc: 'Bongding Curve'},
-  {trackWidth: 20, value: 0, background: '#FFCC00', desc: 'Listed'}
+  {trackWidth: 10, value: 0, percent: "10%", background: '#FF3D54', desc: 'Social Distributed'},
+  {trackWidth: 70, value: 0, percent: "10%", background: '#FE913F', desc: 'Bongding Curve'},
+  {trackWidth: 20, value: 0, percent: "10%", background: '#FFCC00', desc: 'Listed'}
 ])
 
 async function updateProgress() {
@@ -85,9 +85,9 @@ async function updateProgress() {
     const com = coms[0]
     comStore.currentSelectedCommunity = coms[0]
     progressData.value = [
-      {...progressData.value[0], value: (com.totalClaimedSocialRewards / 10000)},
-      {...progressData.value[1], value: (com.bondingCurveSupply / 70000)},
-      {...progressData.value[2], value: 100, desc: com.listed ? 'Listed' : 'Pending List'}
+      {...progressData.value[0], value: (com.totalClaimedSocialRewards / 10000), percent: (com.totalClaimedSocialRewards / 100000).toFixed(2) + '%'},
+      {...progressData.value[1], value: (com.bondingCurveSupply / 70000), percent: (com.bondingCurveSupply / 100000).toFixed(2) + '%'},
+      {...progressData.value[2], value: 100, percent:'20%', desc: com.listed ? 'Listed' : 'Pending List'}
     ]
   }).catch(e => {
     console.error(2, e)
@@ -164,7 +164,7 @@ onMounted(async () => {
               <template #content>
                 <div class="flex gap-1">
                   <span class="text-sm">{{data.desc}}</span>
-                  <span class="font-semibold text-base">{{data.value.toFixed(2)}}%</span>
+                  <span class="font-semibold text-base">{{data.percent}}</span>
                 </div>
               </template>
               <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
