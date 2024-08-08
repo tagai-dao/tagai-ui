@@ -1227,6 +1227,25 @@ export const abis = {
         "anonymous": false,
         "inputs": [
           {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "oldLockTime",
+            "type": "uint256"
+          },
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "newLockTime",
+            "type": "uint256"
+          }
+        ],
+        "name": "LockTimeChanged",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
             "indexed": false,
             "internalType": "string",
             "name": "tick",
@@ -1347,6 +1366,19 @@ export const abis = {
           }
         ],
         "name": "adminChangeIPShare",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "_lockTime",
+            "type": "uint256"
+          }
+        ],
+        "name": "adminChangeLockTime",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1481,6 +1513,19 @@ export const abis = {
             "internalType": "address",
             "name": "",
             "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getLockTime",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
           }
         ],
         "stateMutability": "view",
@@ -2367,29 +2412,6 @@ export const abis = {
         "type": "function"
       },
       {
-        "inputs": [
-          {
-            "internalType": "address",
-            "name": "_WETH",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_uniswapV2Factory",
-            "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_uniswapV2Router02",
-            "type": "address"
-          }
-        ],
-        "name": "setUniForTest",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
         "inputs": [],
         "name": "startTime",
         "outputs": [
@@ -2492,6 +2514,19 @@ export const abis = {
           }
         ],
         "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "unlockTime",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       },
       {
