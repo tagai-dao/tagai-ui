@@ -154,6 +154,11 @@ async function confirm() {
     needChoseWallet.value = true
     return;
   }
+  if (tradeType.value === 'buy') {
+    if (!payBtc.value) return
+  }else {
+    if (!sellAmount.value) return;
+  }
 
   if (isPostTweet.value){
     if (leftWordsLength.value < 0){
