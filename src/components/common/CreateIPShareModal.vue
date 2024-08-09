@@ -10,7 +10,7 @@ const step = ref(1)
 </script>
 
 <template>
-  <div class="px-1 flex flex-col gap-y-10">
+  <div class="flex flex-col gap-y-2">
     <div class="flex justify-between items-center">
       <span class="text-h2 text-grey-normal-hover">Create IpShare</span>
       <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""

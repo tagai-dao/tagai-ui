@@ -173,7 +173,7 @@ const create = async () => {
 
 <template>
   <chose-wallet v-if="accStore.ethConnectState !== EthWalletState.Connected" />
-  <div v-else class="px-1 flex flex-col gap-y-10">
+  <div v-else class="flex flex-col gap-y-2">
     <div class="flex justify-between items-center">
       <span class="text-h2 text-grey-normal-hover">{{ $t('createCommunity.createCommunity') }}</span>
       <img

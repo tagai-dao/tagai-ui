@@ -2,7 +2,9 @@
 import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
 import { computed, ref } from "vue";
+import {GlobalModalType} from "@/types";
 
+const modalStore = useModalStore();
 const loading = ref(false);
 const providers = computed(() => {
   return getProviders() ?? [];
@@ -18,22 +20,28 @@ async function onSelectWalletMeta(wallet: any) {
 </script>
 
 <template>
-    <div>
-      Chose Wallet
-      <button
-        class="w-full mt-3 border-1 gradient-border shadow-shadow12 px-20px h-48px rounded-full flex justify-center items-center gap-10px hover:border-color85 mt-12px"
-        v-for="wallet of providers"
-        :key="wallet.info.uuid"
-        :disabled="loading"
-        @click="onSelectWalletMeta(wallet)"
-      >
-        <img class="w-10 h-10" :src="wallet.info.icon" alt="" />
-        <div
-          class="block min-w-100px ml-3 text-center flex justify-center items-center gap-4px text-gradient-primary"
+  <div class="px-1 flex flex-col gap-y-2">
+      <div class="flex justify-between items-center">
+        <span class="text-h2 text-grey-normal-hover">Chose Wallet</span>
+        <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
+             @click="modalStore.setModalVisible(false)"/>
+      </div>
+      <div class="flex flex-col gap-2 pt-4 pb-6">
+        <button
+            class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
+                   flex justify-center items-center gap-10px
+                   hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
+            v-for="wallet of providers"
+            :key="wallet.info.uuid"
+            :disabled="loading"
+            @click="onSelectWalletMeta(wallet)"
         >
-          <span class="font-bold">{{ wallet.info.name }}</span>
-        </div>
-      </button>
+          <img class="w-8 h-8" :src="wallet.info.icon" alt="" />
+          <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
+            {{ wallet.info.name }}
+          </span>
+        </button>
+      </div>
     </div>
   </template>
   
