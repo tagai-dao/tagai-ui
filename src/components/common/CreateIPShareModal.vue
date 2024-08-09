@@ -21,8 +21,8 @@ const step = ref(1)
         <div class="break-words text-sm text-center text-grey-normal">
           一段文字描述一段文字描述一段文字描述一段文字描述一段文字描述一段文字描述
         </div>
-        <div class="text-sm leading-4 text-center text-gradient bg-gradient-primary">
-          {{ acc?.ethAddr }}
+        <div class="text-sm leading-4 text-center text-grey-normal">
+         需支付 <span class="text-2xl font-bold text-orange-normal">0.01</span> ETH
         </div>
       </div>
       <div class="flex justify-center gap-10">
