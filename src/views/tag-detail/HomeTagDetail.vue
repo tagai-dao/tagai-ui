@@ -76,7 +76,7 @@ const onTweetType =  async (type: CommerceType) => {
 
 const progressData = ref([
   {trackWidth: 10, value: 0, percent: "10%", background: '#FF3D54', desc: 'Social Distributed'},
-  {trackWidth: 70, value: 0, percent: "10%", background: '#FE913F', desc: 'Bongding Curve'},
+  {trackWidth: 70, value: 0, percent: "10%", background: '#FE913F', desc: 'Bonding Curve'},
   {trackWidth: 20, value: 0, percent: "10%", background: '#FFCC00', desc: 'Listed'}
 ])
 
