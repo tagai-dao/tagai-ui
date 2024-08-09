@@ -14,8 +14,6 @@ const emits = defineEmits(['chosedWallet'])
 
 async function onSelectWalletMeta(wallet: any) {
   setActiveProviderDetail(wallet);
-  useModalStore().setModalVisible(false)
-  emits('chosedWallet')
 }
 </script>
 

@@ -23,6 +23,14 @@ import _ from 'lodash'
 //   createTime?: number;
 //   holders?: Array<IPShareHolder>;
 
+export const create = async (ethAddr: string) => {
+    if (!ethers.isAddress(ethAddr)) return;
+    const contract = await getContract('IPShare');
+    const tx = await contract.createShare(ethAddr);
+    await tx.wait();
+    return tx.hash;
+}
+
 export const getIPShareInfo = async (ethAddr: string) => {
     if (!ethers.isAddress(ethAddr)) {
         return {}

@@ -67,6 +67,9 @@
   "postView": {
     "createNewCuration": "Create"
   },
+  "ipshare": {
+    "desc": "Create IPShare, become a personal IP, receive support, and earn IPShare transaction fees."
+  },
   "errMessage": {
     "idUsed": "Identify has been used",
     "btcAuthFail": "BTC auth fail",
