@@ -248,7 +248,7 @@ const create = async () => {
       </div>
       <!-- tag -->
       <div class="flex flex-col gap-1">
-        <label for="tags" class="leading-6 text-lg">Community Tag </label>
+        <label for="tags" class="leading-6 text-lg">Category Tag </label>
         <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
           <input
             class="leading-6 text-base flex-1"
@@ -257,7 +257,7 @@ const create = async () => {
             @keydown="(e) => {if (e.key === 'Enter' || e.key === 'Enter' || e.keyCode===13) { onAddTags()}}"
             type="text"
             id="name"
-            placeholder="KATC"
+            placeholder="TAG"
           />
           <button
             class="border-[1px] border-orange-light-active rounded-md px-2 flex items-center gap-1"
