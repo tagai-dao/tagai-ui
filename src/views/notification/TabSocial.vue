@@ -7,6 +7,7 @@ import { onMounted, onUnmounted, ref } from "vue";
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
+const unread = ref(true)
 const { getMessages, setMessageReaded } = useAccount();
 const onLoad = () => {
   loading.value = false;
@@ -23,7 +24,7 @@ function updatedProfile(profile: string) {
 }
 
 onMounted(() => {
-  getMessages();
+  // getMessages();
 });
 
 onUnmounted(() => {
@@ -47,11 +48,16 @@ onUnmounted(() => {
       :offset="50"
       @load="onLoad"
     >
-      <div v-if="useAccountStore().socialMessages.length == 0">No message</div>
+      <div v-if="useAccountStore().socialMessages.length == 0"
+           class="text-grey-light-active text-center">No message</div>
       <!-- 1quote 2like 3retweet 4reply -->
-      <div @click="$router.push('/post-detail/' + message.tweetId)" v-else v-for="(message, i) of useAccountStore().socialMessages" :key="i">
+      <div class="relative" @click="$router.push('/post-detail/' + message.tweetId)" v-else
+           v-for="(message, i) of useAccountStore().socialMessages" :key="i">
+<!--        unread-->
+        <div class="w-3 min-w-3 h-3 min-h-3 rounded-full absolute right-4 top-4"
+             :class="unread?'bg-red-normal':'bg-grey-light-active'"></div>
         <!-- quote -->
-        <div v-if="message.type === 1"class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
+        <div v-if="message.type === 1" class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
           <img
             class="h-6 w-6 min-h-6 rounded-full"
             :src="updatedProfile(message.profile)"
