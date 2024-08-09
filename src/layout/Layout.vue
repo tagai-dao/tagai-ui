@@ -11,6 +11,7 @@ import AuthTwitter from "@/components/login/AuthTwitter.vue";
 import BondEthModal from "@/components/login/BondEthModal.vue";
 import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
+import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
 
 const modalStore = useModalStore()
 </script>
@@ -36,6 +37,7 @@ const modalStore = useModalStore()
       <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
       <ChoseWallet v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
       <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
+      <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
     </el-dialog>
   </main>
 </template>
