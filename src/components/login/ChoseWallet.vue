@@ -14,6 +14,7 @@ const emits = defineEmits(['chosedWallet'])
 
 async function onSelectWalletMeta(wallet: any) {
   setActiveProviderDetail(wallet);
+  emits('chosedWallet')
 }
 </script>
 

@@ -35,7 +35,7 @@ const modalStore = useModalStore()
       <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace"/>
       <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
       <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
-      <ChoseWallet v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
+      <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
       <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
       <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
     </el-dialog>

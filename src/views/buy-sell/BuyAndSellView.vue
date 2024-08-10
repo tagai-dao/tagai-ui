@@ -32,7 +32,6 @@ const route = useRoute()
 const tokenInfo = ref()
 const trading = ref(false)
 const sellsman = ref()
-const needChoseWallet = ref(false)
 const { preCheckCuration, userTweet } = useTweet();
 
 const payBtc = ref()
@@ -151,7 +150,7 @@ async function checkTweet() {
 async function confirm() {
   // check wallet connect
   if (accStore.ethConnectState !== EthWalletState.Connected) {
-    needChoseWallet.value = true
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
   if (tradeType.value === 'buy') {
@@ -398,13 +397,6 @@ onMounted(async () => {
       <RecordList v-if="comStore.currentSelectedCommunity?.token" />
     </div>
   </div>
-
-  <el-dialog v-model="needChoseWallet"
-               modal-class="overlay-white"
-               class="max-w-[500px] rounded-[20px]"
-               width="90%" :show-close="false" align-center destroy-on-close>
-      <ChoseWallet @chosedWallet="needChoseWallet = false"/>
-  </el-dialog>
 </template>
 
 <style scoped></style>

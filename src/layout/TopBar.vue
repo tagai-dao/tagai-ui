@@ -33,7 +33,7 @@ const modalVisible = ref(false)
       <img class="w-6 cursor-pointer web:hidden"
            src="~@/assets/icons/icon-search.svg" alt=""
            @click="modalVisible=true">
-      <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo.ethAddr"
+      <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.ethAddr"
            src="~@/assets/icons/icon-wallet.svg" alt=""
            @click="$router.push('/wallet')">
       <!-- <img class="w-6 cursor-pointer" src="~@/assets/icons/icon-lang-en.svg" alt=""> -->
