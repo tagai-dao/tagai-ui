@@ -23,7 +23,7 @@ const tabOptions = [
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
-enum CommerceType {
+enum CurationType {
   TWEET,
   SPACE
 }
@@ -36,7 +36,7 @@ const router = useRouter()
 const tokenInfo = ref()
 const checkingAccount = ref(false);
 const showModal = ref(false);
-const commerType = ref(CommerceType.TWEET);
+const curationType = ref(CurationType.TWEET);
 const accStore = useAccountStore();
 const { setInter } = useInterval()
 const {onCopy} = useTools()
@@ -48,7 +48,7 @@ const onlineSpace = computed(() => {
   return !!spaces.find(sp => sp.tick == comStore.currentSelectedCommunity!.tick)
 })
 
-const onTweetType =  async (type: CommerceType) => {
+const onTweetType =  async (type: CurationType) => {
   // check ipshare
   try{
     checkingAccount.value = true
@@ -64,7 +64,7 @@ const onTweetType =  async (type: CommerceType) => {
     //   modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
     //   return;
     // }
-    commerType.value = type;
+    curationType.value = type;
     tweetTypeRef.value.hide()
     showModal.value = true
   } catch (e) {
@@ -182,13 +182,13 @@ onMounted(async () => {
             </template>
             <template #default>
               <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
-                <button @click="onTweetType(CommerceType.TWEET)"
+                <button @click="onTweetType(CurationType.TWEET)"
                         :disabled="checkingAccount"
                         class="whitespace-nowrap flex items-center space-x-3">
                     Tweet on-chain
                     <i-ep-loading v-show="checkingAccount" class="animate-spin" />
                 </button>
-                <button @click="onTweetType(CommerceType.SPACE)"
+                <button @click="onTweetType(CurationType.SPACE)"
                         :disabled="checkingAccount"
                         class="whitespace-nowrap flex items-center space-x-3">
                         Tweet an onchain Space
@@ -219,8 +219,8 @@ onMounted(async () => {
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
                width="90%" :show-close="false" align-center destroy-on-close>
-      <CreateTweetModal @close="showModal = false" v-if="commerType == CommerceType.TWEET" />
-      <CreateSpaceModal @close="showModal = false" v-if="commerType == CommerceType.SPACE" />
+      <CreateTweetModal @close="showModal = false" v-if="curationType == CurationType.TWEET" />
+      <CreateSpaceModal @close="showModal = false" v-if="curationType == CurationType.SPACE" />
   </el-dialog>
 </template>
 
