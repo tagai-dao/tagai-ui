@@ -23,7 +23,7 @@ export const useAccount = () => {
 
     const profile = computed(() => {
         const account = useAccountStore().getAccountInfo
-        return account.profile.replace('normal', '200x200')
+        return account.profile?.replace('normal', '200x200')
     })
 
     const replaceEmptyProfile = (e: any) => {

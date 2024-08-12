@@ -19,7 +19,7 @@ import { formatPrice } from "@/utils/helper";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
-  {label: 'Content', key: 'content'},
+  {label: 'Square', key: 'content'},
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
