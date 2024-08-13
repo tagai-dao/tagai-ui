@@ -29,7 +29,7 @@ export const useStateStore = defineStore('state', {
     return {
       referee: '' as string | null | undefined,
       idType: IdType.ENS,
-      btcPrice: 0
+      ethPrice: 0
     }
   },
 

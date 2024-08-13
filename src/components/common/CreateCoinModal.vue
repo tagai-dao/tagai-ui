@@ -10,7 +10,7 @@ import { box, generateSteemAuth } from "@/utils/web3";
 import { signMessage } from "@/utils/wallets";
 import { ethers } from "ethers";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitBtc, checkTickUsed } from "@/utils/pump";
+import { createCoin, calculateInitEth, checkTickUsed } from "@/utils/pump";
 import { handleErrorTip } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
@@ -41,23 +41,23 @@ const addTagTip = ref("");
 const { accountMismatch, checkLogin } = useAccount();
 
 const showingInitAmount = ref<number|undefined>()
-const showingInitBtc = ref<string|undefined>('$0')
+const showingInitEth = ref<string|undefined>('$0')
 
 watch(() => showingInitAmount.value, (val) => {
   if (val && val > 0) {
     if (val > 7000000) {
       showMaxAmount.value = true
       createForm.initAmount = 0n
-      createForm.initBtc = 0n
+      createForm.initEth = 0n
       return;
     }
     showMaxAmount.value = false
     createForm.initAmount = ethers.parseEther(val.toString())
-    createForm.initBtc = calculateInitBtc(createForm.initAmount)
-    showingInitBtc.value = formatPrice((createForm.initBtc as any).toString() / 1e18)
+    createForm.initEth = calculateInitEth(createForm.initAmount)
+    showingInitEth.value = formatPrice((createForm.initEth as any).toString() / 1e18)
   }else {
     createForm.initAmount = 0n
-    createForm.initBtc = 0n
+    createForm.initEth = 0n
   }
 })
 
@@ -151,7 +151,7 @@ const create = async () => {
     createForm.twitterId = account?.twitterId;
     // upload community info
     delete createForm.initAmount
-    delete createForm.initBtc
+    delete createForm.initEth
     await createCommunity(createForm);
 
     // created token: prepair local data
@@ -292,7 +292,7 @@ const create = async () => {
             {{ $t("createCommunity.maxAmountTip") }}
         </div>
         <div class="text-left text-grey-normal">
-          {{ $t('createCommunity.initBtc', {amount: showingInitBtc}) }}
+          {{ $t('createCommunity.initEth', {amount: showingInitEth}) }}
         </div>
       </div>
     </div>
@@ -310,7 +310,7 @@ const create = async () => {
       </div>
       <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
         <span class="text-grey-normal">Cost to deploy：</span>
-        <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} BTC</span>
+        <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} ETH</span>
       </div>
     </div>
   </div>

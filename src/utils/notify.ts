@@ -38,7 +38,7 @@ export const handleErrorTip = (e: any) => {
     -1
   ) {
     notify({
-      message: "Insufficient gas, please charge BTC to your Donut address",
+      message: "Insufficient gas, please charge ETH to your Donut address",
       type: "info",
       duration: 5000,
     });
@@ -83,8 +83,8 @@ export const handleServerError = (code: number) => {
     case errCode.IDENTITY_HAS_USED:
       notify({ message: t("errMessage.idUsed"), type: "info" });
       break;
-    case errCode.BTC_AUTH_FAIL:
-      notify({ message: t("errMessage.btcAuthFail"), type: "error" });
+    case errCode.ETH_AUTH_FAIL:
+      notify({ message: t("errMessage.ethAuthFail"), type: "error" });
       break;
     case errCode.ENS_MISMATCH:
       notify({ message: t("errMessage.ensMismatch"), type: "info" });

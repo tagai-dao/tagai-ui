@@ -6,7 +6,7 @@ import { useAccountStore } from "./stores/web3";
 import { onMounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
-import { getBtcPrice, getUserProfile, redirectTweet } from "@/apis/api"
+import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
@@ -44,13 +44,13 @@ onMounted(async () => {
       })
     }).catch()
   }
-  getBtcPrice().then((p: any) => {
-      stateStore.btcPrice = p
+  getEthPrice().then((p: any) => {
+      stateStore.ethPrice = p
     })
   let count = 0
   setInter(() => {
-    getBtcPrice().then((p: any) => {
-      stateStore.btcPrice = parseFloat(p)
+    getEthPrice().then((p: any) => {
+      stateStore.ethPrice = parseFloat(p)
     })
     updateVPOP();
     if (count++ % 6 == 0)

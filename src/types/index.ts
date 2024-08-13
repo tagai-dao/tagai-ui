@@ -224,7 +224,7 @@ export type CreateCommunity = {
   identityInfo?: string,
   ethAddr?: string,
   initAmount?: bigint // this is token amount
-  initBtc?: bigint // this is btc amount
+  initEth?: bigint // this is eth amount
 }
 
 export type TokenHoldingList = {

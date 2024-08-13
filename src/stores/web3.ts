@@ -84,7 +84,7 @@ export const useIpshareData = defineStore('ipshareData', {
 export const useBlockchain = defineStore('blockchain', {
     state() {
         return {
-            btcPrice: 0.0,
+            ethPrice: 0.0,
             blockNum: 0,   // on evm chain
             btcBlockNum: 0, // on btc chain
         }

@@ -69,8 +69,8 @@ function updateReward() {
     if (list && list.length > 0) {
       getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
         for (let t of list) {
-          t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().btcPrice;
-          // t.price = t.price ? t.price.toString() / 1e18 * useStateStore().btcPrice : 0
+          t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
+          // t.price = t.price ? t.price.toString() / 1e18 * useStateStore().ethPrice : 0
         }
         listData.value = list
       })
@@ -121,7 +121,7 @@ onMounted(() => {
             <div class="flex items-center gap-2 py-3">
               <div class="w-4 h-4 bg-green-normal rounded-full"></div>
               <router-link :to="`/tag-detail/${tweet.tick}`" class="text-base flex-1">
-                #{{ tweet.tick }} • Market cap {{ formatPrice((tweet.marketCap ?? 0) * stateStore.btcPrice) }}
+                #{{ tweet.tick }} • Market cap {{ formatPrice((tweet.marketCap ?? 0) * stateStore.ethPrice) }}
               </router-link>
               <!-- <router-link :to="`/buy-sell/${tweet.tick}`" class="justify-center flex items-center bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
                 Trade

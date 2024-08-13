@@ -124,7 +124,7 @@ onMounted(async () => {
             <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
             <div class="text-base flex gap-1">
               <span class="font-semibold text-grey-64">market cap</span>
-              <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().btcPrice) }}</span>
+              <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
             </div>
           </div>
           <div class="whitespace-pre-line text-h5 mt-1">

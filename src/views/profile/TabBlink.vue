@@ -101,9 +101,9 @@ onMounted(() => {
             </el-popover>
           </div>
           <button class="bg-gradient-primary h-16 w-full rounded-xl flex items-center justify-center gap-1 text-white mb-2">
-            <span class="text-h1 mr-2">{{ formatPrice(capturedFee * useStateStore().btcPrice) }}</span>
+            <span class="text-h1 mr-2">{{ formatPrice(capturedFee * useStateStore().ethPrice) }}</span>
             <!-- <img src="~@/assets/icons/icon-up.svg" alt=""> -->
-            <span class="text-sm">($BTC {{ formatAmount(capturedFee) }})</span>
+            <span class="text-sm">($ETH {{ formatAmount(capturedFee) }})</span>
           </button>
         </div>
         <div class="px-3">
@@ -111,7 +111,7 @@ onMounted(() => {
             <div class="flex items-center gap-2 py-3">
               <div class="w-4 h-4 bg-green-normal rounded-full"></div>
               <router-link :to="`/tag-detail/${tweet.tick}`" class="text-base flex-1">
-                #{{ tweet.tick }} • Market cap {{ formatPrice((tweet.marketCap ?? 0) * stateStore.btcPrice) }}
+                #{{ tweet.tick }} • Market cap {{ formatPrice((tweet.marketCap ?? 0) * stateStore.ethPrice) }}
               </router-link>
               <!-- <router-link :to="`/buy-sell/${tweet.tick}`" class="justify-center flex items-center bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
                 Trade

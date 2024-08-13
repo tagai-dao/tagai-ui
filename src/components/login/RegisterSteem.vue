@@ -7,7 +7,7 @@ import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } 
 import { checkEns, registerSteem } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
-import { transferBtcTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
+import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
 import { getUserBitip, checkRegister } from "@/apis/api";
 import { bytesToHex, sleep } from "@/utils/helper";
@@ -68,7 +68,7 @@ async function payToken() {
             showInsufficientBalance.value = true;
             return;
         }
-        const hash = await transferBtcTo(FeeAddress, BigInt(CreateFee))
+        const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
         identityInfo.assetId = hash;
         identityInfo.chainName = ChainConfig.name;
         identityInfo.type = 'payToken'
@@ -133,7 +133,7 @@ async function choseBitip(bitip: string) {
             datetime: Date.now()
         }, null, 4)
         const signature = await signMessage(message);
-        identityInfo.chainName = 'BTC';
+        identityInfo.chainName = 'ETH';
         identityInfo.type = 'bitip';
         identityInfo.assetId = bitip
         identityInfo.btcAddr = btcWallet.value?.btcAddr;
@@ -189,7 +189,7 @@ onMounted(() => {
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="payToken"
               :disabled="loading">
-        <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} BTC</span>
+        <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button>
       <div class="w-full">

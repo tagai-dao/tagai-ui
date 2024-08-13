@@ -29,7 +29,7 @@ export const ChainConfig = {
 //     name: "Merlin-main",
 //     rpc: 'https://rpc.merlinchain.io',
 //     chainId: 4200,
-//     symbol: 'BTC',
+//     symbol: 'ETH',
 //     browser: 'https://scan.merlinchain.io/',
 //     decimals: 18,
 //     multiConfig: {
@@ -48,16 +48,16 @@ export const SPACE_STATE = {
 }
 
 export const MainToken = {
-  name: "BTC",
-  symbol: "BTC",
+  name: "ETH",
+  symbol: "ETH",
   icon: "https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/0x2170Ed0880ac9A755fd29B2688956BD959F933F8/logo.png",
   decimals: 18,
 };
 
-// also create coin or create social account will cost 0.00005 BTC
+// also create coin or create social account will cost 0.00005 ETH
 export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
-export const CreateFee = "50000000000000";
-export const ClaimFee = "5000000000000";
+export const CreateFee = "1000000000000000";
+export const ClaimFee = "100000000000000";
 
 export const BondEthMessage = JSON.stringify(
   {
@@ -77,8 +77,8 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const IPShareContract = "0x0B6e5e9544DED2a3bB5be553E6b570E2eA97B77e";
-export const PumpContract = "0xd64a6FA17AdcD5E1be23e1378E35F64f47926Dd7";
+export const IPShareContract = "0x077E19A6ea6E2Ab1b25b4922d0DB0b24F7ff3B73";
+export const PumpContract = "0x588A9db36f8a41d5fE3c0e65AD35bb2e9A535944";
 
 export const WETH = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd';
 export const uniswapV2Factory = '0x6725F303b657a9451d8BA641348b6761A6CC7a17';
@@ -114,7 +114,7 @@ export const VP_RECOVER_DAY = 3;
 export const TwitterLoginCode = {
   success: 1,
   accountMismatch: 2,
-  notRegisterBtc: 3,
+  notRegisterEth: 3,
   twitterHasRegistered: 4,
   notRegisterTwitter: 5,
   paramsIssue: 6,

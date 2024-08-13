@@ -20,7 +20,7 @@ export const checkTickUsed = async (tick: string) => {
 export const createCoin = async (createParms: CreateCommunity) => {
     const pump = await getContract('Pump')
     let tx: any = await pump.createToken(createParms.tick, {
-        value: (createParms.initBtc ?? 0n) + BigInt(CreateFee)
+        value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
     await tx.wait();
     // tx: any = await getTransactionReceipt(hash);
@@ -102,7 +102,7 @@ export const claimReward = async (token: string, orderId: BigInt, amount: BigInt
     return tx.hash;
 }
 
-export const calculateInitBtc = (amount: bigint) => {
+export const calculateInitEth = (amount: bigint) => {
     const price = amount * amount * amount / BigInt(3e36) / (320n * Ether)
     return price * 10000n / (10000n - 100n - 100n);
 }
@@ -134,7 +134,7 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
               'getEthBalance(address)(uint256)', 
               ethAddr
             ],
-            returns: [['btcBalance', (val: any) => val / 10 ** 18]]
+            returns: [['ethBalance', (val: any) => val / 10 ** 18]]
           }
     ]
     const res = await aggregate(calls, ChainConfig.multiConfig);
@@ -296,14 +296,14 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
     return result
 }
 
-export const getBuyAmountWithBTCAfterFee = async (token: string | undefined, amount: bigint) => {
+export const getBuyAmountWithETHAfterFee = async (token: string | undefined, amount: bigint) => {
     if (!token) return 0n
     const tc = await getContract('Token', token, true);
     const receive = await tc.getBuyAmountByValue(amount * 9800n / 10000n);
     return receive
 }
 
-export const getReceivedAmountSellBTCAfterFee = async (token: string | undefined, amount: bigint) => {
+export const getReceivedAmountSellETHAfterFee = async (token: string | undefined, amount: bigint) => {
     if (!token) return 0n
     const tc = await getContract('Token', token, true);
     const receive = await tc.getSellPriceAfterFee(amount);

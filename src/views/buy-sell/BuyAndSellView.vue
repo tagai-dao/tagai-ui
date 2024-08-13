@@ -9,7 +9,7 @@ import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import { useRoute } from "vue-router";
 import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
-import { getBuyAmountWithBTCAfterFee, getReceivedAmountSellBTCAfterFee, getTokenInfo,
+import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
   getBuyAmountUseBtc, getSellAmountUseToken
  } from '@/utils/pump'
@@ -52,7 +52,7 @@ const receiveBtc = ref()
 const maxSlippage = ref(5)
 const lockedAmount = ref(0)
 const tokenBalance = ref(0)
-const btcBalance = ref(0)
+const ethBalance = ref(0)
 const isUnlocked = computed(() => {
   if (comStore.currentSelectedCommunity?.unlockTime) {
     return comStore.currentSelectedCommunity?.unlockTime < (Date.now() / 1000)
@@ -98,7 +98,7 @@ const updateBuyAmount = debounce(async (val: any) => {
     const receive = await getBuyAmountUseBtc(comStore.currentSelectedCommunity!.token, amount)
     receiveAmount.value = receive
   }else {
-   const receive = await getBuyAmountWithBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
+   const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
    receiveAmount.value = receive
   }
  } catch (error) {
@@ -115,7 +115,7 @@ const updateSellAmount = debounce(async (val: any) => {
       const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
       receiveBtc.value = receive
     }else {
-      const receive = await getReceivedAmountSellBTCAfterFee(comStore.currentSelectedCommunity?.token, amount)
+      const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
       receiveBtc.value = receive
     }
   } catch (error) {
@@ -220,7 +220,7 @@ async function updateUserTokenInfo () {
       let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
       lockedAmount.value = info.locked;
       tokenBalance.value = info.balance;
-      btcBalance.value = info.btcBalance;
+      ethBalance.value = info.ethBalance;
     }
   } catch (error) {
     console.error('get users token info fail', error)
@@ -281,10 +281,10 @@ onMounted(async () => {
               type="number"
               class="bg-transparent h-full flex-1 text-h3"
             />
-            <span class="text-h5 whitespace-nowrap">$ BTC</span>
+            <span class="text-h5 whitespace-nowrap">$ ETH</span>
           </div>
           <div class="text-right text-sm">
-            Balance: {{ formatAmount(btcBalance) }}
+            Balance: {{ formatAmount(ethBalance) }}
           </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
@@ -314,7 +314,7 @@ onMounted(async () => {
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
           >
-            <span class="text-h5">Receive $BTC</span>
+            <span class="text-h5">Receive $ETH</span>
             <span class="text-h3">{{ formatAmount(receiveBtc?.toString() / 1e18) }}</span>
           </div></template
         >

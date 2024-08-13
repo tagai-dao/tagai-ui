@@ -38,7 +38,7 @@
   "createCommunity": {
     "createCommunity": "Create Tag",
     "initAmountTip": "Input how many token you wanna buy first.",
-    "initBtc": "Pay {amount} BTC",
+    "initEth": "Pay {amount} ETH",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
     "maxAmountTip" : "Please input less than 7000000",
     "tickUsed": "This name has been registed, please change to another one",
@@ -72,7 +72,7 @@
   },
   "errMessage": {
     "idUsed": "Identify has been used",
-    "btcAuthFail": "BTC auth fail",
+    "ethAuthFail": "ETH auth fail",
     "ensMismatch": "ENS mismatch",
     "transInvalid": "Invalide transaction",
     "noBondEth": "ETH address not bound",

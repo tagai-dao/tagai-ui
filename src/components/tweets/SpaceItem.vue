@@ -104,7 +104,7 @@ const onUserAvatar = () => {
             >
               {{
                 formatPrice(
-                  (tweet.price ?? 0) * useStateStore().btcPrice * (tweet.amount ?? 0)
+                  (tweet.price ?? 0) * useStateStore().ethPrice * (tweet.amount ?? 0)
                 )
               }}
             </button>
@@ -117,7 +117,7 @@ const onUserAvatar = () => {
                   formatPrice(
                     (tweet.authorAmount ?? 0) *
                       (tweet.price ?? 0) *
-                      useStateStore().btcPrice
+                      useStateStore().ethPrice
                   )
                 }}</span>
               </div>
@@ -129,21 +129,21 @@ const onUserAvatar = () => {
                   formatPrice(
                     ( (tweet.curateAmount ?? 0)) *
                       (tweet.price ?? 0) *
-                      useStateStore().btcPrice
+                      useStateStore().ethPrice
                   )
                 }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
                 <span>Host</span>
-                <span class="font-semibold">{{ formatPrice(((tweet.hostAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().btcPrice) }}</span>
+                <span class="font-semibold">{{ formatPrice(((tweet.hostAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
                 <span>Co-host</span>
-                <span class="font-semibold">{{ formatPrice(((tweet.cohostAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().btcPrice) }}</span>
+                <span class="font-semibold">{{ formatPrice(((tweet.cohostAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
                 <span>Speaker</span>
-                <span class="font-semibold">{{ formatPrice(((tweet.speakerAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().btcPrice) }}</span>
+                <span class="font-semibold">{{ formatPrice(((tweet.speakerAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7">
                 <span>End time:</span>

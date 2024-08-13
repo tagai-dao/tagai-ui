@@ -26,7 +26,7 @@
   },
   "errorMessage": {
     "idUsed": "Identify has been used",
-    "btcAuthFail": "BTC auth fail",
+    "ethAuthFail": "ETH auth fail",
     "ensMismatch": "ENS mismatch",
     "transInvalid": "Invalide transaction",
     "noBondEth": "ETH address not bound",

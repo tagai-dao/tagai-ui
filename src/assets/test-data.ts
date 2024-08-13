@@ -755,8 +755,8 @@ export const testComments = [
     "commentAt": "2024-05-08T18:52:31.000Z",
     "tags": "null",
     "steemId": "nfbabu",
-    "btcAddress": "2wsgsafgsdfgsdg",
-    "ethAddress": "23502tiownhjgfkolsdhjg",
+    "ethAddress": "2wsgsafgsdfgsdg",
+    "btcAddress": "23502tiownhjgfkolsdhjg",
     "profile": "https://pbs.twimg.com/profile_images/1714243645304459265/xlvtYP3B_normal.jpg",
     "reputation": 1
   }

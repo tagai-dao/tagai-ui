@@ -90,18 +90,18 @@ const onUserAvatar = () => {
           <template #reference>
             <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold"
                     :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
-              {{ formatPrice((tweet.price ?? 0) * useStateStore().btcPrice * (tweet.amount ?? 0)) }}
+              {{ formatPrice((tweet.price ?? 0) * useStateStore().ethPrice * (tweet.amount ?? 0)) }}
             </button>
           </template>
           <template #default>
             <div class="text-white text-sm px-2">
               <div class="flex justify-between items-center h-7">
                 <span>Author</span>
-                <span class="font-semibold">{{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().btcPrice) }}</span>
+                <span class="font-semibold">{{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
                 <span>Curator</span>
-                <span class="font-semibold">{{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().btcPrice) }}</span>
+                <span class="font-semibold">{{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7">
                 <span>End time:</span>

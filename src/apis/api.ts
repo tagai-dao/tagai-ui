@@ -3,7 +3,7 @@ import { BACKEND_API_URL } from '@/config'
 import type { CreateCommunity } from '@/types'
 
 /************************************ common **********************************/
-export const getBtcPrice = async () =>
+export const getEthPrice = async () =>
   get('https://bevm-api.dnt.social/donut/getETHPrice')
 
 export const getUserBitip = async (btcAddress: string) =>
