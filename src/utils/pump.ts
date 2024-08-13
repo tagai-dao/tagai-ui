@@ -352,9 +352,9 @@ const getCreateTokenEventByHash = (tx: any) => {
     return event
 }
 
-export const getBuyAmountUseBtc = async (token: string, btcAmount: BigInt) => {
+export const getBuyAmountUseEth = async (token: string, ethAmount: BigInt) => {
     let contract = await getContract('UniswapRouter', undefined, true);
-    const amount = await contract.getAmountsOut(btcAmount, [WETH, token]);
+    const amount = await contract.getAmountsOut(ethAmount, [WETH, token]);
     return amount[1];
 }
 

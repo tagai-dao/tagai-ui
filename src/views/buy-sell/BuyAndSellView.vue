@@ -11,7 +11,7 @@ import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/a
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
-  getBuyAmountUseBtc, getSellAmountUseToken
+  getBuyAmountUseEth, getSellAmountUseToken
  } from '@/utils/pump'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
@@ -34,7 +34,7 @@ const trading = ref(false)
 const sellsman = ref()
 const { preCheckCuration, userTweet } = useTweet();
 
-const payBtc = ref()
+const payEth = ref()
 const sellAmount = ref()
 const {replaceEmptyProfile} = useAccount()
 
@@ -47,7 +47,7 @@ watch(() => accStore.ethConnectAddress, (val) => {
 })
 
 const receiveAmount = ref()
-const receiveBtc = ref()
+const receiveEth = ref()
 
 const maxSlippage = ref(5)
 const lockedAmount = ref(0)
@@ -81,7 +81,7 @@ const {
 const isPostTweet = ref(false)
 
 
-watch(payBtc, (val) => {
+watch(payEth, (val) => {
   updateBuyAmount(val)
 })
 
@@ -95,7 +95,7 @@ const updateBuyAmount = debounce(async (val: any) => {
 
  try {
   if (listed.value) {
-    const receive = await getBuyAmountUseBtc(comStore.currentSelectedCommunity!.token, amount)
+    const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount)
     receiveAmount.value = receive
   }else {
    const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
@@ -113,13 +113,13 @@ const updateSellAmount = debounce(async (val: any) => {
     const amount = ethers.parseEther(val.toString())
     if (listed.value) {
       const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
-      receiveBtc.value = receive
+      receiveEth.value = receive
     }else {
       const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
-      receiveBtc.value = receive
+      receiveEth.value = receive
     }
   } catch (error) {
-    receiveBtc.value = '0.00'
+    receiveEth.value = '0.00'
   }
 }, 500)
 
@@ -154,7 +154,7 @@ async function confirm() {
     return;
   }
   if (tradeType.value === 'buy') {
-    if (!payBtc.value) return
+    if (!payEth.value) return
   }else {
     if (!sellAmount.value) return;
   }
@@ -178,11 +178,11 @@ async function confirm() {
     const token = comStore.currentSelectedCommunity
     if (!token) return;
     if (tradeType.value === 'buy') {
-      if (!payBtc.value) return
+      if (!payEth.value) return
 
-      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payBtc.value * 1e18), sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
-        payBtc.value = undefined
+        payEth.value = undefined
         receiveAmount.value = undefined
         if (listed.value && accStore.getAccountInfo?.twitterId) {
           trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
@@ -194,10 +194,10 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveBtc.value, sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100))
+      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveEth.value, sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
-        receiveBtc.value = undefined
+        receiveEth.value = undefined
         if (listed.value && accStore.getAccountInfo?.twitterId) {
           trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
         }
@@ -277,7 +277,7 @@ onMounted(async () => {
           >
             <span class="text-h5">Pay</span>
             <input
-              v-model="payBtc"
+              v-model="payEth"
               type="number"
               class="bg-transparent h-full flex-1 text-h3"
             />
@@ -315,7 +315,7 @@ onMounted(async () => {
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
           >
             <span class="text-h5">Receive $ETH</span>
-            <span class="text-h3">{{ formatAmount(receiveBtc?.toString() / 1e18) }}</span>
+            <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
           </div></template
         >
         <div class="flex items-center justify-between">
