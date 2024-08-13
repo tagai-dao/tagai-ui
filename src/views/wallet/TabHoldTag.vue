@@ -87,6 +87,10 @@ onMounted(async () => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
+        <div v-if="accStore.tokenHoldingList.length == 0 && !refreshing"
+          class="flex justify-center py-6 w-full">
+          <img src="~@/assets/images/empty-data.svg" alt="">
+        </div>
         <div v-for="(holding, i) of accStore.tokenHoldingList" :key="i"
              v-show="holding.community"
              @click="$router.push('/tag-detail/' + holding.community.tick)"

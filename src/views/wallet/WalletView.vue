@@ -3,7 +3,7 @@ import {onMounted, ref} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
-import { formatAmount } from "@/utils/helper";
+import { formatAddress, formatAmount } from "@/utils/helper";
 
 const accStore = useAccountStore()
 const tabOptions = ['tags', 'ipshares']
@@ -34,6 +34,11 @@ onMounted(() => {
         </div>
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-2">
+      <div class="flex-1 flex items-center flex-wrap gap-4">
+          <span>ETH address: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
+        </div>
+      </div>
+      <div class="pl-14 flex justify-between items-center gap-3a mt-1">
         <div class="flex-1 flex items-center flex-wrap gap-4">
           <span>ETH balance: {{ formatAmount(useAccountStore().ethBalance) }}</span>
         </div>

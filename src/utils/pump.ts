@@ -12,9 +12,10 @@ import { getPair } from "./web3";
 import { useAccountStore } from "@/stores/web3";
 
 export const checkTickUsed = async (tick: string) => {
-    const pump = await getContract('Pump')
+    const pump = await getContract('Pump', undefined, true)
     const created = await pump.createdTicks(tick)
     return created
+   
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
@@ -103,7 +104,7 @@ export const claimReward = async (token: string, orderId: BigInt, amount: BigInt
 }
 
 export const calculateInitEth = (amount: bigint) => {
-    const price = amount * amount * amount / BigInt(3e36) / (320n * Ether)
+    const price = amount * amount * amount / BigInt(3e36) / (ethers.parseEther('11.43333333'))
     return price * 10000n / (10000n - 100n - 100n);
 }
 
@@ -311,7 +312,7 @@ export const getReceivedAmountSellETHAfterFee = async (token: string | undefined
 }
 
 export const calculateCapticalLocal = async (supply: number) => {
-    return supply * supply * 1000000 / 320e18
+    return supply * supply * 1000000 / (11.43333333 * 1e18)
 }
 
 export const getTokenCap = async (communities: Community[]) => {
