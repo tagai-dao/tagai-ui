@@ -58,6 +58,7 @@
     background: #3B3B3B;
     border-radius: 30px;
     border: none;
+    width: auto!important;
 }
 .c-arrow-popper.rounded-sm.el-popover {
     padding: 0;
