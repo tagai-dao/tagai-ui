@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useAccount } from "@/composables/useAccount";
 import { useAccountStore } from "@/stores/web3";
-import { parseTimestamp } from "@/utils/helper";
-import { onMounted, onUnmounted, ref } from "vue";
+import type { SocialMessage } from "@/types";
+import { parseTimestamp, formatDate } from "@/utils/helper";
+import { onMounted, onUnmounted, ref, computed } from "vue";
+import { dayjs } from "element-plus";
 
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
-const unread = ref(true)
 const { getMessages, setMessageReaded } = useAccount();
 const onLoad = () => {
   loading.value = false;
@@ -19,12 +20,16 @@ const onRefresh = () => {
   refreshing.value = false;
 };
 
+function unread(message: SocialMessage) {
+  return formatDate(message.operateTime) > (useAccountStore().getAccountInfo.lastReadMessageTime as string)
+}
+
 function updatedProfile(profile: string) {
   return profile?.replace("normal", "200x200");
 }
 
 onMounted(() => {
-  // getMessages();
+  getMessages();
 });
 
 onUnmounted(() => {
@@ -54,8 +59,7 @@ onUnmounted(() => {
       <div class="relative" @click="$router.push('/post-detail/' + message.tweetId)" v-else
            v-for="(message, i) of useAccountStore().socialMessages" :key="i">
 <!--        unread-->
-        <div class="w-3 min-w-3 h-3 min-h-3 rounded-full absolute right-4 top-4"
-             :class="unread?'bg-red-normal':'bg-grey-light-active'"></div>
+        <div v-if="unread(message)" class="w-3 min-w-3 h-3 min-h-3 rounded-full absolute right-4 top-4 bg-red-normal"></div>
         <!-- quote -->
         <div v-if="message.type === 1" class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
           <img

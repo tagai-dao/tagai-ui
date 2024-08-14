@@ -278,8 +278,9 @@ export function parseSpaceStartTime(time: any) {
   }
 }   
 
-export function formatDate() {
-  return dayjs.utc().format("YYYY-MM-DD HH:mm:ss");
+export function formatDate(date: any) {
+  date = date ?? dayjs();
+  return dayjs(date).utc().format("YYYY-MM-DD HH:mm:ss");
 }
 
 export function parseSpaceLastTime(space: Space) {
