@@ -86,7 +86,7 @@ const onUserAvatar = () => {
           </div>
         </div>
         <el-popover v-if="tweet.amount" popper-class="c-arrow-popper rounded-sm"
-                    trigger="click" width="130" :teleported="true" :persistent="false">
+                    trigger="click" :teleported="true" :persistent="false">
           <template #reference>
             <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold"
                     :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
@@ -95,20 +95,20 @@ const onUserAvatar = () => {
           </template>
           <template #default>
             <div class="text-white text-sm px-2">
-              <div class="flex justify-between items-center h-7">
+              <div class="flex justify-between items-center h-7 gap-3">
                 <span>Author</span>
-                <span class="font-semibold">{{ formatAmount(tweet.authorAmount) }}({{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
+                <span class="font-semibold whitespace-nowrap">{{ formatAmount(tweet.authorAmount) }}({{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
-              <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
+              <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10 gap-3">
                 <span>Curator</span>
-                <span class="font-semibold">{{ formatAmount(tweet.curateAmount) }} ({{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
+                <span class="font-semibold whitespace-nowrap">{{ formatAmount(tweet.curateAmount) }} ({{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
-              <div v-if="!tweet.listed" class="flex justify-between items-center h-7">
+              <div v-if="!tweet.listed" class="flex justify-between items-center h-7 gap-3">
                  Pending list
               </div>
               <div v-else class="flex justify-between items-center h-7">
                 <span>End time:</span>
-                <span class="font-semibold">{{ parseTimestamp(new Date((tweet.dayNumber + 3) * 86400000)) }}</span>
+                <span class="font-semibold whitespace-nowrap">{{ parseTimestamp(new Date((tweet.dayNumber + 3) * 86400000)) }}</span>
               </div>
             </div>
           </template>
