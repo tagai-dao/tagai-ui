@@ -2,7 +2,7 @@
 import {computed, defineProps, onMounted, type PropType, ref, withDefaults} from 'vue'
 import { IgnoreAuthor } from '@/config'
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
-import { formatPrice, parseTimestamp } from '@/utils/helper';
+import { formatAmount, formatPrice, parseTimestamp } from '@/utils/helper';
 import { useRouter } from 'vue-router';
 // import { buildAssetId } from '@/utils/eth/ipShare'
 import UserAvatar from "@/components/common/UserAvatar.vue";
@@ -97,13 +97,16 @@ const onUserAvatar = () => {
             <div class="text-white text-sm px-2">
               <div class="flex justify-between items-center h-7">
                 <span>Author</span>
-                <span class="font-semibold">{{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
+                <span class="font-semibold">{{ formatAmount(tweet.authorAmount) }}({{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
                 <span>Curator</span>
-                <span class="font-semibold">{{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
+                <span class="font-semibold">{{ formatAmount(tweet.curateAmount) }} ({{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
-              <div class="flex justify-between items-center h-7">
+              <div v-if="!tweet.listed" class="flex justify-between items-center h-7">
+                 Pending list
+              </div>
+              <div v-else class="flex justify-between items-center h-7">
                 <span>End time:</span>
                 <span class="font-semibold">{{ parseTimestamp(new Date((tweet.dayNumber + 3) * 86400000)) }}</span>
               </div>
