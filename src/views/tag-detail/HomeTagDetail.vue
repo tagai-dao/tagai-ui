@@ -103,6 +103,9 @@ onMounted(async () => {
     }
     comStore.currentSelectedCommunity = null
     comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
+    if (!comStore.currentSelectedCommunity?.tick) {
+      router.replace('/')
+    }
   }
   updateProgress();
   setInter(updateProgress, 3000);

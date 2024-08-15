@@ -14,6 +14,12 @@ const router = createRouter({
       meta: {tabBar: true, topBar: true, keepAlive: true}
     },
     {
+      path: '/commerce/:commerceid?',
+      name: 'commerce',
+      component: HomeView,
+      meta: {tabBar: true, topBar: true, keepAlive: true}
+    },
+    {
       path: '/tag-detail/:id',
       name: 'tag-detail',
       component: () => import('@/views/tag-detail/HomeTagDetail.vue'),

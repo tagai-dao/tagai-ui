@@ -15,7 +15,6 @@ export const checkTickUsed = async (tick: string) => {
     const pump = await getContract('Pump', undefined, true)
     const created = await pump.createdTicks(tick)
     return created
-   
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
@@ -23,6 +22,7 @@ export const createCoin = async (createParms: CreateCommunity) => {
     let tx: any = await pump.createToken(createParms.tick, {
         value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
+
     await tx.wait();
     // tx: any = await getTransactionReceipt(hash);
     const hash = tx.hash;
@@ -50,6 +50,7 @@ export const buyToken = async (token: string, amount: bigint, ethAmount: bigint,
                 value: ethAmount
             }
         )
+        
         await tx.wait();
         return tx.hash;
     }else {
@@ -143,6 +144,7 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
 }
 
 export const getTokenInfo = async (communities: Community[]) => {
+    if (communities.length === 0) return communities;
     let result = await getTokenOnchainInfo(communities.map(com => com.token))
     
     for( let community of communities) {
