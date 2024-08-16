@@ -17,6 +17,20 @@ const router = useRouter();
 const { setInter } = useInterval();
 const { updateVPOP, updateUnreadMessageCount } = useAccount();
 
+function updateOgUrl() {
+    const currentUrl = window.location.href;
+    const ogUrlMeta = document.querySelector('meta[property="og:url"]');
+    
+    if (ogUrlMeta) {
+      ogUrlMeta.setAttribute('content', currentUrl);
+    } else {
+      const metaTag = document.createElement('meta');
+      metaTag.setAttribute('property', 'og:url');
+      metaTag.setAttribute('content', currentUrl);
+      document.head.appendChild(metaTag);
+    }
+  }
+
 onMounted(async () => {
   await router.isReady();
   initPlugin();
@@ -58,6 +72,8 @@ onMounted(async () => {
   }, 10000)
   emitter.on('login', updateVPOP);
   emitter.on('login', updateUnreadMessageCount);
+
+  updateOgUrl();
 })
 </script>
 
