@@ -34,6 +34,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   setMessageReaded().catch()
+  useAccountStore().unreadMessageCount = 0
 })
 </script>
 
