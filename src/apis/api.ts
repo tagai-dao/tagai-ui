@@ -4,7 +4,7 @@ import type { CreateCommunity } from '@/types'
 
 /************************************ common **********************************/
 export const getEthPrice = async () =>
-  get('https://bevm-api.dnt.social/donut/getETHPrice')
+  get(BACKEND_API_URL + '/tiptag/getETHPrice')
 
 export const getUserBitip = async (btcAddress: string) =>
   get("https://api.bitip.social/inscription/listByHolder", {btcAddress})
