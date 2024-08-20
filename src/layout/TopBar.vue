@@ -22,7 +22,7 @@ const modalVisible = ref(false)
              src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
       </router-link>
-      <div class="relative cursor-pointer" @click="$router.push('/notification')">
+      <div v-if="!!useAccountStore().getAccountInfo?.twitterId" class="relative cursor-pointer" @click="$router.push('/notification')">
         <img class="w-6"
              src="~@/assets/icons/icon-notification.svg" alt="">
         <div v-if="useAccountStore().unreadMessageCount > 0" class="bg-red-e6 h-[12px] w-[12px] min-w-[12px] rounded-full text-[10px] text-white

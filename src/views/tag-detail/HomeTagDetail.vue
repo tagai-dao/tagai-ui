@@ -85,9 +85,9 @@ async function updateProgress() {
     const com = coms[0]
     comStore.currentSelectedCommunity = coms[0]
     progressData.value = [
-      {...progressData.value[0], value: (com.totalClaimedSocialRewards / 10000), percent: (com.totalClaimedSocialRewards / 100000).toFixed(2) + '%'},
-      {...progressData.value[1], value: (com.bondingCurveSupply / 70000), percent: (com.bondingCurveSupply / 100000).toFixed(2) + '%'},
-      {...progressData.value[2], value: 100, percent:'20%', desc: com.listed ? 'Listed' : 'Pending List'}
+      {...progressData.value[0], value: (com.totalClaimedSocialRewards / 10000), percent: '15%'},
+      {...progressData.value[1], value: (com.bondingCurveSupply / 70000), percent:'70%'},
+      {...progressData.value[2], value: 100, percent:'15%', desc: com.listed ? 'Listed' : 'Pending List'}
     ]
   }).catch(e => {
     console.error(2, e)
