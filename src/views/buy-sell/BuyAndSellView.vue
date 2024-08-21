@@ -32,6 +32,7 @@ const route = useRoute()
 const tokenInfo = ref()
 const trading = ref(false)
 const sellsman = ref()
+const showFillInfo = ref(false)
 const { preCheckCuration, userTweet } = useTweet();
 
 const payEth = ref()
@@ -91,6 +92,7 @@ watch(sellAmount, (val) => {
 
 const updateBuyAmount = debounce(async (val: any) => {
   if (!val) return;
+  showFillInfo.value = false
   const amount = ethers.parseEther(val.toString())
 
  try {
@@ -110,6 +112,7 @@ const updateBuyAmount = debounce(async (val: any) => {
 const updateSellAmount = debounce(async (val: any) => {
   try {
     if (!val) return;
+    showFillInfo.value = false
     const amount = ethers.parseEther(val.toString())
     if (listed.value) {
       const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
@@ -154,9 +157,15 @@ async function confirm() {
     return;
   }
   if (tradeType.value === 'buy') {
-    if (!payEth.value) return
+    if (!payEth.value) {
+      showFillInfo.value = true
+      return
+    }
   }else {
-    if (!sellAmount.value) return;
+    if (!sellAmount.value) {
+      showFillInfo.value = true
+      return
+    };
   }
 
   if (isPostTweet.value){
@@ -393,6 +402,9 @@ onMounted(async () => {
           <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
+        <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
+          Please complete the amount
+        </div>
       </div>
       <RecordList v-if="comStore.currentSelectedCommunity?.token" />
     </div>
