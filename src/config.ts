@@ -1,43 +1,22 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-// testnet
-// export const TX_BROWSER = 'https://mempool.space/testnet/tx/'
-// export const BACKEND_API_URL = 'https://api-test.bitip.social'
-export const BACKEND_API_URL = "https://alpha-api.tiptag.fun";
+export const BACKEND_API_URL = "https://api.tiptag.social";
 // export const BACKEND_API_URL = "http://localhost:3000";
-// export const GRAPH_URL = 'https://graph-test.bitip.social/subgraphs/name/donut/bitip'
 
-export const GRAPH_URL =
-  "https://graph.bitip.social/subgraphs/name/donut/bitip";
-
-// test chain chapel
+// base main net
 export const ChainConfig = {
-  name: "Chapel",
-  rpc: "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
-  chainId: 97,
-  symbol: "BNB",
-  browser: "https://testnet.bscscan.com/",
-  decimals: 18,
-  multiConfig: {
-    rpcUrl: "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
-    multicallAddress: "0xae11C5B5f29A6a25e955F0CB8ddCc416f522AF5C",
-    interval: 3000,
-  },
-};
-// merlin main net
-// export const ChainConfig = {
-//     name: "Merlin-main",
-//     rpc: 'https://rpc.merlinchain.io',
-//     chainId: 4200,
-//     symbol: 'ETH',
-//     browser: 'https://scan.merlinchain.io/',
-//     decimals: 18,
-//     multiConfig: {
-//         rpcUrl: 'https://rpc.merlinchain.io',
-//         multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
-//         interval: 3000
-//     }
-// }
+    name: "Base",
+    rpc: 'https://mainnet.base.org/',
+    chainId: 8453,
+    symbol: 'ETH',
+    browser: 'https://basescan.org/',
+    decimals: 18,
+    multiConfig: {
+        rpcUrl: 'https://mainnet.base.org/',
+        multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
+        interval: 3000
+    }
+}
 
 
 export const SPACE_STATE = {
@@ -77,12 +56,12 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const IPShareContract = "0x077E19A6ea6E2Ab1b25b4922d0DB0b24F7ff3B73";
-export const PumpContract = "0x588A9db36f8a41d5fE3c0e65AD35bb2e9A535944";
+export const IPShareContract = "0x9d7Bfb9Ced458875CFdCD9bD7B1958594BF73BC2";
+export const PumpContract = "0xE7ebB10BfF30E323090f3b5D4b2a5AD7F97D43db";
 
-export const WETH = '0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd';
-export const uniswapV2Factory = '0x6725F303b657a9451d8BA641348b6761A6CC7a17';
-export const uniswapV2Router02 = '0xD99D1c33F9fC3444f8101754aBC46c52416550D1';
+export const WETH = '0x4200000000000000000000000000000000000006';
+export const uniswapV2Factory = '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6';
+export const uniswapV2Router02 = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 
 export const Ether = BigInt(1e18);
