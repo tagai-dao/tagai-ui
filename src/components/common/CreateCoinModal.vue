@@ -2,7 +2,7 @@
 import { useModalStore } from "@/stores/common";
 import { reactive, ref, computed, watch } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
-import { CreateFee, BACKEND_API_URL, RegisterSteemMessage } from "@/config";
+import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
@@ -45,7 +45,7 @@ const showingInitEth = ref<string|undefined>('$0')
 
 watch(() => showingInitAmount.value, (val) => {
   if (val && val > 0) {
-    if (val > 7000000) {
+    if (val > BondingCurveSupply) {
       showMaxAmount.value = true
       createForm.initAmount = 0n
       createForm.initEth = 0n
@@ -211,7 +211,7 @@ const create = async () => {
           class="border-b-[1px] border-grey-e6 leading-6 text-base"
           v-model="createForm.desc"
           id="desc"
-          placeholder="LOOK AT THE CEOWD"
+          placeholder="Describe your tag"
         />
       </div>
       <!-- logo -->

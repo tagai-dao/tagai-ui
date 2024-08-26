@@ -1,6 +1,6 @@
 import { getContract } from "./contract";
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02 } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply } from "@/config";
 import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract, Ether, ClaimFee } from "@/config";
@@ -105,6 +105,7 @@ export const claimReward = async (token: string, orderId: BigInt, amount: BigInt
 }
 
 export const calculateInitEth = (amount: bigint) => {
+    amount = amount / 100n;
     const price = amount * amount * amount / BigInt(3e36) / (ethers.parseEther('11.43333333'))
     return price * 10000n / (10000n - 100n - 100n);
 }
@@ -153,7 +154,7 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
         community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         community.price = tokenInfo.price;
-        community.marketCap = (community.price ?? 0) * 10000000;
+        community.marketCap = (community.price ?? 0) * TotalSupply;
         community.unlockTime = tokenInfo.unlockTime;
         community.pair = tokenInfo.pair;
     }
@@ -314,7 +315,7 @@ export const getReceivedAmountSellETHAfterFee = async (token: string | undefined
 }
 
 export const calculateCapticalLocal = async (supply: number) => {
-    return supply * supply * 1000000 / (11.43333333 * 1e18)
+    return supply * supply * 100000000 / (11.43333333 * 1e18)
 }
 
 export const getTokenCap = async (communities: Community[]) => {
@@ -323,7 +324,7 @@ export const getTokenCap = async (communities: Community[]) => {
         target: com.token,
         call: [
             'getBuyPrice(uint256)(uint256)',
-            '1000000000000000000'
+            '100000000000000000000'
         ],
         returns: [
             [com.tick, (val: any) => BigInt(val)]
@@ -334,7 +335,7 @@ export const getTokenCap = async (communities: Community[]) => {
     const prices = res.results.transformed
     for(let com of communities) {
         // @ts-ignore
-        com.marketCap = (prices[com.tick] * 10000000n).toString() / 1e18
+        com.marketCap = (prices[com.tick] * BigInt(TotalSupply)).toString() / 1e18
     }
     return communities
 }

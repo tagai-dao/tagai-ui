@@ -38,6 +38,11 @@ export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
 export const CreateFee = "1000000000000000";
 export const ClaimFee = "100000000000000";
 
+export const TotalSupply = 1000000000;
+export const SocialSupply = 150000000;
+export const BondingCurveSupply = 700000000;
+export const ListSupply = 150000000;
+
 export const BondEthMessage = JSON.stringify(
   {
     project: "tiptag",
@@ -56,8 +61,8 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const IPShareContract = "0x9d7Bfb9Ced458875CFdCD9bD7B1958594BF73BC2";
-export const PumpContract = "0xE7ebB10BfF30E323090f3b5D4b2a5AD7F97D43db";
+export const IPShareContract = "0xb6eec8EaEAEd773F47265f743Db607eb547BD2Dc";
+export const PumpContract = "0xC8757feaD6e911b03207DCC0b86998F4e4A73118";
 
 export const WETH = '0x4200000000000000000000000000000000000006';
 export const uniswapV2Factory = '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6';

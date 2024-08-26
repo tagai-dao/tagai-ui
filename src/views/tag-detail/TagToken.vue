@@ -6,6 +6,7 @@ import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
 import { getHolderList } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
+import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
 
 const comStore = useCommunityStore()
 
@@ -165,11 +166,11 @@ onMounted(async () => {
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Total Supply</span>
-        <span class="text-h5 text-black-19">10,000,000</span>
+        <span class="text-h5 text-black-19">{{ formatAmount(TotalSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Social Distribution</span>
-        <span class="text-h5 text-black-19">1,500,000</span>
+        <span class="text-h5 text-black-19">{{ formatAmount(SocialSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Bonding curve sell</span>
@@ -177,7 +178,7 @@ onMounted(async () => {
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Dex Liquidity</span>
-        <span class="text-h5 text-black-19">1,500,000</span>
+        <span class="text-h5 text-black-19">{{ formatAmount(ListSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Cap</span>
