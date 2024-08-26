@@ -40,7 +40,8 @@
     "initAmountTip": "Input how many token you wanna buy first.",
     "initEth": "Pay {amount} ETH",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
-    "maxAmountTip" : "Please input less than 7000000",
+    "tagForbidden": "Can't create this tag",
+    "maxAmountTip" : "Please input less than 700000000",
     "tickUsed": "This name has been registed, please change to another one",
     "pay": "Pay",
     "youReceive": "You receive"

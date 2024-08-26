@@ -33,6 +33,7 @@ const showPicSizeLimit = ref(false);
 const showInvalidName = ref(false);
 const showTickUsed = ref(false);
 const showMaxAmount = ref(false);
+const showTagForbidden = ref(false);
 
 const accStore = useAccountStore();
 const inputTag = ref("");
@@ -101,6 +102,11 @@ const onFocusTagInput = () => {
 const testTick = async () => {
   showInvalidName.value = false;
   showTickUsed.value = false;
+  showTagForbidden.value = false;
+  if (createForm.tick.toLocaleLowerCase() === 'tiptag') {
+    showTagForbidden.value = true;
+    return false;
+  }
   if (createForm.tick.match(/[a-zA-Z]{1,16}$/)) {
     const created = await checkTickUsed(createForm.tick);
     if (created) {
@@ -200,6 +206,9 @@ const create = async () => {
         </div>
         <div class="text-red-e6 text-sm" v-show="showTickUsed">
           {{ $t('createCommunity.tickUsed') }}
+        </div>
+        <div class="text-red-e6 text-sm" v-show="showTagForbidden">
+          {{ $t('createCommunity.tagForbidden') }}
         </div>
       </div>
       <!-- desc -->
