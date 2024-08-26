@@ -7,6 +7,8 @@ import { type TokenHoldingList } from "@/types";
 import { getHolderList } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
+import UserAvatar from "@/components/common/UserAvatar.vue";
+import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 
 const comStore = useCommunityStore()
 
@@ -88,6 +90,7 @@ async function onRefresh() {
     if (list && list.length > 0) {
       list = list.map((h: any) => {
         return {
+          ...h,
           community: comStore.currentSelectedCommunity,
           amount: h.amount.toString() / 1e18,
           ethAddr: h.holder
@@ -114,6 +117,7 @@ async function onLoad() {
     if (list && list.length > 0) {
       list = list.map((h: any) => {
         return {
+          ...h,
           community: comStore.currentSelectedCommunity,
           amount: h.amount.toString() / 1e18,
           ethAddr: h.holder
@@ -129,6 +133,13 @@ async function onLoad() {
   } finally {
     refreshing.value = false
   }
+}
+
+const onUserAvatar = () => {
+
+}
+function replaceEmptyImg(e: any) {
+    e.target.src = emptyAvatar;
 }
 
 onMounted(async () => {
@@ -245,6 +256,15 @@ onMounted(async () => {
            v-for="(holder, i) of holdingList" :key="i">
           <div class="col-span-3 truncate flex items-center gap-1">
             <span class="min-w-4">{{i + 1}}</span>
+            <UserAvatar :profile-img="holder.profile" :name="holder.twitterName" :username="holder.twitterUsername"
+                    :eth-addr="holder.ethAddr"
+                    :steem-id="holder.steemId" :teleported="true">
+              <template #avatar-img>
+                <img
+                    class="w-4 h-4 min-w-4 rounded-full cursor-pointer bg-color2A"
+                    @click.stop="onUserAvatar" src="~@/assets/icons/icon-default-avatar.svg" alt="">
+              </template>
+            </UserAvatar>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
             <span class="">{{ formatAddress(holder.ethAddr) }}</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Contract</span>

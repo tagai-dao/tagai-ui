@@ -230,7 +230,14 @@ export type CreateCommunity = {
 export type TokenHoldingList = {
   community: Community,
   ethAddr: string,
-  amount: number
+  amount: number,
+  followers?: string | null | undefined,
+  followings?:  string | null | undefined,
+  profile?: string | null | undefined,
+  twitterId?: string | null | undefined,
+  twitterName?: string | null | undefined,
+  twitterUsername?: string | null | undefined,
+  steemId?: string | null | undefined,
 }
 
 export type TokenTrade = {
