@@ -51,7 +51,7 @@
     "blinkTip": "You can make blink to Twitter if you have created IPShare, user trade tag from your blink can bring you reward."
   },
   "community": {
-    "distributionTip": "The total amount of tokens is distributed through three parts, including 10% for social distribution, 70% for bonding curve sales, and 20% for entering the liquidity pool",
+    "distributionTip": "The total amount of tokens is distributed through three parts, including 15% for social distribution, 70% for bonding curve sales, and 15% for entering the liquidity pool",
     "spaceHasCreated": "This space has been created curation.",
     "spaceInvalidLink": "It's not a valid space link",
     "spaceNotYours": "This space is not created by yourself",

@@ -173,11 +173,11 @@ onMounted(async () => {
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Social Distribution</span>
-        <span class="text-h5 text-black-19">1,000,000</span>
+        <span class="text-h5 text-black-19">1,500,000</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Dex Liquidity</span>
-        <span class="text-h5 text-black-19">2,000,000</span>
+        <span class="text-h5 text-black-19">1,500,000</span>
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Cap</span>

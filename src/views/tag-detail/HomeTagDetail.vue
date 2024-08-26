@@ -75,9 +75,9 @@ const onTweetType =  async (type: CurationType) => {
 }
 
 const progressData = ref([
-  {trackWidth: 10, value: 0, percent: "10%", background: '#FF3D54', desc: 'Social Distributed'},
+  {trackWidth: 15, value: 0, percent: "10%", background: '#FF3D54', desc: 'Social Distributed'},
   {trackWidth: 70, value: 0, percent: "10%", background: '#FE913F', desc: 'Bonding Curve'},
-  {trackWidth: 20, value: 0, percent: "10%", background: '#FFCC00', desc: 'Listed'}
+  {trackWidth: 15, value: 0, percent: "10%", background: '#FFCC00', desc: 'Listed'}
 ])
 
 async function updateProgress() {
