@@ -126,20 +126,23 @@ async function selectBitip() {
 async function choseBitip(bitip: string) {
     try{
         loading.value = true
-        const message = JSON.stringify({
+        const datetime = Date.now();
+        let message = JSON.stringify({
             bitip,
             btcAddr: btcWallet.value?.btcAddr,
             version: 1,
-            datetime: Date.now()
+            datetime
         }, null, 4)
         const signature = await signMessage(message);
-        identityInfo.chainName = 'ETH';
+        
+        identityInfo.chainName = 'BTC';
         identityInfo.type = 'bitip';
         identityInfo.assetId = bitip
         identityInfo.btcAddr = btcWallet.value?.btcAddr;
         identityInfo.btcPubkey = btcWallet.value?.btcPubkey;
         identityInfo.version = 1;
-        identityInfo.signature = signature
+        identityInfo.signature = signature;
+        identityInfo.datetime = datetime;
         await register()
 
     } catch (e) {
@@ -164,6 +167,7 @@ async function register() {
         salt,
         identityInfo
       }
+      console.log(55, identityInfo)
       await registerSteem(createForm);
       await sleep(3)
       const acc: any = await checkRegister(account.twitterId)
