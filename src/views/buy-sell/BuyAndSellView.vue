@@ -133,11 +133,12 @@ async function checkTweet() {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       isPostTweet.value = false
       return;
-    }else if (!account.steemId || account.steemId.length == 0) {
-      modalStore.setModalVisible(true, GlobalModalType.Register)
-      isPostTweet.value = false
-      return;
     }
+    // else if (!account.steemId || account.steemId.length == 0) {
+    //   modalStore.setModalVisible(true, GlobalModalType.Register)
+    //   isPostTweet.value = false
+    //   return;
+    // }
     
     if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
       const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
