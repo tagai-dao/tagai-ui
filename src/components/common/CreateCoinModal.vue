@@ -107,7 +107,7 @@ const testTick = async () => {
     showTagForbidden.value = true;
     return false;
   }
-  if (createForm.tick.match(/[a-zA-Z]{1,16}$/)) {
+  if (createForm.tick.match(/^[a-zA-Z]{1,16}$/)) {
     const created = await checkTickUsed(createForm.tick);
     if (created) {
       showTickUsed.value = true
@@ -115,6 +115,7 @@ const testTick = async () => {
     }
     return true;
   }
+  console.log(2, createForm.tick)
   showInvalidName.value = true
 }
 
