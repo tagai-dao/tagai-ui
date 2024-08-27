@@ -167,7 +167,6 @@ async function register() {
         salt,
         identityInfo
       }
-      console.log(55, identityInfo)
       await registerSteem(createForm);
       await sleep(3)
       const acc: any = await checkRegister(account.twitterId)
