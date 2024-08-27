@@ -184,7 +184,7 @@ onMounted(async () => {
         <span class="text-h5 text-black-19">{{ formatAmount(SocialSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Bonding curve sell</span>
+        <span class="text-h4 text-grey-93">Bonding curve sold</span>
         <span class="text-h5 text-black-19">{{ formatAmount(comStore.currentSelectedCommunity.bondingCurveSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
@@ -271,7 +271,7 @@ onMounted(async () => {
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Deployer</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.pair" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">DEX</span>
           </div>
-        <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 100000).toFixed(2) }}%</span>
+        <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 10000000).toFixed(2) }}%</span>
       </div>
       </van-list>
     </van-pull-refresh>
