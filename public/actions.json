@@ -1,8 +1,8 @@
 {
     "rules": [
         {
-            "pathPattern": "https://alpha.tiptag.fun/commerce/**",
-            "apiPath": "https://alpha-api.tiptag.fun/action/commerce/**"
+            "pathPattern": "https://tiptag.fun/commerce/**",
+            "apiPath": "https://api.tiptag.fun/action/commerce/**"
         }
     ]
 }
