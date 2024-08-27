@@ -194,7 +194,7 @@ const create = async () => {
     <div class="flex flex-col gap-4">
     <!-- name -->
       <div class="flex flex-col gap-1">
-        <label for="name" class="leading-6 text-lg font-medium text-black">Tag:</label>
+        <label for="name" class="leading-6 text-lg font-medium text-black">Tag(Tick):</label>
         <input
           class="border-b-[1px] border-grey-e6 leading-6 text-base"
           v-model="createForm.tick"

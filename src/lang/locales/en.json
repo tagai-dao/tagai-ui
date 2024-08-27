@@ -2,7 +2,7 @@
   "buy": "Buy",
   "sell": "Sell",
   "tips": "Tips",
-  "createCoin": "Create Tag",
+  "createCoin": "Create Tag(Tick)",
   "search": "Search",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
@@ -36,7 +36,7 @@
     "tips": "Tips"
   },
   "createCommunity": {
-    "createCommunity": "Create Tag",
+    "createCommunity": "Create Tag(Tick)",
     "initAmountTip": "Input how many token you wanna buy first.",
     "initEth": "Pay {amount} ETH",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
