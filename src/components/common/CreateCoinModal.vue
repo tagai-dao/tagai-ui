@@ -287,7 +287,7 @@ const create = async () => {
       <!-- amount -->
       <div class="flex flex-col gap-1">
         <label for="initamount" class="font-medium text-black text-lg">
-          Choose how many 【COIN】 you want to buy (optional)
+          Choose how many 【TICK】 you want to buy (optional)
         </label>
         <div class="flex items-center border-b-[1px] border-grey-e6 gap-2">
           <input
@@ -297,7 +297,7 @@ const create = async () => {
               id="initamount"
               :placeholder="$t('createCommunity.initAmountTip')"
           />
-          <span class="italic text-red-e6">COIN</span>
+          <span class="italic text-red-e6">TICK</span>
         </div>
         <div class="text-red-e6 text-sm" v-show="showMaxAmount">
             {{ $t("createCommunity.maxAmountTip") }}
