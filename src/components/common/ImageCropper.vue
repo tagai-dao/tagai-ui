@@ -22,14 +22,13 @@ onMounted(() => {
     <VueCropper
         ref="cropperRef"
         :class="className"
-        :infoTrue="true"
         :autoCrop="true"
         :img="cropperImgSrc"
-        :fixedNumber="[1, 1]"
-        :autoCropWidth="200"
+        :auto-crop-width="200"
         :auto-crop-height="200"
         :fixed="true"
         :centerBox="true"
+        fixedBox
         outputType="png"
         mode="cover"
     ></VueCropper>
