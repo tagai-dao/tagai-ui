@@ -56,6 +56,7 @@ export default {
         'grey-8d': "#8D8D8D",
         'grey-d1': "#D1D1D1",
         'grey-8e': "#8E8E93",
+        'grey-5a': "#5A5A5A",
         'grey-f4': "#F4F4F4",
         'black-19': "#191C32",
         'orange-fa': "#FACA83",

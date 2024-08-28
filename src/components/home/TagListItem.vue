@@ -53,7 +53,7 @@ async function trade() {
           <!-- <div class="text-grey-64 font-light text-sm">
             created by  @0XSarah
           </div> -->
-          <div class="whitespace-pre-line text-grey-normal text-h5 multi-content multi-content-2">
+          <div class="whitespace-pre-line text-grey-5a text-[14px] leading-[16px] font-medium multi-content multi-content-2">
             {{ community.description }}
           </div>
         </div>
