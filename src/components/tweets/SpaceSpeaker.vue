@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Tweet, CurateRecord } from "@/types";
 import {computed, onMounted, ref} from "vue";
-import { getSpaceCurateList } from '@/apis/api'
+import { getSpaceCurateList, getSpaceCurationList } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { formatAmount, parseTimestamp } from "@/utils/helper";
 
@@ -36,7 +36,8 @@ const speakerList = computed(() => {
 const getSpeakerData = async () => {
   try{
     if (props.tweet.tweetId) {
-      const list: any = await getSpaceCurateList(props.tweet.tweetId)
+      const list: any = await getSpaceCurationList(props.tweet.tweetId)
+      console.log(35, list)
       curateList.value = list
       if (list.length < 30) {
         finished.value = true
