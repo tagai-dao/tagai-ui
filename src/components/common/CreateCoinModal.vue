@@ -15,6 +15,8 @@ import { handleErrorTip } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import emitter from '@/utils/emitter'
+import {useUploadImg} from "@/composables/useUploadImg";
+import ImageCropper from "@/components/common/ImageCropper.vue";
 
 const modalStore = useModalStore();
 
@@ -27,7 +29,6 @@ const createForm = reactive<CreateCommunity>({
   ethAddr: "",
 });
 const createLoading = ref(false);
-const uploading = ref(false);
 const showOnlyPic = ref(false);
 const showPicSizeLimit = ref(false);
 const showInvalidName = ref(false);
@@ -40,6 +41,18 @@ const inputTag = ref("");
 const addTagTip = ref("");
 
 const { accountMismatch, checkLogin } = useAccount();
+const {
+  uploading,
+  cropperModalVisible,
+  cropperImgSrc,
+  completedImgUrl,
+  openImageCropper,
+  onCroppingAndUpload
+} = useUploadImg()
+
+watch(() => completedImgUrl.value, (value) => {
+  createForm.logoUrl = completedImgUrl.value
+})
 
 const showingInitAmount = ref<number|undefined>()
 const showingInitEth = ref<string|undefined>('$0')
@@ -231,7 +244,7 @@ const create = async () => {
           <img
             v-if="createForm.logoUrl"
             :src="createForm.logoUrl"
-            class="w-11 h-11 min-w-11 min-h-11"
+            class="w-11 h-11 min-w-11 min-h-11 rounded-md"
             alt=""
           />
           <div
@@ -242,7 +255,8 @@ const create = async () => {
           </div>
           <el-upload
             class="avatar-uploader w-7 h-6 min-w-7 min-h-7 bg-grey-f0 rounded-full flex items-center justify-center"
-            :action="BACKEND_API_URL + '/qiniu/upload'"
+            action="#"
+            :http-request="(options: any)=> openImageCropper(options)"
             :on-success="uploadSuccess"
             :show-file-list="false"
             :before-upload="beforeUpload"
@@ -324,6 +338,14 @@ const create = async () => {
         <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} ETH</span>
       </div>
     </div>
+    <el-dialog v-model="cropperModalVisible"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px]"
+               width="90%" :show-close="false" align-center destroy-on-close>
+      <ImageCropper :cropperImgSrc="cropperImgSrc?.toString()"
+                    @onCancel="cropperModalVisible = false; uploading=false"
+                    @onConfirm="onCroppingAndUpload"/>
+    </el-dialog>
   </div>
 </template>
 

@@ -1,21 +1,37 @@
-import {ref} from "vue";
+import {type Ref, ref} from "vue";
 import type {UploadRequestOptions} from "element-plus";
 import axios from "axios";
 import { BACKEND_API_URL } from "@/config";
 import errCode from "@/errCode";
+import type {UploadRawFile} from "element-plus/es/components/upload/src/upload";
 
 export const useUploadImg = () => {
-  const uploadType = ref<string>('logo')
   const uploading = ref(false)
   const completedImgUrl = ref('')
 
-  const addUploadImg = async (options: UploadRequestOptions, type: string) => {
+  const cropperModalVisible = ref(false)
+  const cropperImgSrc = ref<string| ArrayBuffer | null>(null)
+
+  const openImageCropper = (options: UploadRequestOptions) => {
+    const reader = new FileReader()
+    reader.readAsDataURL(options.file)
+    reader.onload = (res) => {
+      cropperImgSrc.value = res.target?.result??null
+      cropperModalVisible.value = true
+    }
+  }
+
+  const onCroppingAndUpload = async (cropperRef: any) => {
+    uploading.value = true
+    cropperModalVisible.value = false
+    cropperRef?.getCropBlob(async (data: any) => {
+      completedImgUrl.value = await addUploadImg(data)
+      uploading.value = false
+    })
+  }
+
+  const addUploadImg = async (img: UploadRawFile):Promise<string> => {
     return new Promise(async (resolve, reject) => {
-      uploadType.value = type
-      const reader = new FileReader()
-      reader.readAsDataURL(options.file)
-      // 可上传的文件
-      const img = options.file
       let param = new FormData();
       param.append("file", img);
       const config = {
@@ -26,7 +42,7 @@ export const useUploadImg = () => {
       axios
         .post(BACKEND_API_URL + '/qiniu/upload', param, config)
         .then((res) => {
-          resolve(res?.data?.url);
+          resolve(res?.data?.url??'');
         })
         .catch((err) => {
           reject(errCode.SERVER_ERROR);
@@ -37,6 +53,10 @@ export const useUploadImg = () => {
   return {
     uploading,
     completedImgUrl,
-    addUploadImg
+    addUploadImg,
+    cropperModalVisible,
+    cropperImgSrc,
+    openImageCropper,
+    onCroppingAndUpload
   }
 }
