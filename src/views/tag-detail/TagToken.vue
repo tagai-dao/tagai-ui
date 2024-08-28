@@ -260,9 +260,13 @@ onMounted(async () => {
                     :eth-addr="holder.ethAddr"
                     :steem-id="holder.steemId" :teleported="true">
               <template #avatar-img>
-                <img
-                    class="w-4 h-4 min-w-4 rounded-full cursor-pointer bg-color2A"
-                    @click.stop="onUserAvatar" src="~@/assets/icons/icon-default-avatar.svg" alt="">
+                <img v-if="holder.profile"
+                 class="w-4 h-4 min-w-4 rounded-full cursor-pointer bg-color2A"
+                 @click.stop="onUserAvatar" @error="replaceEmptyImg" :src="holder.profile"
+                 alt="">
+            <img v-else
+                 class="w-4 h-4 min-w-4 rounded-full cursor-pointer bg-color2A"
+                 @click.stop="onUserAvatar" src="~@/assets/icons/icon-default-avatar.svg" alt="">
               </template>
             </UserAvatar>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
