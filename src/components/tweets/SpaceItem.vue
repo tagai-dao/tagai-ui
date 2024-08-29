@@ -148,7 +148,7 @@ const onUserAvatar = () => {
               <div class="flex justify-between items-center h-7">
                 <span>End time:</span>
                 <span class="font-semibold">
-                  {{ parseTimestamp((tweet.dayNumber % 7 + 3 + tweet.dayNumber) * 86400000) }}
+                  {{ tweet.listed ? parseTimestamp((tweet.dayNumber % 7 + 3 + tweet.dayNumber) * 86400000) : 'Pending list' }}
                 </span>
               </div>
             </div>
