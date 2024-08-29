@@ -20,10 +20,12 @@ const modalStore = useModalStore()
   <main class="w-full h-full flex flex-col max-w-[1200px] mx-auto">
     <TopBar v-show="$route.meta.topBar"/>
     <div class="flex-1 overflow-hidden">
-      <KeepAlive>
-        <RouterView v-if="$route.meta.keepAlive"/>
-      </KeepAlive>
-      <RouterView v-if="!$route.meta.keepAlive"/>
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" v-if="$route.meta.keepAlive" :key="$route.name"/>
+        </keep-alive>
+        <component :is="Component" v-if="!$route.meta.keepAlive"/>
+      </router-view>
     </div>
     <TabBar class="web:hidden" v-if="$route.meta.tabBar"/>
     <el-dialog v-model="modalStore.modalVisible"
