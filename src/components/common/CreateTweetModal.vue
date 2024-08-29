@@ -4,10 +4,11 @@ import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { ref } from "vue";
 import { newCommerce } from '@/apis/api'
 import { OperateType, useTweet } from "@/composables/useTweet";
-import { handleErrorTip } from "@/utils/notify";
+import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
 import { useCommunityStore } from "@/stores/community";
 import { useAccount } from "@/composables/useAccount";
+import emitter from "@/utils/emitter";
 
 const comStore = useCommunityStore()
 const {
@@ -40,7 +41,10 @@ const onPostTweet = async () => {
       return;
     }
     let content = formatElToTextContent(contentRef.value)
-    userTweet(content, useCommunityStore().currentSelectedCommunity!.tick!).catch(handleErrorTip)
+    userTweet(content, useCommunityStore().currentSelectedCommunity!.tick!).then(res => {
+      emitter.emit('tweeted')
+      notify({message: "Tweet success", type: 'success'})
+    }).catch(handleErrorTip)
 
     // await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!)
     emit('close')

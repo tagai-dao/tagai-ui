@@ -8,10 +8,11 @@ import debounce from 'lodash.debounce'
 import { getSpaceInfoById } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { useSpace, InvalidSpaceCurationType } from "@/composables/useSpace"; 
-import { handleErrorTip } from "@/utils/notify";
+import { handleErrorTip, notify } from "@/utils/notify";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import type { Space } from "@/types";
 import i18n from "@/lang";
+import emitter from "@/utils/emitter";
 const t = i18n.global.t;
 
 const modalStore = useModalStore();
@@ -90,6 +91,8 @@ const onPostTweet = async () => {
       return;
     }
     await userTweetWithSpace(`${tweetContent}\n${spaceLink.value}`, comStore.currentSelectedCommunity!.tick, spaceId)
+    emitter.emit('tweeted')
+    notify({message: 'Tweet success', type: 'success'})
     emit('close')
   } catch (e) {
     console.log(e);

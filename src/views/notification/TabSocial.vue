@@ -33,7 +33,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  setMessageReaded().catch()
+  console.log(2)
+  setMessageReaded().catch(console.error)
   useAccountStore().unreadMessageCount = 0
 })
 </script>

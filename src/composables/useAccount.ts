@@ -99,6 +99,7 @@ export const useAccount = () => {
                     lastReadMessageTime: formatDate()
                 })
             }).catch((e: any) => {
+                console.log(444, e)
                 if (e === errCode.InvalidAccessToken) {
                     logout()
                 }

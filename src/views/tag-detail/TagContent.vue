@@ -14,6 +14,7 @@ import type { Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import { useCurationStore } from "@/stores/curation";
+import emitter from "@/utils/emitter";
 
 const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
@@ -94,6 +95,7 @@ onMounted(async () => {
     await sleep(0.5);
   }
   onRefresh();
+  emitter.on('tweeted', onRefresh);
 });
 </script>
 
@@ -114,7 +116,7 @@ onMounted(async () => {
         :offset="50"
         @load="onLoad"
       >
-        <div v-for="(tweet, index) of showingTweets" :key="index" class="mb-2">
+        <div v-for="(tweet, index) of showingTweets" :key="tweet.tweetId" class="mb-2">
           <SpaceItem
             v-if="tweet.spaceId"
             class="bg-white rounded-2xl"

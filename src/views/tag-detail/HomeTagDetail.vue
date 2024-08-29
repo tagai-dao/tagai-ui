@@ -181,7 +181,7 @@ onMounted(async () => {
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
               <button class="bg-grey-normal px-3 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold">
-                Build & Earn
+                Post to Earn
               </button>
             </template>
             <template #default>
