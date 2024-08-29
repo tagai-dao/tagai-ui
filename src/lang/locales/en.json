@@ -2,7 +2,7 @@
   "buy": "Buy",
   "sell": "Sell",
   "tips": "Tips",
-  "createCoin": "Create Tag(Tick)",
+  "createCoin": "Create TagCoin",
   "search": "Search",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
@@ -19,10 +19,10 @@
     "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet."
   },
   "profileView": {
-    "holdCoin": "Hold Tags",
+    "holdCoin": "Hold TagCoins",
     "post": "Tweet/Space",
     "blink": "Blink",
-    "createCoin": "Created Tags",
+    "createCoin": "Created TagCoins",
     "followings": "Followings",
     "followers": "Followers",
     "captureTitle": "Captured connect fee",
@@ -36,7 +36,7 @@
     "tips": "Tips"
   },
   "createCommunity": {
-    "createCommunity": "Create Tag(Tick)",
+    "createCommunity": "Create TagCoin",
     "initAmountTip": "Input how many token you wanna buy first.",
     "initEth": "Pay {amount} ETH",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
@@ -61,9 +61,9 @@
   "curation": {
     "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet.",
     "quote": "Quote",
-    "vpDesc": "Like/Retweet a tweet will cost you vp(voting power). And you can earn tag after 3 days.",
+    "vpDesc": "Like/Retweet a tweet will cost you vp(voting power). And you can earn tagcoin after 3 days.",
     "opDesc": "All tweet operation(like/retweet/quote/reply will cost you op(operation power) because of all the operation will sync to the blockchain.",
-    "curationTip": "Curate a tweet or as a speaker of a space can gain curate rewards. Write a tweet or host a space can gain creator rewards. When the tag listed, your can claim all your rewards."
+    "curationTip": "Curate a tweet or as a speaker of a space can gain curate rewards. Write a tweet or host a space can gain creator rewards. When the tagcoin listed, your can claim all your rewards."
   },
   "postView": {
     "createNewCuration": "Create"
