@@ -14,6 +14,7 @@ import { getTweetById } from "@/apis/api";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import { formatAmount, formatPrice } from "@/utils/helper";
 import SpaceSpeaker from "@/components/tweets/SpaceSpeaker.vue";
+import { useStateStore } from "@/stores/common";
 
 enum CurationType {
   Curate,
@@ -95,7 +96,7 @@ onMounted(async () => {
           </button>
         </div>
         <div class="h-12 rounded-xl bg-grey-normal px-3 text-white font-medium flex justify-center items-center">
-          {{ curationStore.currentSelectedTweet?.amount }} #{{ tag }} ({{ formatPrice((curationStore.currentSelectedTweet?.amount ?? 0) * (curationStore.currentSelectedTweet?.price ?? 0)) }})
+          {{ curationStore.currentSelectedTweet?.amount }} #{{ tag }} ({{ formatPrice((curationStore.currentSelectedTweet?.amount ?? 0) * (curationStore.currentSelectedTweet?.price ?? 0) * useStateStore().ethPrice) }})
         </div>
         <div class="grid grid-cols-2 gap-y-2 gap-x-1">
           <div class="col-span-1 bg-yellow-fa rounded-xl px-3 py-3 flex gap-2"
