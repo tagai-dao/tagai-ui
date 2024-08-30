@@ -76,6 +76,8 @@ watch(() => showingInitAmount.value, (val) => {
 })
 
 const onAddTags = () => {
+  inputTag.value = inputTag.value.trim();
+  if (inputTag.value.length == 0) return;
   if (createForm.tags!.length === 3) {
     return;
   }

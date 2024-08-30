@@ -7,16 +7,18 @@ import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import {useRoute, useRouter} from "vue-router";
-import { getCommunityDetail } from "@/apis/api";
+import { getCommunityDetail, getIpshareInfo } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import {useInterval, useTools} from "@/composables/useTools";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
+import CreateBlinkModal from '@/components/common/CreateBlinkModal.vue'
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
+import { ethers } from "ethers";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -26,7 +28,8 @@ const tabOptions = [
 ]
 enum CurationType {
   TWEET,
-  SPACE
+  SPACE,
+  BLINK
 }
 const activeTab = ref('content')
 const modalStore = useModalStore()
@@ -36,6 +39,7 @@ const route = useRoute()
 const router = useRouter()
 const tokenInfo = ref()
 const checkingAccount = ref(false);
+const checkingTweet = ref(false);
 const showModal = ref(false);
 const curationType = ref(CurationType.TWEET);
 const accStore = useAccountStore();
@@ -57,14 +61,6 @@ const onTweetType =  async (type: CurationType) => {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       return;
     }
-    // if (!accStore.getAccountInfo?.steemId){
-    //   modalStore.setModalVisible(true, GlobalModalType.Register);
-    //   return;
-    // }
-    // if (!(await ipshareCreated(accStore.getAccountInfo.ethAddr!))) {
-    //   modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
-    //   return;
-    // }
     curationType.value = type;
     tweetTypeRef.value.hide()
     showModal.value = true
@@ -93,6 +89,32 @@ async function updateProgress() {
   }).catch(e => {
     console.error(2, e)
   })
+}
+
+async function checkTweet() {
+  try{
+    checkingTweet.value = true
+    const account = accStore.getAccountInfo
+    if (!account || !account.twitterId) {
+      modalStore.setModalVisible(true, GlobalModalType.Login)
+      return;
+    }
+    
+    if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
+      const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
+      accStore.ipshare = ipshare;
+    }
+    if (!accStore.ipshare.ethAddr) {
+      modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
+      return;
+    }
+  } catch(e) {
+    handleErrorTip(e)
+  } finally {
+    checkingTweet.value = false
+  }
+    
+    onTweetType(CurationType.BLINK);
 }
 
 onMounted(async () => {
@@ -178,7 +200,11 @@ onMounted(async () => {
               </div>
             </el-tooltip>
           </div>
-          <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
+          <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold"
+          @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">
+            Trade
+          </button>
+          <!-- <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
               <button class="bg-grey-normal px-3 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold">
                 Post to Earn
@@ -200,11 +226,36 @@ onMounted(async () => {
                 </button>
               </div>
             </template>
-          </el-popover>
+          </el-popover> -->
         </div>
-        <div class="flex justify-center text-white">
-          <button class="w-1/2 bg-gradient-primary text-h5 rounded-full h-11"
-                  @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">Trade</button>
+        <div class="flex justify-center text-white space-x-8">
+          <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+            Blinks
+            <i-ep-loading v-show="checkingTweet" class="animate-spin" />
+          </button>
+          
+          <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
+            <template #reference>
+              <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button>
+            </template>
+            <template #default>
+              <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
+                <button @click="onTweetType(CurationType.TWEET)"
+                        :disabled="checkingAccount"
+                        class="whitespace-nowrap flex items-center space-x-3">
+                    Tweet on-chain
+                    <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                </button>
+                <button @click="onTweetType(CurationType.SPACE)"
+                        :disabled="checkingAccount"
+                        class="whitespace-nowrap flex items-center space-x-3">
+                        Tweet an onchain Space
+                    <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                </button>
+              </div>
+            </template>
+          </el-popover>
+          <!-- <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button> -->
         </div>
       </div>
     </div>
@@ -223,6 +274,7 @@ onMounted(async () => {
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
                width="90%" :show-close="false" align-center destroy-on-close>
+      <CreateBlinkModal @close="showModal = false" v-if="curationType == CurationType.BLINK" />
       <CreateTweetModal @close="showModal = false" v-if="curationType == CurationType.TWEET" />
       <CreateSpaceModal @close="showModal = false" v-if="curationType == CurationType.SPACE" />
   </el-dialog>

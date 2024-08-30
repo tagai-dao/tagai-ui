@@ -377,7 +377,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="flex justify-center">
+        <div v-if="false" class="flex justify-center">
           <el-radio-group v-model="isPostTweet" @change="checkTweet" class="c-radio gap-8">
             <el-radio :value="false">None</el-radio>
             <el-radio :value="true">
