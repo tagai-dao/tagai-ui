@@ -24,8 +24,8 @@ onMounted(() => {
         :class="className"
         :autoCrop="true"
         :img="cropperImgSrc"
-        :auto-crop-width="800"
-        :auto-crop-height="800"
+        :auto-crop-width="400"
+        :auto-crop-height="400"
         :fixed="true"
         :centerBox="true"
         fixedBox
