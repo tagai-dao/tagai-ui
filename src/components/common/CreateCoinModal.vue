@@ -182,6 +182,7 @@ const create = async () => {
       ...account!,
       steemId: account?.twitterUsername
     })
+    modalStore.setModalCloseEnable(true)
     modalStore.setModalVisible(false)
   } catch (e) {
     console.error('create community fail', e)
