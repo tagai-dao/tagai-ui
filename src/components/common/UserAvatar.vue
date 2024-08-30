@@ -61,8 +61,8 @@ function replaceEmptyImg(e: any) {
                :src="profile" alt="">
           <div class="flex-1 flex flex-col gap-y-4px">
             <div class="flex items-end whitespace-nowrap">
-              <span class="font-semibold text-black text-lg">{{props.name}}</span>
-              <span class="text-sm italic leading-[16px]">@{{props.username}}</span>
+              <span class="font-semibold text-black text-lg">{{(props.name??'').substring(0, 10)}}</span>
+              <span class="text-sm italic leading-[16px]">@{{props.username??''.substring(0, 10)}}</span>
               <button class="mb-6px" @click="gotoTwitter()">
                 <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
               </button>
