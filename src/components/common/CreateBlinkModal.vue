@@ -106,7 +106,7 @@ const onPostTweet = async () => {
                        flex justify-center items-center space-x-2 disabled:opacity-30"
               :disabled="tweetLoading"
               @click="onPostTweet">
-        <span class="text-white font-bold text-lg">GoTweet</span>
+        <span class="text-white font-bold text-lg">Go Tweet</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>
       </button>
     </div>
