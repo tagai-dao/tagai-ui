@@ -24,11 +24,11 @@ onMounted(() => {
         :class="className"
         :autoCrop="true"
         :img="cropperImgSrc"
-        :auto-crop-width="800"
-        :auto-crop-height="800"
+        :auto-crop-width="200"
+        :auto-crop-height="200"
         :fixed="true"
         :centerBox="true"
-        fixedBox
+        :enlarge="4"
         outputType="png"
         mode="cover"
     ></VueCropper>

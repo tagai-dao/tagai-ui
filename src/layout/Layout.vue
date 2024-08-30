@@ -29,6 +29,8 @@ const modalStore = useModalStore()
     </div>
     <TabBar class="web:hidden" v-if="$route.meta.tabBar"/>
     <el-dialog v-model="modalStore.modalVisible"
+               :close-on-click-modal="modalStore.modalCloseEnable"
+               :close-on-press-escape="modalStore.modalCloseEnable"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
                width="90%" :show-close="false" align-center destroy-on-close>

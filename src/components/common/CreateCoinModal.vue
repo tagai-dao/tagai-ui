@@ -190,6 +190,10 @@ const create = async () => {
     createLoading.value = false;
   }
 };
+
+watch(() => createLoading.value, () => {
+  modalStore.setModalCloseEnable(!createLoading.value)
+})
 </script>
 
 <template>
