@@ -172,7 +172,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
         tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         tweet.price = tokenInfo.price;
-        tweet.marketCap = (tweet.price ?? 0) * 10000000;
+        tweet.marketCap = (tweet.price ?? 0) * TotalSupply;
         tweet.unlockTime = tokenInfo.unlockTime;
         tweet.pair = tokenInfo.pair;
     }
@@ -315,7 +315,7 @@ export const getReceivedAmountSellETHAfterFee = async (token: string | undefined
 }
 
 export const calculateCapticalLocal = async (supply: number) => {
-    return supply * supply * 100000000 / (11.43333333 * 1e18)
+    return supply * supply * 10000000000 / (11.43333333 * 1e18)
 }
 
 export const getTokenCap = async (communities: Community[]) => {
