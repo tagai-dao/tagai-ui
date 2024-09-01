@@ -134,6 +134,7 @@ export const getBalance = async (addr: string) => {
 
 export const transferEthTo = async (to: string, value: bigint) => {
     let eth = getProvider();
+    await setup()
     const provider = new ethers.BrowserProvider(eth);
     const signer = await provider.getSigner();
     const tx = await signer.sendTransaction({
