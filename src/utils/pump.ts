@@ -248,7 +248,6 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
     const res = await aggregate(calls, ChainConfig.multiConfig)
     let infos = res.results.transformed
     let result: any = {}
-    console.log(53, infos)
     
     for (let [key, value] of Object.entries(infos)) {
         const [token, type] = key.split('-')
