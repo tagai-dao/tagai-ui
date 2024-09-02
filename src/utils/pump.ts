@@ -216,7 +216,7 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
                 target: token,
                 call: [
                     'getBuyPrice(uint256)(uint256)',
-                    '100000000000000000'
+                    '1000000000000000000'
                 ],
                 returns: [
                     [token + '-price', (val: any) => (val).toString() / 1e18]
