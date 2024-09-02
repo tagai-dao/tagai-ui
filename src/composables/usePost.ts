@@ -32,7 +32,7 @@ export const usePost = (tweet: Tweet) => {
     content = tweet.content??'';
     content = content.replace(reg, "");
     for (let url of urls.value) {
-      if (url.startsWith(window.location.origin) || url.startsWith('https://x.com') || url.startsWith('https://twitter.com')) {
+      if (url.startsWith(window.location.origin + '/commerce') || url.startsWith('https://x.com') || url.startsWith('https://twitter.com')) {
         content = content.replaceAll(url, '');
       }else {
         content = content.replace(
