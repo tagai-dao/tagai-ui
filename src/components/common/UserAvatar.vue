@@ -71,7 +71,7 @@ function replaceEmptyImg(e: any) {
         </div>
         <div class="pl-10 mt-2 text-grey-normal">
           <div class="flex gap-x-2 whitespace-nowrap" @click="onCopy(props.ethAddr ?? '')">
-            <span>ETH Address</span>
+            <span>ENULS Address</span>
             <span class="text-gradient bg-gradient-primary">{{ formatAddress(props.ethAddr ?? '') }}</span>
           </div>
         </div>
