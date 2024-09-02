@@ -168,7 +168,7 @@ const onUserAvatar = () => {
             >{{ "" }}</a
           >
           <div
-            class="whitespace-pre-line break-words multi-content"
+            class="whitespace-pre-line break-words"
             v-else
             v-html="formatEmojiText(content)"
           ></div>

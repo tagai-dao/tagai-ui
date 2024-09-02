@@ -120,7 +120,7 @@ const onUserAvatar = () => {
           <div @click.stop="clickContent"
                class="cursor-pointer text-base tracking-0.2">
             <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all" target="_blank">{{''}}</a>
-            <div class="whitespace-pre-line break-words multi-content"
+            <div class="whitespace-pre-line break-words"
                  v-else v-html="formatEmojiText(content)"></div>
           </div>
           <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">
