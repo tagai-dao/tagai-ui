@@ -1,19 +1,19 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://api.tiptag.social";
-// export const BACKEND_API_URL = "http://localhost:3000";
+// export const BACKEND_API_URL = "https://enuls-api.tiptag.social";
+export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
-    name: "Base",
-    rpc: 'https://mainnet.base.org/',
-    chainId: 8453,
-    symbol: 'ETH',
+    name: "ENULS",
+    rpc: 'https://evmapi.nuls.io',
+    chainId: 119,
+    symbol: 'ENULS',
     browser: 'https://basescan.org/',
     decimals: 18,
     multiConfig: {
-        rpcUrl: 'https://mainnet.base.org/',
-        multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
+        rpcUrl: 'https://evmapi.nuls.io',
+        multicallAddress: '0x383870Ae4E834155192cEce2fb5B0528CE0790E9',
         interval: 3000
     }
 }
@@ -27,16 +27,16 @@ export const SPACE_STATE = {
 }
 
 export const MainToken = {
-  name: "ETH",
-  symbol: "ETH",
+  name: "ENULS",
+  symbol: "ENULS",
   icon: "https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/0x2170Ed0880ac9A755fd29B2688956BD959F933F8/logo.png",
   decimals: 18,
 };
 
 // also create coin or create social account will cost 0.00005 ETH
 export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
-export const CreateFee = "1000000000000000";
-export const ClaimFee = "100000000000000";
+export const CreateFee = "5000000000000000000";
+export const ClaimFee = "500000000000000000";
 
 export const TotalSupply = 1000000000;
 export const SocialSupply = 150000000;
@@ -64,9 +64,9 @@ export const RegisterSteemMessage = JSON.stringify(
 export const IPShareContract = "0xb6eec8EaEAEd773F47265f743Db607eb547BD2Dc";
 export const PumpContract = "0x2752815C81D421d52cA4038c4ab9081A32685b50";
 
-export const WETH = '0x4200000000000000000000000000000000000006';
-export const uniswapV2Factory = '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6';
-export const uniswapV2Router02 = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24';
+export const WETH = '0x217dffF57E3b855803CE88a1374C90759Ea071bD';
+export const uniswapV2Factory = '0x7bf960B15Cbd9976042257Be3F6Bb2361E107384';
+export const uniswapV2Router02 = '0x3653d15A4Ed7E9acAA9AC7C5DB812e8A7a90DF9e';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 
 export const Ether = BigInt(1e18);
