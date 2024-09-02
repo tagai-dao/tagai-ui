@@ -216,7 +216,7 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
                 target: token,
                 call: [
                     'getBuyPrice(uint256)(uint256)',
-                    '1000000000000000000'
+                    '100000000000000000'
                 ],
                 returns: [
                     [token + '-price', (val: any) => (val).toString() / 1e18]
@@ -248,6 +248,7 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
     const res = await aggregate(calls, ChainConfig.multiConfig)
     let infos = res.results.transformed
     let result: any = {}
+    console.log(53, infos)
     
     for (let [key, value] of Object.entries(infos)) {
         const [token, type] = key.split('-')
