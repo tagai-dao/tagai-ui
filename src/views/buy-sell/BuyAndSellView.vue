@@ -291,7 +291,7 @@ onMounted(async () => {
               type="number"
               class="bg-transparent h-full flex-1 text-h3"
             />
-            <span class="text-h5 whitespace-nowrap">$ ETH</span>
+            <span class="text-h5 whitespace-nowrap">$ ENULS</span>
           </div>
           <div class="text-right text-sm">
             Balance: {{ formatAmount(ethBalance) }}
@@ -324,7 +324,7 @@ onMounted(async () => {
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
           >
-            <span class="text-h5">Receive $ETH</span>
+            <span class="text-h5">Receive $ENULS</span>
             <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
           </div></template
         >
