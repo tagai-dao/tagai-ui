@@ -102,7 +102,7 @@ const onPostTweet = async () => {
       </div>
     </div>
     <div class="flex justify-center">
-      <button class="w-min px-5 h-11 bg-gradient-primary rounded-full
+      <button class="px-5 h-11 bg-gradient-primary rounded-full
                        flex justify-center items-center space-x-2 disabled:opacity-30"
               :disabled="tweetLoading"
               @click="onPostTweet">
