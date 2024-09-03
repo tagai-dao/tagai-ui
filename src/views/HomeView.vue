@@ -11,7 +11,7 @@ import { useRouter } from "vue-router";
 import { getTokenCap, getTokenInfo } from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
-import { useInterval } from "@/composables/useTools";
+import {useInterval, usePageScroll} from "@/composables/useTools";
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -22,6 +22,8 @@ const loading = ref(false);
 const router = useRouter();
 const finished = ref(false)
 const { setInter } = useInterval()
+const { pageScroll, pageScrollTo} = usePageScroll()
+const pageScrollRef = ref()
 
 watch(listType, (val) => {
   refresh()
@@ -87,7 +89,7 @@ async function loadMore() {
 async function getSpaces() {
   try{
     let spaces = await getOnlineSpaces() as Space[];
-    
+
     if (spaces && spaces.length > 0) {
       curationStore.allSpaces = spaces
     }else {
@@ -110,6 +112,11 @@ onMounted(async () => {
   setInter(getSpaces, 10000);
   emitter.on('newCommunity', refresh);
 })
+
+onActivated(() => {
+  pageScrollTo(pageScrollRef.value)
+})
+
 </script>
 
 <template>
@@ -130,7 +137,7 @@ onMounted(async () => {
         <el-option :value="ListType.New" label="New" />
       </el-select>
     </div>
-    <div class="flex-1 px-3 overflow-auto">
+    <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
       <van-pull-refresh v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
                         loading-text="Loading"

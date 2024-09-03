@@ -1,6 +1,6 @@
 import { useClipboard } from "@vueuse/core";
 import { ElNotification } from 'element-plus'
-import { onUnmounted, ref } from "vue";
+import {onUnmounted, ref} from "vue";
 import { useRouter } from "vue-router";
 
 export const useTools = () => {
@@ -60,5 +60,27 @@ export const usePageRouter = () => {
   }
   return {
     goBack
+  }
+}
+
+export const usePageScroll = () => {
+  const scroll = ref(0)
+  const pageScroll = (ref: any) => {
+    scroll.value = ref.scrollTop
+  }
+
+  const pageScrollTo = (ref: any) => {
+    ref.scrollTo({top: scroll.value})
+  }
+
+  const pageScrollToTop = (ref: any) => {
+    ref.scrollTo({top: 0, behavior: 'smooth'})
+  }
+
+  return {
+    scroll,
+    pageScroll,
+    pageScrollTo,
+    pageScrollToTop
   }
 }
