@@ -9,7 +9,8 @@ import type {Tweet} from "@/types";
 import { useStateStore } from '@/stores/common';
 
 const props = defineProps({
-  tweet: {type: Object as PropType<Tweet>, required: true,}
+  tweet: {type: Object as PropType<Tweet>, required: true,},
+  multiline: {type: Boolean, required: false}
 })
 
 const {formatEmojiText} = useTweet()
@@ -168,7 +169,7 @@ const onUserAvatar = () => {
             >{{ "" }}</a
           >
           <div
-            class="whitespace-pre-line break-words"
+            class="whitespace-pre-line break-words content" :class="multiline ? '' : 'multi-content-3'"
             v-else
             v-html="formatEmojiText(content)"
           ></div>

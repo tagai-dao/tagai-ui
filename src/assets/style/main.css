@@ -59,6 +59,16 @@ input {
   display: -webkit-box;
   -webkit-box-orient: vertical;
 }
+.content {
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+.multi-content-3 {
+  -webkit-line-clamp: 3;
+}
 .multi-content-2 {
   -webkit-line-clamp: 2;
 }

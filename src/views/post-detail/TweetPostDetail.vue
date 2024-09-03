@@ -61,7 +61,7 @@ onMounted(async () => {
         </div>
       </div> -->
       <div class="bg-white rounded-2xl py-2">
-        <TweetItem :tweet="curationStore.currentSelectedTweet">
+        <TweetItem :tweet="curationStore.currentSelectedTweet" :multiline="true">
           <template #tweet-action-bar>
             <PostButtonGroup :tweet="curationStore.currentSelectedTweet"/>
           </template>

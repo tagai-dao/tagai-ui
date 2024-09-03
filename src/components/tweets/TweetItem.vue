@@ -16,7 +16,8 @@ import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import { useStateStore } from '@/stores/common';
 
 const props = defineProps({
-  tweet: {type: Object as PropType<Tweet>, required: true,}
+  tweet: {type: Object as PropType<Tweet>, required: true,},
+  multiline: {type: Boolean, required: false}
 })
 
 const {formatEmojiText} = useTweet()
@@ -120,7 +121,7 @@ const onUserAvatar = () => {
           <div @click.stop="clickContent"
                class="cursor-pointer text-base tracking-0.2">
             <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all" target="_blank">{{''}}</a>
-            <div class="whitespace-pre-line break-words"
+            <div class="whitespace-pre-line break-words content" :class="multiline ? '' : 'multi-content-3'"
                  v-else v-html="formatEmojiText(content)"></div>
           </div>
           <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">

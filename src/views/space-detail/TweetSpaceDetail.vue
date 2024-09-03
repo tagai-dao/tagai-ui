@@ -79,7 +79,7 @@ onMounted(async () => {
         </button>
       </div> -->
       <div v-if="curationStore.currentSelectedTweet" class="bg-white rounded-2xl py-2">
-        <SpaceItem :tweet="curationStore.currentSelectedTweet">
+        <SpaceItem :tweet="curationStore.currentSelectedTweet" :multiline="true">
           <template #tweet-action-bar>
             <PostButtonGroup :tweet="curationStore.currentSelectedTweet"/>
           </template>
