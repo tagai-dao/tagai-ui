@@ -2,7 +2,7 @@
 import {useAccountStore} from "@/stores/web3";
 import {useModalStore, useStateStore} from "@/stores/common";
 import {useTimer} from "@/composables/useTools";
-import {ref} from "vue";
+import {ref, watch} from "vue";
 import {twitterAuth, twitterLogin} from "@/apis/api";
 import {sleep} from "@/utils/helper";
 import type {Account} from "@/types";
@@ -16,10 +16,12 @@ const accStore = useAccountStore();
 const stateStore = useStateStore();
 const logging = ref(false);
 const route = useRoute();
+const modalStore = useModalStore()
 
 async function login() {
   try{
     logging.value = true
+    modalStore.setModalCloseEnable(false)
     let isIOS = navigator.userAgent.toUpperCase().indexOf('IPHONE') >= 0
     let isAndroid = navigator.userAgent.toUpperCase().indexOf('ANDROID') >= 0
 
@@ -79,6 +81,10 @@ async function login() {
     logging.value = false
   }
 }
+
+watch(() => logging.value, () => {
+  modalStore.setModalCloseEnable(!logging.value)
+})
 
 onUnmounted(() => {
   logging.value = false

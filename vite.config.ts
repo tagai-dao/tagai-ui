@@ -12,6 +12,7 @@ import IconsResolver from 'unplugin-icons/resolver'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -46,6 +47,54 @@ export default defineConfig({
       include: resolve(dirname(fileURLToPath(import.meta.url)), './src/lang/locales/**'),
     }),
     viteCommonjs(),
+    VitePWA({
+      // disable: true,
+      registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      devOptions: {
+        enabled: true
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html}']
+      },
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024
+      },
+      includeAssets: ['favicon.ico'],
+      manifest: {
+        id: 'TipTag',
+        name: 'TipTag',
+        short_name: 'TipTag',
+        description: '',
+        background_color: '#FE913F',
+        theme_color: '#ffffff',
+        icons: [
+          {
+            src: 'pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ]
+      }
+    }),
     nodePolyfills({
       globals: {
         Buffer: true,
@@ -61,7 +110,10 @@ export default defineConfig({
     }
   },
   build: {
-    target: "es2022"
+    target: "es2022",
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    }
   },
   esbuild: {
     target: "es2022"
