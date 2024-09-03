@@ -4,6 +4,7 @@ import axios from "axios";
 import { BACKEND_API_URL } from "@/config";
 import errCode from "@/errCode";
 import type {UploadRawFile} from "element-plus/es/components/upload/src/upload";
+import { notify } from "@/utils/notify";
 
 export const useUploadImg = () => {
   const uploading = ref(false)
@@ -25,8 +26,14 @@ export const useUploadImg = () => {
     uploading.value = true
     cropperModalVisible.value = false
     cropperRef?.getCropBlob(async (data: any) => {
-      completedImgUrl.value = await addUploadImg(data)
-      uploading.value = false
+      try {
+        completedImgUrl.value = await addUploadImg(data)
+      } catch (error) {
+        console.error(error)
+        notify({message: 'Upload fail, please retry', type: 'error'})
+      }finally {
+        uploading.value = false
+      }
     })
   }
 

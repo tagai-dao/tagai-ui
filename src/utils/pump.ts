@@ -106,7 +106,7 @@ export const claimReward = async (token: string, orderId: BigInt, amount: BigInt
 
 export const calculateInitEth = (amount: bigint) => {
     amount = amount / 100n;
-    const price = amount * amount * amount / BigInt(3e36) / (ethers.parseEther('11.43333333'))
+    const price = amount * amount * amount / BigInt(3e36) / (ethers.parseEther('0.00381'))
     return price * 10000n / (10000n - 100n - 100n);
 }
 
