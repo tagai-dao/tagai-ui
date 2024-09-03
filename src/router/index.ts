@@ -3,6 +3,14 @@ import HomeView from '../views/HomeView.vue'
 import { useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
+import HomeTagDetail from '@/views/tag-detail/HomeTagDetail.vue'
+import BuyAndSellView from '@/views/buy-sell/BuyAndSellView.vue'
+import TweetSpaceDetail from '@/views/space-detail/TweetSpaceDetail.vue'
+import TweetPostDetail from '@/views/post-detail/TweetPostDetail.vue'
+import ProfileView from '@/views/profile/ProfileView.vue'
+import WalletView from '@/views/wallet/WalletView.vue'
+import NotificationView from '@/views/notification/NotificationView.vue'
+import LoginCallBack from '@/views/LoginCallBack.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,40 +30,40 @@ const router = createRouter({
     {
       path: '/tag-detail/:id',
       name: 'tag-detail',
-      component: () => import('@/views/tag-detail/HomeTagDetail.vue'),
+      component: HomeTagDetail,
       meta: {tabBar: true, topBar: true}
     },
     {
       path: '/buy-sell/:id/:sellsman?',
       name: 'buy-sell',
-      component: () => import('@/views/buy-sell/BuyAndSellView.vue')
+      component: BuyAndSellView
     },
     {
       path: '/space-detail/:id',
       name: 'space-detail',
-      component: () => import('@/views/space-detail/TweetSpaceDetail.vue')
+      component: TweetSpaceDetail
     },
     {
       path: '/post-detail/:id',
       name: 'post-detail',
-      component: () => import('@/views/post-detail/TweetPostDetail.vue')
+      component: TweetPostDetail
     },
     {
       path: '/profile',
       name: 'profile',
-      component: () => import('@/views/profile/ProfileView.vue'),
+      component: ProfileView,
       meta: {tabBar: true, topBar: true, gotoHome: true, keepAlive: true}
     },
     {
       path: '/wallet',
       name: 'wallet',
-      component: () => import('@/views/wallet/WalletView.vue'),
+      component: WalletView,
       meta: {tabBar: true, topBar: true, gotoHome: true, keepAlive: true}
     },
     {
       path: '/notification',
       name: 'notification',
-      component: () => import('@/views/notification/NotificationView.vue')
+      component: NotificationView
     },
     {
       path: '/login',
