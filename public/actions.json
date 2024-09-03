@@ -1,8 +1,8 @@
 {
     "rules": [
         {
-            "pathPattern": "https://tiptag.social/commerce/**",
-            "apiPath": "https://api.tiptag.social/action/commerce/**"
+            "pathPattern": "https://enuls.tiptag.social/commerce/**",
+            "apiPath": "https://enuls-api.tiptag.social/action/commerce/**"
         }
     ]
 }
