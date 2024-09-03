@@ -37,7 +37,7 @@ const onRefresh = () => {
               <span class="text-grey-normal font-bold text-lg">Username</span>
               <span class="text-sm text-grey-8d"> • 23 days ago</span>
             </div>
-            <div class="font-medium text-grey-3f">0.003 ETH</div>
+            <div class="font-medium text-grey-3f">0.003 ENULS</div>
           </div>
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-1 text-grey-8d">
