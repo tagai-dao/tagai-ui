@@ -102,6 +102,12 @@ async function getSpaces() {
   }
 }
 
+function gotoChain(chain: string){
+  if (chain === 'ENULS') {
+    window.open('https://enuls.tiptag.social', '__blank')
+  }
+}
+
 function gotoDetail(com: Community) {
   comStore.currentSelectedCommunity = com
   router.push(`/tag-detail/${com.tick}`)
@@ -133,7 +139,7 @@ onActivated(() => {
         <button v-for="tab of tabOptions" :key="tab"
                 class="px-3 rounded-full h-8 text-h3"
                 :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
-                @click="activeTab=tab">{{tab}}</button>
+                @click="gotoChain(tab)">{{tab}}</button>
       </div>
       <SearchBar class="hidden web:flex"/>
       <el-select
