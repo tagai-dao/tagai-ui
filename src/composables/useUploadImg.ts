@@ -29,7 +29,6 @@ export const useUploadImg = () => {
     cropperRef?.getCropBlob(async (data: any) => {
       try {
         if (data.type.startsWith('image')) {
-          console.log(data.size);
           if (data.size > 1024*1024) {
             showPicSizeLimit.value = true
             return;
@@ -46,6 +45,7 @@ export const useUploadImg = () => {
       }finally {
         uploading.value = false
       }
+      
     })
   }
 
