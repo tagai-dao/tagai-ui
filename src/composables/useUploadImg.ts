@@ -4,6 +4,7 @@ import axios from "axios";
 import { BACKEND_API_URL } from "@/config";
 import errCode from "@/errCode";
 import type {UploadRawFile} from "element-plus/es/components/upload/src/upload";
+import { notify } from "@/utils/notify";
 
 export const useUploadImg = () => {
   const uploading = ref(false)
@@ -25,13 +26,20 @@ export const useUploadImg = () => {
     uploading.value = true
     cropperModalVisible.value = false
     cropperRef?.getCropBlob(async (data: any) => {
-      if (data.type.startsWith('image')) {
-        completedImgUrl.value = await addUploadImg(data)
-        console.log('image url:', completedImgUrl.value);
-      }else {
-
+      try {
+        if (data.type.startsWith('image')) {
+          completedImgUrl.value = await addUploadImg(data)
+          console.log('image url:', completedImgUrl.value);
+        }else {
+          notify({message: 'Only support image type file'})
+        }
+        uploading.value = false
+      } catch (error) {
+        console.error(error)
+        notify({message: 'Upload fail, please retry', type: 'error'})
+      }finally {
+        uploading.value = false
       }
-      uploading.value = false
     })
   }
 
