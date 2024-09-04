@@ -11,7 +11,7 @@ import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ethers } from 'ethers';
 
-const props = defineProps<{reward: CurationReward}>()
+const props = defineProps<{reward: CurationReward, canClaim: Boolean}>()
 const claiming = ref(false)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
@@ -42,7 +42,7 @@ async function claim() {
 </script>
 
 <template>
-  <div class="bg-white px-4 py-5 rounded-xl w-[260px]">
+  <div class="bg-white px-4 py-5 rounded-xl card w-[260px]">
     <div class="flex items-center gap-2">
       <img class="w-8 h-8 min-w-8 rounded-full"
            :src="reward.logo" alt="">
@@ -51,9 +51,9 @@ async function claim() {
         <div class="text-h5">{{ formatAmount(reward.amount) }} ({{ formatPrice(reward.amount * reward.price) }})</div>
       </div>
     </div>
-    <button @click="claim" :disabled="claiming"
+    <button @click="claim" :disabled="claiming || !canClaim"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
-      Claim
+      {{ canClaim ? 'Claim' : 'Pending settled' }}
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>
     <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected"
@@ -64,5 +64,7 @@ async function claim() {
 </template>
 
 <style scoped>
-
+.card{
+  border: 1px solid #FF7A00;
+}
 </style>

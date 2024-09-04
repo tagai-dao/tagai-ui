@@ -60,12 +60,12 @@ onMounted(async () => {
   }
   getEthPrice().then((p: any) => {
       stateStore.ethPrice = p
-    })
+    }).catch();
   let count = 0
   setInter(() => {
     getEthPrice().then((p: any) => {
       stateStore.ethPrice = parseFloat(p)
-    })
+    }).catch();
     updateVPOP();
     if (count++ % 6 == 0)
       updateUnreadMessageCount();

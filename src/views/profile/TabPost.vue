@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import TagCurationReward from "@/components/profile/TagCurationReward.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
-import { getUserTweets } from '@/apis/api'
+import { getUserTweets, getMyCurationRewards, userUnclaimableCurationRewards } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
 import { getTokenInfoOfTweets, getTokenOnchainInfo } from '@/utils/pump'
 import { formatPrice } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
-import { getMyCurationRewards } from '@/apis/api'
 import { type CurationReward } from "@/types";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
@@ -24,7 +23,15 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const scroller = document.querySelector('#profile-tab-scroller')
-const listData = ref<CurationReward[]>([])
+const claimableRewards = ref<CurationReward[]>([])
+const unclaimableRewards = ref<CurationReward[]>([])
+
+const tabOptions = ['Claimable', 'Unclaimable']
+const rewardType = ref('Claimable');
+
+watch(() => rewardType.value, (val) => {
+  updateReward();
+})
 
 const onLoad = async () => {
   if(finished.value || refreshing.value || accStore.tweetsList.length == 0) return
@@ -65,17 +72,29 @@ const onRefresh = async () => {
 };
 
 function updateReward() {
-  getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
+  if (rewardType.value === 'Claimable') {
+    getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
     if (list && list.length > 0) {
-      getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
-        for (let t of list) {
-          t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
-          // t.price = t.price ? t.price.toString() / 1e18 * useStateStore().ethPrice : 0
-        }
-        listData.value = list
-      })
-    }
-  })
+        getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
+          for (let t of list) {
+            t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
+          }
+          claimableRewards.value = list
+        })
+      }
+    })
+  }else {
+    userUnclaimableCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
+    if (list && list.length > 0) {
+        getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
+          for (let t of list) {
+            t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
+          }
+          unclaimableRewards.value = list
+        })
+      }
+    })
+  }
 }
 
 onMounted(() => {
@@ -100,8 +119,8 @@ onMounted(() => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <div class="flex items-center gap-1 px-3" v-if="listData.length > 0">
-          <span class="font-normal text-sm">Curation or Space Rewards</span>
+        <div class="flex items-center gap-1 px-3">
+          <span class="font-normal text-sm">Curation & Space Rewards</span>
           <el-popover popper-class="c-popper">
             <template #reference>
               <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
@@ -111,9 +130,30 @@ onMounted(() => {
             </template>
           </el-popover>
         </div>
-        <div class="w-full flex gap-3 scroll-pl-3 overflow-x-auto no-scroll-bar mt-1 snap-x">
-          <div class="snap-start shrink-0 first:pl-3 last:pr-3" v-for="reward of listData" :key="reward.tick">
-            <TagCurationReward :reward/>
+        <div class="my-3 gap-2 bg-white rounded-xl py-3 mx-3">
+          <div class="flex justify-start mb-2">
+            <button v-for="tab of tabOptions" :key="tab"
+                  class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
+                  :class="tab===rewardType?'text-gradient bg-gradient-primary':'text-grey-normal'"
+                  @click="rewardType=tab">{{tab}}</button>
+          </div>
+
+          <div v-show="rewardType == 'Claimable'" class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
+            <div v-if="claimableRewards.length > 0" class="pb-5 snap-start shrink-0 first:pl-3 last:pr-3" v-for="reward of claimableRewards" :key="reward.tick + 'claimable'">
+              <TagCurationReward :reward :can-claim="true"/>
+            </div>
+            <div v-else class="w-full flex my-8 justify-center items-center">
+              <img src="~@/assets/images/empty-data.svg" alt="">
+            </div>
+          </div>
+
+          <div v-show="rewardType == 'Unclaimable'" class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
+            <div v-if="unclaimableRewards.length > 0" class="snap-start shrink-0 first:pl-3 last:pr-3" v-for="reward of unclaimableRewards" :key="reward.tick + 'unclaimable'">
+              <TagCurationReward :reward :can-claim="false"/>
+            </div>
+            <div v-else class="w-full flex my-8 justify-center items-center">
+              <img src="~@/assets/images/empty-data.svg" alt="">
+            </div>
           </div>
         </div>
         <div class="px-3">
