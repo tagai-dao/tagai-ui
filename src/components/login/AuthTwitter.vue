@@ -60,6 +60,7 @@ async function login() {
         userInfo = await twitterLogin(state);
         if (userInfo.code === 3) {
           accStore.setAccount(userInfo.account as Account)
+          modalStore.setModalCloseEnable(true)
           useModalStore().setModalVisible(false);
           emitter.emit('login', true);
           break;
@@ -70,6 +71,7 @@ async function login() {
     }else {
       if (userInfo.code === 3) {
         accStore.setAccount(userInfo.account as Account)
+        modalStore.setModalCloseEnable(true)
         useModalStore().setModalVisible(false);
         emitter.emit('login', true);
       }
@@ -81,10 +83,6 @@ async function login() {
     logging.value = false
   }
 }
-
-watch(() => logging.value, () => {
-  modalStore.setModalCloseEnable(!logging.value)
-})
 
 onUnmounted(() => {
   logging.value = false
