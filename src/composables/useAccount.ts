@@ -140,7 +140,7 @@ export const useAccount = () => {
         if (op.value >= opConsume) {
             useAccountStore().setAccount({
                 ...account,
-                op: account.op! = opConsume
+                op: account.op! - opConsume
             })
             return true;
         }

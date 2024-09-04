@@ -153,6 +153,9 @@ export const getSpaceCurationList = async (tweetId: string) =>
 export const getMyCurationRewards = async (twitterId: string) =>
   post(BACKEND_API_URL + '/curation/userCurationRewards', {twitterId})
 
+export const userUnclaimableCurationRewards = async (twitterId: string) =>
+  post(BACKEND_API_URL + '/curation/userUnclaimableCurationRewards', {twitterId})
+
 export const getClaimSignature = async (twitterId: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/getUserClaimTagRewardSignature', {twitterId, tick})
 
