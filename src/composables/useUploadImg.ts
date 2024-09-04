@@ -25,7 +25,12 @@ export const useUploadImg = () => {
     uploading.value = true
     cropperModalVisible.value = false
     cropperRef?.getCropBlob(async (data: any) => {
-      completedImgUrl.value = await addUploadImg(data)
+      if (data.type.startsWith('image')) {
+        completedImgUrl.value = await addUploadImg(data)
+        console.log('image url:', completedImgUrl.value);
+      }else {
+
+      }
       uploading.value = false
     })
   }
@@ -40,9 +45,9 @@ export const useUploadImg = () => {
         },
       };
       axios
-        .post(BACKEND_API_URL + '/qiniu/upload', param, config)
+        .put('https://upload.wormhole3.io/files/upload?fileName=' + Date.now() + Math.ceil(Math.random() * 1000) + '.' + img.type.split('/')[1] + '&path=tiptag&bucket=tiptag', param, config)
         .then((res) => {
-          resolve(res?.data?.url??'');
+          resolve(res?.data??'');
         })
         .catch((err) => {
           reject(errCode.SERVER_ERROR);

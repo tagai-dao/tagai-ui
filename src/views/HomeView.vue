@@ -98,7 +98,7 @@ async function getSpaces() {
       curationStore.allSpaces = [];
     }
   } catch(e) {
-    handleErrorTip(e)
+    // handleErrorTip(e)
   }
 }
 
