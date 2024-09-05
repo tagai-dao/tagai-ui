@@ -25,7 +25,10 @@
         3：Once 10 ETH is raised, the liquidity pool (10 ETH + 15% tokens) will be added to Uniswap, and LP tokens will be burned (liquidity locked).
       </li>
       <li>
-        4：Coin Deployer and Blink creators will receive 1% of transaction fees from trades.
+        step 4：once someone transacts with a Blink on twitter, 1% of the transaction fee flows to the Blink publisher.
+      </li>
+      <li>
+        step 5：30000 $NULS of liquidity is then deposited in pheasantswap and burned
       </li>
     </ul>
   </div>
