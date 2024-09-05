@@ -55,7 +55,7 @@ export const useUploadImg = () => {
       axios
         .put('https://upload.wormhole3.io/files/upload?fileName=' + Date.now() + Math.ceil(Math.random() * 1000) + '.' + img.type.split('/')[1] + '&path=tiptag&bucket=tiptag', param, config)
         .then((res) => {
-          resolve(res?.data??'');
+          resolve((res?.data??'').replace('cn-shenzhen', 'accelerate'));
         })
         .catch((err) => {
           reject(errCode.SERVER_ERROR);
