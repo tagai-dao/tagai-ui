@@ -5,6 +5,9 @@ import {GlobalModalType, type Community} from "@/types";
 import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import {useCommunityStore} from "@/stores/community";
+import { handleErrorTip, notify } from "@/utils/notify";
+import { updateCommunityInfo } from '@/apis/api'
+import { useAccountStore } from "@/stores/web3";
 
 const comStore = useCommunityStore()
 const modalStore = useModalStore();
@@ -33,6 +36,48 @@ const uploadSuccess = (res: any, file: any) => {
 
 const onConfirmModify = async () => {
   console.log(modifyCommunityForm)
+  if (!modifyCommunityForm.logo) {
+    notify({message: 'Please upload Tag logo'})
+    return;
+  }
+  if (modifyCommunityForm.description.trim().length === 0) {
+    notify({message: 'Please complete description'})
+    return;
+  }
+  if (modifyCommunityForm.twitter && modifyCommunityForm.twitter.length > 0) {
+    if (!modifyCommunityForm.twitter.startsWith('https://twitter.com') &&
+        !modifyCommunityForm.twitter.startsWith('httsp://x.com')) {
+          notify({message: 'Wrong twitter link form'})
+          return;
+        }
+  }
+
+  if (modifyCommunityForm.telegram && modifyCommunityForm.telegram.length > 0) {
+    if (!modifyCommunityForm.telegram.startsWith('https://t.me')) {
+          notify({message: 'Wrong telegram link form'})
+          return;
+        }
+  }
+  const urlReg =
+    /^http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_#@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+$/;
+
+  if (modifyCommunityForm.official && modifyCommunityForm.official.length > 0) {
+    if (!modifyCommunityForm.official.match(urlReg)) {
+      notify({message: 'Wrong url link form'});
+      return;
+    }
+  }
+
+  try{
+    loading.value = true
+    await updateCommunityInfo(modifyCommunityForm, useAccountStore().getAccountInfo.twitterId);
+    useCommunityStore().currentSelectedCommunity = modifyCommunityForm;
+    useModalStore().setModalVisible(false);
+  } catch(e) {
+    handleErrorTip(e)
+  } finally {
+    loading.value = false
+  }
 }
 
 </script>
@@ -100,19 +145,20 @@ const onConfirmModify = async () => {
         <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
                v-model="modifyCommunityForm.twitter"
                id="twitter"
-               placeholder="@twittername"/>
+               placeholder="https://x.com"/>
       </div>
+      
       <!-- telegram -->
       <div class="flex flex-col gap-1">
-        <label for="twitter" class="leading-6 text-lg font-medium text-black">Twitter:</label>
+        <label for="twitter" class="leading-6 text-lg font-medium text-black">Telegram:</label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
                v-model="modifyCommunityForm.telegram"
                id="telegram"
-               placeholder="@telegram"/>
+               placeholder="https://t.me"/>
       </div>
       <!-- official -->
       <div class="flex flex-col gap-1">
-        <label for="twitter" class="leading-6 text-lg font-medium text-black">Twitter:</label>
+        <label for="twitter" class="leading-6 text-lg font-medium text-black">Official link:</label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
                v-model="modifyCommunityForm.official"
                id="official"
