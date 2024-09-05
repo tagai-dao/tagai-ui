@@ -44,7 +44,8 @@
     "maxAmountTip" : "Please input less than 700000000",
     "tickUsed": "This name has been registed, please change to another one",
     "pay": "Pay",
-    "youReceive": "You receive"
+    "youReceive": "You receive",
+    "modifyCoin": "Modify Coin"
   },
   "buyAndSell": {
     "setMaxSlippage": "Set max. slippage (%)",

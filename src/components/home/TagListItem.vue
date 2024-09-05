@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
 import { useStateStore } from '@/stores/common';
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
+import IconLinks from "@/components/home/IconLinks.vue";
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
@@ -41,18 +42,16 @@ async function trade() {
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
         <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
-        <div v-if="community.marketCap" class="flex items-center">
-          <span class="font-normal italic text-grey-64 leading-6 text-sm">market cap</span>
-          <span class="font-normal italic text-grey-64 leading-6 text-sm">
-            {{ formatPrice(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}
-          </span>
+        <IconLinks :community="community"/>
+        <div v-if="community.marketCap" class="flex items-end gap-1">
+          <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
+          <span class="font-medium italic text-orange-normal leading-5 text-sm">
+              {{ formatPrice(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}
+            </span>
         </div>
       </div>
       <div class="flex-1 w-full flex justify-between pt-1">
         <div class="flex-1 truncate">
-          <!-- <div class="text-grey-64 font-light text-sm">
-            created by  @0XSarah
-          </div> -->
           <div class="whitespace-pre-line text-grey-5a text-[14px] leading-[16px] font-medium multi-content multi-content-2">
             {{ community.description }}
           </div>
