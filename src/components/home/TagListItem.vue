@@ -42,12 +42,14 @@ async function trade() {
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
         <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
-        <IconLinks :community="community"/>
-        <div v-if="community.marketCap" class="flex items-end gap-1">
-          <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
-          <span class="font-medium italic text-orange-normal leading-5 text-sm">
+        <div class="flex-1 flex justify-between mt-1">
+          <IconLinks :community="community"/>
+          <div v-if="community.marketCap" class="flex items-end gap-1">
+            <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
+            <span class="font-medium italic text-orange-normal leading-5 text-sm">
               {{ formatPrice(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}
             </span>
+          </div>
         </div>
       </div>
       <div class="flex-1 w-full flex justify-between pt-1">

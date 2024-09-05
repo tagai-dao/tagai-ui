@@ -4,18 +4,23 @@ import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
 import CreateBtn from "@/layout/CreateBtn.vue";
 import { useAccountStore } from "@/stores/web3";
+import RuleModal from "@/components/common/RuleModal.vue";
 
 const modalVisible = ref(false)
-
+const ruleModalVisible = ref(false)
 
 </script>
 
 <template>
   <div class="w-full h-14 web:h-20 flex justify-between items-center px-4
               web:border-b-[1px] border-white">
-    <img class="h-8 mt-2 cursor-pointer"
-         src="~@/assets/logo.svg" alt=""
-         @click="$router.replace('/')">
+    <div class="flex items-center gap-2 mt-2">
+      <img class="h-8 cursor-pointer"
+           src="~@/assets/logo.svg" alt=""
+           @click="$router.replace('/')">
+      <button class="bg-gradient-primary text-white rounded-2xl text-sm px-2 h-5"
+              @click="ruleModalVisible = true">Rule</button>
+    </div>
     <div class="flex items-center gap-3 web:gap-6">
       <router-link to="/" class="hidden web:block">
         <img v-if="$route.name==='home'" class="w-6 h-6"
@@ -44,6 +49,12 @@ const modalVisible = ref(false)
                modal-class="overlay-white c-modal-fullscreen" fullscreen
                :show-close="false" align-center destroy-on-close>
       <SearchModal @onClose="modalVisible=false"/>
+    </el-dialog>
+    <el-dialog v-model="ruleModalVisible"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px]"
+               width="90%" :show-close="false" align-center destroy-on-closee>
+      <RuleModal @onClose="ruleModalVisible=false"/>
     </el-dialog>
   </div>
 </template>
