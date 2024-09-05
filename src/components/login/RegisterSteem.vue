@@ -192,7 +192,7 @@ onMounted(() => {
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="payToken"
               :disabled="loading">
-        <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ENULS</span>
+        <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} NULS</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button>
       <div class="w-full">

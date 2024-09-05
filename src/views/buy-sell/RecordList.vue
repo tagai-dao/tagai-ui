@@ -77,7 +77,7 @@ onMounted(() => {
           <span class="col-span-1 text-left">Address</span>
           <span class="col-span-1 text-center">Buy/Sell</span>
           <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
-          <span class="col-span-1 text-right">$ENULS</span>
+          <span class="col-span-1 text-right">$NULS</span>
         </div>
 
         <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">

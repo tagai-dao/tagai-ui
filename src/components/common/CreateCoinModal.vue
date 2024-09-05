@@ -344,7 +344,7 @@ watch(() => createLoading.value, () => {
       </div>
       <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
         <span class="text-grey-normal">Cost to deploy：</span>
-        <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} ENULS</span>
+        <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} NULS</span>
       </div>
     </div>
     <el-dialog v-model="cropperModalVisible"
