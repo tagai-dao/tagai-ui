@@ -29,8 +29,6 @@ const createForm = reactive<CreateCommunity>({
   ethAddr: "",
 });
 const createLoading = ref(false);
-const showOnlyPic = ref(false);
-const showPicSizeLimit = ref(false);
 const showInvalidName = ref(false);
 const showTickUsed = ref(false);
 const showMaxAmount = ref(false);
@@ -45,6 +43,8 @@ const {
   uploading,
   cropperModalVisible,
   cropperImgSrc,
+  showOnlyPic,
+  showPicSizeLimit,
   completedImgUrl,
   openImageCropper,
   onCroppingAndUpload
@@ -100,10 +100,6 @@ const uploadSuccess = (res: any, file: any) => {
 
 const beforeUpload = (file: any) => {
   uploading.value = true;
-  const isPic = file.type.startsWith("image/");
-  const isLt1M = file.size / 1024 / 1024 < 1;
-  showOnlyPic.value = !isPic;
-  showPicSizeLimit.value = !isLt1M;
 };
 
 const onFocusTagInput = () => {
@@ -276,6 +272,12 @@ watch(() => createLoading.value, () => {
             />
             <img v-else src="~@/assets/icons/icon-upload.svg" alt="" />
           </el-upload>
+          <div v-if="showOnlyPic" class="text-red-e6">
+            Only support image type
+          </div>
+          <div v-if="showPicSizeLimit" class="text-red-e6">
+            Image size can't large than 1M
+          </div>
         </div>
       </div>
       <!-- tag -->

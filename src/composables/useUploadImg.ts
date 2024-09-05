@@ -9,6 +9,8 @@ import { notify } from "@/utils/notify";
 export const useUploadImg = () => {
   const uploading = ref(false)
   const completedImgUrl = ref('')
+  const showOnlyPic = ref(false)
+  const showPicSizeLimit = ref(false)
 
   const cropperModalVisible = ref(false)
   const cropperImgSrc = ref<string| ArrayBuffer | null>(null)
@@ -28,10 +30,15 @@ export const useUploadImg = () => {
     cropperRef?.getCropBlob(async (data: any) => {
       try {
         if (data.type.startsWith('image')) {
+          console.log(data.size);
+          if (data.size > 1024*1024) {
+            showPicSizeLimit.value = true
+            return;
+          }
           completedImgUrl.value = await addUploadImg(data)
           console.log('image url:', completedImgUrl.value);
         }else {
-          notify({message: 'Only support image type file'})
+          showOnlyPic.value = true
         }
         uploading.value = false
       } catch (error) {
@@ -66,6 +73,8 @@ export const useUploadImg = () => {
   return {
     uploading,
     completedImgUrl,
+    showPicSizeLimit,
+    showOnlyPic,
     addUploadImg,
     cropperModalVisible,
     cropperImgSrc,
