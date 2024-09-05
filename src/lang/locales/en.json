@@ -38,7 +38,7 @@
   "createCommunity": {
     "createCommunity": "Create TagCoin",
     "initAmountTip": "Input how many TagCoin you wanna buy first.",
-    "initEth": "Pay {amount} ENULS",
+    "initEth": "Pay {amount} NULS",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
     "tagForbidden": "Can't create this tag",
     "descTooLong": "The description must within 1024 characters.",

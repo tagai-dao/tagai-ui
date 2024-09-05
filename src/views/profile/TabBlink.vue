@@ -103,7 +103,7 @@ onMounted(() => {
           <button class="bg-gradient-primary h-16 w-full rounded-xl flex items-center justify-center gap-1 text-white mb-2">
             <span class="text-h1 mr-2">{{ formatPrice(capturedFee * useStateStore().ethPrice) }}</span>
             <!-- <img src="~@/assets/icons/icon-up.svg" alt=""> -->
-            <span class="text-sm">($ENULS {{ formatAmount(capturedFee) }})</span>
+            <span class="text-sm">($NULS {{ formatAmount(capturedFee) }})</span>
           </button>
         </div>
         <div class="px-3">
