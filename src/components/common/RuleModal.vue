@@ -12,7 +12,7 @@ import {GlobalModalType} from "@/types";
            src="~@/assets/icons/icon-modal-close.svg" alt=""/>
     </div>
     <div class="text-h5 leading-6 mt-4 mb-2">
-      The way tiptag prevents Rugs is that the first 10% of $Coins buy are locked up for 3 days.
+      The way tiptag prevents Rugs is that the first 10% of $Coins buy are locked up for 3 days or listed.
       Each coin on tiptag is a <span class="text-green-34">fair-launch</span> with <span class="text-blue-32">no presale</span> and
       <span class="text-orange-normal">no team allocation</span>.
     </div>

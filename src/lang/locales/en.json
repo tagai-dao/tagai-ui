@@ -45,7 +45,7 @@
     "tickUsed": "This name has been registed, please change to another one",
     "pay": "Pay",
     "youReceive": "You receive",
-    "modifyCoin": "Modify Coin"
+    "modifyCoin": "Modify TagCoin info"
   },
   "buyAndSell": {
     "setMaxSlippage": "Set max. slippage (%)",

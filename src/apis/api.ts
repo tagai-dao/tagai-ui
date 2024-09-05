@@ -1,6 +1,6 @@
 import { get, post, put } from "./axios"
 import { BACKEND_API_URL } from '@/config'
-import type { CreateCommunity } from '@/types'
+import type { Community, CreateCommunity } from '@/types'
 
 /************************************ common **********************************/
 export const getEthPrice = async () =>
@@ -98,6 +98,9 @@ export const newQuote = async (twitterId: string, tweetId: string, text: string,
 /************************************ community **********************************/
 export const createCommunity = async (params: CreateCommunity) => 
   post(BACKEND_API_URL + '/community/createCommunity', params)
+
+export const updateCommunityInfo = async (community: Community, twitterId: string) =>
+  post(BACKEND_API_URL + '/community/updateInfo', {...community, twitterId})
 
 export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
   post(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})

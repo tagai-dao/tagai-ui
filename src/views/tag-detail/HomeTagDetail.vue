@@ -148,8 +148,10 @@ onMounted(async () => {
         </div>
         <div class="flex-1 py-1">
           <div class="flex flex-wrap justify-between gap-x-4 items-center">
-            <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
-            <IconLinks :community="comStore.currentSelectedCommunity"/>
+            <div class="flex items-center">
+              <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
+              <IconLinks :community="comStore.currentSelectedCommunity"/>
+            </div>
             <div class="text-base flex gap-1">
               <span class="font-semibold text-grey-64">market cap</span>
               <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
@@ -159,9 +161,10 @@ onMounted(async () => {
             <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
               {{ comStore.currentSelectedCommunity?.description }}
             </div>
-            <button @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
+            <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr" 
+                    @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
                     :disabled="!comStore.currentSelectedCommunity">
-              <img src="~@/assets/icons/icon-edit.svg" alt="">
+              <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
             </button>
           </div>
         </div>
