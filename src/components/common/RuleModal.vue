@@ -30,7 +30,7 @@ import {GlobalModalType} from "@/types";
         step 4：once someone transacts with a Blink on twitter, 1% of the transaction fee flows to the Blink publisher.
       </li>
       <li>
-        step 5：10 $ETH of liquidity is then deposited in uniswap and burned
+        step 5：30000 $NULS of liquidity is then deposited in pheasantswap and burned
       </li>
     </ul>
   </div>
