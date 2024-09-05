@@ -19,6 +19,7 @@ import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
 import { ethers } from "ethers";
+import IconLinks from "@/components/home/IconLinks.vue";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -99,7 +100,7 @@ async function checkTweet() {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       return;
     }
-    
+
     if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
       const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
       accStore.ipshare = ipshare;
@@ -113,7 +114,7 @@ async function checkTweet() {
   } finally {
     checkingTweet.value = false
   }
-    
+
     onTweetType(CurationType.BLINK);
 }
 
@@ -148,13 +149,20 @@ onMounted(async () => {
         <div class="flex-1 py-1">
           <div class="flex flex-wrap justify-between gap-x-4 items-center">
             <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
+            <IconLinks :community="comStore.currentSelectedCommunity"/>
             <div class="text-base flex gap-1">
               <span class="font-semibold text-grey-64">market cap</span>
               <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
             </div>
           </div>
-          <div class="whitespace-pre-line text-h5 mt-1">
-            {{ comStore.currentSelectedCommunity?.description }}
+          <div class="flex justify-between items-end gap-3 mt-1">
+            <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
+              {{ comStore.currentSelectedCommunity?.description }}
+            </div>
+            <button @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
+                    :disabled="!comStore.currentSelectedCommunity">
+              <img src="~@/assets/icons/icon-edit.svg" alt="">
+            </button>
           </div>
         </div>
       </div>
@@ -233,7 +241,7 @@ onMounted(async () => {
             Blinks
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
-          
+
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
               <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button>
