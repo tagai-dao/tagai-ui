@@ -155,7 +155,6 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         community.price = tokenInfo.price;
         community.marketCap = (community.price ?? 0) * TotalSupply;
-        community.unlockTime = tokenInfo.unlockTime;
         community.pair = tokenInfo.pair;
     }
     
@@ -173,7 +172,6 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         tweet.price = tokenInfo.price;
         tweet.marketCap = (tweet.price ?? 0) * TotalSupply;
-        tweet.unlockTime = tokenInfo.unlockTime;
         tweet.pair = tokenInfo.pair;
     }
     return tweets;
@@ -220,15 +218,6 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
                 ],
                 returns: [
                     [token + '-price', (val: any) => (val).toString() / 1e18]
-                ]
-            },
-            {
-                target: token,
-                call: [
-                    'unlockTime()(uint256)'
-                ],
-                returns: [
-                    [token + '-unlockTime', (val: any) => parseInt(val)]
                 ]
             },
             {

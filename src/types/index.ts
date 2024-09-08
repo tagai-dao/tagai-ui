@@ -191,7 +191,6 @@ export type OnchainTokenInfo = {
   bondingCurveSupply?: number;
   totalClaimedSocialRewards?: number;
   price?: number;
-  unlockTime?: number;
   pair?: string;
 }
 
