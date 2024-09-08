@@ -12,25 +12,24 @@ import {GlobalModalType} from "@/types";
            src="~@/assets/icons/icon-modal-close.svg" alt=""/>
     </div>
     <div class="text-h5 leading-6 mt-4 mb-2">
-      The way tiptag prevents Rugs is that the first 10% of $Coins buy are locked up for 3 days or listed.
       Each coin on tiptag is a <span class="text-green-34">fair-launch</span> with <span class="text-blue-32">no presale</span> and
       <span class="text-orange-normal">no team allocation</span>.
     </div>
     <ul class="leading-6 flex flex-col gap-3">
       <li>
-        step 1：buy the Tagcoin on the bonding curve
+        Step 1：Buy the Tagcoin on the bonding curve
       </li>
       <li>
-        step 2：post or like tweet, host or participate in Twitter Space, get TagCoin
+        Step 2：Post or like tweet, host or participate in Twitter Space, get TagCoin
       </li>
       <li>
-        step 3：if someone trades, 1% transaction fee flows to the deployer
+        Step 3：If someone trades, 1% transaction fee flows to the deployer
       </li>
       <li>
-        step 4：once someone transacts with a Blink on twitter, 1% of the transaction fee flows to the Blink publisher.
+        Step 4：Once someone transacts with a Blink on twitter, 1% of the transaction fee flows to the Blink publisher.
       </li>
       <li>
-        step 5：10 $ETH of liquidity is then deposited in uniswap and burned
+        Step 5：10 $ETH of liquidity is then deposited in Uniswap and burned
       </li>
     </ul>
   </div>
