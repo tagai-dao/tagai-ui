@@ -17,19 +17,19 @@ import {GlobalModalType} from "@/types";
     </div>
     <ul class="leading-6 flex flex-col gap-3">
       <li>
-        step 1：buy the Tagcoin on the bonding curve
+        Step 1：Buy the Tagcoin on the bonding curve.
       </li>
       <li>
-        step 2：post or like tweet, host or participate in Twitter Space, get TagCoin
+        Step 2：Post or like tweet, host or participate in Twitter Space, earn TagCoin.
       </li>
       <li>
-        step 3：if someone trades, 1% transaction fee flows to the deployer
+        Step 3：If someone trades, 1% transaction fee flows to the deployer.
       </li>
       <li>
-        step 4：once someone transacts with a Blink on twitter, 1% of the transaction fee flows to the Blink publisher.
+        Step 4：Once someone transacts with a Blink on twitter, 1% of the transaction fee flows to the Blink publisher.
       </li>
       <li>
-        step 5：30000 $NULS of liquidity is then deposited in pheasantswap and burned
+        Step 5：30000 $NULS of liquidity is then deposited in PheasantSwap and burned.
       </li>
     </ul>
   </div>
