@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import BackHeader from "@/layout/BackHeader.vue";
-import {computed, onMounted, ref, watch} from "vue";
+import {computed, onMounted, provide, ref, watch} from "vue";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
@@ -23,6 +23,7 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import { useCurationStore } from "@/stores/curation";
 import { ethers } from "ethers";
 import emitter from "@/utils/emitter";
+import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -75,6 +76,16 @@ const {
 
 const isPostTweet = ref(false)
 
+const percentage = ref(50)
+provide('percentage', percentage)
+watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value], () => {
+  if(tradeType.value==='buy') payEth.value = ethBalance.value * percentage.value / 100
+  if(tradeType.value==='sell') sellAmount.value = tokenBalance.value * percentage.value / 100
+}, {immediate: true})
+
+watch(() => tradeType.value, () => {
+  percentage.value = 0
+})
 
 watch(payEth, (val) => {
   updateBuyAmount(val)
@@ -133,7 +144,7 @@ async function checkTweet() {
     //   isPostTweet.value = false
     //   return;
     // }
-    
+
     if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
       const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
       accStore.ipshare = ipshare;
@@ -228,7 +239,7 @@ async function updateUserTokenInfo () {
     }
   } catch (error) {
     console.error('get users token info fail', error)
-  } 
+  }
 }
 
 onMounted(async () => {
@@ -287,6 +298,7 @@ onMounted(async () => {
             />
             <span class="text-h5 whitespace-nowrap">$ NULS</span>
           </div>
+          <AmountProgressBar/>
           <div class="text-right text-sm">
             Balance: {{ formatAmount(ethBalance) }}
           </div>
@@ -311,6 +323,7 @@ onMounted(async () => {
             />
             <span class="text-h5 whitespace-nowrap min-w">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
+          <AmountProgressBar/>
           <div class="text-sm flex justify-end">
             Balance: {{ formatAmount(tokenBalance) }}
           </div>
