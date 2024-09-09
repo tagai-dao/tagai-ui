@@ -123,16 +123,6 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
             ]
         },
         {
-            target: token,
-            call: [
-                'userLockedInBondingCurve(address)(uint256)',
-                ethAddr
-            ],
-            returns: [
-                ['locked', (val: any) => val.toString() / 1e18]
-            ]
-        },
-        {
             call: [
               'getEthBalance(address)(uint256)', 
               ethAddr
