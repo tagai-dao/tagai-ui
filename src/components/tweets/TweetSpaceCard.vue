@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { withDefaults, defineProps, computed } from 'vue'
+import { computed } from 'vue'
 import type {Tweet} from "@/types";
 import {usePost} from "@/composables/usePost";
 import { parseSpaceStartTime, parseSpaceLastTime, parseTimestamp } from '@/utils/helper';

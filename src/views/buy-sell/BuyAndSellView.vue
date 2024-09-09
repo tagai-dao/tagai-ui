@@ -76,7 +76,7 @@ const {
 
 const isPostTweet = ref(false)
 
-const percentage = ref(50)
+const percentage = ref(0)
 provide('percentage', percentage)
 watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value], () => {
   if(tradeType.value==='buy') payEth.value = ethBalance.value * percentage.value / 100

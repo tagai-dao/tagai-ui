@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineProps, onMounted, type PropType, ref, withDefaults} from 'vue'
+import {computed, defineProps, onMounted, type PropType, ref} from 'vue'
 import { IgnoreAuthor } from '@/config'
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { formatAmount, formatPrice, parseTimestamp } from '@/utils/helper';
