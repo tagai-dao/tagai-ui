@@ -52,15 +52,8 @@ const receiveAmount = ref()
 const receiveEth = ref()
 
 const maxSlippage = ref(5)
-const lockedAmount = ref(0)
 const tokenBalance = ref(0)
 const ethBalance = ref(0)
-const isUnlocked = computed(() => {
-  if (comStore.currentSelectedCommunity?.unlockTime) {
-    return comStore.currentSelectedCommunity?.unlockTime < (Date.now() / 1000)
-  }
-  return false
-})
 const listed = computed(() => {
   const listed = comStore.currentSelectedCommunity?.listed
   if (listed) {
@@ -82,7 +75,7 @@ const {
 
 const isPostTweet = ref(false)
 
-const percentage = ref(50)
+const percentage = ref(0)
 provide('percentage', percentage)
 watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value], () => {
   if(tradeType.value==='buy') payEth.value = ethBalance.value * percentage.value / 100
@@ -239,7 +232,6 @@ async function updateUserTokenInfo () {
   try {
     if (ethers.isAddress(accStore.ethConnectAddress)) {
       let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
-      lockedAmount.value = info.locked;
       tokenBalance.value = info.balance;
       ethBalance.value = info.ethBalance;
     }
@@ -332,7 +324,6 @@ onMounted(async () => {
           <AmountProgressBar/>
           <div class="text-sm flex justify-end">
             Balance: {{ formatAmount(tokenBalance) }}
-            <span class="text-red-e6" v-if="!isUnlocked && lockedAmount > 0 && !comStore.currentSelectedCommunity?.listed">(Locked: {{ formatAmount(lockedAmount) }})</span>
           </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"

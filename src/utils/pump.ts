@@ -8,12 +8,11 @@ import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
 import _ from 'lodash'
-import { getPair } from "./web3";
+import { isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 
 export const checkTickUsed = async (tick: string) => {
-    const pump = await getContract('Pump', undefined, true)
-    const created = await pump.createdTicks(tick)
+    const created = await isTokenExist(tick);
     return created
 }
 
@@ -123,16 +122,6 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
             ]
         },
         {
-            target: token,
-            call: [
-                'userLockedInBondingCurve(address)(uint256)',
-                ethAddr
-            ],
-            returns: [
-                ['locked', (val: any) => val.toString() / 1e18]
-            ]
-        },
-        {
             call: [
               'getEthBalance(address)(uint256)', 
               ethAddr
@@ -155,7 +144,6 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         community.price = tokenInfo.price;
         community.marketCap = (community.price ?? 0) * TotalSupply;
-        community.unlockTime = tokenInfo.unlockTime;
         community.pair = tokenInfo.pair;
     }
     
@@ -173,7 +161,6 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         tweet.price = tokenInfo.price;
         tweet.marketCap = (tweet.price ?? 0) * TotalSupply;
-        tweet.unlockTime = tokenInfo.unlockTime;
         tweet.pair = tokenInfo.pair;
     }
     return tweets;
@@ -220,15 +207,6 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
                 ],
                 returns: [
                     [token + '-price', (val: any) => (val).toString() / 1e18]
-                ]
-            },
-            {
-                target: token,
-                call: [
-                    'unlockTime()(uint256)'
-                ],
-                returns: [
-                    [token + '-unlockTime', (val: any) => parseInt(val)]
                 ]
             },
             {

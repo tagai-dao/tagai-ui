@@ -62,7 +62,7 @@ export const RegisterSteemMessage = JSON.stringify(
 );
 
 export const IPShareContract = "0xb6eec8EaEAEd773F47265f743Db607eb547BD2Dc";
-export const PumpContract = "0xC8757feaD6e911b03207DCC0b86998F4e4A73118";
+export const PumpContract = "0x2752815C81D421d52cA4038c4ab9081A32685b50";
 
 export const WETH = '0x4200000000000000000000000000000000000006';
 export const uniswapV2Factory = '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6';
