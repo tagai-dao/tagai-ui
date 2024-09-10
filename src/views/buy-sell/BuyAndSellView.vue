@@ -182,7 +182,7 @@ async function confirm() {
       return;
     }
     let content = formatElToTextContent(contentRef.value)
-    newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!).catch();
+    newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!).catch(console.error);
 
     // userTweet(content, comStore.currentSelectedCommunity!.tick).catch(handleErrorTip)
   }
@@ -198,9 +198,7 @@ async function confirm() {
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
-        if (listed.value && accStore.getAccountInfo?.twitterId) {
-          trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
-        }
+        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else{
@@ -212,9 +210,8 @@ async function confirm() {
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined
-        if (listed.value && accStore.getAccountInfo?.twitterId) {
-          trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
-        }
+        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else {

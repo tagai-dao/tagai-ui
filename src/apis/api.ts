@@ -103,7 +103,7 @@ export const updateCommunityInfo = async (community: Community, twitterId: strin
   post(BACKEND_API_URL + '/community/updateInfo', {...community, twitterId})
 
 export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
-  post(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
+  get(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
 
 export const search = async (tick: string) =>
   get(BACKEND_API_URL + '/community/search', { tick })
