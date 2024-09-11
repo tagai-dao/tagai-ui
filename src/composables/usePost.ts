@@ -31,18 +31,18 @@ export const usePost = (tweet: Tweet) => {
     let content = "";
     content = tweet.content??'';
     content = content.replace(reg, "");
-    for (let url of urls.value) {
+    let tempContent = ''
+    for (let i = 0 ; i < urls.value.length; i++) {
+      const url = urls.value[i]
       if (url.startsWith(window.location.origin + '/commerce') || url.startsWith('https://x.com') || url.startsWith('https://twitter.com')) {
         content = content.replaceAll(url, '');
       }else {
-        content = content.replace(
-          url,
-          `<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`
-        );
-
+        const strList = content.split(url)
+        tempContent += `${strList[0]}<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`
+        content = strList.slice(1).join(url)
       }
     }
-    return content;
+    return tempContent;
   });
 
   const isIgnoreAccount = computed(() => {
