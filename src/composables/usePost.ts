@@ -34,15 +34,16 @@ export const usePost = (tweet: Tweet) => {
     let tempContent = ''
     for (let i = 0 ; i < urls.value.length; i++) {
       const url = urls.value[i]
+      const strList = content.split(url)
       if (url.startsWith(window.location.origin + '/commerce') || url.startsWith('https://x.com') || url.startsWith('https://twitter.com')) {
-        content = content.replaceAll(url, '');
+        // content = content.replaceAll(url, '');
+        tempContent += `${strList[0]}`
       }else {
-        const strList = content.split(url)
         tempContent += `${strList[0]}<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`
-        content = strList.slice(1).join(url)
       }
+      content = strList.slice(1).join(url)
     }
-    return tempContent;
+    return tempContent || content;
   });
 
   const isIgnoreAccount = computed(() => {
