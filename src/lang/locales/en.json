@@ -41,6 +41,7 @@
     "initEth": "Pay {amount} ETH",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
     "tagForbidden": "Can't create this tag",
+    "descTooLong": "The description must within 1024 characters.",
     "maxAmountTip" : "Please input less than 700000000",
     "tickUsed": "This name has been registed, please change to another one",
     "pay": "Pay",

@@ -11,7 +11,7 @@ import { signMessage } from "@/utils/wallets";
 import { ethers } from "ethers";
 import { bytesToHex, formatPrice } from "@/utils/helper";
 import { createCoin, calculateInitEth, checkTickUsed } from "@/utils/pump";
-import { handleErrorTip } from "@/utils/notify";
+import { handleErrorTip, notify } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import emitter from '@/utils/emitter'
@@ -33,6 +33,7 @@ const showInvalidName = ref(false);
 const showTickUsed = ref(false);
 const showMaxAmount = ref(false);
 const showTagForbidden = ref(false);
+const showLongDesc = ref(false);
 
 const accStore = useAccountStore();
 const inputTag = ref("");
@@ -126,7 +127,6 @@ const testTick = async () => {
     }
     return true;
   }
-  console.log(2, createForm.tick)
   showInvalidName.value = true
 }
 
@@ -136,6 +136,7 @@ const create = async () => {
     createLoading.value = true;
     // check params
     showInvalidName.value = false
+    showLongDesc.value = false
 
     if (!(await testTick())) {
       return;
@@ -146,6 +147,12 @@ const create = async () => {
     }
 
     if (!createForm.logoUrl || createForm.logoUrl.length === 0) {
+      notify({message: 'Need upload an image for your tag'})
+      return;
+    }
+
+    if (createForm.desc.length > 1024){
+      showLongDesc.value = true;
       return;
     }
 
@@ -239,6 +246,9 @@ watch(() => createLoading.value, () => {
           id="desc"
           placeholder="Describe your tag"
         />
+        <div class="text-red-e6 text-sm" v-show="showLongDesc">
+          {{ $t('createCommunity.descTooLong') }}
+        </div>
       </div>
       <!-- logo -->
       <div class="flex items-center gap-4">
