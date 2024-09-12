@@ -243,10 +243,13 @@ async function updateUserTokenInfo () {
 }
 
 onMounted(async () => {
-  if (!comStore.currentSelectedCommunity?.tick) {
-    const tick = route.params.id as string
-    const community = (await getCommunityDetail(tick)) as Community
-    comStore.currentSelectedCommunity = (await getTokenInfo([community]))[0]
+  const tick = route.params.id as string
+  if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick) {
+    if (comStore.currentSelectedCommunity?.tick != tick) {
+      comStore.currentSelectedCommunity = null;
+    }
+    let community = (await getCommunityDetail(tick)) as Community
+    community = (await getTokenInfo([community]))[0]
     comStore.currentSelectedCommunity = community
   }
   sellsman.value = route.params.sellsman
