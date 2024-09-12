@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineProps, onMounted, type PropType, ref, withDefaults} from 'vue'
+import {computed, defineProps, onMounted, type PropType, ref} from 'vue'
 import { formatPrice, parseTimestamp } from '@/utils/helper';
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import {useTweet} from "@/composables/useTweet";

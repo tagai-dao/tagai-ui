@@ -8,7 +8,9 @@ import {useCommunityStore} from "@/stores/community";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { updateCommunityInfo } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
+import i18n from "@/lang";
 
+const t = i18n.global.t;
 const comStore = useCommunityStore()
 const modalStore = useModalStore();
 const modifyCommunityForm = reactive<Community>({
@@ -42,6 +44,10 @@ const onConfirmModify = async () => {
   }
   if (modifyCommunityForm.description.trim().length === 0) {
     notify({message: 'Please complete description'})
+    return;
+  }
+  if (modifyCommunityForm.description.trim().length > 1024) {
+    notify({message: t('createCommunity.descTooLong')})
     return;
   }
   if (modifyCommunityForm.twitter && modifyCommunityForm.twitter.length > 0) {
