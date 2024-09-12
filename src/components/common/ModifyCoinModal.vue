@@ -46,7 +46,7 @@ const onConfirmModify = async () => {
   }
   if (modifyCommunityForm.twitter && modifyCommunityForm.twitter.length > 0) {
     if (!modifyCommunityForm.twitter.startsWith('https://twitter.com') &&
-        !modifyCommunityForm.twitter.startsWith('httsp://x.com')) {
+        !modifyCommunityForm.twitter.startsWith('https://x.com')) {
           notify({message: 'Wrong twitter link form'})
           return;
         }
