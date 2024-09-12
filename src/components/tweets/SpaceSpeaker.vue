@@ -37,7 +37,6 @@ const getSpeakerData = async () => {
   try{
     if (props.tweet.tweetId) {
       const list: any = await getSpaceCurationList(props.tweet.tweetId)
-      console.log(35, list)
       curateList.value = list
       if (list.length < 30) {
         finished.value = true
