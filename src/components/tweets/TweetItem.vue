@@ -130,6 +130,9 @@ const onUserAvatar = () => {
                     class="px-2 text-base rounded-md">#{{ tag }}</button>
           </div>
         </div>
+        <div v-if="tweet.videoLink" class="pl-12">
+            <video controls loop playsinline webkit-playsinline muted :src="tweet.videoLink"></video>
+        </div>
         <div class="px-3 md:pl-12">
           <!--       foreign page -->
           <LinkPreview @click.stop="clickLinkView()" class="cursor-pointer"
