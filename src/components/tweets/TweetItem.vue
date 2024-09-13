@@ -158,7 +158,7 @@ onUnmounted(() => {
           </div>
         </div>
         <div v-if="tweet.videoLink" class="pl-12">
-            <video ref="video" controls loop playsinline webkit-playsinline muted :src="tweet.videoLink"></video>
+            <video controls loop playsinline webkit-playsinline muted :src="tweet.videoLink"></video>
         </div>
         <div class="px-3 md:pl-12">
           <!--       foreign page -->
