@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineProps, onMounted, type PropType, ref} from 'vue'
+import {computed, defineProps, onMounted, onUnmounted, type PropType, ref, watch} from 'vue'
 import { IgnoreAuthor } from '@/config'
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { formatAmount, formatPrice, parseTimestamp } from '@/utils/helper';
@@ -14,6 +14,9 @@ import {usePost} from "@/composables/usePost";
 import type {Tweet} from "@/types";
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import { useStateStore } from '@/stores/common';
+
+const video = ref();
+let observer: any = null
 
 const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,},
@@ -52,6 +55,30 @@ const showPageInfo = computed(() => {
 const onUserAvatar = () => {
 
 }
+
+onMounted(() => {
+  if (props.tweet.videoLink){
+    observer = new IntersectionObserver((entries) => {
+              entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                      // @ts-ignore
+                      entry.target.play();
+                  }else {
+                      // @ts-ignore
+                      entry.target.pause();
+                  }
+              })
+          }, {
+              threshold: 0.75
+          })
+
+    observer.observe(video.value);
+  }
+})
+
+onUnmounted(() => {
+  observer?.disconnect();
+})
 
 </script>
 
@@ -129,6 +156,9 @@ const onUserAvatar = () => {
                     :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
                     class="px-2 text-base rounded-md">#{{ tag }}</button>
           </div>
+        </div>
+        <div v-if="tweet.videoLink" class="pl-12">
+            <video ref="video" controls loop playsinline webkit-playsinline muted :src="tweet.videoLink"></video>
         </div>
         <div class="px-3 md:pl-12">
           <!--       foreign page -->
