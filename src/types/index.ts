@@ -136,6 +136,7 @@ export type Tweet = OnchainTokenInfo & Space &
     tweetId: string;
     content: string;
     tags?: string | undefined | null;
+    videoLink?: string | undefined | null;
     pageInfo?: string | undefined | null;
     retweetInfo?: string | undefined | null;
     onchainSteemId?: string | undefined | null;
