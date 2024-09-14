@@ -19,8 +19,8 @@ function tradeTime (token: TokenTrade) {
 }
 
 const onLoad = async () => {
-  if(finished.value || listData.value.length == 0) return
-  
+  if(finished.value || loading.value || listData.value.length == 0) return
+  loading.value = true
   try{
     const list = (await getTokenTradeList(comStore.currentSelectedCommunity!.token, Math.floor((listData.value.length - 1) / 30) + 1)) as TokenTrade[]
     listData.value = listData.value.concat(list)
