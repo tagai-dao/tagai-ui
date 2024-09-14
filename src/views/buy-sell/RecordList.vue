@@ -92,8 +92,8 @@ onMounted(() => {
           <span class="col-span-1 text-center" :class="token.isBuy?'text-green-34':'text-red-normal'">
             {{ token.isBuy ? 'Buy' : "Sell" }} {{ formatPastTime(token.timestamp as number) }}
           </span>
-          <span class="col-span-1 text-center">{{ formatAmount((token.amount as any) / 1e18) }}</span>
-          <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any) / 1e18) }}</span>
+          <span class="col-span-1 text-center">{{ formatAmount((token.amount as any)) }}</span>
+          <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any)) }}</span>
         </div>
       </van-list>
     </van-pull-refresh>
