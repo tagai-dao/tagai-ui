@@ -309,7 +309,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="py-5 px-4 rounded-2xl h-200px">
+  <div class="py-5 px-4 rounded-2xl h-500px min-h-[500px] w-full">
    <div ref="chartdom" class="h-full w-full">
    </div>
   </div>
