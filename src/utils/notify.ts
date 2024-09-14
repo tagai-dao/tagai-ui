@@ -73,8 +73,6 @@ export const handleErrorTip = (e: any) => {
     notify({ message: "Cannot sell the last 10 shares", type: "info" });
     return "Cannot sell the last 10 shares";
   } else {
-    notify({ message: "Transaction fail!", type: "error" });
-    return t("errMessage.invalidTransaction");
   }
 };
 
@@ -173,9 +171,6 @@ export const handleServerError = (code: number) => {
     case errCode.HasRegistered:
       notify({ message: t("errMessage.hasRegisted"), type: "info" });
       break;
-    case errCode.SERVER_ERR:
-      notify({ message: t('errMessage.serverErr'), type: 'error'})
-      break;
     case errCode.CANT_LIKE_SELF:
       notify({ message: t('errMessage.cantLikeSelf'), type: 'error'})
       break;
@@ -186,7 +181,6 @@ export const handleServerError = (code: number) => {
       notify({ message: t('errMessage.twitterErr'), type: 'error'});
       break;
     default:
-      notify({ message: t("errMessage.unknownError"), type: "error" });
       break;
   }
 };
