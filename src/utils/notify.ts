@@ -73,8 +73,6 @@ export const handleErrorTip = (e: any) => {
     notify({ message: "Cannot sell the last 10 shares", type: "info" });
     return "Cannot sell the last 10 shares";
   } else {
-    notify({ message: "Transaction fail!", type: "error" });
-    return t("errMessage.invalidTransaction");
   }
 };
 
