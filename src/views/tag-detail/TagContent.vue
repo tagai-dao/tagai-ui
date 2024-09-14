@@ -71,7 +71,7 @@ async function onLoad() {
       return;
     }
     loading.value = true
-    let list: any = await getCommunityNewTweets(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo.twitterId, Math.floor((showingTweets.value.length - 1) / 30) + 1)
+    let list: any = await getCommunityNewTweets(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, Math.floor((showingTweets.value.length - 1) / 30) + 1)
     tweetsStore.communityTweets![
       comStore.currentSelectedCommunity!.tick
     ] = showingTweets.value.concat(list as Tweet[])
