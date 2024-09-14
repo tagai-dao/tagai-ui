@@ -2,7 +2,7 @@
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { onMounted, ref } from "vue";
-import { newCommerce } from '@/apis/api'
+import { getTokenTradeData } from '@/apis/api'
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
@@ -11,11 +11,14 @@ import { useAccount } from "@/composables/useAccount";
 import emitter from "@/utils/emitter";
 import * as echarts from 'echarts';
 
+const props = defineProps(['tick'])
+const datas = ref([])
+
 type EChartsOption = echarts.EChartsOption;
-const upColor = '#00da3c';
-const upBorderColor = '#008F28';
-const downColor = '#ec0000';
-const downBorderColor = '#8A0000';
+const upColor = '#ec0000';
+const upBorderColor = '#8A0000';
+const downColor = '#00da3c';
+const downBorderColor = '#008F28';
 const barCount = 40;
 const chartdom = ref()
 const option = ref<EChartsOption>();
@@ -139,13 +142,22 @@ function calculateMA(dayCount: number) {
   return result;
 }
 
+async function getNewData() {
+    try{
+        let datas = await getTokenTradeData(props.tick, undefined, true);
+        console.log(23, datas)
+    } catch (e) {
+        
+    } finally {
+        
+    }
+}
 
-
-onMounted(() => {
+onMounted(async () => {
     option.value = {
         animation: true,
         title: {
-            text: '上证指数',
+            text: props.tick,
             left: 0
         },
         tooltip: {
@@ -156,7 +168,7 @@ onMounted(() => {
             confine: true,
         },
         legend: {
-            data: ['日K', 'MA5', 'MA10', 'MA20', 'MA30']
+            data: ['1min', '5min']
         },
         grid: {
             left: '10%',
@@ -175,7 +187,7 @@ onMounted(() => {
         yAxis: {
             scale: true,
             splitArea: {
-            show: true
+                show: true
             }
         },
         dataZoom: [
@@ -194,7 +206,7 @@ onMounted(() => {
         ],
         series: [
             {
-            name: '日K',
+            name: '1min',
             type: 'candlestick',
             data: data0.values,
             itemStyle: {
@@ -286,14 +298,98 @@ onMounted(() => {
                 }
                 ]
             }
+            },{
+            name: '5min',
+            type: 'candlestick',
+            data: data0.values,
+            itemStyle: {
+                color: upColor,
+                color0: downColor,
+                borderColor: upBorderColor,
+                borderColor0: downBorderColor
             },
-            {
-            name: 'MA5',
-            type: 'line',
-            data: calculateMA(5),
-            smooth: true,
-            lineStyle: {
-                opacity: 0.5
+            markPoint: {
+                label: {
+                formatter: function (param: any) {
+                    return param != null ? Math.round(param.value) + '' : '';
+                }
+                },
+                data: [
+                {
+                    name: 'Mark',
+                    coord: ['2013/5/31', 2300],
+                    value: 2300,
+                    itemStyle: {
+                    color: 'rgb(41,60,85)'
+                    }
+                },
+                {
+                    name: 'highest value',
+                    type: 'max',
+                    valueDim: 'highest'
+                },
+                {
+                    name: 'lowest value',
+                    type: 'min',
+                    valueDim: 'lowest'
+                },
+                {
+                    name: 'average value on close',
+                    type: 'average',
+                    valueDim: 'close'
+                }
+                ],
+                tooltip: {
+                formatter: function (param: any) {
+                    return param.name + '<br>' + (param.data.coord || '');
+                }
+                }
+            },
+            markLine: {
+                symbol: ['none', 'none'],
+                data: [
+                [
+                    {
+                    name: 'from lowest to highest',
+                    type: 'min',
+                    valueDim: 'lowest',
+                    symbol: 'circle',
+                    symbolSize: 10,
+                    label: {
+                        show: false
+                    },
+                    emphasis: {
+                        label: {
+                        show: false
+                        }
+                    }
+                    },
+                    {
+                    type: 'max',
+                    valueDim: 'highest',
+                    symbol: 'circle',
+                    symbolSize: 10,
+                    label: {
+                        show: false
+                    },
+                    emphasis: {
+                        label: {
+                        show: false
+                        }
+                    }
+                    }
+                ],
+                {
+                    name: 'min line on close',
+                    type: 'min',
+                    valueDim: 'close'
+                },
+                {
+                    name: 'max line on close',
+                    type: 'max',
+                    valueDim: 'close'
+                }
+                ]
             }
             }
         ]
@@ -303,6 +399,7 @@ onMounted(() => {
         renderer: 'canvas',
         useDirtyRect: false
     });
+    await getNewData();
     kC.setOption(option.value)
 })
 

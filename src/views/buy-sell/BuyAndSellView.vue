@@ -24,7 +24,7 @@ import { useCurationStore } from "@/stores/curation";
 import { ethers } from "ethers";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
-import KChart from "@/components/common/K-Chart.vue";
+import KChart from "@/views/buy-sell/K-Chart.vue";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -412,7 +412,7 @@ onMounted(async () => {
           Please complete the amount
         </div>
       </div>
-      <KChart/>
+      <KChart v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>
       <RecordList v-if="comStore.currentSelectedCommunity?.token" />
     </div>
   </div>
