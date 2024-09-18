@@ -10,7 +10,8 @@ import { useCommunityStore } from "@/stores/community";
 import { useAccount } from "@/composables/useAccount";
 import emitter from "@/utils/emitter";
 import * as echarts from 'echarts';
-import { formatAmount, formatDate, formatPrice } from "@/utils/helper";
+import { formatAmount, formatKChartDate, formatPrice } from "@/utils/helper";
+import { useStateStore } from "@/stores/common";
 
 const props = defineProps(['tick'])
 type ChartData = {
@@ -27,6 +28,7 @@ type FormData = {
 }
 const data1min = reactive<FormData>({categoryData: [''], values: [[3]]})
 const data5min = reactive<FormData>({categoryData: [''], values: [[3]]})
+const data1day = reactive<FormData>({categoryData: [''], values: [[3]]})
 
 type EChartsOption = echarts.EChartsOption;
 const upColor = '#35aa3e';
@@ -39,35 +41,34 @@ let kChart: any = null;
 const option = ref<EChartsOption>();
 
 
-function splitData(rawData: (ChartData)[], interval: 60) {
+function splitData(rawData: (ChartData)[], interval = 60) {
   let categoryData = [];
   let values = [];
   let lastData: any;
   let currentTime = rawData[0].timestamp;
+  const price = useStateStore().ethPrice;
   for (let data of rawData) {
     if(values.length === 0){
-        categoryData.push(formatDate(data.timestamp * 1000));
+        categoryData.push(formatKChartDate(data.timestamp * 1000));
         let data0 = [
-            (data.open / 1e18),
-            (data.close / 1e18),
-            (data.low / 1e18),
-            (data.high / 1e18)
+            (data.low / 1e18 * price),
+            (data.close / 1e18 * price),
+            (data.low / 1e18 * price),
+            (data.high / 1e18 * price)
         ]
         values.push(data0);
         lastData = data0
         currentTime = data.timestamp
-        continue;
-    }
-    if (data.timestamp == currentTime){
+    }else if (data.timestamp == currentTime){
         lastData = [
             lastData[0],
-            data.close / 1e18,
-            Math.min(data.low / 1e18, lastData[2]),
-            Math.max(data.high / 1e18, lastData[3])
+            data.close / 1e18 * price,
+            Math.min(data.low / 1e18 * price, lastData[2]),
+            Math.max(data.high / 1e18 * price, lastData[3])
         ]
         values[values.length - 1] = lastData
     }else if (data.timestamp > currentTime + interval) {
-        categoryData.push(formatDate(data.timestamp * 1000 + interval * 1000));
+        categoryData.push(formatKChartDate(data.timestamp * 1000 + interval * 1000));
         lastData = [
             lastData[1],
             lastData[1],
@@ -77,24 +78,39 @@ function splitData(rawData: (ChartData)[], interval: 60) {
         currentTime = currentTime + interval
         values.push(lastData)
         while(data.timestamp > currentTime + interval) {
-            categoryData.push(formatDate(currentTime * 1000 + interval * 1000));
-            currentTime += interval
+            categoryData.push(formatKChartDate(currentTime * 1000 + interval * 1000));
+            lastData = [
+                lastData[1],
+                data.close / 1e18 * price,
+                data.low / 1e18 * price,
+                data.high / 1e18 * price
+            ]
+            currentTime = data.timestamp
             values.push(lastData)
         }
-    }else {
-        categoryData.push(formatDate(data.timestamp * 1000));
+        categoryData.push(formatKChartDate(data.timestamp * 1000));
         let data0 = [
             lastData.close,
-            (data.close / 1e18),
-            (data.low / 1e18),
-            (data.high / 1e18)
+            (data.close / 1e18 * price),
+            (data.low / 1e18 * price),
+            (data.high / 1e18 * price)
+        ]
+        values.push(0);
+        lastData = data0
+        currentTime = data.timestamp
+    }else {
+        categoryData.push(formatKChartDate(data.timestamp * 1000));
+        let data0 = [
+            lastData.close,
+            (data.close / 1e18 * price),
+            (data.low / 1e18 * price),
+            (data.high / 1e18 * price)
         ]
         values.push(0);
         lastData = data0
         currentTime = data.timestamp
     }
   }
-  console.log(333, categoryData)
   return {
     categoryData: categoryData,
     values: values
@@ -120,11 +136,17 @@ function calculateMA(dayCount: number) {
 async function getNewData() {
     try{
         let res: any = await getTokenTradeData(props.tick, undefined, true);
-        console.log(23, res)
         if (res && res.length > 0) {
-            let d = splitData(res, 60)
-            data1min.categoryData = d.categoryData;
-            data1min.values = d.values;
+            let d1 = splitData(res, 60)
+            let d5 = splitData(res, 300)
+            let day1 = splitData(res, 86400)
+            data1min.categoryData = d1.categoryData;
+            data1min.values = d1.values;
+            data5min.categoryData = d5.categoryData;
+            data5min.values = d5.values;
+            data1day.categoryData = day1.categoryData;
+            data1day.values = day1.values
+            console.log(42, day1)
             updateChart();
         }
     } catch (e) {
@@ -135,11 +157,10 @@ async function getNewData() {
 }
 
 async function updateChart() {
-
     option.value = {
         animation: true,
         title: {
-            text: props.tick,
+            text: props.tick + '/ETH',
             left: 0
         },
         tooltip: {
@@ -149,8 +170,12 @@ async function updateChart() {
             },
             confine: true,
         },
+        select: {
+            disabled: false
+        },
         legend: {
-            data: ['1min', '5min']
+            data: ['1min', '5min', '1d'],
+            selectedMode: 'single',
         },
         grid: {
             left: '10%',
@@ -197,42 +222,16 @@ async function updateChart() {
                 borderColor: upBorderColor,
                 borderColor0: downBorderColor
             },
-            markPoint: {
-                label: {
-                formatter: function (param: any) {
-                    return param != null ? Math.round(param.value) + '' : '';
-                }
-                },
-                data: [
-                {
-                    name: 'Mark',
-                    coord: ['2013/5/31', 2300],
-                    value: 2300,
-                    itemStyle: {
-                    color: 'rgb(41,60,85)'
-                    }
-                },
-                {
-                    name: 'highest value',
-                    type: 'max',
-                    valueDim: 'highest'
-                },
-                {
-                    name: 'lowest value',
-                    type: 'min',
-                    valueDim: 'lowest'
-                },
-                {
-                    name: 'average value on close',
-                    type: 'average',
-                    valueDim: 'close'
-                }
-                ],
-                tooltip: {
-                formatter: function (param: any) {
-                    return param.name + '<br>' + (param.data.coord || '');
-                }
-                }
+            },
+            {
+            name: '5min',
+            type: 'candlestick',
+            data: data5min.values,
+            itemStyle: {
+                color: upColor,
+                color0: downColor,
+                borderColor: upBorderColor,
+                borderColor0: downBorderColor
             },
             markLine: {
                 symbol: ['none', 'none'],
@@ -280,52 +279,16 @@ async function updateChart() {
                 }
                 ]
             }
-            },{
-            name: '5min',
+            },
+            {
+            name: '1d',
             type: 'candlestick',
-            data: data1min.values,
+            data: data1day.values,
             itemStyle: {
                 color: upColor,
                 color0: downColor,
                 borderColor: upBorderColor,
                 borderColor0: downBorderColor
-            },
-            markPoint: {
-                label: {
-                formatter: function (param: any) {
-                    return param != null ? Math.round(param.value) + '' : '';
-                }
-                },
-                data: [
-                {
-                    name: 'Mark',
-                    coord: ['2013/5/31', 2300],
-                    value: 2300,
-                    itemStyle: {
-                    color: 'rgb(41,60,85)'
-                    }
-                },
-                {
-                    name: 'highest value',
-                    type: 'max',
-                    valueDim: 'highest'
-                },
-                {
-                    name: 'lowest value',
-                    type: 'min',
-                    valueDim: 'lowest'
-                },
-                {
-                    name: 'average value on close',
-                    type: 'average',
-                    valueDim: 'close'
-                }
-                ],
-                tooltip: {
-                formatter: function (param: any) {
-                    return param.name + '<br>' + (param.data.coord || '');
-                }
-                }
             },
             markLine: {
                 symbol: ['none', 'none'],
