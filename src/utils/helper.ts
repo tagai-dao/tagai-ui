@@ -283,6 +283,15 @@ export function formatDate(date?: any) {
   return dayjs(date).utc().format("YYYY-MM-DD HH:mm:ss");
 }
 
+export function formatKChartDate(date?: any) {
+  if (Date.now() - date < 86400000) {
+    date = date ?? dayjs();
+    return dayjs(date).utc().format("HH:mm");
+  }
+  date = date ?? dayjs();
+  return dayjs(date).utc().format("MM-DD HH:mm");
+}
+
 export function parseSpaceLastTime(space: Space) {
   const start = space.startedAt;
   const end = space.endedAt;
