@@ -38,7 +38,7 @@ export const handleErrorTip = (e: any) => {
     -1
   ) {
     notify({
-      message: "Insufficient gas, please charge ETH to your Donut address",
+      message: "Insufficient gas, please charge NULS to your address",
       type: "info",
       duration: 5000,
     });
