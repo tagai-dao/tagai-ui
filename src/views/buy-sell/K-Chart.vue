@@ -9,6 +9,8 @@ import { useInterval } from "@/composables/useTools";
 const props = defineProps(['tick'])
 const start = ref(0)
 const end = ref(0)
+let lastStart = 0;
+let lastEnd = 0;
 type ChartData = {
     timestamp: number,
     open: number,
@@ -111,8 +113,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
     }
   }
   return {
-    categoryData: categoryData.slice(-2000),
-    values: values.slice(-2000)
+    categoryData: categoryData,
+    values: values
   };
 }
 
@@ -159,8 +161,10 @@ async function getNewData() {
             data1h.categoryData = h1.categoryData;
             data1h.values = h1.values;
 
-            start.value = h1.values.length > 15 ? h1.values.length - 15 : 0;
-            end.value = h1.values.length + 10
+            start.value = Math.max(0, data5min.values.length - 15) * 100 / data5min.values.length;
+            end.value = 100
+            lastStart = start.value;
+            lastEnd = 100;
             updateChart();
         }
     } catch (e) {
@@ -207,8 +211,8 @@ async function updateChart() {
             boundaryGap: false,
             axisLine: { onZero: false },
             splitLine: { show: false },
-            min: 'dataMin',
-            max: 'dataMax'
+            min: -1,
+            max: lastEnd + 1
         },
         yAxis: {
             scale: true,
@@ -220,18 +224,9 @@ async function updateChart() {
             {
                 type: 'inside',
                 xAxisIndex: 0,
-                startValue: start.value,
-                endValue: end.value,
-                minValueSpan: 30
-            },
-            {
-                show: true,
-                type: 'slider',
-                top: '90%',
-                xAxisIndex: 0,
-                minValueSpan: 30,
-                start: 50,
-                end: 100
+                start: start.value,
+                end: 100,
+                // maxValueSpan: 30
             }
         ],
         series: [
@@ -266,10 +261,7 @@ async function updateChart() {
                     color0: downColor,
                     borderColor: upBorderColor,
                     borderColor0: downBorderColor
-                },
-                barWidth: 10,
-                barMinWidth: 10,
-                barMaxWidth: 20
+                }
             }
         ]
     };
@@ -292,14 +284,14 @@ async function updateChart() {
             length = data1day.values.length;
             category = data1day.categoryData
         }
-        start.value = length > 15 ? length - 15 : 0;
-        end.value = length;
+        start.value = (length > 15 ? length - 15 : 0) * 100 / length;
+        end.value = 100;
         kChart.setOption({
             dataZoom: [
                 {
                     type: 'inside',
-                    startValue: start.value,
-                    endValue: end.value
+                    start: start.value,
+                    end: 100
                 },
             ],
             xAxis: {
@@ -308,10 +300,31 @@ async function updateChart() {
                 boundaryGap: false,
                 axisLine: { onZero: false },
                 splitLine: { show: false },
-                min: 'dataMin',
-                max: 'dataMax'
+                min: -1,
+                max: length + 2
             },
         })
+    })
+    kChart.on('dataZoom', (params: any) => {
+        // const dataZoom = params.batch ? params.batch[0] : params;
+        // const zoom = kChart.getOption().dataZoom[0];
+        // const preRange = (lastEnd - lastStart).toFixed(6);
+        // const currentRange = (dataZoom.end - dataZoom.start).toFixed(6);
+        // console.log(33222, params, dataZoom, preRange, currentRange)
+        // if (preRange == currentRange) {
+        //     // 拖动
+        //     lastEnd = dataZoom.end;
+        //     lastStart = dataZoom.start;
+        // }else {
+        //     // 缩放
+        //     zoom.end = lastEnd;
+        //     kChart.setOption({
+        //         dataZoom: [zoom]
+        //     })
+        // }
+    })
+    window.addEventListener('resize', () => {
+        kChart.resize();
     })
 }
 
