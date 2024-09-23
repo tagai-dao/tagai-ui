@@ -32,6 +32,7 @@ export default {
         'green-darker': '#40524A',
         'green-hover': '#6D8C7F',
         'green-34': "#34C759",
+        'green-2f': "#2fc08f",
         'green-b6': "#B6EBD2",
         'yellow-fa': "#faedaa",
         'red-e6': "#E6374D",

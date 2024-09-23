@@ -25,6 +25,7 @@ import { ethers } from "ethers";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import KChart from "@/views/buy-sell/K-Chart.vue";
+import Kline from "@/views/buy-sell/Kline.vue";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -212,7 +213,7 @@ async function confirm() {
         sellAmount.value = undefined
         receiveEth.value = undefined
         trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
-        
+
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else {
@@ -413,6 +414,7 @@ onMounted(async () => {
         </div>
       </div>
       <KChart v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>
+      <Kline v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>
       <RecordList v-if="comStore.currentSelectedCommunity?.token" />
     </div>
   </div>

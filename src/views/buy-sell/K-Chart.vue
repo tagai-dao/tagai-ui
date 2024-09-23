@@ -201,10 +201,9 @@ async function updateChart() {
             right: '0'
         },
         grid: {
-          left: 80,
-          right: 20,
-          bottom: 30,
-          borderColor: '#C9C9C9'
+            left: '10%',
+            right: '10%',
+            bottom: '15%'
         },
         xAxis: {
             type: 'category',
@@ -216,19 +215,20 @@ async function updateChart() {
             max: lastEnd + 1
         },
         yAxis: {
-          scale: true,
-          splitLine: {
-            show: true
-          }
+            scale: true,
+            splitArea: {
+                show: true
+            }
         },
-        dataZoom: [{
-          type: 'inside',
-          minValueSpan: 5,
-          maxValueSpan: 60,
-          start: start.value,
-          end: 100,
-          orient: 'horizontal'
-        }],
+        dataZoom: [
+            {
+                type: 'inside',
+                xAxisIndex: 0,
+                start: start.value,
+                end: 100,
+                // maxValueSpan: 30
+            }
+        ],
         series: [
             {
                 name: '5min',
