@@ -22,13 +22,7 @@
         2：70% of tokens are allocated via a bonding curve to raise initial liquidity.
       </li>
       <li>
-        3：Once 10 ETH is raised, the liquidity pool (30000 $NULS + 15% tokens) will be added to Uniswap, and LP tokens will be burned (liquidity locked).
-      </li>
-      <li>
-        Step 4：Once someone transacts with a Blink on twitter, 1% of the transaction fee flows to the Blink publisher.
-      </li>
-      <li>
-        Step 5：30000 $NULS of liquidity is then deposited in PheasantSwap and burned.
+        3：Once 30000 $NULS is raised, the liquidity pool (30000 $NULS + 15% tokens) will be added to Uniswap, and LP tokens will be burned (liquidity locked).
       </li>
     </ul>
   </div>
