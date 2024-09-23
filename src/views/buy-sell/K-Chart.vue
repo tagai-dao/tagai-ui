@@ -168,9 +168,9 @@ async function getNewData() {
             updateChart();
         }
     } catch (e) {
-        
+
     } finally {
-        
+
     }
 }
 
@@ -201,9 +201,10 @@ async function updateChart() {
             right: '0'
         },
         grid: {
-            left: '10%',
-            right: '10%',
-            bottom: '15%'
+          left: 80,
+          right: 20,
+          bottom: 30,
+          borderColor: '#C9C9C9'
         },
         xAxis: {
             type: 'category',
@@ -215,20 +216,19 @@ async function updateChart() {
             max: lastEnd + 1
         },
         yAxis: {
-            scale: true,
-            splitArea: {
-                show: true
-            }
+          scale: true,
+          splitLine: {
+            show: true
+          }
         },
-        dataZoom: [
-            {
-                type: 'inside',
-                xAxisIndex: 0,
-                start: start.value,
-                end: 100,
-                // maxValueSpan: 30
-            }
-        ],
+        dataZoom: [{
+          type: 'inside',
+          minValueSpan: 5,
+          maxValueSpan: 60,
+          start: start.value,
+          end: 100,
+          orient: 'horizontal'
+        }],
         series: [
             {
                 name: '5min',
@@ -335,7 +335,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="py-5 px-4 rounded-2xl h-500px min-h-[500px] w-full">
+  <div class="py-5 px-4 rounded-2xl h-500px min-h-[500px] w-full bg-white">
    <div ref="chartdom" class="h-full w-full">
    </div>
   </div>
