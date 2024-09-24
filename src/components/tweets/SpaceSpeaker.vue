@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import type { Tweet, CurateRecord } from "@/types";
 import {computed, onMounted, ref} from "vue";
-import { getSpaceCurateList, getSpaceCurationList } from '@/apis/api'
+import { getSpaceCurationList } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
-import { formatAmount, parseTimestamp } from "@/utils/helper";
+import { formatAmount } from "@/utils/helper";
 
 const refreshing = ref(false)
-const loading = ref(false)
 const finished = ref(false)
 const curateList = ref<CurateRecord[]>([])
 

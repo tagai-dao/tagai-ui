@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import {useAccountStore} from "@/stores/web3";
 import {useModalStore, useStateStore} from "@/stores/common";
-import {useTimer} from "@/composables/useTools";
-import {ref, watch} from "vue";
+import {ref} from "vue";
 import {twitterAuth, twitterLogin} from "@/apis/api";
 import {sleep} from "@/utils/helper";
 import type {Account} from "@/types";

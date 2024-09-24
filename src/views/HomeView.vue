@@ -8,7 +8,7 @@ import { useCommunityStore } from "@/stores/community";
 import { useCurationStore } from '@/stores/curation'
 import { handleErrorTip } from '@/utils/notify'
 import { useRouter } from "vue-router";
-import { getTokenCap, getTokenInfo } from '@/utils/pump'
+import { getTokenInfo } from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";

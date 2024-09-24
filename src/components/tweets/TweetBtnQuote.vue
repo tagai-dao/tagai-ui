@@ -9,7 +9,6 @@ import {OperateType, useTweet} from "@/composables/useTweet";
 import { type Tweet } from "@/types";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { handleErrorTip } from "@/utils/notify";
-import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 
 const props = defineProps<{
     tweet: Tweet;

@@ -4,7 +4,6 @@ import {ref} from "vue";
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const listData = ref<number []>([])
 const onLoad = () => {
   if(loading.value || finished.value) return
   loading.value = true

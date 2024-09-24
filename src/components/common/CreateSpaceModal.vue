@@ -2,7 +2,7 @@
 import {useModalStore} from "@/stores/common";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
-import {computed, onUnmounted, ref, watch} from "vue";
+import { computed, ref } from "vue";
 import { useCommunityStore } from "@/stores/community";
 import debounce from 'lodash.debounce'
 import { getSpaceInfoById } from '@/apis/api'

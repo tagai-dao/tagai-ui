@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from "vue";
+import {onMounted, ref} from "vue";
 import { getTokenTradeList } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import type { TokenTrade } from "@/types";
-import { formatAddress, formatAmount, formatPastTime, parseTimestamp } from "@/utils/helper";
+import { formatAddress, formatAmount, formatPastTime } from "@/utils/helper";
 import { handleErrorTip } from "@/utils/notify";
 import emitter from "@/utils/emitter";
 

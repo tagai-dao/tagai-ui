@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {ref} from "vue";
-import {checkAccessToken, newLike} from "@/apis/api";
-import {handleErrorTip, handleServerError} from "@/utils/notify";
+import {handleErrorTip} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import { type Tweet } from "@/types";
 import { OperateType, useTweet } from "@/composables/useTweet";

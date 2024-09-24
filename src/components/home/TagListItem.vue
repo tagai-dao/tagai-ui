@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Community } from '@/types';
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useCurationStore } from '@/stores/curation';
 import { formatPrice } from '@/utils/helper';
 import { useAccountStore } from '@/stores/web3';
@@ -8,7 +8,6 @@ import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
 import { useStateStore } from '@/stores/common';
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
-import IconLinks from "@/components/home/IconLinks.vue";
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()

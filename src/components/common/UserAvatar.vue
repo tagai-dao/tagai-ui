@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { useTools } from "@/composables/useTools";
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed } from "vue";
 import { formatAddress } from "@/utils/helper";
-import { ethers } from "ethers";
-import { handleErrorTip } from "@/utils/notify";
-import { checkEthUsed } from "@/apis/api";
 
 const props = withDefaults(defineProps<{
     twitterId?: string | null | undefined,

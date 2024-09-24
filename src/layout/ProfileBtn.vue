@@ -4,7 +4,6 @@ import {MAX_OP, MAX_VP} from "@/config";
 import {useAccountStore} from "@/stores/web3";
 import {useAccount} from "@/composables/useAccount";
 import HalfCircleProgress from "@/components/common/HalfCircleProgress.vue";
-import BannerTag from "@/components/common/OnlineSpace.vue";
 
 const accStore = useAccountStore()
 const { vp, op, profile, replaceEmptyProfile } = useAccount()

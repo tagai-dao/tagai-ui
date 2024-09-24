@@ -1,7 +1,6 @@
-import {type Ref, ref} from "vue";
+import {ref} from "vue";
 import type {UploadRequestOptions} from "element-plus";
 import axios from "axios";
-import { BACKEND_API_URL } from "@/config";
 import errCode from "@/errCode";
 import type {UploadRawFile} from "element-plus/es/components/upload/src/upload";
 import { notify } from "@/utils/notify";

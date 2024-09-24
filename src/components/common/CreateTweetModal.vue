@@ -2,12 +2,9 @@
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { ref } from "vue";
-import { newCommerce } from '@/apis/api'
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip, notify } from "@/utils/notify";
-import { useAccountStore } from "@/stores/web3";
 import { useCommunityStore } from "@/stores/community";
-import { useAccount } from "@/composables/useAccount";
 import emitter from "@/utils/emitter";
 
 const comStore = useCommunityStore()

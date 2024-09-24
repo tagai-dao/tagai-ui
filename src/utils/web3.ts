@@ -6,7 +6,6 @@ import { sha256 } from "js-sha256";
 import base58 from "bs58";
 import { ethers } from "ethers";
 import steem from "steem";
-import { aggregate } from '@makerdao/multicall'
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();

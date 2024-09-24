@@ -2,7 +2,6 @@
 import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
 import { computed, ref } from "vue";
-import {GlobalModalType} from "@/types";
 
 const modalStore = useModalStore();
 const loading = ref(false);

@@ -4,7 +4,6 @@ import { useAccountStore } from "@/stores/web3";
 import type { SocialMessage } from "@/types";
 import { parseTimestamp, formatDate } from "@/utils/helper";
 import { onMounted, onUnmounted, ref, computed } from "vue";
-import { dayjs } from "element-plus";
 
 const refreshing = ref(false);
 const loading = ref(false);

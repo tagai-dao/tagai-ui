@@ -1,13 +1,11 @@
 <script setup lang="ts">
 
 import BackHeader from "@/layout/BackHeader.vue";
-import {testTweets} from "@/assets/test-data";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import Comments from "@/components/tweets/Comments.vue";
 import {onMounted, ref} from "vue";
 import CuratorsList from "@/components/tweets/CuratorsList.vue";
-import type { Tweet } from "@/types";
 import { useCurationStore } from "@/stores/curation";
 import { useRoute, useRouter } from "vue-router";
 import { getTweetById } from "@/apis/api";

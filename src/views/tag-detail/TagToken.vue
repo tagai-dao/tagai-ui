@@ -6,7 +6,7 @@ import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
 import { getHolderList } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
-import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
+import { TotalSupply, SocialSupply, ListSupply } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 

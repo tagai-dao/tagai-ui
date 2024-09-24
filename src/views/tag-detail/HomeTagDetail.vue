@@ -2,7 +2,7 @@
 import {onMounted, ref, computed} from "vue";
 import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
-import {GlobalModalType, type Community} from "@/types";
+import {GlobalModalType} from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";

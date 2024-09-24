@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import {useStateStore} from "@/stores/common";
-import {formatDate, formatKChartDate} from "@/utils/helper";
+import {formatKChartDate} from "@/utils/helper";
 import {onMounted, reactive, ref, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
-import {init, utils} from "klinecharts";
+import {init} from "klinecharts";
 import { useInterval } from "@/composables/useTools";
 
 const props = defineProps(['tick'])

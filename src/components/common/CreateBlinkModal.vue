@@ -7,7 +7,6 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
 import { useCommunityStore } from "@/stores/community";
-import { useAccount } from "@/composables/useAccount";
 import emitter from "@/utils/emitter";
 
 const comStore = useCommunityStore()

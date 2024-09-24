@@ -1,4 +1,4 @@
-import {computed, reactive, ref, withDefaults, defineProps} from "vue";
+import {computed, ref} from "vue";
 import {stringLength} from "@/utils/helper";
 import {useTweet} from "@/composables/useTweet";
 

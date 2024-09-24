@@ -5,7 +5,6 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import Comments from "@/components/tweets/Comments.vue";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import SpaceCurateList from "@/components/tweets/SpaceCurateList.vue";
-import type { Tweet } from "@/types";
 import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useCurationStore } from "@/stores/curation";

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { withDefaults, defineProps, computed } from 'vue'
+import { defineProps, computed } from 'vue'
 import type {Tweet} from "@/types";
 import {usePost} from "@/composables/usePost";
 import { parseSpaceStartTime, parseSpaceLastTime, parseTimestamp } from '@/utils/helper';
@@ -7,14 +7,7 @@ import { parseSpaceStartTime, parseSpaceLastTime, parseTimestamp } from '@/utils
 const props = defineProps<{tweet: Tweet}>();
 
 const {
-  blogRef,
-  profileImg,
-  content,
-  isIgnoreAccount,
-  steemUrl,
-  replaceEmptyImg,
-  gotoTweet,
-  clickContent,
+  profileImg
 } = usePost(props.tweet)
 
 const isEnd = computed(() => {

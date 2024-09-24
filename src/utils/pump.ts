@@ -1,7 +1,7 @@
 import { getContract } from "./contract";
-import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
+import type { Community, CreateCommunity, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply } from "@/config";
-import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
+import { getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract, Ether, ClaimFee } from "@/config";
 import { abis } from './abis'

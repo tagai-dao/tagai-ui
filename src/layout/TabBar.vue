@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import {useModalStore} from "@/stores/common";
-import {GlobalModalType} from "@/types";
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
-import { MAX_OP, MAX_VP } from "@/config";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
 import CreateBtn from "@/layout/CreateBtn.vue";
 

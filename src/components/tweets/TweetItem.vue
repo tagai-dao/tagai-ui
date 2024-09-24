@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import {computed, defineProps, onMounted, onUnmounted, type PropType, ref, watch} from 'vue'
-import { IgnoreAuthor } from '@/config'
-import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { formatAmount, formatPrice, parseTimestamp } from '@/utils/helper';
-import { useRouter } from 'vue-router';
 // import { buildAssetId } from '@/utils/eth/ipShare'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import LinkPreview from "@/components/tweets/LinkPreview.vue";
 import QuoteTweet from "@/components/tweets/QuoteTweet.vue";
 import {useTweet} from "@/composables/useTweet";
-import TweetSpaceCard from "@/components/tweets/TweetSpaceCard.vue";
 import {usePost} from "@/composables/usePost";
 import type {Tweet} from "@/types";
 import {tagBgColors, tagTextColors} from "@/composables/useTags";

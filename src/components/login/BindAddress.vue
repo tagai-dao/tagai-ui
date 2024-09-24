@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { EthWalletState, useAccountStore } from "@/stores/web3";
-import { computed, ref, watch } from "vue";
+import { useAccountStore } from "@/stores/web3";
+import { ref, watch } from "vue";
 import { ethers } from "ethers";
 import { checkEthUsed, bondEth } from '@/apis/api'
 import { BondEthMessage } from '@/config'

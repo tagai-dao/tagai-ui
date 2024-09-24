@@ -2,7 +2,6 @@
 import { onMounted, ref } from 'vue'
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { parseTimestamp } from '@/utils/helper';
-import type {Tweet} from "@/types";
 
 const props = defineProps<{
     retweetInfo: string,

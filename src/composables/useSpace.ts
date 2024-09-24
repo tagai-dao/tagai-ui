@@ -1,6 +1,4 @@
 const SpaceRex = /https:\/\/(twitter|x)\.com\/i\/spaces\/([0-9a-z-A-Z]+)(\/\w)?/
-const regex_hive_tag = /#hive-[0-9]{4,7}/
-const regex_tweet_link = new RegExp("https://twitter.com/([a-zA-Z0-9\_]+)/status/([0-9]+)[/]?$")
 import { useAccountStore } from '@/stores/web3'
 import { tweetWithSpace } from '@/apis/api'
 

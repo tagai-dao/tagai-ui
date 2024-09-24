@@ -1,12 +1,8 @@
 import { getContract } from "./contract";
-import type { Community, CreateCommunity, Tweet, IPShare } from "@/types";
-import { CreateFee, ChainConfig } from "@/config";
-import { getReadOnlyProvider, getTransactionReceipt } from "./web3";
+import { ChainConfig } from "@/config";
 import { ethers } from 'ethers'
-import { PumpContract, IPShareContract, Ether } from "@/config";
-import { abis } from './abis'
+import { IPShareContract } from "@/config";
 import { aggregate } from '@makerdao/multicall'
-import errCode from "@/errCode";
 import _ from 'lodash'
 
 // ethAddr?: string;

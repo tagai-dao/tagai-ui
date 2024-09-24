@@ -1,6 +1,5 @@
 <script setup lang="ts">
 
-import {GlobalModalType} from "@/types";
 </script>
 
 <template>

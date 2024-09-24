@@ -1,7 +1,7 @@
 import { computed } from "vue";
 import { useAccountStore } from "@/stores/web3";
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
-import { twitterRefreshAccessToken, twitterLogout, getVPOP, needLogin,
+import { twitterRefreshAccessToken, getVPOP, needLogin,
     getNewMessageCount, getMessages as gm, readAllMessage
  } from '@/apis/api'
 import { MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY } from '@/config'

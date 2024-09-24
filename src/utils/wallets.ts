@@ -2,9 +2,6 @@ import { ethers } from 'ethers';
 import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 
-
-
-
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
 // this.ethConnectAddress = ''

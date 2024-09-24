@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {parseTimestamp} from "@/utils/helper";
-import {checkAccessToken} from "@/apis/api";
-import {handleErrorTip, notify} from "@/utils/notify";
+import {handleErrorTip} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
 import {OperateType, useTweet} from "@/composables/useTweet";
