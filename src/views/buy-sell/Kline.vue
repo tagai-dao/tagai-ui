@@ -144,7 +144,7 @@ async function getNewData() {
       data1h.values = h1.values;
     }
   } catch (e) {
-    
+
   } finally {
 
   }
@@ -192,7 +192,7 @@ onMounted(async () => {
     } catch (e) {
       console.log(5333, e)
     } finally {
-      
+
     }
   }, 3000)
 })
@@ -205,9 +205,9 @@ watch(()=> activeTab.value, () => {
 
 <template>
   <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[500px] w-full bg-white flex flex-col">
-    <div class="mb-4 px-3 flex justify-between">
+    <div class="mb-4 px-3 flex flex-wrap justify-between gap-y-2 gap-x-4">
       <span class="font-medium text-black text-xl">{{props.tick + '/USDT'}}</span>
-      <div class="flex items-center gap-4">
+      <div class="flex-1 flex justify-end items-center gap-4">
         <button v-for="t of timeOptions" :key="t" class="flex items-center gap-1"
                 @click="activeTab=t">
           <span class="text-sm font-light">{{t}}</span>
