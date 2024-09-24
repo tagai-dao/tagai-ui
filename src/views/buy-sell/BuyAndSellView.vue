@@ -5,7 +5,6 @@ import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
-import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import { useRoute } from "vue-router";
 import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
@@ -24,7 +23,6 @@ import { useCurationStore } from "@/stores/curation";
 import { ethers } from "ethers";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
-import KChart from "@/views/buy-sell/K-Chart.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
 
 const comStore = useCommunityStore()

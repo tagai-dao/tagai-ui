@@ -4,12 +4,11 @@ import {formatDate, formatKChartDate} from "@/utils/helper";
 import {onMounted, reactive, ref, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
 import {init, utils} from "klinecharts";
+import { useInterval } from "@/composables/useTools";
 
 const props = defineProps(['tick'])
-const start = ref(0)
-const end = ref(0)
-let lastStart = 0;
-let lastEnd = 0;
+const { setInter } = useInterval();
+let lastTimestamp = 0;
 type ChartData = {
   timestamp: number,
   open: number,
@@ -25,6 +24,7 @@ type FormData = {
 
 const timeOptions = ['5min', '1h', '1d']
 const activeTab = ref('5min')
+let originalData: ChartData[] = []
 const data1min = reactive<FormData>({categoryData: [''], values: [[3]]})
 const data5min = reactive<FormData>({categoryData: [''], values: [[3]]})
 const data1h = reactive<FormData>({categoryData: [''], values: [[3]]})
@@ -91,7 +91,7 @@ function splitData(rawData: (ChartData)[], interval = 60) {
       }
       categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
       lastData = {
-        open: lastData.open,
+        open: lastData.close,
         close: (data.close / 1e18 * price),
         low: lowest,
         high: highest,
@@ -102,7 +102,7 @@ function splitData(rawData: (ChartData)[], interval = 60) {
     }else {
       categoryData.push(formatKChartDate(thisInterval * interval * 1000, interval >= 86400));
       lastData = {
-        open: lastData.open,
+        open: lastData.close,
         close: (data.close / 1e18 * price),
         low: lowest,
         high: highest,
@@ -128,12 +128,8 @@ async function getNewData() {
   try{
     let res: any = await getTokenTradeData(props.tick, undefined, true);
     if (res && res.length > 0) {
-      console.log(32, res.map((res: any) => {
-        return {
-          ...res,
-          time: formatDate(res.timestamp * 1000)
-        }
-      }))
+      originalData = res as ChartData[];
+      lastTimestamp = res[res.length - 1].timestamp;
       let m1 = splitData(res, 60)
       let m5 = splitData(res, 300)
       let h1 = splitData(res, 3600)
@@ -146,21 +142,12 @@ async function getNewData() {
       data1day.values = day1.values;
       data1h.categoryData = h1.categoryData;
       data1h.values = h1.values;
-
-      start.value = Math.max(0, data5min.values.length - 15) * 100 / data5min.values.length;
-      end.value = 100
-      lastStart = start.value;
-      lastEnd = 100;
     }
   } catch (e) {
-
+    
   } finally {
 
   }
-}
-
-function formatTest() {
-
 }
 
 onMounted(async () => {
@@ -183,6 +170,31 @@ onMounted(async () => {
   })
   chart.value.setPriceVolumePrecision(8, 8)
   updateChart();
+  setInter(async () => {
+    try{
+      let res: any = await getTokenTradeData(props.tick, lastTimestamp, true);
+      if (res && res.length > 0) {
+        originalData = originalData.concat(res as ChartData[])
+        let m1 = splitData(originalData, 60)
+        let m5 = splitData(originalData, 300)
+        let h1 = splitData(originalData, 3600)
+        let day1 = splitData(originalData, 86400)
+        data1min.categoryData = m1.categoryData;
+        data1min.values = m1.values;
+        data5min.categoryData = m5.categoryData;
+        data5min.values = m5.values;
+        data1day.categoryData = day1.categoryData;
+        data1day.values = day1.values;
+        data1h.categoryData = h1.categoryData;
+        data1h.values = h1.values;
+        updateChart();
+      }
+    } catch (e) {
+      console.log(5333, e)
+    } finally {
+      
+    }
+  }, 3000)
 })
 
 watch(()=> activeTab.value, () => {
