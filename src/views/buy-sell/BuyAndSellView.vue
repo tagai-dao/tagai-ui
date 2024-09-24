@@ -413,7 +413,7 @@ onMounted(async () => {
           Please complete the amount
         </div>
       </div>
-      <KChart v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>
+<!--      <KChart v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>-->
       <Kline v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>
       <RecordList v-if="comStore.currentSelectedCommunity?.token" />
     </div>

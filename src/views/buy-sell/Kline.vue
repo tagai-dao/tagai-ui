@@ -3,7 +3,7 @@ import {useStateStore} from "@/stores/common";
 import {formatDate, formatKChartDate} from "@/utils/helper";
 import {onMounted, reactive, ref, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
-import {init} from "klinecharts";
+import {init, utils} from "klinecharts";
 
 const props = defineProps(['tick'])
 const start = ref(0)
@@ -159,10 +159,15 @@ async function getNewData() {
   }
 }
 
+function formatTest() {
+
+}
 
 onMounted(async () => {
   await getNewData()
-  chart.value = init("k-line-chart");
+  chart.value = init("k-line-chart",  {
+    decimalFoldThreshold: 8
+  });
   chart.value.setStyles({
     candle: {
       tooltip: {
@@ -188,7 +193,6 @@ watch(()=> activeTab.value, () => {
 
 <template>
   <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[500px] w-full bg-white flex flex-col">
-<!--    <h3 class="k-line-chart-title">{{ title }}</h3>-->
     <div class="mb-4 px-3 flex justify-between">
       <span class="font-medium text-black text-xl">{{props.tick + '/USDT'}}</span>
       <div class="flex items-center gap-4">
