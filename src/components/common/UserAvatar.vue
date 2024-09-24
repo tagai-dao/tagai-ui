@@ -9,11 +9,11 @@ import { checkEthUsed } from "@/apis/api";
 
 const props = withDefaults(defineProps<{
     twitterId?: string | null | undefined,
-    profileImg: string | null,
-    name: string | null,
-    username: string | null,
-    steemId: string | null,
-    ethAddr: string | null,
+    profileImg: string | null | undefined,
+    name: string | null | undefined,
+    username: string | null | undefined,
+    steemId: string | null | undefined,
+    ethAddr: string | null | undefined,
     teleported: boolean
 }>(), {
     profileImg: '',
