@@ -130,4 +130,4 @@ dist
 .pnp.*
 /auto-imports.d.ts
 /components.d.ts
-package.lock.json
+package-lock.json
