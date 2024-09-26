@@ -5,9 +5,23 @@ import ProfileBtn from "@/layout/ProfileBtn.vue";
 import CreateBtn from "@/layout/CreateBtn.vue";
 import { useAccountStore } from "@/stores/web3";
 import RuleModal from "@/components/common/RuleModal.vue";
+import { useRouter } from "vue-router";
+import { useModalStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
 
 const modalVisible = ref(false)
 const ruleModalVisible = ref(false)
+const router = useRouter();
+const accStore = useAccountStore();
+
+function onClickWallet() {
+  if (accStore.getAccountInfo?.ethAddr) {
+    router.push('/wallet')
+    return;
+  }else if(accStore.getAccountInfo?.twitterId) {
+    useModalStore().setModalVisible(true, GlobalModalType.BondEth);
+  }
+}
 
 </script>
 
@@ -38,9 +52,9 @@ const ruleModalVisible = ref(false)
       <img class="w-6 cursor-pointer web:hidden"
            src="~@/assets/icons/icon-search.svg" alt=""
            @click="modalVisible=true">
-      <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.ethAddr"
+      <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.twitterId"
            src="~@/assets/icons/icon-wallet.svg" alt=""
-           @click="$router.push('/wallet')">
+           @click="onClickWallet">
       <!-- <img class="w-6 cursor-pointer" src="~@/assets/icons/icon-lang-en.svg" alt=""> -->
       <ProfileBtn class="hidden web:flex"/>
       <CreateBtn class="hidden web:block"/>
