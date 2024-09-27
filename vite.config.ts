@@ -48,7 +48,7 @@ export default defineConfig({
     }),
     viteCommonjs(),
     VitePWA({
-      // disable: true,
+      disable: true,
       registerType: 'autoUpdate',
       strategies: 'injectManifest',
       devOptions: {
@@ -122,5 +122,8 @@ export default defineConfig({
     esbuildOptions: {
       target: "es2022",
     }
+  },
+  server: {
+    host: '0.0.0.0'
   }
 })
