@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import { ref, onActivated, onMounted, watch } from "vue";
+import {ref, onActivated, onMounted, watch, computed} from "vue";
 import { ListType, type Community, type Space } from '@/types'
 import { getCommunitiesByNew, getCommunitiesByTrending, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
@@ -127,15 +127,33 @@ onActivated(() => {
   pageScrollTo(pageScrollRef.value)
 })
 
+const duration = computed(() => {
+  const totalWidth = curationStore.allSpaces.length * 320
+  return (totalWidth / 80) * 1000
+})
+
+const contentWidth = computed(() => {
+  return curationStore.allSpaces.length * 320;
+})
 </script>
 
 <template>
   <div class="h-full overflow-hidden pb-2 flex flex-col gap-3">
-    <van-swipe :loop="true" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">
-      <van-swipe-item v-for="space of curationStore.allSpaces">
-        <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
-      </van-swipe-item>
-    </van-swipe>
+<!--    <van-swipe :loop="false" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">-->
+<!--      <van-swipe-item v-for="space of curationStore.allSpaces">-->
+<!--        <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>-->
+<!--      </van-swipe-item>-->
+<!--    </van-swipe>-->
+    <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="container">
+      <div class="scroll-content flex"
+           :style="{ width: `${contentWidth}px`, animationDuration: `${duration}ms`, animationDelay: '2s' }">
+        <div class="w-[320px] min-w-[320px] flex justify-end"
+             v-for="(space, index) in curationStore.allSpaces.concat(curationStore.allSpaces)"
+             :key="index">
+          <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
+        </div>
+      </div>
+    </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10">
       <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full">
         <button v-for="tab of tabOptions" :key="tab"
@@ -191,4 +209,20 @@ onActivated(() => {
 
 <style lang="scss">
 
+.scroll-content {
+  display: inline-block;
+  animation: scroll linear infinite
+}
+.scroll-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
 </style>
