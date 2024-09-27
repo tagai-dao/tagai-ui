@@ -257,8 +257,13 @@ onMounted(async () => {
     <BackHeader class="px-3">
       <template #title>
         <div class="text-lg font-semibold text-black-19">
-          ${{ comStore.currentSelectedCommunity?.tick }}
+          1000{{ comStore.currentSelectedCommunity?.tick }}/USDT
         </div>
+      </template>
+      <template #right>
+        <button @click="$router.push('/tag-detail/' + comStore.currentSelectedCommunity?.tick)" class="absolute top-4 right-3 h-8 w-8 min-w-8 bg-white rounded-full flex items-center justify-center">
+          <img class="rounded-full" :src="comStore.currentSelectedCommunity?.logo" alt="" srcset="">
+        </button>
       </template>
     </BackHeader>
     <div

@@ -65,7 +65,7 @@
     "quote": "Quote",
     "vpDesc": "Like/Retweet a tweet will cost you vp(voting power). And you can earn tagcoin after 3 days.",
     "opDesc": "All tweet operation(like/retweet/quote/reply will cost you op(operation power) because of all the operation will sync to the blockchain.",
-    "curationTip": "Curate a tweet or as a speaker of a space can gain curate rewards. Write a tweet or host a space can gain creator rewards. When the tagcoin listed, your can claim all your rewards."
+    "curationTip": "Curate a tweet or as a speaker of a space can gain curate rewards. Write a tweet or host a space can gain creator rewards. When the tagcoin listed, you can claim all this tagcoin rewards."
   },
   "postView": {
     "createNewCuration": "Create"

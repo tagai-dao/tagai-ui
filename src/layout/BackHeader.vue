@@ -11,6 +11,7 @@ const {goBack} = usePageRouter()
       <img src="~@/assets/icons/icon-back.svg" alt="">
     </button>
     <slot name="title"></slot>
+    <slot name="right"/>
   </div>
 </template>
 
