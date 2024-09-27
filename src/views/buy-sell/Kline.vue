@@ -45,18 +45,18 @@ function splitData(rawData: (ChartData)[], interval = 60) {
     if(values.length === 0){
       categoryData.push(formatKChartDate(thisInterval * interval * 1000, interval >= 86400));
       let data0 = {
-        open: (data.open / 1e18 * price),
-        close: (data.close / 1e18 * price),
-        low: (data.low / 1e18 * price),
-        high: (data.high / 1e18 * price),
+        open: (data.open / 1e15 * price),
+        close: (data.close / 1e15 * price),
+        low: (data.low / 1e15 * price),
+        high: (data.high / 1e15 * price),
         timestamp: thisInterval * interval * 1000
       }
       values.push(data0);
       lastData = data0
       continue;
     }
-    let lowest = Math.min(data.open, data.close, data.low, data.high) / 1e18 * price
-    let highest = Math.max(data.open, data.close, data.low, data.high) / 1e18 * price;
+    let lowest = Math.min(data.open, data.close, data.low, data.high) / 1e15 * price
+    let highest = Math.max(data.open, data.close, data.low, data.high) / 1e15 * price;
     lowest = Math.min(lowest, lastData.close)
     highest = Math.max(highest, lastData.close)
     if (thisInterval == lastInterval) {
@@ -64,7 +64,7 @@ function splitData(rawData: (ChartData)[], interval = 60) {
       highest = Math.max(highest, lastData.high)
       lastData = {
         open: lastData.open,
-        close: (data.close / 1e18 * price),
+        close: (data.close / 1e15 * price),
         low: lowest,
         high: highest,
         timestamp: thisInterval * interval * 1000
@@ -92,7 +92,7 @@ function splitData(rawData: (ChartData)[], interval = 60) {
       categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
       lastData = {
         open: lastData.close,
-        close: (data.close / 1e18 * price),
+        close: (data.close / 1e15 * price),
         low: lowest,
         high: highest,
         timestamp: (lastInterval + 1) * interval * 1000
@@ -103,7 +103,7 @@ function splitData(rawData: (ChartData)[], interval = 60) {
       categoryData.push(formatKChartDate(thisInterval * interval * 1000, interval >= 86400));
       lastData = {
         open: lastData.close,
-        close: (data.close / 1e18 * price),
+        close: (data.close / 1e15 * price),
         low: lowest,
         high: highest,
         timestamp: (lastInterval + 1) * interval * 1000
@@ -153,7 +153,7 @@ async function getNewData() {
 onMounted(async () => {
   await getNewData()
   chart.value = init("k-line-chart",  {
-    decimalFoldThreshold: 8
+    decimalFoldThreshold: 6
   });
   chart.value.setStyles({
     candle: {
@@ -168,7 +168,7 @@ onMounted(async () => {
       }
     }
   })
-  chart.value.setPriceVolumePrecision(8, 8)
+  chart.value.setPriceVolumePrecision(6, 6)
   updateChart();
   setInter(async () => {
     try{
@@ -206,7 +206,7 @@ watch(()=> activeTab.value, () => {
 <template>
   <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[500px] w-full bg-white flex flex-col">
     <div class="mb-4 px-3 flex flex-wrap justify-between gap-y-2 gap-x-4">
-      <span class="font-medium text-black text-xl">{{props.tick + '/USDT'}}</span>
+      <span class="font-medium text-black text-xl">{{'1000' + props.tick + '/USDT'}}</span>
       <div class="flex-1 flex justify-end items-center gap-4">
         <button v-for="t of timeOptions" :key="t" class="flex items-center gap-1"
                 @click="activeTab=t">
