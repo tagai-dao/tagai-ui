@@ -26,8 +26,8 @@ const scroller = document.querySelector('#profile-tab-scroller')
 const claimableRewards = ref<CurationReward[]>([])
 const unclaimableRewards = ref<CurationReward[]>([])
 
-const tabOptions = ['Claimable', 'Unclaimable']
-const rewardType = ref('Claimable');
+const tabOptions = ['Unclaimable', 'Claimable']
+const rewardType = ref('Unclaimable');
 
 watch(() => rewardType.value, (val) => {
   updateReward();
