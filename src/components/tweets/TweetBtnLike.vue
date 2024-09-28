@@ -4,6 +4,7 @@ import {handleErrorTip} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import { type Tweet } from "@/types";
 import { OperateType, useTweet } from "@/composables/useTweet";
+import errCode from "@/errCode";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -24,6 +25,9 @@ async function like() {
     props.tweet.likeCount += 1;
     props.tweet.liked = 1;
   } catch (e) {
+    if (e === errCode.TWITTER_ERR) {
+      e = errCode.LIKE_FREQUENT
+    }
     handleErrorTip(e)
   } finally {
     isLiking.value = false

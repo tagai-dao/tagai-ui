@@ -5,6 +5,7 @@ import {ref} from "vue";
 import { type Tweet } from "@/types";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip } from "@/utils/notify";
+import errCode from "@/errCode";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -26,6 +27,9 @@ async function retweet() {
     props.tweet.retweetCount += 1;
     props.tweet.retweeted = 1;
   } catch (e) {
+    if (e === errCode.TWITTER_ERR) {
+      e = errCode.RETWEET_FREQUENT
+    }
     handleErrorTip(e)
   } finally {
     isRetweeting.value = false

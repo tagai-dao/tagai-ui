@@ -48,6 +48,7 @@ export default {
 
   TWEET_NOT_FOUND: 701,
   POST_NOT_FOUND: 702,
-
+  LIKE_FREQUENT: 703,
+  RETWEET_FREQUENT: 704
   
 };

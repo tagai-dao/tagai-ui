@@ -180,6 +180,12 @@ export const handleServerError = (code: number) => {
     case errCode.TWITTER_ERR:
       notify({ message: t('errMessage.twitterErr'), type: 'error'});
       break;
+    case errCode.LIKE_FREQUENT:
+      notify({ message: t('errMessage.likeFrequent'), type: 'error'});
+      break;
+    case errCode.RETWEET_FREQUENT:
+      notify({ message: t('errMessage.retweetFrequent'), type: 'error'});
+      break;
     default:
       break;
   }
