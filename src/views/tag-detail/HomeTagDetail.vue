@@ -109,13 +109,12 @@ async function checkTweet() {
       modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
       return;
     }
+    onTweetType(CurationType.BLINK);
   } catch(e) {
     handleErrorTip(e)
   } finally {
     checkingTweet.value = false
   }
-
-    onTweetType(CurationType.BLINK);
 }
 
 onMounted(async () => {
