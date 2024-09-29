@@ -37,8 +37,8 @@ async function createIPShare() {
 </script>
 
 <template>
-  <!-- <chose-wallet v-if="useAccountStore().ethConnectState !== EthWalletState.Connected" /> -->
-  <BondEthModal v-if="!useAccountStore().getAccountInfo.ethAddr" />
+  <chose-wallet v-if="useAccountStore().ethConnectState !== EthWalletState.Connected" />
+  <BondEthModal v-else-if="!useAccountStore().getAccountInfo.ethAddr" />
   <div v-else class="flex flex-col gap-y-2">
     <div class="flex justify-between items-center">
       <span class="text-h2 text-grey-normal-hover">Create IPShare</span>
