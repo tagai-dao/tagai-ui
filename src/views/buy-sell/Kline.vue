@@ -51,7 +51,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
         close: (data.close / 1e15 * price),
         low: (data.low / 1e15 * price),
         high: (data.high / 1e15 * price),
-        timestamp: thisInterval * interval * 1000
+        timestamp: thisInterval * interval * 1000,
+        change: 0.01
       }
       values.push(data0);
       lastData = data0
@@ -69,7 +70,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
         close: (data.close / 1e15 * price),
         low: lowest,
         high: highest,
-        timestamp: thisInterval * interval * 1000
+        timestamp: thisInterval * interval * 1000,
+        change: 0.01
       }
       values[values.length - 1] = lastData;
     }else if (thisInterval > lastInterval + 1) {
@@ -79,7 +81,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
         close: lastData.close,
         low: lastData.close,
         high: lastData.close,
-        timestamp: (lastInterval + 1) * interval * 1000
+        timestamp: (lastInterval + 1) * interval * 1000,
+        change: 0.01
       }
       lastInterval = lastInterval + 1
       values.push(lastData)
@@ -88,7 +91,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
         categoryData.push(formatKChartDate(lastInterval * interval * 1000, interval >= 86400));
         values.push({
           ...lastData,
-          timestamp: lastInterval * interval * 1000
+          timestamp: lastInterval * interval * 1000,
+          change: 0.01
         })
       }
       categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
@@ -97,7 +101,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
         close: (data.close / 1e15 * price),
         low: lowest,
         high: highest,
-        timestamp: (lastInterval + 1) * interval * 1000
+        timestamp: (lastInterval + 1) * interval * 1000,
+        change: 0.01
       }
       values.push(lastData);
       lastInterval += 1;
@@ -108,7 +113,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
         close: (data.close / 1e15 * price),
         low: lowest,
         high: highest,
-        timestamp: (lastInterval + 1) * interval * 1000
+        timestamp: (lastInterval + 1) * interval * 1000,
+        change: 0.01
       }
       values.push(lastData);
       lastInterval = thisInterval;
@@ -175,7 +181,8 @@ onMounted(async () => {
           { title: 'open', value: '{open}' },
           { title: 'high', value: '{high}' },
           { title: 'low', value: '{low}' },
-          { title: 'close', value: '{close}' }
+          { title: 'close', value: '{close}' },
+          { title: '', value: `{change}` },
         ],
       }
     }
