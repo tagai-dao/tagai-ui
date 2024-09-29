@@ -145,7 +145,8 @@ const contentWidth = computed(() => {
 <!--      </van-swipe-item>-->
 <!--    </van-swipe>-->
     <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="container">
-      <div class="scroll-content flex"
+      <OnlineSpace class="ml-4" v-if=" curationStore.allSpaces.length == 1" @click="$router.push('/space-detail/' +  curationStore.allSpaces[0].tweetId)" :space=" curationStore.allSpaces[0]"/>
+      <div v-else class="scroll-content flex"
            :style="{ width: `${contentWidth}px`, animationDuration: `${duration}ms`, animationDelay: '2s' }">
         <div class="w-[320px] min-w-[320px] flex justify-end"
              v-for="(space, index) in curationStore.allSpaces.concat(curationStore.allSpaces)"

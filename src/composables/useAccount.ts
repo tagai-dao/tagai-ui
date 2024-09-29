@@ -109,14 +109,14 @@ export const useAccount = () => {
 
     const vp = computed(() => {
         const vpInfo = useAccountStore().getAccountInfo
-        if (!vpInfo.vp || !vpInfo.lastUpdateVpStamp) return vpInfo.vp ?? 0;
+        if ((!vpInfo.vp && vpInfo.vp !== 0) || !vpInfo.lastUpdateVpStamp) return vpInfo.vp ?? 0;
         let vp = (vpInfo.vp! + (Date.now() - vpInfo.lastUpdateVpStamp!) * MAX_VP / (86400000 * VP_RECOVER_DAY))
         return vp > MAX_VP ? MAX_VP : vp
     })
 
     const op = computed(() => {
         const opInfo = useAccountStore().getAccountInfo
-        if (!opInfo.op || !opInfo.lastUpdateOpStamp) return opInfo.op ?? 0;
+        if ((!opInfo.op && opInfo.op !== 0) || !opInfo.lastUpdateOpStamp) return opInfo.op ?? 0;
         let op = (opInfo.op! + (Date.now() - opInfo.lastUpdateOpStamp!) * MAX_OP / (86400000 * OP_RECOVER_DAY))
         return op > MAX_OP ? MAX_OP : op
     })

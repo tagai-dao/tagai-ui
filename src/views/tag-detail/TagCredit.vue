@@ -61,7 +61,7 @@ async function onLoad() {
   } catch (e) {
     handleErrorTip(e)
   } finally {
-    refreshing.value = false
+    loading.value = false
   }
 }
 

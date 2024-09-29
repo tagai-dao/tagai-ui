@@ -2,6 +2,7 @@
 import {ref} from "vue";
 import {EthWalletState, useAccountStore} from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
+import BondEthModal from '../login/BondEthModal.vue';
 import {useModalStore} from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
 import { create } from "@/utils/ipshare";
@@ -36,7 +37,8 @@ async function createIPShare() {
 </script>
 
 <template>
-  <chose-wallet v-if="useAccountStore().ethConnectState !== EthWalletState.Connected" />
+  <!-- <chose-wallet v-if="useAccountStore().ethConnectState !== EthWalletState.Connected" /> -->
+  <BondEthModal v-if="!useAccountStore().getAccountInfo.ethAddr" />
   <div v-else class="flex flex-col gap-y-2">
     <div class="flex justify-between items-center">
       <span class="text-h2 text-grey-normal-hover">Create IPShare</span>

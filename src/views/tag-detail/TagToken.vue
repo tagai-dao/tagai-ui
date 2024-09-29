@@ -113,7 +113,6 @@ async function onLoad() {
   loading.value = true;
   try{
     let list: any = await getHolderList(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
-
     if (list && list.length > 0) {
       list = list.map((h: any) => {
         return {
@@ -131,7 +130,7 @@ async function onLoad() {
   } catch (e) {
     handleErrorTip(e)
   } finally {
-    refreshing.value = false
+    loading.value = false
   }
 }
 
