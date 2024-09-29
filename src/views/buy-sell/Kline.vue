@@ -5,7 +5,9 @@ import {onMounted, reactive, ref, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
 import {init} from "klinecharts";
 import { useInterval } from "@/composables/useTools";
+import { useWindowSize } from '@vant/use';
 
+const { width, height } = useWindowSize();
 const props = defineProps(['tick'])
 const { setInter } = useInterval();
 let lastTimestamp = 0;
@@ -153,7 +155,17 @@ async function getNewData() {
 onMounted(async () => {
   await getNewData()
   chart.value = init("k-line-chart",  {
-    decimalFoldThreshold: 6
+    decimalFoldThreshold: 6,
+    layout: [
+      {
+        type: 'candle',
+        options: {
+          gap: {
+            top: 150
+          }
+        }
+      }
+    ]
   });
   chart.value.setStyles({
     candle: {
@@ -199,6 +211,10 @@ onMounted(async () => {
 
 watch(()=> activeTab.value, () => {
   updateChart()
+})
+
+watch(() => width.value, () => {
+  chart.value.resize()
 })
 
 </script>
