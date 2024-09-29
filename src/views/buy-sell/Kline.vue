@@ -158,6 +158,7 @@ onMounted(async () => {
     decimalFoldThreshold: 6,
     layout: [
       {
+        // @ts-ignore
         type: 'candle',
         options: {
           gap: {
