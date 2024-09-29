@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed} from "vue";
+import {onMounted, ref, computed, onActivated} from "vue";
 import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType} from "@/types";
@@ -9,7 +9,7 @@ import TagToken from "@/views/tag-detail/TagToken.vue";
 import {useRoute, useRouter} from "vue-router";
 import { getCommunityDetail, getIpshareInfo } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
-import {useInterval, useTools} from "@/composables/useTools";
+import {useInterval, usePageScroll, useTools} from "@/composables/useTools";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
 import CreateBlinkModal from '@/components/common/CreateBlinkModal.vue'
@@ -32,6 +32,9 @@ enum CurationType {
   SPACE,
   BLINK
 }
+
+const { pageScroll, pageScrollTo} = usePageScroll()
+const pageScrollRef = ref()
 const activeTab = ref('content')
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
@@ -133,10 +136,15 @@ onMounted(async () => {
   updateProgress();
   setInter(updateProgress, 3000);
 })
+
+onActivated(() => {
+  pageScrollTo(pageScrollRef.value)
+})
 </script>
 
 <template>
-  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative">
+  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative"
+       ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
     <div class="grid grid-cols-1 web:grid-cols-5 gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
@@ -160,7 +168,7 @@ onMounted(async () => {
             <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
               {{ comStore.currentSelectedCommunity?.description }}
             </div>
-            <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr" 
+            <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
                     @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
                     :disabled="!comStore.currentSelectedCommunity">
               <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
