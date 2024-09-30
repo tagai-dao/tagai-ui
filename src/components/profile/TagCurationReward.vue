@@ -34,6 +34,7 @@ async function claim() {
       emitter.emit('claimedReward')
     }
   } catch (e) {
+    console.log(53, e)
     handleErrorTip(e)
   } finally {
     claiming.value = false

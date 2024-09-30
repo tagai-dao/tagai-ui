@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TagCurationReward from "@/components/profile/TagCurationReward.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
-import {onMounted, ref, watch} from "vue";
+import { onMounted, ref, watch } from "vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
@@ -34,15 +34,15 @@ watch(() => rewardType.value, (val) => {
 })
 
 const onLoad = async () => {
-  if(finished.value || refreshing.value || accStore.tweetsList.length == 0) return
+  if (finished.value || refreshing.value || accStore.tweetsList.length == 0) return
   // loading.value = true
-  try{
+  try {
     loading.value = true;
-    let list : any = await getUserTweets(accStore.getAccountInfo.twitterId, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
+    let list: any = await getUserTweets(accStore.getAccountInfo.twitterId, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
     if (list && list.length > 0) {
       accStore.tweetsList = accStore.tweetsList.concat(await getTokenInfoOfTweets(list))
     }
-    if (list.length  === 0) {
+    if (list.length === 0) {
       finished.value = true
     }
   } catch (e) {
@@ -56,7 +56,7 @@ const onRefresh = async () => {
   if (loading.value) {
     return;
   }
-  try{
+  try {
     refreshing.value = true
     finished.value = false
     const list: any = await getUserTweets(accStore.getAccountInfo.twitterId)
@@ -74,24 +74,29 @@ const onRefresh = async () => {
 function updateReward() {
   if (rewardType.value === 'Claimable') {
     getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
-    if (list && list.length > 0) {
+      console.log(35, list)
+      if (list && list.length > 0) {
         getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
           for (let t of list) {
             t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
           }
           claimableRewards.value = list
         })
+      }else {
+        claimableRewards.value = []
       }
     })
-  }else {
+  } else {
     userUnclaimableCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
-    if (list && list.length > 0) {
+      if (list && list.length > 0) {
         getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
           for (let t of list) {
             t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
           }
           unclaimableRewards.value = list
         })
+      }else {
+        unclaimableRewards.value = []
       }
     })
   }
@@ -107,18 +112,10 @@ onMounted(() => {
 
 <template>
   <div class="min-h-full h-full">
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                      class="min-h-full h-full overflow-auto"
-                      loading-text="Loading"
-                      pulling-text="Pull to refresh data"
-                      loosing-text="Release to refresh">
-      <van-list :loading="loading"
-                :finished="finished"
-                :immediate-check="false"
-                finished-text="No more"
-                :scroller="scroller"
-                :offset="50"
-                @load="onLoad">
+    <van-pull-refresh v-model="refreshing" @refresh="onRefresh" class="min-h-full h-full overflow-auto"
+      loading-text="Loading" pulling-text="Pull to refresh data" loosing-text="Release to refresh">
+      <van-list :loading="loading" :finished="finished" :immediate-check="false" finished-text="No more"
+        :scroller="scroller" :offset="50" @load="onLoad">
         <div class="flex items-center gap-1 px-3">
           <span class="font-normal text-sm">Curation & Space Rewards</span>
           <el-popover popper-class="c-popper">
@@ -132,24 +129,27 @@ onMounted(() => {
         </div>
         <div class="my-3 gap-2 bg-white rounded-xl py-3 mx-3">
           <div class="flex justify-start mb-2">
-            <button v-for="tab of tabOptions" :key="tab"
-                  class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
-                  :class="tab===rewardType?'text-gradient bg-gradient-primary':'text-grey-normal'"
-                  @click="rewardType=tab">{{tab}}</button>
+            <button v-for="tab of tabOptions" :key="tab" class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
+              :class="tab === rewardType ? 'text-gradient bg-gradient-primary' : 'text-grey-normal'"
+              @click="rewardType = tab">{{ tab }}</button>
           </div>
 
-          <div v-show="rewardType == 'Claimable'" class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
-            <div v-if="claimableRewards.length > 0" class="pb-5 snap-start shrink-0 first:pl-3 last:pr-3" v-for="reward of claimableRewards" :key="reward.tick + 'claimable'">
-              <TagCurationReward :reward :can-claim="true"/>
+          <div v-show="rewardType == 'Claimable'"
+            class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
+            <div v-if="claimableRewards.length > 0" class="pb-5 snap-start shrink-0 first:pl-3 last:pr-3"
+              v-for="reward of claimableRewards" :key="reward.tick + 'claimable'">
+              <TagCurationReward :reward :can-claim="true" />
             </div>
             <div v-else class="w-full flex my-8 justify-center items-center">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
           </div>
 
-          <div v-show="rewardType == 'Unclaimable'" class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
-            <div v-if="unclaimableRewards.length > 0" class="snap-start shrink-0 first:pl-3 last:pr-3" v-for="reward of unclaimableRewards" :key="reward.tick + 'unclaimable'">
-              <TagCurationReward :reward :can-claim="false"/>
+          <div v-show="rewardType == 'Unclaimable'"
+            class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
+            <div v-if="unclaimableRewards.length > 0" class="snap-start shrink-0 first:pl-3 last:pr-3"
+              v-for="reward of unclaimableRewards" :key="reward.tick + 'unclaimable'">
+              <TagCurationReward :reward :can-claim="false" />
             </div>
             <div v-else class="w-full flex my-8 justify-center items-center">
               <img src="~@/assets/images/empty-data.svg" alt="">
@@ -169,25 +169,24 @@ onMounted(() => {
             </div>
             <div class="bg-white rounded-2xl mb-3">
               <SpaceItem v-if="tweet.spaceId" :tweet="tweet"
-                @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)">
+                @click.stop="curationStore.currentSelectedTweet = tweet; $router.push(`/space-detail/${tweet.tweetId}`)">
                 <template #tweet-action-bar>
-                  <PostButtonGroup :tweet="tweet"/>
+                  <PostButtonGroup :tweet="tweet" />
                 </template>
               </SpaceItem>
               <TweetItem v-else :tweet="tweet"
-                @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)">
+                @click.stop="curationStore.currentSelectedTweet = tweet; $router.push(`/post-detail/${tweet.tweetId}`)">
                 <template #tweet-trade v-if="tweet.commerceId">
                   <CommerceBtn :tweet="tweet"></CommerceBtn>
                 </template>
                 <template #tweet-action-bar>
-                  <PostButtonGroup :tweet="tweet"/>
+                  <PostButtonGroup :tweet="tweet" />
                 </template>
               </TweetItem>
             </div>
           </div>
         </div>
-        <div v-if="!loading && !refreshing && accStore.tweetsList.length===0"
-             class="flex justify-center py-6 w-full">
+        <div v-if="!loading && !refreshing && accStore.tweetsList.length === 0" class="flex justify-center py-6 w-full">
           <img src="~@/assets/images/empty-data.svg" alt="">
         </div>
       </van-list>
@@ -195,6 +194,4 @@ onMounted(() => {
   </div>
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>
