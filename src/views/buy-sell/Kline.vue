@@ -73,23 +73,23 @@ function splitData(rawData: (ChartData)[], interval = 60) {
       }
       values[values.length - 1] = lastData;
     }else if (thisInterval > lastInterval + 1) {
-      categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
-      lastData = {
-        open: lastData.close,
-        close: lastData.close,
-        low: lastData.close,
-        high: lastData.close,
-        timestamp: (lastInterval + 1) * interval * 1000
-      }
+      // categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
+      // lastData = {
+      //   open: lastData.close,
+      //   close: lastData.close,
+      //   low: lastData.close,
+      //   high: lastData.close,
+      //   timestamp: (lastInterval + 1) * interval * 1000
+      // }
       lastInterval = lastInterval + 1
-      values.push(lastData)
+      // values.push(lastData)
       while(thisInterval > lastInterval + 1) {
         lastInterval = lastInterval + 1
-        categoryData.push(formatKChartDate(lastInterval * interval * 1000, interval >= 86400));
-        values.push({
-          ...lastData,
-          timestamp: lastInterval * interval * 1000
-        })
+        // categoryData.push(formatKChartDate(lastInterval * interval * 1000, interval >= 86400));
+        // values.push({
+        //   ...lastData,
+        //   timestamp: lastInterval * interval * 1000
+        // })
       }
       categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
       lastData = {
