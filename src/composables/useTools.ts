@@ -1,6 +1,6 @@
 import { useClipboard } from "@vueuse/core";
 import { ElNotification } from 'element-plus'
-import {onUnmounted, ref} from "vue";
+import {onDeactivated, onUnmounted, ref} from "vue";
 import { useRouter } from "vue-router";
 
 export const useTools = () => {
@@ -47,8 +47,12 @@ export const useInterval = () => {
   onUnmounted(() => {
     clearInterval(interval.value)
   })
+  onDeactivated(() => {
+    clearInterval(interval.value)
+  })
   return {
-    setInter
+    setInter,
+    interval
   }
 }
 

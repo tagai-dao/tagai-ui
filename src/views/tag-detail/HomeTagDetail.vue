@@ -120,7 +120,8 @@ async function checkTweet() {
   }
 }
 
-onMounted(async () => {
+onActivated(async () => {
+  pageScrollTo(pageScrollRef.value)
   const tick = route.params.id;
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){
     if (typeof(tick) !== 'string') {
@@ -137,9 +138,6 @@ onMounted(async () => {
   setInter(updateProgress, 3000);
 })
 
-onActivated(() => {
-  pageScrollTo(pageScrollRef.value)
-})
 </script>
 
 <template>
