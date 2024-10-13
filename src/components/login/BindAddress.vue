@@ -12,25 +12,39 @@ const accStore = useAccountStore();
 const loading = ref(false);
 const ethAddrUsed = ref(false);
 
-watch(() => accStore.ethConnectAddress, (address) => {
-    if (ethers.isAddress(address)) {
+async function checkEth(address: string): Promise<boolean> {
+  if (ethers.isAddress(address)) {
       loading.value = true
       // check if address been bonded
-      checkEthUsed(address).then((acc: any) => {
+      try {
+        const acc: any = await checkEthUsed(address);
         if (acc.twitterId) {
-          ethAddrUsed.value = true
-        }else {
-          ethAddrUsed.value = false
+          ethAddrUsed.value = true;
+          return true
+        } else {
+          ethAddrUsed.value = false;
+          return false
         }
-      }).catch(console.error).finally(() => {
-        loading.value = false
-      })
+      } catch (error) {
+        console.error(error);
+        return false
+      } finally {
+        loading.value = false;
+      }
     }
+    return false
+}
+
+watch(() => accStore.ethConnectAddress, (address) => {
+  checkEth(address)
 })
 
 async function confirm() {
   try{
     loading.value = true;
+    if(!(await checkEth(accStore.ethConnectAddress))) {
+      return;
+    }
     const signature = await signMessage(BondEthMessage);
     await bondEth(accStore.ethConnectAddress, accStore.getAccountInfo!.twitterId, signature, BondEthMessage)
     accStore.getAccountInfo!.ethAddr = accStore.ethConnectAddress

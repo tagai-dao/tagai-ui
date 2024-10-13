@@ -99,6 +99,9 @@ export const handleServerError = (code: number) => {
     case errCode.CURATION_NOT_EXIST:
       notify({ message: t("errMessage.curationNotExsist"), type: "error" });
       break;
+    case errCode.ETH_ADDRESS_ALREADY_USED:
+      notify({ message: t("errMessage.ethAddressAlreadyUsed"), type: "error" });
+      break;
     case errCode.INSUFFICIENT_CONTENT:
       notify({ message: t("errMessage.insufficientContent"), type: "error" });
       break;
