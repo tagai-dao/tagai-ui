@@ -27,6 +27,7 @@ async function checkEth(address: string): Promise<boolean> {
         }
       } catch (error) {
         console.error(error);
+        handleErrorTip(error);
         return false
       } finally {
         loading.value = false;
@@ -42,7 +43,7 @@ watch(() => accStore.ethConnectAddress, (address) => {
 async function confirm() {
   try{
     loading.value = true;
-    if(!(await checkEth(accStore.ethConnectAddress))) {
+    if((await checkEth(accStore.ethConnectAddress))) {
       return;
     }
     const signature = await signMessage(BondEthMessage);
