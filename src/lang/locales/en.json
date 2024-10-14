@@ -87,6 +87,7 @@
     "insufficientOp": "Insufficient of OP",
     "insufficientVp": "Insufficient of VP",
     "spaceNotFound": "Space not found",
+    "ipshareNotCreated": "IPShare not created",
     "userCanceled": "User canceled transaction",
     "isLiked": "You have liked this tweet",
     "isUnliked": "You have unliked this tweet",

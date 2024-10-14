@@ -96,6 +96,9 @@ export const handleServerError = (code: number) => {
     case errCode.PARAMS_ERROR:
       notify({ message: t("errMessage.paramsError"), type: "info" });
       break;
+    case errCode.IPSHARE_NOT_CREATED:
+      notify({ message: t("errMessage.ipshareNotCreated"), type: "info" });
+      break;
     case errCode.CURATION_NOT_EXIST:
       notify({ message: t("errMessage.curationNotExsist"), type: "error" });
       break;
