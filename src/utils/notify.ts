@@ -111,6 +111,9 @@ export const handleServerError = (code: number) => {
     case errCode.INSUFFICIENT_VP:
       notify({ message: t("errMessage.insufficientVp"), type: "error" });
       break;
+    case errCode.SPACE_NOT_FOUND:
+      notify({ message: t("errMessage.spaceNotFound"), type: "info" });
+      break;
     case errCode.IS_LIKED:
       notify({ message: t("errMessage.isLiked"), type: "info" });
       break;

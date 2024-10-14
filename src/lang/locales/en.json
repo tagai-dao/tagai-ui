@@ -86,6 +86,7 @@
     "insufficientContent": "Please write something",
     "insufficientOp": "Insufficient of OP",
     "insufficientVp": "Insufficient of VP",
+    "spaceNotFound": "Space not found",
     "userCanceled": "User canceled transaction",
     "isLiked": "You have liked this tweet",
     "isUnliked": "You have unliked this tweet",
