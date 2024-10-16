@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getHolderList } from '@/apis/api'
+import { useTools } from '@/composables/useTools';
 import { useCommunityStore } from '@/stores/community';
 import { type TokenHoldingList } from '@/types';
 import { formatAddress, formatAmount, sleep } from '@/utils/helper';
@@ -12,6 +13,7 @@ const loading = ref(false);
 const finished = ref(false);
 
 const holdingList = ref<TokenHoldingList[]>([]);
+const { onCopy } = useTools()
 
 async function onRefresh() {
   if (loading.value) return;
@@ -103,7 +105,7 @@ onMounted(async () => {
           <div class="col-span-4 truncate flex items-center gap-1">
             <span class="min-w-4">{{ i + 1 }}</span>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
-            <span class="truncate font-mono">{{ formatAddress(holder.ethAddr) }}</span>
+            <span @click.stop="onCopy(holder.ethAddr ?? '')" class="truncate font-mono cursor-pointer">{{ formatAddress(holder.ethAddr) }}</span>
           </div>
           <span class="col-span-2">{{ formatAmount(holder.amount) }}</span>
           <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }}</span>

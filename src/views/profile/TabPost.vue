@@ -26,8 +26,8 @@ const scroller = document.querySelector('#profile-tab-scroller')
 const claimableRewards = ref<CurationReward[]>([])
 const unclaimableRewards = ref<CurationReward[]>([])
 
-const tabOptions = ['Unclaimable', 'Claimable']
-const rewardType = ref('Unclaimable');
+const tabOptions = ['Processing', 'Claimable']
+const rewardType = ref('Processing');
 
 watch(() => rewardType.value, (val) => {
   updateReward();
@@ -145,7 +145,7 @@ onMounted(() => {
             </div>
           </div>
 
-          <div v-show="rewardType == 'Unclaimable'"
+          <div v-show="rewardType == 'Processing'"
             class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
             <div v-if="unclaimableRewards.length > 0" class="snap-start shrink-0 first:pl-3 last:pr-3"
               v-for="reward of unclaimableRewards" :key="reward.tick + 'unclaimable'">
