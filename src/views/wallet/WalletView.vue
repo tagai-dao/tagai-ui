@@ -4,11 +4,13 @@ import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { formatAddress, formatAmount } from "@/utils/helper";
+import { useTools } from "@/composables/useTools";
 
 const accStore = useAccountStore()
 const tabOptions = ['tags', 'ipshares']
 const activeTab = ref('tags')
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
+const { onCopy } = useTools()
 
 onMounted(() => {
   updateBalance()
@@ -34,7 +36,7 @@ onMounted(() => {
         </div>
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-2">
-      <div class="flex-1 flex items-center flex-wrap gap-4">
+      <div class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
           <span>ETH address: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
       </div>
