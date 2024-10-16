@@ -15,7 +15,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore } from "@/stores/common";
-import { handleErrorTip } from "@/utils/notify";
+import { handleErrorTip, notify } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
@@ -166,11 +166,21 @@ async function confirm() {
       showFillInfo.value = true
       return
     }
+    // check eth balance
+    if (ethBalance.value < payEth.value) {
+      notify({message: 'Insufficient ETH balance'})
+      return
+    }
   }else {
     if (!sellAmount.value) {
       showFillInfo.value = true
       return
     };
+    // check token balance
+    if (tokenBalance.value < sellAmount.value) {
+      notify({message: 'Insufficient token balance'})
+      return
+    }
   }
 
   if (isPostTweet.value){

@@ -4,12 +4,13 @@ import { useModalStore } from '@/stores/common';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { GlobalModalType, type CurationReward } from '@/types';
 import { formatAmount, formatPrice, sleep } from '@/utils/helper';
-import { handleErrorTip } from '@/utils/notify';
+import { handleErrorTip, notify } from '@/utils/notify';
 import { getClaimSignature, setOrderClaimed } from '@/apis/api'
 import { claimReward } from '@/utils/pump'
 import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ethers } from 'ethers';
+import { ClaimFee } from '@/config';
 
 const props = defineProps<{reward: CurationReward, canClaim: Boolean}>()
 const claiming = ref(false)
@@ -22,6 +23,12 @@ async function claim() {
   if (accStore.ethConnectState != EthWalletState.Connected) {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
+  }
+  // check eth balance
+  // @ts-ignore
+  if (accStore.ethBalance < (ClaimFee / 1e18)) {
+    notify({message: 'Insufficient ETH balance'})
+    return
   }
   try{
     claiming.value = true
