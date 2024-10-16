@@ -1,6 +1,6 @@
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "./useAccount";
-import { tweet, newLike, newRetweet, newReply, newQuote } from "@/apis/api";
+import { tweet, newLike, newRetweet, newReply, newQuote, newTip } from "@/apis/api";
 import errCode from "@/errCode";
 import { GlobalModalType, type Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
@@ -12,6 +12,7 @@ export enum OperateType {
   RETWEET,
   QUOTE,
   REPLY,
+  TIP
 }
 
 export const useTweet = () => {
@@ -20,6 +21,7 @@ export const useTweet = () => {
   const formatEmojiText = (str: string) => {
     if (!str || str.trim().length === 0) return "";
     const nStrList = str.split(/\r\n|\r|\n/)
+    // @ts-ignore
     const regStr = /[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF][\u200D|\uFE0F]|[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF]|[0-9|*|#]\uFE0F\u20E3|[0-9|#]\u20E3|[\u203C-\u3299]\uFE0F\u200D|[\u203C-\u3299]\uFE0F|[\u2122-\u2B55]|\u303D|[\A9|\AE]\u3030|\uA9|\uAE|\u3030/gi;
     let nStr = ''
     for(let iStr of nStrList) {
@@ -33,7 +35,7 @@ export const useTweet = () => {
     return nStr;
   };
 
-  const preCheckCuration = async (opType: OperateType, tweet?: Tweet) => {
+  const preCheckCuration = async (opType: OperateType, tweet?: Tweet, costVp: number = 0) => {
     const account = useAccountStore().getAccountInfo
     if (!account?.twitterId) {
       useModalStore().setModalVisible(true, GlobalModalType.Login)
@@ -56,16 +58,14 @@ export const useTweet = () => {
         if (op.value < OP_CONSUME.LIKE) {
           throw errCode.INSUFFICIENT_OP;
         }
-        if (vp.value < VP_CONSUME.LIKE) {
-          throw errCode.INSUFFICIENT_VP;
-        }
+ 
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_LIKE_SELF
         }
-        if (!account.steemId) {
-          useModalStore().setModalVisible(true, GlobalModalType.Register)
-          return false;
-        }
+        // if (!account.steemId) {
+        //   useModalStore().setModalVisible(true, GlobalModalType.Register)
+        //   return false;
+        // }
         break;
       case OperateType.RETWEET:
         if (tweet && tweet.retweeted) {
@@ -74,16 +74,16 @@ export const useTweet = () => {
         if (op.value < OP_CONSUME.RETWEET) {
           throw errCode.INSUFFICIENT_OP;
         }
-        if (vp.value < VP_CONSUME.RETWEET) {
-          throw errCode.INSUFFICIENT_VP;
-        }
+        // if (vp.value < VP_CONSUME.RETWEET) {
+        //   throw errCode.INSUFFICIENT_VP;
+        // }
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_RETWEET_SELF
         }
-        if (!account.steemId) {
-          useModalStore().setModalVisible(true, GlobalModalType.Register)
-          return false;
-        }
+        // if (!account.steemId) {
+        //   useModalStore().setModalVisible(true, GlobalModalType.Register)
+        //   return false;
+        // }
         break;
       case OperateType.QUOTE:
         if (op.value < OP_CONSUME.QUOTE) {
@@ -94,6 +94,24 @@ export const useTweet = () => {
         if (op.value < OP_CONSUME.REPLY) {
           throw errCode.INSUFFICIENT_OP;
         }
+        break;
+      case OperateType.TIP:
+        if (tweet && tweet.tipped) {
+          return false
+        }
+        if (op.value < costVp) {
+          throw errCode.INSUFFICIENT_OP;
+        }
+        if (vp.value < costVp) {
+          throw errCode.INSUFFICIENT_VP;
+        }
+        if (tweet?.twitterId == account.twitterId) {
+          throw errCode.CANT_LIKE_SELF
+        }
+        if (!account.steemId) {
+            useModalStore().setModalVisible(true, GlobalModalType.Register)
+            return false;
+          }
         break;
     }
     return true;
@@ -107,15 +125,21 @@ export const useTweet = () => {
   const userLike = async (t: Tweet, tick: string) => {
     await newLike(useAccountStore().getAccountInfo.twitterId, t.tweetId, tick);
     udpateUserOPLocal(OP_CONSUME.LIKE);
-    updateUserVpLocal(VP_CONSUME.LIKE);
+    // updateUserVpLocal(VP_CONSUME.LIKE);
   };
 
   const userRetweet = async (t: Tweet, tick: string) => {
     const account = useAccountStore().getAccountInfo;
     await newRetweet(account.twitterId, t.tweetId, tick);
     udpateUserOPLocal(OP_CONSUME.RETWEET);
-    updateUserVpLocal(VP_CONSUME.RETWEET);
+    // updateUserVpLocal(VP_CONSUME.RETWEET);
   };
+
+  const userTip = async (t: Tweet, tick: string, vp: number) => {
+    const account = useAccountStore().getAccountInfo;
+    await newTip(account.twitterId, t.tweetId, tick, vp);
+    udpateUserOPLocal(vp);
+  }
 
   const userReply = async (t: Tweet, text: string, tick: string) => {
     const account = useAccountStore().getAccountInfo;
@@ -136,6 +160,7 @@ export const useTweet = () => {
     userLike,
     userRetweet,
     userReply,
-    userQuote
+    userQuote,
+    userTip
   };
 };
