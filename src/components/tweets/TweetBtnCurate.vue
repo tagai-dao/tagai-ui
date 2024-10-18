@@ -34,8 +34,10 @@ async function confirmCurate() {
       return;
     }
     const res = await userCurate(props.tweet, props.tweet.tick!, curateAmount.value)
-    props.tweet.likeCount += 1;
-    props.tweet.liked = 1;
+    if (!props.tweet.liked){
+      props.tweet.likeCount += 1;
+      props.tweet.liked = 1;
+    }
     props.tweet.curated = 1;
   } catch (e) {
     if (e === errCode.TWITTER_ERR) {
