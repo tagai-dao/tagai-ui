@@ -153,6 +153,7 @@ export type Tweet = OnchainTokenInfo & Space &
     retweeted?: number;
     replied?: number;
     liked?: number;
+    curated?: number;
     curateCount?: number;
     spaceCurateCount?: number
   };

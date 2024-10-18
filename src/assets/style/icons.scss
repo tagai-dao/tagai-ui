@@ -44,3 +44,13 @@
   @extend .icon;
   background-image: url("~@/assets/icons/btn-reply-active.svg");
 }
+
+.btn-icon-curate {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-curate.svg");
+}
+
+.btn-icon-curate-active {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-curate-active.svg");
+}

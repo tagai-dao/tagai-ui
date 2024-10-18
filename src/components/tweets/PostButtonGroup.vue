@@ -8,6 +8,8 @@
     <TweetBtnLike :tweet/>
     <!-- quote-->
     <TweetBtnQuote :tweet/>
+    <!-- tip -->
+    <TweetBtnTip :tweet/>
   </div>
 </template>
 
@@ -18,6 +20,7 @@ import TweetBtnLike from "@/components/tweets/TweetBtnLike.vue";
 import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
 import TweetBtnReply from "@/components/tweets/TweetBtnReply.vue";
 import TweetBtnQuote from "@/components/tweets/TweetBtnQuote.vue";
+import TweetBtnTip from "./TweetBtnTip.vue";
 
 const props = defineProps<{
     tweet: Tweet;

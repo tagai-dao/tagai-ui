@@ -1,6 +1,6 @@
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "./useAccount";
-import { tweet, newLike, newRetweet, newReply, newQuote } from "@/apis/api";
+import { tweet, newLike, newRetweet, newReply, newQuote, newCurate } from "@/apis/api";
 import errCode from "@/errCode";
 import { GlobalModalType, type Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
@@ -12,6 +12,7 @@ export enum OperateType {
   RETWEET,
   QUOTE,
   REPLY,
+  CURATE
 }
 
 export const useTweet = () => {
@@ -34,7 +35,7 @@ export const useTweet = () => {
     return nStr;
   };
 
-  const preCheckCuration = async (opType: OperateType, tweet?: Tweet) => {
+  const preCheckCuration = async (opType: OperateType, tweet?: Tweet, costVp: number = 0) => {
     const account = useAccountStore().getAccountInfo
     if (!account?.twitterId) {
       useModalStore().setModalVisible(true, GlobalModalType.Login)
@@ -57,16 +58,14 @@ export const useTweet = () => {
         if (op.value < OP_CONSUME.LIKE) {
           throw errCode.INSUFFICIENT_OP;
         }
-        if (vp.value < VP_CONSUME.LIKE) {
-          throw errCode.INSUFFICIENT_VP;
-        }
+ 
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_LIKE_SELF
         }
-        if (!account.steemId) {
-          useModalStore().setModalVisible(true, GlobalModalType.Register)
-          return false;
-        }
+        // if (!account.steemId) {
+        //   useModalStore().setModalVisible(true, GlobalModalType.Register)
+        //   return false;
+        // }
         break;
       case OperateType.RETWEET:
         if (tweet && tweet.retweeted) {
@@ -75,16 +74,16 @@ export const useTweet = () => {
         if (op.value < OP_CONSUME.RETWEET) {
           throw errCode.INSUFFICIENT_OP;
         }
-        if (vp.value < VP_CONSUME.RETWEET) {
-          throw errCode.INSUFFICIENT_VP;
-        }
+        // if (vp.value < VP_CONSUME.RETWEET) {
+        //   throw errCode.INSUFFICIENT_VP;
+        // }
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_RETWEET_SELF
         }
-        if (!account.steemId) {
-          useModalStore().setModalVisible(true, GlobalModalType.Register)
-          return false;
-        }
+        // if (!account.steemId) {
+        //   useModalStore().setModalVisible(true, GlobalModalType.Register)
+        //   return false;
+        // }
         break;
       case OperateType.QUOTE:
         if (op.value < OP_CONSUME.QUOTE) {
@@ -95,6 +94,24 @@ export const useTweet = () => {
         if (op.value < OP_CONSUME.REPLY) {
           throw errCode.INSUFFICIENT_OP;
         }
+        break;
+      case OperateType.CURATE:
+        if (tweet && tweet.curated) {
+          return false
+        }
+        if (op.value < costVp) {
+          throw errCode.INSUFFICIENT_OP;
+        }
+        if (vp.value < costVp) {
+          throw errCode.INSUFFICIENT_VP;
+        }
+        if (tweet?.twitterId == account.twitterId) {
+          throw errCode.CANT_LIKE_SELF
+        }
+        if (!account.steemId) {
+            useModalStore().setModalVisible(true, GlobalModalType.Register)
+            return false;
+          }
         break;
     }
     return true;
@@ -108,15 +125,22 @@ export const useTweet = () => {
   const userLike = async (t: Tweet, tick: string) => {
     await newLike(useAccountStore().getAccountInfo.twitterId, t.tweetId, tick);
     udpateUserOPLocal(OP_CONSUME.LIKE);
-    updateUserVpLocal(VP_CONSUME.LIKE);
+    // updateUserVpLocal(VP_CONSUME.LIKE);
   };
 
   const userRetweet = async (t: Tweet, tick: string) => {
     const account = useAccountStore().getAccountInfo;
     await newRetweet(account.twitterId, t.tweetId, tick);
     udpateUserOPLocal(OP_CONSUME.RETWEET);
-    updateUserVpLocal(VP_CONSUME.RETWEET);
+    // updateUserVpLocal(VP_CONSUME.RETWEET);
   };
+
+  const userCurate = async (t: Tweet, tick: string, vp: number) => {
+    const account = useAccountStore().getAccountInfo;
+    await newCurate(account.twitterId, t.tweetId, tick, vp);
+    udpateUserOPLocal(vp);
+    updateUserVpLocal(vp);
+  }
 
   const userReply = async (t: Tweet, text: string, tick: string) => {
     const account = useAccountStore().getAccountInfo;
@@ -137,6 +161,7 @@ export const useTweet = () => {
     userLike,
     userRetweet,
     userReply,
-    userQuote
+    userQuote,
+    userCurate
   };
 };
