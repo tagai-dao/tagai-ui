@@ -59,7 +59,7 @@ async function claim() {
         <div class="text-h5">{{ formatAmount(reward.amount) }} ({{ formatPrice(reward.amount * reward.price) }})</div>
       </div>
     </div>
-    <button @click="claim" :disabled="claiming || !canClaim"
+    <button @click="claim" :disabled="claiming || !canClaim || accountMismatch"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
       {{ canClaim ? 'Claim' : 'Pending settled' }}
       <i-ep-loading v-if="claiming" class="animate-spin" />
