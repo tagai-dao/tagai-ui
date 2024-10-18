@@ -106,7 +106,7 @@ export const useTweet = () => {
           throw errCode.INSUFFICIENT_VP;
         }
         if (tweet?.twitterId == account.twitterId) {
-          throw errCode.CANT_LIKE_SELF
+          throw errCode.CANT_CURATE_SELF
         }
         if (!account.steemId) {
             useModalStore().setModalVisible(true, GlobalModalType.Register)

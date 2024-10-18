@@ -113,6 +113,7 @@
     "hasRegisted": "The account has been registed",
     "unknownError": "Unknown error",
     "cantLikeSelf": "Can't like yourself tweet",
+    "cantCurateSelf": "Can't curate your self tweet",
     "cantRetweetSelf": "Can't retweet your self tweet",
     "likeFrequent": "Like so frequently, please operate later",
     "retweetFrequent": "Retweet so frequently, please operate later"

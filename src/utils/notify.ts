@@ -186,6 +186,9 @@ export const handleServerError = (code: number) => {
     case errCode.CANT_RETWEET_SELF:
       notify({ message: t('errMessage.cantRetweetSelf'), type: 'error'})
       break;
+    case errCode.CANT_CURATE_SELF:
+      notify({ message: t('errMessage.cantCurateSelf'), type: 'error'})
+      break;
     case errCode.TWITTER_ERR:
       notify({ message: t('errMessage.twitterErr'), type: 'error'});
       break;
