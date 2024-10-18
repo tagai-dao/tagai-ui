@@ -1,6 +1,6 @@
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "./useAccount";
-import { tweet, newLike, newRetweet, newReply, newQuote, newTip } from "@/apis/api";
+import { tweet, newLike, newRetweet, newReply, newQuote, newCurate } from "@/apis/api";
 import errCode from "@/errCode";
 import { GlobalModalType, type Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
@@ -12,7 +12,7 @@ export enum OperateType {
   RETWEET,
   QUOTE,
   REPLY,
-  TIP
+  CURATE
 }
 
 export const useTweet = () => {
@@ -95,8 +95,8 @@ export const useTweet = () => {
           throw errCode.INSUFFICIENT_OP;
         }
         break;
-      case OperateType.TIP:
-        if (tweet && tweet.tipped) {
+      case OperateType.CURATE:
+        if (tweet && tweet.curated) {
           return false
         }
         if (op.value < costVp) {
@@ -135,10 +135,11 @@ export const useTweet = () => {
     // updateUserVpLocal(VP_CONSUME.RETWEET);
   };
 
-  const userTip = async (t: Tweet, tick: string, vp: number) => {
+  const userCurate = async (t: Tweet, tick: string, vp: number) => {
     const account = useAccountStore().getAccountInfo;
-    await newTip(account.twitterId, t.tweetId, tick, vp);
+    await newCurate(account.twitterId, t.tweetId, tick, vp);
     udpateUserOPLocal(vp);
+    updateUserVpLocal(vp);
   }
 
   const userReply = async (t: Tweet, text: string, tick: string) => {
@@ -161,6 +162,6 @@ export const useTweet = () => {
     userRetweet,
     userReply,
     userQuote,
-    userTip
+    userCurate
   };
 };

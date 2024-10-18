@@ -89,8 +89,8 @@ export const newLike = async (twitterId: string, tweetId: string, tick: string) 
 export const newRetweet = async (twitterId: string, tweetId: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/retweet', {twitterId, tweetId, tick})
 
-export const newTip = async (twitterId: string, tweetId: string, tick: string, vp: number) =>
-  post(BACKEND_API_URL + '/curation/tip', {twitterId, tweetId, tick, vp})
+export const newCurate = async (twitterId: string, tweetId: string, tick: string, vp: number) =>
+  post(BACKEND_API_URL + '/curation/curate', {twitterId, tweetId, tick, vp})
 
 export const newReply = async (twitterId: string, tweetId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/reply', { twitterId, tweetId, text, tick })
