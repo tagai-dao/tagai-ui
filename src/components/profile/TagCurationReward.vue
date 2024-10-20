@@ -17,7 +17,7 @@ const claiming = ref(false)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 
-const { accountMismatch } = useAccount();
+const { accountMismatch, updateBalance } = useAccount();
 
 async function claim() {
   if (accStore.ethConnectState != EthWalletState.Connected) {
@@ -45,6 +45,7 @@ async function claim() {
     handleErrorTip(e)
   } finally {
     claiming.value = false
+    updateBalance()
   }
 }
 </script>

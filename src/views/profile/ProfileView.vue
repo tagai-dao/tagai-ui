@@ -12,7 +12,7 @@ import { useInterval } from "@/composables/useTools";
 const accStore = useAccountStore()
 const tabOptions = ['post', 'blink', 'createCoin']
 const activeTab = ref('post')
-const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout } = useAccount();
+const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
 const { setInter } = useInterval()
 
 async function updateIPShare() {
@@ -20,6 +20,7 @@ async function updateIPShare() {
 
   try {
     if (acc.ethAddr) {
+      updateBalance();
       const ipshare: any = await getIpshareInfo(acc.ethAddr);
       useAccountStore().ipshare = ipshare;
     }
