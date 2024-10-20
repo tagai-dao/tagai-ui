@@ -71,16 +71,12 @@ async function confirmCurate() {
           <br />
           The curation reward will be depended on the curate amount. The more you curate, the more reward the author and you will get.
           <br />
-          Curate will cost you 1-10 OP(operation power) and VP(vote power) that you selected.
-          <br />
-          Every user have initial 2000 OP and 200 VP. And it will recover 100% OP and 100% VP per 3 days.
+          Curate will cost you 1-10 VP(voting power) that you selected, and every user has initial 200 vp which will recover 100% per 3days.
         </p>
         <el-slider v-model="curateAmount" :min="1" :max="10" :step="1" class="w-full mb-4 slider" />
         <div class="text-sm w-full text-gray-500 mb-4">Consume 
-          <span class="text-red-500">OP: {{ curateAmount }}</span> 
           <span class="text-red-500"> VP: {{ curateAmount }}</span>
         </div><div class="text-sm w-full text-gray-500 mb-4">Remain 
-          <span class="text-green-500">OP: {{ Math.floor(op) }}</span> 
           <span class="text-green-500"> VP: {{ Math.floor(vp) }}</span>
         </div>
         <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
