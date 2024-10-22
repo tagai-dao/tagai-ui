@@ -11,7 +11,9 @@ const props = withDefaults(defineProps<{
     username: string | null | undefined,
     steemId: string | null | undefined,
     ethAddr: string | null | undefined,
-    teleported: boolean
+    teleported: boolean,
+    followers: number | null | undefined,
+    followings: number | null | undefined
 }>(), {
     profileImg: '',
     name: '',
@@ -66,7 +68,17 @@ function replaceEmptyImg(e: any) {
             </div>
           </div>
         </div>
-        <div class="pl-10 mt-2 text-grey-normal">
+        <div class="pl-10 mt-2 flex gap-x-4">
+          <div class="flex flex-col items-center">
+            <span class="font-semibold text-black">{{ props.followers || 0 }}</span>
+            <span class="text-sm text-grey-normal">Followers</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <span class="font-semibold text-black">{{ props.followings || 0 }}</span>
+            <span class="text-sm text-grey-normal">Followings</span>
+          </div>
+        </div>
+        <div v-if="props.ethAddr" class="pl-10 mt-2 text-grey-normal">
           <div class="flex gap-x-2 whitespace-nowrap" @click="onCopy(props.ethAddr ?? '')">
             <span>ETH Address</span>
             <span class="text-gradient bg-gradient-primary">{{ formatAddress(props.ethAddr ?? '') }}</span>

@@ -52,6 +52,8 @@ const onUserAvatar = () => {
           :profile-img="profileImg"
           :name="tweet.twitterName"
           :username="tweet.twitterUsername"
+          :followers="tweet.followers"
+          :followings="tweet.followings"
           :eth-addr="tweet.ethAddr"
           :steem-id="tweet.steemId"
           :teleported="true"

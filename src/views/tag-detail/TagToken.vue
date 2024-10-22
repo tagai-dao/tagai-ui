@@ -256,6 +256,7 @@ onMounted(async () => {
           <div class="col-span-3 truncate flex items-center gap-1">
             <span class="min-w-4">{{i + 1}}</span>
             <UserAvatar :profile-img="holder.profile" :name="holder.twitterName" :username="holder.twitterUsername"
+                    :followers="holder.followers" :followings="holder.followings"
                     :eth-addr="holder.ethAddr"
                     :steem-id="holder.steemId" :teleported="true">
               <template #avatar-img>

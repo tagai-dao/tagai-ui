@@ -83,6 +83,7 @@ onUnmounted(() => {
     <div class="bg-gray-fc rounded-2xl py-4 px-3">
       <div class="flex gap-2 items-stretch">
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
+                    :followers="tweet.followers" :followings="tweet.followings"
                     :eth-addr="tweet.ethAddr" :twitter-id="tweet.twitterId"
                     :steem-id="tweet.steemId" :teleported="true">
           <template #avatar-img>
