@@ -6,6 +6,7 @@ import type { TokenTrade } from "@/types";
 import { formatAddress, formatAmount, formatPastTime } from "@/utils/helper";
 import { handleErrorTip } from "@/utils/notify";
 import emitter from "@/utils/emitter";
+import { useTools } from "@/composables/useTools";
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -13,6 +14,7 @@ const finished = ref(false)
 const comStore = useCommunityStore()
 const listData = ref<TokenTrade []>([])
 const scroller = document.querySelector('#trade-record-scroller')
+const { onCopy } = useTools()
 
 function tradeTime (token: TokenTrade) {
   return formatPastTime(token.timestamp as number)
@@ -85,7 +87,7 @@ onMounted(() => {
         </div>
         <div v-else class="grid grid-cols-4 gap-x-2 h-8 items-center text-h4"
              v-for="(token, i) of listData" :key="i">
-          <div class="col-span-1 truncate flex items-center gap-1">
+          <div class="col-span-1 truncate flex items-center gap-1 cursor-pointer" @click="onCopy(token.trader)">
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
             <span class="truncate">{{ formatAddress(token.trader, 5, 4) }}</span>
           </div>
