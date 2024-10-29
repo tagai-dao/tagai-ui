@@ -56,13 +56,13 @@ async function trade() {
             {{ community.description }}
           </div>
         </div>
-        <slot name="default-btn">
+        <!-- <slot name="default-btn">
           <div class="flex items-center">
             <button @click.stop="trade" class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full">
               Trade
             </button>
           </div>
-        </slot>
+        </slot> -->
       </div>
       <div v-if="community.tags" class="font-extralight flex flex-wrap gap-2 mt-2">
         <button v-for="(tag, index) of JSON.parse(community.tags as string)" :key="tag"

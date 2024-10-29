@@ -21,10 +21,12 @@ import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/con
 import { ethers } from "ethers";
 import IconLinks from "@/components/home/IconLinks.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
+import RecordList from "../buy-sell/RecordList.vue";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
   {label: 'Square', key: 'content'},
+  {label: 'Trades', key: 'trade'},
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
@@ -178,7 +180,7 @@ onActivated(async () => {
       <div class="col-span-1 web:col-span-3 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
         <div class="flex items-center gap-2">
           <span class="text-sm font-semibold">CA</span>
-          <div class="bg-white text-grey-light-active text-xs h-4 flex items-center flex-1 rounded-[3px]">
+          <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px]">
             {{ comStore.currentSelectedCommunity?.token }}
           </div>
           <button @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
@@ -285,6 +287,7 @@ onActivated(async () => {
     </div>
     <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
     <TagContent v-if="activeTab==='content'"/>
+    <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
     <TagCredit v-if="activeTab==='credit'"/>
     <TagToken v-if="activeTab==='token'"/>
   </div>

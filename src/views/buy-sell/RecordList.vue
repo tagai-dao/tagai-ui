@@ -21,6 +21,7 @@ function tradeTime (token: TokenTrade) {
 }
 
 const onLoad = async () => {
+  console.log('onLoad', finished.value, loading.value, listData.value.length)
   if(finished.value || loading.value || listData.value.length == 0) return
   loading.value = true
   try{
@@ -63,7 +64,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-white py-5 px-4 rounded-2xl">
+  <div class="bg-white rounded-2xl p-3">
+    <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">
+      <span class="col-span-1 text-left">Address</span>
+      <span class="col-span-1 text-center">Buy/Sell</span>
+      <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
+      <span class="col-span-1 text-right">$ETH</span>
+    </div>
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
                       loading-text="Loading"
                       pulling-text="Pull to refresh data"
@@ -75,12 +82,6 @@ onMounted(() => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
-        <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">
-          <span class="col-span-1 text-left">Address</span>
-          <span class="col-span-1 text-center">Buy/Sell</span>
-          <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
-          <span class="col-span-1 text-right">$ETH</span>
-        </div>
 
         <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">
           No trade data

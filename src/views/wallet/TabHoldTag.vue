@@ -107,7 +107,7 @@ onMounted(async () => {
               {{ formatAmount((holding.amount?.toString() as any) / 1e18) }}
             </div>
           </div>
-          <button @click.stop="$router.push('/buy-sell/' + holding.community.tick)"
+          <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"
                   class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">Trade</button>
         </div>
       </van-list>
