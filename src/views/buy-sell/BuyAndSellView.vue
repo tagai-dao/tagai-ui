@@ -34,6 +34,7 @@ const tokenInfo = ref()
 const trading = ref(false)
 const sellsman = ref()
 const showFillInfo = ref(false)
+const defaultAmount = ref([0.01, 0.02, 0.05, 0.1])
 const { preCheckCuration, userTweet } = useTweet();
 
 const payEth = ref()
@@ -263,8 +264,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full overflow-hidden flex flex-col gap-3">
-    <BackHeader class="px-3">
+  <div class="flex flex-col gap-3">
+    <!-- <BackHeader class="px-3">
       <template #title>
         <div class="text-lg font-semibold text-black-19">
           1000{{ comStore.currentSelectedCommunity?.tick }}/USDT
@@ -275,12 +276,17 @@ onMounted(async () => {
           <img class="rounded-full" :src="comStore.currentSelectedCommunity?.logo" alt="" srcset="">
         </button>
       </template>
-    </BackHeader>
+    </BackHeader> -->
     <div
-      class="flex-1 overflow-auto px-3 pb-3 flex flex-col gap-2"
+      class="flex-1 overflow-auto px-3 pb-3 flex gap-2"
       id="trade-record-scroller"
     >
-      <div class="bg-white py-5 px-4 rounded-2xl flex flex-col gap-3">
+      <div v-if="comStore.currentSelectedCommunity?.tick" class="w-full min-w-[320px] flex flex-1 gap-3">
+  <!--      <KChart v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>-->
+        <Kline :tick="comStore.currentSelectedCommunity?.tick"/>
+        <!-- <RecordList v-if="comStore.currentSelectedCommunity?.token" /> -->
+      </div>
+      <div class="bg-white py-5 px-4 rounded-2xl flex flex-col gap-3 w-[340px]">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >
@@ -307,11 +313,18 @@ onMounted(async () => {
             <input
               v-model="payEth"
               type="number"
-              class="bg-transparent h-full flex-1 text-h3"
+              class="bg-transparent h-full flex-1 w-[120px] text-h3"
             />
             <span class="text-h5 whitespace-nowrap">$ ETH</span>
           </div>
-          <AmountProgressBar/>
+          <div class="grid grid-cols-4 gap-1 h-7 text-sm">
+            <button v-for="i of defaultAmount"
+              class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active" 
+              @click="payEth=i" 
+              :class="payEth === i ? 'bg-gradient-primary' : ''">
+              {{ i }}
+              </button>
+          </div>
           <div class="text-right text-sm">
             Balance: {{ formatAmount(ethBalance) }}
           </div>
@@ -336,7 +349,7 @@ onMounted(async () => {
             />
             <span class="text-h5 whitespace-nowrap min-w">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
-          <AmountProgressBar/>
+          <AmountProgressBar class="h-7"/>
           <div class="text-sm flex justify-end">
             Balance: {{ formatAmount(tokenBalance) }}
           </div>
@@ -426,9 +439,6 @@ onMounted(async () => {
           Please complete the amount
         </div>
       </div>
-<!--      <KChart v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>-->
-      <Kline v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>
-      <RecordList v-if="comStore.currentSelectedCommunity?.token" />
     </div>
   </div>
 </template>

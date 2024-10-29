@@ -20,6 +20,7 @@ import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
 import { ethers } from "ethers";
 import IconLinks from "@/components/home/IconLinks.vue";
+import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -216,10 +217,10 @@ onActivated(async () => {
               </div>
             </el-tooltip>
           </div>
-          <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold"
+          <!-- <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold"
           @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">
             Trade
-          </button>
+          </button> -->
           <!-- <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
               <button class="bg-grey-normal px-3 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold">
@@ -275,6 +276,7 @@ onActivated(async () => {
         </div>
       </div>
     </div>
+    <BuyAndSellView />
     <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl">
       <button v-for="tab of tabOptions" :key="tab.key"
               class="px-3 rounded-full h-8 text-h3"

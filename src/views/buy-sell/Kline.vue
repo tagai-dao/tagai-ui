@@ -155,7 +155,7 @@ async function getNewData() {
 onMounted(async () => {
   await getNewData()
   chart.value = init("k-line-chart",  {
-    decimalFoldThreshold: 6,
+    decimalFoldThreshold: 4,
     layout: [
       {
         // @ts-ignore
@@ -182,7 +182,7 @@ onMounted(async () => {
       }
     }
   })
-  chart.value.setPriceVolumePrecision(6, 6)
+  chart.value.setPriceVolumePrecision(4, 4)
   updateChart();
   setInter(async () => {
     try{
@@ -222,7 +222,7 @@ watch(() => width.value, () => {
 </script>
 
 <template>
-  <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[500px] w-full bg-white flex flex-col">
+  <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[400px] w-full bg-white flex flex-col">
     <div class="mb-4 px-3 flex flex-wrap justify-between gap-y-2 gap-x-4">
       <span class="font-medium text-black text-xl">{{'1000' + props.tick + '/USDT'}}</span>
       <div class="flex-1 flex justify-end items-center gap-4">
