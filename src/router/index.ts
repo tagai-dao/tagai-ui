@@ -28,10 +28,10 @@ const router = createRouter({
       meta: {tabBar: true, topBar: true, keepAlive: true}
     },
     {
-      path: '/tag-detail/:id',
+      path: '/tag-detail/:id/:sellsman?',
       name: 'tag-detail',
       component: HomeTagDetail,
-      meta: {tabBar: true, topBar: true, keepAlive: true}
+      meta: {tabBar: true, topBar: true}
     },
     {
       path: '/buy-sell/:id/:sellsman?',

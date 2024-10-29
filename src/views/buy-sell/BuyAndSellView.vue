@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import BackHeader from "@/layout/BackHeader.vue";
-import {computed, onMounted, provide, ref, watch} from "vue";
+import {computed, onActivated, onMounted, provide, ref, watch} from "vue";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
@@ -14,7 +14,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
  } from '@/utils/pump'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
-import { useModalStore } from "@/stores/common";
+import { useModalStore, useStateStore } from "@/stores/common";
 import { handleErrorTip, notify } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
@@ -32,10 +32,10 @@ const tradeType = ref('buy')
 const route = useRoute()
 const tokenInfo = ref()
 const trading = ref(false)
-const sellsman = ref()
 const showFillInfo = ref(false)
 const defaultAmount = ref([0.01, 0.02, 0.05, 0.1])
 const { preCheckCuration, userTweet } = useTweet();
+const stateStore = useStateStore()
 
 const payEth = ref()
 const sellAmount = ref()
@@ -205,7 +205,7 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
 
-      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -217,7 +217,7 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveEth.value, sellsman.value, listed.value!, Math.ceil(maxSlippage.value * 100))
+      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined
@@ -248,7 +248,8 @@ async function updateUserTokenInfo () {
   }
 }
 
-onMounted(async () => {
+onActivated(async () => {
+  console.log('onActivated', route.params.id)
   const tick = route.params.id as string
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick) {
     if (comStore.currentSelectedCommunity?.tick != tick) {
@@ -258,8 +259,13 @@ onMounted(async () => {
     community = (await getTokenInfo([community]))[0]
     comStore.currentSelectedCommunity = community
   }
-  sellsman.value = route.params.sellsman
+  stateStore.sellsman = route.params.sellsman as string
   updateUserTokenInfo()
+})
+
+onMounted(async () => {
+  console.log('onMounted', route.params.id)
+  
 })
 </script>
 

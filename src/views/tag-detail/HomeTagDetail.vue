@@ -123,7 +123,7 @@ async function checkTweet() {
   }
 }
 
-onActivated(async () => {
+onMounted(async () => {
   pageScrollTo(pageScrollRef.value)
   const tick = route.params.id;
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){

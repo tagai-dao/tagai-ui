@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import {useStateStore} from "@/stores/common";
 import {formatKChartDate} from "@/utils/helper";
-import {onMounted, reactive, ref, watch} from "vue";
+import {onActivated, onMounted, reactive, ref, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
 import {init} from "klinecharts";
 import { useInterval } from "@/composables/useTools";
 import { useWindowSize } from '@vant/use';
+import { useRoute } from "vue-router";
 
 const { width, height } = useWindowSize();
 const props = defineProps(['tick'])
 const { setInter } = useInterval();
+let tick = ref('');
 let lastTimestamp = 0;
 type ChartData = {
   timestamp: number,
@@ -23,7 +25,7 @@ type FormData = {
   categoryData: string[],
   values: (string | number)[][]
 }
-
+const route = useRoute()
 const timeOptions = ['5min', '1h', '1d']
 const activeTab = ref('5min')
 let originalData: ChartData[] = []
@@ -152,7 +154,42 @@ async function getNewData() {
   }
 }
 
+onActivated(async () => {
+  if (route.params.id !== tick.value) {
+    originalData = []
+    tick.value = route.params.id as string
+    await getNewData()
+    updateChart()
+    setInter(async () => {
+    try{
+      let res: any = await getTokenTradeData(tick.value, lastTimestamp, true);
+      if (res && res.length > 0) {
+        originalData = originalData.concat(res as ChartData[])
+        let m1 = splitData(originalData, 60)
+        let m5 = splitData(originalData, 300)
+        let h1 = splitData(originalData, 3600)
+        let day1 = splitData(originalData, 86400)
+        data1min.categoryData = m1.categoryData;
+        data1min.values = m1.values;
+        data5min.categoryData = m5.categoryData;
+        data5min.values = m5.values;
+        data1day.categoryData = day1.categoryData;
+        data1day.values = day1.values;
+        data1h.categoryData = h1.categoryData;
+        data1h.values = h1.values;
+        updateChart();
+      }
+    } catch (e) {
+      console.log(5333, e)
+    } finally {
+
+    }
+  }, 3000)
+  }
+})
+
 onMounted(async () => {
+  tick.value = route.params.id as string
   await getNewData()
   chart.value = init("k-line-chart",  {
     decimalFoldThreshold: 4,
@@ -186,7 +223,7 @@ onMounted(async () => {
   updateChart();
   setInter(async () => {
     try{
-      let res: any = await getTokenTradeData(props.tick, lastTimestamp, true);
+      let res: any = await getTokenTradeData(tick.value, lastTimestamp, true);
       if (res && res.length > 0) {
         originalData = originalData.concat(res as ChartData[])
         let m1 = splitData(originalData, 60)
@@ -224,7 +261,7 @@ watch(() => width.value, () => {
 <template>
   <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[400px] w-full bg-white flex flex-col">
     <div class="mb-4 px-3 flex flex-wrap justify-between gap-y-2 gap-x-4">
-      <span class="font-medium text-black text-xl">{{'1000' + props.tick + '/USDT'}}</span>
+      <span class="font-medium text-black text-xl">{{'1000' + tick + '/USDT'}}</span>
       <div class="flex-1 flex justify-end items-center gap-4">
         <button v-for="t of timeOptions" :key="t" class="flex items-center gap-1"
                 @click="activeTab=t">
