@@ -238,6 +238,7 @@ async function confirm() {
 
 async function updateUserTokenInfo () {
   try {
+    console.log(233)
     if (ethers.isAddress(accStore.ethConnectAddress)) {
       let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
       tokenBalance.value = info.balance;
@@ -250,6 +251,11 @@ async function updateUserTokenInfo () {
 
 onActivated(async () => {
   console.log('onActivated', route.params.id)
+  
+})
+
+onMounted(async () => {
+  console.log('onMounted', route.params.id)
   const tick = route.params.id as string
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick) {
     if (comStore.currentSelectedCommunity?.tick != tick) {
@@ -261,11 +267,6 @@ onActivated(async () => {
   }
   stateStore.sellsman = route.params.sellsman as string
   updateUserTokenInfo()
-})
-
-onMounted(async () => {
-  console.log('onMounted', route.params.id)
-  
 })
 </script>
 
