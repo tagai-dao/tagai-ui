@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
+import { uiLog } from '@/apis/api';
 
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
@@ -38,11 +39,19 @@ const detectEip6963 = () => {
 };
 
 export const setActiveProviderDetail = (providerDetail: any) => {
-    provider = providerDetail.provider;
-    providerInfo = providerDetail.info;
-    const accStore = useAccountStore();
-    accStore.ethWalletType = providerInfo.name
-    initializeProvider();
+    try {
+        provider = providerDetail.provider;
+        if (!provider.isMetaMask) {
+            uiLog(provider).catch()
+        }
+        providerInfo = providerDetail.info;
+        const accStore = useAccountStore();
+        uiLog(providerInfo.name).catch()
+        accStore.ethWalletType = providerInfo.name
+        initializeProvider();
+    } catch (error) {
+        uiLog(error).catch()
+    }
 };
 
 export const initializeProvider = async () => {
@@ -60,6 +69,7 @@ export const initializeProvider = async () => {
             console.error('Error on init when getting accounts', e);
         }
     }else {
+        uiLog('not plugin installed').catch()
         console.error('not plugin installed')
     }
 }

@@ -9,6 +9,9 @@ export const getEthPrice = async () =>
 export const getUserBitip = async (btcAddress: string) =>
   get("https://api.bitip.social/inscription/listByHolder", {btcAddress})
 
+export const uiLog = async (info: any) =>
+  get(BACKEND_API_URL + '/tiptag/uiLog', info)
+
 /************************************ twitter auth **********************************/
 export const checkAccessToken = async (twitterId: string) =>
   post(BACKEND_API_URL + '/auth/checkAccessToken', {twitterId})
