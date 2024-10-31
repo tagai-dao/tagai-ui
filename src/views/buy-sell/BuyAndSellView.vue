@@ -251,7 +251,7 @@ async function updateUserTokenInfo () {
 
 onActivated(async () => {
   console.log('onActivated', route.params.id)
-  
+
 })
 
 onMounted(async () => {
@@ -285,15 +285,13 @@ onMounted(async () => {
       </template>
     </BackHeader> -->
     <div
-      class="flex-1 overflow-auto px-3 pb-3 flex gap-2"
-      id="trade-record-scroller"
+      class="flex-1 overflow-auto pb-3 flex gap-2"
     >
-      <div v-if="comStore.currentSelectedCommunity?.tick" class="w-full min-w-[320px] flex flex-1 gap-3">
-  <!--      <KChart v-if="comStore.currentSelectedCommunity?.tick" :tick="comStore.currentSelectedCommunity?.tick"/>-->
-        <Kline :tick="comStore.currentSelectedCommunity?.tick"/>
-        <!-- <RecordList v-if="comStore.currentSelectedCommunity?.token" /> -->
+      <div v-if="comStore.currentSelectedCommunity?.tick"
+           class="w-full hidden web:flex min-w-[320px] flex-1 gap-3">
+        <Kline :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
       </div>
-      <div class="bg-white py-5 px-4 rounded-2xl flex flex-col gap-3 w-[340px]">
+      <div class="bg-white py-5 px-4 rounded-2xl flex flex-col gap-3 w-full web:w-[340px]">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >
@@ -326,8 +324,8 @@ onMounted(async () => {
           </div>
           <div class="grid grid-cols-4 gap-1 h-7 text-sm">
             <button v-for="i of defaultAmount"
-              class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active" 
-              @click="payEth=i" 
+              class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active"
+              @click="payEth=i"
               :class="payEth === i ? 'bg-gradient-primary' : ''">
               {{ i }}
               </button>

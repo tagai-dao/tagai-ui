@@ -9,7 +9,7 @@ import { useWindowSize } from '@vant/use';
 import { useRoute } from "vue-router";
 
 const { width, height } = useWindowSize();
-const props = defineProps(['tick'])
+const props = defineProps(['tick', 'chartId'])
 const { setInter } = useInterval();
 let tick = ref('');
 let lastTimestamp = 0;
@@ -191,7 +191,7 @@ onActivated(async () => {
 onMounted(async () => {
   tick.value = route.params.id as string
   await getNewData()
-  chart.value = init("k-line-chart",  {
+  chart.value = init(props.chartId,  {
     decimalFoldThreshold: 4,
     layout: [
       {
@@ -271,7 +271,7 @@ watch(() => width.value, () => {
         </button>
       </div>
     </div>
-    <div id="k-line-chart" class="k-line-chart flex flex-1"/>
+    <div :id="chartId" class="k-line-chart flex flex-1"/>
   </div>
 </template>
 

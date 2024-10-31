@@ -7,6 +7,7 @@ import { formatAddress, formatAmount, formatPastTime } from "@/utils/helper";
 import { handleErrorTip } from "@/utils/notify";
 import emitter from "@/utils/emitter";
 import { useTools } from "@/composables/useTools";
+import Kline from "@/views/buy-sell/Kline.vue";
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -43,7 +44,7 @@ const onRefresh = async () => {
     if (!comStore.currentSelectedCommunity?.token) {
       return;
     }
-    
+
     finished.value = false;
     const list = await getTokenTradeList(comStore.currentSelectedCommunity!.token)
     listData.value = list as TokenTrade[]
@@ -64,42 +65,48 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl p-3">
-    <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">
-      <span class="col-span-1 text-left">Address</span>
-      <span class="col-span-1 text-center">Buy/Sell</span>
-      <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
-      <span class="col-span-1 text-right">$ETH</span>
+  <div>
+    <div v-if="comStore.currentSelectedCommunity?.tick"
+         class="w-full web:hidden min-w-[320px] mb-2">
+      <Kline :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart2"/>
     </div>
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                      loading-text="Loading"
-                      pulling-text="Pull to refresh data"
-                      loosing-text="Release to refresh">
-      <van-list :loading="loading"
-                :finished="finished"
-                :immediate-check="false"
-                finished-text="No more"
-                :scroller="scroller"
-                :offset="50"
-                @load="onLoad">
+    <div class="bg-white rounded-2xl p-3">
+      <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">
+        <span class="col-span-1 text-left">Address</span>
+        <span class="col-span-1 text-center">Buy/Sell</span>
+        <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
+        <span class="col-span-1 text-right">$ETH</span>
+      </div>
+      <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
+                        loading-text="Loading"
+                        pulling-text="Pull to refresh data"
+                        loosing-text="Release to refresh">
+        <van-list :loading="loading"
+                  :finished="finished"
+                  :immediate-check="false"
+                  finished-text="No more"
+                  :scroller="scroller"
+                  :offset="50"
+                  @load="onLoad">
 
-        <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">
-          No trade data
-        </div>
-        <div v-else class="grid grid-cols-4 gap-x-2 h-8 items-center text-h4"
-             v-for="(token, i) of listData" :key="i">
-          <div class="col-span-1 truncate flex items-center gap-1 cursor-pointer" @click="onCopy(token.trader)">
-            <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
-            <span class="truncate">{{ formatAddress(token.trader, 5, 4) }}</span>
+          <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">
+            No trade data
           </div>
-          <span class="col-span-1 text-center" :class="token.isBuy?'text-green-34':'text-red-normal'">
+          <div v-else class="grid grid-cols-4 gap-x-2 h-8 items-center text-h4"
+               v-for="(token, i) of listData" :key="i">
+            <div class="col-span-1 truncate flex items-center gap-1 cursor-pointer" @click="onCopy(token.trader)">
+              <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
+              <span class="truncate">{{ formatAddress(token.trader, 5, 4) }}</span>
+            </div>
+            <span class="col-span-1 text-center" :class="token.isBuy?'text-green-34':'text-red-normal'">
             {{ token.isBuy ? 'Buy' : "Sell" }} {{ formatPastTime(token.timestamp as number) }}
           </span>
-          <span class="col-span-1 text-center">{{ formatAmount((token.amount as any)) }}</span>
-          <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any)) }}</span>
-        </div>
-      </van-list>
-    </van-pull-refresh>
+            <span class="col-span-1 text-center">{{ formatAmount((token.amount as any)) }}</span>
+            <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any)) }}</span>
+          </div>
+        </van-list>
+      </van-pull-refresh>
+    </div>
   </div>
 </template>
 

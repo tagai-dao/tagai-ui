@@ -48,7 +48,7 @@ export default defineConfig({
     }),
     viteCommonjs(),
     VitePWA({
-      disable: true,
+      // disable: true,
       registerType: 'autoUpdate',
       strategies: 'injectManifest',
       devOptions: {
