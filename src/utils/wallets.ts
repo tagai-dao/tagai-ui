@@ -42,7 +42,6 @@ export const setActiveProviderDetail = (providerDetail: any) => {
     try {
         provider = providerDetail.provider;
         providerInfo = providerDetail.info;
-        console.log(Object.keys(provider))
         const accStore = useAccountStore();
         accStore.ethWalletType = providerInfo.name
         initializeProvider();
@@ -66,7 +65,6 @@ export const initializeProvider = async () => {
             console.error('Error on init when getting accounts', e);
         }
     }else {
-        uiLog('not plugin installed').catch()
         console.error('not plugin installed')
     }
 }
