@@ -284,13 +284,13 @@ onMounted(async () => {
       </template>
     </BackHeader> -->
     <div
-      class="flex-1 overflow-auto pb-3 flex gap-2"
+      class="flex-1 overflow-auto flex gap-2"
     >
       <div v-if="comStore.currentSelectedCommunity?.tick"
            class="w-full hidden web:flex min-w-[320px] flex-1 gap-3">
         <Kline :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
       </div>
-      <div class="bg-white py-5 px-4 rounded-2xl flex flex-col gap-3 w-full web:w-[340px]">
+      <div class="bg-white py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full web:w-[340px]">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >
@@ -311,7 +311,7 @@ onMounted(async () => {
         </div>
         <template v-if="tradeType === 'buy'">
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center"
           >
             <span class="text-h5">Pay</span>
             <input
@@ -321,7 +321,7 @@ onMounted(async () => {
             />
             <span class="text-h5 whitespace-nowrap">$ ETH</span>
           </div>
-          <div class="grid grid-cols-4 gap-1 h-7 text-sm">
+          <div class="grid grid-cols-4 gap-1 h-5 web:h-7 text-sm">
             <button v-for="i of defaultAmount"
               class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active"
               @click="payEth=i"
@@ -333,7 +333,7 @@ onMounted(async () => {
             Balance: {{ formatAmount(ethBalance) }}
           </div>
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
           >
             <span class="text-h5"
               >Receive ${{ comStore.currentSelectedCommunity?.tick }}</span
@@ -343,7 +343,7 @@ onMounted(async () => {
         </template>
         <template v-else>
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center"
           >
             <span class="text-h5">Sell</span>
             <input
@@ -353,12 +353,12 @@ onMounted(async () => {
             />
             <span class="text-h5 whitespace-nowrap min-w">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
-          <AmountProgressBar class="h-7"/>
+          <AmountProgressBar class="h-5 web:h-7"/>
           <div class="text-sm flex justify-end">
             Balance: {{ formatAmount(tokenBalance) }}
           </div>
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-11 gap-4 text-black flex items-center justify-between"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
           >
             <span class="text-h5">Receive $ETH</span>
             <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
@@ -366,9 +366,9 @@ onMounted(async () => {
         >
         <div class="flex items-center justify-between">
           <div class="font-light text-base">{{$t('buyAndSell.setMaxSlippage')}}</div>
-          <div class="w-[100px] flex items-center justify-between border-[1px] border-grey-light-active rounded-lg h-9 px-3">
-            <div class="flex-1 flex items-center gpa-1">
-              <input class="w-12 overflow-hidden text-right text-orange-normal" type="number" v-model="maxSlippage">
+          <div class="w-[100px] flex items-center justify-between border-[1px] border-grey-light-active rounded-lg h-6 web:h-9 px-3">
+            <div class="flex-1 flex items-center gpa-1 h-full">
+              <input class="w-12 h-full overflow-hidden text-right text-orange-normal" type="number" v-model="maxSlippage">
               <span class="text-orange-normal">%</span>
             </div>
             <div class="flex flex-col gap-1 ml-4">
@@ -432,7 +432,7 @@ onMounted(async () => {
           </el-radio-group>
         </div>
         <button
-          class="w-full h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
+          class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
           :disabled="trading"
         >
