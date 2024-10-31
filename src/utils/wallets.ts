@@ -13,7 +13,7 @@ let providerInfo: any;
 let accounts: any = []
 let initialized = false
 
-export const isMetaMaskInstalled = () => provider && provider.isMetaMask;
+export const isMetaMaskInstalled = () => provider && (provider.isMetaMask || provider.isOkxWallet || provider.isOKExWallet);
 export const isMetaMaskConnected = () => accounts && accounts.length > 0;
 export const isInitinalized = () => initialized;
 export const getProviders = () => providerDetails;
@@ -42,6 +42,7 @@ export const setActiveProviderDetail = (providerDetail: any) => {
     try {
         provider = providerDetail.provider;
         providerInfo = providerDetail.info;
+        console.log(Object.keys(provider))
         const accStore = useAccountStore();
         accStore.ethWalletType = providerInfo.name
         initializeProvider();
@@ -51,7 +52,7 @@ export const setActiveProviderDetail = (providerDetail: any) => {
 };
 
 export const initializeProvider = async () => {
-    if (true) {
+    if (isMetaMaskConnected()) {
         provider.on('accountsChanged', handleNewAccounts);
         try {
             const newAccounts = await provider.request({
