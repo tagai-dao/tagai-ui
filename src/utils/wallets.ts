@@ -51,7 +51,7 @@ export const setActiveProviderDetail = (providerDetail: any) => {
 };
 
 export const initializeProvider = async () => {
-    if (isMetaMaskConnected()) {
+    if (isMetaMaskInstalled()) {
         provider.on('accountsChanged', handleNewAccounts);
         try {
             const newAccounts = await provider.request({

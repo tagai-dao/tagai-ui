@@ -238,7 +238,6 @@ async function confirm() {
 
 async function updateUserTokenInfo () {
   try {
-    console.log(233)
     if (ethers.isAddress(accStore.ethConnectAddress)) {
       let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
       tokenBalance.value = info.balance;
