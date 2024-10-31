@@ -10,7 +10,7 @@ export const getUserBitip = async (btcAddress: string) =>
   get("https://api.bitip.social/inscription/listByHolder", {btcAddress})
 
 export const uiLog = async (info: any) =>
-  get(BACKEND_API_URL + '/tiptag/uiLog', info)
+  get(BACKEND_API_URL + '/tiptag/ui-log', info)
 
 /************************************ twitter auth **********************************/
 export const checkAccessToken = async (twitterId: string) =>

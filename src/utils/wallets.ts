@@ -41,21 +41,17 @@ const detectEip6963 = () => {
 export const setActiveProviderDetail = (providerDetail: any) => {
     try {
         provider = providerDetail.provider;
-        if (!provider.isMetaMask) {
-            uiLog(provider).catch()
-        }
         providerInfo = providerDetail.info;
         const accStore = useAccountStore();
-        uiLog(providerInfo.name).catch()
         accStore.ethWalletType = providerInfo.name
         initializeProvider();
     } catch (error) {
-        uiLog(error).catch()
+        console.error(error)
     }
 };
 
 export const initializeProvider = async () => {
-    if (isMetaMaskInstalled()) {
+    if (true) {
         provider.on('accountsChanged', handleNewAccounts);
         try {
             const newAccounts = await provider.request({
