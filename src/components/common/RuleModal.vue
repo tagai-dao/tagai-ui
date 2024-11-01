@@ -24,6 +24,9 @@
       <li>
         3：Once 30000 $NULS is raised, the liquidity pool (30000 $NULS + 15% tokens) will be added to Uniswap, and LP tokens will be burned (liquidity locked).
       </li>
+      <li>
+        4：Coin Deployer and Blink creators will receive 1% of transaction fees from trades.
+      </li>
     </ul>
   </div>
 </template>

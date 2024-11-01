@@ -254,7 +254,6 @@ onActivated(async () => {
 })
 
 onMounted(async () => {
-  console.log('onMounted', route.params.id)
   const tick = route.params.id as string
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick) {
     if (comStore.currentSelectedCommunity?.tick != tick) {
@@ -329,6 +328,7 @@ onMounted(async () => {
               {{ i }}
               </button>
           </div>
+          <AmountProgressBar/>
           <div class="text-right text-sm">
             Balance: {{ formatAmount(ethBalance) }}
           </div>

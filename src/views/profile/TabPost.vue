@@ -74,8 +74,7 @@ const onRefresh = async () => {
 function updateReward() {
   if (rewardType.value === 'Claimable') {
     getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
-      console.log(35, list)
-      if (list && list.length > 0) {
+    if (list && list.length > 0) {
         getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
           for (let t of list) {
             t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
