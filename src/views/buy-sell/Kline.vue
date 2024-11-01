@@ -161,27 +161,28 @@ onActivated(async () => {
     await getNewData()
     updateChart()
     setInter(async () => {
-    try{
-      let res: any = await getTokenTradeData(tick.value, lastTimestamp, true);
-      if (res && res.length > 0) {
-        originalData = originalData.concat(res as ChartData[])
-        let m1 = splitData(originalData, 60)
-        let m5 = splitData(originalData, 300)
-        let h1 = splitData(originalData, 3600)
-        let day1 = splitData(originalData, 86400)
-        data1min.categoryData = m1.categoryData;
-        data1min.values = m1.values;
-        data5min.categoryData = m5.categoryData;
-        data5min.values = m5.values;
-        data1day.categoryData = day1.categoryData;
-        data1day.values = day1.values;
-        data1h.categoryData = h1.categoryData;
-        data1h.values = h1.values;
-        updateChart();
-      }
-    } catch (e) {
-      console.log(5333, e)
-    } finally {
+      try{
+        let res: any = await getTokenTradeData(tick.value, lastTimestamp, true);
+        if (res && res.length > 0) {
+          originalData = originalData.concat(res as ChartData[])
+          lastTimestamp = res[res.length - 1].timestamp
+          let m1 = splitData(originalData, 60)
+          let m5 = splitData(originalData, 300)
+          let h1 = splitData(originalData, 3600)
+          let day1 = splitData(originalData, 86400)
+          data1min.categoryData = m1.categoryData;
+          data1min.values = m1.values;
+          data5min.categoryData = m5.categoryData;
+          data5min.values = m5.values;
+          data1day.categoryData = day1.categoryData;
+          data1day.values = day1.values;
+          data1h.categoryData = h1.categoryData;
+          data1h.values = h1.values;
+          updateChart();
+        }
+      } catch (e) {
+        console.log(5333, e)
+      } finally {
 
     }
   }, 3000)
@@ -226,6 +227,7 @@ onMounted(async () => {
       let res: any = await getTokenTradeData(tick.value, lastTimestamp, true);
       if (res && res.length > 0) {
         originalData = originalData.concat(res as ChartData[])
+        lastTimestamp = res[res.length - 1].timestamp
         let m1 = splitData(originalData, 60)
         let m5 = splitData(originalData, 300)
         let h1 = splitData(originalData, 3600)
