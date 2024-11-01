@@ -328,7 +328,6 @@ onMounted(async () => {
               {{ i }}
               </button>
           </div>
-          <AmountProgressBar/>
           <div class="text-right text-sm">
             Balance: {{ formatAmount(ethBalance) }}
           </div>
