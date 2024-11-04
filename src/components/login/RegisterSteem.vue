@@ -189,17 +189,29 @@ onMounted(() => {
   <div v-else-if="step === 2" class="p-6">
     <div class="text-center text-base text-black font-normal mb-8">{{ $t("loginView.registerRequire") }}</div>
     <div class="flex flex-col items-center gap-4 mt-1.5rem">
-      <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
+      <!-- <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="payToken"
               :disabled="loading">
         <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} NULS</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
-      </button>
+      </button> -->
+      <div class="w-full">
+        <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
+                :class="showNoEns?'bg-grey-light':''"
+                @click="payToken"
+                :disabled="loading || accountMismatch">
+          <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
+          <i-ep-loading v-show="loading" class="animate-spin" />
+        </button>
+        <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
+          {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
+        </div>
+      </div>
       <div class="w-full">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"
                 @click="choseEns"
-                :disabled="loading">
+                :disabled="loading || accountMismatch">
           <span class="text-white font-semibold"> I have ENS </span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
