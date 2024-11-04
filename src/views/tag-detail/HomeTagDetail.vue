@@ -117,7 +117,7 @@ async function checkTweet() {
       modalStore.setModalVisible(true, GlobalModalType.BondEth)
       return;
     }
-
+    console.log('ipshare2:', accStore.ipshare)
     if (!ethers.isAddress(accStore.ipshare?.ethAddr)) {
       modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
       return;
