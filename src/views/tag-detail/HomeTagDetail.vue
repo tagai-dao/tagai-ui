@@ -108,10 +108,16 @@ async function checkTweet() {
     }
 
     if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
-      const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
-      accStore.ipshare = ipshare;
+      if (!accStore.ipshare?.created) {
+        const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
+        accStore.ipshare = ipshare;
+      }
+    }else {
+      modalStore.setModalVisible(true, GlobalModalType.BondEth)
+      return;
     }
-    if (!accStore.ipshare.ethAddr) {
+
+    if (!ethers.isAddress(accStore.ipshare?.ethAddr)) {
       modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
       return;
     }

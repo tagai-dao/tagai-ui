@@ -13,6 +13,7 @@ import NotificationView from '@/views/notification/NotificationView.vue'
 import LoginCallBack from '@/views/LoginCallBack.vue'
 
 const router = createRouter({
+  // @ts-ignore
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {

@@ -79,6 +79,7 @@ export const useCreateTweet = (maxLength: number = 240) => {
     el.innerHTML =el.innerHTML.replaceAll('<br>', '')
     let content = ''
     let contentLength = 0;
+    // @ts-ignore
     for(let i of el.childNodes) {
       if(i.nodeName==='#text') {
         contentLength += stringLength(i.textContent??'');

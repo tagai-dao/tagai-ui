@@ -36,7 +36,7 @@ const onPostTweet = async () => {
     }
     if (tweetLength.value === 0) return;
     tweetLoading.value = true
-    if (!(await preCheckCuration(OperateType.TWEET))) {
+    if (!(await preCheckCuration(OperateType.BLINK))) {
       return;
     }
     let content = formatElToTextContent(contentRef.value)
