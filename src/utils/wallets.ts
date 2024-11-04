@@ -127,6 +127,7 @@ export const signMessage = async (message: string) => {
 }
 
 export const getBalance = async (addr: string) => {
+    // @ts-ignore
     if (!ethers.isAddress(addr)) return 0n;
     let eth = getProvider();
     const provider = new ethers.BrowserProvider(eth);

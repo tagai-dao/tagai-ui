@@ -8,6 +8,7 @@ import { useModalStore } from "@/stores/common";
 
 export enum OperateType {
   TWEET,
+  BLINK,
   LIKE,
   RETWEET,
   QUOTE,
@@ -47,6 +48,15 @@ export const useTweet = () => {
     }
     switch (opType) {
       case OperateType.TWEET:
+        if (op.value < OP_CONSUME.POST) {
+          throw errCode.INSUFFICIENT_OP;
+        }
+        break;
+      case OperateType.BLINK:
+        if (!useAccountStore().ipshare?.created) {
+          useModalStore().setModalVisible(true, GlobalModalType.CreateIPShare)
+          throw errCode.IPSHARE_NOT_CREATED;
+        }
         if (op.value < OP_CONSUME.POST) {
           throw errCode.INSUFFICIENT_OP;
         }
