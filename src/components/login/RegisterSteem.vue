@@ -200,7 +200,7 @@ onMounted(() => {
                 :class="showNoEns?'bg-grey-light':''"
                 @click="payToken"
                 :disabled="loading || accountMismatch">
-          <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
+          <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} NULS</span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
         <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
