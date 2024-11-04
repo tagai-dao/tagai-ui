@@ -108,7 +108,7 @@ async function checkTweet() {
     }
 
     if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
-      if (!accStore.ipshare?.created) {
+      if (!accStore.ipshare?.ethAddr) {
         const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
         accStore.ipshare = ipshare;
       }

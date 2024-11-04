@@ -53,7 +53,7 @@ export const useTweet = () => {
         }
         break;
       case OperateType.BLINK:
-        if (!useAccountStore().ipshare?.created) {
+        if (!useAccountStore().ipshare?.ethAddr) {
           useModalStore().setModalVisible(true, GlobalModalType.CreateIPShare)
           throw errCode.IPSHARE_NOT_CREATED;
         }
