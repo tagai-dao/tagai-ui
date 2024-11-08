@@ -68,12 +68,12 @@ const quote = async () => {
     isQuoting.value = true;
     await userQuote(props.tweet, text, props.tweet.tick!)
     quoteVisible.value = false
+    props.tweet.quoteCount += 1;
+    props.tweet.quoted = 1;
   } catch (e) {
     handleErrorTip(e)
   } finally {
     isQuoting.value = false
-    props.tweet.quoteCount += 1;
-    props.tweet.quoted = 1;
   }
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, defineProps, onMounted, onUnmounted, type PropType, ref, watch} from 'vue'
+import {computed, onMounted, onUnmounted, type PropType, ref, watch} from 'vue'
 import { formatAmount, formatPrice, parseTimestamp } from '@/utils/helper';
 // import { buildAssetId } from '@/utils/eth/ipShare'
 import UserAvatar from "@/components/common/UserAvatar.vue";

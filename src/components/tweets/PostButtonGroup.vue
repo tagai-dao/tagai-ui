@@ -14,7 +14,6 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from "vue";
 import type { Tweet } from "@/types";
 import TweetBtnLike from "@/components/tweets/TweetBtnLike.vue";
 import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
