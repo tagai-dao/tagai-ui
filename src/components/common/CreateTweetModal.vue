@@ -58,6 +58,25 @@ const onPostTweet = async () => {
     <div class="text-xl font-medium text-black text-center">
       Tweet on-chain
     </div>
+    <div class="flex flex-col gap-y-2 px-4">
+    <p class="text-sm text-gray-600">
+      Write a tweet as curation and receive curates from other users.
+      </p>  
+    <p class="text-sm text-gray-600">
+      You can write a tweet with 
+      <span class="text-blue-500">
+        #tiptag(or @Tip_Tag)
+      </span>
+       and 
+      <span class="text-blue-500">
+        #{{ useCommunityStore().currentSelectedCommunity?.tick }}
+      </span> 
+      at the front of your tweet content on Twitter, the tweet will be automatically posted to the community.
+    </p>
+    <p class="text-sm text-gray-600">
+      Or you can write a tweet directly in the following text box and click go tweet.
+    </p>
+    </div>
     <div>
       <div class="flex justify-between items-center px-2">
         <div>Type your content here</div>

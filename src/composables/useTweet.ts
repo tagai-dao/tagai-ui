@@ -16,6 +16,8 @@ export enum OperateType {
   CURATE
 }
 
+const TweetRex = /https:\/\/(twitter|x)\.com\/[0-9a-zA-Z]+\/status\/([0-9]+)(\/\w)?/
+
 export const useTweet = () => {
   const { updateUserVpLocal, udpateUserOPLocal, vp, op, addBackOp, addBackVp } =
     useAccount();
@@ -35,6 +37,15 @@ export const useTweet = () => {
     }
     return nStr;
   };
+
+  const getTweetIdFromUrl = (url: string) => {
+    if (!url) return null;
+    const group = url.match(TweetRex);
+    if (group) {
+        const tweetId = group[2]
+        return tweetId;
+    }
+  }
 
   const preCheckCuration = async (opType: OperateType, tweet?: Tweet, costVp: number = 0) => {
     const account = useAccountStore().getAccountInfo
@@ -167,6 +178,7 @@ export const useTweet = () => {
   return {
     formatEmojiText,
     preCheckCuration,
+    getTweetIdFromUrl,
     userTweet,
     userLike,
     userRetweet,

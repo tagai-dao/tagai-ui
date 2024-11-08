@@ -33,7 +33,8 @@ const tabOptions = [
 enum CurationType {
   TWEET,
   SPACE,
-  BLINK
+  BLINK,
+  TIP_CURATE
 }
 
 const { pageScroll, pageScrollTo} = usePageScroll()
@@ -254,10 +255,14 @@ onMounted(async () => {
             </template>
           </el-popover> -->
         </div>
-        <div class="flex justify-center text-white space-x-8">
+        <div class="flex justify-center text-white space-x-4">
           <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
             Blinks
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
+          </button>
+
+          <button @click="onTweetType(CurationType.TIP_CURATE)" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+            Tip ${{ comStore.currentSelectedCommunity?.tick }}
           </button>
 
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
@@ -303,6 +308,7 @@ onMounted(async () => {
                class="max-w-[500px] rounded-[20px]"
                width="90%" :show-close="false" align-center destroy-on-close>
       <CreateBlinkModal @close="showModal = false" v-if="curationType == CurationType.BLINK" />
+      <CreateTipCurateModal @close="showModal = false" v-if="curationType == CurationType.TIP_CURATE" />
       <CreateTweetModal @close="showModal = false" v-if="curationType == CurationType.TWEET" />
       <CreateSpaceModal @close="showModal = false" v-if="curationType == CurationType.SPACE" />
   </el-dialog>
