@@ -22,6 +22,7 @@ import { ethers } from "ethers";
 import IconLinks from "@/components/home/IconLinks.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
+import { OperateType, useTweet } from "@/composables/useTweet";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -53,6 +54,7 @@ const curationType = ref(CurationType.TWEET);
 const accStore = useAccountStore();
 const { setInter } = useInterval()
 const {onCopy} = useTools()
+const { preCheckCuration } = useTweet()
 
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
@@ -97,6 +99,26 @@ async function updateProgress() {
   }).catch(e => {
     console.error(2, e)
   })
+}
+
+async function checkTipCurate() {
+  try{
+    checkingTweet.value = true
+    const account = accStore.getAccountInfo
+    if (!account || !account.twitterId) {
+      modalStore.setModalVisible(true, GlobalModalType.Login)
+      return;
+    }
+
+    if (!(await preCheckCuration(OperateType.TIP_CURATE, undefined, 10))) {
+      return;
+    }
+    onTweetType(CurationType.TIP_CURATE);
+  } catch(e) {
+    handleErrorTip(e)
+  } finally {
+    checkingTweet.value = false
+  }
 }
 
 async function checkTweet() {
@@ -261,8 +283,9 @@ onMounted(async () => {
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
 
-          <button @click="onTweetType(CurationType.TIP_CURATE)" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+          <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
             Tip ${{ comStore.currentSelectedCommunity?.tick }}
+            <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
 
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">

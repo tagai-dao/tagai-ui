@@ -93,16 +93,12 @@ const checkSpace = debounce(async () => {}, 10000);
         @Tip_Tag ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
         good content!
       </span>
-      in the front of your reply content on Twitter directly.
+      in the front of your reply content on Twitter directly, and append with any words you want to say else.
       <p class="text-sm text-gray-600">
-        Or you can write a tweet in the following text box and paste the original
-        tweet link below.
-      </p>
-      <p class="text-sm text-gray-600">
-        It will automatically curate the tweet with 10 VPs from your account.
+        It will automatically curate the tweet with 10 VPs and cost 200 OPs from your account.
       </p>
     </div>
-    <div>
+    <!-- <div>
       <div class="p-2">original tweet link</div>
       <div class="bg-grey-f0/90 rounded-2xl h-12 px-3">
         <input
@@ -187,7 +183,7 @@ const checkSpace = debounce(async () => {}, 10000);
         <span class="text-white font-bold text-lg">Go Reply</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin" />
       </button>
-    </div>
+    </div> -->
   </div>
 </template>
 

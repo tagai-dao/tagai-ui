@@ -13,7 +13,8 @@ export enum OperateType {
   RETWEET,
   QUOTE,
   REPLY,
-  CURATE
+  CURATE,
+  TIP_CURATE
 }
 
 const TweetRex = /https:\/\/(twitter|x)\.com\/[0-9a-zA-Z]+\/status\/([0-9]+)(\/\w)?/
@@ -134,6 +135,17 @@ export const useTweet = () => {
             return false;
           }
         break;
+      case OperateType.TIP_CURATE:
+        if (op.value < OP_CONSUME.POST) {
+          throw errCode.INSUFFICIENT_OP;
+        }
+        if (vp.value < costVp) {
+          throw errCode.INSUFFICIENT_VP;
+        }
+        if (!account.steemId) {
+            useModalStore().setModalVisible(true, GlobalModalType.Register)
+            return false;
+          }
     }
     return true;
   };
