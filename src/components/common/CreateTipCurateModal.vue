@@ -90,7 +90,7 @@ const checkSpace = debounce(async () => {}, 10000);
         You can reply the tweet which you like with the following content:
       </p>
       <span class="text-sm text-blue-500">
-        @Tip_Tag ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
+        @Tip_Tag tip ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
         good content!
       </span>
       in the front of your reply content on Twitter directly, and append with any words you want to say else.
