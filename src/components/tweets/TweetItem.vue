@@ -104,6 +104,8 @@ onUnmounted(() => {
             <button @click="gotoTweet($event)">
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
+
+            <img v-if="tweet.twitterId == '1846600810719072256'" class="w-12 h-12 -ml-2" src="~@/assets/icons/icon-ai.svg" alt="">
           </div>
           <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">
             <span>@{{tweet.twitterUsername}}</span>

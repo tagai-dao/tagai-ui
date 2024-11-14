@@ -1,0 +1,21 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Define a multi-color gradient with smooth, aurora-like transitions -->
+    <linearGradient id="auroraGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4B0082">
+        <animate attributeName="stop-color" values="#4B0082;#00FFFF;#32CD32;#FFD700;#4B0082" dur="3s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="50%" stop-color="#00FFFF">
+        <animate attributeName="stop-color" values="#00FFFF;#32CD32;#FFD700;#FF69B4;#00FFFF" dur="3s" repeatCount="indefinite" />
+      </stop>
+      <stop offset="100%" stop-color="#32CD32">
+        <animate attributeName="stop-color" values="#32CD32;#FFD700;#FF69B4;#4B0082;#32CD32" dur="3s" repeatCount="indefinite" />
+      </stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Static 'AI' text with aurora-like gradient fill -->
+  <text x="50%" y="53%" text-anchor="middle" dy=".3em" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="url(#auroraGradient)">
+    AI
+  </text>
+</svg>
