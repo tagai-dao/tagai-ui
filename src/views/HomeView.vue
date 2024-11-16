@@ -24,7 +24,7 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['Base', 'ETH', 'ENULS']
+const tabOptions = ['Base', 'ENULS']
 const activeTab = ref('Base')
 
 watch(listType, (val) => {
@@ -105,8 +105,6 @@ async function getSpaces() {
 function gotoChain(chain: string){
   if (chain === 'ENULS') {
     window.open('https://enuls.tiptag.social', '__blank')
-  }else if(chain === 'ETH') {
-    window.open('https://eth.tiptag.social', '__blank')
   }
 }
 
