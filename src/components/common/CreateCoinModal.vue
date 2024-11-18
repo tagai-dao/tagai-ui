@@ -216,7 +216,7 @@ watch(() => createLoading.value, () => {
         alt=""
       />
     </div>
-    <!-- @Tip_Tag make a MEME for this tweet -->
+    <!-- @TipTagAi make a MEME for this tweet -->
     <div class="flex flex-col gap-1">
       <p class="text-grey-normal text-sm">
         You can follow the next steps to create TagCoin use your wallet. 
@@ -225,8 +225,8 @@ watch(() => createLoading.value, () => {
         Or you can copy the following content and reply to the tweet which you want to make a MEME:
       </p>
       <div class="text-blue-500 text-sm flex items-center">
-        @Tip_Tag make a MEME for this tweet
-        <button class="ml-2" @click="onCopy(`@Tip_Tag make a MEME for this tweet`)">
+        @TipTagAi make a MEME for this tweet
+        <button class="ml-2" @click="onCopy(`@TipTagAi make a MEME for this tweet`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
       </div>
