@@ -70,6 +70,9 @@ async function trade() {
                 :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
           {{ tag }}
         </button>
+        <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
+          AI create
+        </button>
       </div>
 
       <!-- <IconLinks class="my-1" :community="community"/> -->
@@ -78,5 +81,52 @@ async function trade() {
 </template>
 
 <style scoped>
+.gradient-text {
+  background: linear-gradient(
+    300deg,
+    #ff0080,
+    #ff8c00,
+    #40e0d0,
+    #7b68ee,
+    #ff0080
+  );
+  background-size: 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient 8s linear infinite;
+  font-weight: bold;
+}
 
+.glow-effect {
+  position: relative;
+}
+
+.glow-effect::before {
+  content: "AI create";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: inherit;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: blur(12px);
+  opacity: 0.7;
+  animation: gradient 8s linear infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
 </style>

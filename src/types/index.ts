@@ -208,6 +208,7 @@ export type Community = OnchainTokenInfo & {
   telegram?: string | undefined | null;
   official?: string | undefined | null;
   createAt?: string | number | null | undefined;
+  createdByAi?: number | null | undefined;
 };
 
 export type CreateCommunity = {
