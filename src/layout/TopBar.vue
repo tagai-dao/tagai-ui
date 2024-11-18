@@ -8,21 +8,16 @@ import RuleModal from "@/components/common/RuleModal.vue";
 import { useRouter } from "vue-router";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
-import { useSolanaWallet } from "@/utils/solana";
+import { WalletMultiButton } from 'solana-wallets-vue'
+
 
 const modalVisible = ref(false)
 const ruleModalVisible = ref(false)
 const router = useRouter();
 const accStore = useAccountStore();
-const { init } = useSolanaWallet()
+
 async function onClickWallet() {
-  // if (accStore.getAccountInfo?.ethAddr) {
-  //   router.push('/wallet')
-  //   return;
-  // }else if(accStore.getAccountInfo?.twitterId) {
-  //   useModalStore().setModalVisible(true, GlobalModalType.BondEth);
-  // }
-  init()
+  
 }
 
 </script>
@@ -57,6 +52,7 @@ async function onClickWallet() {
       <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.twitterId"
            src="~@/assets/icons/icon-wallet.svg" alt=""
            @click="onClickWallet">
+      <WalletMultiButton />
       <!-- <img class="w-6 cursor-pointer" src="~@/assets/icons/icon-lang-en.svg" alt=""> -->
       <ProfileBtn class="hidden web:flex"/>
       <CreateBtn class="hidden web:block"/>
