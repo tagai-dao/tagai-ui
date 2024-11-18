@@ -8,19 +8,21 @@ import RuleModal from "@/components/common/RuleModal.vue";
 import { useRouter } from "vue-router";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
+import { useSolanaWallet } from "@/utils/solana";
 
 const modalVisible = ref(false)
 const ruleModalVisible = ref(false)
 const router = useRouter();
 const accStore = useAccountStore();
-
-function onClickWallet() {
-  if (accStore.getAccountInfo?.ethAddr) {
-    router.push('/wallet')
-    return;
-  }else if(accStore.getAccountInfo?.twitterId) {
-    useModalStore().setModalVisible(true, GlobalModalType.BondEth);
-  }
+const { init } = useSolanaWallet()
+async function onClickWallet() {
+  // if (accStore.getAccountInfo?.ethAddr) {
+  //   router.push('/wallet')
+  //   return;
+  // }else if(accStore.getAccountInfo?.twitterId) {
+  //   useModalStore().setModalVisible(true, GlobalModalType.BondEth);
+  // }
+  init()
 }
 
 </script>
