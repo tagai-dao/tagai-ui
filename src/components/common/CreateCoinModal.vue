@@ -17,6 +17,7 @@ import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import emitter from '@/utils/emitter'
 import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
+import { useTools } from "@/composables/useTools";
 
 const modalStore = useModalStore();
 
@@ -50,6 +51,7 @@ const {
   openImageCropper,
   onCroppingAndUpload
 } = useUploadImg()
+const { onCopy } = useTools()
 
 watch(() => completedImgUrl.value, (value) => {
   createForm.logoUrl = completedImgUrl.value
@@ -213,6 +215,21 @@ watch(() => createLoading.value, () => {
         src="~@/assets/icons/icon-modal-close.svg"
         alt=""
       />
+    </div>
+    <!-- @Tip_Tag make a MEME for this tweet -->
+    <div class="flex flex-col gap-1">
+      <p class="text-grey-normal text-sm">
+        You can follow the next steps to create TagCoin use your wallet. 
+      </p>
+      <p class="text-grey-normal text-sm">
+        Or you can copy the following content and reply to the tweet which you want to make a MEME:
+      </p>
+      <div class="text-blue-500 text-sm flex items-center">
+        @Tip_Tag make a MEME for this tweet
+        <button class="ml-2" @click="onCopy(`@Tip_Tag make a MEME for this tweet`)">
+            <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
+          </button>
+      </div>
     </div>
     <div class="flex flex-col gap-4">
     <!-- name -->
