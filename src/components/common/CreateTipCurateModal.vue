@@ -95,7 +95,7 @@ const checkSpace = debounce(async () => {}, 10000);
       <span class="text-sm text-blue-500 flex items-center">
         @Tip_Tag tip ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
         good content!
-        <button class="ml-2" @click="onCopy(`@Tip_Tag tip ${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
+        <button class="ml-2" @click="onCopy(`@Tip_Tag tip $${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
       </span>
