@@ -9,6 +9,7 @@
     "p1": "uses progressive web app technolog that combines the best features of traditional websites and platform-specific apps",
     "createWallet": "Create Wallet",
     "bindAddress": "Bind ETH address",
+    "bindSolAddress": "Bind SOL address",
     "addressUsed": "This address has been used by other twitter, please change another one in your wallet.",
     "registerRequire": "We will help you create a web3 social account and delegate posting key permissions to our account. Due to the cost of registering a web3 social account, we will cost your fee for registration. If you have ENS or Bitip, we will help you register for free.",
     "noEns": "No ENS in your address",

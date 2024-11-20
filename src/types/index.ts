@@ -6,6 +6,7 @@ export enum GlobalModalType {
   Login,
   Register,
   BondEth,
+  BondSol,
   ChoseWallet,
   ModifyCoin
 }
@@ -69,6 +70,7 @@ export type Account = {
   expiresAt?: string | number;
   btcAddr?: string | null | undefined;
   ethAddr?: string | null | undefined;
+  solAddr?: string | null | undefined;
   steemId?: string | null | undefined;
   lastReadMessageTime?: string,
   vp?: number;

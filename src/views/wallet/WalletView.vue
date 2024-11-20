@@ -5,6 +5,7 @@ import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { formatAddress, formatAmount } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
+import axios from "axios";
 
 const accStore = useAccountStore()
 const tabOptions = ['tags', 'ipshares']
@@ -12,8 +13,28 @@ const activeTab = ref('tags')
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
 
-onMounted(() => {
+onMounted(async () => {
+  console.log(10)
   updateBalance()
+  
+  const response = await fetch('https://mainnet.helius-rpc.com/?api-key=d66140ab-63a2-4fb8-981a-7ccf7e7db999', {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "jsonrpc": "2.0",
+      "id": "text",
+      "method": "getTokenAccounts",
+      "params": {
+        page: 1,
+        limit: 100,
+        owner: "238ZySG89DBkHtbm8syYFQx4Be9uPyNinLxq7ZcoeJPb"
+      }
+    }),
+});
+const data = await response.json();
+console.log(data)
 })
 
 </script>
@@ -36,13 +57,13 @@ onMounted(() => {
         </div>
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-2">
-      <div class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
-          <span>ETH address: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
+      <div class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.solAddr ?? '')">
+          <span>Sol address: {{ formatAddress(useAccountStore().getAccountInfo?.solAddr ?? '') }}</span>
         </div>
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-1">
         <div class="flex-1 flex items-center flex-wrap gap-4">
-          <span>ETH balance: {{ formatAmount(useAccountStore().ethBalance) }}</span>
+          <span>Sol balance: {{ formatAmount(useAccountStore().solBalance) }}</span>
         </div>
       </div>
     </div>
@@ -52,10 +73,9 @@ onMounted(() => {
               :class="tab===activeTab?'text-gradient bg-gradient-primary':'text-grey-normal'"
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
     </div> -->
-    <div class="flex-1 overflow-auto " id="profile-tab-scroller">
-      <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
+    <!-- <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <TabHoldTag v-if="activeTab==='tags'"/>
-    </div>
+    </div> -->
   </div>
 </template>
 

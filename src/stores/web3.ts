@@ -47,11 +47,13 @@ export const useAccountStore = defineStore('account', {
             createdTokenList: [] as Community[],
             setAccount,
             ethBalance: 0,
+            solBalance: 0,
             ipshare: {} as IPShare,
             pubKey: '',
             ethWalletType: '',
             ethConnectState: EthWalletState.Disconnect,
             ethConnectAddress: '',
+            solConnectAddress: '',
             unreadMessageCount: 0,
             socialMessages: [] as SocialMessage[],
             chainId: 0

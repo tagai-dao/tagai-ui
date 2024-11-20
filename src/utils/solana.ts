@@ -1,17 +1,4 @@
-import { WalletAdapterNetwork, WalletReadyState } from '@solana/wallet-adapter-base'
-import { Connection, clusterApiUrl } from '@solana/web3.js'
-import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { useWallet } from 'solana-wallets-vue'
+import { Connection, clusterApiUrl, Keypair, SystemProgram, Transaction } from '@solana/web3.js'
 
-
-export const newtwork = WalletAdapterNetwork.Devnet;
-export const endpoint = clusterApiUrl(newtwork);
-export const connection = new Connection(endpoint, 'confirmed');
-
-export const wallets = [
-    new PhantomWalletAdapter(),
-    new SolflareWalletAdapter(),
-]
-export const walletContext = {
-    wallets,
-    autoConnect: true
-}
+export const { wallets, connect, disconnect, connected, publicKey, signMessage } = useWallet()

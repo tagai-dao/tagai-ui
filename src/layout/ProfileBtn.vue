@@ -42,7 +42,7 @@ const { vp, op, profile, replaceEmptyProfile } = useAccount()
       <div class="w-[3px] h-[0.5px] bg-white absolute right-0 top-1/2 transform -translate-y-1/2"></div>
     </div>
     <img v-else class="w-7 h-7 rounded-full" src="~@/assets/icons/icon-tabbar-profile.svg" alt="">
-    <span class="text-h5 text-grey-normal web:hidden">Profile</span>
+    <!-- <span class="text-h5 text-grey-normal web:hidden">Profile</span> -->
   </router-link>
 
 </template>

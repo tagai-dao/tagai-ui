@@ -19,26 +19,26 @@ const router = createRouter({
     {
       path: '/:commerceid?',
       name: 'home',
-      component: HomeView,
-      meta: {tabBar: true, topBar: true, keepAlive: true}
-    },
-    {
-      path: '/commerce/:commerceid?',
-      name: 'commerce',
-      component: HomeView,
-      meta: {tabBar: true, topBar: true, keepAlive: true}
-    },
-    {
-      path: '/tag-detail/:id/:sellsman?',
-      name: 'tag-detail',
       component: HomeTagDetail,
-      meta: {tabBar: true, topBar: true}
+      meta: {tabBar: true, topBar: true, keepAlive: true}
     },
-    {
-      path: '/buy-sell/:id/:sellsman?',
-      name: 'buy-sell',
-      component: BuyAndSellView
-    },
+    // {
+    //   path: '/commerce/:commerceid?',
+    //   name: 'commerce',
+    //   component: HomeView,
+    //   meta: {tabBar: true, topBar: true, keepAlive: true}
+    // },
+    // {
+    //   path: '/tag-detail/:id/:sellsman?',
+    //   name: 'tag-detail',
+    //   component: HomeTagDetail,
+    //   meta: {tabBar: true, topBar: true}
+    // },
+    // {
+    //   path: '/buy-sell/:id/:sellsman?',
+    //   name: 'buy-sell',
+    //   component: BuyAndSellView
+    // },
     {
       path: '/space-detail/:id',
       name: 'space-detail',

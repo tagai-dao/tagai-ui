@@ -40,12 +40,18 @@ export const checkRegister = async (twitterId: string) =>
 export const bondEth = async (ethAddr: string, twitterId: string, signature: string, infoStr: string) =>
   post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
 
+export const bondSol = async (solAddr: string, twitterId: string, signature: string) =>
+  post(BACKEND_API_URL + '/user/bondSol', { solAddr, twitterId, signature })
+
 /************************************ user api **********************************/
 export const getUserProfile = (twitterId: string) =>
   get(BACKEND_API_URL + '/user/getUserProfile', {twitterId})
 
 export const checkEthUsed = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/checkEthUsed', { ethAddr })
+
+export const checkSolUsed = async (solAddr: string) =>
+  get(BACKEND_API_URL + '/user/checkSolUsed', { solAddr })  
 
 export const checkEns = async (ethAddr: string) => 
   get(BACKEND_API_URL + '/user/getENS', {ethAddr})
@@ -64,6 +70,10 @@ export const getMessages = async (twitterId: string) =>
 
 export const readAllMessage = async (twitterId: string) =>
   post(BACKEND_API_URL + '/user/readAllMessage', {twitterId})
+
+export const getSolBalance = async (solAddr: string) =>
+  get(BACKEND_API_URL + '/user/getSolBalance', {solAddr})
+
 /************************************ tweets **********************************/
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})

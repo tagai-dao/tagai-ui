@@ -13,7 +13,7 @@ import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
 import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
-
+import BindSolAddress from "@/components/login/BindSolAddress.vue";
 const modalStore = useModalStore()
 </script>
 
@@ -28,7 +28,7 @@ const modalStore = useModalStore()
         <component :is="Component" v-if="!$route.meta.keepAlive"/>
       </router-view>
     </div>
-    <TabBar class="web:hidden" v-if="$route.meta.tabBar"/>
+    <!-- <TabBar class="web:hidden" v-if="$route.meta.tabBar"/> -->
     <el-dialog v-model="modalStore.modalVisible"
                :close-on-click-modal="modalStore.modalCloseEnable"
                :close-on-press-escape="modalStore.modalCloseEnable"
@@ -40,6 +40,7 @@ const modalStore = useModalStore()
       <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace"/>
       <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
       <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
+      <BindSolAddress v-if="modalStore.modalType===GlobalModalType.BondSol"/>
       <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
       <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
       <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />

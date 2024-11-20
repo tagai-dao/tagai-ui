@@ -2,7 +2,8 @@ import { computed } from "vue";
 import { useAccountStore } from "@/stores/web3";
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
 import { twitterRefreshAccessToken, getVPOP, needLogin,
-    getNewMessageCount, getMessages as gm, readAllMessage
+    getNewMessageCount, getMessages as gm, readAllMessage,
+    getSolBalance
  } from '@/apis/api'
 import { MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY } from '@/config'
 import errCode from "@/errCode";
@@ -11,6 +12,8 @@ import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { ethers } from "ethers";
 import { getBalance } from '@/utils/web3'
+import { useWallet } from 'solana-wallets-vue'
+import { Connection, PublicKey } from '@solana/web3.js'
 
 export const useAccount = () => {
     const accountMismatch = computed(() => {
@@ -218,11 +221,11 @@ export const useAccount = () => {
     }
 
     const updateBalance = () => {
-        if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
-            getBalance(useAccountStore().getAccountInfo.ethAddr!).then(balance => {
-                // @ts-ignore
-                useAccountStore().ethBalance = balance.toString() / 1e18
-            }).catch()
+        const LAMPORTS_PER_SOL = 1e9
+        if (useAccountStore().getAccountInfo.solAddr) {
+            getSolBalance(useAccountStore().getAccountInfo?.solAddr ?? '').then((balance: any) => {
+                useAccountStore().solBalance = balance / LAMPORTS_PER_SOL;
+            })
         }
     }
 

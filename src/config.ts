@@ -1,7 +1,7 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://api.tiptag.social";
-// export const BACKEND_API_URL = "http://localhost:3000";
+// export const BACKEND_API_URL = "https://api.tiptag.social";
+export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
@@ -47,6 +47,15 @@ export const BondEthMessage = JSON.stringify(
   {
     project: "tiptag",
     method: "bond-eth",
+  },
+  null,
+  4
+);
+
+export const BondSolMessage = JSON.stringify(
+  {
+    project: "xverse",
+    method: "bond-sol",
   },
   null,
   4

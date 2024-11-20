@@ -27,7 +27,7 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 const tabOptions = [
   // {label: 'Group', key: 'group'},
   {label: 'Square', key: 'content'},
-  {label: 'Trades', key: 'trade'},
+  // {label: 'Trades', key: 'trade'},
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
 ]
@@ -155,7 +155,9 @@ async function checkTweet() {
 
 onMounted(async () => {
   pageScrollTo(pageScrollRef.value)
-  const tick = route.params.id;
+  let tick = route.params.id;
+  tick = 'Slime'
+  
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){
     if (typeof(tick) !== 'string') {
       router.replace('/')
@@ -218,7 +220,7 @@ onMounted(async () => {
             <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
         </div>
-        <div class="text-base font-medium flex items-center gap-1">
+        <!-- <div class="text-base font-medium flex items-center gap-1">
           <span>Bonding Curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
           <el-popover popper-class="c-popper">
             <template #reference>
@@ -230,9 +232,9 @@ onMounted(async () => {
               </div>
             </template>
           </el-popover>
-        </div>
+        </div> -->
         <div class="flex items-center gap-3">
-          <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
+          <!-- <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
                       bg-white gap-[2px]">
             <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
                         placement="top" popper-class="c-arrow-popper">
@@ -248,7 +250,7 @@ onMounted(async () => {
                 </div>
               </div>
             </el-tooltip>
-          </div>
+          </div> -->
           <!-- <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold"
           @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">
             Trade
@@ -283,10 +285,10 @@ onMounted(async () => {
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
 
-          <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+          <!-- <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
             Tip ${{ comStore.currentSelectedCommunity?.tick }}
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-          </button>
+          </button> -->
 
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
@@ -313,7 +315,7 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <BuyAndSellView />
+    <!-- <BuyAndSellView /> -->
     <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl">
       <button v-for="tab of tabOptions" :key="tab.key"
               class="px-3 rounded-full h-8 text-h3"
@@ -322,7 +324,7 @@ onMounted(async () => {
     </div>
     <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
     <TagContent v-if="activeTab==='content'"/>
-    <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
+    <!-- <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/> -->
     <TagCredit v-if="activeTab==='credit'"/>
     <TagToken v-if="activeTab==='token'"/>
   </div>
