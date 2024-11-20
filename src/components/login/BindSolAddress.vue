@@ -83,7 +83,7 @@ function sel() {
       </div>
       <div v-show="solAddrUsed" class="text-base text-center text-red-e6 mt-3">{{ $t('loginView.addressUsed') }}</div>
     </div>
-    <div v-if="!accStore.getAccountInfo?.solAddr && !publicKey?.toBase58()" class="flex flex-col gap-4">
+    <div v-if="!accStore.getAccountInfo?.solAddr || !publicKey?.toBase58()" class="flex flex-col gap-4">
       <div v-for="wallet in wallets" :key="wallet.adapter.name" 
         class="flex items-center justify-center gap-2"
         @click="select(wallet.adapter.name as WalletName)">
@@ -103,7 +103,7 @@ function sel() {
         <span class="text-h5 text-white">Confirm</span>
         <i-ep-loading v-if="loading" class="animate-spin text-white"/>
       </button>
-      <div v-show="solAddrUsed" class="text-base text-center text-red-e6 mt-3">{{ $t('loginView.addressUsed') }}</div>
+      <!-- <div v-show="solAddrUsed" class="text-base text-center text-red-e6 mt-3">{{ $t('loginView.addressUsed') }}</div> -->
       <!-- <div class="text-base text-center text-red-e6 mt-3">钱包地址不匹配，请重新绑定</div> -->
     </div>
   </div>

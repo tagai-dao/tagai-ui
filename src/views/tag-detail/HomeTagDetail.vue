@@ -130,21 +130,11 @@ async function checkTweet() {
       return;
     }
 
-    if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
-      if (!accStore.ipshare?.ethAddr) {
-        const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
-        console.log('ipshare:', ipshare)
-        accStore.ipshare = ipshare;
-      }
-    }else {
-      modalStore.setModalVisible(true, GlobalModalType.BondEth)
+    if (!accStore.getAccountInfo.solAddr) {
+      modalStore.setModalVisible(true, GlobalModalType.BondSol)
       return;
     }
-    console.log('ipshare2:', accStore.ipshare)
-    if (!ethers.isAddress(accStore.ipshare?.ethAddr)) {
-      modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
-      return;
-    }
+    
     onTweetType(CurationType.BLINK);
   } catch(e) {
     handleErrorTip(e)
@@ -169,8 +159,8 @@ onMounted(async () => {
       router.replace('/')
     }
   }
-  updateProgress();
-  setInter(updateProgress, 3000);
+  // updateProgress();
+  // setInter(updateProgress, 3000);
 })
 
 </script>

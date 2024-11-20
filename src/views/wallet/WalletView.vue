@@ -16,25 +16,6 @@ const { onCopy } = useTools()
 onMounted(async () => {
   console.log(10)
   updateBalance()
-  
-  const response = await fetch('https://mainnet.helius-rpc.com/?api-key=d66140ab-63a2-4fb8-981a-7ccf7e7db999', {
-    method: 'POST',
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      "jsonrpc": "2.0",
-      "id": "text",
-      "method": "getTokenAccounts",
-      "params": {
-        page: 1,
-        limit: 100,
-        owner: "238ZySG89DBkHtbm8syYFQx4Be9uPyNinLxq7ZcoeJPb"
-      }
-    }),
-});
-const data = await response.json();
-console.log(data)
 })
 
 </script>
