@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useAccountStore } from "@/stores/web3";
 import { ref, watch } from "vue";
-import { ethers } from "ethers";
 import { checkSolUsed, bondSol } from '@/apis/api'
 import { BondSolMessage } from '@/config'
 import { handleErrorTip } from "@/utils/notify";

@@ -6,6 +6,9 @@ import type { Community, CreateCommunity } from '@/types'
 export const getEthPrice = async () =>
   get(BACKEND_API_URL + '/tiptag/getETHPrice')
 
+export const getSolPrice = async () =>
+  get(BACKEND_API_URL + '/tiptag/getSOLPrice')
+
 export const getUserBitip = async (btcAddress: string) =>
   get("https://api.bitip.social/inscription/listByHolder", {btcAddress})
 
@@ -73,6 +76,9 @@ export const readAllMessage = async (twitterId: string) =>
 
 export const getSolBalance = async (solAddr: string) =>
   get(BACKEND_API_URL + '/user/getSolBalance', {solAddr})
+
+export const getSolBlockHash = async () =>
+  get(BACKEND_API_URL + '/user/getSolBlockHash')
 
 /************************************ tweets **********************************/
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>

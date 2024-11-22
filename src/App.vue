@@ -6,7 +6,7 @@ import { useAccountStore } from "./stores/web3";
 import { onMounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
-import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
+import { getSolPrice, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
@@ -49,6 +49,7 @@ onMounted(async () => {
       }
     })
   }
+
   // update userinfo
   if (account?.twitterId) {
     getUserProfile(account.twitterId).then((acc: any) => {
@@ -58,13 +59,13 @@ onMounted(async () => {
       })
     }).catch()
   }
-  getEthPrice().then((p: any) => {
-      stateStore.ethPrice = p
+  getSolPrice().then((p: any) => {
+      stateStore.solPrice = parseFloat(p)
     }).catch();
   let count = 0
   setInter(() => {
-    getEthPrice().then((p: any) => {
-      stateStore.ethPrice = parseFloat(p)
+    getSolPrice().then((p: any) => {
+      stateStore.solPrice = parseFloat(p)
     }).catch();
     updateVPOP();
     if (count++ % 6 == 0)

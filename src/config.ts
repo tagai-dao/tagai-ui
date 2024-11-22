@@ -33,9 +33,9 @@ export const MainToken = {
   decimals: 18,
 };
 
-// also create coin or create social account will cost 0.00005 ETH
-export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
-export const CreateFee = "1000000000000000";
+// also create coin or create social account will cost 0.01 SOL
+export const FeeAddress = "3at3ThmWyf1rt9StSK4kjFr1PMjnBToEidPqXVqiqee1";
+export const CreateFee = "10000000";
 export const ClaimFee = "100000000000000";
 
 export const TotalSupply = 1000000000;

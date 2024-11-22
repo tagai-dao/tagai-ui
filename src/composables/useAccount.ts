@@ -16,12 +16,13 @@ import { useWallet } from 'solana-wallets-vue'
 import { Connection, PublicKey } from '@solana/web3.js'
 
 export const useAccount = () => {
+    const { publicKey } = useWallet();
     const accountMismatch = computed(() => {
         const accStore = useAccountStore()
-        if (!accStore.ethConnectAddress) {
+        if (!publicKey.value) {
             return false
         }
-        return accStore.getAccountInfo?.ethAddr != accStore.ethConnectAddress
+        return accStore.getAccountInfo?.solAddr != publicKey.value.toBase58()
     })
 
     const profile = computed(() => {

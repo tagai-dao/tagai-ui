@@ -38,6 +38,7 @@ export const useStateStore = defineStore('state', {
       referee: '' as string | null | undefined,
       idType: IdType.ENS,
       ethPrice: 0,
+      solPrice: 0,
       sellsman: ''
     }
   },

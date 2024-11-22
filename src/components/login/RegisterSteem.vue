@@ -7,14 +7,15 @@ import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } 
 import { checkEns, registerSteem } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
-import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
-import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
+import { transferEthTo, getBalance, signMessage as ethSignMessage, transferSolTo } from "@/utils/wallets";
+import { connectUnisat, signMessage as btcSignMessage, type BtcWallet } from "@/utils/btc";
 import { getUserBitip, checkRegister } from "@/apis/api";
-import { bytesToHex, sleep } from "@/utils/helper";
+import { bytesToHex, sleep, u8arryToHex } from "@/utils/helper";
 import { box, generateSteemAuth } from "@/utils/web3";
 import { ethers } from 'ethers';
 import type { Account } from "@/types";
 import { useModalStore } from "@/stores/common";
+import { useWallet } from "solana-wallets-vue";
 
 const accStore = useAccountStore();
 
@@ -24,6 +25,7 @@ const showNoEns = ref(false);
 const chosingBitip = ref(false);
 const bitips = ref([]);
 const btcWallet = ref<BtcWallet>();
+const { publicKey, signMessage } = useWallet();
 
 const { accountMismatch } = useAccount();
 
@@ -40,12 +42,12 @@ const identityInfo = reactive<{
 }>({});
 
 const step = computed(() => {
-    if (chosingBitip.value) {
-        return 3;
-    }
+  if (chosingBitip.value) {
+      return 3;
+  }
   if (
-    !accStore.getAccountInfo.ethAddr ||
-    accStore.ethConnectState !== EthWalletState.Connected
+    !accStore.getAccountInfo.solAddr
+    || !publicKey.value?.toBase58()
   ) {
     return 1;
   } else if (!accStore.getAccountInfo.steemId) {
@@ -63,15 +65,15 @@ async function payToken() {
     resetTips()
     try {
         loading.value = true
-        const balance = await getBalance(accStore.getAccountInfo!.ethAddr!);
-        if (balance <= BigInt(CreateFee)) {
+        const balance = await getBalance(accStore.getAccountInfo!.solAddr!);
+        if (BigInt(balance) <= BigInt(CreateFee)) {
             showInsufficientBalance.value = true;
             return;
         }
-        const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+        const hash = '3YkJrqNkE5ge5tg2mPcWfFprKp8qLvQWgymAoMVTUTNXCvJgu6x6HFq6AzeZaafPqvjxhHqqc5omU23A8QL6M78G';// await transferSolTo(FeeAddress, Number(CreateFee))
         identityInfo.assetId = hash;
         identityInfo.chainName = ChainConfig.name;
-        identityInfo.type = 'payToken'
+        identityInfo.type = 'paySol'
         await register();
     } catch (error) {
         handleErrorTip(error)
@@ -80,28 +82,28 @@ async function payToken() {
     }
 }
 
-async function choseEns() {
-    resetTips()
-    try{
-        loading.value = true;
-        const name = await checkEns(accStore.getAccountInfo.ethAddr ?? '')
-        if (name) {
-            identityInfo.chainName = 'ETH';
-            identityInfo.type = 'ens';
-            identityInfo.assetId = name as string;
-            showNoEns.value = false
-            // resister
-            await register();
-        }else {
-            showNoEns.value = true
-        }
+// async function choseEns() {
+//     resetTips()
+//     try{
+//         loading.value = true;
+//         const name = await checkEns(accStore.getAccountInfo.ethAddr ?? '')
+//         if (name) {
+//             identityInfo.chainName = 'ETH';
+//             identityInfo.type = 'ens';
+//             identityInfo.assetId = name as string;
+//             showNoEns.value = false
+//             // resister
+//             await register();
+//         }else {
+//             showNoEns.value = true
+//         }
 
-    } catch (e) {
-        handleErrorTip(e)
-    } finally {
-        loading.value = false
-    }
-}
+//     } catch (e) {
+//         handleErrorTip(e)
+//     } finally {
+//         loading.value = false
+//     }
+// }
 
 async function selectBitip() {
     resetTips()
@@ -111,7 +113,6 @@ async function selectBitip() {
         if (!wallet) return
         btcWallet.value = wallet
         const res: any = await getUserBitip(wallet.btcAddr)
-        console.log(233, res, wallet.btcAddr)
         if (res && res.length > 0) {
             bitips.value = res.map((b: any) => b.content)
         }
@@ -133,7 +134,7 @@ async function choseBitip(bitip: string) {
             version: 1,
             datetime
         }, null, 4)
-        const signature = await signMessage(message);
+        const signature = await btcSignMessage(message);
         
         identityInfo.chainName = 'BTC';
         identityInfo.type = 'bitip';
@@ -153,17 +154,17 @@ async function choseBitip(bitip: string) {
 }
 
 async function register() {
-    const signature = await ethSignMessage(RegisterSteemMessage)
+    const signature = await signMessage.value!(new TextEncoder().encode(RegisterSteemMessage))
     const account = accStore.getAccountInfo
     const salt = bytesToHex(ethers.randomBytes(4));
-      const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
+      const steemAccount = generateSteemAuth(u8arryToHex(signature) + salt);
       let params = box(steemAccount);
       let createForm = {
         twitterId: account.twitterId,
         pwd: params.pwd,
         sendNonce: params.sendNonce,
         sendPubKey: params.sendPubKey,
-        ethAddr: account.ethAddr,
+        solAddr: account.solAddr,
         salt,
         identityInfo
       }
@@ -200,14 +201,14 @@ onMounted(() => {
                 :class="showNoEns?'bg-grey-light':''"
                 @click="payToken"
                 :disabled="loading || accountMismatch">
-          <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
+          <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e9 }} SOL</span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
         <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
-          {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
+          {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.solAddr??'**' }) }}
         </div>
       </div>
-      <div class="w-full">
+      <!-- <div class="w-full">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"
                 @click="choseEns"
@@ -221,7 +222,7 @@ onMounted(() => {
         <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
           {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
         </div>
-      </div>
+      </div> -->
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="selectBitip"
               :disabled="loading">

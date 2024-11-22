@@ -1,7 +1,9 @@
 import { ethers } from 'ethers';
 import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
-import { uiLog } from '@/apis/api';
+import { getSolBalance, getSolBlockHash } from '@/apis/api';
+import { useWallet } from 'solana-wallets-vue';
+import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
@@ -126,13 +128,18 @@ export const signMessage = async (message: string) => {
     return await signer.signMessage(message);
 }
 
+// export const getBalance = async (addr: string) => {
+//     // @ts-ignore
+//     if (!ethers.isAddress(addr)) return 0n;
+//     let eth = getProvider();
+//     const provider = new ethers.BrowserProvider(eth);
+//     const balance = await provider.getBalance(addr);
+//     return balance;
+// }
+
 export const getBalance = async (addr: string) => {
-    // @ts-ignore
-    if (!ethers.isAddress(addr)) return 0n;
-    let eth = getProvider();
-    const provider = new ethers.BrowserProvider(eth);
-    const balance = await provider.getBalance(addr);
-    return balance;
+    const balance: any = await getSolBalance(addr)
+    return balance
 }
 
 export const transferEthTo = async (to: string, value: bigint) => {
@@ -148,6 +155,25 @@ export const transferEthTo = async (to: string, value: bigint) => {
     return tx.hash;
 }
 
+export const transferSolTo = async (to: string, value: number) => {
+    const { publicKey, signTransaction, sendTransaction } = useWallet();
+    if (!publicKey.value) throw new Error('No wallet connected');
+    const connection = new Connection('https://api.mainnet-beta.solana.com');
+    let transaction = new Transaction().add(
+        SystemProgram.transfer({
+            fromPubkey: publicKey.value,
+            toPubkey: new PublicKey(to),
+            lamports: Number(value)
+        })
+    );
+    transaction.feePayer = publicKey.value;
+    transaction.recentBlockhash = await getSolBlockHash() as string;
+    // const signedTx = await signTransaction.value!(transaction);
+    // console.log(233, signedTx)
+    const txid = await sendTransaction(transaction, connection);
+    console.log(233, txid)
+    return txid;
+}
+
 export async function initPlugin() {
-    detectEip6963()
 }

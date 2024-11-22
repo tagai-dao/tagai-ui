@@ -2,6 +2,8 @@
 import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
 import { computed, ref } from "vue";
+import { useWallet } from "solana-wallets-vue";
+import type { WalletName } from "@solana/wallet-adapter-base";
 
 const modalStore = useModalStore();
 const loading = ref(false);
@@ -9,35 +11,28 @@ const providers = computed(() => {
   return getProviders() ?? [];
 });
 
+const { wallets, connecting, select } = useWallet();
+
 const emits = defineEmits(['chosedWallet'])
 
-async function onSelectWalletMeta(wallet: any) {
-  setActiveProviderDetail(wallet);
-  emits('chosedWallet')
-}
 </script>
 
 <template>
-  <div class="px-1 flex flex-col gap-y-2">
+  <div class="px-1 flex flex-col gap-y-5">
       <div class="flex justify-between items-center">
         <span class="text-h2 text-grey-normal-hover">Chose Wallet</span>
         <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
              @click="modalStore.setModalVisible(false)"/>
       </div>
-      <div class="flex flex-col gap-2 pt-4 pb-6">
-        <button
-            class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
-                   flex justify-center items-center gap-10px
-                   hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
-            v-for="wallet of providers"
-            :key="wallet.info.uuid"
-            :disabled="loading"
-            @click="onSelectWalletMeta(wallet)"
+      <div v-for="wallet in wallets" :key="wallet.adapter.name" 
+        class="flex items-center justify-center gap-5"
+        @click="select(wallet.adapter.name as WalletName)">
+        <img class="w-12 h-12" :src="wallet.adapter.icon" alt="">
+        <button class="text-h5 bg-gradient-primary flex items-center justify-center rounded-full px-6 py-4 text-white h-12 w-64"
+          :disabled="connecting"
         >
-          <img class="w-8 h-8" :src="wallet.info.icon" alt="" />
-          <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
-            {{ wallet.info.name }}
-          </span>
+          {{ wallet.adapter.name }}
+        <i-ep-loading v-if="connecting" class="animate-spin text-white"/>
         </button>
       </div>
     </div>
