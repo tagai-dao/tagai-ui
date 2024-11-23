@@ -226,7 +226,7 @@ watch(() => createLoading.value, () => {
       </p>
       <div class="text-blue-500 text-sm flex items-center">
         @TipTagAi can you make a MEME for this tweet. #ticker
-        <button class="ml-2" @click="onCopy(`@TipTagAi can you make a MEME for this tweet. #tick`)">
+        <button class="ml-2" @click="onCopy(`@TipTagAi can you make a MEME for this tweet. #ticker`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
       </div>
