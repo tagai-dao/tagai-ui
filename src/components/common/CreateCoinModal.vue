@@ -225,11 +225,14 @@ watch(() => createLoading.value, () => {
         Or you can copy the following content and reply to the tweet which you want to make a MEME:
       </p>
       <div class="text-blue-500 text-sm flex items-center">
-        @TipTagAi make a MEME for this tweet
-        <button class="ml-2" @click="onCopy(`@TipTagAi make a MEME for this tweet`)">
+        @TipTagAi can you make a MEME for this tweet. #ticker
+        <button class="ml-2" @click="onCopy(`@TipTagAi can you make a MEME for this tweet. #tick`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
       </div>
+      <p class="text-grey-normal text-sm">
+        You can replace '#ticker' with what you want, or delete '#ticker' to let AI generate a ticker for you.
+      </p>
     </div>
     <div class="flex flex-col gap-4">
     <!-- name -->
