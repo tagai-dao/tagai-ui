@@ -53,6 +53,8 @@ const invalidTip = computed(() => {
         return t('community.spaceNotYours')
       case InvalidSpaceCurationType.SPACE_IS_STARTED:
         return t('community.spaceHasStarted')
+      case InvalidSpaceCurationType.SPACE_IS_ENDED:
+        return t('community.spaceHasEnded')
     }
   }
 })
@@ -82,8 +84,8 @@ const onPostTweet = async () => {
       invalidSpaceType.value = InvalidSpaceCurationType.HAS_CREATED;
       return;
     }
-    if (space.value!.state !== 1) {
-      invalidSpaceType.value = InvalidSpaceCurationType.SPACE_IS_STARTED
+    if (space.value!.state !== 1 && space.value!.state !== 2) {
+      invalidSpaceType.value = InvalidSpaceCurationType.SPACE_IS_ENDED
       return;
     }
     if (space.value!.twitterId != accStore.getAccountInfo.twitterId) {

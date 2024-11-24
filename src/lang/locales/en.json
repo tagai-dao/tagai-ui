@@ -58,7 +58,8 @@
     "spaceHasCreated": "This space has been created curation.",
     "spaceInvalidLink": "It's not a valid space link",
     "spaceNotYours": "This space is not created by yourself",
-    "spaceHasStarted": "This space has been started"
+    "spaceHasStarted": "This space has been started",
+    "spaceHasEnded": "This space has been ended or cancelled"
   },
   "curation": {
     "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet.",

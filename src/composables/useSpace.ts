@@ -7,7 +7,8 @@ export enum InvalidSpaceCurationType {
     NOT_YOUR_SPACE,
     HAS_CREATED,
     INVALID_LINK,
-    SPACE_IS_STARTED
+    SPACE_IS_STARTED,
+    SPACE_IS_ENDED
 }
 
 export const useSpace = () => {
