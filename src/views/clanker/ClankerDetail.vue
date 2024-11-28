@@ -13,18 +13,9 @@ import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import { formatPrice } from "@/utils/helper";
 import TweetItem from '@/components/tweets/TweetItem.vue';
-import { ethers } from "ethers";
-import { OperateType, useTweet } from "@/composables/useTweet";
 import { useClankerStore } from "@/stores/clanker";
 import type { Tweet } from "@/types";
 
-const tabOptions = [
-  // {label: 'Group', key: 'group'},
-  { label: "Square", key: "content" },
-  { label: "Trades", key: "trade" },
-  { label: "Credit", key: "credit" },
-  { label: "Token", key: "token" },
-];
 enum CurationType {
   TWEET,
   SPACE,
@@ -34,13 +25,7 @@ enum CurationType {
 
 const { pageScroll, pageScrollTo } = usePageScroll();
 const pageScrollRef = ref();
-const activeTab = ref("content");
-const modalStore = useModalStore();
-const tweetTypeRef = ref();
 const route = useRoute();
-const router = useRouter();
-const tokenInfo = ref();
-const checkingAccount = ref(false);
 const checkingTweet = ref(false);
 const showModal = ref(false);
 const curationType = ref(CurationType.TWEET);
@@ -52,55 +37,69 @@ const finished = ref(false);
 const loading = ref(false);
 const { setInter } = useInterval();
 const { onCopy } = useTools();
-const { preCheckCuration } = useTweet();
 const swapModalVisible = ref(false)
-
-const onTweetType = async (type: CurationType) => {
-  // check ipshare
-  try {
-    checkingAccount.value = true;
-    if (!accStore.getAccountInfo?.twitterId) {
-      modalStore.setModalVisible(true, GlobalModalType.Login);
-      return;
-    }
-    curationType.value = type;
-    tweetTypeRef.value.hide();
-    showModal.value = true;
-  } catch (e) {
-    handleErrorTip(e);
-  } finally {
-    checkingAccount.value = false;
-  }
-};
 
 async function postTweet() {
   window.open(`https://x.com/compose/tweet?text=${encodeURIComponent(`#${clankerStore.currentSelectedClanker?.tick}`)}`, '_blank');
 }
 
-async function onRefresh() {}
+async function onRefresh() {
+  try {
+    const token = route.params.token;
+    if (refreshing.value) {
+      return;
+    }
+    refreshing.value = true;
+    const res: any = await getClankerTickTweets(token as string);
+    if (res && res.length > 0) {
+      const token = res[0];
+      clankerStore.currentSelectedClanker = (
+        await getTokensInfo([
+          {
+            name: token.name,
+            tick: token.tick,
+            token: token.token,
+            logo: token.logo,
+            pool: token.pool,
+          },
+        ])
+      )[0];
+  
+      tweets.value = res;
+      if (res.length < 30) {
+        finished.value = true;
+      }
+    }
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    refreshing.value = false
+  }
+}
 
-async function onLoad() {}
+async function onLoad() {
+  try {
+    if (refreshing.value || finished.value || loading.value || tweets.value.length == 0) {
+      return;
+    }
+    loading.value = true;
+    const res: any = await getClankerTickTweets(clankerStore.currentSelectedClanker?.token as string, Math.floor((tweets.value.length - 1) / 30) + 1);
+    if (res && res.length > 0) {
+      tweets.value = tweets.value.concat(res);
+    }
+    if (res.length < 30) {
+      finished.value = true;
+    }
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    loading.value = false;
+  }
+}
 
 onMounted(async () => {
   pageScrollTo(pageScrollRef.value);
-  const token = route.params.token;
-  const res: any = await getClankerTickTweets(token as string);
-  if (res && res.length > 0) {
-    const token = res[0];
-    clankerStore.currentSelectedClanker = (
-      await getTokensInfo([
-        {
-          name: token.name,
-          tick: token.tick,
-          token: token.token,
-          logo: token.logo,
-          pool: token.pool,
-        },
-      ])
-    )[0];
-
-    tweets.value = res;
-  }
+  onRefresh();
 });
 </script>
 

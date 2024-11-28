@@ -25,7 +25,7 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['Base', 'ENULS', 'Clanker']
+const tabOptions = ['Base', 'Clanker', 'ENULS']
 const activeTab = ref('Base')
 
 watch(listType, (val) => {
