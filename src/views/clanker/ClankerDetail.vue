@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, onActivated } from "vue";
 import { useModalStore, useStateStore } from "@/stores/common";
-import { useCommunityStore } from "@/stores/community";
 import { GlobalModalType } from "@/types";
-import TagContent from "@/views/tag-detail/TagContent.vue";
-import TagCredit from "@/views/tag-detail/TagCredit.vue";
-import TagToken from "@/views/tag-detail/TagToken.vue";
 import { useRoute, useRouter } from "vue-router";
 import { getClankerTickTweets, getCommunityDetail, getIpshareInfo } from "@/apis/api";
 import { getTokensInfo } from "@/utils/clanker";
@@ -15,13 +11,9 @@ import { useAccountStore } from "@/stores/web3";
 import CreateBlinkModal from "@/components/common/CreateBlinkModal.vue";
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
-import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
-import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from "@/config";
+import TweetItem from '@/components/tweets/TweetItem.vue';
 import { ethers } from "ethers";
-import IconLinks from "@/components/home/IconLinks.vue";
-import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
-import RecordList from "../buy-sell/RecordList.vue";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { useClankerStore } from "@/stores/clanker";
 import type { Tweet } from "@/types";
@@ -81,74 +73,8 @@ const onTweetType = async (type: CurationType) => {
   }
 };
 
-const progressData = ref([
-  {
-    trackWidth: 15,
-    value: 0,
-    percent: "10%",
-    background: "#FF3D54",
-    desc: "Social Distributed",
-  },
-  {
-    trackWidth: 70,
-    value: 0,
-    percent: "10%",
-    background: "#FE913F",
-    desc: "Bonding Curve",
-  },
-  { trackWidth: 15, value: 0, percent: "10%", background: "#FFCC00", desc: "Listed" },
-]);
-
-async function checkTipCurate() {
-  try {
-    checkingTweet.value = true;
-    const account = accStore.getAccountInfo;
-    if (!account || !account.twitterId) {
-      modalStore.setModalVisible(true, GlobalModalType.Login);
-      return;
-    }
-
-    if (!(await preCheckCuration(OperateType.TIP_CURATE, undefined, 10))) {
-      return;
-    }
-    onTweetType(CurationType.TIP_CURATE);
-  } catch (e) {
-    handleErrorTip(e);
-  } finally {
-    checkingTweet.value = false;
-  }
-}
-
-async function checkTweet() {
-  try {
-    checkingTweet.value = true;
-    const account = accStore.getAccountInfo;
-    if (!account || !account.twitterId) {
-      modalStore.setModalVisible(true, GlobalModalType.Login);
-      return;
-    }
-
-    if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
-      if (!accStore.ipshare?.ethAddr) {
-        const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
-        console.log("ipshare:", ipshare);
-        accStore.ipshare = ipshare;
-      }
-    } else {
-      modalStore.setModalVisible(true, GlobalModalType.BondEth);
-      return;
-    }
-    console.log("ipshare2:", accStore.ipshare);
-    if (!ethers.isAddress(accStore.ipshare?.ethAddr)) {
-      modalStore.setModalVisible(true, GlobalModalType.CreateIPShare);
-      return;
-    }
-    onTweetType(CurationType.BLINK);
-  } catch (e) {
-    handleErrorTip(e);
-  } finally {
-    checkingTweet.value = false;
-  }
+async function postTweet() {
+  window.open(`https://x.com/compose/tweet?text=${encodeURIComponent(`#${clankerStore.currentSelectedClanker?.tick}`)}`, '_blank');
 }
 
 async function onRefresh() {}
@@ -193,7 +119,7 @@ onMounted(async () => {
             frameborder="0"
         ></iframe>
       </div>
-      <div class="w-full web:w-[400px] border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5">
+      <div class="w-full web:w-[400px] border-[1px] border-white bg-grey-fa rounded-2xl pt-5 px-3.5">
         <div class="flex gap-3 overflow-hide">
           <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-light-active shadow-tag-logo overflow-hidden">
             <img
@@ -228,47 +154,11 @@ onMounted(async () => {
         </div>
         <div class="flex justify-center text-white space-x-4 mt-3">
           <button :disabled="checkingTweet"
-                  @click="checkTweet"
+                  @click="postTweet"
                   class="w-full bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
-            Blinks
+            Post
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
-
-          <el-popover
-              popper-class="c-popper"
-              placement="bottom-end"
-              width="200"
-              ref="tweetTypeRef"
-              trigger="click"
-          >
-            <template #reference>
-              <button class="w-full bg-gradient-primary text-h5 rounded-full h-11">
-                Post To Earn
-              </button>
-            </template>
-            <template #default>
-              <div
-                  class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start"
-              >
-                <button
-                    @click="onTweetType(CurationType.TWEET)"
-                    :disabled="checkingAccount"
-                    class="whitespace-nowrap flex items-center space-x-3"
-                >
-                  Tweet on-chain
-                  <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                </button>
-                <button
-                    @click="onTweetType(CurationType.SPACE)"
-                    :disabled="checkingAccount"
-                    class="whitespace-nowrap flex items-center space-x-3"
-                >
-                  Tweet an onchain Space
-                  <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                </button>
-              </div>
-            </template>
-          </el-popover>
 
           <button class="w-full web:hidden bg-gradient-primary text-h5 rounded-full h-11"
                   @click="swapModalVisible=true">Swap</button>
@@ -315,7 +205,7 @@ onMounted(async () => {
           @load="onLoad"
         >
           <div v-for="(tweet, index) of tweets" :key="tweet.tweetId" class="mb-2">
-            <TweetItem class="bg-white rounded-2xl" :tweet="tweet"> </TweetItem>
+            <TweetItem class="bg-white rounded-2xl" :tweet="tweet" multiline> </TweetItem>
           </div>
         </van-list>
       </van-pull-refresh>
