@@ -11,6 +11,7 @@ import ProfileView from '@/views/profile/ProfileView.vue'
 import WalletView from '@/views/wallet/WalletView.vue'
 import NotificationView from '@/views/notification/NotificationView.vue'
 import LoginCallBack from '@/views/LoginCallBack.vue'
+import ClankerDetail from '@/views/clanker/ClankerDetail.vue'
 
 const router = createRouter({
   // @ts-ignore
@@ -70,6 +71,12 @@ const router = createRouter({
       path: '/login',
       name: 'login-call-back',
       component: () => import('@/views/LoginCallBack.vue')
+    },
+    {
+      path: '/clanker/token/:token',
+      name: 'clanker-token',
+      component: ClankerDetail,
+      meta: {tabBar: true, topBar: true}
     }
   ]
 })

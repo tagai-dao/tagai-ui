@@ -12,6 +12,7 @@ import { getTokenInfo } from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
+import ClankerList from "./clanker/ClankerList.vue";
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -24,7 +25,7 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['Base', 'ENULS']
+const tabOptions = ['Base', 'ENULS', 'Clanker']
 const activeTab = ref('Base')
 
 watch(listType, (val) => {
@@ -105,7 +106,12 @@ async function getSpaces() {
 function gotoChain(chain: string){
   if (chain === 'ENULS') {
     window.open('https://enuls.tiptag.social', '__blank')
+    return;
+  } else if (chain === 'Clanker') {
+    activeTab.value = 'Clanker'
+    return;
   }
+  activeTab.value = 'Base'
 }
 
 function gotoDetail(com: Community) {
@@ -171,7 +177,7 @@ const contentWidth = computed(() => {
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-      <van-pull-refresh v-model="refreshing" @refresh="refresh"
+      <van-pull-refresh v-show="activeTab == 'Base'" v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
                         loading-text="Loading"
                         pulling-text="Pull to refresh data"
@@ -202,6 +208,7 @@ const contentWidth = computed(() => {
         </van-list>
       </van-pull-refresh>
 
+      <ClankerList v-show="activeTab == 'Clanker'" :listType/>
     </div>
   </div>
 </template>

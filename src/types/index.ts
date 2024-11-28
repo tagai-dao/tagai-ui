@@ -131,7 +131,7 @@ export type Commerce = Account & {
 };
 
 export type Tweet = OnchainTokenInfo & Space &
-  Curation &
+  Curation & ClankerToken &
   Commerce & {
     tweetId: string;
     content: string;
@@ -155,7 +155,7 @@ export type Tweet = OnchainTokenInfo & Space &
     liked?: number;
     curated?: number;
     curateCount?: number;
-    spaceCurateCount?: number
+    spaceCurateCount?: number;
   };
 
 export type CurateRecord = Account & {
@@ -210,6 +210,13 @@ export type Community = OnchainTokenInfo & {
   createAt?: string | number | null | undefined;
   createdByAi?: number | null | undefined;
 };
+
+export type ClankerToken = OnchainTokenInfo & {
+  logo?: string,
+  name?: string,
+  pool?: string,
+  totalSupply?: number
+}
 
 export type CreateCommunity = {
   desc: string,

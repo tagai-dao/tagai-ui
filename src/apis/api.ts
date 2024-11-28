@@ -176,3 +176,10 @@ export const setOrderClaimed = async (twitterId: string, orderId: string, hash: 
 /************************************ ipshare **********************************/
 export const getIpshareInfo = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/ipshare', {ethAddr})
+
+/************************************ clanker **********************************/
+export const getClankerTickers = async () =>
+  get(BACKEND_API_URL + '/clanker/ticks')
+
+export const getClankerTickTweets = async (contract: string, pageIndex?: number) =>
+  get(BACKEND_API_URL + '/clanker/tickTweets', {contract, pageIndex})
