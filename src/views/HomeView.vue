@@ -25,8 +25,8 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['Base', 'Clanker', 'ENULS']
-const activeTab = ref('Base')
+const tabOptions = ['TipTag', 'Clanker', 'ENULS']
+const activeTab = ref('TipTag')
 
 watch(listType, (val) => {
   refresh()
@@ -111,7 +111,7 @@ function gotoChain(chain: string){
     activeTab.value = 'Clanker'
     return;
   }
-  activeTab.value = 'Base'
+  activeTab.value = 'TipTag'
 }
 
 function gotoDetail(com: Community) {
@@ -177,7 +177,7 @@ const contentWidth = computed(() => {
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-      <van-pull-refresh v-show="activeTab == 'Base'" v-model="refreshing" @refresh="refresh"
+      <van-pull-refresh v-show="activeTab == 'TipTag'" v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
                         loading-text="Loading"
                         pulling-text="Pull to refresh data"
