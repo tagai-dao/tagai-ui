@@ -61,6 +61,7 @@ const loading = ref(false);
 const { setInter } = useInterval();
 const { onCopy } = useTools();
 const { preCheckCuration } = useTweet();
+const swapModalVisible = ref(false)
 
 const onTweetType = async (type: CurationType) => {
   // check ipshare
@@ -183,120 +184,117 @@ onMounted(async () => {
     ref="pageScrollRef"
     @scroll="pageScroll(pageScrollRef)"
   >
-    <div class="flex">
-      <iframe
-        v-if="clankerStore.currentSelectedClanker"
-        class="min-h-[600px]"
-        :src="`https://dexscreener.com/base/${clankerStore.currentSelectedClanker?.token}?embed=1&info=0`"
-        frameborder="0"
-      ></iframe>
-
-      <div class="grid grid-cols-1 web:grid-cols-5 gap-3">
-        <div
-          class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide"
-        >
-          <div
-            class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden"
-          >
+    <div class="flex web:gap-3">
+      <div class="flex-1 rounded-2xl overflow-hidden">
+        <iframe
+            v-if="clankerStore.currentSelectedClanker"
+            style="width: 100%; height: 100%"
+            :src="`https://dexscreener.com/base/${clankerStore.currentSelectedClanker?.token}?embed=1&info=0`"
+            frameborder="0"
+        ></iframe>
+      </div>
+      <div class="w-full web:w-[400px] border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5">
+        <div class="flex gap-3 overflow-hide">
+          <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-light-active shadow-tag-logo overflow-hidden">
             <img
-              class="w-full h-full rounded-2xl"
-              :src="clankerStore.currentSelectedClanker?.logo"
-              alt=""
+                class="w-full h-full rounded-2xl"
+                :src="clankerStore.currentSelectedClanker?.logo"
+                alt=""
             />
           </div>
-          <div class="flex-1 py-1">
+          <div class="flex-1 overflow-hidden flex flex-col min-h-20 justify-between gap-y-1">
             <div class="flex flex-wrap justify-between gap-x-4 items-center">
-              <div class="flex items-center">
-                <span class="text-black text-h2">{{
-                  clankerStore.currentSelectedClanker?.name
-                }}</span>
-              </div>
+              <span class="text-black text-h2">{{clankerStore.currentSelectedClanker?.name}}</span>
               <div class="text-base flex gap-1">
                 <span class="font-semibold text-grey-64">market cap</span>
-                <span
-                  class="text-gradient bg-gradient-primary font-semibold"
-                  >{{ formatPrice(parseFloat(clankerStore.currentSelectedClanker?.marketCap as any) * useStateStore().ethPrice) }}</span
-                >
+                <span class="text-gradient bg-gradient-primary font-semibold">
+                  {{ formatPrice(parseFloat(clankerStore.currentSelectedClanker?.marketCap as any) * useStateStore().ethPrice) }}
+                </span>
               </div>
             </div>
-            <div class="my-3">
-              {{ clankerStore.currentSelectedClanker?.tick }}
-            </div>
-            <div class="flex items-center gap-2">
+            <div>{{ clankerStore.currentSelectedClanker?.tick }}</div>
+            <div class="flex items-center gap-2 overflow-hidden">
               <span class="text-sm font-semibold">CA</span>
-              <div
-                class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px]"
-              >
+              <div class="bg-white text-grey-light-active text-sm h-4 rounded-[3px] flex-1 truncate">
                 {{ clankerStore.currentSelectedClanker?.token }}
               </div>
-              <button
-                @click="onCopy(clankerStore.currentSelectedClanker?.token ?? '')"
-                :disabled="!clankerStore.currentSelectedClanker?.token"
-              >
-                <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="" />
+              <button @click="onCopy(clankerStore.currentSelectedClanker?.token ?? '')"
+                      :disabled="!clankerStore.currentSelectedClanker?.token">
+                <img class="w-[10px] w-min-[8px]" src="~@/assets/icons/icon-copy.svg" alt="" />
               </button>
             </div>
 
-          <div
-            class="col-span-1 web:col-span-3 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3"
-          >
-            <div class="flex justify-center text-white space-x-4">
-              <button
-                :disabled="checkingTweet"
-                @click="checkTweet"
-                class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11"
-              >
-                Blinks
-                <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-              </button>
-
-              <el-popover
-                popper-class="c-popper"
-                placement="bottom-end"
-                width="200"
-                ref="tweetTypeRef"
-                trigger="click"
-              >
-                <template #reference>
-                  <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">
-                    Post To Earn
-                  </button>
-                </template>
-                <template #default>
-                  <div
-                    class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start"
-                  >
-                    <button
-                      @click="onTweetType(CurationType.TWEET)"
-                      :disabled="checkingAccount"
-                      class="whitespace-nowrap flex items-center space-x-3"
-                    >
-                      Tweet on-chain
-                      <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                    </button>
-                    <button
-                      @click="onTweetType(CurationType.SPACE)"
-                      :disabled="checkingAccount"
-                      class="whitespace-nowrap flex items-center space-x-3"
-                    >
-                      Tweet an onchain Space
-                      <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                    </button>
-                  </div>
-                </template>
-              </el-popover>
-              <!-- <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button> -->
-            </div>
           </div>
-
-          <iframe
-            class="min-h-[400px]"
-            v-if="clankerStore.currentSelectedClanker"
-            :src="`https://app.uniswap.org/#/swap`"
-          />
-          </div>
-
         </div>
+        <div class="flex justify-center text-white space-x-4 mt-3">
+          <button :disabled="checkingTweet"
+                  @click="checkTweet"
+                  class="w-full bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+            Blinks
+            <i-ep-loading v-show="checkingTweet" class="animate-spin" />
+          </button>
+
+          <el-popover
+              popper-class="c-popper"
+              placement="bottom-end"
+              width="200"
+              ref="tweetTypeRef"
+              trigger="click"
+          >
+            <template #reference>
+              <button class="w-full bg-gradient-primary text-h5 rounded-full h-11">
+                Post To Earn
+              </button>
+            </template>
+            <template #default>
+              <div
+                  class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start"
+              >
+                <button
+                    @click="onTweetType(CurationType.TWEET)"
+                    :disabled="checkingAccount"
+                    class="whitespace-nowrap flex items-center space-x-3"
+                >
+                  Tweet on-chain
+                  <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                </button>
+                <button
+                    @click="onTweetType(CurationType.SPACE)"
+                    :disabled="checkingAccount"
+                    class="whitespace-nowrap flex items-center space-x-3"
+                >
+                  Tweet an onchain Space
+                  <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                </button>
+              </div>
+            </template>
+          </el-popover>
+
+          <button class="w-full web:hidden bg-gradient-primary text-h5 rounded-full h-11"
+                  @click="swapModalVisible=true">Swap</button>
+        </div>
+        <div class="hidden web:block h-[540px] min-h-[540px] rounded-2xl overflow-hidden mt-3">
+          <iframe
+              style="width: 100%; height: 100%; "
+              v-if="clankerStore.currentSelectedClanker"
+              :src="`https://app.uniswap.org/#/swap`"
+          />
+        </div>
+        <el-dialog v-model="swapModalVisible"
+                   modal-class="overlay-white"
+                   class="max-w-[500px] rounded-[20px]"
+                   width="90%"
+                   :show-close="false" align-center>
+          <div class="w-full flex justify-center">
+            <div class="w-[400px] h-[540px] min-h-[540px] rounded-[20px]">
+              <iframe
+                  style="width: 100%; height: 100%; "
+                  v-if="clankerStore.currentSelectedClanker"
+                  :src="`https://app.uniswap.org/#/swap`"
+              />
+            </div>
+          </div>
+        </el-dialog>
       </div>
     </div>
     <div class="flex-1">
