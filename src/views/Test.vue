@@ -23,7 +23,7 @@ async function onSignInSuccess(data: any) {
   console.log("Sign-in success with data:", data);
 }   
 
-function init() {
+function inititial() {
   var authWindow: any;
 
   async function getLogo(logoUrl: string, button: any, text: string) {
@@ -42,13 +42,15 @@ function init() {
   }
 
   function handleMessage(event: any, authOrigin: string, successCallback: string) {
-    console.log(1, event, authOrigin, successCallback)
+    // console.log(1, event, authOrigin, successCallback)
     if (event.origin === authOrigin && event.data.is_authenticated) {
-        //@ts-ignore
-      if (typeof window[successCallback] === "function") {
-        //@ts-ignore
-        window[successCallback](event.data); // Call the global callback function
-      }
+    //     //@ts-ignore
+    //   if (typeof window[successCallback] === "function") {
+    //     //@ts-ignore
+    //     window[successCallback](event.data); // Call the global callback function
+    //   }
+
+        onSignInSuccess(event.data)
 
       if (authWindow) {
         authWindow.close();
@@ -250,7 +252,7 @@ function init() {
 }
 onMounted(() => {
   console.log('mounted')
-  init()
+  inititial()
 })
 </script>
 
