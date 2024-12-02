@@ -10,6 +10,7 @@ import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
+import Test from "@/views/Test.vue";
 
 const stateStore = useStateStore();
 const route = useRoute();
@@ -79,7 +80,8 @@ onMounted(async () => {
 
 <template>
   <div id="app" :class="route.name==='home'?'bg-img-home':'bg-img-common'">
-    <Layout></Layout>
+    <!-- <Layout></Layout> -->
+    <Test />
   </div>
 </template>
 
