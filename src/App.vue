@@ -10,7 +10,6 @@ import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
-import Test from "@/views/Test.vue";
 
 const stateStore = useStateStore();
 const route = useRoute();
@@ -50,6 +49,9 @@ onMounted(async () => {
       }
     })
   }
+
+  // useModalStore().setModalVisible(true, GlobalModalType.Register)
+
   // update userinfo
   if (account?.twitterId) {
     getUserProfile(account.twitterId).then((acc: any) => {
@@ -80,8 +82,7 @@ onMounted(async () => {
 
 <template>
   <div id="app" :class="route.name==='home'?'bg-img-home':'bg-img-common'">
-    <!-- <Layout></Layout> -->
-    <Test />
+    <Layout></Layout>
   </div>
 </template>
 

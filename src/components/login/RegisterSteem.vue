@@ -9,7 +9,7 @@ import { handleErrorTip } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
 import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
-import { getUserBitip, checkRegister } from "@/apis/api";
+import { getUserBitip, checkRegister, checkEthUsed } from "@/apis/api";
 import { bytesToHex, sleep } from "@/utils/helper";
 import { box, generateSteemAuth } from "@/utils/web3";
 import { ethers } from 'ethers';
@@ -21,6 +21,7 @@ const accStore = useAccountStore();
 const loading = ref(false);
 const showInsufficientBalance = ref(false);
 const showNoEns = ref(false);
+const showFidUsed = ref(false);
 const chosingBitip = ref(false);
 const bitips = ref([]);
 const btcWallet = ref<BtcWallet>();
@@ -36,13 +37,18 @@ const identityInfo = reactive<{
     chainName?: string,
     type?: string,
     assetId?: string,
-    datetime?: number
+    datetime?: number,
+    farcasterSignerUuid?: string,
+    farcasterEthAddr?: string,
+    farcasterName?: string,
+    farcasterUsername?: string,
+    farcasterAvatar?: string,
 }>({});
 
 const step = computed(() => {
-    if (chosingBitip.value) {
-        return 3;
-    }
+  if (chosingBitip.value) {
+      return 3;
+  }
   if (
     !accStore.getAccountInfo.ethAddr ||
     accStore.ethConnectState !== EthWalletState.Connected
@@ -50,13 +56,40 @@ const step = computed(() => {
     return 1;
   } else if (!accStore.getAccountInfo.steemId) {
     return 2;
+  } else if(accStore.farcasterUser?.fid) {
+    return 4
   }
 });
+
+const showChangeEthAddr = computed(() => {
+  return accStore.farcasterUser?.ethAddr.toLocaleLowerCase() !== accStore.ethConnectAddress.toLowerCase();
+})
 
 function resetTips() {
     showNoEns.value = false;
     showInsufficientBalance.value = false;
     chosingBitip.value = false;
+    showFidUsed.value = false;
+}
+
+async function onSignInSuccess(success: boolean) {
+  if (!success) {
+    loading.value = false
+    return
+  }
+  // get farcaster user info
+  const userInfo = useAccountStore().farcasterUser
+  console.log(1, userInfo)
+
+  // check fid registered
+  const o: any = await checkEthUsed(userInfo?.ethAddr ?? '')
+  loading.value = false
+  if (o && o.fid && o.fid == userInfo?.fid) {
+    accStore.farcasterUser = null;
+    showFidUsed.value = true;
+    return
+  }
+
 }
 
 async function payToken() {
@@ -101,6 +134,11 @@ async function choseEns() {
     } finally {
         loading.value = false
     }
+}
+
+async function selectFarcaster() {
+  resetTips()
+  loading.value = true
 }
 
 async function selectBitip() {
@@ -152,6 +190,28 @@ async function choseBitip(bitip: string) {
     }
 }
 
+async function signInFarcasterEth() {
+  resetTips()
+    try {
+        loading.value = true
+        
+        identityInfo.farcasterEthAddr = ethers.getAddress(accStore.farcasterUser?.ethAddr ?? '');
+        identityInfo.farcasterName = accStore.farcasterUser?.name;
+        identityInfo.farcasterUsername = accStore.farcasterUser?.username;
+        identityInfo.farcasterSignerUuid = accStore.farcasterUser?.signerUuid;
+        identityInfo.assetId = accStore.farcasterUser?.fid;
+        
+        identityInfo.farcasterAvatar = accStore.farcasterUser?.avatar;
+        identityInfo.chainName = ChainConfig.name;
+        identityInfo.type = 'farcaster'
+        await register();
+    } catch (error) {
+        handleErrorTip(error)
+    }finally{
+        loading.value = false
+    }
+}
+
 async function register() {
     const signature = await ethSignMessage(RegisterSteemMessage)
     const account = accStore.getAccountInfo
@@ -165,9 +225,21 @@ async function register() {
         sendPubKey: params.sendPubKey,
         ethAddr: account.ethAddr,
         salt,
-        identityInfo
+        identityInfo,
+        signature
       }
       await registerSteem(createForm);
+      if (accStore.getAccountInfo.steemId) {
+        accStore.setAccount({
+          ...accStore.getAccountInfo,
+          ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
+          fid: accStore.farcasterUser?.fid,
+          isAuthFarcaster: true
+        })
+        accStore.farcasterUser = null;
+        useModalStore().setModalVisible(false)
+        return;
+      }
       await sleep(3)
       const acc: any = await checkRegister(account.twitterId)
       if (acc.code == 3) {
@@ -195,6 +267,9 @@ onMounted(() => {
         <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button> -->
+      <div class="w-full" @click="selectFarcaster">
+        <FarcasterBtn @signInSuccess="onSignInSuccess" />
+      </div>
       <div class="w-full">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"
@@ -207,7 +282,7 @@ onMounted(() => {
           {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
         </div>
       </div>
-      <div class="w-full">
+      <!-- <div class="w-full">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"
                 @click="choseEns"
@@ -221,7 +296,7 @@ onMounted(() => {
         <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
           {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
         </div>
-      </div>
+      </div> -->
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="selectBitip"
               :disabled="loading">
@@ -257,4 +332,37 @@ onMounted(() => {
           </span>
         </div>
       </div>
+    <div v-if="step === 4" class="flex flex-col min-h-[240px] gap-4">
+      <button class="absolute top-4 left-4 h-10 w-10 min-w-10 bg-white rounded-full flex items-center justify-center"
+              @click="accStore.farcasterUser = null">
+        <img src="~@/assets/icons/icon-back.svg" alt="">
+      </button>
+        <div class="flex justify-center items-center mt-6">
+          <img :src="accStore.farcasterUser?.avatar" alt="" style="object-fit: cover"class="w-16 h-16 rounded-full">
+        </div>
+        <div class="text-h3 text-black text-center">
+            {{ accStore.farcasterUser?.name }}@{{ accStore.farcasterUser?.username }}
+          </div>
+        <p v-if="showFidUsed" class="text-center text-sm text-red-e6">
+          This Farcaster account has already been used.
+        </p>
+        <div v-else class="w-full mt-6">
+          <p v-if="accStore.getAccountInfo.ethAddr && accStore.getAccountInfo.ethAddr != accStore.ethConnectAddress"
+            class="mb-4 text-center">
+            You have bond a eth address: {{ accStore.getAccountInfo.ethAddr }}. <br/>
+            It will be replaced by the farcaster address after this operation.
+          </p>
+          <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
+                @click="signInFarcasterEth"
+                :disabled="loading || showChangeEthAddr">
+            <span class="text-white font-semibold">
+              Bond
+            </span>
+            <i-ep-loading v-show="loading" class="animate-spin" />
+          </button>
+          <p v-if="showChangeEthAddr"class="text-center text-sm text-grey-dark mt-4 text-red-e6">
+            Please change to {{ accStore.farcasterUser?.ethAddr }} in your wallet to continue.
+          </p>
+        </div>
+    </div>
 </template>

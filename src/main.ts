@@ -12,12 +12,6 @@ import './assets/style/main.css'
 const app = createApp(App)
 app.config.globalProperties.$apexcharts = VueApexCharts;
 
-function onSignInSuccess(data: any) {
-  console.log("Sign-in success with data:", data);
-}
-
-app.use(onSignInSuccess)
-
 app.use(createPinia())
 app.use(router)
 app.use(i18n)

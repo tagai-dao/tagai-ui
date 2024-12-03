@@ -67,6 +67,9 @@ async function confirm() {
     <div class="text-h2 text-black text-center">
       {{$t('loginView.bindAddress')}}
     </div>
+    <div class="text-base text-center">  
+      We recommend using your Farcaster account as the binding address
+    </div>
     <div class="flex flex-col w-full items-center px-8">
       <div class="text-base text-center text-red-e6 break-all">
         {{ accStore.ethConnectAddress }}

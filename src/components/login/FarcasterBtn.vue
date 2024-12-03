@@ -1,26 +1,50 @@
 <template>
     <div>
-    1111
-        <div class="neynar_signin"
+        <div class="neynar_signin h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
             :data-client_id="clientId"
             data-variant="farcaster"
+            data-background_color="transparent"
+            data-color="#fff"
+            data-width="100%"
+            :data-text="props.title"
             :data-neynar_login_url="neynarLoginUrl"
             :data-success-callback="onSignInSuccess">
-            testset
         </div>
-2222
     </div>
 </template>
 
 <script setup lang="ts">
+
+import { useAccountStore } from '@/stores/web3';
+import type { FarcasterUser } from '@/types';
 import { onMounted, ref } from 'vue'
 
 const isClient = ref(true)
-const clientId = ref('89b01290-14de-41ab-9a40-9d4a239e8e28')
+const clientId = import.meta.env.VITE_APP_NEYNAR_CLIENT_ID
 const neynarLoginUrl = ref("https://app.neynar.com/login")
+const props = withDefaults(defineProps<{
+  title?: string
+}>(), {
+  title: 'Connect Farcaster'
+})
+
+const emit = defineEmits(['signInSuccess'])
 
 async function onSignInSuccess(data: any) {
-  console.log("Sign-in success with data:", data);
+  if (!data) {
+    emit('signInSuccess', false)
+    return
+  }
+  let userInfo = {
+    ethAddr: data.user.verified_addresses.eth_addresses[0],
+    fid: data.user.fid,
+    signerUuid: data.signer_uuid,
+    name: data.user.display_name,
+    avatar: data.user.pfp_url,
+    username: data.user.username,
+  }
+  useAccountStore().farcasterUser = userInfo as FarcasterUser
+  emit('signInSuccess', true)
 }   
 
 function inititial() {
@@ -42,7 +66,6 @@ function inititial() {
   }
 
   function handleMessage(event: any, authOrigin: string, successCallback: string) {
-    // console.log(1, event, authOrigin, successCallback)
     if (event.origin === authOrigin && event.data.is_authenticated) {
     //     //@ts-ignore
     //   if (typeof window[successCallback] === "function") {
@@ -58,6 +81,8 @@ function inititial() {
 
       //@ts-ignore
       window.removeEventListener("message", handleMessage);
+    }else if(event.origin === authOrigin && event.data.is_authenticated === false) {
+      onSignInSuccess(false)
     }
   }
 
@@ -69,7 +94,6 @@ function inititial() {
   ) {
     var authUrl = new URL(neynarLoginUrl);
     authUrl.searchParams.append("client_id", clientId);
-    console.log(2, redirectUri)
     if (redirectUri) {
       authUrl.searchParams.append("redirect_uri", redirectUri);
     }
@@ -174,7 +198,7 @@ function inititial() {
     button.id = "siwn-button";
 
     button.style.height = height ?? "48px";
-    button.style.width = width;
+    button.style.width = width ?? "100%";
     button.style.minWidth = "205px";
     button.style.borderRadius = borderRadius ?? "5px";
     button.style.fontSize = fontSize ?? "16px";
@@ -218,7 +242,7 @@ function inititial() {
     } else if (variant === "farcaster") {
       button.innerHTML = `
           <span>${farcasterLogo}</span>
-          <span>Connect Farcaster</span>
+          <span>${text ?? 'Connect Farcaster'}</span>
         `;
     } else {
       button.innerHTML = `
