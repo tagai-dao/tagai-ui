@@ -59,6 +59,7 @@ const step = computed(() => {
   } else if(accStore.farcasterUser?.fid) {
     return 4
   }
+  return 2
 });
 
 const showChangeEthAddr = computed(() => {
@@ -234,7 +235,8 @@ async function register() {
           ...accStore.getAccountInfo,
           ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
           fid: accStore.farcasterUser?.fid,
-          isAuthFarcaster: true
+          isAuthFarcaster: true,
+          farcasterName: accStore.farcasterUser?.name
         })
         accStore.farcasterUser = null;
         useModalStore().setModalVisible(false)
@@ -259,7 +261,7 @@ onMounted(() => {
 <template>
   <BondEthModal v-if="step === 1" />
   <div v-else-if="step === 2" class="p-6">
-    <div class="text-center text-base text-black font-normal mb-8">{{ $t("loginView.registerRequire") }}</div>
+    <div v-show="!accStore.getAccountInfo.steemId" class="text-center text-base text-black font-normal mb-8">{{ $t("loginView.registerRequire") }}</div>
     <div class="flex flex-col items-center gap-4 mt-1.5rem">
       <!-- <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="payToken"
@@ -270,7 +272,7 @@ onMounted(() => {
       <div class="w-full" @click="selectFarcaster">
         <FarcasterBtn @signInSuccess="onSignInSuccess" />
       </div>
-      <div class="w-full">
+      <div class="w-full" v-if="!accStore.getAccountInfo.steemId">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"
                 @click="payToken"
@@ -297,7 +299,7 @@ onMounted(() => {
           {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
         </div>
       </div> -->
-      <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
+      <button v-if="!accStore.getAccountInfo.steemId" class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="selectBitip"
               :disabled="loading">
         <span class="text-white font-semibold">I have BitIp</span>

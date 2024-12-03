@@ -1,6 +1,5 @@
 <template>
     <div>
-      1111{{ testEnv }}2222
         <div class="neynar_signin h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
             :data-client_id="clientId"
             data-variant="farcaster"
@@ -30,7 +29,6 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits(['signInSuccess'])
-const testEnv = import.meta.env.VITE_APP_TEST
 
 async function onSignInSuccess(data: any) {
   if (!data) {

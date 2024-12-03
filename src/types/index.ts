@@ -77,6 +77,7 @@ export type Account = {
   lastUpdateOpStamp?: number;
   fid?: string | null | undefined;
   isAuthFarcaster?: boolean;
+  farcasterName?: string | null | undefined
 };
 
 export type FarcasterUser = {
