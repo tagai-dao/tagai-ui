@@ -30,7 +30,7 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits(['signInSuccess'])
-const testEnv = import.meta.env.VITE_APP_TEST
+const testEnv = import.meta.env.VITE_APP_TEST;
 
 async function onSignInSuccess(data: any) {
   if (!data) {
