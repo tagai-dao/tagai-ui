@@ -245,7 +245,14 @@ async function register() {
       await sleep(3)
       const acc: any = await checkRegister(account.twitterId)
       if (acc.code == 3) {
-        accStore.setAccount(acc.account as Account)
+        accStore.setAccount({
+          ...acc,
+          ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
+          fid: accStore.farcasterUser?.fid,
+          isAuthFarcaster: true,
+          farcasterName: accStore.farcasterUser?.name
+        }
+        )
       }
     useModalStore().setModalVisible(false)
 }
