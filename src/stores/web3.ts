@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { IPShare, Account, TokenHoldingList, Tweet, Community, SocialMessage } from '@/types'
+import type { IPShare, Account, TokenHoldingList, Tweet, Community, SocialMessage, FarcasterUser } from '@/types'
 import { ref } from 'vue'
 
 export enum EthWalletState {
@@ -24,7 +24,8 @@ export const useAccountStore = defineStore('account', {
             this.ethConnectState = EthWalletState.Disconnect
             this.ethConnectAddress = '',
             this.unreadMessageCount = 0,
-            this.socialMessages = []
+            this.socialMessages = [],
+            this.farcasterUser = null
         }
     },
     state() {
@@ -54,6 +55,7 @@ export const useAccountStore = defineStore('account', {
             ethConnectAddress: '',
             unreadMessageCount: 0,
             socialMessages: [] as SocialMessage[],
+            farcasterUser: null as FarcasterUser | null,
             chainId: 0
         }
     },

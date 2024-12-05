@@ -49,6 +49,9 @@ onMounted(async () => {
       }
     })
   }
+
+  // useModalStore().setModalVisible(true, GlobalModalType.Register)
+
   // update userinfo
   if (account?.twitterId) {
     getUserProfile(account.twitterId).then((acc: any) => {

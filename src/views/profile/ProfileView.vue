@@ -8,6 +8,9 @@ import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP } from "@/config";
 import { getIpshareInfo } from '@/apis/api'
 import { useInterval } from "@/composables/useTools";
+import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
+import { useModalStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
 
 const accStore = useAccountStore()
 const tabOptions = ['post', 'blink', 'createCoin']
@@ -89,6 +92,20 @@ onMounted(() => {
         <button @click="logout();$router.replace('/')">
           <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
         </button>
+      </div>
+      <div v-if="accStore.getAccountInfo.farcasterName && accStore.getAccountInfo.isAuthFarcaster" class="pl-14 flex justify-start items-center gap-3a mt-2">
+        <img class="w-4 h-4" src="~@/assets/icons/icon-farcaster.svg" alt="">
+        <div class="ml-2 text-sm">
+          {{ accStore.getAccountInfo.farcasterName }}
+        </div>
+      </div>
+      <div v-else class="flex pl-14 justify-start items-center gap-3a mt-2 ">
+        <button @click="useModalStore().setModalVisible(true, GlobalModalType.Register)" class="bg-gradient-primary flex items-center px-2 py-1 rounded-full">
+          <img class="w-4 h-4 mr-2" src="~@/assets/icons/icon-farcaster.svg" alt="">
+          <span class="text-white text-sm">
+            Bind Farcaster
+          </span>
+      </button>
       </div>
     </div>
     <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">

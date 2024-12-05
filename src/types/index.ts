@@ -75,7 +75,19 @@ export type Account = {
   lastUpdateVpStamp?: number;
   op?: number;
   lastUpdateOpStamp?: number;
+  fid?: string | null | undefined;
+  isAuthFarcaster?: boolean;
+  farcasterName?: string | null | undefined
 };
+
+export type FarcasterUser = {
+  ethAddr: string,
+  fid: string,
+  signerUuid?: string,
+  name?: string,
+  avatar?: string,
+  username?: string,
+}
 
 export type SocialMessage = {
   tweetId: string;
