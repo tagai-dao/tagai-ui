@@ -22,6 +22,7 @@ const loading = ref(false);
 const showInsufficientBalance = ref(false);
 const showNoEns = ref(false);
 const showFidUsed = ref(false);
+const showNeedBondEthToFarcaster = ref(false);
 const chosingBitip = ref(false);
 const bitips = ref([]);
 const btcWallet = ref<BtcWallet>();
@@ -71,6 +72,7 @@ function resetTips() {
     showInsufficientBalance.value = false;
     chosingBitip.value = false;
     showFidUsed.value = false;
+    showNeedBondEthToFarcaster.value = false;
 }
 
 async function onSignInSuccess(success: boolean) {
@@ -80,10 +82,15 @@ async function onSignInSuccess(success: boolean) {
   }
   // get farcaster user info
   const userInfo = useAccountStore().farcasterUser
+  loading.value = false
+  console.log(11, userInfo)
+  if (!userInfo?.ethAddr) {
+    showNeedBondEthToFarcaster.value = true;
+    return;
+  }
 
   // check fid registered
   const o: any = await checkEthUsed(userInfo?.ethAddr ?? '')
-  loading.value = false
   if (o && o.fid && o.fid == userInfo?.fid && o.fid !== accStore.getAccountInfo.fid) {
     accStore.farcasterUser = null;
     showFidUsed.value = true;
@@ -360,9 +367,12 @@ onMounted(() => {
             You have bond a eth address: {{ accStore.getAccountInfo.ethAddr }}. <br/>
             It will be replaced by the farcaster address after this operation.
           </p>
+          <p v-if="showNeedBondEthToFarcaster" class="mb-4 text-center text-red-e6">
+            Please bond your eth address to farcaster in Warpcast to continue.
+          </p>
           <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 @click="signInFarcasterEth"
-                :disabled="loading || showChangeEthAddr">
+                :disabled="loading || showChangeEthAddr || showNeedBondEthToFarcaster">
             <span class="text-white font-semibold">
               Bond
             </span>
