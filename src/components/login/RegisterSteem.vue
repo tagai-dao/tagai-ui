@@ -80,12 +80,11 @@ async function onSignInSuccess(success: boolean) {
   }
   // get farcaster user info
   const userInfo = useAccountStore().farcasterUser
-  console.log(1, userInfo)
 
   // check fid registered
   const o: any = await checkEthUsed(userInfo?.ethAddr ?? '')
   loading.value = false
-  if (o && o.fid && o.fid == userInfo?.fid) {
+  if (o && o.fid && o.fid == userInfo?.fid && o.fid !== accStore.getAccountInfo.fid) {
     accStore.farcasterUser = null;
     showFidUsed.value = true;
     return

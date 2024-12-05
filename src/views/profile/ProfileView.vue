@@ -93,7 +93,7 @@ onMounted(() => {
           <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
         </button>
       </div>
-      <div v-if="accStore.getAccountInfo.farcasterName" class="pl-14 flex justify-start items-center gap-3a mt-2">
+      <div v-if="accStore.getAccountInfo.farcasterName && accStore.getAccountInfo.isAuthFarcaster" class="pl-14 flex justify-start items-center gap-3a mt-2">
         <img class="w-4 h-4" src="~@/assets/icons/icon-farcaster.svg" alt="">
         <div class="ml-2 text-sm">
           {{ accStore.getAccountInfo.farcasterName }}
