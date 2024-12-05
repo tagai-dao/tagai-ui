@@ -55,7 +55,7 @@ const step = computed(() => {
     accStore.ethConnectState !== EthWalletState.Connected
   ) {
     return 1;
-  } else if (!accStore.getAccountInfo.steemId) {
+  } else if (!accStore.getAccountInfo.steemId && !accStore.farcasterUser?.fid) {
     return 2;
   } else if(accStore.farcasterUser?.fid) {
     return 4
@@ -252,7 +252,7 @@ async function register() {
       const acc: any = await checkRegister(account.twitterId)
       if (acc.code == 3) {
         accStore.setAccount({
-          ...acc,
+          ...acc.account,
           ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
           fid: accStore.farcasterUser?.fid,
           isAuthFarcaster: true,
