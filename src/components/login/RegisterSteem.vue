@@ -4,8 +4,8 @@ import BondEthModal from "@/components/login/BondEthModal.vue";
 import { useAccountStore } from "@/stores/web3";
 import { EthWalletState } from "@/stores/web3";
 import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } from "@/config";
-import { checkEns, registerSteem } from "@/apis/api";
-import { handleErrorTip } from "@/utils/notify";
+import { checkEns, registerSteem, checkFarcaster } from "@/apis/api";
+import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
 import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
@@ -22,7 +22,8 @@ const loading = ref(false);
 const showInsufficientBalance = ref(false);
 const showNoEns = ref(false);
 const showFidUsed = ref(false);
-const showNeedBondEthToFarcaster = ref(false);
+const showBondEthToFarcaster = ref(false);
+const showFarcasterAuthFailed = ref(false);
 const chosingBitip = ref(false);
 const bitips = ref([]);
 const btcWallet = ref<BtcWallet>();
@@ -57,7 +58,7 @@ const step = computed(() => {
     return 1;
   } else if (!accStore.getAccountInfo.steemId && !accStore.farcasterUser?.fid) {
     return 2;
-  } else if(accStore.farcasterUser?.fid) {
+  } else if(showBondEthToFarcaster.value) {
     return 4
   }
   return 2
@@ -72,7 +73,8 @@ function resetTips() {
     showInsufficientBalance.value = false;
     chosingBitip.value = false;
     showFidUsed.value = false;
-    showNeedBondEthToFarcaster.value = false;
+    showBondEthToFarcaster.value = false;
+    showFarcasterAuthFailed.value = false;
 }
 
 async function onSignInSuccess(success: boolean) {
@@ -81,22 +83,20 @@ async function onSignInSuccess(success: boolean) {
     return
   }
   // get farcaster user info
-  const userInfo = useAccountStore().farcasterUser
-  loading.value = false
-  console.log(11, userInfo)
-  if (!userInfo?.ethAddr) {
-    showNeedBondEthToFarcaster.value = true;
+  let userInfo = useAccountStore().farcasterUser
+  if (!userInfo?.fid) {
+    showFarcasterAuthFailed.value = true
     return;
   }
 
   // check fid registered
-  const o: any = await checkEthUsed(userInfo?.ethAddr ?? '')
-  if (o && o.fid && o.fid == userInfo?.fid && o.fid !== accStore.getAccountInfo.fid) {
-    accStore.farcasterUser = null;
-    showFidUsed.value = true;
-    return
+  const aa: any = await checkFarcaster(userInfo?.fid ?? '')
+  loading.value = false
+  showBondEthToFarcaster.value = true
+  if (aa && aa.fid && aa.fid) {
+    showFidUsed.value = true
+    return;
   }
-
 }
 
 async function payToken() {
@@ -199,6 +199,7 @@ async function choseBitip(bitip: string) {
 
 async function signInFarcasterEth() {
   resetTips()
+  showBondEthToFarcaster.value = true
     try {
         loading.value = true
         
@@ -349,7 +350,7 @@ onMounted(() => {
       </div>
     <div v-if="step === 4" class="flex flex-col min-h-[240px] gap-4">
       <button class="absolute top-4 left-4 h-10 w-10 min-w-10 bg-white rounded-full flex items-center justify-center"
-              @click="accStore.farcasterUser = null">
+              @click="showBondEthToFarcaster = false">
         <img src="~@/assets/icons/icon-back.svg" alt="">
       </button>
         <div class="flex justify-center items-center mt-6">
@@ -362,25 +363,17 @@ onMounted(() => {
           This Farcaster account has already been used.
         </p>
         <div v-else class="w-full mt-6">
-          <p v-if="accStore.getAccountInfo.ethAddr && accStore.getAccountInfo.ethAddr != accStore.ethConnectAddress"
-            class="mb-4 text-center">
-            You have bond a eth address: {{ accStore.getAccountInfo.ethAddr }}. <br/>
-            It will be replaced by the farcaster address after this operation.
-          </p>
-          <p v-if="showNeedBondEthToFarcaster" class="mb-4 text-center text-red-e6">
-            Please bond your eth address to farcaster in Warpcast to continue.
-          </p>
           <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 @click="signInFarcasterEth"
-                :disabled="loading || showChangeEthAddr || showNeedBondEthToFarcaster">
+                :disabled="loading || accountMismatch">
             <span class="text-white font-semibold">
               Bond
             </span>
             <i-ep-loading v-show="loading" class="animate-spin" />
           </button>
-          <p v-if="showChangeEthAddr"class="text-center text-sm text-grey-dark mt-4 text-red-e6">
-            Please change to {{ accStore.farcasterUser?.ethAddr }} in your wallet to continue.
-          </p>
+          <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
+            {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
+          </div>
         </div>
     </div>
 </template>
