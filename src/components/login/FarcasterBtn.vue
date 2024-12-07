@@ -31,6 +31,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits(['signInSuccess'])
 
 async function onSignInSuccess(data: any) {
+  console.log('farcaster info', data)
   if (!data) {
     emit('signInSuccess', false)
     return

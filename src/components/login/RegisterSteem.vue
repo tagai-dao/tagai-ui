@@ -79,6 +79,10 @@ function resetTips() {
 
 async function onSignInSuccess(success: boolean) {
   if (!success) {
+    notify({
+      type: 'error',
+      message: 'Failed to sign in to Farcaster'
+    })
     loading.value = false
     return
   }
@@ -224,43 +228,42 @@ async function register() {
     const signature = await ethSignMessage(RegisterSteemMessage)
     const account = accStore.getAccountInfo
     const salt = bytesToHex(ethers.randomBytes(4));
-      const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
-      let params = box(steemAccount);
-      let createForm = {
-        twitterId: account.twitterId,
-        pwd: params.pwd,
-        sendNonce: params.sendNonce,
-        sendPubKey: params.sendPubKey,
-        ethAddr: account.ethAddr,
-        salt,
-        identityInfo,
-        signature
-      }
-      await registerSteem(createForm);
-      if (accStore.getAccountInfo.steemId) {
-        accStore.setAccount({
-          ...accStore.getAccountInfo,
-          ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
-          fid: accStore.farcasterUser?.fid,
-          isAuthFarcaster: true,
-          farcasterName: accStore.farcasterUser?.name
-        })
-        accStore.farcasterUser = null;
-        useModalStore().setModalVisible(false)
-        return;
-      }
-      await sleep(3)
-      const acc: any = await checkRegister(account.twitterId)
-      if (acc.code == 3) {
-        accStore.setAccount({
-          ...acc.account,
-          ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
-          fid: accStore.farcasterUser?.fid,
-          isAuthFarcaster: true,
-          farcasterName: accStore.farcasterUser?.name
-        }
-        )
-      }
+    const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
+    let params = box(steemAccount);
+    let createForm = {
+      twitterId: account.twitterId,
+      pwd: params.pwd,
+      sendNonce: params.sendNonce,
+      sendPubKey: params.sendPubKey,
+      ethAddr: account.ethAddr,
+      salt,
+      identityInfo,
+      signature
+    }
+    // await registerSteem(createForm);
+    if (accStore.getAccountInfo.steemId) {
+      accStore.setAccount({
+        ...accStore.getAccountInfo,
+        ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
+        fid: accStore.farcasterUser?.fid,
+        isAuthFarcaster: true,
+        farcasterName: accStore.farcasterUser?.name
+      })
+      accStore.farcasterUser = null;
+      useModalStore().setModalVisible(false)
+      return;
+    }
+    await sleep(3)
+    // const acc: any = await checkRegister(account.twitterId)
+    // if (acc.code == 3) {
+    //   accStore.setAccount({
+    //     ...acc.account,
+    //     ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
+    //     fid: accStore.farcasterUser?.fid,
+    //     isAuthFarcaster: true,
+    //     farcasterName: accStore.farcasterUser?.name
+    //   })
+    // }
     useModalStore().setModalVisible(false)
 }
 
