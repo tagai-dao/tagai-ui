@@ -235,16 +235,16 @@ async function register() {
       pwd: params.pwd,
       sendNonce: params.sendNonce,
       sendPubKey: params.sendPubKey,
-      ethAddr: account.ethAddr,
+      ethAddr: account.ethAddr ?? accStore.ethConnectAddress ?? '',
       salt,
       identityInfo,
       signature
     }
-    // await registerSteem(createForm);
+    await registerSteem(createForm);
     if (accStore.getAccountInfo.steemId) {
       accStore.setAccount({
         ...accStore.getAccountInfo,
-        ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
+        ethAddr: ethers.getAddress(account.ethAddr ?? accStore.ethConnectAddress ?? ''),
         fid: accStore.farcasterUser?.fid,
         isAuthFarcaster: true,
         farcasterName: accStore.farcasterUser?.name
