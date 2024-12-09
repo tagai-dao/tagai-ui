@@ -14,6 +14,7 @@ import { useStateStore } from "@/stores/common";
 import { type CurationReward } from "@/types";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
+import { DefaultCommunityTick } from "@/config";
 
 const accStore = useAccountStore()
 const stateStore = useStateStore()
@@ -158,7 +159,7 @@ onMounted(() => {
         </div>
         <div class="px-3">
           <div v-for="tweet of accStore.tweetsList" :key="tweet.tweetId">
-            <div class="flex items-center gap-2 py-3">
+            <div v-if="tweet.tick !== DefaultCommunityTick" class="flex items-center gap-2 py-3">
               <div class="w-4 h-4 bg-green-normal rounded-full"></div>
               <router-link :to="`/tag-detail/${tweet.tick}`" class="text-base flex-1">
                 #{{ tweet.tick }} • Market cap {{ formatPrice((tweet.marketCap ?? 0) * stateStore.ethPrice) }}

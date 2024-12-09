@@ -18,6 +18,7 @@ export const ChainConfig = {
     }
 }
 
+export const DefaultCommunityTick = 'no-tick-of-tiptag'
 
 export const SPACE_STATE = {
   1: 'scheduled',
