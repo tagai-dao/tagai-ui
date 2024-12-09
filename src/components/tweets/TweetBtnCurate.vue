@@ -43,6 +43,12 @@ async function confirmCurate() {
     if (e === errCode.TWITTER_ERR) {
       e = errCode.LIKE_FREQUENT
     }
+    if (e === errCode.USER_ALREADY_CURATED_TWEET) {
+      props.tweet.likeCount += 1;
+      props.tweet.liked = 1;
+      props.tweet.curated = 1;
+      return;
+    }
     console.log(e)
     handleErrorTip(e)
   } finally {

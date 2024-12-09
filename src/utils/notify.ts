@@ -189,6 +189,9 @@ export const handleServerError = (code: number) => {
     case errCode.CANT_CURATE_SELF:
       notify({ message: t('errMessage.cantCurateSelf'), type: 'error'})
       break;
+    case errCode.USER_ALREADY_CURATED_TWEET:
+      notify({ message: t('errMessage.userAlreadyCuratedTweet'), type: 'error'})
+      break;
     case errCode.TWITTER_ERR:
       notify({ message: t('errMessage.twitterErr'), type: 'error'});
       break;
