@@ -35,6 +35,7 @@ const showTickUsed = ref(false);
 const showMaxAmount = ref(false);
 const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
+const activeTab = ref('token');
 
 const accStore = useAccountStore();
 const inputTag = ref("");
@@ -216,164 +217,198 @@ watch(() => createLoading.value, () => {
         alt=""
       />
     </div>
-    <!-- @TipTagAi make a MEME for this tweet -->
-    <div class="flex flex-col gap-1">
-      <p class="text-grey-normal text-sm">
-        You can follow the next steps to create TagCoin use your wallet. 
-      </p>
-      <p class="text-grey-normal text-sm">
-        Or you can copy the following command to your deploy tweet or reply to the tweet which you want to make a MEME:
-      </p>
-      <div class="text-blue-500 text-sm flex items-center">
-        @TipTagAi #deploy
-        <button class="ml-2" @click="onCopy(`@TipTagAi #deploy`)">
-            <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
-          </button>
+
+    <!-- 选项卡 -->
+    <div class="flex border-b border-grey-e6 mb-4">
+      <div 
+        class="px-4 py-2 cursor-pointer text-lg text-bold"
+        :class="{'border-b-2 border-orange-light-active': activeTab === 'token'}"
+        @click="activeTab = 'token'"
+      >
+        Directly
+      </div>
+      <div
+        class="px-4 py-2 cursor-pointer text-lg bold" 
+        :class="{'border-b-2 border-orange-light-active': activeTab === 'tweet'}"
+        @click="activeTab = 'tweet'"
+      >
+        By AI
       </div>
     </div>
-    <div class="flex flex-col gap-4">
-    <!-- name -->
-      <div class="flex flex-col gap-1">
-        <label for="name" class="leading-6 text-lg font-medium text-black">Tag(Tick):</label>
-        <input
-          class="border-b-[1px] border-grey-e6 leading-6 text-base"
-          v-model="createForm.tick"
-          type="text"
-          id="name"
-          :placeholder="$t('createCommunity.invalidTickTip')"
-        />
-        <div class="text-red-e6 text-sm" v-show="showInvalidName">
-          {{ $t('createCommunity.invalidTickTip') }}
-        </div>
-        <div class="text-red-e6 text-sm" v-show="showTickUsed">
-          {{ $t('createCommunity.tickUsed') }}
-        </div>
-        <div class="text-red-e6 text-sm" v-show="showTagForbidden">
-          {{ $t('createCommunity.tagForbidden') }}
-        </div>
-      </div>
-      <!-- desc -->
-      <div class="flex flex-col gap-1">
-        <label for="desc" class="leading-6 text-lg font-medium text-black"
-          >Description:</label
-        >
-        <textarea
-          class="border-b-[1px] border-grey-e6 leading-6 text-base"
-          v-model="createForm.desc"
-          id="desc"
-          placeholder="Describe your tag"
-        />
-        <div class="text-red-e6 text-sm" v-show="showLongDesc">
-          {{ $t('createCommunity.descTooLong') }}
-        </div>
-      </div>
-      <!-- logo -->
-      <div class="flex items-center gap-4">
-        <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
-        <div class="flex items-center gap-2">
-          <img
-            v-if="createForm.logoUrl"
-            :src="createForm.logoUrl"
-            class="w-11 h-11 min-w-11 min-h-11 rounded-md"
-            alt=""
-          />
-          <div
-            v-else
-            class="w-11 h-11 min-w-11 min-h-11 bg-grey-f0 rounded-full flex items-center justify-center"
-          >
-            <img class="w-3 h-3" src="~@/assets/icons/icon-img.svg" alt="" />
-          </div>
-          <el-upload
-            class="avatar-uploader w-7 h-6 min-w-7 min-h-7 bg-grey-f0 rounded-full flex items-center justify-center"
-            action="#"
-            :http-request="(options: any)=> openImageCropper(options)"
-            :on-success="uploadSuccess"
-            :show-file-list="false"
-            :before-upload="beforeUpload"
-          >
-            <img
-              v-if="uploading"
-              class="animate-spin"
-              src="~@/assets/icons/loading.svg"
-              alt=""
-            />
-            <img v-else src="~@/assets/icons/icon-upload.svg" alt="" />
-          </el-upload>
-          <div v-if="showOnlyPic" class="text-red-e6">
-            Only support image type
-          </div>
-          <div v-if="showPicSizeLimit" class="text-red-e6">
-            Image size can't large than 1M
-          </div>
-        </div>
-      </div>
-      <!-- tag -->
-      <div class="flex flex-col gap-1">
-        <label for="tags" class="leading-6 text-lg">Category Tag </label>
-        <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
+
+    <!-- 创建代币内容 -->
+    <div v-if="activeTab === 'token'">
+      <div class="flex flex-col gap-4">
+      <!-- name -->
+        <div class="flex flex-col gap-1">
+          <label for="name" class="leading-6 text-lg font-medium text-black">Tag(Tick):</label>
           <input
-            class="leading-6 text-base flex-1"
-            v-model="inputTag"
-            @focus="onFocusTagInput"
-            @keydown="(e) => {if (e.key === 'Enter' || e.key === 'Enter' || e.keyCode===13) { onAddTags()}}"
+            class="border-b-[1px] border-grey-e6 leading-6 text-base"
+            v-model="createForm.tick"
             type="text"
             id="name"
-            placeholder="TAG"
+            :placeholder="$t('createCommunity.invalidTickTip')"
           />
-          <button
-            class="border-[1px] border-orange-light-active rounded-md px-2 flex items-center gap-1"
-            @click="onAddTags"
+          <div class="text-red-e6 text-sm" v-show="showInvalidName">
+            {{ $t('createCommunity.invalidTickTip') }}
+          </div>
+          <div class="text-red-e6 text-sm" v-show="showTickUsed">
+            {{ $t('createCommunity.tickUsed') }}
+          </div>
+          <div class="text-red-e6 text-sm" v-show="showTagForbidden">
+            {{ $t('createCommunity.tagForbidden') }}
+          </div>
+        </div>
+        <!-- desc -->
+        <div class="flex flex-col gap-1">
+          <label for="desc" class="leading-6 text-lg font-medium text-black"
+            >Description:</label
           >
-            <span class="text-gradient bg-gradient-primary">Add</span>
-          </button>
-        </div>
-        <div v-if="createForm.tags!.length > 0" class="flex flex-wrap gap-4 mt-1">
-          <button v-for="(tag, index) of createForm.tags" :key="tag"
-                  @click="onRemoveTags(tag)"
-                  :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
-                  class="px-2 rounded-md">#{{ tag }}</button>
-        </div>
-      </div>
-      <!-- amount -->
-      <div class="flex flex-col gap-1">
-        <label for="initamount" class="font-medium text-black text-lg">
-          Choose how many 【TagCoin】 you want to buy (optional)
-        </label>
-        <div class="flex items-center border-b-[1px] border-grey-e6 gap-2">
-          <input
-              class="flex-1 leading-6 text-base"
-              v-model="showingInitAmount"
-              type="number"
-              id="initamount"
-              :placeholder="$t('createCommunity.initAmountTip')"
+          <textarea
+            class="border-b-[1px] border-grey-e6 leading-6 text-base"
+            v-model="createForm.desc"
+            id="desc"
+            placeholder="Describe your tag"
           />
-          <span class="italic text-red-e6">TagCoin</span>
+          <div class="text-red-e6 text-sm" v-show="showLongDesc">
+            {{ $t('createCommunity.descTooLong') }}
+          </div>
         </div>
-        <div class="text-red-e6 text-sm" v-show="showMaxAmount">
-            {{ $t("createCommunity.maxAmountTip") }}
+        <!-- logo -->
+        <div class="flex items-center gap-4">
+          <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
+          <div class="flex items-center gap-2">
+            <img
+              v-if="createForm.logoUrl"
+              :src="createForm.logoUrl"
+              class="w-11 h-11 min-w-11 min-h-11 rounded-md"
+              alt=""
+            />
+            <div
+              v-else
+              class="w-11 h-11 min-w-11 min-h-11 bg-grey-f0 rounded-full flex items-center justify-center"
+            >
+              <img class="w-3 h-3" src="~@/assets/icons/icon-img.svg" alt="" />
+            </div>
+            <el-upload
+              class="avatar-uploader w-7 h-6 min-w-7 min-h-7 bg-grey-f0 rounded-full flex items-center justify-center"
+              action="#"
+              :http-request="(options: any)=> openImageCropper(options)"
+              :on-success="uploadSuccess"
+              :show-file-list="false"
+              :before-upload="beforeUpload"
+            >
+              <img
+                v-if="uploading"
+                class="animate-spin"
+                src="~@/assets/icons/loading.svg"
+                alt=""
+              />
+              <img v-else src="~@/assets/icons/icon-upload.svg" alt="" />
+            </el-upload>
+            <div v-if="showOnlyPic" class="text-red-e6">
+              Only support image type
+            </div>
+            <div v-if="showPicSizeLimit" class="text-red-e6">
+              Image size can't large than 1M
+            </div>
+          </div>
         </div>
-        <div class="text-left text-grey-normal">
-          {{ $t('createCommunity.initEth', {amount: showingInitEth}) }}
+        <!-- tag -->
+        <div class="flex flex-col gap-1">
+          <label for="tags" class="leading-6 text-lg">Category Tag </label>
+          <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
+            <input
+              class="leading-6 text-base flex-1"
+              v-model="inputTag"
+              @focus="onFocusTagInput"
+              @keydown="(e) => {if (e.key === 'Enter' || e.key === 'Enter' || e.keyCode===13) { onAddTags()}}"
+              type="text"
+              id="name"
+              placeholder="TAG"
+            />
+            <button
+              class="border-[1px] border-orange-light-active rounded-md px-2 flex items-center gap-1"
+              @click="onAddTags"
+            >
+              <span class="text-gradient bg-gradient-primary">Add</span>
+            </button>
+          </div>
+          <div v-if="createForm.tags!.length > 0" class="flex flex-wrap gap-4 mt-1">
+            <button v-for="(tag, index) of createForm.tags" :key="tag"
+                    @click="onRemoveTags(tag)"
+                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                    class="px-2 rounded-md">#{{ tag }}</button>
+          </div>
+        </div>
+        <!-- amount -->
+        <div class="flex flex-col gap-1">
+          <label for="initamount" class="font-medium text-black text-lg">
+            Choose how many 【TagCoin】 you want to buy (optional)
+          </label>
+          <div class="flex items-center border-b-[1px] border-grey-e6 gap-2">
+            <input
+                class="flex-1 leading-6 text-base"
+                v-model="showingInitAmount"
+                type="number"
+                id="initamount"
+                :placeholder="$t('createCommunity.initAmountTip')"
+            />
+            <span class="italic text-red-e6">TagCoin</span>
+          </div>
+          <div class="text-red-e6 text-sm" v-show="showMaxAmount">
+              {{ $t("createCommunity.maxAmountTip") }}
+          </div>
+          <div class="text-left text-grey-normal">
+            {{ $t('createCommunity.initEth', {amount: showingInitEth}) }}
+          </div>
+        </div>
+      </div>
+      <div class="pb-2">
+        <button
+          class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
+          @click="create"
+          :disabled="createLoading || accountMismatch"
+        >
+          <span>Create</span>
+          <i-ep-loading v-if="createLoading" class="animate-spin" />
+        </button>
+        <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
+          {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
+        </div>
+        <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
+          <span class="text-grey-normal">Cost to deploy：</span>
+          <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} ETH</span>
         </div>
       </div>
     </div>
-    <div class="pb-2">
-      <button
-        class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
-        @click="create"
-        :disabled="createLoading || accountMismatch"
-      >
-        <span>Create</span>
-        <i-ep-loading v-if="createLoading" class="animate-spin" />
-      </button>
-      <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
-        {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
-      </div>
-      <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
-        <span class="text-grey-normal">Cost to deploy：</span>
-        <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} ETH</span>
+
+    <!-- 发推内容 -->
+    <div v-else class="flex flex-col gap-4">
+      <div class="text-center text-grey-normal">
+        <div class="flex flex-col text-left gap-1">
+          <p class="text-grey-normal text-lg font-medium mb-2">
+            You can ask TipTagAI deploy token for you right now:
+          </p>
+          <p>
+            • Write a tweet with any thoughts about the token you want to make. TipTagAI will analyze your tweet and help you create the token with ticker/description/logo.
+          </p>
+          <p>
+            • Reply or quote a tweet which you find something interesting. 
+          </p>
+          <p>
+            • All of that only need you copy the following command to you tweet content.
+          </p>
+          <div class="text-blue-500 flex text-center justify-center text-lg my-8 items-center">
+            @TipTagAi #deploy
+            <button class="ml-2" @click="onCopy(`@TipTagAi #deploy`)">
+                <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
+              </button>
+          </div>
+        </div>
       </div>
     </div>
+
     <el-dialog v-model="cropperModalVisible"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
