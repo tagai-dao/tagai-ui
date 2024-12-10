@@ -40,7 +40,8 @@ const detectEip6963 = () => {
     window.dispatchEvent(new Event('eip6963:requestProvider'));
 };
 
-export const setMetaMaskSDK = () => {
+export const setMetaMaskSDK = async () => {
+    console.log(1)
     mmSdk = new MetaMaskSDK({
         checkInstallationImmediately: true,
         dappMetadata: {
@@ -48,6 +49,16 @@ export const setMetaMaskSDK = () => {
             url: 'https://tiptag.social'
         }
     });
+    const accounts = await mmSdk.connect();
+    provider = mmSdk.getProvider();
+    providerInfo = {
+        name: 'MetaMask',
+        icon: 'https://docs.metamask.io/img/metamask-logo.svg',
+        uuid: 'metamask'
+    }
+    const accStore = useAccountStore();
+    accStore.ethWalletType = 'metamask';
+    handleNewAccounts(accounts);
 }
 
 export const setActiveProviderDetail = (providerDetail: any) => {

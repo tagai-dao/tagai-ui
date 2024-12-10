@@ -47,16 +47,16 @@ async function connectMetaMask() {
       </div>
       <div class="flex flex-col gap-2 pt-4 pb-6" v-else>
         <button
-            class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
+            class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
                    flex justify-center items-center gap-10px
                    hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
             :disabled="loading"
             @click="connectMetaMask()"
         >
-          <img class="w-8 h-8" src="https://docs.metamask.io/img/metamask-logo.svg" alt="" />
-          <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
+          <img class="h-full" src="https://docs.metamask.io/img/metamask-logo.svg" alt="" />
+          <!-- <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
             MetaMask
-          </span>
+          </span> -->
         </button>
       </div>
     </div>
