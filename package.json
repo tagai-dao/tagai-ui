@@ -14,6 +14,7 @@
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "@makerdao/multicall": "^0.12.0",
+    "@metamask/sdk": "^0.31.1",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@types/lodash.debounce": "^4.0.9",
     "@vant/compat": "^1.0.1",

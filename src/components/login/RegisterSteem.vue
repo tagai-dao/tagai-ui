@@ -207,7 +207,7 @@ async function signInFarcasterEth() {
     try {
         loading.value = true
         
-        identityInfo.farcasterEthAddr = ethers.getAddress(accStore.farcasterUser?.ethAddr ?? '');
+        identityInfo.farcasterEthAddr = ethers.getAddress(accStore.ethConnectAddress ?? '');
         identityInfo.farcasterName = accStore.farcasterUser?.name;
         identityInfo.farcasterUsername = accStore.farcasterUser?.username;
         identityInfo.farcasterSignerUuid = accStore.farcasterUser?.signerUuid;

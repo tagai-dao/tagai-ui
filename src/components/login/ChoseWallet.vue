@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useModalStore } from "@/stores/common";
-import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
+import { getProviders, setActiveProviderDetail, setMetaMaskSDK } from "@/utils/wallets";
 import { computed, ref } from "vue";
 
 const modalStore = useModalStore();
@@ -15,6 +15,11 @@ async function onSelectWalletMeta(wallet: any) {
   setActiveProviderDetail(wallet);
   emits('chosedWallet')
 }
+
+async function connectMetaMask() {
+  setMetaMaskSDK();
+  emits('chosedWallet')
+}
 </script>
 
 <template>
@@ -24,7 +29,7 @@ async function onSelectWalletMeta(wallet: any) {
         <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
              @click="modalStore.setModalVisible(false)"/>
       </div>
-      <div class="flex flex-col gap-2 pt-4 pb-6">
+      <div class="flex flex-col gap-2 pt-4 pb-6" v-if="providers.length > 0">
         <button
             class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
                    flex justify-center items-center gap-10px
@@ -38,6 +43,20 @@ async function onSelectWalletMeta(wallet: any) {
           <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
             {{ wallet.info.name }}
           </span>
+        </button>
+      </div>
+      <div class="flex flex-col gap-2 pt-4 pb-6" v-else>
+        <button
+            class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
+                   flex justify-center items-center gap-10px
+                   hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
+            :disabled="loading"
+            @click="connectMetaMask()"
+        >
+          <img class="h-full" src="https://docs.metamask.io/img/metamask-logo.svg" alt="" />
+          <!-- <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
+            MetaMask
+          </span> -->
         </button>
       </div>
     </div>
