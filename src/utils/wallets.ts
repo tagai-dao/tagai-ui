@@ -2,12 +2,14 @@ import { ethers } from 'ethers';
 import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { uiLog } from '@/apis/api';
+import { MetaMaskSDK } from '@metamask/sdk';
 
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
 // this.ethConnectAddress = ''
 
 const providerDetails: any = []
+let mmSdk: any;
 let provider: any;
 let providerInfo: any;
 let accounts: any = []
@@ -37,6 +39,27 @@ const detectEip6963 = () => {
     });
     window.dispatchEvent(new Event('eip6963:requestProvider'));
 };
+
+export const setMetaMaskSDK = async () => {
+    console.log(1)
+    mmSdk = new MetaMaskSDK({
+        checkInstallationImmediately: true,
+        dappMetadata: {
+            name: 'TipTag',
+            url: 'https://tiptag.social'
+        }
+    });
+    const accounts = await mmSdk.connect();
+    provider = mmSdk.getProvider();
+    providerInfo = {
+        name: 'MetaMask',
+        icon: 'https://docs.metamask.io/img/metamask-logo.svg',
+        uuid: 'metamask'
+    }
+    const accStore = useAccountStore();
+    accStore.ethWalletType = 'metamask';
+    handleNewAccounts(accounts);
+}
 
 export const setActiveProviderDetail = (providerDetail: any) => {
     try {
