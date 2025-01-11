@@ -129,6 +129,9 @@ export const handleServerError = (code: number) => {
     case errCode.NOT_COMMUNITY_OWNER:
       notify({ message: t("errMessage.notCommunityOwner"), type: "info" });
       break;
+    case errCode.DISTRIBUTION_ENDED:
+      notify({ message: t("errMessage.distributionEnded"), type: "info" });
+      break;
     case errCode.DB_ERROR:
       notify({ message: t("errMessage.dbErr"), type: "info" });
       break;

@@ -311,3 +311,7 @@ export function parseSpaceLastTime(space: Space) {
     return `${Math.floor(diff / 3600)} H ${Math.ceil(diff % 3600 / 60)} M`
   }
 }
+
+export const getDayNumber = () => {
+  return Math.floor(Date.now() / 86400000)
+}

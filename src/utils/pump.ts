@@ -10,6 +10,7 @@ import errCode from "@/errCode";
 import _ from 'lodash'
 import { isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
+import { getDayNumber } from '@/utils/helper'
 
 export const checkTickUsed = async (tick: string) => {
     const created = await isTokenExist(tick);
@@ -145,6 +146,8 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.price = tokenInfo.price;
         community.marketCap = (community.price ?? 0) * TotalSupply;
         community.pair = tokenInfo.pair;
+        community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
+        console.log(community.distributionEnded, community.listedDayNumber, getDayNumber())
     }
     
     return communities;

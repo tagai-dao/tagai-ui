@@ -92,6 +92,7 @@
     "userCanceled": "User canceled transaction",
     "isLiked": "You have liked this tweet",
     "isUnliked": "You have unliked this tweet",
+    "distributionEnded": "Distribution ended",
     "notCommunityOwner": "You are not the community manager",
     "isRetweeted": "You have retweeted the tweet",
     "dbErr": "Server error",

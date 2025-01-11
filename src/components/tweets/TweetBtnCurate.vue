@@ -6,6 +6,7 @@ import { type Tweet } from "@/types";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
+import { useCommunityStore } from "@/stores/community";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -20,6 +21,10 @@ const { op, vp } = useAccount();
 const curateAmount = ref(3);
 
 async function preCurate() {
+  if (useCommunityStore().currentSelectedCommunity.distributionEnded) {
+      handleErrorTip(errCode.DISTRIBUTION_ENDED)
+      return;
+    }
   if (!(await preCheckCuration(OperateType.CURATE, props.tweet))) {
     return;
   }
