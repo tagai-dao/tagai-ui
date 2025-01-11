@@ -21,7 +21,7 @@ const { op, vp } = useAccount();
 const curateAmount = ref(3);
 
 async function preCurate() {
-  if (useCommunityStore().currentSelectedCommunity.distributionEnded) {
+  if (useCommunityStore().currentSelectedCommunity?.distributionEnded) {
       handleErrorTip(errCode.DISTRIBUTION_ENDED)
       return;
     }

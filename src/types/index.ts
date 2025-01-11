@@ -206,8 +206,8 @@ export type OnchainTokenInfo = {
   totalClaimedSocialRewards?: number;
   price?: number;
   pair?: string;
-  listedDayNumber?: number;
-  distributionEnded?: boolean;
+  listedDayNumber?: number | null | undefined;
+  distributionEnded?: boolean | null | undefined;
 }
 
 export type Community = OnchainTokenInfo & {
