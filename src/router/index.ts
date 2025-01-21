@@ -19,15 +19,15 @@ const router = createRouter({
     {
       path: '/:commerceid?',
       name: 'home',
-      component: HomeTagDetail,
+      component: HomeView,
       meta: {tabBar: true, topBar: true, keepAlive: true}
     },
-    // {
-    //   path: '/commerce/:commerceid?',
-    //   name: 'commerce',
-    //   component: HomeView,
-    //   meta: {tabBar: true, topBar: true, keepAlive: true}
-    // },
+    {
+      path: '/commerce/:commerceid?',
+      name: 'commerce',
+      component: HomeView,
+      meta: {tabBar: true, topBar: true, keepAlive: true}
+    },
     // {
     //   path: '/tag-detail/:id/:sellsman?',
     //   name: 'tag-detail',
@@ -39,6 +39,12 @@ const router = createRouter({
     //   name: 'buy-sell',
     //   component: BuyAndSellView
     // },
+    {
+      path: '/tag-detail/:id/:sellsman?',
+      name: 'tag-detail',
+      component: HomeTagDetail,
+      meta: {tabBar: true, topBar: true}
+    },
     {
       path: '/space-detail/:id',
       name: 'space-detail',

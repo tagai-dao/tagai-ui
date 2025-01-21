@@ -11,7 +11,7 @@
            src="~@/assets/icons/icon-modal-close.svg" alt=""/>
     </div>
     <div class="text-h5 leading-6 mt-4 mb-2">
-      TipTag Launchpad: <span class="text-green-34">No presale</span>, <span class="text-blue-32">no team allocation - equal opportunity</span>
+      TagAI Launchpad: <span class="text-green-34">No presale</span>, <span class="text-blue-32">no team allocation - equal opportunity</span>
       for all participants.
     </div>
     <ul class="leading-6 flex flex-col gap-3">

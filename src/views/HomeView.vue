@@ -24,8 +24,6 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['Base', 'ENULS']
-const activeTab = ref('Base')
 
 watch(listType, (val) => {
   refresh()
@@ -102,12 +100,6 @@ async function getSpaces() {
   }
 }
 
-function gotoChain(chain: string){
-  if (chain === 'ENULS') {
-    window.open('https://enuls.tiptag.social', '__blank')
-  }
-}
-
 function gotoDetail(com: Community) {
   comStore.currentSelectedCommunity = com
   router.push(`/tag-detail/${com.tick}`)
@@ -155,10 +147,6 @@ const contentWidth = computed(() => {
     </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10">
       <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full">
-        <button v-for="tab of tabOptions" :key="tab"
-                class="px-3 rounded-full h-8 text-h3"
-                :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
-                @click="gotoChain(tab)">{{tab}}</button>
       </div>
       <SearchBar class="hidden web:flex"/>
       <el-select

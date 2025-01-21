@@ -65,7 +65,7 @@ const onPostTweet = async () => {
     <p class="text-sm text-gray-600">
       You can write a tweet with 
       <span class="text-blue-500">
-        #tiptag(or @Tip_Tag)
+        #tagai(or @TagAIDAO)
       </span>
        and 
       <span class="text-blue-500">

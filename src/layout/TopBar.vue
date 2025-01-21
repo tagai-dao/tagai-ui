@@ -39,7 +39,7 @@ async function sign() {
   <div class="w-full h-14 web:h-20 flex justify-between items-center px-4
               web:border-b-[1px] border-white">
     <div class="flex items-center gap-2 mt-2">
-      <img class="h-12 cursor-pointer"
+      <img class="h-6 cursor-pointer"
            src="~@/assets/logo.png" alt=""
            @click="$router.replace('/')">
       <!-- <button class="bg-gradient-primary text-white rounded-2xl text-sm px-2 h-5"

@@ -4,16 +4,16 @@ import type { Community, CreateCommunity } from '@/types'
 
 /************************************ common **********************************/
 export const getEthPrice = async () =>
-  get(BACKEND_API_URL + '/tiptag/getETHPrice')
+  get(BACKEND_API_URL + '/tagai/getETHPrice')
 
 export const getSolPrice = async () =>
-  get(BACKEND_API_URL + '/tiptag/getSOLPrice')
+  get(BACKEND_API_URL + '/tagai/getSOLPrice')
 
 export const getUserBitip = async (btcAddress: string) =>
   get("https://api.bitip.social/inscription/listByHolder", {btcAddress})
 
 export const uiLog = async (info: any) =>
-  get(BACKEND_API_URL + '/tiptag/ui-log', info)
+  get(BACKEND_API_URL + '/tagai/ui-log', info)
 
 /************************************ twitter auth **********************************/
 export const checkAccessToken = async (twitterId: string) =>

@@ -1,10 +1,10 @@
 {
-  "name": "tiptag-ui-vue",
+  "name": "tagai-ui-vue",
   "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "NODE_OPTIONS='--experimental-json-modules' vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
@@ -21,7 +21,7 @@
     "@solana/web3.js": "^1.95.4",
     "@types/lodash.debounce": "^4.0.9",
     "@vant/compat": "^1.0.1",
-    "apexcharts": "^3.49.2",
+    "apexcharts": "^4.0.0",
     "axios": "^1.7.2",
     "axios-retry": "^4.4.0",
     "bs58": "^6.0.0",
@@ -41,7 +41,7 @@
     "vue-cropper": "^1.1.4",
     "vue-i18n": "^9.13.1",
     "vue-router": "^4.3.3",
-    "vue3-apexcharts": "^1.5.3",
+    "vue3-apexcharts": "1.5.3",
     "vue3-twemoji-picker-final": "^0.0.15"
   },
   "devDependencies": {

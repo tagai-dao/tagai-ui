@@ -1,7 +1,7 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-// export const BACKEND_API_URL = "https://api.tiptag.social";
-export const BACKEND_API_URL = "http://localhost:3000";
+export const BACKEND_API_URL = "https://api.tagai.fun";
+// export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
@@ -45,7 +45,7 @@ export const ListSupply = 150000000;
 
 export const BondEthMessage = JSON.stringify(
   {
-    project: "tiptag",
+    project: "tagai",
     method: "bond-eth",
   },
   null,
@@ -63,7 +63,7 @@ export const BondSolMessage = JSON.stringify(
 
 export const RegisterSteemMessage = JSON.stringify(
   {
-    project: "tiptag",
+    project: "tagai",
     method: "generate-social-account",
   },
   null,
