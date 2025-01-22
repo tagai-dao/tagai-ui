@@ -41,7 +41,7 @@ async function onRefresh() {
     let list: any = await getCommunityNewTweets(
       comStore.currentSelectedCommunity!.tick,
       accStore.getAccountInfo?.twitterId
-    );
+    )
 
     if (!tweetsStore.communityTweets) {
       tweetsStore.communityTweets = {};

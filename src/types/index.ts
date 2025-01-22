@@ -206,6 +206,7 @@ export type Community = OnchainTokenInfo & {
   tags?: string | string[];
   token: string,
   tick: string,
+  listedTimestamp?: number | null | undefined,
   twitter?: string | undefined | null;
   telegram?: string | undefined | null;
   official?: string | undefined | null;

@@ -172,23 +172,7 @@ const create = async () => {
       createForm.salt = salt
     }
 
-    // create token
-    const {createHash, token} = await createCoin(createForm);
-    createForm.createHash = createHash;
-    createForm.token = token;
-    createForm.twitterId = account?.twitterId;
-    // upload community info
-    delete createForm.initAmount
-    delete createForm.initEth
-    await createCommunity(createForm);
-
-    // created token: prepair local data
-    emitter.emit('newCommunity', createForm);
-    // add steem account
-    accStore.setAccount({
-      ...account!,
-      steemId: account?.twitterUsername
-    })
+   
     modalStore.setModalCloseEnable(true)
     modalStore.setModalVisible(false)
   } catch (e) {

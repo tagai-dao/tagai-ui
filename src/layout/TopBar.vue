@@ -59,21 +59,21 @@ async function sign() {
           {{ useAccountStore().unreadMessageCount }}
         </div>
       </div>
-      <!-- <img class="w-6 cursor-pointer web:hidden"
+      <img class="w-6 cursor-pointer web:hidden"
            src="~@/assets/icons/icon-search.svg" alt=""
-           @click="modalVisible=true"> -->
-      <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.twitterId"
+           @click="modalVisible=true">
+      <!-- <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.twitterId"
            src="~@/assets/icons/icon-wallet.svg" alt=""
-           @click="onClickWallet">
+           @click="onClickWallet"> -->
       <!-- <img class="w-6 cursor-pointer" src="~@/assets/icons/icon-lang-en.svg" alt=""> -->
       <ProfileBtn/>
       <!-- <CreateBtn class="hidden web:block"/> -->
     </div>
-    <!-- <el-dialog v-model="modalVisible"
+    <el-dialog v-model="modalVisible"
                modal-class="overlay-white c-modal-fullscreen" fullscreen
                :show-close="false" align-center destroy-on-close>
       <SearchModal @onClose="modalVisible=false"/>
-    </el-dialog> -->
+    </el-dialog>
     <el-dialog v-model="ruleModalVisible"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"

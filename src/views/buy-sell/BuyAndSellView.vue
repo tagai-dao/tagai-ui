@@ -9,8 +9,7 @@ import { useRoute } from "vue-router";
 import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
-  buyToken, sellToken, getUserTokenInfo,
-  getBuyAmountUseEth, getSellAmountUseToken
+  buyToken, sellToken, getUserTokenInfo
  } from '@/utils/pump'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
@@ -96,39 +95,10 @@ watch(sellAmount, (val) => {
 })
 
 const updateBuyAmount = debounce(async (val: any) => {
-  if (!val) return;
-  showFillInfo.value = false
-  const amount = ethers.parseEther(val.toString())
-
- try {
-  if (listed.value) {
-    const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount)
-    receiveAmount.value = receive
-  }else {
-   const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
-   receiveAmount.value = receive
-  }
- } catch (error) {
-    console.log(33, error)
-    receiveAmount.value = '0.00'
- }
 }, 500)
 
 const updateSellAmount = debounce(async (val: any) => {
-  try {
-    if (!val) return;
-    showFillInfo.value = false
-    const amount = ethers.parseEther(val.toString())
-    if (listed.value) {
-      const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
-      receiveEth.value = receive
-    }else {
-      const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
-      receiveEth.value = receive
-    }
-  } catch (error) {
-    receiveEth.value = '0.00'
-  }
+  
 }, 500)
 
 async function checkTweet() {
@@ -202,33 +172,6 @@ async function confirm() {
     trading.value = true
     const token = comStore.currentSelectedCommunity
     if (!token) return;
-    if (tradeType.value === 'buy') {
-      if (!payEth.value) return
-
-      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
-      if (hash) {
-        payEth.value = undefined
-        receiveAmount.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
-        emitter.emit('newTrade')
-        updateUserTokenInfo()
-      }else{
-        handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
-      }
-    }else {
-      if (!sellAmount.value) return;
-      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
-      if (hash) {
-        sellAmount.value = undefined
-        receiveEth.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
-
-        emitter.emit('newTrade')
-        updateUserTokenInfo()
-      }else {
-        handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
-      }
-    }
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -238,11 +181,6 @@ async function confirm() {
 
 async function updateUserTokenInfo () {
   try {
-    if (ethers.isAddress(accStore.ethConnectAddress)) {
-      let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
-      tokenBalance.value = info.balance;
-      ethBalance.value = info.ethBalance;
-    }
   } catch (error) {
     console.error('get users token info fail', error)
   }

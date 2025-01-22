@@ -9,7 +9,7 @@
     <!-- quote-->
     <TweetBtnQuote :tweet/>
     <!-- curate -->
-    <TweetBtnCurate :tweet/>
+    <!-- <TweetBtnCurate :tweet/> -->
   </div>
 </template>
 
