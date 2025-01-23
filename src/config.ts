@@ -103,6 +103,8 @@ export const MAX_VP = 200;
 export const OP_RECOVER_DAY = 3;
 export const VP_RECOVER_DAY = 3;
 
+export const ReservedTicks = ['tagai', 'tiptag'];
+
 export const TwitterLoginCode = {
   success: 1,
   accountMismatch: 2,

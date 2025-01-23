@@ -44,10 +44,14 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
 }
 
 export const getTokenInfo = async (communities: Community[]) => {
+    if (communities.length === 0) return [];
+    const result = await getTokenOnchainInfo(communities.map(community => community.token));
     return communities.map(community => {
         return {
             ...community,
-            listed: community.listedTimestamp ? community.listedTimestamp > 0 : false
+            listed: community.listedTimestamp ? community.listedTimestamp > 0 : false,
+            price: result[community.token]?.price ?? 0,
+            marketCap: result[community.token]?.price * 1000000000
         }
     }).filter(community => community.name != 'XCountry');
 }
@@ -56,8 +60,9 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     return tweets;
 }
 
-export const getTokenOnchainInfo = async (tokens: String[]) => {
-    return []
+export const getTokenOnchainInfo = async (tokens: string[]) => {
+    const prices: any = await getTokensPrices(tokens);
+    return prices.data
 }
 
 export const getBuyAmountWithETHAfterFee = async (token: string | undefined, amount: bigint) => {

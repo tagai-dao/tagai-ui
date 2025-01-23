@@ -183,10 +183,10 @@ onMounted(async () => {
               <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
               <IconLinks :community="comStore.currentSelectedCommunity" />
             </div>
-            <!-- <div class="text-base flex gap-1">
+            <div class="text-base flex gap-1">
               <span class="font-semibold text-grey-64">market cap</span>
-              <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
-            </div> -->
+              <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any)) }}</span>
+            </div>
           </div>
           <div class="flex justify-between items-end gap-3 mt-1">
             <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
@@ -200,9 +200,9 @@ onMounted(async () => {
             </button>
           </div>
           <div>
-            <div class="flex items-center gap-2 mt-2">
-              <span class="text-sm font-semibold">CA</span>
-              <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px]">
+            <div class="flex items-center gap-2 mt-2 text-lg">
+              <span class="font-semibold">CA</span>
+              <div class="bg-white text-grey-light-active h-4 flex items-center rounded-[3px]">
                 {{ formatAddress(comStore.currentSelectedCommunity?.token ?? '') }}
               </div>
               <button @click="onCopy(comStore.currentSelectedCommunity?.token ?? '')"

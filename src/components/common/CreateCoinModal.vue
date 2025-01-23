@@ -2,7 +2,7 @@
 import { useModalStore } from "@/stores/common";
 import { reactive, ref, computed, watch } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
-import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
+import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, ReservedTicks } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
@@ -117,7 +117,8 @@ const testTick = async () => {
   showInvalidName.value = false;
   showTickUsed.value = false;
   showTagForbidden.value = false;
-  if (createForm.tick.toLocaleLowerCase() === 'tagai') {
+  
+  if (ReservedTicks.some(tag => tag === createForm.tick.toLocaleLowerCase())) {
     showTagForbidden.value = true;
     return false;
   }
