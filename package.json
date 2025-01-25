@@ -27,6 +27,7 @@
     "klinecharts": "^9.8.10",
     "lodash.debounce": "^4.0.8",
     "mitt": "^3.0.1",
+    "nuls-api-v2": "https://github.com/xiangxn/nuls-api-v2.git",
     "pinia": "^2.1.7",
     "steem": "^0.7.11",
     "tweetnacl": "^1.0.3",

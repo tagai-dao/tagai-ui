@@ -1,6 +1,7 @@
 import { getContract } from "./contract";
 import { ChainConfig } from "@/config";
-import { ethers } from 'ethers'
+import { isAddress } from "nuls-api-v2"
+import { nulsapi } from "./nuls"
 import { IPShareContract } from "@/config";
 import { aggregate } from '@makerdao/multicall'
 import _ from 'lodash'
@@ -20,15 +21,15 @@ import _ from 'lodash'
 //   holders?: Array<IPShareHolder>;
 
 export const create = async (ethAddr: string) => {
-    if (!ethers.isAddress(ethAddr)) return;
+    if (!isAddress(ethAddr)) return;
     const contract = await getContract('IPShare');
-    const tx = await contract.createShare(ethAddr);
-    await tx.wait();
-    return tx.hash;
+    const txHash = await contract.createShare(ethAddr);
+    await nulsapi.waitingResult(txHash);
+    return txHash;
 }
 
 export const getIPShareInfo = async (ethAddr: string) => {
-    if (!ethers.isAddress(ethAddr)) {
+    if (!isAddress(ethAddr)) {
         return {}
     }
     let calls = [{
@@ -40,19 +41,10 @@ export const getIPShareInfo = async (ethAddr: string) => {
 }
 
 export const ipshareCreated = async (ethAddr: string) => {
-    if (!ethers.isAddress(ethAddr)) {
+    if (!isAddress(ethAddr)) {
         return {}
     }
-    let calls = [{
-        target: IPShareContract,
-        call: [
-            'ipshareCreated(address)(bool)',
-            ethAddr
-        ],
-        returns: [
-            ['created']
-        ]
-    }]
-    const res = await aggregate(calls, ChainConfig.multiConfig);
-    return res.results.transformed.created;
+    const contract = await getContract('IPShare');
+    const res = await contract.ipshareCreated(ethAddr);
+    return res
 }

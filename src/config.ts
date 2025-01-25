@@ -5,17 +5,17 @@ export const BACKEND_API_URL = "https://enuls-api.tiptag.social";
 
 // base main net
 export const ChainConfig = {
-    name: "ENULS",
-    rpc: 'https://evmapi.nuls.io',
-    chainId: 119,
-    symbol: 'ENULS',
-    browser: 'https://basescan.org/',
-    decimals: 18,
-    multiConfig: {
-        rpcUrl: 'https://evmapi.nuls.io',
-        multicallAddress: '0x383870Ae4E834155192cEce2fb5B0528CE0790E9',
-        interval: 3000
-    }
+  name: "NULS",
+  rpc: 'http://beta.api.nuls.io/jsonrpc',
+  chainId: 100001,
+  symbol: 'NULS',
+  browser: 'https://beta.nulscan.io/',
+  decimals: 8,
+  multiConfig: {
+    rpcUrl: 'http://beta.api.nuls.io/jsonrpc',
+    multicallAddress: 'tNULSeBaMwP81fGuNPRRSpKxLto1o1hQPnUTJQ',
+    interval: 3000
+  }
 }
 
 
@@ -27,16 +27,16 @@ export const SPACE_STATE = {
 }
 
 export const MainToken = {
-  name: "ENULS",
-  symbol: "ENULS",
+  name: "NULS",
+  symbol: "NULS",
   icon: "https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/0x2170Ed0880ac9A755fd29B2688956BD959F933F8/logo.png",
-  decimals: 18,
+  decimals: 8,
 };
 
 // also create coin or create social account will cost 0.00005 ETH
-export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
-export const CreateFee = "5000000000000000000";
-export const ClaimFee = "500000000000000000";
+export const FeeAddress = "tNULSeBaMv8mJetNd2bcwr1Uc7RNC6GAamMRUJ";
+export const CreateFee = "500000000";
+export const ClaimFee = "50000000";
 
 export const TotalSupply = 1000000000;
 export const SocialSupply = 150000000;
@@ -61,12 +61,12 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const IPShareContract = "0x3E316332ad3Fe2E71198D201f705eC875F33CdfC";
-export const PumpContract = "0x9BAb6bB67d14C693f03ea593731F4A972b918cDf";
+export const IPShareContract = "tNULSeBaMygW4Q37EHuSfxHV5AjnZc3cUbqXEz";
+export const PumpContract = "tNULSeBaMwef5a6tZeqAXMFfYzMd2ScezXGuv2";
 
-export const WETH = '0x217dffF57E3b855803CE88a1374C90759Ea071bD';
-export const uniswapV2Factory = '0x7bf960B15Cbd9976042257Be3F6Bb2361E107384';
-export const uniswapV2Router02 = '0x3653d15A4Ed7E9acAA9AC7C5DB812e8A7a90DF9e';
+export const WETH = 'tNULSeBaN8aNHMo4yKomvGDbZfL1KAYGwfn8Jk';
+export const uniswapV2Factory = 'tNULSeBaMzYWiaCcZPu3kD2nJ52jMzMvbNzgVn';
+export const uniswapV2Router02 = 'tNULSeBaMxcaWDC7zxUqJfyY2LPK3DAGStmGzU';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 
 export const Ether = BigInt(1e18);
@@ -78,16 +78,16 @@ export const SendPubKey = new Uint8Array([
 
 // vp consume
 export const VP_CONSUME = Object.freeze({
-    RETWEET: 5,
-    LIKE: 3
+  RETWEET: 5,
+  LIKE: 3
 });
 // op consume
 export const OP_CONSUME = Object.freeze({
-    POST: 200,
-    QUOTE: 200,
-    RETWEET: 5,
-    REPLY: 50,
-    LIKE: 3
+  POST: 200,
+  QUOTE: 200,
+  RETWEET: 5,
+  REPLY: 50,
+  LIKE: 3
 });
 
 export const MAX_OP = 2000;
