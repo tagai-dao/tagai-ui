@@ -3,7 +3,6 @@ import { ChainConfig } from "@/config";
 import { isAddress } from "nuls-api-v2"
 import { nulsapi } from "./nuls"
 import { IPShareContract } from "@/config";
-import { aggregate } from '@makerdao/multicall'
 import _ from 'lodash'
 
 // ethAddr?: string;
