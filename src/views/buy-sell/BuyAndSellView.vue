@@ -205,7 +205,7 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
 
-      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e8), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -217,7 +217,7 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
+      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e8), receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined
@@ -337,7 +337,7 @@ onMounted(async () => {
             <span class="text-h5"
               >Receive ${{ comStore.currentSelectedCommunity?.tick }}</span
             >
-            <span class="text-h3">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
+            <span class="text-h3">{{ formatAmount(receiveAmount?.toString() / 1e8) }}</span>
           </div>
         </template>
         <template v-else>
@@ -360,7 +360,7 @@ onMounted(async () => {
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
           >
             <span class="text-h5">Receive $NULS</span>
-            <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
+            <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e8) }}</span>
           </div></template
         >
         <div class="flex items-center justify-between">

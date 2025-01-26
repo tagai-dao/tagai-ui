@@ -69,7 +69,7 @@ export const uniswapV2Factory = 'tNULSeBaMzYWiaCcZPu3kD2nJ52jMzMvbNzgVn';
 export const uniswapV2Router02 = 'tNULSeBaMxcaWDC7zxUqJfyY2LPK3DAGStmGzU';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 
-export const Ether = BigInt(1e18);
+export const Ether = BigInt(1e8);
 
 export const SendPubKey = new Uint8Array([
   197, 251, 61, 64, 103, 59, 66, 126, 109, 154, 9, 122, 8, 175, 171, 78, 84, 46,

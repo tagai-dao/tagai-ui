@@ -92,7 +92,7 @@ async function onRefresh() {
         return {
           ...h,
           community: comStore.currentSelectedCommunity,
-          amount: h.amount.toString() / 1e18,
+          amount: h.amount.toString() / 1e8,
           ethAddr: h.holder
         }
       })
@@ -118,7 +118,7 @@ async function onLoad() {
         return {
           ...h,
           community: comStore.currentSelectedCommunity,
-          amount: h.amount.toString() / 1e18,
+          amount: h.amount.toString() / 1e8,
           ethAddr: h.holder
         }
       })

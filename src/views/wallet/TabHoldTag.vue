@@ -104,7 +104,7 @@ onMounted(async () => {
               <span class="text-grey-normal text-h3 leading-5">{{ holding.community?.tick }}</span>
             </div>
             <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary">
-              {{ formatAmount((holding.amount?.toString() as any) / 1e18) }}
+              {{ formatAmount((holding.amount?.toString() as any) / 1e8) }}
             </div>
           </div>
           <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"

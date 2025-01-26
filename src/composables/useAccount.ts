@@ -221,7 +221,7 @@ export const useAccount = () => {
         if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
             getBalance(useAccountStore().getAccountInfo.ethAddr!).then(balance => {
                 // @ts-ignore
-                useAccountStore().ethBalance = balance.toString() / 1e18
+                useAccountStore().ethBalance = balance.toString() / 1e8
             }).catch()
         }
     }

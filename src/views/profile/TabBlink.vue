@@ -25,7 +25,7 @@ const capturedFee = computed(() => {
   let captured: any = accStore.ipshare.totalCaptured
   if (typeof(captured) == 'string' || typeof(captured) === 'bigint') {
     // @ts-ignore
-    return captured.toString() / 1e18
+    return captured.toString() / 1e8
   }
   return captured
 })

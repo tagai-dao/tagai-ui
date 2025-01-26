@@ -25,7 +25,7 @@ async function onRefresh() {
       list = list.map((h: any) => {
         return {
           community: comStore.currentSelectedCommunity,
-          amount: h.amount.toString() / 1e18,
+          amount: h.amount.toString() / 1e8,
           ethAddr: h.holder
         }
       })
@@ -51,7 +51,7 @@ async function onLoad() {
       list = list.map((h: any) => {
         return {
           community: comStore.currentSelectedCommunity,
-          amount: h.amount.toString() / 1e18,
+          amount: h.amount.toString() / 1e8,
           ethAddr: h.holder
         }
       })
