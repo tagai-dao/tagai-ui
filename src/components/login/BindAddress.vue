@@ -4,7 +4,8 @@ import { ref, watch } from "vue";
 import { ethers } from "ethers";
 import { checkEthUsed, bondEth } from '@/apis/api'
 import { BondEthMessage } from '@/config'
-import { signMessage } from "@/utils/wallets";
+// import { signMessage } from "@/utils/wallets";
+import { signMessage } from "@/utils/nuls";
 import { handleErrorTip } from "@/utils/notify";
 import { useModalStore } from "@/stores/common";
 

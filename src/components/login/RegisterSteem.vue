@@ -7,7 +7,8 @@ import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } 
 import { checkEns, registerSteem } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
-import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
+// import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
+import { signMessage as ethSignMessage, getBalance ,transferEthTo} from "@/utils/nuls";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
 import { getUserBitip, checkRegister } from "@/apis/api";
 import { bytesToHex, sleep } from "@/utils/helper";

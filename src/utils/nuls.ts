@@ -1,5 +1,5 @@
 import { EthWalletState, useAccountStore } from "@/stores/web3";
-import { NULSAPI } from "nuls-api-v2"
+import { isAddress, NULSAPI } from "nuls-api-v2"
 import BigNumber from "bignumber.js"
 import { ChainConfig, PumpContract } from "@/config";
 
@@ -131,4 +131,32 @@ export class Contract {
             }
         })
     }
+}
+
+export const signMessage = async (message: string) => {
+    await initializeProvider()
+    const accStore = useAccountStore();
+    return await window.nabox.signMessage([message, accStore.ethConnectAddress])
+}
+
+export const getBalance = async (addr: string) => {
+    if (!isAddress(addr)) return 0n;
+    const balance = await nulsapi.getAvailableBalance(addr)
+    return BigInt(balance.toString(10));
+}
+
+export const transferEthTo = async (to: string, value: bigint, assetChainId: number = 1, assetId: number = 1, remarks: string = "", contractAddress: string = "") => {
+    await initializeProvider()
+    const accStore = useAccountStore();
+    const tx = {
+        from: accStore.ethConnectAddress,
+        to,
+        value: value.toString(),
+        assetChainId,
+        assetId,
+        contractAddress,
+        remarks
+    }
+    const res = await window.nabox.sendTransaction(tx);
+    return res
 }
