@@ -1,19 +1,19 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://enuls-api.tiptag.social";
+export const BACKEND_API_URL = "https://api.nuls.tagai.fun";
 // export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
   name: "NULS",
-  rpc: 'http://beta.api.nuls.io/jsonrpc',
+  rpc: 'https://api.nuls.io/jsonrpc',
   chainId: 100001,
   symbol: 'NULS',
-  browser: 'https://beta.nulscan.io/',
+  browser: 'https://nulscan.io/',
   decimals: 8,
   multiConfig: {
-    rpcUrl: 'http://beta.api.nuls.io/jsonrpc',
-    multicallAddress: 'tNULSeBaMwP81fGuNPRRSpKxLto1o1hQPnUTJQ',
+    rpcUrl: 'https://api.nuls.io/jsonrpc',
+    multicallAddress: 'NULSd6Hgrnv1oxcdyhzZmsu7HWgk7vcaR6nMR',
     interval: 3000
   }
 }
@@ -34,7 +34,7 @@ export const MainToken = {
 };
 
 // also create coin or create social account will cost 0.00005 ETH
-export const FeeAddress = "tNULSeBaMv8mJetNd2bcwr1Uc7RNC6GAamMRUJ";
+export const FeeAddress = "NULSd6HgXNLpGkM854ihXrL97jTYfQE7w68Lz";
 export const CreateFee = "500000000";
 export const ClaimFee = "50000000";
 
@@ -61,12 +61,12 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const IPShareContract = "tNULSeBaMygW4Q37EHuSfxHV5AjnZc3cUbqXEz";
-export const PumpContract = "tNULSeBaMwef5a6tZeqAXMFfYzMd2ScezXGuv2";
+export const IPShareContract = "NULSd6Hh1ABdc9WL4as7JBBtzLDa7QuJAvPam";
+export const PumpContract = "NULSd6HgoDqAwNaKVApdMgxcgY1oHjXxYPiPJ";
 
-export const WETH = 'tNULSeBaN8aNHMo4yKomvGDbZfL1KAYGwfn8Jk';
-export const uniswapV2Factory = 'tNULSeBaMzYWiaCcZPu3kD2nJ52jMzMvbNzgVn';
-export const uniswapV2Router02 = 'tNULSeBaMxcaWDC7zxUqJfyY2LPK3DAGStmGzU';
+export const WETH = 'NULSd6HgnjgEdarTNnBRGwhHaXU6MUXyHtLLi';
+export const uniswapV2Factory = 'NULSd6Hgp11fYE42kgoAudZCKh7JmxTTeDBvq';
+export const uniswapV2Router02 = 'NULSd6HgqaiJB6rVBo7mdXwiN8GhRDU7huFeZ';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 
 export const Ether = BigInt(1e8);
