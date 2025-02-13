@@ -24,6 +24,7 @@ import IconLinks from "@/components/home/IconLinks.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
+import { useTweet } from "@/composables/useTweet";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
