@@ -6,7 +6,8 @@ import { GlobalModalType } from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
-import { useRoute, useRouter } from "vue-router";
+import TagProposal from "@/views/tag-detail/TagProposal.vue";
+import {useRoute, useRouter} from "vue-router";
 import { getCommunityDetail, getIpshareInfo } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import { useInterval, usePageScroll, useTools } from "@/composables/useTools";
@@ -22,11 +23,13 @@ import { ethers } from "ethers";
 import IconLinks from "@/components/home/IconLinks.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
+import PostAI from "@/views/tag-detail/PostAI.vue";
 import { OperateType, useTweet } from "@/composables/useTweet";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
   { label: 'Square', key: 'content' },
+  {label: 'Proposal', key: 'proposal'},
   // {label: 'Trades', key: 'trade'},
   { label: 'Credit', key: 'credit' },
   { label: 'Token', key: 'token' },
@@ -167,7 +170,7 @@ onMounted(async () => {
 <template>
   <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative" ref="pageScrollRef"
     @scroll="pageScroll(pageScrollRef)">
-    <div class="grid grid-cols-1 web:grid-cols-5 gap-3">
+    <div class="grid grid-cols-1 web:hidden gap-3">
       <div
         class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div
