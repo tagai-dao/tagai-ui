@@ -30,7 +30,7 @@ function onClickWallet() {
               web:border-b-[1px] border-white">
     <div class="flex items-center gap-2 mt-2">
       <img class="h-8 cursor-pointer"
-           src="~@/assets/logo.svg" alt=""
+           src="~@/assets/logo.png" alt=""
            @click="$router.replace('/')">
       <button class="bg-gradient-primary text-white rounded-2xl text-sm px-2 h-5"
               @click="ruleModalVisible = true">Rule</button>
