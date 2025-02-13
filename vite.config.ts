@@ -63,9 +63,9 @@ export default defineConfig({
       },
       includeAssets: ['favicon.ico'],
       manifest: {
-        id: 'TipTag',
-        name: 'TipTag',
-        short_name: 'TipTag',
+        id: 'TagAI',
+        name: 'TagAI',
+        short_name: 'TagAI',
         description: '',
         background_color: '#FE913F',
         theme_color: '#ffffff',

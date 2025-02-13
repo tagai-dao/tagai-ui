@@ -27,7 +27,7 @@ async function claim() {
   // check eth balance
   // @ts-ignore
   if (accStore.ethBalance < (ClaimFee / 1e18)) {
-    notify({message: 'Insufficient ETH balance'})
+    notify({message: 'Insufficient BNB balance'})
     return
   }
   try{

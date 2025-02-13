@@ -24,7 +24,7 @@ import IconLinks from "@/components/home/IconLinks.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
-import { useTweet } from "@/composables/useTweet";
+import { OperateType, useTweet } from "@/composables/useTweet";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -96,8 +96,8 @@ async function updateProgress() {
     comStore.currentSelectedCommunity = coms[0]
     progressData.value = [
       {...progressData.value[0], value: (com.totalClaimedSocialRewards / SocialSupply * 100), percent: '15%'},
-      {...progressData.value[1], value: (com.bondingCurveSupply / BondingCurveSupply * 100), percent:'70%'},
-      {...progressData.value[2], value: 100, percent:'15%', desc: com.listed ? 'Listed' : 'Pending List'}
+      {...progressData.value[1], value: (com.bondingCurveSupply / BondingCurveSupply * 100), percent:'65%'},
+      {...progressData.value[2], value: 100, percent:'20%', desc: com.listed ? 'Listed' : 'Pending List'}
     ]
   }).catch(e => {
     console.error(2, e)
@@ -359,7 +359,7 @@ onMounted(async () => {
                 <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
                   {{ comStore.currentSelectedCommunity?.description }}
                 </div>
-                <button v-if="!!accStore.getAccountInfo?.nulsAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.nulsAddr"
+                <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
                         @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
                         :disabled="!comStore.currentSelectedCommunity">
                   <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">

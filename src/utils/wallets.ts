@@ -45,8 +45,8 @@ export const setMetaMaskSDK = async () => {
     mmSdk = new MetaMaskSDK({
         checkInstallationImmediately: true,
         dappMetadata: {
-            name: 'TipTag',
-            url: 'https://tiptag.social'
+            name: 'TagAI',
+            url: 'https://tagai.fun'
         }
     });
     const accounts = await mmSdk.connect();

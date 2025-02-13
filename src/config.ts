@@ -5,15 +5,15 @@ export const BACKEND_API_URL = "https://api.tiptag.social";
 
 // base main net
 export const ChainConfig = {
-    name: "Base",
-    rpc: 'https://mainnet.base.org/',
-    chainId: 8453,
-    symbol: 'ETH',
-    browser: 'https://basescan.org/',
+    name: "BSC",
+    rpc: 'https://bsc-dataseed.binance.org/',
+    chainId: 56,
+    symbol: 'BNB',
+    browser: 'https://bscscan.com/',
     decimals: 18,
     multiConfig: {
-        rpcUrl: 'https://mainnet.base.org/',
-        multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
+        rpcUrl: 'https://bsc-dataseed.binance.org/',
+        multicallAddress: '0x41263cba59eb80dc200f3e2544eda4ed6a90e76c',
         interval: 3000
     }
 }
@@ -28,26 +28,26 @@ export const SPACE_STATE = {
 }
 
 export const MainToken = {
-  name: "ETH",
-  symbol: "ETH",
-  icon: "https://assets-cdn.trustwallet.com/blockchains/smartchain/assets/0x2170Ed0880ac9A755fd29B2688956BD959F933F8/logo.png",
+  name: "BNB",
+  symbol: "BNB",
+  icon: "https://assets-cdn.trustwallet.com/blockchains/smartchain/info/logo.png",
   decimals: 18,
 };
 
 // also create coin or create social account will cost 0.00005 ETH
-export const FeeAddress = "0x2Cd63b4f45Ee66A4717C92058e0DA5EA6C6cc685";
-export const CreateFee = "1000000000000000";
-export const ClaimFee = "100000000000000";
+export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
+export const CreateFee = "10000000000000000";
+export const ClaimFee =  "1000000000000000";
 
 export const TotalSupply = 1000000000;
 export const SocialSupply = 150000000;
-export const BondingCurveSupply = 700000000;
-export const ListSupply = 150000000;
+export const BondingCurveSupply = 650000000;
+export const ListSupply = 200000000;
 
 export const BondEthMessage = JSON.stringify(
   {
-    project: "tiptag",
-    method: "bond-eth",
+    project: "tagai",
+    method: "bond-account",
   },
   null,
   4
@@ -55,19 +55,19 @@ export const BondEthMessage = JSON.stringify(
 
 export const RegisterSteemMessage = JSON.stringify(
   {
-    project: "tiptag",
+    project: "tagai",
     method: "generate-social-account",
   },
   null,
   4
 );
 
-export const IPShareContract = "0xb6eec8EaEAEd773F47265f743Db607eb547BD2Dc";
-export const PumpContract = "0x2752815C81D421d52cA4038c4ab9081A32685b50";
+export const IPShareContract = "0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0";
+export const PumpContract = "0xa77253Ac630502A35A6FcD210A01f613D33ba7cD";
 
-export const WETH = '0x4200000000000000000000000000000000000006';
-export const uniswapV2Factory = '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6';
-export const uniswapV2Router02 = '0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24';
+export const WETH = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
+export const uniswapV2Factory = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
+export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 
 export const Ether = BigInt(1e18);

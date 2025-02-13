@@ -98,7 +98,7 @@ export const box = (data: string) => {
 
 export const generateSteemAuth = (pk: string) => {
   const pass = generateBrainKey(pk);
-  const account = generateKeys("tiptag", pass);
+  const account = generateKeys("tagai", pass);
   const keys = {
     postingPub: account.auth.posting,
     postingPri: account.key.posting.posting,
