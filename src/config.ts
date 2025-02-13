@@ -1,6 +1,6 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://api.tiptag.social";
+export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
 // export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
