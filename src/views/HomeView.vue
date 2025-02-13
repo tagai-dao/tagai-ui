@@ -160,7 +160,7 @@ const contentWidth = computed(() => {
       </div>
     </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10">
-      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full">
+      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full web:hidden">
         <button v-for="tab of tabOptions" :key="tab"
                 class="px-3 rounded-full h-8 text-h3"
                 :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
