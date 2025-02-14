@@ -20,7 +20,7 @@ const modalStore = useModalStore()
 
 <template>
   <main class="w-full h-full flex">
-    <Sidebar class="hidden web:block"></Sidebar>
+    <!-- <Sidebar class="hidden web:block"></Sidebar> -->
     <main class="w-full h-full flex flex-col max-w-[1200px] mx-auto">
       <TopBar v-show="$route.meta.topBar"/>
       <div class="flex-1 overflow-hidden">

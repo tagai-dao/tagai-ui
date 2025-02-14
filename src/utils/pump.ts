@@ -147,7 +147,6 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.marketCap = (community.price ?? 0) * TotalSupply;
         community.pair = tokenInfo.pair;
         community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
-        console.log(community.distributionEnded, community.listedDayNumber, getDayNumber())
     }
     
     return communities;

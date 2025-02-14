@@ -21,14 +21,14 @@ import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
 import { ethers } from "ethers";
 import IconLinks from "@/components/home/IconLinks.vue";
-import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
+import BuyAndSellView from "../buy-sell/BuyAndSellView.vue"
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
 import { useTweet } from "@/composables/useTweet";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
-  {label: 'Square', key: 'content'},
+  {label: 'Memory', key: 'content'},
   {label: 'Proposal', key: 'proposal'},
   {label: 'Trades', key: 'trade'},
   {label: 'Credit', key: 'credit'},
