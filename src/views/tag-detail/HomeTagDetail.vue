@@ -24,7 +24,7 @@ import IconLinks from "@/components/home/IconLinks.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue"
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
-import { useTweet } from "@/composables/useTweet";
+import { OperateType, useTweet } from "@/composables/useTweet";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -359,7 +359,7 @@ onMounted(async () => {
                 <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
                   {{ comStore.currentSelectedCommunity?.description }}
                 </div>
-                <button v-if="!!accStore.getAccountInfo?.nulsAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.nulsAddr"
+                <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
                         @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
                         :disabled="!comStore.currentSelectedCommunity">
                   <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
