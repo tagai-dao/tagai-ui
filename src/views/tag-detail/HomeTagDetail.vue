@@ -33,6 +33,8 @@ const tabOptions = [
   // {label: 'Trades', key: 'trade'},
   { label: 'Credit', key: 'credit' },
   { label: 'Token', key: 'token' },
+  {label: 'AI', key: 'ai'},
+
 ]
 enum CurationType {
   TWEET,
@@ -217,23 +219,77 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-
-    <div id="dexscreener-embed" class="w-full h-full">
-      <iframe
-        :src="`https://dexscreener.com/solana/${comStore.currentSelectedCommunity?.token}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`">
-      </iframe>
+    <div class="flex gap-2">
+      <div class="w-full flex flex-col gap-2">
+        <div id="dexscreener-embed" class="w-full h-full">
+          <iframe
+              :src="`https://dexscreener.com/solana/${comStore.currentSelectedCommunity?.token}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`">
+          </iframe>
+        </div>
+        <!-- <BuyAndSellView /> -->
+        <!-- <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl">
+          <button v-for="tab of tabOptions" :key="tab.key" class="px-3 rounded-full h-8 text-h3"
+            :class="tab.key === activeTab ? 'bg-grey-normal text-white' : 'text-grey-3f'"
+            @click="activeTab = tab.key">{{ tab.label }}</button>
+        </div> -->
+        <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
+        <TagContent v-if="activeTab === 'content'" />
+        <!-- <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/> -->
+        <!-- <TagCredit v-if="activeTab === 'credit'" />
+        <TagToken v-if="activeTab === 'token'" /> -->
+<!--        <PostAI v-if="activeTab==='ai'"/>-->
+      </div>
+      <div class="web:w-[340px] web:min-w-[340px] flex flex-col gap-2">
+        <div class="hidden web:flex flex-col gap-2">
+          <div class="w-full border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
+            <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
+              <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
+              <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+              <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
+            </div>
+            <div class="flex-1 py-1">
+              <div class="flex flex-wrap justify-between gap-x-4 items-center">
+                <div class="flex items-center">
+                  <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
+                  <IconLinks :community="comStore.currentSelectedCommunity" />
+                </div>
+                <div class="text-base flex gap-1">
+                  <span class="font-semibold text-grey-64">market cap</span>
+                  <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any)) }}</span>
+                </div>
+              </div>
+              <div class="flex justify-between items-end gap-3 mt-1">
+                <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
+                  {{ comStore.currentSelectedCommunity?.description }}
+                </div>
+                <button
+                    v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
+                    @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
+                    :disabled="!comStore.currentSelectedCommunity">
+                  <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
+                </button>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 mt-2 text-lg">
+                  <span class="font-semibold">CA</span>
+                  <div class="bg-white text-grey-light-active h-4 flex items-center rounded-[3px]">
+                    {{ formatAddress(comStore.currentSelectedCommunity?.token ?? '') }}
+                  </div>
+                  <button @click="onCopy(comStore.currentSelectedCommunity?.token ?? '')"
+                          :disabled="!(comStore.currentSelectedCommunity?.token)">
+                    <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hidden web:block">
+          <PostAI/>
+        </div>
+      </div>
     </div>
-    <!-- <BuyAndSellView /> -->
-    <!-- <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl">
-      <button v-for="tab of tabOptions" :key="tab.key" class="px-3 rounded-full h-8 text-h3"
-        :class="tab.key === activeTab ? 'bg-grey-normal text-white' : 'text-grey-3f'"
-        @click="activeTab = tab.key">{{ tab.label }}</button>
-    </div> -->
-    <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
-    <TagContent v-if="activeTab === 'content'" />
-    <!-- <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/> -->
-    <!-- <TagCredit v-if="activeTab === 'credit'" />
-    <TagToken v-if="activeTab === 'token'" /> -->
   </div>
   <el-dialog v-model="showModal" modal-class="overlay-white" class="max-w-[500px] rounded-[20px]" width="90%"
     :show-close="false" align-center destroy-on-close>
