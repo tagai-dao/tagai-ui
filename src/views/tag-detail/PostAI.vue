@@ -1,19 +1,20 @@
 <script setup lang="ts">
+import { getAgentTweets } from '@/apis/api'
+import { useCommunityStore } from '@/stores/community'
+import type { Tweet } from '@/types'
+import { handleErrorTip } from '@/utils/notify'
+import { onMounted, ref } from 'vue'
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
-import { useTweetsStore } from "@/stores/tweets";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
-import { computed, onMounted, ref } from "vue";
-import { useCommunityStore } from "@/stores/community";
-import type { Tweet } from "@/types";
-import { handleErrorTip } from "@/utils/notify";
 import { useCurationStore } from "@/stores/curation";
-import { getAgentTweets } from '@/apis/api'
 
 const agentTweets = ref<Tweet[]>([])
 const comStore = useCommunityStore()
 const finished = ref(false)
 const refreshing = ref(false)
+const loading = ref(false)
+const curationStore = useCurationStore()
 
 const onRefresh = async () => {
   try {
@@ -49,7 +50,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <van-pull-refresh v-if="showingTweets.length>0" class="h-full min-h-full"
+  <van-pull-refresh v-if="agentTweets.length>0" class="h-full min-h-full"
                     v-model="refreshing"
                     @refresh="onRefresh"
                     loading-text="Loading"
@@ -64,7 +65,7 @@ onMounted(async () => {
         :offset="50"
         @load="onLoad"
     >
-      <div v-for="(tweet, index) of showingTweets" :key="tweet.tweetId" class="mb-2">
+      <div v-for="(tweet, index) of agentTweets" :key="tweet.tweetId" class="mb-2">
         <SpaceItem
             v-if="tweet.spaceId"
             class="bg-white rounded-2xl"
