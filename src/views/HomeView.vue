@@ -25,8 +25,8 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['TipTag', 'ENULS']
-const activeTab = ref('TipTag')
+const tabOptions = ['Base', 'BSC', 'NULS', 'ENULS']
+const activeTab = ref('Base')
 
 watch(listType, (val) => {
   refresh()
@@ -107,11 +107,14 @@ function gotoChain(chain: string){
   if (chain === 'ENULS') {
     window.open('https://enuls.tiptag.social', '__blank')
     return;
-  } else if (chain === 'Clanker') {
-    activeTab.value = 'Clanker'
+  } else if (chain === 'BSC') {
+    window.open('https://tagai.fun', '__blank')
     return;
-  }
-  activeTab.value = 'TipTag'
+  } else if (chain === 'NULS') {
+    window.open('https://nuls.tagai.fun', '__blank')
+    return;
+  } 
+  activeTab.value = 'Base'
 }
 
 function gotoDetail(com: Community) {
@@ -143,11 +146,11 @@ const contentWidth = computed(() => {
 
 <template>
   <div class="h-full overflow-hidden pb-2 flex flex-col gap-3">
-<!--    <van-swipe :loop="false" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">-->
-<!--      <van-swipe-item v-for="space of curationStore.allSpaces">-->
-<!--        <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>-->
-<!--      </van-swipe-item>-->
-<!--    </van-swipe>-->
+   <!-- <van-swipe :loop="false" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">
+     <van-swipe-item v-for="space of curationStore.allSpaces">
+       <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
+     </van-swipe-item>
+   </van-swipe> -->
     <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="container">
       <OnlineSpace class="ml-4" v-if=" curationStore.allSpaces.length == 1" @click="$router.push('/space-detail/' +  curationStore.allSpaces[0].tweetId)" :space=" curationStore.allSpaces[0]"/>
       <div v-else class="scroll-content flex"
@@ -160,7 +163,7 @@ const contentWidth = computed(() => {
       </div>
     </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10">
-      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full web:hidden">
+      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full">
         <button v-for="tab of tabOptions" :key="tab"
                 class="px-3 rounded-full h-8 text-h3"
                 :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
@@ -177,7 +180,7 @@ const contentWidth = computed(() => {
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-      <van-pull-refresh v-show="activeTab == 'TipTag'" v-model="refreshing" @refresh="refresh"
+      <van-pull-refresh v-show="activeTab == 'Base'" v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
                         loading-text="Loading"
                         pulling-text="Pull to refresh data"

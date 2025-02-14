@@ -2,99 +2,50 @@
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
 import { useTweetsStore } from "@/stores/tweets";
-import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
-import { getCommunityNewTweets } from "@/apis/api";
 import { computed, onMounted, ref } from "vue";
 import { useCommunityStore } from "@/stores/community";
-import { sleep } from "@/utils/helper";
 import type { Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
-import { getTokenInfoOfTweets } from "@/utils/pump";
 import { useCurationStore } from "@/stores/curation";
-import emitter from "@/utils/emitter";
+import { getAgentTweets } from '@/apis/api'
 
-const tweetsStore = useTweetsStore();
-const accStore = useAccountStore();
-const refreshing = ref(false);
-const loading = ref(false);
-const finished = ref(false);
-const comStore = useCommunityStore();
-const curationStore = useCurationStore()
+const agentTweets = ref<Tweet[]>([])
+const comStore = useCommunityStore()
+const finished = ref(false)
+const refreshing = ref(false)
 
-const showingTweets = computed(() => {
-  if (
-      comStore.currentSelectedCommunity?.tick &&
-      tweetsStore &&
-      tweetsStore.communityTweets
-  ) {
-    return tweetsStore.communityTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
-  }
-  return [] as Tweet[];
-});
-
-async function onRefresh() {
+const onRefresh = async () => {
   try {
+    console.log(1)
     finished.value = false;
     refreshing.value = true;
-    let list: any = await getCommunityNewTweets(
-        comStore.currentSelectedCommunity!.tick,
-        accStore.getAccountInfo?.twitterId
+    let list: any = await getAgentTweets(
+        comStore.currentSelectedCommunity!.tick
     );
+    console.log(2, list)
 
-    if (!tweetsStore.communityTweets) {
-      tweetsStore.communityTweets = {};
-    }
-    tweetsStore.communityTweets[
-        comStore.currentSelectedCommunity!.tick
-        ] = list as Tweet[];
-    tweetsStore.communityTweets[
-        comStore.currentSelectedCommunity!.tick
-        ] = await getTokenInfoOfTweets(tweetsStore.communityTweets[
-        comStore.currentSelectedCommunity!.tick
-        ])
     if (list.length < 30) {
       finished.value = true
     }
+    agentTweets.value = list
   } catch (e) {
+    console.log(3, e)
     handleErrorTip(e)
   } finally {
     refreshing.value = false;
   }
 }
 
-async function onLoad() {
-  try{
-    if (refreshing.value || finished.value || showingTweets.value.length === 0) {
-      return;
-    }
-    loading.value = true
-    let list: any = await getCommunityNewTweets(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, Math.floor((showingTweets.value.length - 1) / 30) + 1)
-    tweetsStore.communityTweets![
-        comStore.currentSelectedCommunity!.tick
-        ] = showingTweets.value.concat(list as Tweet[])
-    tweetsStore.communityTweets![
-        comStore.currentSelectedCommunity!.tick
-        ] = await getTokenInfoOfTweets(tweetsStore.communityTweets![
-        comStore.currentSelectedCommunity!.tick
-        ])
-    if (list.length < 30) {
-      finished.value = true
-    }
-  } catch (e) {
-    handleErrorTip(e)
-  } finally {
-    loading.value = false;
-  }
+const onLoad = async () => {
+  // @ts-ignore
+  const list = await getAgentTweets(comStore.currentSelectedCommunity!.tick, Math.floor((agentTweets.value.length - 1) / 30) + 1)
+  agentTweets.value = agentTweets.value.concat(list as Tweet[])
 }
 
 onMounted(async () => {
-  while (!comStore.currentSelectedCommunity?.tick) {
-    await sleep(0.5);
-  }
-  onRefresh();
-  emitter.on('tweeted', onRefresh);
-});
+  await onRefresh()
+})
 </script>
 
 <template>
