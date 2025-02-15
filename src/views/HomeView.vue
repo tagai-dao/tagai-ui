@@ -25,8 +25,8 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['TipTag', 'ENULS']
-const activeTab = ref('TipTag')
+const tabOptions = ['BSC', 'Base', 'NULS', 'ENULS']
+const activeTab = ref('BSC')
 
 watch(listType, (val) => {
   refresh()
@@ -105,13 +105,16 @@ async function getSpaces() {
 
 function gotoChain(chain: string){
   if (chain === 'ENULS') {
-    window.open('https://enuls.tiptag.social', '__blank')
+    window.open('https://enuls.tagai.fun', '__blank')
     return;
-  } else if (chain === 'Clanker') {
-    activeTab.value = 'Clanker'
+  } else if (chain === 'Base') {
+    window.open('https://base.tagai.fun', '__blank')
+    return;
+  } else if (chain === 'NULS') {
+    window.open('https://nuls.tagai.fun', '__blank')
     return;
   }
-  activeTab.value = 'TipTag'
+  activeTab.value = 'BSC'
 }
 
 function gotoDetail(com: Community) {
@@ -160,7 +163,7 @@ const contentWidth = computed(() => {
       </div>
     </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10">
-      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full web:hidden">
+      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full">
         <button v-for="tab of tabOptions" :key="tab"
                 class="px-3 rounded-full h-8 text-h3"
                 :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
@@ -177,7 +180,7 @@ const contentWidth = computed(() => {
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-      <van-pull-refresh v-show="activeTab == 'TipTag'" v-model="refreshing" @refresh="refresh"
+      <van-pull-refresh v-show="activeTab == 'BSC'" v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
                         loading-text="Loading"
                         pulling-text="Pull to refresh data"
