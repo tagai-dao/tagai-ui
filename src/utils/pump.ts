@@ -302,32 +302,6 @@ export const getReceivedAmountSellETHAfterFee = async (token: string | undefined
     return receive
 }
 
-export const calculateCapticalLocal = async (supply: number) => {
-    return supply * supply * 10000000000 / (11.43333333 * 1e18)
-}
-
-export const getTokenCap = async (communities: Community[]) => {
-    if (communities.length == 0) return [];
-    let calls = communities.map(com => ({
-        target: com.token,
-        call: [
-            'getBuyPrice(uint256)(uint256)',
-            '100000000000000000000'
-        ],
-        returns: [
-            [com.tick, (val: any) => BigInt(val)]
-        ]
-    }))
-
-    const res = await aggregate(calls, ChainConfig.multiConfig)
-    const prices = res.results.transformed
-    for(let com of communities) {
-        // @ts-ignore
-        com.marketCap = (prices[com.tick] * BigInt(TotalSupply)).toString() / 1e18
-    }
-    return communities
-}
-
 const getCreateTokenEventByHash = (tx: any) => {
     let contract = new ethers.Contract(PumpContract, abis.Pump)
     let event;
