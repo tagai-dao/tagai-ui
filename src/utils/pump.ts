@@ -136,6 +136,7 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
 
 export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
+    
     let result = await getTokenOnchainInfo(communities.map(com => com.token))
     
     for( let community of communities) {
@@ -147,7 +148,6 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.marketCap = (community.price ?? 0) * TotalSupply;
         community.pair = tokenInfo.pair;
         community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
-        console.log(community.distributionEnded, community.listedDayNumber, getDayNumber())
     }
     
     return communities;
@@ -194,22 +194,13 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
                 ]
             },
             {
-                target: token,
+                target: PumpContract,
                 call: [
-                    'totalClaimedSocialRewards()(uint256)'
+                    'totalClaimedSocialRewards(address)(uint256)',
+                    token
                 ],
                 returns: [
                     [token + '-totalClaimedSocialRewards', (val: any) => BigInt(val)]
-                ]
-            },
-            {
-                target: token,
-                call: [
-                    'getBuyPrice(uint256)(uint256)',
-                    '1000000000000000000'
-                ],
-                returns: [
-                    [token + '-price', (val: any) => (val).toString() / 1e18]
                 ]
             },
             {
@@ -241,6 +232,17 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
     for (let p of Object.entries(result)) {
         const token = p[0]
         let info: any = p[1]
+        calls.push({
+            target: PumpContract,
+            call: [
+                'getPrice(uint256,uint256)(uint256)',
+                info.bondingCurveSupply.toString(),
+                '1000000000000000000'
+            ],
+            returns: [
+                [token + '-price', (val: any) => (val).toString() / 1e18]
+            ]
+        })
         if (info.listed) {
             calls.push({
                 target: info.pair,
@@ -275,6 +277,7 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
                     result[key].price = res[key + '-1'] / res[key + '-2']
                 }
             }
+            result[key].price = res[key + '-price']
         }
     }
     
@@ -284,14 +287,18 @@ export const getTokenOnchainInfo = async (tokens: String[]) => {
 export const getBuyAmountWithETHAfterFee = async (token: string | undefined, amount: bigint) => {
     if (!token) return 0n
     const tc = await getContract('Token', token, true);
-    const receive = await tc.getBuyAmountByValue(amount * 9800n / 10000n);
+    const supply = await tc.bondingCurveSupply();
+    const pumpC = await getContract('Pump', PumpContract, true);
+    const receive = await pumpC.getBuyAmountByValue(supply, amount * 9800n / 10000n)
     return receive
 }
 
 export const getReceivedAmountSellETHAfterFee = async (token: string | undefined, amount: bigint) => {
     if (!token) return 0n
     const tc = await getContract('Token', token, true);
-    const receive = await tc.getSellPriceAfterFee(amount);
+    const pumpC = await getContract('Pump', PumpContract, true);
+    const supply = await tc.bondingCurveSupply();
+    const receive = await pumpC.getSellPriceAfterFee(supply, amount)
     return receive
 }
 

@@ -1045,11 +1045,6 @@ export const abis = {
             "internalType": "address",
             "name": "_ipshare",
             "type": "address"
-          },
-          {
-            "internalType": "address",
-            "name": "_feeReceiver",
-            "type": "address"
           }
         ],
         "stateMutability": "nonpayable",
@@ -1063,6 +1058,16 @@ export const abis = {
       {
         "inputs": [],
         "name": "CantSetSocialDistributionMoreThanTotalSupply",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "ClaimOrderExist",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "CostFeeFail",
         "type": "error"
       },
       {
@@ -1084,6 +1089,16 @@ export const abis = {
           }
         ],
         "name": "InvalidAccountNonce",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidClaimAmount",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidSignature",
         "type": "error"
       },
       {
@@ -1115,6 +1130,11 @@ export const abis = {
       },
       {
         "inputs": [],
+        "name": "ReentrancyGuardReentrantCall",
+        "type": "error"
+      },
+      {
+        "inputs": [],
         "name": "RefundFail",
         "type": "error"
       },
@@ -1125,8 +1145,43 @@ export const abis = {
       },
       {
         "inputs": [],
+        "name": "TokenNotCreated",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "TokenNotListed",
+        "type": "error"
+      },
+      {
+        "inputs": [],
         "name": "TooMuchFee",
         "type": "error"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "ClaimDistributedReward",
+        "type": "event"
       },
       {
         "anonymous": false,
@@ -1227,25 +1282,6 @@ export const abis = {
         "anonymous": false,
         "inputs": [
           {
-            "indexed": true,
-            "internalType": "uint256",
-            "name": "oldLockTime",
-            "type": "uint256"
-          },
-          {
-            "indexed": true,
-            "internalType": "uint256",
-            "name": "newLockTime",
-            "type": "uint256"
-          }
-        ],
-        "name": "LockTimeChanged",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
             "indexed": false,
             "internalType": "string",
             "name": "tick",
@@ -1303,6 +1339,37 @@ export const abis = {
           }
         ],
         "name": "SocialDistributionContractChanged",
+        "type": "event"
+      },
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "internalType": "uint256",
+            "name": "orderId",
+            "type": "uint256"
+          },
+          {
+            "indexed": true,
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "indexed": true,
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "UserClaimReward",
         "type": "event"
       },
       {
@@ -1374,13 +1441,61 @@ export const abis = {
         "inputs": [
           {
             "internalType": "uint256",
-            "name": "_lockTime",
+            "name": "from",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "to",
             "type": "uint256"
           }
         ],
-        "name": "adminChangeLockTime",
+        "name": "calculateReward",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "rewards",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          }
+        ],
+        "name": "claimPendingSocialRewards",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "name": "claimedOrder",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       },
       {
@@ -1454,6 +1569,54 @@ export const abis = {
         "type": "function"
       },
       {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "bondingCurveSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ethAmount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getBuyAmountByValue",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "supply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getBuyPriceAfterFee",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "inputs": [],
         "name": "getClaimFee",
         "outputs": [
@@ -1519,13 +1682,111 @@ export const abis = {
         "type": "function"
       },
       {
-        "inputs": [],
-        "name": "getLockTime",
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "supply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getPrice",
         "outputs": [
           {
             "internalType": "uint256",
             "name": "",
             "type": "uint256"
+          }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "supply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getSellPrice",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "supply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getSellPriceAfterFee",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getUniswapV2Factory",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getUniswapV2Router",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getWETH",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -1564,10 +1825,48 @@ export const abis = {
         "type": "function"
       },
       {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "name": "pendingClaimSocialRewards",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
         "inputs": [],
         "name": "renounceOwnership",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "name": "totalClaimedSocialRewards",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
         "type": "function"
       },
       {
@@ -1597,6 +1896,34 @@ export const abis = {
         "type": "function"
       },
       {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "orderId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "name": "userClaim",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
         "stateMutability": "payable",
         "type": "receive"
       }
@@ -1614,11 +1941,6 @@ export const abis = {
       },
       {
         "inputs": [],
-        "name": "CanntSellLockedToken",
-        "type": "error"
-      },
-      {
-        "inputs": [],
         "name": "ClaimOrderExist",
         "type": "error"
       },
@@ -1629,7 +1951,7 @@ export const abis = {
       },
       {
         "inputs": [],
-        "name": "CreateDexPoolFail",
+        "name": "DustIssue",
         "type": "error"
       },
       {
@@ -1655,11 +1977,6 @@ export const abis = {
       {
         "inputs": [],
         "name": "InvalidClaimAmount",
-        "type": "error"
-      },
-      {
-        "inputs": [],
-        "name": "InvalidClaimer",
         "type": "error"
       },
       {
@@ -1735,25 +2052,6 @@ export const abis = {
           }
         ],
         "name": "Approval",
-        "type": "event"
-      },
-      {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": true,
-            "internalType": "uint256",
-            "name": "timestamp",
-            "type": "uint256"
-          },
-          {
-            "indexed": true,
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "ClaimDistributedReward",
         "type": "event"
       },
       {
@@ -1844,31 +2142,6 @@ export const abis = {
         "type": "event"
       },
       {
-        "anonymous": false,
-        "inputs": [
-          {
-            "indexed": true,
-            "internalType": "uint256",
-            "name": "orderId",
-            "type": "uint256"
-          },
-          {
-            "indexed": true,
-            "internalType": "address",
-            "name": "user",
-            "type": "address"
-          },
-          {
-            "indexed": true,
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "UserClaimReward",
-        "type": "event"
-      },
-      {
         "inputs": [],
         "name": "DOMAIN_SEPARATOR",
         "outputs": [
@@ -1950,6 +2223,19 @@ export const abis = {
       },
       {
         "inputs": [],
+        "name": "bondingCurve",
+        "outputs": [
+          {
+            "internalType": "contract IBondingCurve",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
         "name": "bondingCurveSupply",
         "outputs": [
           {
@@ -1999,37 +2285,6 @@ export const abis = {
         "inputs": [
           {
             "internalType": "uint256",
-            "name": "from",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "to",
-            "type": "uint256"
-          }
-        ],
-        "name": "calculateReward",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "rewards",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "claimPendingSocialRewards",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "uint256",
             "name": "",
             "type": "uint256"
           }
@@ -2059,175 +2314,13 @@ export const abis = {
         "type": "function"
       },
       {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "ethAmount",
-            "type": "uint256"
-          }
-        ],
-        "name": "getBuyAmountByValue",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "getBuyPrice",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "getBuyPriceAfterFee",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
         "inputs": [],
-        "name": "getCurrentDistibutionEra",
+        "name": "getIPShare",
         "outputs": [
           {
-            "components": [
-              {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "startTime",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "stopTime",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct Token.Distribution",
-            "name": "era",
-            "type": "tuple"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "getCurrentRewardPerDay",
-        "outputs": [
-          {
-            "internalType": "uint256",
+            "internalType": "address",
             "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "getETHAmountToDex",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "supply",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "getPrice",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "pure",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "getSellPrice",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          }
-        ],
-        "name": "getSellPriceAfterFee",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -2264,19 +2357,6 @@ export const abis = {
             "internalType": "address",
             "name": "",
             "type": "address"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "lastClaimTime",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
           }
         ],
         "stateMutability": "view",
@@ -2329,12 +2409,12 @@ export const abis = {
       },
       {
         "inputs": [],
-        "name": "pendingClaimSocialRewards",
+        "name": "pair",
         "outputs": [
           {
-            "internalType": "uint256",
+            "internalType": "address",
             "name": "",
-            "type": "uint256"
+            "type": "address"
           }
         ],
         "stateMutability": "view",
@@ -2413,38 +2493,12 @@ export const abis = {
       },
       {
         "inputs": [],
-        "name": "startTime",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
         "name": "symbol",
         "outputs": [
           {
             "internalType": "string",
             "name": "",
             "type": "string"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "totalClaimedSocialRewards",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
           }
         ],
         "stateMutability": "view",
@@ -2514,66 +2568,6 @@ export const abis = {
           }
         ],
         "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "unlockTime",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "orderId",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "amount",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bytes",
-            "name": "signature",
-            "type": "bytes"
-          }
-        ],
-        "name": "userClaim",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          {
-            "internalType": "address",
-            "name": "",
-            "type": "address"
-          }
-        ],
-        "name": "userLockedInBondingCurve",
-        "outputs": [
-          {
-            "internalType": "uint256",
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "stateMutability": "view",
         "type": "function"
       },
       {

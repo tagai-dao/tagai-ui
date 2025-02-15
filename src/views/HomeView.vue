@@ -12,7 +12,6 @@ import { getTokenInfo } from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
-import ClankerList from "./clanker/ClankerList.vue";
 
 const listType = ref(ListType.Trending)
 const typePopoverVisible = ref(false)
@@ -210,8 +209,6 @@ const contentWidth = computed(() => {
           </div>
         </van-list>
       </van-pull-refresh>
-
-      <ClankerList v-show="activeTab == 'Clanker'" :listType/>
     </div>
   </div>
 </template>
