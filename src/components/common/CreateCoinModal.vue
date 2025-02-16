@@ -118,7 +118,7 @@ const testTick = async () => {
   showInvalidName.value = false;
   showTickUsed.value = false;
   showTagForbidden.value = false;
-  if (createForm.tick.toLocaleLowerCase() === 'tiptag') {
+  if (createForm.tick.toLowerCase() === 'tiptag' || createForm.tick.toLowerCase() === 'tagai') {
     showTagForbidden.value = true;
     return false;
   }
