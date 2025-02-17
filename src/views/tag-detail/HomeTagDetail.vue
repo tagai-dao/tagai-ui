@@ -409,33 +409,6 @@ onMounted(async () => {
                   </div>
                 </el-tooltip>
               </div>
-              <!-- <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold"
-              @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">
-                Trade
-              </button> -->
-              <!-- <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
-                <template #reference>
-                  <button class="bg-grey-normal px-3 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold">
-                    Post to Earn
-                  </button>
-                </template>
-                <template #default>
-                  <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
-                    <button @click="onTweetType(CurationType.TWEET)"
-                            :disabled="checkingAccount"
-                            class="whitespace-nowrap flex items-center space-x-3">
-                        Tweet on-chain
-                        <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                    </button>
-                    <button @click="onTweetType(CurationType.SPACE)"
-                            :disabled="checkingAccount"
-                            class="whitespace-nowrap flex items-center space-x-3">
-                            Tweet an onchain Space
-                        <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                    </button>
-                  </div>
-                </template>
-              </el-popover> -->
             </div>
             <div class="flex justify-center text-white space-x-8">
               <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">

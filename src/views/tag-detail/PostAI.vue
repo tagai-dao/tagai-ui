@@ -2,6 +2,7 @@
 import { getAgentTweets } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community'
 import type { Tweet } from '@/types'
+import { sleep } from '@/utils/helper'
 import { handleErrorTip } from '@/utils/notify'
 import { onMounted, ref } from 'vue'
 
@@ -39,6 +40,9 @@ const onLoad = async () => {
 }
 
 onMounted(async () => {
+  while(!comStore.currentSelectedCommunity?.tick) {
+    await sleep(0.2);
+  }
   await onRefresh()
 })
 </script>
