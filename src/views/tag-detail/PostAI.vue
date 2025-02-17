@@ -5,11 +5,17 @@ import type { Tweet } from '@/types'
 import { sleep } from '@/utils/helper'
 import { handleErrorTip } from '@/utils/notify'
 import { onMounted, ref } from 'vue'
+import TweetItem from "@/components/tweets/TweetItem.vue";
+import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
+import SpaceItem from "@/components/tweets/SpaceItem.vue";
+import { useCurationStore } from "@/stores/curation";
 
 const agentTweets = ref<Tweet[]>([])
 const comStore = useCommunityStore()
 const finished = ref(false)
 const refreshing = ref(false)
+const loading = ref(false)
+const curationStore = useCurationStore()
 
 const onRefresh = async () => {
   try {
@@ -17,7 +23,7 @@ const onRefresh = async () => {
     finished.value = false;
     refreshing.value = true;
     let list: any = await getAgentTweets(
-      comStore.currentSelectedCommunity!.tick
+        comStore.currentSelectedCommunity!.tick
     );
     console.log(2, list)
 
@@ -48,21 +54,46 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-white py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3
-                    w-full web:w-[340px] web:min-w-[340px]">
-<!--    <div class="flex gap-2 items-center">-->
-<!--      <img class="w-10 h-10 rounded-full" src="~@/assets/icons/icon-default-avatar.svg" alt="">-->
-<!--      <div class="text-h3 text-grey-normal">AI</div>-->
-<!--    </div>-->
-    <div v-if="agentTweets.length == 0" class="w-full flex my-8 justify-center items-center">
-      <img src="~@/assets/images/empty-data.svg" alt="">
-    </div>
-    <div v-else>
-      <div v-for="tweet in agentTweets" :key="tweet.tweetId">
-        <div class="text-h3 text-grey-normal">
-          {{ tweet.content }}
-        </div>
+  <van-pull-refresh v-if="agentTweets.length>0" class="h-full min-h-full"
+                    v-model="refreshing"
+                    @refresh="onRefresh"
+                    loading-text="Loading"
+                    pulling-text="Pull to refresh data"
+                    loosing-text="Release to refresh"
+  >
+    <van-list
+        :loading="loading"
+        :finished="finished"
+        :immediate-check="false"
+        finished-text="No more"
+        :offset="50"
+        @load="onLoad"
+    >
+      <div v-for="(tweet, index) of agentTweets" :key="tweet.tweetId" class="mb-2">
+        <SpaceItem
+            v-if="tweet.spaceId"
+            class="bg-white rounded-2xl"
+            :tweet="tweet"
+            @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
+        >
+        </SpaceItem>
+        <TweetItem
+            v-else
+            class="bg-white rounded-2xl"
+            :tweet="tweet"
+            @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
+        >
+          <!-- <template #tweet-trade v-if="tweet.commerceId">
+            <CommerceBtn :tweet="tweet"/>
+          </template> -->
+        </TweetItem>
       </div>
+    </van-list>
+  </van-pull-refresh>
+  <div v-else class="bg-white py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3
+                    w-full">
+    <div class="w-full flex my-8 justify-center items-center">
+      <img src="~@/assets/images/empty-data.svg" alt="">
     </div>
   </div>
 </template>

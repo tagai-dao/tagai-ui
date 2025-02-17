@@ -33,6 +33,7 @@ const tabOptions = [
   {label: 'Trades', key: 'trade'},
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
+  {label: 'AI', key: 'ai'},
 ]
 enum CurationType {
   TWEET,
@@ -325,7 +326,7 @@ onMounted(async () => {
         <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
           <button v-for="tab of tabOptions" :key="tab.key"
                   class="px-3 rounded-full h-8 text-h3"
-                  :class="tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f'"
+                  :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
                   @click="activeTab=tab.key">{{tab.label}}</button>
         </div>
         <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
@@ -334,6 +335,7 @@ onMounted(async () => {
         <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
         <TagCredit v-if="activeTab==='credit'"/>
         <TagToken v-if="activeTab==='token'"/>
+        <PostAI v-if="activeTab==='ai'"/>
       </div>
       <div class="web:w-[340px] web:min-w-[340px] flex flex-col gap-2">
         <div class="hidden web:flex flex-col gap-2">
@@ -368,9 +370,9 @@ onMounted(async () => {
             </div>
           </div>
           <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 ">
               <span class="text-sm font-semibold">CA</span>
-              <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px]">
+              <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px] flex-1 truncate">
                 {{ comStore.currentSelectedCommunity?.token }}
               </div>
               <button @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
@@ -441,7 +443,9 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <PostAI/>
+        <div class="hidden web:block">
+          <PostAI/>
+        </div>
       </div>
     </div>
   </div>
