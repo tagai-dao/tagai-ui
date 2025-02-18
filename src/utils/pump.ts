@@ -95,8 +95,7 @@ export const sellToken = async (token: string, amount: bigint, receiveEth: bigin
 
 export const claimReward = async (token: string, orderId: BigInt, amount: BigInt, signature: string) => {
     if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
-    console.log(3, token, orderId, amount, signature)
-    const tc = await getContract('Token', token)
+    const tc = await getContract('Pump')
     const tx = await tc.userClaim(token, orderId, amount, signature, {
         value: ClaimFee
     });
