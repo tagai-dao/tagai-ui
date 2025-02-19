@@ -33,6 +33,7 @@ const tabOptions = [
   {label: 'Trades', key: 'trade'},
   {label: 'Credit', key: 'credit'},
   {label: 'Token', key: 'token'},
+  {label: 'AI', key: 'ai'},
 ]
 enum CurationType {
   TWEET,
