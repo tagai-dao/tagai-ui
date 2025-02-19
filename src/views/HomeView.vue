@@ -113,7 +113,7 @@ function gotoChain(chain: string){
   } else if (chain === 'NULS') {
     window.open('https://nuls.tagai.fun', '__blank')
     return;
-  } 
+  }
   activeTab.value = 'Base'
 }
 
@@ -163,12 +163,13 @@ const contentWidth = computed(() => {
       </div>
     </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10">
-      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full">
-        <button v-for="tab of tabOptions" :key="tab"
-                class="px-3 rounded-full h-8 text-h3"
-                :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
-                @click="gotoChain(tab)">{{tab}}</button>
-      </div>
+      <el-select
+          v-model="activeTab"
+          class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
+          popper-class="c-select-popper rounded-xl"
+      >
+        <el-option v-for="tab of tabOptions" :key="tab" :value="tab" :label="tab" />
+      </el-select>
       <SearchBar class="hidden web:flex"/>
       <el-select
         v-model="listType"
