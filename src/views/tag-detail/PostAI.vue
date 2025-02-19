@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getAgentTweets } from '@/apis/api'
+// import { getAgentTweets } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community'
 import type { Tweet } from '@/types'
 import { handleErrorTip } from '@/utils/notify'
@@ -50,7 +50,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <van-pull-refresh v-if="agentTweets.length>0" class="h-full min-h-full"
+  <van-pull-refresh v-if="agentTweets.length>0" class="h-full min-h-full overflow-auto no-scroll-bar"
                     v-model="refreshing"
                     @refresh="onRefresh"
                     loading-text="Loading"
