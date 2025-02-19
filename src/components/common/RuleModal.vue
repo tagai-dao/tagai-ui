@@ -25,7 +25,7 @@
         3：Once 20 BNB is raised, the liquidity pool (20 BNB + 20% tokens) will be added to PancakeSwap, and LP tokens will be burned (liquidity locked).
       </li>
       <li>
-        4：Coin Deployer and Blink creators will receive 1% of transaction fees from trades.
+        4：Coin Deployer or Blinks creators will receive 1% of transaction fees from trades.
       </li>
     </ul>
   </div>
