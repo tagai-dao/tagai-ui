@@ -25,7 +25,7 @@
         3：Once 10 ETH is raised, the liquidity pool (10 ETH + 15% tokens) will be added to Uniswap, and LP tokens will be burned (liquidity locked).
       </li>
       <li>
-        4：Coin Deployer and Blink creators will receive 1% of transaction fees from trades.
+        4：Coin Deployer or Blinks creators will receive 1% of transaction fees from trades.
       </li>
     </ul>
   </div>
