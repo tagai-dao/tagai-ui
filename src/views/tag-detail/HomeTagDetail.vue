@@ -322,8 +322,8 @@ onMounted(async () => {
     <BuyAndSellView />
     <div class="h-full sticky top-[0px]" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
       <div class="h-full flex gap-2">
-        <div class="h-full w-full flex flex-col gap-2">
-          <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
+        <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
+          <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
                     class="px-3 rounded-full h-8 text-h3"
                     :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
@@ -336,7 +336,7 @@ onMounted(async () => {
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
             <TagCredit v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
-            <PostAI v-if="activeTab==='ai'"/>
+            <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
           </div>
         </div>
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
