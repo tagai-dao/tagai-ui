@@ -9,12 +9,8 @@
 <!--      <img class="w-10 h-10 rounded-full" src="~@/assets/icons/icon-default-avatar.svg" alt="">-->
 <!--      <div class="text-h3 text-grey-normal">AI</div>-->
 <!--    </div>-->
-    <div class="w-full flex my-8 justify-center items-center">
+    <div class="w-full flex my-8 justify-center">
       <img src="~@/assets/images/empty-data.svg" alt="">
     </div>
   </div>
 </template>
-
-<style scoped>
-
-</style>
