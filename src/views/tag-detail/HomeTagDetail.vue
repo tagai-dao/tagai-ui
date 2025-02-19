@@ -178,8 +178,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative"
-       ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative">
     <div class="grid grid-cols-1 web:hidden gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
@@ -321,130 +320,134 @@ onMounted(async () => {
       </div>
     </div>
     <BuyAndSellView />
-    <div class="flex gap-2">
-      <div class="w-full flex flex-col gap-2">
-        <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
-          <button v-for="tab of tabOptions" :key="tab.key"
-                  class="px-3 rounded-full h-8 text-h3"
-                  :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
-                  @click="activeTab=tab.key">{{tab.label}}</button>
+    <div class="h-full sticky top-[0px]" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+      <div class="h-full flex gap-2">
+        <div class="h-full w-full flex flex-col gap-2">
+          <div class="flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
+            <button v-for="tab of tabOptions" :key="tab.key"
+                    class="px-3 rounded-full h-8 text-h3"
+                    :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
+                    @click="activeTab=tab.key">{{tab.label}}</button>
+          </div>
+          <div class="flex-1 overflow-auto no-scroll-bar">
+            <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
+            <TagContent v-if="activeTab==='content'"/>
+            <TagProposal v-if="activeTab==='proposal'"/>
+            <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
+            <TagCredit v-if="activeTab==='credit'"/>
+            <TagToken v-if="activeTab==='token'"/>
+            <PostAI v-if="activeTab==='ai'"/>
+          </div>
         </div>
-        <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
-        <TagContent v-if="activeTab==='content'"/>
-        <TagProposal v-if="activeTab==='proposal'"/>
-        <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
-        <TagCredit v-if="activeTab==='credit'"/>
-        <TagToken v-if="activeTab==='token'"/>
-        <PostAI v-if="activeTab==='ai'"/>
-      </div>
-      <div class="web:w-[340px] web:min-w-[340px] flex flex-col gap-2">
-        <div class="hidden web:flex flex-col gap-2">
-          <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
-            <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-              <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
-              <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
-              <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
+        <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
+          <div class="flex flex-col gap-2">
+            <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
+              <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
+                <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
+                <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+                <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
-            </div>
-            <div class="flex-1 py-1">
-              <div class="flex flex-wrap justify-between gap-x-4 items-center">
-                <div class="flex items-center">
-                  <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
-                  <IconLinks :community="comStore.currentSelectedCommunity"/>
+              </div>
+              <div class="flex-1 py-1">
+                <div class="flex flex-wrap justify-between gap-x-4 items-center">
+                  <div class="flex items-center">
+                    <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
+                    <IconLinks :community="comStore.currentSelectedCommunity"/>
+                  </div>
+                  <div class="text-base flex gap-1">
+                    <span class="font-semibold text-grey-64">market cap</span>
+                    <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
+                  </div>
                 </div>
-                <div class="text-base flex gap-1">
-                  <span class="font-semibold text-grey-64">market cap</span>
-                  <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
+                <div class="flex justify-between items-end gap-3 mt-1">
+                  <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
+                    {{ comStore.currentSelectedCommunity?.description }}
+                  </div>
+                  <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
+                          @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
+                          :disabled="!comStore.currentSelectedCommunity">
+                    <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
+                  </button>
                 </div>
               </div>
-              <div class="flex justify-between items-end gap-3 mt-1">
-                <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
-                  {{ comStore.currentSelectedCommunity?.description }}
+            </div>
+            <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
+              <div class="flex items-center gap-2 ">
+                <span class="text-sm font-semibold">CA</span>
+                <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px] flex-1 truncate">
+                  {{ comStore.currentSelectedCommunity?.token }}
                 </div>
-                <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
-                        @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
-                        :disabled="!comStore.currentSelectedCommunity">
-                  <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
+                <button @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
+                        :disabled="!(comStore.currentSelectedCommunity?.token)">
+                  <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
                 </button>
               </div>
-            </div>
-          </div>
-          <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
-            <div class="flex items-center gap-2 ">
-              <span class="text-sm font-semibold">CA</span>
-              <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px] flex-1 truncate">
-                {{ comStore.currentSelectedCommunity?.token }}
-              </div>
-              <button @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
-                      :disabled="!(comStore.currentSelectedCommunity?.token)">
-                <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
-              </button>
-            </div>
-            <div class="text-base font-medium flex items-center gap-1">
-              <span>Bonding Curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
-              <el-popover popper-class="c-popper">
-                <template #reference>
-                  <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
-                </template>
-                <template #default>
-                  <div class="bg-white rounded-xl p-2 shadow-popper-tip">
-                    {{ $t('community.distributionTip') }}
-                  </div>
-                </template>
-              </el-popover>
-            </div>
-            <div class="flex items-center gap-3">
-              <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
-                      bg-white gap-[2px]">
-                <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
-                            placement="top" popper-class="c-arrow-popper">
-                  <template #content>
-                    <div class="flex gap-1">
-                      <span class="text-sm">{{data.desc}}</span>
-                      <span class="font-semibold text-base">{{data.percent}}</span>
+              <div class="text-base font-medium flex items-center gap-1">
+                <span>Bonding Curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
+                <el-popover popper-class="c-popper">
+                  <template #reference>
+                    <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
+                  </template>
+                  <template #default>
+                    <div class="bg-white rounded-xl p-2 shadow-popper-tip">
+                      {{ $t('community.distributionTip') }}
                     </div>
                   </template>
-                  <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
-                    <div class="h-full"
-                         :style="{background: data.background, width:`${data.value.toFixed(2)}%`}" >
+                </el-popover>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
+                      bg-white gap-[2px]">
+                  <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
+                              placement="top" popper-class="c-arrow-popper">
+                    <template #content>
+                      <div class="flex gap-1">
+                        <span class="text-sm">{{data.desc}}</span>
+                        <span class="font-semibold text-base">{{data.percent}}</span>
+                      </div>
+                    </template>
+                    <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
+                      <div class="h-full"
+                           :style="{background: data.background, width:`${data.value.toFixed(2)}%`}" >
+                      </div>
                     </div>
-                  </div>
-                </el-tooltip>
+                  </el-tooltip>
+                </div>
+              </div>
+              <div class="flex justify-center text-white space-x-8">
+                <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+                  Blinks
+                  <i-ep-loading v-show="checkingTweet" class="animate-spin" />
+                </button>
+
+                <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
+                  <template #reference>
+                    <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button>
+                  </template>
+                  <template #default>
+                    <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
+                      <button @click="onTweetType(CurationType.TWEET)"
+                              :disabled="checkingAccount"
+                              class="whitespace-nowrap flex items-center space-x-3">
+                        Tweet on-chain
+                        <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                      </button>
+                      <button @click="onTweetType(CurationType.SPACE)"
+                              :disabled="checkingAccount"
+                              class="whitespace-nowrap flex items-center space-x-3">
+                        Tweet an onchain Space
+                        <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                      </button>
+                    </div>
+                  </template>
+                </el-popover>
+                <!-- <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button> -->
               </div>
             </div>
-            <div class="flex justify-center text-white space-x-8">
-              <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
-                Blinks
-                <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-              </button>
-
-              <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
-                <template #reference>
-                  <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button>
-                </template>
-                <template #default>
-                  <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
-                    <button @click="onTweetType(CurationType.TWEET)"
-                            :disabled="checkingAccount"
-                            class="whitespace-nowrap flex items-center space-x-3">
-                      Tweet on-chain
-                      <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                    </button>
-                    <button @click="onTweetType(CurationType.SPACE)"
-                            :disabled="checkingAccount"
-                            class="whitespace-nowrap flex items-center space-x-3">
-                      Tweet an onchain Space
-                      <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                    </button>
-                  </div>
-                </template>
-              </el-popover>
-              <!-- <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button> -->
-            </div>
           </div>
-        </div>
-        <div class="hidden web:block">
-          <PostAI/>
+          <div class="h-full sticky top-[0px]">
+            <PostAI/>
+          </div>
         </div>
       </div>
     </div>
