@@ -6,7 +6,7 @@ export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
 // base main net
 export const ChainConfig = {
     name: "BSC",
-    rpc: 'https://bsc-dataseed.binance.org/',
+    rpc: 'https://rpc.48.club',
     chainId: 56,
     symbol: 'BNB',
     browser: 'https://bscscan.com/',
