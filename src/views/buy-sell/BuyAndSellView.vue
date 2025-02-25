@@ -44,7 +44,7 @@ const account = computed(() => {
   return accStore.getAccountInfo
 })
 
-watch(() => accStore.ethConnectAddress, (val) => {
+watch(() => accStore.solConnectAddress, (val) => {
   updateUserTokenInfo()
 })
 
@@ -374,7 +374,7 @@ onMounted(async () => {
           @click="confirm"
           :disabled="trading"
         >
-          <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
+          <span>{{ (accStore.solConnectAddress ? "Confirm" : 'Connect') }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">

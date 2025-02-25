@@ -23,6 +23,7 @@ export const useAccountStore = defineStore('account', {
             this.ethWalletType = 'none' // metamask, okx, none
             this.ethConnectState = EthWalletState.Disconnect
             this.ethConnectAddress = '',
+            this.solConnectAddress = '',
             this.unreadMessageCount = 0,
             this.socialMessages = []
         }

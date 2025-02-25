@@ -130,6 +130,10 @@ export const useTweet = () => {
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_CURATE_SELF
         }
+        if (!account.solAddr) {
+          useModalStore().setModalVisible(true, GlobalModalType.BondSol)
+          return false;
+        }
         if (!account.steemId) {
             useModalStore().setModalVisible(true, GlobalModalType.Register)
             return false;
@@ -142,6 +146,10 @@ export const useTweet = () => {
         if (vp.value < costVp) {
           throw errCode.INSUFFICIENT_VP;
         }
+        if (!account.solAddr) {
+            useModalStore().setModalVisible(true, GlobalModalType.BondSol)
+            return false;
+          }
         if (!account.steemId) {
             useModalStore().setModalVisible(true, GlobalModalType.Register)
             return false;

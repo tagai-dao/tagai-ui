@@ -53,7 +53,7 @@ export const BondEthMessage = JSON.stringify(
 
 export const BondSolMessage = JSON.stringify(
   {
-    project: "xverse",
+    project: "tagai",
     method: "bond-sol",
   },
   null,

@@ -9,7 +9,7 @@
     <!-- quote-->
     <TweetBtnQuote :tweet/>
     <!-- curate -->
-    <!-- <TweetBtnCurate :tweet/> -->
+    <TweetBtnCurate :tweet/>
   </div>
 </template>
 
@@ -19,7 +19,7 @@ import TweetBtnLike from "@/components/tweets/TweetBtnLike.vue";
 import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
 import TweetBtnReply from "@/components/tweets/TweetBtnReply.vue";
 import TweetBtnQuote from "@/components/tweets/TweetBtnQuote.vue";
-import TweetBtnCurate from "./TweetBtnCurate.vue";
+import TweetBtnCurate from "@/components/tweets/TweetBtnCurate.vue";
 
 const props = defineProps<{
     tweet: Tweet;

@@ -20,10 +20,14 @@ const { op, vp } = useAccount();
 const curateAmount = ref(3);
 
 async function preCurate() {
-  if (!(await preCheckCuration(OperateType.CURATE, props.tweet))) {
-    return;
+  try {
+    if (!(await preCheckCuration(OperateType.CURATE, props.tweet))) {
+      return;
+    }
+    curateVisible.value = true
+  } catch (e) {
+    handleErrorTip(e)
   }
-  curateVisible.value = true
 }
 
 async function confirmCurate() {
@@ -63,6 +67,7 @@ async function confirmCurate() {
   <el-dialog v-model="curateVisible"
            modal-class="overlay-white"
            class="max-w-[500px] rounded-[20px]"
+           @click.stop
            width="90%" :show-close="false" align-center destroy-on-close>
       <div class="flex flex-col items-center p-4">
         <h2 class="text-2xl font-bold mb-4">Curate</h2>

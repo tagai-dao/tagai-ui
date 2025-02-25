@@ -74,11 +74,10 @@ const onRefresh = async () => {
 function updateReward() {
   if (rewardType.value === 'Claimable') {
     getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
-      console.log(35, list)
       if (list && list.length > 0) {
         getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
           for (let t of list) {
-            t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
+            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
           }
           claimableRewards.value = list
         })
@@ -91,7 +90,7 @@ function updateReward() {
       if (list && list.length > 0) {
         getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
           for (let t of list) {
-            t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
+            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
           }
           unclaimableRewards.value = list
         })
@@ -116,7 +115,7 @@ onMounted(() => {
       loading-text="Loading" pulling-text="Pull to refresh data" loosing-text="Release to refresh">
       <van-list :loading="loading" :finished="finished" :immediate-check="false" finished-text="No more"
         :scroller="scroller" :offset="50" @load="onLoad">
-        <!-- <div class="flex items-center gap-1 px-3">
+        <div class="flex items-center gap-1 px-3">
           <span class="font-normal text-sm">Curation & Space Rewards</span>
           <el-popover popper-class="c-popper">
             <template #reference>
@@ -126,8 +125,8 @@ onMounted(() => {
               <div class="bg-white rounded-xl p-2 shadow-popper-tip">{{ $t('curation.curationTip') }}</div>
             </template>
           </el-popover>
-        </div> -->
-        <!-- <div class="my-3 gap-2 bg-white rounded-xl py-3 mx-3">
+        </div>
+        <div class="my-3 gap-2 bg-white rounded-xl py-3 mx-3">
           <div class="flex justify-start mb-2">
             <button v-for="tab of tabOptions" :key="tab" class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
               :class="tab === rewardType ? 'text-gradient bg-gradient-primary' : 'text-grey-normal'"
@@ -155,7 +154,7 @@ onMounted(() => {
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
           </div>
-        </div> -->
+        </div>
         <div class="px-3">
           <div v-for="tweet of accStore.tweetsList" :key="tweet.tweetId">
             <div class="flex items-center gap-2 py-3">
