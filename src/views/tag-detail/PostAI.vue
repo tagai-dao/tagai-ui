@@ -17,31 +17,31 @@ const loading = ref(false)
 const curationStore = useCurationStore()
 
 const onRefresh = async () => {
-  try {
-    console.log(1)
-    finished.value = false;
-    refreshing.value = true;
-    let list: any = await getAgentTweets(
-        comStore.currentSelectedCommunity!.tick
-    );
-    console.log(2, list)
+  // try {
+  //   console.log(1)
+  //   finished.value = false;
+  //   refreshing.value = true;
+  //   let list: any = await getAgentTweets(
+  //       comStore.currentSelectedCommunity!.tick
+  //   );
+  //   console.log(2, list)
 
-    if (list.length < 30) {
-      finished.value = true
-    }
-    agentTweets.value = list
-  } catch (e) {
-    console.log(3, e)
-    handleErrorTip(e)
-  } finally {
-    refreshing.value = false;
-  }
+  //   if (list.length < 30) {
+  //     finished.value = true
+  //   }
+  //   agentTweets.value = list
+  // } catch (e) {
+  //   console.log(3, e)
+  //   handleErrorTip(e)
+  // } finally {
+  //   refreshing.value = false;
+  // }
 }
 
 const onLoad = async () => {
   // @ts-ignore
-  const list = await getAgentTweets(comStore.currentSelectedCommunity!.tick, Math.floor((agentTweets.value.length - 1) / 30) + 1)
-  agentTweets.value = agentTweets.value.concat(list as Tweet[])
+  // const list = await getAgentTweets(comStore.currentSelectedCommunity!.tick, Math.floor((agentTweets.value.length - 1) / 30) + 1)
+  // agentTweets.value = agentTweets.value.concat(list as Tweet[])
 }
 
 onMounted(async () => {
