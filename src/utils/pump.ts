@@ -53,7 +53,12 @@ export const getTokenInfo = async (communities: Community[]) => {
             price: result[community.token]?.price ?? 0,
             marketCap: result[community.token]?.price * 1000000000
         }
-    }).filter(community => community.name != 'XCountry');
+    }).filter(community => community.name != 'XCountry').map(community => {
+        if (community.token === '9aVCwNY2gYWCBCq9soBLcVb69pU2RhopmM3nrWsyWWHZ') {
+            community.token = '6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN'
+        }
+        return community;
+    });
 }
 
 export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
