@@ -25,7 +25,7 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['Base', 'BSC', 'NULS', 'ENULS']
+const tabOptions = ['Base', 'Solana', 'BSC', 'NULS', 'ENULS']
 const activeTab = ref('Base')
 
 watch(listType, (val) => {
@@ -116,6 +116,9 @@ function gotoChain(chain: string){
     return;
   } else if (chain === 'NULS') {
     window.open('https://nuls.tagai.fun', '__blank')
+    return;
+  } else if (chain === 'Solana') {
+    window.open('https://sol.tagai.fun', '__blank')
     return;
   }
   activeTab.value = 'Base'
