@@ -31,7 +31,7 @@ const { vp, op } = useAccount()
           <span class="text-h5 text-grey-normal">Tag</span>
         </template>
       </router-link>
-      <CreateBtn/>
+      <!-- <CreateBtn/> -->
       <ProfileBtn class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
       </ProfileBtn>
     </div>

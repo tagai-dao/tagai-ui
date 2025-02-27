@@ -30,7 +30,7 @@ export const sellToken = async (token: string, amount: bigint, receiveEth: bigin
 }
 
 export const claimReward = async (token: string, orderId: BigInt, amount: BigInt, signature: string) => {
-
+    return ''
 }
 
 export const calculateInitEth = (amount: bigint) => {

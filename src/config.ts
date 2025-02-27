@@ -1,7 +1,7 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-// export const BACKEND_API_URL = "https://api.tagai.fun";
-export const BACKEND_API_URL = "http://localhost:3000";
+export const BACKEND_API_URL = "https://sol-api.tagai.fun";
+// export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
@@ -35,7 +35,7 @@ export const MainToken = {
 // also create coin or create social account will cost 0.01 SOL
 export const FeeAddress = "3at3ThmWyf1rt9StSK4kjFr1PMjnBToEidPqXVqiqee1";
 export const CreateFee = "10000000";
-export const ClaimFee = "100000000000000";
+export const ClaimFee = "10000000";
 
 export const TotalSupply = 1000000000;
 export const SocialSupply = 150000000;

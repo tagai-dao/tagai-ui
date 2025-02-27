@@ -24,9 +24,15 @@ const finished = ref(false)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
+const tabOptions = ["Solana", "Base", 'BSC', 'NULS', 'ENULS']
+const activeTab = ref('Solana')
 
 watch(listType, (val) => {
   refresh()
+})
+
+watch(activeTab, (val) => {
+  gotoChain(val)
 })
 
 async function refresh() {
@@ -100,6 +106,23 @@ async function getSpaces() {
   }
 }
 
+function gotoChain(chain: string) {
+  if (chain === 'ENULS') {
+    window.open('https://enuls.tagai.fun', '__blank')
+    return;
+  } else if (chain === 'BSC') {
+    window.open('https://tagai.fun', '__blank')
+    return;
+  } else if (chain === 'NULS') {
+    window.open('https://nuls.tagai.fun', '__blank')
+    return;
+  } else if (chain === 'Base'){
+    window.open('https://base.tagai.fun', '__blank')
+    return;
+  }
+  activeTab.value = 'Solana'
+}
+
 function gotoDetail(com: Community) {
   comStore.currentSelectedCommunity = com
   router.push(`/tag-detail/${com.tick}`)
@@ -146,9 +169,13 @@ const contentWidth = computed(() => {
       </div>
     </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10">
-      <div class="flex justify-between items-center gap-2 bg-white px-2 rounded-full web:hidden">
-
-      </div>
+      <el-select
+          v-model="activeTab"
+          class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
+          popper-class="c-select-popper rounded-xl"
+      >
+        <el-option v-for="tab of tabOptions" :key="tab" :value="tab" :label="tab" />
+      </el-select>
       <SearchBar class="hidden web:flex"/>
       <el-select
         v-model="listType"

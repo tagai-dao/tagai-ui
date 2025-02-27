@@ -1,19 +1,34 @@
 <script setup lang="ts">
 import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail } from "@/utils/wallets";
-import { computed, ref } from "vue";
-import { useWallet } from "solana-wallets-vue";
+import { computed, ref, watch } from "vue";
+import { useWallet, WalletMultiButton } from "solana-wallets-vue";
 import type { WalletName } from "@solana/wallet-adapter-base";
+import { EthWalletState, useAccountStore } from "@/stores/web3";
 
 const modalStore = useModalStore();
 const loading = ref(false);
 const providers = computed(() => {
   return getProviders() ?? [];
 });
+const accStore = useAccountStore();
 
-const { wallets, connecting, select } = useWallet();
+const { wallets, connecting, select, readyState, publicKey } = useWallet();
 
 const emits = defineEmits(['chosedWallet'])
+
+watch(readyState, (val) => {
+  console.log('readyState', val)  
+})
+
+watch(publicKey, (val) => {
+  console.log('publicKey', val)
+  if (val) {
+    accStore.solConnectAddress = val.toBase58()
+    accStore.ethConnectState = EthWalletState.Connected
+    emits('chosedWallet', val.toBase58())
+  }
+})
 
 </script>
 

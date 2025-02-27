@@ -6,48 +6,74 @@ import { GlobalModalType, type CurationReward } from '@/types';
 import { formatAmount, formatPrice, sleep } from '@/utils/helper';
 import { handleErrorTip, notify } from '@/utils/notify';
 import { getClaimSignature, setOrderClaimed } from '@/apis/api'
-import { claimReward } from '@/utils/pump'
-import { ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import emitter from '@/utils/emitter';
-import { ethers } from 'ethers';
 import { ClaimFee } from '@/config';
+import { useWallet, useAnchorWallet } from 'solana-wallets-vue';
+import { Connection, Transaction } from '@solana/web3.js';
+import { web3 } from '@coral-xyz/anchor';
+import errCode from '@/errCode';
 
 const props = defineProps<{reward: CurationReward, canClaim: Boolean}>()
 const claiming = ref(false)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
-
+const { publicKey, readyState, connecting, connected, wallet, sendTransaction, signTransaction } = useWallet()
+const anchorWallet = useAnchorWallet()
 const { accountMismatch, updateBalance } = useAccount();
 
+watch(publicKey, (val) => {
+  console.log('connected', val)
+})
+
 async function claim() {
-  if (accStore.ethConnectState != EthWalletState.Connected) {
+  if (!connected.value) {
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
+  if (publicKey.value?.toBase58() != accStore.getAccountInfo?.solAddr) {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
   // check eth balance
   // @ts-ignore
-  if (accStore.ethBalance < (ClaimFee / 1e18)) {
-    notify({message: 'Insufficient ETH balance'})
+  if (accStore.solBalance < (ClaimFee / 1e9)) {
+    notify({message: 'Insufficient Solana balance'})
     return
   }
   try{
     claiming.value = true
     const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
     if (res) {
-      const {signature, orderId, amount} = res;
-      const hash = await claimReward(props.reward.token, BigInt(orderId), ethers.parseEther(amount.toString()), signature);
-      setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash).catch(console.error);
+      let {signature, orderId, amount} = res;
+      const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL!, "confirmed");
+      let tx: any = Transaction.from(Buffer.from(signature, 'base64'));
+      
+      // tx = await signTransaction.value!(tx);
+      // console.log('tx3', tx)
+      tx = await sendTransaction(tx, connection, {
+        // skipPreflight: true,
+      });
+      setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, tx).catch(console.error);
       await sleep(1)
       emitter.emit('claimedReward')
     }
   } catch (e) {
     console.log(53, e)
-    handleErrorTip(e)
+    if (e === errCode.NO_REWARD_TO_CLAIM) {
+      emitter.emit('claimedReward')
+    } else {
+      handleErrorTip(e)
+    }
   } finally {
     claiming.value = false
     updateBalance()
   }
 }
+
+onMounted(() => {
+  console.log('readyState', readyState.value, publicKey.value?.toBase58(), connected.value)
+})
 </script>
 
 <template>
@@ -65,7 +91,7 @@ async function claim() {
       {{ canClaim ? 'Claim' : 'Pending settled' }}
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>
-    <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected"
+    <div v-if="accountMismatch && connected"
          class="text-red-e6 w-full text-sm break-words">
       {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
     </div>
