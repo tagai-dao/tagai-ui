@@ -32,6 +32,10 @@ watch(listType, (val) => {
   refresh()
 })
 
+watch(activeTab, (val) => {
+  gotoChain(val)
+})
+
 async function refresh() {
   try{
     finished.value = false
