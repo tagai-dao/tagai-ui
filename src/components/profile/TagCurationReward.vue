@@ -46,7 +46,7 @@ async function claim() {
     const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
     if (res) {
       let {signature, orderId, amount} = res;
-      const connection = new Connection(import.meta.env.VITE_SOLANA_RPC_URL!, "confirmed");
+      const connection = new Connection('https://api.devnet.solana.com', "confirmed");
       let tx: any = Transaction.from(Buffer.from(signature, 'base64'));
       
       // tx = await signTransaction.value!(tx);
