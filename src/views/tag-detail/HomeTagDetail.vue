@@ -172,7 +172,7 @@ onMounted(async () => {
 <template>
   <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative" ref="pageScrollRef"
     @scroll="pageScroll(pageScrollRef)">
-    <div class="grid grid-cols-1 web:hidden gap-3">
+    <div class="grid grid-cols-1 gap-3">
       <div
         class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div
@@ -215,6 +215,35 @@ onMounted(async () => {
                 <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
               </button>
             </div>
+            <div class="flex justify-center text-white space-x-8 mt-2">
+<!--              <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">-->
+<!--                Blinks-->
+<!--                <i-ep-loading v-show="checkingTweet" class="animate-spin" />-->
+<!--              </button>-->
+
+              <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
+                <template #reference>
+                  <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button>
+                </template>
+                <template #default>
+                  <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
+                    <button @click="onTweetType(CurationType.TWEET)"
+                            :disabled="checkingAccount"
+                            class="whitespace-nowrap flex items-center space-x-3">
+                      Tweet on-chain
+                      <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                    </button>
+                    <button @click="onTweetType(CurationType.SPACE)"
+                            :disabled="checkingAccount"
+                            class="whitespace-nowrap flex items-center space-x-3">
+                      Tweet an onchain Space
+                      <i-ep-loading v-show="checkingAccount" class="animate-spin" />
+                    </button>
+                  </div>
+                </template>
+              </el-popover>
+              <!-- <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button> -->
+            </div>
           </div>
         </div>
       </div>
@@ -222,7 +251,7 @@ onMounted(async () => {
     <div class="h-full sticky top-[0px]" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
       <div class="h-full flex gap-2">
         <div class="h-full w-full flex flex-col gap-2">
-          <div id="dexscreener-embed" class="w-full h-full">
+          <div id="dexscreener-embed" class="w-full h-full rounded-xl overflow-hidden">
             <iframe
                 :src="`https://dexscreener.com/solana/${comStore.currentSelectedCommunity?.token}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`">
             </iframe>
@@ -231,7 +260,7 @@ onMounted(async () => {
             <TagContent v-if="activeTab === 'content'" />
           </div>
         </div>
-        <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
+        <div class="web:w-[340px] web:min-w-[340px] hidden flex-col gap-2 h-full overflow-auto no-scroll-bar">
           <div class="flex flex-col gap-2">
             <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
               <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
@@ -277,9 +306,9 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          <div class="h-full sticky top-[0px]">
-            <PostAI/>
-          </div>
+<!--          <div class="h-full sticky top-[0px]">-->
+<!--            <PostAI/>-->
+<!--          </div>-->
         </div>
       </div>
     </div>
