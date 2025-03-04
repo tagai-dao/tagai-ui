@@ -203,6 +203,7 @@ async function confirm() {
     const token = comStore.currentSelectedCommunity
     if (!token) return;
     if (tradeType.value === 'buy') {
+      return;
       if (!payEth.value) return
 
       const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
