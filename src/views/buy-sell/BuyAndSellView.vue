@@ -163,6 +163,7 @@ async function confirm() {
     return;
   }
   if (tradeType.value === 'buy') {
+    return;
     if (!payEth.value) {
       showFillInfo.value = true
       return
