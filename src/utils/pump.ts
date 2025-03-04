@@ -165,6 +165,9 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         community.price = tokenInfo.price;
         community.marketCap = (community.price ?? 0) * TotalSupply;
+        if (community.tick == 'TTAI'){
+            console.log(42333, community.price, community.marketCap)
+        }
         community.pair = tokenInfo.pair;
         const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
@@ -303,11 +306,12 @@ export const getTokenOnchainInfo = async (tokens: String[], versions: Record<str
                 }else {
                     result[key].price = res[key + '-1'] / res[key + '-2']
                 }
+                console.log(42, key, result[key].price)
+            }else{
+                result[key].price = res[key + '-price']
             }
-            result[key].price = res[key + '-price']
         }
     }
-    
     return result
 }
 
