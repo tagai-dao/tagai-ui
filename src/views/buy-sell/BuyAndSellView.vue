@@ -95,6 +95,10 @@ watch(sellAmount, (val) => {
   updateSellAmount(val)
 })
 
+const invalidToken = computed(() => {
+  return comStore.currentSelectedCommunity?.version === 1 && comStore.currentSelectedCommunity?.tick !== 'TTAI' && !comStore.currentSelectedCommunity?.listed
+})
+
 const updateBuyAmount = debounce(async (val: any) => {
   if (!val) return;
   showFillInfo.value = false
@@ -105,7 +109,7 @@ const updateBuyAmount = debounce(async (val: any) => {
     const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount)
     receiveAmount.value = receive
   }else {
-   const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
+   const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
    receiveAmount.value = receive
   }
  } catch (error) {
@@ -123,7 +127,7 @@ const updateSellAmount = debounce(async (val: any) => {
       const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
       receiveEth.value = receive
     }else {
-      const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
+      const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
       receiveEth.value = receive
     }
   } catch (error) {
@@ -203,10 +207,9 @@ async function confirm() {
     const token = comStore.currentSelectedCommunity
     if (!token) return;
     if (tradeType.value === 'buy') {
-      return;
       if (!payEth.value) return
 
-      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, token!.version ?? 2, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -434,11 +437,14 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading"
+          :disabled="trading || (invalidToken && tradeType === 'buy')"
         >
           <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
+        <div v-if="invalidToken" class="text-sm text-red-e6 text-center">
+          This token is created by the old version which has an abnormality and has been closed for buying. Please sell as soon as possible 
+        </div>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
           Please complete the amount
         </div>

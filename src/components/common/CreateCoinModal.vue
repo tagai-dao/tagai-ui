@@ -18,6 +18,7 @@ import emitter from '@/utils/emitter'
 import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import { useTools } from "@/composables/useTools";
+import debounce from "lodash.debounce";
 
 const modalStore = useModalStore();
 
@@ -61,7 +62,7 @@ watch(() => completedImgUrl.value, (value) => {
 const showingInitAmount = ref<number|undefined>()
 const showingInitEth = ref<string|undefined>('$0')
 
-watch(() => showingInitAmount.value, (val) => {
+watch(() => showingInitAmount.value, debounce(async (val: number) => {
   if (val && val > 0) {
     if (val > BondingCurveSupply) {
       showMaxAmount.value = true
@@ -71,13 +72,13 @@ watch(() => showingInitAmount.value, (val) => {
     }
     showMaxAmount.value = false
     createForm.initAmount = ethers.parseEther(val.toString())
-    createForm.initEth = calculateInitEth(createForm.initAmount)
+    createForm.initEth = await calculateInitEth(createForm.initAmount)
     showingInitEth.value = formatPrice((createForm.initEth as any).toString() / 1e18)
   }else {
     createForm.initAmount = 0n
     createForm.initEth = 0n
   }
-})
+}, 500))
 
 const onAddTags = () => {
   inputTag.value = inputTag.value.trim();
@@ -219,7 +220,7 @@ watch(() => createLoading.value, () => {
     </div>
 
     <!-- 选项卡 -->
-    <div class="flex border-b border-grey-e6 mb-4">
+    <div class="flex border-b border-grey-e6 mb-4" v-if="false">
       <div 
         class="px-4 py-2 cursor-pointer text-lg text-bold"
         :class="{'border-b-2 border-orange-light-active': activeTab === 'token'}"
@@ -373,9 +374,6 @@ watch(() => createLoading.value, () => {
           <span>Create</span>
           <i-ep-loading v-if="createLoading" class="animate-spin" />
         </button>
-        <div class="mt-2 text-sm px-3 text-red-e6">
-          TagAI is not updating, please wait.
-        </div>
         <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
           {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
         </div>
