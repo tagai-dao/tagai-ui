@@ -369,7 +369,7 @@ watch(() => createLoading.value, () => {
         <button
           class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
           @click="create"
-          :disabled="true"
+          :disabled="createLoading || accountMismatch"
         >
           <span>Create</span>
           <i-ep-loading v-if="createLoading" class="animate-spin" />
