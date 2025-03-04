@@ -133,12 +133,20 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
     return res.results.transformed;
 }
 
+function checkDistributionEnd(config: any) {
+    let lastTime = 0;
+    config.forEach((v: any) => {
+        if (v.end >= lastTime) lastTime = v.end;
+    })
+    return Date.now() / 1000 > lastTime;
+}
+
 export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
-    
+
     let result = await getTokenOnchainInfo(communities.map(com => com.token))
-    
-    for( let community of communities) {
+
+    for (let community of communities) {
         const tokenInfo = result[community.token]
         community.listed = tokenInfo.listed;
         community.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
@@ -146,9 +154,11 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.price = tokenInfo.price;
         community.marketCap = (community.price ?? 0) * TotalSupply;
         community.pair = tokenInfo.pair;
-        community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
+        const distribution = JSON.parse(community.distribution);
+        // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
+        community.distributionEnded = checkDistributionEnd(distribution);
     }
-    
+
     return communities;
 }
 

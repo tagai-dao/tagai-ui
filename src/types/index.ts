@@ -223,6 +223,7 @@ export type Community = OnchainTokenInfo & {
   official?: string | undefined | null;
   createAt?: string | number | null | undefined;
   createdByAi?: number | null | undefined;
+  distribution: string;
 };
 
 export type ClankerToken = OnchainTokenInfo & {
@@ -256,7 +257,7 @@ export type TokenHoldingList = {
   ethAddr: string,
   amount: number,
   followers?: number | null | undefined,
-  followings?:  number | null | undefined,
+  followings?: number | null | undefined,
   profile?: string | null | undefined,
   twitterId?: string | null | undefined,
   twitterName?: string | null | undefined,
