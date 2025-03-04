@@ -42,7 +42,7 @@ export const buyToken = async (token: string, amount: bigint, ethAmount: bigint,
     if (listed) {
         const router = await getContract('UniswapRouter');
         const tx = await router.swapExactETHForTokens(
-            amount * BigInt(slippage) / 10000n,
+            amount * BigInt(10000 - slippage) / 10000n,
             [WETH, token],
             useAccountStore().ethConnectAddress,
             Math.floor(Date.now() / 1000) + 300,
@@ -79,7 +79,7 @@ export const sellToken = async (token: string, amount: bigint, receiveEth: bigin
         const router = await getContract('UniswapRouter');
         const tx = await router.swapExactTokensForETH(
             amount,
-            receiveEth * BigInt(slippage) / 10000n,
+            receiveEth * BigInt(10000 - slippage) / 10000n,
             [token, WETH],
             useAccountStore().ethConnectAddress,
             Math.floor(Date.now() / 1000) + 300
