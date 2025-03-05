@@ -76,7 +76,7 @@ export const sellToken = async (token: string, amount: bigint, receiveEth: bigin
     if (!ethers.isAddress(sellsman)) {
         sellsman = ethers.ZeroAddress;
     }
-    const tc = await getContract('Token', token)
+    const tc = await getContract('Token1', token)
     if (listed) {
         // checkout approve
         const allowance = await tc.allowance(useAccountStore().ethConnectAddress, uniswapV2Router02);
@@ -165,9 +165,6 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         community.price = tokenInfo.price;
         community.marketCap = (community.price ?? 0) * TotalSupply;
-        if (community.tick == 'TTAI'){
-            console.log(42333, community.price, community.marketCap)
-        }
         community.pair = tokenInfo.pair;
         const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
@@ -306,7 +303,6 @@ export const getTokenOnchainInfo = async (tokens: String[], versions: Record<str
                 }else {
                     result[key].price = res[key + '-1'] / res[key + '-2']
                 }
-                console.log(42, key, result[key].price)
             }else{
                 result[key].price = res[key + '-price']
             }
@@ -317,7 +313,7 @@ export const getTokenOnchainInfo = async (tokens: String[], versions: Record<str
 
 export const getBuyAmountWithETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
     if (!token) return 0n
-    const tc = await getContract('Token', token, true);
+    const tc = await getContract('Token1', token, true);
     const supply = await tc.bondingCurveSupply();
     const pumpC = await getContract('Pump' + version, version == 1 ? PumpContract1 : PumpContract2, true);
     const receive = await pumpC.getBuyAmountByValue(supply, amount * 9800n / 10000n)
@@ -326,7 +322,7 @@ export const getBuyAmountWithETHAfterFee = async (token: string | undefined, ver
 
 export const getReceivedAmountSellETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
     if (!token) return 0n
-    const tc = await getContract('Token', token, true);
+    const tc = await getContract('Token1', token, true);
     const pumpC = await getContract('Pump' + version, version == 1 ? PumpContract1 : PumpContract2, true);
     const supply = await tc.bondingCurveSupply();
     const receive = await pumpC.getSellPriceAfterFee(supply, amount)

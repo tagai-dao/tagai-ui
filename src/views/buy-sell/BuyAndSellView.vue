@@ -33,7 +33,7 @@ const route = useRoute()
 const tokenInfo = ref()
 const trading = ref(false)
 const showFillInfo = ref(false)
-const defaultAmount = ref([0.01, 0.02, 0.05, 0.1])
+const defaultAmount = ref([0.02, 0.05, 0.1, 0.2])
 const { preCheckCuration, userTweet } = useTweet();
 const stateStore = useStateStore()
 
