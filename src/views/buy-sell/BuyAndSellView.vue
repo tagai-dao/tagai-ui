@@ -120,7 +120,7 @@ const updateBuyAmount = debounce(async (val: any) => {
 
 const updateSellAmount = debounce(async (val: any) => {
   try {
-    if (!val) return;
+    if (!val || !comStore.currentSelectedCommunity) return;
     showFillInfo.value = false
     const amount = ethers.parseEther(val.toString())
     if (listed.value) {
