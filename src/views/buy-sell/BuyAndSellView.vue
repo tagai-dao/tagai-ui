@@ -36,6 +36,7 @@ const showFillInfo = ref(false)
 const defaultAmount = ref([0.01, 0.02, 0.05, 0.1])
 const { preCheckCuration, userTweet } = useTweet();
 const stateStore = useStateStore()
+const calculating = ref(false)
 
 const payEth = ref()
 const sellAmount = ref()
@@ -87,11 +88,13 @@ watch(() => tradeType.value, () => {
   percentage.value = 0
 })
 
-watch(payEth, (val) => {
+watch(payEth, (val: any) => {
+  calculating.value = true
   updateBuyAmount(val)
 })
 
-watch(sellAmount, (val) => {
+watch(sellAmount, (val: any) => {
+  calculating.value = true
   updateSellAmount(val)
 })
 
@@ -111,6 +114,8 @@ const updateBuyAmount = debounce(async (val: any) => {
  } catch (error) {
     console.log(33, error)
     receiveAmount.value = '0.00'
+ }finally {
+  calculating.value = false
  }
 }, 500)
 
@@ -128,6 +133,8 @@ const updateSellAmount = debounce(async (val: any) => {
     }
   } catch (error) {
     receiveEth.value = '0.00'
+  }finally {
+    calculating.value = false
   }
 }, 500)
 
@@ -163,7 +170,6 @@ async function confirm() {
     return;
   }
   if (tradeType.value === 'buy') {
-    return;
     if (!payEth.value) {
       showFillInfo.value = true
       return
@@ -435,10 +441,10 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading"
+          :disabled="trading || calculating"
         >
           <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
-          <i-ep-loading v-show="trading" class="animate-spin" />
+          <i-ep-loading v-show="trading || calculating" class="animate-spin" />
         </button>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
           Please complete the amount
