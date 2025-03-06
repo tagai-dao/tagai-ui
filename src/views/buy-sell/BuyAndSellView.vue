@@ -36,6 +36,7 @@ const showFillInfo = ref(false)
 const defaultAmount = ref([0.02, 0.05, 0.1, 0.2])
 const { preCheckCuration, userTweet } = useTweet();
 const stateStore = useStateStore()
+const calculating = ref(false)
 
 const payEth = ref()
 const sellAmount = ref()
@@ -101,6 +102,7 @@ const invalidToken = computed(() => {
 
 const updateBuyAmount = debounce(async (val: any) => {
   if (!val) return;
+  calculating.value = true
   showFillInfo.value = false
   const amount = ethers.parseEther(val.toString())
 
@@ -111,16 +113,19 @@ const updateBuyAmount = debounce(async (val: any) => {
   }else {
    const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
    receiveAmount.value = receive
-  }
+  } 
  } catch (error) {
     console.log(33, error)
     receiveAmount.value = '0.00'
+  }finally {
+  calculating.value = false
  }
 }, 500)
 
 const updateSellAmount = debounce(async (val: any) => {
   try {
     if (!val || !comStore.currentSelectedCommunity) return;
+    calculating.value = true
     showFillInfo.value = false
     const amount = ethers.parseEther(val.toString())
     if (listed.value) {
@@ -132,6 +137,8 @@ const updateSellAmount = debounce(async (val: any) => {
     }
   } catch (error) {
     receiveEth.value = '0.00'
+  }finally {
+    calculating.value = false
   }
 }, 500)
 
