@@ -88,13 +88,15 @@ watch(() => tradeType.value, () => {
   percentage.value = 0
 })
 
-watch(payEth, debounce((val: any) => {
+watch(payEth, (val: any) => {
+  calculating.value = true
   updateBuyAmount(val)
-}, 200))
+})
 
-watch(sellAmount, debounce((val: any) => {
+watch(sellAmount, (val: any) => {
+  calculating.value = true
   updateSellAmount(val)
-}, 200))
+})
 
 const invalidToken = computed(() => {
   return comStore.currentSelectedCommunity?.version === 1 && comStore.currentSelectedCommunity?.tick !== 'TTAI' && !comStore.currentSelectedCommunity?.listed
@@ -102,7 +104,6 @@ const invalidToken = computed(() => {
 
 const updateBuyAmount = debounce(async (val: any) => {
   if (!val) return;
-  calculating.value = true
   showFillInfo.value = false
   const amount = ethers.parseEther(val.toString())
 
@@ -125,7 +126,6 @@ const updateBuyAmount = debounce(async (val: any) => {
 const updateSellAmount = debounce(async (val: any) => {
   try {
     if (!val || !comStore.currentSelectedCommunity) return;
-    calculating.value = true
     showFillInfo.value = false
     const amount = ethers.parseEther(val.toString())
     if (listed.value) {
