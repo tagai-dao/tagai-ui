@@ -88,13 +88,13 @@ watch(() => tradeType.value, () => {
   percentage.value = 0
 })
 
-watch(payEth, (val) => {
+watch(payEth, debounce((val: any) => {
   updateBuyAmount(val)
-})
+}, 200))
 
-watch(sellAmount, (val) => {
+watch(sellAmount, debounce((val: any) => {
   updateSellAmount(val)
-})
+}, 200))
 
 const invalidToken = computed(() => {
   return comStore.currentSelectedCommunity?.version === 1 && comStore.currentSelectedCommunity?.tick !== 'TTAI' && !comStore.currentSelectedCommunity?.listed
