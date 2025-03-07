@@ -297,6 +297,9 @@ onMounted(() => {
           <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} BNB</span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
+        <div v-show="showInsufficientBalance" class="text-center text-sm text-red-e6">
+          {{ $t('errMessage.insufficientFee') }}
+        </div>
         <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
           {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
         </div>

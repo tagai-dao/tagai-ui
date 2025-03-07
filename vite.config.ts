@@ -13,8 +13,6 @@ import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { viteCommonjs } from '@originjs/vite-plugin-commonjs'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import { VitePWA } from 'vite-plugin-pwa'
-// @ts-ignore
-import {viteObfuscateFile} from 'vite-plugin-obfuscator';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -30,13 +28,6 @@ export default defineConfig({
           prefix: 'Icon',
         }),
       ],
-    }),
-    viteObfuscateFile({
-      global: true,
-      compact: true,
-      controlFlowFlattening: true,
-      stringArray: true,
-      renameGlobals: true,
     }),
     Components({
       resolvers: [
