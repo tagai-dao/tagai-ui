@@ -73,8 +73,9 @@ export const usePageScroll = () => {
     scroll.value = ref.scrollTop
   }
 
-  const pageScrollTo = (ref: any) => {
-    ref.scrollTo({top: scroll.value})
+  const pageScrollTo = (ref: any, position?: number) => {
+    if(position) ref.scrollTo({top: position, behavior: 'smooth'})
+    else ref.scrollTo({top: scroll.value})
   }
 
   const pageScrollToTop = (ref: any) => {

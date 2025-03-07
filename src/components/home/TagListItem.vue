@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
 import { useStateStore } from '@/stores/common';
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
+import IconLinks from "@/components/home/IconLinks.vue";
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
@@ -45,6 +46,7 @@ async function trade() {
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
         <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
+        <IconLinks class="my-1" :community="community"/>
         <div class="flex-1 flex justify-end mt-1">
           <div v-if="community.marketCap" class="flex items-end gap-1">
             <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
@@ -78,8 +80,6 @@ async function trade() {
           AI create
         </button>
       </div>
-
-      <!-- <IconLinks class="my-1" :community="community"/> -->
     </div>
   </div>
 </template>
