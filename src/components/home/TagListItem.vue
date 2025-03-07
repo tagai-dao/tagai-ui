@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
 import { useStateStore } from '@/stores/common';
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
+import IconLinks from "@/components/home/IconLinks.vue";
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
@@ -64,18 +65,21 @@ async function trade() {
           </div>
         </slot> -->
       </div>
-      <div v-if="community.tags" class="font-extralight flex flex-wrap gap-2 mt-2">
-        <button v-for="(tag, index) of JSON.parse(community.tags as string)" :key="tag"
-                class="px-2 h-5 text-xs rounded-md"
-                :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
-          {{ tag }}
-        </button>
-        <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
-          AI create
-        </button>
+      <div class="flex justify-between items-center mt-2">
+        <div class="font-extralight flex flex-wrap gap-2">
+          <template v-if="community.tags" >
+            <button v-for="(tag, index) of JSON.parse(community.tags as string)" :key="tag"
+                    class="px-2 h-5 text-xs rounded-md"
+                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
+              {{ tag }}
+            </button>
+            <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
+              AI create
+            </button>
+          </template>
+        </div>
+        <IconLinks class="my-1" :community="community"/>
       </div>
-
-      <!-- <IconLinks class="my-1" :community="community"/> -->
     </div>
   </div>
 </template>

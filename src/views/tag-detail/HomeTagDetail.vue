@@ -42,8 +42,14 @@ enum CurationType {
   TIP_CURATE
 }
 
-const { pageScroll, pageScrollTo} = usePageScroll()
+const { pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
+const tabScrollRef = ref()
+const pageScroll = (ref: any) => {
+  if(tabScrollRef.value.scrollTop>100) {
+    pageScrollTo(pageScrollRef.value, 412)
+  }
+}
 const activeTab = ref('content')
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
@@ -158,7 +164,6 @@ async function checkTweet() {
 }
 
 onMounted(async () => {
-  pageScrollTo(pageScrollRef.value)
   const tick = route.params.id;
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){
     if (typeof(tick) !== 'string') {
@@ -178,7 +183,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative">
+  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative"
+       ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
     <div class="grid grid-cols-1 web:hidden gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
@@ -320,7 +326,7 @@ onMounted(async () => {
       </div>
     </div>
     <BuyAndSellView />
-    <div class="h-full sticky top-[0px]" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+    <div class="h-full sticky top-[0px]">
       <div class="h-full flex gap-2">
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
@@ -329,7 +335,7 @@ onMounted(async () => {
                     :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
                     @click="activeTab=tab.key">{{tab.label}}</button>
           </div>
-          <div class="flex-1 overflow-auto no-scroll-bar">
+          <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef)">
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
             <TagContent v-if="activeTab==='content'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
