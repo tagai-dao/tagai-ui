@@ -3,7 +3,7 @@ import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {ref, onActivated, onMounted, watch, computed} from "vue";
 import { ListType, type Community, type Space } from '@/types'
-import { getCommunitiesByNew, getCommunitiesByTrending, getOnlineSpaces } from "@/apis/api";
+import { getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import { useCurationStore } from '@/stores/curation'
 import { handleErrorTip } from '@/utils/notify'
@@ -13,7 +13,7 @@ import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
 
-const listType = ref(ListType.Trending)
+const listType = ref(ListType.MarketCap)
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
 const curationStore = useCurationStore();
@@ -37,7 +37,14 @@ watch(activeTab, (val) => {
 async function refresh() {
   try{
     finished.value = false
-    if (listType.value == ListType.New) {
+    if (listType.value == ListType.MarketCap) {
+      let communities = await getCommunityByMarketCap() as Array<Community>;
+      if (communities && communities.length > 0) {
+        comStore.marketCapCommunities = await getTokenInfo(communities)
+      } else {
+        finished.value = true
+      }
+    } else if (listType.value == ListType.New) {
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = await getTokenInfo(communities)
@@ -63,7 +70,17 @@ async function loadMore() {
   try{
     if (finished.value) return;
     loading.value = true
-    if (listType.value == ListType.New) {
+    if (listType.value == ListType.MarketCap) {
+      if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length == 0) {
+        return;
+      }
+      let communities = await getCommunityByMarketCap((comStore.marketCapCommunities.length - 1) / 30 + 1) as Array<Community>;
+      if (communities && communities.length > 0) {
+        comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
+      } else {
+        finished.value = true
+      }
+    } else if (listType.value == ListType.New) {
       if (!comStore.newCommunities || comStore.newCommunities.length == 0) {
         return;
       }
@@ -181,6 +198,7 @@ const contentWidth = computed(() => {
         class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
         popper-class="c-select-popper rounded-xl"
       >
+        <el-option :value="ListType.MarketCap" label="Market Cap" />
         <el-option :value="ListType.Trending" label="Trending" />
         <el-option :value="ListType.New" label="New" />
       </el-select>
@@ -198,21 +216,29 @@ const contentWidth = computed(() => {
                   :offset="50"
                   @load="loadMore">
 
-            <div v-if="comStore.trendingCommunities.length == 0 && !loading && listType == ListType.Trending"
-              class="flex justify-center py-6 w-full">
-              <img src="~@/assets/images/empty-data.svg" alt="">
-            </div>
+          <div v-if="comStore.trendingCommunities.length == 0 && !loading && listType == ListType.Trending"
+            class="flex justify-center py-6 w-full">
+            <img src="~@/assets/images/empty-data.svg" alt="">
+          </div>
           <div v-else v-show="listType == ListType.Trending"
                class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
             <TagListItem v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
           </div>
-          <div v-if="comStore.trendingCommunities.length == 0 && !loading && listType == ListType.New"
+          <div v-if="comStore.newCommunities.length == 0 && !loading && listType == ListType.New"
                   class="flex justify-center py-6 w-full">
                   <img src="~@/assets/images/empty-data.svg" alt="">
                 </div>
           <div v-else v-show="listType == ListType.New"
                class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
             <TagListItem v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+          </div>
+          <div v-if="comStore.marketCapCommunities.length == 0 && !loading && listType == ListType.MarketCap"
+                  class="flex justify-center py-6 w-full">
+                  <img src="~@/assets/images/empty-data.svg" alt="">
+                </div>
+          <div v-else v-show="listType == ListType.MarketCap"
+               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
+            <TagListItem v-for="community of comStore.marketCapCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
           </div>
         </van-list>
       </van-pull-refresh>

@@ -284,10 +284,10 @@ onMounted(async () => {
           </el-popover> -->
         </div>
         <div class="flex justify-center text-white space-x-4">
-          <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+          <!-- <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
             Blinks
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-          </button>
+          </button> -->
 
           <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
             Tip ${{ comStore.currentSelectedCommunity?.tick }}
@@ -415,10 +415,10 @@ onMounted(async () => {
                 </div>
               </div>
               <div class="flex justify-center text-white space-x-8">
-                <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+                <!-- <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
                   Blinks
                   <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-                </button>
+                </button> -->
 
                 <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
                   <template #reference>

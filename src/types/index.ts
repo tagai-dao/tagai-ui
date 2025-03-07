@@ -11,6 +11,7 @@ export enum GlobalModalType {
 }
 
 export enum ListType {
+  MarketCap,
   Trending,
   New
 }
