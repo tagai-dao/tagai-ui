@@ -113,7 +113,17 @@ export default defineConfig({
     target: "es2022",
     commonjsOptions: {
       transformMixedEsModules: true,
-    }
+    },
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_debugger: true,
+      },
+      format: {
+        comments: false,
+      },
+      mangle: true,
+    },
   },
   esbuild: {
     target: "es2022"
