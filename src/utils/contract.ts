@@ -2,10 +2,11 @@ import { getProvider, setup } from "./wallets";
 import { abis } from './abis'
 import { ethers } from 'ethers'
 import { getReadOnlyProvider } from "./web3";
-import { PumpContract, IPShareContract, uniswapV2Router02 } from '@/config'
+import { PumpContract1, IPShareContract, uniswapV2Router02, PumpContract2 } from '@/config'
 
 const ContractAddress = {
-    Pump: PumpContract,
+    Pump1: PumpContract1,
+    Pump2: PumpContract2,
     IPShare: IPShareContract,
     UniswapRouter: uniswapV2Router02
 }

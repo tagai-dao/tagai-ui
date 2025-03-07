@@ -132,7 +132,8 @@ export type CurationReward = {
   tick: string,
   token: string,
   amount: number,
-  price: number
+  price: number,
+  version?: number | null | undefined
 }
 
 export type Commerce = Account & {
@@ -155,6 +156,7 @@ export type Tweet = OnchainTokenInfo & Space &
     retweetId?: string | undefined | null;
     spaceId?: string | undefined | null;
     tweetTime?: string | number | Date;
+    version?: number | null | undefined;
     tick?: string;
     likeCount: number;
     retweetCount: number;
@@ -217,12 +219,14 @@ export type Community = OnchainTokenInfo & {
   creator: string; // ethAddr
   tags?: string | string[];
   token: string,
+  version?: number | null | undefined,
   tick: string,
   twitter?: string | undefined | null;
   telegram?: string | undefined | null;
   official?: string | undefined | null;
   createAt?: string | number | null | undefined;
   createdByAi?: number | null | undefined;
+  distribution: string;
 };
 
 export type ClankerToken = OnchainTokenInfo & {
@@ -256,7 +260,7 @@ export type TokenHoldingList = {
   ethAddr: string,
   amount: number,
   followers?: number | null | undefined,
-  followings?:  number | null | undefined,
+  followings?: number | null | undefined,
   profile?: string | null | undefined,
   twitterId?: string | null | undefined,
   twitterName?: string | null | undefined,

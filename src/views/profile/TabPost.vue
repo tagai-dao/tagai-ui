@@ -77,7 +77,11 @@ function updateReward() {
     getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
       console.log(35, list)
       if (list && list.length > 0) {
-        getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
+        let versions: Record<string, number> = {}
+        for (let t of list) {
+          versions[t.token] = t.version ?? 2
+        }
+        getTokenOnchainInfo(list.map((l: any) => l.token), versions).then((tokeninfo: any) => {
           for (let t of list) {
             t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
           }
@@ -90,7 +94,11 @@ function updateReward() {
   } else {
     userUnclaimableCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
       if (list && list.length > 0) {
-        getTokenOnchainInfo(list.map((l: any) => l.token)).then((tokeninfo: any) => {
+        let versions: Record<string, number> = {}
+        for (let t of list) {
+          versions[t.token] = t.version ?? 2
+        }
+        getTokenOnchainInfo(list.map((l: any) => l.token), versions).then((tokeninfo: any) => {
           for (let t of list) {
             t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
           }

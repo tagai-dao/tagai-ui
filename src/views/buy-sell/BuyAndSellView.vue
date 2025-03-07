@@ -33,9 +33,10 @@ const route = useRoute()
 const tokenInfo = ref()
 const trading = ref(false)
 const showFillInfo = ref(false)
-const defaultAmount = ref([0.01, 0.02, 0.05, 0.1])
+const defaultAmount = ref([0.02, 0.05, 0.1, 0.2])
 const { preCheckCuration, userTweet } = useTweet();
 const stateStore = useStateStore()
+const calculating = ref(false)
 
 const payEth = ref()
 const sellAmount = ref()
@@ -87,12 +88,18 @@ watch(() => tradeType.value, () => {
   percentage.value = 0
 })
 
-watch(payEth, (val) => {
+watch(payEth, (val: any) => {
+  calculating.value = true
   updateBuyAmount(val)
 })
 
-watch(sellAmount, (val) => {
+watch(sellAmount, (val: any) => {
+  calculating.value = true
   updateSellAmount(val)
+})
+
+const invalidToken = computed(() => {
+  return comStore.currentSelectedCommunity?.version === 1 && comStore.currentSelectedCommunity?.tick !== 'TTAI' && !comStore.currentSelectedCommunity?.listed
 })
 
 const updateBuyAmount = debounce(async (val: any) => {
@@ -105,29 +112,33 @@ const updateBuyAmount = debounce(async (val: any) => {
     const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount)
     receiveAmount.value = receive
   }else {
-   const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
+   const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
    receiveAmount.value = receive
-  }
+  } 
  } catch (error) {
     console.log(33, error)
     receiveAmount.value = '0.00'
+  }finally {
+  calculating.value = false
  }
 }, 500)
 
 const updateSellAmount = debounce(async (val: any) => {
   try {
-    if (!val) return;
+    if (!val || !comStore.currentSelectedCommunity) return;
     showFillInfo.value = false
     const amount = ethers.parseEther(val.toString())
     if (listed.value) {
       const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
       receiveEth.value = receive
     }else {
-      const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, amount)
+      const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
       receiveEth.value = receive
     }
   } catch (error) {
     receiveEth.value = '0.00'
+  }finally {
+    calculating.value = false
   }
 }, 500)
 
@@ -205,7 +216,7 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
 
-      const hash = await buyToken(token!.token, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, token!.version ?? 2, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -433,11 +444,14 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading"
+          :disabled="trading || (invalidToken && tradeType === 'buy')"
         >
           <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
+        <div v-if="invalidToken" class="text-sm text-red-e6 text-center">
+          This token is created by the old version which has an abnormality and has been closed for buying. Please sell as soon as possible 
+        </div>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
           Please complete the amount
         </div>
