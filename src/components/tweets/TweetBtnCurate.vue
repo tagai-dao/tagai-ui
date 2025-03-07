@@ -76,6 +76,7 @@ async function confirmCurate() {
   <el-dialog v-model="curateVisible"
            modal-class="overlay-white"
            class="max-w-[500px] rounded-[20px]"
+             append-to-body
            width="90%" :show-close="false" align-center destroy-on-close>
       <div class="flex flex-col items-center p-4">
         <h2 class="text-2xl font-bold mb-4">Curate</h2>
@@ -87,9 +88,9 @@ async function confirmCurate() {
           Curate will cost you 1-10 VP(voting power) that you selected, and every user has initial 200 vp which will recover 100% per 3days.
         </p>
         <el-slider v-model="curateAmount" :min="1" :max="10" :step="1" class="w-full mb-4 slider" />
-        <div class="text-sm w-full text-gray-500 mb-4">Consume 
+        <div class="text-sm w-full text-gray-500 mb-4">Consume
           <span class="text-red-500"> VP: {{ curateAmount }}</span>
-        </div><div class="text-sm w-full text-gray-500 mb-4">Remain 
+        </div><div class="text-sm w-full text-gray-500 mb-4">Remain
           <span class="text-green-500"> VP: {{ Math.floor(vp) }}</span>
         </div>
         <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
