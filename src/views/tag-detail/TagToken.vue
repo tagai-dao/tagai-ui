@@ -192,7 +192,7 @@ onMounted(async () => {
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">Cap</span>
-        <span class="text-h5 text-black-19">{{ formatPrice((comStore.currentSelectedCommunity.marketCap ?? 0) * useStateStore().ethPrice) }}</span>
+        <span class="text-h5 text-black-19">{{ formatPrice(Math.round((comStore.currentSelectedCommunity.marketCap ?? 0) * useStateStore().ethPrice)) }}</span>
       </div>
     </div>
     <!-- <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">

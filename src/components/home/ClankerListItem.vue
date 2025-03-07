@@ -42,7 +42,7 @@ const { onCopy } = useTools()
           <div v-if="token.marketCap" class="flex items-end gap-1">
             <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
             <span class="font-medium italic text-orange-normal leading-5 text-sm">
-              {{ formatPrice(parseFloat(token.marketCap as any) * stateStore.ethPrice) }}
+              {{ formatPrice(Math.round(parseFloat(token.marketCap as any) * stateStore.ethPrice)) }}
             </span>
           </div>
         </div>
