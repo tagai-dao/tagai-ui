@@ -5,6 +5,7 @@ import errCode from "@/errCode";
 import { GlobalModalType, type Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
 import { useModalStore } from "@/stores/common";
+import { ethers } from "ethers";
 
 export enum OperateType {
   TWEET,
@@ -129,6 +130,10 @@ export const useTweet = () => {
         }
         if (tweet?.twitterId == account.twitterId) {
           throw errCode.CANT_CURATE_SELF
+        }
+        if (!ethers.isAddress(account.ethAddr)) {
+          useModalStore().setModalVisible(true, GlobalModalType.BondEth)
+          return false
         }
         if (!account.steemId) {
             useModalStore().setModalVisible(true, GlobalModalType.Register)
