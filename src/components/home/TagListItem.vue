@@ -31,12 +31,16 @@ async function trade() {
 
 <template>
   <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 flex gap-3">
-    <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo
+    <div class="relative w-20 h-20 min-w-20 min-h-20">
+      <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo
                 flex items-center justify-center relative overflow-hidden">
-      <img class="w-full h-full object-center object-cover" :src="community.logo" alt="">
-      <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
-      <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
+        <img class="w-full h-full object-center object-cover" :src="community.logo" alt="">
+        <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+      </div>
+      <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
+        <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
+      </div>
     </div>
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
