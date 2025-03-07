@@ -89,6 +89,7 @@ export const formatPrice = (value: number | string, abb = false) => {
   if (Number(value) > 1e6) {
     abb = true
   }
+
   let digit = 3
   if (Number(value) > 1e3) {
     digit = 0
@@ -101,6 +102,9 @@ export const formatPrice = (value: number | string, abb = false) => {
   }
   if (Number(value) < 0.00000001) {
     digit = 10
+  }
+  if (Number(value) % 1 === 0) {
+    digit = 0
   }
   if (Number(value) < 0.0000000001) {
     return '$0.0'

@@ -179,7 +179,7 @@ onMounted(async () => {
                width="90%" :show-close="false" align-center destroy-on-close>
       <SpaceCurateList v-if="curationType === CurationType.Curate"
                        :tweet="curationStore.currentSelectedTweet!"/>
-      <SpaceSpeaker v-else :tweet="curationStore.currentSelectedTweet!"/>
+      <SpaceSpeaker v-else :tweet="curationStore.currentSelectedTweet!" :curation-type="curationType as number"/>
     </el-dialog>
 </div>
 </template>

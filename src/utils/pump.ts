@@ -164,7 +164,7 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
         community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         community.price = tokenInfo.price;
-        community.marketCap = (community.price ?? 0) * TotalSupply;
+        community.marketCap = ((community.price ?? 0) * TotalSupply);
         community.pair = tokenInfo.pair;
         const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
@@ -190,7 +190,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
         tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
         tweet.price = tokenInfo.price;
-        tweet.marketCap = (tweet.price ?? 0) * TotalSupply;
+        tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
         tweet.pair = tokenInfo.pair;
     }
     return tweets;

@@ -1,18 +1,24 @@
 <script setup lang="ts">
 import type { Tweet, CurateRecord } from "@/types";
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, ref, type PropType} from "vue";
 import { getSpaceCurationList } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { formatAmount } from "@/utils/helper";
 
 const refreshing = ref(false)
 const finished = ref(false)
+
+
 const curateList = ref<CurateRecord[]>([])
 
-const props = defineProps<{tweet: Tweet}>()
+const props = defineProps<{
+  tweet: Tweet,
+  curationType: number
+}>()
 
 const hostList = computed(() => {
   if (curateList.value.length > 0) {
+    console.log(1, curateList.value.filter((record: CurateRecord) => (record.curateRecord & 4) === 4))
     return curateList.value.filter((record: CurateRecord) => (record.curateRecord & 4) === 4)
   }
   return []
@@ -20,6 +26,7 @@ const hostList = computed(() => {
 
 const cohostList = computed(() => {
   if (curateList.value.length > 0) {
+    console.log(2, curateList.value.filter((record: CurateRecord) => (record.curateRecord & 8) === 8))
     return curateList.value.filter((record: CurateRecord) => (record.curateRecord & 8) === 8)
   }
   return []
@@ -27,6 +34,7 @@ const cohostList = computed(() => {
 
 const speakerList = computed(() => {
   if (curateList.value.length > 0) {
+    console.log(3, curateList.value.filter((record: CurateRecord) => (record.curateRecord & 16) === 16))
     return curateList.value.filter((record: CurateRecord) => (record.curateRecord & 16) === 16)
   }
   return []
@@ -36,6 +44,7 @@ const getSpeakerData = async () => {
   try{
     if (props.tweet.tweetId) {
       const list: any = await getSpaceCurationList(props.tweet.tweetId)
+      console.log(list)
       curateList.value = list
       if (list.length < 30) {
         finished.value = true
@@ -49,6 +58,7 @@ const getSpeakerData = async () => {
 }
 
 onMounted(async () => {
+  console.log(1, props.curationType, props.tweet)
   getSpeakerData()
 })
 </script>
@@ -56,6 +66,7 @@ onMounted(async () => {
 <template>
   <div class="max-h-[80vh] overflow-auto no-scroll-bar">
     <div v-for="(curate, i) of hostList" :key="i + 'host'"
+         v-if="props.curationType === 1"
          class="bg-white rounded-2xl py-3 px-3.5 flex items-center gap-3 mb-2">
       <div class="relative">
         <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">
@@ -68,6 +79,7 @@ onMounted(async () => {
       </div>
     </div>
     <div v-for="(curate, i) of cohostList" :key="i + 'cohost'"
+         v-if="props.curationType === 2"
          class="bg-white rounded-2xl py-3 px-3.5 flex items-center gap-3 mb-2">
       <div class="relative">
         <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">
@@ -80,6 +92,7 @@ onMounted(async () => {
       </div>
     </div>
     <div v-for="(curate, i) of speakerList" :key="i + 'speaker'"
+         v-if="props.curationType === 3"
          class="bg-white rounded-2xl py-3 px-3.5 flex items-center gap-3 mb-2">
       <div class="relative">
         <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">

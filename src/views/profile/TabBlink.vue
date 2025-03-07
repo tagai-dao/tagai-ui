@@ -111,7 +111,7 @@ onMounted(() => {
             <div class="flex items-center gap-2 py-3">
               <div class="w-4 h-4 bg-green-normal rounded-full"></div>
               <router-link :to="`/tag-detail/${tweet.tick}`" class="text-base flex-1">
-                #{{ tweet.tick }} • Market cap {{ formatPrice((tweet.marketCap ?? 0) * stateStore.ethPrice) }}
+                #{{ tweet.tick }} • Market cap {{ formatPrice(Math.round((tweet.marketCap ?? 0) * stateStore.ethPrice)) }}
               </router-link>
               <!-- <router-link :to="`/buy-sell/${tweet.tick}`" class="justify-center flex items-center bg-green-normal h-8 px-3 min-w-16 rounded-full text-sm">
                 Trade
