@@ -46,7 +46,6 @@ async function trade() {
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
         <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
-        <IconLinks class="my-1" :community="community"/>
         <div class="flex-1 flex justify-end mt-1">
           <div v-if="community.marketCap" class="flex items-end gap-1">
             <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
@@ -70,15 +69,20 @@ async function trade() {
           </div>
         </slot> -->
       </div>
-      <div v-if="community.tags" class="font-extralight flex flex-wrap gap-2 mt-2">
-        <button v-for="(tag, index) of JSON.parse(community.tags as string)" :key="tag"
-                class="px-2 h-5 text-xs rounded-md"
-                :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
-          {{ tag }}
-        </button>
-        <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
-          AI create
-        </button>
+      <div class="flex justify-between items-center mt-2">
+        <div class="font-extralight flex flex-wrap gap-2">
+          <template v-if="community.tags" >
+            <button v-for="(tag, index) of JSON.parse(community.tags as string)" :key="tag"
+                    class="px-2 h-5 text-xs rounded-md"
+                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
+              {{ tag }}
+            </button>
+            <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
+              AI create
+            </button>
+          </template>
+        </div>
+        <IconLinks class="my-1" :community="community"/>
       </div>
     </div>
   </div>
