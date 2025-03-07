@@ -22,7 +22,7 @@
         2：65% of tokens are allocated via a bonding curve to raise initial liquidity.
       </li>
       <li>
-        3：Once 20 BNB is raised, the liquidity pool (19 BNB + 20% tokens) will be added to PancakeSwap, and LP tokens will be burned (liquidity locked).
+        3：When enough people buy on the bonding curve it reaches a market cap of $60k, $12k of liquidity is then deposited in PancakeSwap and burned.
       </li>
       <li>
         4：Coin Deployer or Blinks creators will receive 1% of transaction fees from trades.
