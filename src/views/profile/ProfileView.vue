@@ -19,7 +19,7 @@ const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance
 const { setInter } = useInterval()
 
 const profileTableData = ref([
-  { action: 'Curation', vp: 'selected vp', op: 'selected op'},
+  { action: 'Curation', vp: 'Selected vp', op: 'Selected vp'},
   { action: 'Tweet', vp: '0', op: '200'},
   { action: 'Quote', vp: '0', op: '200'},
   { action: 'Reply', vp: '0', op: '50'},
