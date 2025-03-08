@@ -3,11 +3,13 @@ import en from './locales/en.json'
 import zh from './locales/zh.json'
 
 const i18n = createI18n({
-  locale: 'en',
+  legacy: false,
+  globalInjection: true,
+  locale: localStorage.getItem('language') || 'en',
   allowComposition: true,
   messages: {
     en: en,
-    cn: zh,
+    zh: zh,
   },
   fallbackLocale: 'en'
 })

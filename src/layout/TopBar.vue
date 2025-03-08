@@ -8,11 +8,20 @@ import RuleModal from "@/components/common/RuleModal.vue";
 import { useRouter } from "vue-router";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
+import { useI18n } from 'vue-i18n'
 
 const modalVisible = ref(false)
 const ruleModalVisible = ref(false)
 const router = useRouter();
 const accStore = useAccountStore();
+
+
+const { locale } = useI18n()
+
+const switchLanguage = (lang: string) => {
+  locale.value = lang
+  localStorage.setItem('language', lang)
+}
 
 function onClickWallet() {
   if (accStore.getAccountInfo?.ethAddr) {
@@ -55,7 +64,14 @@ function onClickWallet() {
       <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.twitterId"
            src="~@/assets/icons/icon-wallet.svg" alt=""
            @click="onClickWallet">
-      <!-- <img class="w-6 cursor-pointer" src="~@/assets/icons/icon-lang-en.svg" alt=""> -->
+       <img v-if="$i18n.locale==='zh'"
+            class="w-5 cursor-pointer"
+            @click="switchLanguage('en')"
+            src="~@/assets/icons/icon-lang-zh.svg" alt="">
+       <img v-if="$i18n.locale==='en'"
+            class="w-5 cursor-pointer"
+            @click="switchLanguage('zh')"
+            src="~@/assets/icons/icon-lang-en.svg" alt="">
       <ProfileBtn class="hidden web:flex"/>
       <CreateBtn class="hidden web:block"/>
     </div>
