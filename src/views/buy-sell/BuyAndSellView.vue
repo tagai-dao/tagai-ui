@@ -305,6 +305,7 @@ onMounted(async () => {
             class="h-full flex-1"
             :class="tradeType === 'buy' ? 'bg-gradient-primary' : ''"
             @click="tradeType = 'buy'"
+            :disabled="true"
           >
             Buy
           </button>
