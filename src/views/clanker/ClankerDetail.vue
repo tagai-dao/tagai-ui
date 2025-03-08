@@ -133,7 +133,7 @@ onMounted(async () => {
               <div class="text-base flex gap-1">
                 <span class="font-semibold text-grey-64">market cap</span>
                 <span class="text-gradient bg-gradient-primary font-semibold">
-                  {{ formatPrice(parseFloat(clankerStore.currentSelectedClanker?.marketCap as any) * useStateStore().ethPrice) }}
+                  {{ formatPrice(Math.floor(parseFloat(clankerStore.currentSelectedClanker?.marketCap as any) * useStateStore().ethPrice)) }}
                 </span>
               </div>
             </div>

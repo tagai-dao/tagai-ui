@@ -50,7 +50,7 @@ async function trade() {
           <div v-if="community.marketCap" class="flex items-end gap-1">
             <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
             <span class="font-medium italic text-orange-normal leading-5 text-sm">
-              {{ formatPrice(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}
+              {{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}
             </span>
           </div>
         </div>
