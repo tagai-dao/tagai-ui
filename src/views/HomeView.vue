@@ -120,17 +120,17 @@ async function loadMore() {
 }
 
 async function getSpaces() {
-  // try{
-  //   let spaces = await getOnlineSpaces() as Space[];
+  try{
+    let spaces = await getOnlineSpaces() as Space[];
 
-  //   if (spaces && spaces.length > 0) {
-  //     curationStore.allSpaces = spaces
-  //   }else {
-  //     curationStore.allSpaces = [];
-  //   }
-  // } catch(e) {
-  //   // handleErrorTip(e)
-  // }
+    if (spaces && spaces.length > 0) {
+      curationStore.allSpaces = spaces
+    }else {
+      curationStore.allSpaces = [];
+    }
+  } catch(e) {
+    // handleErrorTip(e)
+  }
 }
 
 function gotoChain(chain: string){
