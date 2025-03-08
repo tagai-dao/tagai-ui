@@ -4,6 +4,11 @@
   "tips": "打赏",
   "createCoin": "创建代币",
   "search": "搜索",
+  "home": {
+    "marketCap": "市值",
+    "trending": "趋势",
+    "new": "最新"
+  },
   "loginView": {
     "loginWithTwitter": "登录推特",
     "p1": "使用渐进式Web应用技术，结合了传统网站和平台特定应用的最佳功能",

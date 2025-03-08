@@ -4,6 +4,9 @@
   "tips": "Tips",
   "createCoin": "Create TagCoin",
   "search": "Search",
+  "marketCap": "Market Cap",
+  "trending": "Trending",
+  "new": "New",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
     "p1": "uses progressive web app technolog that combines the best features of traditional websites and platform-specific apps",
