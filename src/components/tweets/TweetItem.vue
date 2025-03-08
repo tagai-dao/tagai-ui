@@ -121,7 +121,7 @@ onUnmounted(() => {
             </button>
           </template>
           <template #default>
-            <div class="text-white text-sm px-2">
+            <div class="text-grey-normal text-sm px-2">
               <div class="flex justify-between items-center h-7 gap-3">
                 <span>Author</span>
                 <span class="font-semibold whitespace-nowrap">{{ formatAmount(tweet.authorAmount) }}({{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
