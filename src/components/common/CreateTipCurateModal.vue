@@ -93,7 +93,7 @@ const checkSpace = debounce(async () => {}, 10000);
         You can reply the tweet which you like with the following content:
       </p>
       <span class="text-sm text-blue-500 flex items-center">
-        @Tip_Tag tip ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
+        @TagAIDAO tip ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
         good content!
         <button class="ml-2" @click="onCopy(`@TagAIDAO tip $${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
