@@ -249,7 +249,7 @@ onMounted(async () => {
             <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
                         placement="top" popper-class="c-arrow-popper">
               <template #content>
-                <div class="flex gap-1">
+                <div class="flex gap-1 text-grey-normal">
                   <span class="text-sm">{{data.desc}}</span>
                   <span class="font-semibold text-base">{{data.percent}}</span>
                 </div>
@@ -407,7 +407,7 @@ onMounted(async () => {
                   <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
                               placement="top" popper-class="c-arrow-popper">
                     <template #content>
-                      <div class="flex gap-1">
+                      <div class="flex gap-1 text-grey-normal">
                         <span class="text-sm">{{data.desc}}</span>
                         <span class="font-semibold text-base">{{data.percent}}</span>
                       </div>

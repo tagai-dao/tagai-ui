@@ -114,7 +114,7 @@ const updateBuyAmount = debounce(async (val: any) => {
   }else {
    const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
    receiveAmount.value = receive
-  } 
+  }
  } catch (error) {
     console.log(33, error)
     receiveAmount.value = '0.00'
@@ -434,7 +434,7 @@ onMounted(async () => {
                     <img class="w-4" src="~@/assets/icons/icon-warning-primary.svg" alt="">
                   </button>
                   <template #content>
-                    <div class="text-white px-3 py-1 max-w-[200px] font-medium">{{  $t('buyAndSell.blinkTip') }}</div>
+                    <div class="text-grey-normal px-3 py-1 max-w-[200px] font-medium">{{  $t('buyAndSell.blinkTip') }}</div>
                   </template>
                 </el-tooltip>
               </div>
@@ -450,7 +450,7 @@ onMounted(async () => {
           <i-ep-loading v-show="trading" class="animate-spin" />
         </button>
         <div v-if="invalidToken" class="text-sm text-red-e6 text-center">
-          This token is created by the old version which has an abnormality and has been closed for buying. Please sell as soon as possible 
+          This token is created by the old version which has an abnormality and has been closed for buying. Please sell as soon as possible
         </div>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
           Please complete the amount
