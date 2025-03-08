@@ -368,11 +368,14 @@ watch(() => createLoading.value, () => {
         <button
           class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
           @click="create"
-          :disabled="createLoading || accountMismatch"
+          :disabled="true"
         >
           <span>Create</span>
           <i-ep-loading v-if="createLoading" class="animate-spin" />
         </button>
+        <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
+          Pending new contract deployment...
+        </div>
         <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
           {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
         </div>
