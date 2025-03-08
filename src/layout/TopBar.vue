@@ -67,11 +67,11 @@ function onClickWallet() {
        <img v-if="$i18n.locale==='zh'"
             class="w-5 cursor-pointer"
             @click="switchLanguage('en')"
-            src="~@/assets/icons/icon-lang-zh.svg" alt="">
+            src="~@/assets/icons/icon-lang-en.svg" alt="">
        <img v-if="$i18n.locale==='en'"
             class="w-5 cursor-pointer"
             @click="switchLanguage('zh')"
-            src="~@/assets/icons/icon-lang-en.svg" alt="">
+            src="~@/assets/icons/icon-lang-zh.svg" alt="">
       <ProfileBtn class="hidden web:flex"/>
       <CreateBtn class="hidden web:block"/>
     </div>
