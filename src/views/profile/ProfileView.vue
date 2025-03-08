@@ -13,7 +13,7 @@ import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 
 const accStore = useAccountStore()
-const tabOptions = ['post', 'blink', 'createCoin']
+const tabOptions = ['post', 'createCoin']
 const activeTab = ref('post')
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
 const { setInter } = useInterval()
