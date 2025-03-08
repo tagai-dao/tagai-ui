@@ -37,7 +37,7 @@ async function claim() {
     if (res) {
       const {signature, orderId, amount} = res;
       const hash = await claimReward(props.reward.token, props.reward.version ?? 2, BigInt(orderId), ethers.parseEther(amount.toString()), signature);
-      setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash).catch(console.error);
+      setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, props.reward.version ?? 2).catch(console.error);
       await sleep(1)
       emitter.emit('claimedReward')
     }

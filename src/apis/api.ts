@@ -176,8 +176,8 @@ export const userUnclaimableCurationRewards = async (twitterId: string) =>
 export const getClaimSignature = async (twitterId: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/getUserClaimTagRewardSignature', {twitterId, tick})
 
-export const setOrderClaimed = async (twitterId: string, orderId: string, hash: string) =>
-  post(BACKEND_API_URL + '/curation/setOrderClaimed', {twitterId, orderId, hash})
+export const setOrderClaimed = async (twitterId: string, orderId: string, hash: string, version: number) =>
+  post(BACKEND_API_URL + '/curation/setOrderClaimed', {twitterId, orderId, hash, version})
 
 /************************************ ipshare **********************************/
 export const getIpshareInfo = async (ethAddr: string) =>
