@@ -11,6 +11,7 @@ import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ethers } from 'ethers';
 import { ClaimFee } from '@/config';
+import errCode from '@/errCode';
 
 const props = defineProps<{reward: CurationReward, canClaim: Boolean}>()
 const claiming = ref(false)
@@ -43,6 +44,9 @@ async function claim() {
   } catch (e) {
     console.log(53, e)
     handleErrorTip(e)
+    if (e === errCode.NO_REWARD_TO_CLAIM) {
+      emitter.emit('claimedReward')
+    }
   } finally {
     claiming.value = false
     updateBalance()
