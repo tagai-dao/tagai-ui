@@ -305,7 +305,6 @@ onMounted(async () => {
             class="h-full flex-1"
             :class="tradeType === 'buy' ? 'bg-gradient-primary' : ''"
             @click="tradeType = 'buy'"
-            :disabled="true"
           >
             Buy
           </button>
@@ -442,7 +441,7 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || calculating"
+          :disabled="trading || calculating || tradeType === 'buy'"
         >
           <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
           <i-ep-loading v-show="trading || calculating" class="animate-spin" />
