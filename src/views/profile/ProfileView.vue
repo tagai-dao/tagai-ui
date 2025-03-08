@@ -18,6 +18,15 @@ const activeTab = ref('post')
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
 const { setInter } = useInterval()
 
+const profileTableData = ref([
+  { action: 'Curation', vp: 'selected vp', op: 'selected op'},
+  { action: 'Tweet', vp: '0', op: '200'},
+  { action: 'Quote', vp: '0', op: '200'},
+  { action: 'Reply', vp: '0', op: '50'},
+  { action: 'Retweet', vp: '0', op: '5'},
+  { action: 'Like', vp: '0', op: '3'},
+])
+
 async function updateIPShare() {
   const acc = useAccountStore().getAccountInfo;
 
@@ -65,7 +74,14 @@ onMounted(() => {
               <el-progress :percentage="op * 100 / MAX_OP" :stroke-width="6" :show-text="false"
                            class="c-gradient-progress c-gradient-progress-green w-full"/>
               <template #content>
-                <div class="text-grey-normal py-1">{{ $t('curation.opDesc') }}</div>
+                <div class="max-w-[400px] py-4">
+                  <div class="text-grey-normal py-1">{{ $t('curation.opDesc') }}</div>
+                  <el-table :data="profileTableData" border style="width: 100%">
+                    <el-table-column prop="action" label="Action"/>
+                    <el-table-column prop="vp" label="VP" width="120" />
+                    <el-table-column prop="op" label="OP" width="120" />
+                  </el-table>
+                </div>
               </template>
             </el-tooltip>
           </div>

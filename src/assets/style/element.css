@@ -54,17 +54,18 @@
 }
 
 .c-arrow-popper.el-popper {
-    stroke: #3B3B3B;
-    background: #3B3B3B;
+    stroke: #ffffff;
+    background: #ffffff;
     border-radius: 30px;
     border: none;
     width: auto!important;
+    box-shadow: 0px 0px 12px rgba(0,0,0,0.12);
 }
 .c-arrow-popper.rounded-sm.el-popover {
     padding: 0;
     border-radius: 4px;
 }
 .c-arrow-popper.el-popper .el-popper__arrow::before {
-    background: #3B3B3B ;
+    background: #ffffff ;
     border: none;
 }
