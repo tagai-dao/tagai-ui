@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import {ref, onActivated, onMounted, watch, computed} from "vue";
+import {ref, onActivated, onMounted, watch, computed, reactive} from "vue";
 import { ListType, type Community, type Space } from '@/types'
 import { getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
@@ -20,7 +20,11 @@ const curationStore = useCurationStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const router = useRouter();
-const finished = ref(false)
+const finished = reactive({
+  [ListType.MarketCap]: false,
+  [ListType.Trending]: false,
+  [ListType.New]: false,
+})
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
@@ -36,27 +40,29 @@ watch(activeTab, (val) => {
 
 async function refresh() {
   try{
-    finished.value = false
     if (listType.value == ListType.MarketCap) {
+      finished[ListType.MarketCap] = false
       let communities = await getCommunityByMarketCap() as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = await getTokenInfo(communities)
       } else {
-        finished.value = true
+        finished[ListType.MarketCap] = true
       }
     } else if (listType.value == ListType.New) {
+      finished[ListType.New] = false
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = await getTokenInfo(communities)
       } else {
-        finished.value = true
+        finished[ListType.New] = true
       }
     }else if(listType.value == ListType.Trending) {
+      finished[ListType.Trending] = false
       let communities = await getCommunitiesByTrending() as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = await getTokenInfo(communities)
       } else {
-        finished.value = true
+        finished[ListType.Trending] = true
       }
     }
   } catch (e) {
@@ -68,37 +74,42 @@ async function refresh() {
 
 async function loadMore() {
   try{
-    if (finished.value) return;
     loading.value = true
     if (listType.value == ListType.MarketCap) {
+      if (finished[ListType.MarketCap]) return;
       if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length == 0) {
         return;
       }
       let communities = await getCommunityByMarketCap((comStore.marketCapCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
-      } else {
-        finished.value = true
+      } 
+      if (communities.length < 30) {
+        finished[ListType.MarketCap] = true
       }
     } else if (listType.value == ListType.New) {
       if (!comStore.newCommunities || comStore.newCommunities.length == 0) {
         return;
       }
+      if (finished[ListType.New]) return;
       let communities = await getCommunitiesByNew((comStore.newCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = comStore.newCommunities.concat(await getTokenInfo(communities))
-      } else {
-        finished.value = true
+      } 
+      if (communities.length < 30) {
+        finished[ListType.New] = true
       }
     }else if(listType.value == ListType.Trending) {
       if (!comStore.trendingCommunities || comStore.trendingCommunities.length == 0) {
         return;
       }
+      if (finished[ListType.Trending]) return;
       let communities = await getCommunitiesByTrending((comStore.trendingCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
-      } else {
-        finished.value = true
+      } 
+      if (communities.length < 30) {
+        finished[ListType.Trending] = true
       }
     }
   } catch (e) {
@@ -109,17 +120,17 @@ async function loadMore() {
 }
 
 async function getSpaces() {
-  try{
-    let spaces = await getOnlineSpaces() as Space[];
+  // try{
+  //   let spaces = await getOnlineSpaces() as Space[];
 
-    if (spaces && spaces.length > 0) {
-      curationStore.allSpaces = spaces
-    }else {
-      curationStore.allSpaces = [];
-    }
-  } catch(e) {
-    // handleErrorTip(e)
-  }
+  //   if (spaces && spaces.length > 0) {
+  //     curationStore.allSpaces = spaces
+  //   }else {
+  //     curationStore.allSpaces = [];
+  //   }
+  // } catch(e) {
+  //   // handleErrorTip(e)
+  // }
 }
 
 function gotoChain(chain: string){
@@ -210,7 +221,7 @@ const contentWidth = computed(() => {
                         pulling-text="Pull to refresh data"
                         loosing-text="Release to refresh">
         <van-list :loading="loading"
-                  :finished="finished"
+                  :finished="finished[listType]"
                   :immediate-check="false"
                   finished-text="No more"
                   :offset="50"
