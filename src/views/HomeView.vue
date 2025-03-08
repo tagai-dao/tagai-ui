@@ -124,8 +124,7 @@ async function getSpaces() {
     let spaces = await getOnlineSpaces() as Space[];
 
     if (spaces && spaces.length > 0) {
-      console.log('spaces', spaces)
-      curationStore.allSpaces = spaces.filter(space => space.tweetId !== '1898272504902283303')
+      curationStore.allSpaces = spaces.filter(space => space.twitterId !== "1487723839693852673")
     }else {
       curationStore.allSpaces = [];
     }
