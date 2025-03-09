@@ -40,7 +40,7 @@ async function trade() {
       </div>
       <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
         <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">{{$t('listed')}}</div>
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">{{$t('listed')}}</div>
       </div>
     </div>
     <div class="flex-1 flex flex-col justify-between truncate">
