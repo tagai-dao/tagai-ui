@@ -135,7 +135,7 @@ const testTick = async () => {
 }
 
 const create = async () => {
-  const account = accStore.getAccountInfo;
+  const connetctedEthAddr = accStore.ethConnectAddress;
   try {
     createLoading.value = true;
     // check params
@@ -143,10 +143,7 @@ const create = async () => {
     showLongDesc.value = false
 
     if (!(await testTick())) {
-      return;
-    }
-
-    if (!(await checkLogin())){
+      console.log('testTick failed')
       return;
     }
 
@@ -159,26 +156,10 @@ const create = async () => {
       showLongDesc.value = true;
       return;
     }
-
-    // check steem
-    if (!account?.steemId) {
-      // generate steem account
-      const signature = await signMessage(RegisterSteemMessage);
-      const salt = bytesToHex(ethers.randomBytes(4));
-      const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
-      let params = box(steemAccount);
-      createForm.pwd = params.pwd;
-      createForm.sendNonce = params.sendNonce;
-      createForm.sendPubKey = params.sendPubKey;
-      createForm.ethAddr = account!.ethAddr!;
-      createForm.salt = salt
-    }
-
     // create token
     const {createHash, token} = await createCoin(createForm);
     createForm.createHash = createHash;
     createForm.token = token;
-    createForm.twitterId = account?.twitterId;
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth
@@ -186,11 +167,6 @@ const create = async () => {
 
     // created token: prepair local data
     emitter.emit('newCommunity', createForm);
-    // add steem account
-    accStore.setAccount({
-      ...account!,
-      steemId: account?.twitterUsername
-    })
     modalStore.setModalCloseEnable(true)
     modalStore.setModalVisible(false)
   } catch (e) {
@@ -347,7 +323,7 @@ watch(() => createLoading.value, () => {
           <label for="initamount" class="font-medium text-black text-lg">
             Choose how many 【TagCoin】 you want to buy (optional)
           </label>
-          <div class="flex items-center border-b-[1px] border-grey-e6 gap-2">
+          <div class="flex items-center border-b-[1px] border-grey-e6 gap-2 h-14">
             <input
                 class="flex-1 leading-6 text-base"
                 v-model="showingInitAmount"
@@ -365,18 +341,18 @@ watch(() => createLoading.value, () => {
           </div>
         </div>
       </div>
-      <div class="pb-2">
+      <div class="py-2">
         <button
           class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
           @click="create"
-          :disabled="createLoading || accountMismatch"
+          :disabled="createLoading"
         >
           <span>Create</span>
           <i-ep-loading v-if="createLoading" class="animate-spin" />
         </button>
-        <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
+        <!-- <div v-show="accountMismatch && !accStore.getAccountInfo?.twitterId" class="mt-2 text-sm px-3 text-red-e6">
           {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
-        </div>
+        </div> -->
         <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
           <span class="text-grey-normal">Cost to deploy：</span>
           <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} BNB</span>
