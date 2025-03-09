@@ -37,7 +37,7 @@ export const MainToken = {
 // also create coin or create social account will cost 0.00005 ETH
 export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
 export const CreateFee = "10000000000000000";
-export const ClaimFee =  "2000000000000000";
+export const ClaimFee =  "1000000000000000";
 
 export const TotalSupply = 1000000000;
 export const SocialSupply = 150000000;
