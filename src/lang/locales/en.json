@@ -128,8 +128,8 @@
   "curation": {
     "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet.",
     "quote": "Quote",
-    "vpDesc": "Like/Retweet a tweet will cost you vp(voting power). And you can earn tagcoin after 3 days. Each account has 200VP value.",
-    "opDesc": "All tweet operation(like/retweet/quote/reply will cost you op(operation power) because of all the operation will sync to the blockchain. Each account has 2000OP value.",
+    "vpDesc": "Like/Retweet a tweet will cost you vp(voting power). And you can earn tagcoin after 3 days. Each account has 200 VP value. VP value will recover linearly, 200 VP every 3 days.",
+    "opDesc": "All tweet operation(like/retweet/quote/reply will cost you op(operation power) because of all the operation will sync to the blockchain. Each account has 2000 OP value. OP value will recover linearly, 2000 OP every 3 days.",
     "curationTip": "Curate a tweet or as a speaker of a space can gain curate rewards. Write a tweet or host a space can gain creator rewards. When the tagcoin listed, you can claim all this tagcoin rewards.",
     "curate": "Curate",
     "curation": "Curation"
