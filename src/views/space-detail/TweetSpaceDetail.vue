@@ -87,11 +87,11 @@ onMounted(async () => {
       <div v-if="curationStore.currentSelectedTweet?.state != 4" class="bg-white rounded-2xl py-4 px-3 flex flex-col gap-4">
         <div class="flex items-center gap-2">
           <div class="text-base flex-1 text-h5">
-            Rewards
+            {{$t('postView.rewards')}}
           </div>
           <button class="h-6 px-3 text-sm rounded-lg"
                   :class="curationStore.currentSelectedTweet?.isSettled?'bg-grey-light-hover':'bg-yellow-fa'">
-            {{ curationStore.currentSelectedTweet?.isSettled ? "Settled" : "On Curation" }}
+            {{ curationStore.currentSelectedTweet?.isSettled ? $t('postView.settled') : $t('postView.onCuration') }}
           </button>
         </div>
         <div class="h-12 rounded-xl bg-grey-normal px-3 text-white font-medium flex justify-center items-center">
@@ -102,7 +102,7 @@ onMounted(async () => {
             @click="curationType = CurationType.Curate; curatorsModalVisible = true">
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
-                <div class="flex-1">Curation</div>
+                <div class="flex-1">{{$t('curation.curation')}}</div>
                 <span>{{ curationStore.currentSelectedTweet?.spaceCurateCount ?? 0 }}</span>
               </div>
               <div class="flex justify-between items-center gap-1">
@@ -117,7 +117,7 @@ onMounted(async () => {
               @click="curationType = CurationType.Host; curatorsModalVisible = true">
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
-                <div class="flex-1">Host</div>
+                <div class="flex-1">{{ $t('postView.host') }}</div>
                 <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length : 0 }}</span>
               </div>
               <div class="flex justify-between items-center gap-1">
@@ -132,7 +132,7 @@ onMounted(async () => {
           @click="curationType = CurationType.CoHost; curatorsModalVisible = true">
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
-                <div class="flex-1">Co-Host</div>
+                <div class="flex-1">{{ $t('postView.co-host') }}</div>
                 <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length - 1 : 0 }}</span>
               </div>
               <div class="flex justify-between items-center gap-1">
@@ -147,7 +147,7 @@ onMounted(async () => {
           @click="curationType = CurationType.Speaker; curatorsModalVisible = true">
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
-                <div class="flex-1">Speaker</div>
+                <div class="flex-1">{{ $t('postView.speaker') }}</div>
                 <span>{{ curationStore.currentSelectedTweet?.speakerIds ? JSON.parse(curationStore.currentSelectedTweet?.speakerIds).length : 0 }}</span>
               </div>
               <div class="flex justify-between items-center gap-1">
@@ -170,7 +170,7 @@ onMounted(async () => {
           </button>
         </div> -->
       </div>
-      <div class="text-h5 mt-2 px-3">Space Comments</div>
+      <div class="text-h5 mt-2 px-3">{{ $t('postView.spaceComments') }}</div>
       <Comments/>
     </div>
     <el-dialog v-model="curatorsModalVisible"

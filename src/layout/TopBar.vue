@@ -42,7 +42,7 @@ function onClickWallet() {
            src="~@/assets/logo.png" alt=""
            @click="$router.replace('/')">
       <button class="bg-gradient-primary text-white rounded-2xl text-sm px-2 h-5"
-              @click="ruleModalVisible = true">Rule</button>
+              @click="ruleModalVisible = true">{{ $t('rule') }}</button>
     </div>
     <div class="flex items-center gap-3 web:gap-6">
       <router-link to="/" class="hidden web:block">

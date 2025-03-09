@@ -72,8 +72,8 @@ onMounted(() => {
     </div>
     <div class="bg-white rounded-2xl p-3">
       <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">
-        <span class="col-span-1 text-left">Address</span>
-        <span class="col-span-1 text-center">Buy/Sell</span>
+        <span class="col-span-1 text-left">{{$t('address')}}</span>
+        <span class="col-span-1 text-center">{{ $t('buy') }}/{{$t('sell')}}</span>
         <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
         <span class="col-span-1 text-right">$BNB</span>
       </div>
@@ -90,7 +90,7 @@ onMounted(() => {
                   @load="onLoad">
 
           <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">
-            No trade data
+            {{$t('buyAndSell.noTradeData')}}
           </div>
           <div v-else class="grid grid-cols-4 gap-x-2 h-8 items-center text-h4"
                v-for="(token, i) of listData" :key="i">
@@ -99,7 +99,7 @@ onMounted(() => {
               <span class="truncate">{{ formatAddress(token.trader, 5, 4) }}</span>
             </div>
             <span class="col-span-1 text-center" :class="token.isBuy?'text-green-34':'text-red-normal'">
-            {{ token.isBuy ? 'Buy' : "Sell" }} {{ formatPastTime(token.timestamp as number) }}
+            {{ token.isBuy ? $t('buy') : $t('sell') }} {{ formatPastTime(token.timestamp as number) }}
           </span>
             <span class="col-span-1 text-center">{{ formatAmount((token.amount as any)) }}</span>
             <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any)) }}</span>

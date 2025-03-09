@@ -13,7 +13,7 @@ const activeTab = ref('social')
   <div class="h-full overflow-hidden flex flex-col gap-3">
     <BackHeader class="px-3">
       <template #title>
-        <div class="text-lg font-semibold text-black-19 ">Notification</div>
+        <div class="text-lg font-semibold text-black-19 ">{{$t('notificationView.notification')}}</div>
       </template>
     </BackHeader>
     <div v-if="false" class="flex justify-between items-center gap-2 px-3 bg-white rounded-2xl h-12 mx-3">

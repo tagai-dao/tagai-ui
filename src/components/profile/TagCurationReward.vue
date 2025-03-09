@@ -66,7 +66,7 @@ async function claim() {
     </div>
     <button @click="claim" :disabled="claiming || !canClaim || accountMismatch"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
-      {{ canClaim ? 'Claim' : 'Pending settled' }}
+      {{ canClaim ? $t('claim') : $t('pendingSettled') }}
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>
     <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected"

@@ -107,7 +107,7 @@ async function reply() {
       <div class="mt-3">
         <TweetInput ref="tweetInput" :max-length="280" :tick="tweet.tick">
           <template #placeholder>
-            Write comment to the tweet here
+            {{$t('postView.writeCommentTip')}}}}
           </template>
         </TweetInput>
       </div>
@@ -116,7 +116,7 @@ async function reply() {
                          flex items-center justify-center gap-2 disabled:opacity-30"
                 :disabled="isRepling"
                 @click="reply">
-          <span class="text-white text-h5">Reply</span>
+          <span class="text-white text-h5">{{$t('postView.reply')}}</span>
           <i-ep-loading v-if="isRepling" class="w-4 h-4"/>
         </button>
       </div>

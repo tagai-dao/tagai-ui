@@ -43,7 +43,7 @@ const onPostTweet = async () => {
     if (leftWordsLength.value < 0){
       return;
     }
-  
+
     await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!);
     emitter.emit('tweeted')
     emit('close')
@@ -58,11 +58,11 @@ const onPostTweet = async () => {
 <template>
   <div class="flex flex-col gap-y-6 pb-3">
     <div class="text-xl font-medium text-black text-center">
-      Tweet a blink
+      {{ $t('postView.tweetBlink') }}
     </div>
     <div>
       <div class="flex justify-between items-center px-2">
-        <div>Type your content here</div>
+        <div>{{ $t('postView.typeTip') }}</div>
         <div :class="leftWordsLength < 0 ? 'text-red-e6' : ''">{{ leftWordsLength }}</div>
       </div>
       <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
@@ -75,7 +75,7 @@ const onPostTweet = async () => {
              @paste="onPaste"
              v-html="contentEl"></div>
         <div v-if="!showClear" class="absolute top-3 left-3 text-14px leading-24px z-0 opacity-30">
-          Please input
+          {{$t('postView.pleaseInput')}}
         </div>
         <div class="flex justify-between items-center px-3 py-2">
           <el-popover ref="emojiPopover" trigger="click" width="300" :teleported="true" :persistent="false">
@@ -105,7 +105,7 @@ const onPostTweet = async () => {
                        flex justify-center items-center space-x-2 disabled:opacity-30"
               :disabled="tweetLoading"
               @click="onPostTweet">
-        <span class="text-white font-bold text-lg">Go Tweet</span>
+        <span class="text-white font-bold text-lg">{{ $t('postView.goTweet') }}</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>
       </button>
     </div>

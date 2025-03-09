@@ -123,18 +123,18 @@ onUnmounted(() => {
           <template #default>
             <div class="text-grey-normal text-sm px-2">
               <div class="flex justify-between items-center h-7 gap-3">
-                <span>Author</span>
+                <span>{{ $t('postView.author') }}</span>
                 <span class="font-semibold whitespace-nowrap">{{ formatAmount(tweet.authorAmount) }}({{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10 gap-3">
-                <span>Curator</span>
+                <span>{{$t('postView.curator')}}</span>
                 <span class="font-semibold whitespace-nowrap">{{ formatAmount(tweet.curateAmount) }} ({{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
               <div v-if="!tweet.listed" class="flex justify-between items-center h-7 gap-3">
-                 Pending list
+                {{ $t('postView.pendingList') }}
               </div>
               <div v-else class="flex justify-between items-center h-7">
-                <span>End time:</span>
+                <span>{{ $t('postView.endTime') }}:</span>
                 <span class="font-semibold whitespace-nowrap">{{ parseTimestamp(new Date((tweet.dayNumber + 3) * 86400000)) }}</span>
               </div>
             </div>

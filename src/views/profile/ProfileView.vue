@@ -121,7 +121,7 @@ onMounted(() => {
         <button @click="useModalStore().setModalVisible(true, GlobalModalType.Register)" class="bg-gradient-primary flex items-center px-2 py-1 rounded-full">
           <img class="w-4 h-4 mr-2" src="~@/assets/icons/icon-farcaster.svg" alt="">
           <span class="text-white text-sm">
-            Bind Farcaster
+            {{$t('profileView.bindFacaster')}}
           </span>
       </button>
       </div>

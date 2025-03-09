@@ -78,7 +78,7 @@ onMounted(async () => {
 <template>
   <div class="bg-white rounded-2xl p-3" v-if="comStore.currentSelectedCommunity?.tick">
     <div class="grid grid-cols-8 gap-x-2 text-h5 h-10 items-center">
-      <span class="col-span-4 pl-8">Account</span>
+      <span class="col-span-4 pl-8">{{ $t('account') }}</span>
       <span class="col-span-2">#{{ comStore.currentSelectedCommunity.tick }}</span>
       <span class="col-span-2 text-right">Credit</span>
     </div>

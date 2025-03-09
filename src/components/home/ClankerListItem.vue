@@ -52,7 +52,7 @@ const { onCopy } = useTools()
       </div>
       <div class="flex-1 w-full flex items-center pt-1 text-sm text-grey-64">
         <span>
-          address: {{ formatAddress(token.token ?? '', 8, 4) }}
+          {{ $t('address') }}: {{ formatAddress(token.token ?? '', 8, 4) }}
         </span>
         <button class="ml-2" @click.stop="onCopy(token.token??'')"
                   :disabled="!(token?.token)">

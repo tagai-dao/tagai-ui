@@ -2,13 +2,36 @@
   "buy": "购买",
   "sell": "出售",
   "tips": "打赏",
+  "tip": "打赏",
   "createCoin": "创建代币",
   "search": "搜索",
-  "home": {
-    "marketCap": "市值",
-    "trending": "趋势",
-    "new": "最新"
-  },
+  "marketCap": "市值",
+  "trending": "热门",
+  "new": "最新",
+  "tag": "Tag",
+  "profile": "我的",
+  "rule": "规则",
+  "confirm": "确认",
+  "confirmListed": "确认（已列出）",
+  "pay": "支付",
+  "connect": "连接",
+  "create": "创建",
+  "cancel": "取消",
+  "complete": "完成",
+  "listed": "已列出",
+  "address": "地址",
+  "claim": "领取",
+  "pendingSettled": "待结算",
+  "balance": "余额",
+  "receive": "接收",
+  "none": "无",
+  "blink": "Blink",
+  "post": "发布",
+  "swap": "兑换",
+  "more": "更多",
+  "account": "账户",
+  "comingSoon": "即将推出",
+  "trade": "交易",
   "loginView": {
     "loginWithTwitter": "登录推特",
     "p1": "使用渐进式Web应用技术，结合了传统网站和平台特定应用的最佳功能",
@@ -16,9 +39,16 @@
     "bindAddress": "绑定以太坊钱包",
     "addressUsed": "这个地址已被其他Twitter账户使用，请在您的钱包中更换另一个地址",
     "registerRequire": "我们将帮助您创建一个Web3社交账户，并将发布权限委托给我们的账户。由于注册Web3社交账户需要费用，我们将为您承担注册费用。如果您拥有Farcaster或Bitip账户，我们将免费帮助您注册。",
-    "noEns": "您的地址中没有ENS",
-    "noBitip": "还没有BItIP吗？点击这里进行创建。",
-    "selectBitipTip": "选择BitIP作为身份"
+    "noEns": "您的地址中没有 ENS",
+    "noBitip": "还没有 BItIP 吗？点击这里进行创建。",
+    "selectBitipTip": "选择 BitIP 作为身份",
+    "bindAddressTip": "推荐使用您的 Farcaster 账户作为绑定地址",
+    "choseWallet": "选择钱包",
+    "haveBitIP": "我已有 BitIp",
+    "mint": "铸造",
+    "bond": "绑定",
+    "fidUsedTip": "该 Farcaster 账户已被使用",
+    "createWalletTip": "您需要创建一个钱包供 Donut 使用"
   },
   "web3": {
     "addressMismatch": "连接的地址不匹配，请在你的钱包地址中更换地址为: {address}"
@@ -33,12 +63,19 @@
     "captureTitle": "价值捕获",
     "captureDesc": "用户交易代币产生的部分交易费用将被注入到IPShare中由IPShare质押者瓜分",
     "bindEthAddress": "绑定你的ETH地址",
-    "createYourCoin": "创建您的社区代币"
+    "createYourCoin": "创建您的社区代币",
+    "bindFacaster": "绑定你的 Farcaster"
   },
   "notificationView": {
     "ipShare": "IPShare",
     "social": "社交",
-    "tips": "提示"
+    "tips": "提示",
+    "notification": "通知",
+    "noMsg": "暂无消息",
+    "quoteTweet": "引用了你的推文",
+    "replyTweet": "回复了你的推文",
+    "likeTweet": "点赞了你的推文",
+    "retweetTweet": "转发了你的推文"
   },
   "createCommunity": {
     "createCommunity": "创建代币",
@@ -51,12 +88,34 @@
     "tickUsed": "这个名称已经被注册，请更换",
     "pay": "支付",
     "youReceive": "你将得到",
-    "modifyCoin": "修改代币信息"
+    "modifyCoin": "修改代币信息",
+    "directly": "直接",
+    "byAI": "通过AI",
+    "tagTick": "标签(Tick)",
+    "description": "描述",
+    "logo": "Logo",
+    "onlyPicTip": "仅支持图片类型",
+    "picSizeLimitTip": "图片大小不能超过1M",
+    "categoryTag": "分类标签",
+    "descTag": "描述你的标签",
+    "add": "添加",
+    "buyTip": "选择你想购买的【TagCoin】数量（可选）",
+    "create": "创建",
+    "costTopDeploy": "部署成本",
+    "deployTip": "你可以让 TipTagAI 立即为你部署代币：",
+    "deployTip1": "写一条推文，表达你对想要创建的代币的任何想法。TipTagAI 将分析你的推文，并帮助你创建带有ticker/描述/logo的代币。",
+    "deployTip2": "回复或引用一条你觉得有趣的推文。",
+    "deployTip3": "你只需要将以下命令复制到你的推文内容中即可完成所有操作。",
+    "officialLink": "官方链接",
+    "aiCreate": "AI创建"
   },
   "buyAndSell": {
     "setMaxSlippage": "设置最大滑点 %",
     "tweetTip": "您必须创建社交账户才能发布推文",
-    "blinkTip": "如果您已经创建了IPShare，您可以通过Blink与Twitter互动。您在Blink上的交易标签可以为您带来奖励"
+    "blinkTip": "如果您已经创建了IPShare，您可以通过Blink与Twitter互动。您在Blink上的交易标签可以为您带来奖励",
+    "invalidTokenSellTip": "该代币由旧版本创建，存在异常且已关闭购买功能。请尽快出售。",
+    "fillInfoTip": "请填写数量",
+    "noTradeData": "暂无交易数据"
   },
   "community": {
     "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于绑定曲线销售，20%用于进入流动性池。",
@@ -71,13 +130,43 @@
     "quote": "引用",
     "vpDesc": "策展一条推文将消耗您的VP（投票权）。即参与了社区代币的去中心化分配。",
     "opDesc": "所有推文操作（点赞/转发/引用/回复）将消耗您的OP（操作权限），因为所有操作都会同步到区块链。",
-    "curationTip": "策展一条推文或作为空间的作者可以获得策展奖励。写一条推文或主持一个直播space可以获得创作者奖励。当标签所属的代币list到dex后，您可以领取所有这些代币奖励。"
+    "curationTip": "策展一条推文或作为空间的作者可以获得策展奖励。写一条推文或主持一个直播space可以获得创作者奖励。当标签所属的代币list到dex后，您可以领取所有这些代币奖励。",
+    "curate": "策展",
+    "curation": "策展"
   },
   "postView": {
-    "createNewCuration": "创建"
+    "createNewCuration": "创建",
+    "tweetOnChain": "链上推文",
+    "tweetOnChainTip1": "撰写一条推文作为策展内容，并接收其他用户的策展。",
+    "tweetOnChainTip2": "或者你可以直接在下方文本框中撰写推文并点击“发布推文”。",
+    "typeTip": "在此输入你的内容",
+    "pleaseInput": "请输入",
+    "goTweet": "发布推文",
+    "spaceOnChain": "发布链上Space",
+    "spaceLink": "Space链接",
+    "tweetBlink": "发布Blink",
+    "author": "作者",
+    "curator": "策展人",
+    "host": "主持人",
+    "co-host": "联合主持人",
+    "speaker": "演讲者",
+    "endTime": "结束时间",
+    "pendingList": "待处理列表",
+    "writeCommentTip": "在此撰写推文的评论",
+    "reply": "回复",
+    "curatedCount": "{count}人已策展",
+    "comments": "评论",
+    "postReward": "策展 & Space奖励",
+    "rewards": "奖励",
+    "settled": "已结算",
+    "onCuration": "策展中",
+    "spaceComments": "Space评论",
+    "aiCreate": "AI创建",
+    "postToEarn": "发布赚取"
   },
   "ipshare": {
-    "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。"
+    "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",
+    "createIpShare": "创建 IPShare"
   },
   "errMessage": {
     "idUsed": "身份已经被使用",

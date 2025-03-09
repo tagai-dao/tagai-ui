@@ -27,7 +27,9 @@ const connect = async (type: WalletType) => {
     <div class="text-h2 text-black text-center">
       {{$t('loginView.createWallet')}}
     </div>
-    <div class="text-base text-center text-grey-normal">Now you need to create a wallet for donut use</div>
+    <div class="text-base text-center text-grey-normal">
+      {{$t('loginView.createWalletTip')}}
+    </div>
     <div class="flex flex-col gap-3 w-full items-center text-18px pb-5">
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-4"
               :disabled="connecting"

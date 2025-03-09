@@ -37,12 +37,12 @@ onMounted(() => {
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-2">
       <div class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
-          <span>BSC address: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
+          <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-1">
         <div class="flex-1 flex items-center flex-wrap gap-4">
-          <span>BSC balance: {{ formatAmount(useAccountStore().ethBalance) }}</span>
+          <span>BSC {{ $t('balance') }}: {{ formatAmount(useAccountStore().ethBalance) }}</span>
         </div>
       </div>
     </div>
