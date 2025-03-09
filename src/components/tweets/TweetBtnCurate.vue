@@ -21,13 +21,13 @@ const { op, vp } = useAccount();
 const curateAmount = ref(3);
 
 async function preCurate() {
-  // if (useCommunityStore().currentSelectedCommunity?.distributionEnded) {
-  //     handleErrorTip(errCode.DISTRIBUTION_ENDED)
-  //     return;
-  //   }
-  // if (!(await preCheckCuration(OperateType.CURATE, props.tweet))) {
-  //   return;
-  // }
+  if (useCommunityStore().currentSelectedCommunity?.distributionEnded) {
+      handleErrorTip(errCode.DISTRIBUTION_ENDED)
+      return;
+    }
+  if (!(await preCheckCuration(OperateType.CURATE, props.tweet))) {
+    return;
+  }
   curateVisible.value = true
 }
 
