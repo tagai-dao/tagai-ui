@@ -75,7 +75,7 @@ const onPostTweet = async () => {
     </p>
     <p v-if="$i18n.locale==='zh'" class="text-sm text-gray-600">
       您可以在 Twitter 上撰写推文，并在推文内容前面加上
-      <span class="text-blue-500">#tiptag(or @TagAIDAO)</span> 和
+      <span class="text-blue-500">#tagai(or @TagAIDAO)</span> 和
       <span class="text-blue-500">#{{ useCommunityStore().currentSelectedCommunity?.tick }}</span>，
       该推文将自动发布到社区。
     </p>
