@@ -127,7 +127,6 @@ export const formatPrice = (value: number | string, abb = false) => {
     }
   }
   const str = Number(value).toFixed(digit).toString();
-  console.log('str', str)
   let integer = str;
   let fraction = "";
   if (str.includes(".")) {
