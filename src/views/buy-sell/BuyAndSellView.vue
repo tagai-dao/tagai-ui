@@ -441,7 +441,7 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || calculating || tradeType === 'buy'"
+          :disabled="trading || calculating || (tradeType === 'buy' && !comStore.currentSelectedCommunity?.listed)"
         >
           <span>{{ (accStore.ethConnectAddress ? (listed ? $t('confirmListed') : $t('confirm')): $t('connect')) }}</span>
           <i-ep-loading v-show="trading || calculating" class="animate-spin" />
