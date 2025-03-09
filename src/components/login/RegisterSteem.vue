@@ -286,9 +286,9 @@ onMounted(() => {
         <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button> -->
-      <div class="w-full" @click="selectFarcaster">
+      <!-- <div class="w-full" @click="selectFarcaster">
         <FarcasterBtn @signInSuccess="onSignInSuccess" />
-      </div>
+      </div> -->
       <div class="w-full" v-if="!accStore.getAccountInfo.steemId">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"
