@@ -107,20 +107,29 @@ async function payToken() {
     resetTips()
     try {
         loading.value = true
-        const balance = await getBalance(accStore.getAccountInfo!.ethAddr!);
-        if (balance <= BigInt(CreateFee)) {
-            showInsufficientBalance.value = true;
-            return;
+        const payTokenHash = localStorage.getItem('payTokenHash')
+        if (payTokenHash) {
+            const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+            identityInfo.assetId = hash;
+            identityInfo.chainName = ChainConfig.name;
+            identityInfo.type = 'payToken'
+            await register();
+        }else {
+          const balance = await getBalance(accStore.getAccountInfo!.ethAddr!);
+          if (balance <= BigInt(CreateFee)) {
+              showInsufficientBalance.value = true;
+              return;
+          }
+          const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+          identityInfo.assetId = hash;
+          identityInfo.chainName = ChainConfig.name;
+          identityInfo.type = 'payToken'
+          await register();
         }
-        const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
-        identityInfo.assetId = hash;
-        identityInfo.chainName = ChainConfig.name;
-        identityInfo.type = 'payToken'
-        await register();
     } catch (error) {
         handleErrorTip(error)
-    }finally{
         loading.value = false
+    }finally{
     }
 }
 
@@ -225,6 +234,7 @@ async function signInFarcasterEth() {
 }
 
 async function register() {
+  try {
     const signature = await ethSignMessage(RegisterSteemMessage)
     const account = accStore.getAccountInfo
     const salt = bytesToHex(ethers.randomBytes(4));
@@ -250,6 +260,7 @@ async function register() {
         farcasterName: accStore.farcasterUser?.name
       })
       accStore.farcasterUser = null;
+      localStorage.removeItem('payTokenHash')
       useModalStore().setModalVisible(false)
       return;
     }
@@ -263,8 +274,15 @@ async function register() {
         isAuthFarcaster: true,
         farcasterName: accStore.farcasterUser?.name
       })
+      localStorage.removeItem('payTokenHash')
     }
     useModalStore().setModalVisible(false)
+  } catch (error) {
+    handleErrorTip(error)
+  } finally{
+    loading.value = false
+  }
+    
 }
 
 const openDonut = () => {
@@ -286,9 +304,9 @@ onMounted(() => {
         <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button> -->
-      <div class="w-full" @click="selectFarcaster">
+      <!-- <div class="w-full" @click="selectFarcaster">
         <FarcasterBtn @signInSuccess="onSignInSuccess" />
-      </div>
+      </div> -->
       <div class="w-full" v-if="!accStore.getAccountInfo.steemId">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"

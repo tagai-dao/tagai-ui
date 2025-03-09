@@ -80,7 +80,7 @@
   "createCommunity": {
     "createCommunity": "创建代币",
     "initAmountTip": "请输入第一次购买数量",
-    "initEth": "支付（数量）BNB",
+    "initEth": "支付 {amount} BNB",
     "invalidTickTip": "请输入1-16个字符（(a-z&A-Z)），区分大小写",
     "tagForbidden": "不能创建这个标贴",
     "descTooLong": "描述信息在1024个字符内",
@@ -128,8 +128,8 @@
   "curation": {
     "tweetWithTickTip": "写一些关于带有标签 {tick} 的内容，如果有人喜欢您的推文，您可以赚取 {tick} 代币。",
     "quote": "引用",
-    "vpDesc": "策展一条推文将消耗您的VP（投票权）。即参与了社区代币的去中心化分配。",
-    "opDesc": "所有推文操作（点赞/转发/引用/回复）将消耗您的OP（操作权限），因为所有操作都会同步到区块链。",
+    "vpDesc": "策展一条推文将消耗您的VP（投票权）。即参与了社区代币的去中心化分配。 每个账号初始拥有200VP值。",
+    "opDesc": "所有推文操作（点赞/转发/引用/回复）将消耗您的OP（操作权限），因为所有操作都会同步到区块链。每个账号初始拥有2000OP值。",
     "curationTip": "策展一条推文或作为空间的作者可以获得策展奖励。写一条推文或主持一个直播space可以获得创作者奖励。当标签所属的代币list到dex后，您可以领取所有这些代币奖励。",
     "curate": "策展",
     "curation": "策展"

@@ -117,14 +117,14 @@ onMounted(() => {
           {{ accStore.getAccountInfo.farcasterName }}
         </div>
       </div>
-      <div v-else class="flex pl-14 justify-start items-center gap-3a mt-2 ">
+      <!-- <div v-else class="flex pl-14 justify-start items-center gap-3a mt-2 ">
         <button @click="useModalStore().setModalVisible(true, GlobalModalType.Register)" class="bg-gradient-primary flex items-center px-2 py-1 rounded-full">
           <img class="w-4 h-4 mr-2" src="~@/assets/icons/icon-farcaster.svg" alt="">
           <span class="text-white text-sm">
             {{$t('profileView.bindFacaster')}}
           </span>
-      </button>
-      </div>
+        </button>
+      </div> -->
     </div>
     <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
       <button v-for="tab of tabOptions" :key="tab"

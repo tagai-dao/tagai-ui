@@ -65,7 +65,7 @@ const onPostTweet = async () => {
     <p v-if="$i18n.locale==='en'" class="text-sm text-gray-600">
       You can write a tweet with
       <span class="text-blue-500">
-        #tiptag(or @TagAIDAO)
+        #tagai(or @TagAIDAO)
       </span>
        and
       <span class="text-blue-500">

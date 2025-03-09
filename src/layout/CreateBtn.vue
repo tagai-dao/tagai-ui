@@ -6,12 +6,8 @@ const accStore = useAccountStore()
 const modalStore = useModalStore()
 
 async function createCoin() {
-  const acc = accStore.getAccountInfo;
-  if (!acc) {
-    modalStore.setModalVisible(true, GlobalModalType.Login)
-    return
-  }else if (!acc.ethAddr) {
-    modalStore.setModalVisible(true, GlobalModalType.BondEth)
+  if (!accStore.ethConnectAddress) {
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return
   }else {
     modalStore.setModalVisible(true, GlobalModalType.CreateCoin)

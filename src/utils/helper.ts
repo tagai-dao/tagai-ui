@@ -86,13 +86,16 @@ export function stringLength(str: string) {
 export const formatPrice = (value: number | string, abb = false) => {
   if (!value) return "$0.00";
   let unit = ''
-  if (Number(value) > 1e6) {
+  if (Number(value) > 1e7) {
     abb = true
   }
 
   let digit = 3
   if (Number(value) > 1e3) {
     digit = 0
+  }
+  if(Number(value) > 1e5) {
+    digit = 2
   }
   if (Number(value) < 1) {
     digit = 4
