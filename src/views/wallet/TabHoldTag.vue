@@ -108,7 +108,7 @@ onMounted(async () => {
             </div>
           </div>
           <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"
-                  class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">Trade</button>
+                  class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}</button>
         </div>
       </van-list>
     </van-pull-refresh>

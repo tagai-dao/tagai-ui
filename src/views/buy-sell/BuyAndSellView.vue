@@ -306,21 +306,21 @@ onMounted(async () => {
             :class="tradeType === 'buy' ? 'bg-gradient-primary' : ''"
             @click="tradeType = 'buy'"
           >
-            Buy
+            {{ $t('buy') }}
           </button>
           <button
             class="h-full flex-1"
             :class="tradeType === 'sell' ? 'bg-gradient-primary' : ''"
             @click="tradeType = 'sell'"
           >
-            Sell
+            {{ $t('sell') }}
           </button>
         </div>
         <template v-if="tradeType === 'buy'">
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center"
           >
-            <span class="text-h5">Pay</span>
+            <span class="text-h5">{{ $t('pay') }}</span>
             <input
               v-model="payEth"
               type="number"
@@ -337,13 +337,13 @@ onMounted(async () => {
               </button>
           </div>
           <div class="text-right text-sm">
-            Balance: {{ formatAmount(ethBalance) }}
+            {{$t('balance')}}: {{ formatAmount(ethBalance) }}
           </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
           >
             <span class="text-h5"
-              >Receive ${{ comStore.currentSelectedCommunity?.tick }}</span
+              >{{$t('receive')}} ${{ comStore.currentSelectedCommunity?.tick }}</span
             >
             <span class="text-h3">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
           </div>
@@ -352,7 +352,7 @@ onMounted(async () => {
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center"
           >
-            <span class="text-h5">Sell</span>
+            <span class="text-h5">{{ $t('sell') }}</span>
             <input
               v-model="sellAmount"
               type="number"
@@ -362,12 +362,12 @@ onMounted(async () => {
           </div>
           <AmountProgressBar class="h-5 web:h-7"/>
           <div class="text-sm flex justify-end">
-            Balance: {{ formatAmount(tokenBalance) }}
+            {{ $t('balance') }}: {{ formatAmount(tokenBalance) }}
           </div>
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
           >
-            <span class="text-h5">Receive $ETH</span>
+            <span class="text-h5">{{ $t('receive') }} $ETH</span>
             <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
           </div></template
         >
@@ -422,16 +422,16 @@ onMounted(async () => {
         </div>
         <div v-if="false" class="flex justify-center">
           <el-radio-group v-model="isPostTweet" @change="checkTweet" class="c-radio gap-8">
-            <el-radio :value="false">None</el-radio>
+            <el-radio :value="false">{{ $t('none') }}</el-radio>
             <el-radio :value="true">
               <div class="flex items-center gap-1.5">
-                <span>Blink</span>
+                <span>{{$t('blink')}}</span>
                 <el-tooltip popper-class="c-arrow-popper" trigger="click" ref="retweetQuoteRef">
                   <button @click.stop class="">
                     <img class="w-4" src="~@/assets/icons/icon-warning-primary.svg" alt="">
                   </button>
                   <template #content>
-                    <div class="text-white px-3 py-1 max-w-[200px] font-medium">{{  $t('buyAndSell.blinkTip') }}</div>
+                    <div class="text-grey-normal px-3 py-1 max-w-[200px] font-medium">{{  $t('buyAndSell.blinkTip') }}</div>
                   </template>
                 </el-tooltip>
               </div>
@@ -443,11 +443,11 @@ onMounted(async () => {
           @click="confirm"
           :disabled="trading || calculating || tradeType === 'buy'"
         >
-          <span>{{ (accStore.ethConnectAddress ? (listed ? "Confirm(listed)" : "Confirm"): 'Connect') }}</span>
+          <span>{{ (accStore.ethConnectAddress ? (listed ? $t('confirmListed') : $t('confirm')): $t('connect')) }}</span>
           <i-ep-loading v-show="trading || calculating" class="animate-spin" />
         </button>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
-          Please complete the amount
+          {{ $t('buyAndSell.fillInfoTip') }}
         </div>
       </div>
     </div>

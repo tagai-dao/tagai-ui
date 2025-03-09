@@ -220,19 +220,19 @@ watch(() => createLoading.value, () => {
 
     <!-- 选项卡 -->
     <div class="flex border-b border-grey-e6 mb-4">
-      <div 
+      <div
         class="px-4 py-2 cursor-pointer text-lg text-bold"
         :class="{'border-b-2 border-orange-light-active': activeTab === 'token'}"
         @click="activeTab = 'token'"
       >
-        Directly
+        {{$t('createCommunity.directly')}}
       </div>
       <div
-        class="px-4 py-2 cursor-pointer text-lg bold" 
+        class="px-4 py-2 cursor-pointer text-lg bold"
         :class="{'border-b-2 border-orange-light-active': activeTab === 'tweet'}"
         @click="activeTab = 'tweet'"
       >
-        By AI
+        {{$t('createCommunity.byAI')}}
       </div>
     </div>
 
@@ -241,7 +241,7 @@ watch(() => createLoading.value, () => {
       <div class="flex flex-col gap-4">
       <!-- name -->
         <div class="flex flex-col gap-1">
-          <label for="name" class="leading-6 text-lg font-medium text-black">Tag(Tick):</label>
+          <label for="name" class="leading-6 text-lg font-medium text-black">{{$t('createCommunity.tagTick')}}:</label>
           <input
             class="border-b-[1px] border-grey-e6 leading-6 text-base"
             v-model="createForm.tick"
@@ -262,13 +262,13 @@ watch(() => createLoading.value, () => {
         <!-- desc -->
         <div class="flex flex-col gap-1">
           <label for="desc" class="leading-6 text-lg font-medium text-black"
-            >Description:</label
+            >{{$t('createCommunity.description')}}:</label
           >
           <textarea
             class="border-b-[1px] border-grey-e6 leading-6 text-base"
             v-model="createForm.desc"
             id="desc"
-            placeholder="Describe your tag"
+            :placeholder="$t('createCommunity.descTag')"
           />
           <div class="text-red-e6 text-sm" v-show="showLongDesc">
             {{ $t('createCommunity.descTooLong') }}
@@ -276,7 +276,7 @@ watch(() => createLoading.value, () => {
         </div>
         <!-- logo -->
         <div class="flex items-center gap-4">
-          <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
+          <label for="logo" class="leading-6 text-lg font-medium text-black">{{ $t('createCommunity.logo') }}:</label>
           <div class="flex items-center gap-2">
             <img
               v-if="createForm.logoUrl"
@@ -307,16 +307,16 @@ watch(() => createLoading.value, () => {
               <img v-else src="~@/assets/icons/icon-upload.svg" alt="" />
             </el-upload>
             <div v-if="showOnlyPic" class="text-red-e6">
-              Only support image type
+              {{$t('createCommunity.onlyPicTip')}}
             </div>
             <div v-if="showPicSizeLimit" class="text-red-e6">
-              Image size can't large than 1M
+              {{$t('createCommunity.picSizeLimitTip')}}
             </div>
           </div>
         </div>
         <!-- tag -->
         <div class="flex flex-col gap-1">
-          <label for="tags" class="leading-6 text-lg">Category Tag </label>
+          <label for="tags" class="leading-6 text-lg">{{$t('createCommunity.categoryTag')}} </label>
           <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
             <input
               class="leading-6 text-base flex-1"
@@ -325,13 +325,13 @@ watch(() => createLoading.value, () => {
               @keydown="(e) => {if (e.key === 'Enter' || e.key === 'Enter' || e.keyCode===13) { onAddTags()}}"
               type="text"
               id="name"
-              placeholder="TAG"
+              :placeholder="$t('tag')"
             />
             <button
               class="border-[1px] border-orange-light-active rounded-md px-2 flex items-center gap-1"
               @click="onAddTags"
             >
-              <span class="text-gradient bg-gradient-primary">Add</span>
+              <span class="text-gradient bg-gradient-primary">{{ $t('createCommunity.add') }}</span>
             </button>
           </div>
           <div v-if="createForm.tags!.length > 0" class="flex flex-wrap gap-4 mt-1">
@@ -344,7 +344,7 @@ watch(() => createLoading.value, () => {
         <!-- amount -->
         <div class="flex flex-col gap-1">
           <label for="initamount" class="font-medium text-black text-lg">
-            Choose how many 【TagCoin】 you want to buy (optional)
+            {{ $t('createCommunity.buyTip') }}
           </label>
           <div class="flex items-center border-b-[1px] border-grey-e6 gap-2">
             <input
@@ -370,17 +370,17 @@ watch(() => createLoading.value, () => {
           @click="create"
           :disabled="true"
         >
-          <span>Create</span>
+          <span>{{ $t('createCommunity.create') }}</span>
           <i-ep-loading v-if="createLoading" class="animate-spin" />
         </button>
         <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
-          Pending new contract deployment...
+          {{$t('createCommunity.pendingTip')}}
         </div>
         <div v-show="accountMismatch" class="mt-2 text-sm px-3 text-red-e6">
           {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
         </div>
         <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
-          <span class="text-grey-normal">Cost to deploy：</span>
+          <span class="text-grey-normal">{{$t('createCommunity.costTopDeploy')}}</span>
           <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} ETH</span>
         </div>
       </div>
@@ -391,16 +391,16 @@ watch(() => createLoading.value, () => {
       <div class="text-center text-grey-normal">
         <div class="flex flex-col text-left gap-1">
           <p class="text-grey-normal text-lg font-medium mb-2">
-            You can ask TipTagAI deploy token for you right now:
+            {{$t('createCommunity.deployTip')}}
           </p>
           <p>
-            • Write a tweet with any thoughts about the token you want to make. TipTagAI will analyze your tweet and help you create the token with ticker/description/logo.
+            • {{$t('createCommunity.deployTip1')}}
           </p>
           <p>
-            • Reply or quote a tweet which you find something interesting. 
+            • {{ $t('createCommunity.deployTip2') }}
           </p>
           <p>
-            • All of that only need you copy the following command to you tweet content.
+            • {{$t('createCommunity.deployTip3')}}
           </p>
           <div class="text-blue-500 flex text-center justify-center text-lg my-8 items-center">
             @TipTagAi #deploy

@@ -78,7 +78,9 @@ onMounted(() => {
               <el-progress :percentage="vp * 100 / MAX_VP" :stroke-width="6" :show-text="false"
                            class="c-gradient-progress c-gradient-progress-orange w-full"/>
               <template #content>
-                <div class="text-grey-normal py-1">{{  $t('curation.vpDesc')  }}</div>
+                <div class="max-w-[400px]">
+                  <div class="text-grey-normal py-1">{{  $t('curation.vpDesc')  }}</div>
+                </div>
               </template>
             </el-tooltip>
           </div>
@@ -103,7 +105,7 @@ onMounted(() => {
         <button @click="useModalStore().setModalVisible(true, GlobalModalType.Register)" class="bg-gradient-primary flex items-center px-2 py-1 rounded-full">
           <img class="w-4 h-4 mr-2" src="~@/assets/icons/icon-farcaster.svg" alt="">
           <span class="text-white text-sm">
-            Bind Farcaster
+            {{$t('profileView.bindFacaster')}}
           </span>
       </button>
       </div>

@@ -70,7 +70,7 @@ onMounted(async () => {
       </div>
       <div v-if="curationStore.currentSelectedTweet.curateCount" class="border-[1px] gradient-border bg-gradient-purple shadow-insert-white h-[50px] min-h-[50px] rounded-full
                   flex items-center justify-between px-4 mt-3">
-        <span>{{ curationStore.currentSelectedTweet.curateCount }} guys has curated</span>
+        <span>{{$t('postView.curatedCount', {count: curationStore.currentSelectedTweet.curateCount})}}</span>
         <div class="flex items-center gap-2">
           <div class="flex">
             <!-- <div class="border-[1px] border-white rounded-full bg-gray-400 w-8 h-8 z-30">
@@ -84,12 +84,12 @@ onMounted(async () => {
             </div> -->
           </div>
           <button class="flex items-center gap-1.5" @click="curatorsModalVisible=true">
-            <span>more</span>
+            <span>{{ $t('more') }}</span>
             <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-arrow-forward.svg" alt="">
           </button>
         </div>
       </div>
-      <div class="text-h5 mt-2 px-3">Comments</div>
+      <div class="text-h5 mt-2 px-3">{{$t('postView.comments')}}</div>
       <Comments />
     </div>
     <el-dialog v-model="curatorsModalVisible"

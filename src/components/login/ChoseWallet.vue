@@ -25,7 +25,7 @@ async function connectMetaMask() {
 <template>
   <div class="px-1 flex flex-col gap-y-2">
       <div class="flex justify-between items-center">
-        <span class="text-h2 text-grey-normal-hover">Chose Wallet</span>
+        <span class="text-h2 text-grey-normal-hover">{{$t('loginView.choseWallet')}}</span>
         <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
              @click="modalStore.setModalVisible(false)"/>
       </div>
@@ -61,4 +61,3 @@ async function connectMetaMask() {
       </div>
     </div>
   </template>
-  

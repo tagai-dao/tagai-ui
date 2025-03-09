@@ -183,8 +183,8 @@ const contentWidth = computed(() => {
         class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
         popper-class="c-select-popper rounded-xl"
       >
-        <el-option :value="ListType.Trending" label="Trending" />
-        <el-option :value="ListType.New" label="New" />
+        <el-option :value="ListType.Trending" :label="$t('trending')" />
+        <el-option :value="ListType.New" :label="$t('new')" />
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">

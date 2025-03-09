@@ -103,18 +103,18 @@ const onConfirmModify = async () => {
       <!-- desc -->
       <div class="flex flex-col gap-1">
         <label for="desc" class="leading-6 text-lg font-medium text-black"
-          >Description:</label
+          >{{$t('createCommunity.description')}}:</label
         >
         <textarea
           class="border-b-[1px] border-grey-e6 leading-6 text-base"
           v-model="modifyCommunityForm.description"
           id="desc"
-          placeholder="Describe your tag"
+          :placeholder="$t('createCommunity.descTag')"
         />
       </div>
       <!-- logo -->
       <div class="flex items-center gap-4">
-        <label for="logo" class="leading-6 text-lg font-medium text-black">Logo:</label>
+        <label for="logo" class="leading-6 text-lg font-medium text-black">{{$t('createCommunity.logo')}}:</label>
         <div class="flex items-center gap-2">
           <img
             v-if="modifyCommunityForm.logo"
@@ -153,7 +153,7 @@ const onConfirmModify = async () => {
                id="twitter"
                placeholder="https://x.com"/>
       </div>
-      
+
       <!-- telegram -->
       <div class="flex flex-col gap-1">
         <label for="twitter" class="leading-6 text-lg font-medium text-black">Telegram:</label>
@@ -164,11 +164,11 @@ const onConfirmModify = async () => {
       </div>
       <!-- official -->
       <div class="flex flex-col gap-1">
-        <label for="twitter" class="leading-6 text-lg font-medium text-black">Official link:</label>
+        <label for="twitter" class="leading-6 text-lg font-medium text-black">{{ $t('createCommunity.officialLink') }}:</label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
                v-model="modifyCommunityForm.official"
                id="official"
-               placeholder="official link"/>
+               :placeholder="$t('createCommunity.officialLink')"/>
       </div>
     </div>
     <div class="pb-2 mt-4">
@@ -176,7 +176,7 @@ const onConfirmModify = async () => {
         class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
         @click="onConfirmModify"
         :disabled="loading">
-        <span>Confirm</span>
+        <span>{{ $t('confirm') }}</span>
         <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
     </div>

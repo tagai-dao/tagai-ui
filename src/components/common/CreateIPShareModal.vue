@@ -41,7 +41,7 @@ async function createIPShare() {
   <BondEthModal v-else-if="!useAccountStore().getAccountInfo.ethAddr" />
   <div v-else class="flex flex-col gap-y-2">
     <div class="flex justify-between items-center">
-      <span class="text-h2 text-grey-normal-hover">Create IPShare</span>
+      <span class="text-h2 text-grey-normal-hover">{{ $t('ipshare.createIpShare') }}</span>
       <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
            @click="modalStore.setModalVisible(false)"/>
     </div>
@@ -63,7 +63,7 @@ async function createIPShare() {
         <button class="h-12 w-[80%] bg-gradient-primary text-white font-bold rounded-full text-lg
                       flex items-center justify-center gap-2 disabled:opacity-30"
                 @click="createIPShare" :disabled="creating || accountMismatch">
-          <span>{{ useAccountStore().ethConnectState !== EthWalletState.Connected ? "Connect" : 'Create' }}</span>
+          <span>{{ useAccountStore().ethConnectState !== EthWalletState.Connected ? $t('connect') : $t('create') }}</span>
           <i-ep-loading v-if="creating" class="animate-spin" />
         </button>
       </div>

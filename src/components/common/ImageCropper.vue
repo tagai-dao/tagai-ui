@@ -35,9 +35,9 @@ onMounted(() => {
   </div>
   <div class="flex justify-center items-center gap-5 py-5 font-semibold text-white">
     <button class="h-10 w-[100px] border-2 border-orange-normal text-orange-normal rounded-full"
-            @click="$emit('onCancel')">Cancel</button>
+            @click="$emit('onCancel')">{{ $t('cancel') }}</button>
     <button class="h-10 w-[100px] bg-gradient-primary rounded-full"
-            @click="$emit('onConfirm', $refs.cropperRef)">Complete</button>
+            @click="$emit('onConfirm', $refs.cropperRef)">{{$t('complete')}}</button>
   </div>
 </template>
 

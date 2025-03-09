@@ -118,7 +118,7 @@ onMounted(() => {
       <van-list :loading="loading" :finished="finished" :immediate-check="false" finished-text="No more"
         :scroller="scroller" :offset="50" @load="onLoad">
         <div class="flex items-center gap-1 px-3">
-          <span class="font-normal text-sm">Curation & Space Rewards</span>
+          <span class="font-normal text-sm">{{$t('postView.postReward')}}</span>
           <el-popover popper-class="c-popper">
             <template #reference>
               <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">

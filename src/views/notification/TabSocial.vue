@@ -54,7 +54,7 @@ onUnmounted(() => {
       @load="onLoad"
     >
       <div v-if="useAccountStore().socialMessages.length == 0"
-           class="text-grey-light-active text-center">No message</div>
+           class="text-grey-light-active text-center">{{$t('notificationView.noMsg')}}</div>
       <!-- 1quote 2like 3retweet 4reply -->
       <div class="relative" @click="$router.push('/post-detail/' + message.tweetId)" v-else
            v-for="(message, i) of useAccountStore().socialMessages" :key="i">
@@ -73,12 +73,12 @@ onUnmounted(() => {
               <span> · </span>
               <span>{{ parseTimestamp(message.operateTime) }}</span>
             </div>
-            <div class="text-base">Quote your tweet</div>
+            <div class="text-base">{{$t('notificationView.quoteTweet')}}</div>
             <div class="text-base">{{ message.content }}</div>
           </div>
         </div>
         <!--reply-->
-        <div v-if="message.type === 4"class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
+        <div v-if="message.type === 4" class="bg-white p-4 rounded-2xl flex gap-3 mb-2">
           <img
             class="h-6 w-6 min-h-6 rounded-full"
             :src="updatedProfile(message.profile)"
@@ -91,7 +91,7 @@ onUnmounted(() => {
               <span> · </span>
               <span>{{ parseTimestamp(message.operateTime) }}</span>
             </div>
-            <div class="text-base text-grey-bd">Reply your tweet</div>
+            <div class="text-base text-grey-bd">{{$t('notificationView.replyTweet')}}</div>
             <div class="text-base mt-2">{{ message.content }}</div>
           </div>
         </div>
@@ -112,7 +112,7 @@ onUnmounted(() => {
                 alt=""
               />
             </div>
-            <div class="text-base">@{{ message.twitterName }} liked your tweet</div>
+            <div class="text-base">@{{ message.twitterName }} {{$t('notificationView.likeTweet')}}</div>
             <div class="text-grey-bd mt-2">
               {{ message.content }}
             </div>
@@ -135,7 +135,7 @@ onUnmounted(() => {
                 alt=""
               />
             </div>
-            <div class="text-base">@{{ message.twitterUsername }} retweeted your tweet</div>
+            <div class="text-base">@{{ message.twitterUsername }} {{$t('notificationView.retweetTweet')}}</div>
             <div class="text-gray">
               {{ message.content }}
             </div>

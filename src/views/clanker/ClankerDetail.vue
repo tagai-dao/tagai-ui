@@ -64,7 +64,7 @@ async function onRefresh() {
           },
         ])
       )[0];
-  
+
       tweets.value = res;
       if (res.length < 30) {
         finished.value = true;
@@ -131,7 +131,7 @@ onMounted(async () => {
             <div class="flex flex-wrap justify-between gap-x-4 items-center">
               <span class="text-black text-h2">{{clankerStore.currentSelectedClanker?.name}}</span>
               <div class="text-base flex gap-1">
-                <span class="font-semibold text-grey-64">market cap</span>
+                <span class="font-semibold text-grey-64">{{$t('marketCap')}}</span>
                 <span class="text-gradient bg-gradient-primary font-semibold">
                   {{ formatPrice(parseFloat(clankerStore.currentSelectedClanker?.marketCap as any) * useStateStore().ethPrice) }}
                 </span>
@@ -155,12 +155,12 @@ onMounted(async () => {
           <button :disabled="checkingTweet"
                   @click="postTweet"
                   class="w-full bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
-            Post
+            {{ $t('post') }}
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
 
           <button class="w-full web:hidden bg-gradient-primary text-h5 rounded-full h-11"
-                  @click="swapModalVisible=true">Swap</button>
+                  @click="swapModalVisible=true">{{$t('swap')}}</button>
         </div>
         <div class="hidden web:block h-[540px] min-h-[540px] rounded-2xl overflow-hidden mt-3">
           <iframe

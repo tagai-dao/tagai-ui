@@ -37,7 +37,7 @@ async function trade() {
       <img class="w-full h-full object-center object-cover" :src="community.logo" alt="">
       <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
       <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">{{$t('listed')}}</div>
     </div>
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
@@ -74,7 +74,7 @@ async function trade() {
               {{ tag }}
             </button>
             <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
-              AI create
+              {{$t('createCommunity.aiCreate')}}
             </button>
           </template>
         </div>

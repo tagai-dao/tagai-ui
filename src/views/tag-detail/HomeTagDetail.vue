@@ -191,19 +191,19 @@ onMounted(async () => {
           <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
           <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
           <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">{{$t('listed')}}</div>
         </div>
         <div class="flex-1 py-1">
           <div class="flex flex-wrap justify-between gap-x-4 items-center">
             <div class="flex items-center">
               <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
               <button v-if="comStore.currentSelectedCommunity?.createdByAi" class="pl-2 h-5 text-sm rounded-md gradient-text glow-effect">
-                AI create with
+                {{$t('postView.aiCreate')}}
               </button>
               <IconLinks :community="comStore.currentSelectedCommunity"/>
             </div>
             <div class="text-base flex gap-1">
-              <span class="font-semibold text-grey-64">market cap</span>
+              <span class="font-semibold text-grey-64">{{$t('marketCap')}}</span>
               <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
             </div>
           </div>
@@ -249,7 +249,7 @@ onMounted(async () => {
             <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
                         placement="top" popper-class="c-arrow-popper">
               <template #content>
-                <div class="flex gap-1">
+                <div class="flex gap-1 text-grey-normal">
                   <span class="text-sm">{{data.desc}}</span>
                   <span class="font-semibold text-base">{{data.percent}}</span>
                 </div>
@@ -296,26 +296,26 @@ onMounted(async () => {
           </button>
 
           <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
-            Tip ${{ comStore.currentSelectedCommunity?.tick }}
+            {{$t('tip')}} ${{ comStore.currentSelectedCommunity?.tick }}
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
 
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
-              <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button>
+              <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">{{$t('postView.postToEarn')}}</button>
             </template>
             <template #default>
               <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
                 <button @click="onTweetType(CurationType.TWEET)"
                         :disabled="checkingAccount"
                         class="whitespace-nowrap flex items-center space-x-3">
-                    Tweet on-chain
+                    {{$t('postView.tweetOnChain')}}
                     <i-ep-loading v-show="checkingAccount" class="animate-spin" />
                 </button>
                 <button @click="onTweetType(CurationType.SPACE)"
                         :disabled="checkingAccount"
                         class="whitespace-nowrap flex items-center space-x-3">
-                        Tweet an onchain Space
+                        {{$t('postView.spaceOnChain')}}
                     <i-ep-loading v-show="checkingAccount" class="animate-spin" />
                 </button>
               </div>
@@ -352,7 +352,7 @@ onMounted(async () => {
                 <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
                 <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
                 <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">listed</div>
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">{{ $t('listed') }}</div>
               </div>
               <div class="flex-1 py-1">
                 <div class="flex flex-wrap justify-between gap-x-4 items-center">
@@ -361,7 +361,7 @@ onMounted(async () => {
                     <IconLinks :community="comStore.currentSelectedCommunity"/>
                   </div>
                   <div class="text-base flex gap-1">
-                    <span class="font-semibold text-grey-64">market cap</span>
+                    <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
                     <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice) }}</span>
                   </div>
                 </div>
@@ -407,7 +407,7 @@ onMounted(async () => {
                   <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
                               placement="top" popper-class="c-arrow-popper">
                     <template #content>
-                      <div class="flex gap-1">
+                      <div class="flex gap-1 text-grey-normal">
                         <span class="text-sm">{{data.desc}}</span>
                         <span class="font-semibold text-base">{{data.percent}}</span>
                       </div>
@@ -428,20 +428,20 @@ onMounted(async () => {
 
                 <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
                   <template #reference>
-                    <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button>
+                    <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">{{$t('postView.postToEarn')}}</button>
                   </template>
                   <template #default>
                     <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
                       <button @click="onTweetType(CurationType.TWEET)"
                               :disabled="checkingAccount"
                               class="whitespace-nowrap flex items-center space-x-3">
-                        Tweet on-chain
+                        {{$t('postView.tweetOnChain')}}
                         <i-ep-loading v-show="checkingAccount" class="animate-spin" />
                       </button>
                       <button @click="onTweetType(CurationType.SPACE)"
                               :disabled="checkingAccount"
                               class="whitespace-nowrap flex items-center space-x-3">
-                        Tweet an onchain Space
+                        {{$t('postView.spaceOnChain') }}
                         <i-ep-loading v-show="checkingAccount" class="animate-spin" />
                       </button>
                     </div>

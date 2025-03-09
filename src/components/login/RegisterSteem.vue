@@ -183,7 +183,7 @@ async function choseBitip(bitip: string) {
             datetime
         }, null, 4)
         const signature = await signMessage(message);
-        
+
         identityInfo.chainName = 'BTC';
         identityInfo.type = 'bitip';
         identityInfo.assetId = bitip
@@ -206,13 +206,13 @@ async function signInFarcasterEth() {
   showBondEthToFarcaster.value = true
     try {
         loading.value = true
-        
+
         identityInfo.farcasterEthAddr = ethers.getAddress(accStore.ethConnectAddress ?? '');
         identityInfo.farcasterName = accStore.farcasterUser?.name;
         identityInfo.farcasterUsername = accStore.farcasterUser?.username;
         identityInfo.farcasterSignerUuid = accStore.farcasterUser?.signerUuid;
         identityInfo.assetId = accStore.farcasterUser?.fid;
-        
+
         identityInfo.farcasterAvatar = accStore.farcasterUser?.avatar;
         identityInfo.chainName = ChainConfig.name;
         identityInfo.type = 'farcaster'
@@ -294,7 +294,7 @@ onMounted(() => {
                 :class="showNoEns?'bg-grey-light':''"
                 @click="payToken"
                 :disabled="loading || accountMismatch">
-          <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
+          <span class="text-white font-semibold">{{ $t('pay') }} {{ parseInt(CreateFee) / 1e18 }} ETH</span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
         <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
@@ -319,7 +319,7 @@ onMounted(() => {
       <button v-if="!accStore.getAccountInfo.steemId" class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="selectBitip"
               :disabled="loading">
-        <span class="text-white font-semibold">I have BitIp</span>
+        <span class="text-white font-semibold">{{ $t('loginView.haveBitIP') }}</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button>
     </div>
@@ -347,7 +347,7 @@ onMounted(() => {
             {{$t('loginView.noBitip')}}
           </span>
           <span @click="openDonut" class="text-orange-normal cursor-pointer">
-            Mint
+            {{ $t('loginView.mint') }}
           </span>
         </div>
       </div>
@@ -357,20 +357,20 @@ onMounted(() => {
         <img src="~@/assets/icons/icon-back.svg" alt="">
       </button>
         <div class="flex justify-center items-center mt-6">
-          <img :src="accStore.farcasterUser?.avatar" alt="" style="object-fit: cover"class="w-16 h-16 rounded-full">
+          <img :src="accStore.farcasterUser?.avatar" alt="" style="object-fit: cover" class="w-16 h-16 rounded-full">
         </div>
         <div class="text-h3 text-black text-center">
             {{ accStore.farcasterUser?.name }}@{{ accStore.farcasterUser?.username }}
           </div>
         <p v-if="showFidUsed" class="text-center text-sm text-red-e6">
-          This Farcaster account has already been used.
+          {{$t('loginView.fidUsedTip')}}
         </p>
         <div v-else class="w-full mt-6">
           <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 @click="signInFarcasterEth"
                 :disabled="loading || accountMismatch">
             <span class="text-white font-semibold">
-              Bond
+              {{ $t("loginView.bond") }}
             </span>
             <i-ep-loading v-show="loading" class="animate-spin" />
           </button>
