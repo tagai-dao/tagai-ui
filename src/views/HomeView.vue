@@ -83,7 +83,7 @@ async function loadMore() {
       let communities = await getCommunityByMarketCap((comStore.marketCapCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
-      } 
+      }
       if (communities.length < 30) {
         finished[ListType.MarketCap] = true
       }
@@ -95,7 +95,7 @@ async function loadMore() {
       let communities = await getCommunitiesByNew((comStore.newCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = comStore.newCommunities.concat(await getTokenInfo(communities))
-      } 
+      }
       if (communities.length < 30) {
         finished[ListType.New] = true
       }
@@ -107,7 +107,7 @@ async function loadMore() {
       let communities = await getCommunitiesByTrending((comStore.trendingCommunities.length - 1) / 30 + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
-      } 
+      }
       if (communities.length < 30) {
         finished[ListType.Trending] = true
       }
@@ -175,21 +175,27 @@ const duration = computed(() => {
 const contentWidth = computed(() => {
   return curationStore.allSpaces.length * 320;
 })
+
+const scrollContainer = ref()
+const needScroll = ref(true)
+watch([() => contentWidth.value, () => scrollContainer.value], () => {
+  if(!scrollContainer.value) return
+  needScroll.value = contentWidth.value>scrollContainer.value.clientWidth
+})
 </script>
 
 <template>
-  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3">
+  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2">
 <!--    <van-swipe :loop="false" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">-->
 <!--      <van-swipe-item v-for="space of curationStore.allSpaces">-->
 <!--        <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>-->
 <!--      </van-swipe-item>-->
 <!--    </van-swipe>-->
-    <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="container">
-      <OnlineSpace class="ml-4" v-if=" curationStore.allSpaces.length == 1" @click="$router.push('/space-detail/' +  curationStore.allSpaces[0].tweetId)" :space=" curationStore.allSpaces[0]"/>
-      <div v-else class="scroll-content flex"
+    <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="scrollContainer">
+      <div class="flex" :class="needScroll?'scroll-content':''"
            :style="{ width: `${contentWidth}px`, animationDuration: `${duration}ms`, animationDelay: '2s' }">
         <div class="w-[320px] min-w-[320px] flex justify-end"
-             v-for="(space, index) in curationStore.allSpaces.concat(curationStore.allSpaces)"
+             v-for="(space, index) in (needScroll?curationStore.allSpaces.concat(curationStore.allSpaces):curationStore.allSpaces)"
              :key="index">
           <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
         </div>
