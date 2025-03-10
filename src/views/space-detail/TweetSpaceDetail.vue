@@ -118,7 +118,7 @@ onMounted(async () => {
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">{{ $t('postView.host') }}</div>
-                <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length : 0 }}</span>
+                <span>{{ curationStore.currentSelectedTweet?.hostIds ? 1 : 0 }}</span>
               </div>
               <div class="flex justify-between items-center gap-1">
                 <div class="text-h5 flex-1 truncate">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
