@@ -26,6 +26,7 @@
   "receive": "接收",
   "none": "无",
   "blink": "Blink",
+  "blinks": "Blinks",
   "post": "发布",
   "swap": "兑换",
   "more": "更多",
@@ -107,7 +108,8 @@
     "deployTip2": "回复或引用一条你觉得有趣的推文。",
     "deployTip3": "你只需要将以下命令复制到你的推文内容中即可完成所有操作。",
     "officialLink": "官方链接",
-    "aiCreate": "AI创建"
+    "aiCreate": "AI创建",
+    "pendingTip": "等待新合约部署中..."
   },
   "buyAndSell": {
     "setMaxSlippage": "设置最大滑点 %",
@@ -162,7 +164,19 @@
     "onCuration": "策展中",
     "spaceComments": "Space评论",
     "aiCreate": "AI创建",
-    "postToEarn": "发布赚取"
+    "postToEarn": "发布赚取",
+    "tokenInfo": "代币信息",
+    "price": "价格",
+    "totalSupply": "总供应量",
+    "socialSupply": "社交分发",
+    "bindCurveSold": "绑定曲线销售",
+    "dexLiquidity": "去中心化交易所流动性",
+    "cap": "市值",
+    "holderList": "持有者列表",
+    "contract": "合约",
+    "deployer": "部署者",
+    "bridge": "跨链桥",
+    "curveProgress": "绑定曲线进度"
   },
   "ipshare": {
     "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",

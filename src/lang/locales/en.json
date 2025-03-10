@@ -26,6 +26,7 @@
   "receive": "Receive",
   "none": "None",
   "blink": "Blink",
+  "blinks": "Blinks",
   "post": "Post",
   "swap": "Swap",
   "more": "More",
@@ -107,7 +108,8 @@
     "deployTip2": "Reply or quote a tweet which you find something interesting.",
     "deployTip3": "All of that only need you copy the following command to you tweet content.",
     "officialLink": "Official Link",
-    "aiCreate": "AI Create"
+    "aiCreate": "AI Create",
+    "pendingTip": "Pending new contract deployment..."
   },
   "buyAndSell": {
     "setMaxSlippage": "Set max. slippage (%)",
@@ -162,7 +164,19 @@
     "onCuration": "On Curation",
     "spaceComments": "Space Comments",
     "aiCreate": "AI create with",
-    "postToEarn": "Post To Earn"
+    "postToEarn": "Post To Earn",
+    "tokenInfo": "Token Info",
+    "price": "Price",
+    "totalSupply": "Total Supply",
+    "socialSupply": "Social Distribution",
+    "bindCurveSold": "Bonding Curve Sold",
+    "dexLiquidity": "Dex Liquidity",
+    "cap": "Cap",
+    "holderList": "Holder List",
+    "contract": "Contract",
+    "deployer": "Deployer",
+    "bridge": "NerveNetwork: Bridge",
+    "curveProgress": "Bonding Curve progress"
   },
   "ipshare": {
     "desc": "Create IPShare, become a personal IP, receive support, and earn IPShare transaction fees.",
