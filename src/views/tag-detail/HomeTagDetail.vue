@@ -46,7 +46,7 @@ const { pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
 const tabScrollRef = ref()
 const pageScroll = (ref: any) => {
-  if(tabScrollRef.value.scrollTop>100) {
+  if(tabScrollRef.value.scrollTop>100 && document.body.clientWidth>1104) {
     pageScrollTo(pageScrollRef.value, 412)
   }
 }
@@ -389,7 +389,7 @@ onMounted(async () => {
                 </button>
               </div>
               <div class="text-base font-medium flex items-center gap-1">
-                <span>Bonding Curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
+                <span>{{$t('postView.curveProgress')}}：{{ progressData[1].value.toFixed(2) }}%</span>
                 <el-popover popper-class="c-popper">
                   <template #reference>
                     <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">

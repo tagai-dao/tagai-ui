@@ -65,7 +65,9 @@ onMounted(() => {
               <el-progress :percentage="op * 100 / MAX_OP" :stroke-width="6" :show-text="false"
                            class="c-gradient-progress c-gradient-progress-green w-full"/>
               <template #content>
-                <div class="text-grey-normal py-1">{{ $t('curation.opDesc') }}</div>
+                <div class="max-w-[400px] py-4">
+                  <div class="text-grey-normal py-1">{{ $t('curation.opDesc') }}</div>
+                </div>
               </template>
             </el-tooltip>
           </div>
