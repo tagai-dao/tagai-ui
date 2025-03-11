@@ -102,9 +102,14 @@ async function updateProgress() {
   getTokenInfo([comStore.currentSelectedCommunity!]).then((coms: any) => {
     const com = coms[0]
     comStore.currentSelectedCommunity = coms[0]
+    let bondingCurveProgress =  (com.bondingCurveSupply / BondingCurveSupply * 100);
+    if (!com.listed && bondingCurveProgress >= 99.99){
+      bondingCurveProgress = 99.99
+    }
+    
     progressData.value = [
       {...progressData.value[0], value: (com.totalClaimedSocialRewards / SocialSupply * 100), percent: '15%'},
-      {...progressData.value[1], value: (com.bondingCurveSupply / BondingCurveSupply * 100), percent:'65%'},
+      {...progressData.value[1], value: com.listed ? 100 : bondingCurveProgress, percent:'65%'},
       {...progressData.value[2], value: 100, percent:'20%', desc: com.listed ? 'Listed' : 'Pending List'}
     ]
   }).catch(e => {
