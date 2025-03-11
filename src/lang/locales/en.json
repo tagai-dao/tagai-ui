@@ -33,6 +33,12 @@
   "account": "Account",
   "comingSoon": "Coming soon",
   "trade": "Trade",
+  "consume": "Consume",
+  "remain": "Remain",
+  "noMore": "No more",
+  "loading": "Loading...",
+  "pullToRefreshData": "Pull to refresh data",
+  "releaseToRefresh": "Release to refresh",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
     "p1": "uses progressive web app technolog that combines the best features of traditional websites and platform-specific apps",

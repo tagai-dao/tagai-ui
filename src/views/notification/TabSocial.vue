@@ -41,15 +41,15 @@ onUnmounted(() => {
   <van-pull-refresh
     v-model="refreshing"
     @refresh="onRefresh"
-    loading-text="Loading"
-    pulling-text="Pull to refresh data"
-    loosing-text="Release to refresh"
+    :loading-text="$t('loading')"
+    :lpulling-text="$t('pullToRefreshData')"
+    :loosing-text="$t('releaseToRefresh')"
   >
     <van-list
       :loading="loading"
       :finished="finished"
       :immediate-check="false"
-      finished-text="No more"
+      :finished-text="$t('noMore')"
       :offset="50"
       @load="onLoad"
     >

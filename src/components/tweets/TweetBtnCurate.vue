@@ -93,9 +93,9 @@ async function confirmCurate() {
           策展将花费您选择的 1-10 VP（投票权），每个用户都有初始 200 vp，每 3 天将恢复 100%。
         </p>
         <el-slider v-model="curateAmount" :min="1" :max="10" :step="1" class="w-full mb-4 slider" />
-        <div class="text-sm w-full text-gray-500 mb-4">Consume
+        <div class="text-sm w-full text-gray-500 mb-4">{{ $t('consume') }}
           <span class="text-red-500"> VP: {{ curateAmount }}</span>
-        </div><div class="text-sm w-full text-gray-500 mb-4">Remain
+        </div><div class="text-sm w-full text-gray-500 mb-4">{{ $t('remain') }}
           <span class="text-green-500"> VP: {{ Math.floor(vp) }}</span>
         </div>
         <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
