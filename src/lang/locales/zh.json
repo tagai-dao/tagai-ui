@@ -43,7 +43,7 @@
     "noEns": "您的地址中没有 ENS",
     "noBitip": "还没有 BItIP 吗？点击这里进行创建。",
     "selectBitipTip": "选择 BitIP 作为身份",
-    "bindAddressTip": "推荐使用您的 Farcaster 账户作为绑定地址",
+    "bindAddressTip": "将该ETH地址绑定到您的Twitter账户，绑定后将不能换绑。",
     "choseWallet": "选择钱包",
     "haveBitIP": "我已有 BitIp",
     "mint": "铸造",

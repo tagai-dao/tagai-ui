@@ -43,7 +43,7 @@
     "noEns": "No ENS in your address",
     "noBitip": "Not yet have one? Click here to ",
     "selectBitipTip": "Select BitIP as identity",
-    "bindAddressTip": "We recommend using your Farcaster account as the binding address",
+    "bindAddressTip": "Bind this address to your twitter account. And you can't change it later.",
     "choseWallet": "Chose Wallet",
     "haveBitIP": "I have BitIp",
     "mint": "Mint",
