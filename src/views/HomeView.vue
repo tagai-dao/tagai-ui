@@ -229,7 +229,7 @@ watch([() => contentWidth.value, () => scrollContainer.value], () => {
         <van-list :loading="loading"
                   :finished="finished[listType]"
                   :immediate-check="false"
-                  :finished-text="comStore.trendingCommunities.length==0?'':$t('noMore')"
+                  :finished-text="comStore.marketCapCommunities.length==0?'':$t('noMore')"
                   :offset="50"
                   @load="loadMore">
 
