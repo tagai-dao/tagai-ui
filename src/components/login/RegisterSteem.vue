@@ -290,6 +290,9 @@ const openDonut = () => {
 }
 
 onMounted(() => {
+  if (localStorage.getItem('payTokenHash')){
+    payToken()
+  }
 });
 </script>
 

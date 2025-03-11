@@ -45,7 +45,7 @@
     "createWallet": "创建钱包",
     "bindAddress": "绑定以太坊钱包",
     "addressUsed": "这个地址已被其他Twitter账户使用，请在您的钱包中更换另一个地址",
-    "registerRequire": "我们将帮助您创建一个Web3社交账户，并将发布权限委托给我们的账户。由于注册Web3社交账户需要费用，我们将为您承担注册费用。如果您拥有Farcaster或Bitip账户，我们将免费帮助您注册。",
+    "registerRequire": "我们将帮助您创建一个Web3社交账户，并将发布权限委托给我们的账户。由于注册Web3社交账户需要费用，我们将为您承担注册费用。",
     "noEns": "您的地址中没有 ENS",
     "noBitip": "还没有 BItIP 吗？点击这里进行创建。",
     "selectBitipTip": "选择 BitIP 作为身份",
