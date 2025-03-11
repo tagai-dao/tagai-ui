@@ -75,7 +75,6 @@ const onRefresh = async () => {
 function updateReward() {
   if (rewardType.value === 'Claimable') {
     getMyCurationRewards(accStore.getAccountInfo.twitterId).then((list: any) => {
-      console.log(35, list)
       if (list && list.length > 0) {
         let versions: Record<string, number> = {}
         for (let t of list) {

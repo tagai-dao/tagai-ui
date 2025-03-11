@@ -48,7 +48,6 @@ const onPostTweet = async () => {
     tweetLoading.value = true;
     invalidTip.value = ''
     const tweetContent = formatElToTextContent(contentRef.value);
-    console.log(tweetContent)
     if (tweetLength.value == 0 || leftWordsLength.value < 0) {
       return;
     }
