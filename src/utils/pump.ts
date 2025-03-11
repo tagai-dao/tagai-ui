@@ -316,23 +316,8 @@ export const getBuyAmountWithETHAfterFee = async (token: string | undefined, ver
     const tc = await getContract('Token1', token, true);
     const supply = await tc.bondingCurveSupply();
     const pumpC = await getContract('Pump' + version, version == 1 ? PumpContract1 : PumpContract2, true);
-    const receive = await pumpC.getBuyAmountByValue(supply, amount * 9790n / 10000n)
+    const receive = await pumpC.getBuyAmountByValue(supply, amount * 9800n / 10000n)
     return {supply, receive}
-}
-
-export const getListAmount = async (token: string, version: number, value: bigint) => {
-    if (!ethers.isAddress(token)) {
-        return 0n;
-    } if (!token) return 0n
-    const tc = await getContract('Token1', token, true);
-    const supply = await tc.bondingCurveSupply();
-    const pumpC = await getContract('Pump' + version, version == 1 ? PumpContract1 : PumpContract2, true);
-    const receive = await pumpC.getBuyAmountByValue(supply, value * 9790n / 10000n)
-    if (receive > supply * 9990n / 10000n) {
-        return 
-    }
-    return receive
-
 }
 
 export const getBuyPriceAfterFee = async (supply: bigint, amount: bigint) => {
