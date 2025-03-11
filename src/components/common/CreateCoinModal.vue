@@ -142,6 +142,14 @@ const create = async () => {
     showInvalidName.value = false
     showLongDesc.value = false
 
+    let prevForm:any  = localStorage.getItem('createTokenForm')
+    if (prevForm){
+      prevForm = JSON.parse(prevForm)
+      await createCommunity(prevForm);
+      localStorage.removeItem('createTokenForm')
+      return;
+    }
+
     if (!(await testTick())) {
       console.log('testTick failed')
       return;
@@ -163,7 +171,9 @@ const create = async () => {
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth
+    localStorage.setItem('createTokenForm', JSON.stringify(createForm))
     await createCommunity(createForm);
+    localStorage.removeItem('createTokenForm')
 
     // created token: prepair local data
     emitter.emit('newCommunity', createForm);
