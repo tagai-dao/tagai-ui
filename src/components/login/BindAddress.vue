@@ -76,7 +76,7 @@ async function confirm() {
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-4"
         @click="confirm"
         :disabled="loading">
-        <span class="text-h5 text-white">Confirm</span>
+        <span class="text-h5 text-white">{{$t('confirm')}}</span>
         <i-ep-loading v-if="loading" class="animate-spin text-white"/>
       </button>
       <div v-show="ethAddrUsed" class="text-base text-center text-red-e6 mt-3">{{ $t('loginView.addressUsed') }}</div>

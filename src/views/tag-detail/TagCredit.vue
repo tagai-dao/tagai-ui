@@ -78,22 +78,22 @@ onMounted(async () => {
 <template>
   <div class="bg-white rounded-2xl p-3" v-if="comStore.currentSelectedCommunity?.tick">
     <div class="grid grid-cols-8 gap-x-2 text-h5 h-10 items-center">
-      <span class="col-span-4 pl-8">Account</span>
+      <span class="col-span-4 pl-8">{{ $t('account') }}</span>
       <span class="col-span-2">#{{ comStore.currentSelectedCommunity.tick }}</span>
       <span class="col-span-2 text-right">Credit</span>
     </div>
     <van-pull-refresh
       v-model="refreshing"
       @refresh="onRefresh"
-      loading-text="Loading"
-      pulling-text="Pull to refresh data"
-      loosing-text="Release to refresh"
+      :loading-text="$t('loading')"
+      :lpulling-text="$t('pullToRefreshData')"
+      :loosing-text="$t('releaseToRefresh')"
     >
       <van-list
         :loading="loading"
         :finished="finished"
         :immediate-check="false"
-        finished-text="No more"
+        :finished-text="$t('noMore')"
         :offset="50"
         @load="onLoad"
       >

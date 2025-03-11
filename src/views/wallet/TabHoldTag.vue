@@ -76,14 +76,14 @@ onMounted(async () => {
     </template>
     <van-pull-refresh v-else v-model="refreshing" @refresh="onRefresh"
                       class="min-h-full h-full overflow-auto"
-                      loading-text="Loading"
-                      pulling-text="Pull to refresh data"
-                      loosing-text="Release to refresh">
+                      :loading-text="$t('loading')"
+                      :lpulling-text="$t('pullToRefreshData')"
+                      :loosing-text="$t('releaseToRefresh')">
       <van-list class="px-3"
                 :loading="loading"
                 :finished="finished"
                 :immediate-check="false"
-                finished-text="No more"
+                :finished-text="$t('noMore')"
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
@@ -108,7 +108,7 @@ onMounted(async () => {
             </div>
           </div>
           <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"
-                  class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">Trade</button>
+                  class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}</button>
         </div>
       </van-list>
     </van-pull-refresh>

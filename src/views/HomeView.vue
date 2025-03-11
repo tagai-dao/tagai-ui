@@ -148,6 +148,13 @@ const duration = computed(() => {
 const contentWidth = computed(() => {
   return curationStore.allSpaces.length * 320;
 })
+
+const scrollContainer = ref()
+const needScroll = ref(true)
+watch([() => contentWidth.value, () => scrollContainer.value], () => {
+  if(!scrollContainer.value) return
+  needScroll.value = contentWidth.value>scrollContainer.value.clientWidth
+})
 </script>
 
 <template>
@@ -157,12 +164,11 @@ const contentWidth = computed(() => {
 <!--        <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>-->
 <!--      </van-swipe-item>-->
 <!--    </van-swipe>-->
-    <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="container">
-      <OnlineSpace class="ml-4" v-if=" curationStore.allSpaces.length == 1" @click="$router.push('/space-detail/' +  curationStore.allSpaces[0].tweetId)" :space=" curationStore.allSpaces[0]"/>
-      <div v-else class="scroll-content flex"
+    <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="scrollContainer">
+      <div class="flex" :class="needScroll?'scroll-content':''"
            :style="{ width: `${contentWidth}px`, animationDuration: `${duration}ms`, animationDelay: '2s' }">
         <div class="w-[320px] min-w-[320px] flex justify-end"
-             v-for="(space, index) in curationStore.allSpaces.concat(curationStore.allSpaces)"
+             v-for="(space, index) in (needScroll?curationStore.allSpaces.concat(curationStore.allSpaces):curationStore.allSpaces)"
              :key="index">
           <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
         </div>
@@ -182,20 +188,20 @@ const contentWidth = computed(() => {
         class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
         popper-class="c-select-popper rounded-xl"
       >
-        <el-option :value="ListType.Trending" label="Trending" />
-        <el-option :value="ListType.New" label="New" />
+        <el-option :value="ListType.Trending" :label="$t('trending')" />
+        <el-option :value="ListType.New" :label="$t('new')" />
       </el-select>
     </div>
     <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
       <van-pull-refresh v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
-                        loading-text="Loading"
-                        pulling-text="Pull to refresh data"
-                        loosing-text="Release to refresh">
+                        :loading-text="$t('loading')"
+                        :lpulling-text="$t('pullToRefreshData')"
+                        :loosing-text="$t('releaseToRefresh')">
         <van-list :loading="loading"
                   :finished="finished"
                   :immediate-check="false"
-                  finished-text="No more"
+                  :finished-text="$t('noMore')"
                   :offset="50"
                   @load="loadMore">
 

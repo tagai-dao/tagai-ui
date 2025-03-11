@@ -113,9 +113,9 @@ const onUserAvatar = () => {
             </button>
           </template>
           <template #default>
-            <div class="text-white text-sm px-2">
+            <div class="text-grey-normal text-sm px-2">
               <div class="flex justify-between items-center h-7">
-                <span>Author</span>
+                <span>{{$t('postView.author')}}</span>
                 <span class="font-semibold">{{
                   formatPrice(
                     (tweet.authorAmount ?? 0) *
@@ -127,7 +127,7 @@ const onUserAvatar = () => {
               <div
                 class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10"
               >
-                <span>Curator</span>
+                <span>{{ $t('postView.curator') }}</span>
                 <span class="font-semibold">{{
                   formatPrice(
                     ( (tweet.curateAmount ?? 0)) *
@@ -137,21 +137,21 @@ const onUserAvatar = () => {
                 }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
-                <span>Host</span>
+                <span>{{$t('postView.host')}}</span>
                 <span class="font-semibold">{{ formatPrice(((tweet.hostAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
-                <span>Co-host</span>
+                <span>{{$t('postView.co-host')}}</span>
                 <span class="font-semibold">{{ formatPrice(((tweet.cohostAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10">
-                <span>Speaker</span>
+                <span>{{$t('postView.speaker')}}</span>
                 <span class="font-semibold">{{ formatPrice(((tweet.speakerAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }}</span>
               </div>
               <div class="flex justify-between items-center h-7">
-                <span>End time:</span>
+                <span>{{$t('postView.endTime')}}:</span>
                 <span class="font-semibold">
-                  {{ tweet.listed ? parseTimestamp((tweet.dayNumber % 7 + 3 + tweet.dayNumber) * 86400000) : 'Pending list' }}
+                  {{ tweet.listed ? parseTimestamp((tweet.dayNumber % 7 + 3 + tweet.dayNumber) * 86400000) : $t('postView.pendingList') }}
                 </span>
               </div>
             </div>

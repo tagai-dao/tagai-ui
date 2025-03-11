@@ -65,7 +65,7 @@ const onPostTweet = async () => {
     if (!(await preCheckCuration(OperateType.CURATE), tweet.value, 10)) {
       return;
     }
-    
+
     notify({ message: "Tweet success", type: "success" });
     emit("close");
   } catch (e) {
@@ -81,29 +81,53 @@ const checkSpace = debounce(async () => {}, 10000);
 
 <template>
   <div class="flex flex-col gap-y-6 pb-3">
-    <div class="text-xl font-medium text-black text-center">
-      Tip ${{ comStore.currentSelectedCommunity?.tick }}<br />
-    </div>
-    <div class="flex flex-col gap-y-2 px-4 text-sm">
-      <p class="text-sm text-gray-600">
-        Tip ${{ comStore.currentSelectedCommunity?.tick }} to an awesome people by reply
-        to one of his tweets.
-      </p>
-      <p class="text-sm text-gray-600">
-        You can reply the tweet which you like with the following content:
-      </p>
-      <span class="text-sm text-blue-500 flex items-center">
+    <template v-if="$i18n.locale==='en'">
+      <div class="text-xl font-medium text-black text-center">
+        Tip ${{ comStore.currentSelectedCommunity?.tick }}<br />
+      </div>
+      <div class="flex flex-col gap-y-2 px-4 text-sm">
+        <p class="text-sm text-gray-600">
+          Tip ${{ comStore.currentSelectedCommunity?.tick }} to an awesome people by reply
+          to one of his tweets.
+        </p>
+        <p class="text-sm text-gray-600">
+          You can reply the tweet which you like with the following content:
+        </p>
+        <span class="text-sm text-blue-500 flex items-center">
         @Tip_Tag tip ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
         good content!
         <button class="ml-2" @click="onCopy(`@Tip_Tag tip ${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
       </span>
-      in the front of your reply content on Twitter directly, and append with any words you want to say else.
-      <p class="text-sm text-gray-600">
-        It will automatically curate the tweet with 10 VPs and cost 200 OPs from your account.
-      </p>
-    </div>
+        in the front of your reply content on Twitter directly, and append with any words you want to say else.
+        <p class="text-sm text-gray-600">
+          It will automatically curate the tweet with 10 VPs and cost 200 OPs from your account.
+        </p>
+      </div>
+    </template>
+    <template v-if="$i18n.locale==='zh'">
+      <div class="text-xl font-medium text-black text-center">
+        打赏 ${{ comStore.currentSelectedCommunity?.tick }}<br />
+      </div>
+      <div class="flex flex-col gap-y-2 px-4 text-sm">
+        <p class="text-sm text-gray-600">
+          回复推文并打赏 ${{ comStore.currentSelectedCommunity?.tick }}
+        </p>
+        <p class="text-sm text-grey-normal">
+          你可以回复你喜欢的推文，并在回复内容前加上以下内容：
+        </p>
+        <span class="text-sm text-blue-500 flex items-center">
+          @Tip_Tag 打赏 ${{ comStore.currentSelectedCommunity?.tick }} 给这位作者，感谢他分享的内容！
+        <button class="ml-2" @click="onCopy(`@Tip_Tag tip $${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
+            <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
+          </button>
+        </span>
+        <p class="text-sm text-grey-normal">
+          这将自动为推文提供10个VP，并从您的帐户中扣除200个OP。
+        </p>
+      </div>
+    </template>
     <!-- <div>
       <div class="p-2">original tweet link</div>
       <div class="bg-grey-f0/90 rounded-2xl h-12 px-3">

@@ -56,30 +56,36 @@ const onPostTweet = async () => {
 <template>
   <div class="flex flex-col gap-y-6 pb-3">
     <div class="text-xl font-medium text-black text-center">
-      Tweet on-chain
+      {{ $t('postView.tweetOnChain') }}
     </div>
     <div class="flex flex-col gap-y-2 px-4">
     <p class="text-sm text-gray-600">
-      Write a tweet as curation and receive curates from other users.
-      </p>  
-    <p class="text-sm text-gray-600">
-      You can write a tweet with 
+      {{$t('postView.tweetOnChainTip1')}}
+      </p>
+    <p v-if="$i18n.locale==='en'" class="text-sm text-gray-600">
+      You can write a tweet with
       <span class="text-blue-500">
         #tagai(or @TagAIDAO)
       </span>
-       and 
+       and
       <span class="text-blue-500">
         #{{ useCommunityStore().currentSelectedCommunity?.tick }}
-      </span> 
+      </span>
       at the front of your tweet content on Twitter, the tweet will be automatically posted to the community.
     </p>
+    <p v-if="$i18n.locale==='zh'" class="text-sm text-gray-600">
+      您可以在 Twitter 上撰写推文，并在推文内容前面加上
+      <span class="text-blue-500">#tagai(or @TagAIDAO)</span> 和
+      <span class="text-blue-500">#{{ useCommunityStore().currentSelectedCommunity?.tick }}</span>，
+      该推文将自动发布到社区。
+    </p>
     <p class="text-sm text-gray-600">
-      Or you can write a tweet directly in the following text box and click go tweet.
+      {{$t('postView.tweetOnChainTip2')}}
     </p>
     </div>
     <div>
       <div class="flex justify-between items-center px-2">
-        <div>Type your content here</div>
+        <div>{{$t('postView.typeTip')}}</div>
         <div :class="leftWordsLength < 0 ? 'text-red-e6' : ''">{{ leftWordsLength }}</div>
       </div>
       <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
@@ -92,7 +98,7 @@ const onPostTweet = async () => {
              @paste="onPaste"
              v-html="contentEl"></div>
         <div v-if="!showClear" class="absolute top-3 left-3 text-14px leading-24px z-0 opacity-30">
-          Please input
+          {{$t('postView.pleaseInput')}}
         </div>
         <div class="flex justify-between items-center px-3 py-2">
           <el-popover ref="emojiPopover" trigger="click" width="300" :teleported="true" :persistent="false">
@@ -122,7 +128,7 @@ const onPostTweet = async () => {
                        flex justify-center items-center space-x-2 disabled:opacity-30"
               :disabled="tweetLoading"
               @click="onPostTweet">
-        <span class="text-white font-bold text-lg">Go Tweet</span>
+        <span class="text-white font-bold text-lg">{{$t('postView.goTweet')}}</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>
       </button>
     </div>

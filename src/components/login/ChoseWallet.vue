@@ -18,7 +18,7 @@ const { wallets, connecting, select, readyState, publicKey } = useWallet();
 const emits = defineEmits(['chosedWallet'])
 
 watch(readyState, (val) => {
-  console.log('readyState', val)  
+  console.log('readyState', val)
 })
 
 watch(publicKey, (val) => {
@@ -35,11 +35,11 @@ watch(publicKey, (val) => {
 <template>
   <div class="px-1 flex flex-col gap-y-5">
       <div class="flex justify-between items-center">
-        <span class="text-h2 text-grey-normal-hover">Chose Wallet</span>
+        <span class="text-h2 text-grey-normal-hover">{{$t('loginView.choseWallet')}}</span>
         <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
              @click="modalStore.setModalVisible(false)"/>
       </div>
-      <div v-for="wallet in wallets" :key="wallet.adapter.name" 
+      <div v-for="wallet in wallets" :key="wallet.adapter.name"
         class="flex items-center justify-center gap-5"
         @click="select(wallet.adapter.name as WalletName)">
         <img class="w-12 h-12" :src="wallet.adapter.icon" alt="">
@@ -52,4 +52,3 @@ watch(publicKey, (val) => {
       </div>
     </div>
   </template>
-  

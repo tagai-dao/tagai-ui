@@ -39,12 +39,12 @@ onMounted(async () => {
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-2">
       <div class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.solAddr ?? '')">
-          <span>Sol address: {{ formatAddress(useAccountStore().getAccountInfo?.solAddr ?? '') }}</span>
+          <span>Sol {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.solAddr ?? '') }}</span>
         </div>
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-1">
         <div class="flex-1 flex items-center flex-wrap gap-4">
-          <span>Sol balance: {{ formatAmount(useAccountStore().solBalance) }}</span>
+          <span>Sol {{ $t('balance') }}: {{ formatAmount(useAccountStore().solBalance) }}</span>
         </div>
       </div>
     </div>

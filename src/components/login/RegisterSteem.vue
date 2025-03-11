@@ -135,7 +135,7 @@ async function choseBitip(bitip: string) {
             datetime
         }, null, 4)
         const signature = await btcSignMessage(message);
-        
+
         identityInfo.chainName = 'BTC';
         identityInfo.type = 'bitip';
         identityInfo.assetId = bitip
@@ -226,7 +226,7 @@ onMounted(() => {
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
               @click="selectBitip"
               :disabled="loading">
-        <span class="text-white font-semibold">I have BitIp</span>
+        <span class="text-white font-semibold">{{ $t('loginView.haveBitIP') }}</span>
         <i-ep-loading v-show="loading" class="animate-spin" />
       </button>
     </div>
@@ -254,7 +254,7 @@ onMounted(() => {
             {{$t('loginView.noBitip')}}
           </span>
           <span @click="openDonut" class="text-orange-normal cursor-pointer">
-            Mint
+            {{ $t('loginView.mint') }}
           </span>
         </div>
       </div>

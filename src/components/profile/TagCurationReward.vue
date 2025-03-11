@@ -48,7 +48,7 @@ async function claim() {
       let {signature, orderId, amount} = res;
       const connection = new Connection('https://api.devnet.solana.com', "confirmed");
       let tx: any = Transaction.from(Buffer.from(signature, 'base64'));
-      
+
       // tx = await signTransaction.value!(tx);
       // console.log('tx3', tx)
       tx = await sendTransaction(tx, connection, {
@@ -88,7 +88,7 @@ onMounted(() => {
     </div>
     <button @click="claim" :disabled="claiming || !canClaim || accountMismatch"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
-      {{ canClaim ? 'Claim' : 'Pending settled' }}
+      {{ canClaim ? $t('claim') : $t('pendingSettled') }}
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>
     <div v-if="accountMismatch && connected"

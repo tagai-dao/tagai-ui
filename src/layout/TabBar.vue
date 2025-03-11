@@ -24,11 +24,11 @@ const { vp, op } = useAccount()
       <router-link to="/" class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
         <template v-if="$route.name==='home'">
           <img class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
-          <span class="text-gradient bg-gradient-primary text-h5">Tag</span>
+          <span class="text-gradient bg-gradient-primary text-h5">{{$t('tag')}}</span>
         </template>
         <template v-else>
           <img class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
-          <span class="text-h5 text-grey-normal">Tag</span>
+          <span class="text-h5 text-grey-normal">{{$t('tag')}}</span>
         </template>
       </router-link>
       <!-- <CreateBtn/> -->

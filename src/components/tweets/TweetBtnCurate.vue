@@ -70,22 +70,27 @@ async function confirmCurate() {
            @click.stop
            width="90%" :show-close="false" align-center destroy-on-close>
       <div class="flex flex-col items-center p-4">
-        <h2 class="text-2xl font-bold mb-4">Curate</h2>
-        <p class="text-sm text-gray-500 mb-4">
+        <h2 class="text-2xl font-bold mb-4">{{ $t('curation.curate') }}</h2>
+        <p v-if="$i18n.locale==='en'" class="text-sm text-gray-500 mb-4">
           User can Curate to tweets if you have registered social account on the platform.
           <br />
           The curation reward will be depended on the curate amount. The more you curate, the more reward the author and you will get.
           <br />
           Curate will cost you 1-10 VP(voting power) that you selected, and every user has initial 200 vp which will recover 100% per 3days.
         </p>
+        <p v-if="$i18n.locale==='zh'" class="text-sm text-gray-500 mb-4">
+          如果您已在平台上注册社交账户，则用户可以对推文进行策展。<br/>
+          策展奖励将取决于策展量。策展越多，您和作者获得的奖励就越多。 <br/>
+          策展将花费您选择的 1-10 VP（投票权），每个用户都有初始 200 vp，每 3 天将恢复 100%。
+        </p>
         <el-slider v-model="curateAmount" :min="1" :max="10" :step="1" class="w-full mb-4 slider" />
-        <div class="text-sm w-full text-gray-500 mb-4">Consume 
+        <div class="text-sm w-full text-gray-500 mb-4">{{ $t('consume') }}
           <span class="text-red-500"> VP: {{ curateAmount }}</span>
-        </div><div class="text-sm w-full text-gray-500 mb-4">Remain 
+        </div><div class="text-sm w-full text-gray-500 mb-4">{{ $t('remain') }}
           <span class="text-green-500"> VP: {{ Math.floor(vp) }}</span>
         </div>
         <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
-          Confirm
+          {{$t('confirm')}}
         </button>
       </div>
 </el-dialog>
