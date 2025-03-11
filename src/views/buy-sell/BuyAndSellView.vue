@@ -10,7 +10,8 @@ import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/a
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
-  getBuyAmountUseEth, getSellAmountUseToken
+  getBuyAmountUseEth, getSellAmountUseToken,
+  getBuyPriceAfterFee
  } from '@/utils/pump'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
@@ -24,6 +25,7 @@ import { ethers } from "ethers";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
+import { ca } from "element-plus/es/locale/index.mjs";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -37,6 +39,9 @@ const defaultAmount = ref([0.02, 0.05, 0.1, 0.2])
 const { preCheckCuration, userTweet } = useTweet();
 const stateStore = useStateStore()
 const calculating = ref(false)
+let willListing = false;
+let updatedBuyValue = 0n;
+let updatedReveiveAmount = 0n;
 
 const payEth = ref()
 const sellAmount = ref()
@@ -90,11 +95,13 @@ watch(() => tradeType.value, () => {
 
 watch(payEth, (val: any) => {
   calculating.value = true
+  willListing = false
   updateBuyAmount(val)
 })
 
 watch(sellAmount, (val: any) => {
   calculating.value = true
+  willListing = false
   updateSellAmount(val)
 })
 
@@ -112,7 +119,15 @@ const updateBuyAmount = debounce(async (val: any) => {
     const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount)
     receiveAmount.value = receive
   }else {
-   const receive = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
+   const {receive, supply} = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
+   if (receive > ethers.parseEther('650000000') * 9950n / 10000n - supply) {
+    updatedReveiveAmount = ethers.parseEther('650000010') - supply
+    updatedBuyValue = await getBuyPriceAfterFee(supply, updatedReveiveAmount) * 10000n / 9900n
+    willListing = true
+   }else{
+    updatedReveiveAmount = receive
+    willListing = false
+   }
    receiveAmount.value = receive
   }
  } catch (error) {
@@ -149,12 +164,11 @@ async function checkTweet() {
       modalStore.setModalVisible(true, GlobalModalType.Login)
       isPostTweet.value = false
       return;
+    } else if (!account.steemId || account.steemId.length == 0) {
+      modalStore.setModalVisible(true, GlobalModalType.Register)
+      isPostTweet.value = false
+      return;
     }
-    // else if (!account.steemId || account.steemId.length == 0) {
-    //   modalStore.setModalVisible(true, GlobalModalType.Register)
-    //   isPostTweet.value = false
-    //   return;
-    // }
 
     if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
       const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
@@ -179,10 +193,10 @@ async function confirm() {
       return
     }
     // check eth balance
-    if (ethBalance.value < payEth.value) {
-      notify({message: 'Insufficient BNB balance'})
-      return
-    }
+    // if (ethBalance.value < payEth.value) {
+    //   notify({message: 'Insufficient BNB balance'})
+    //   return
+    // }
   }else {
     if (!sellAmount.value) {
       showFillInfo.value = true
@@ -216,7 +230,10 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
 
-      const hash = await buyToken(token!.token, token!.version ?? 2, receiveAmount.value, BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
+      // check list
+
+
+      const hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -444,11 +461,15 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy')"
+          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating"
         >
           <span>{{ (accStore.ethConnectAddress ? (listed ? $t('confirmListed') : $t('confirm')): $t('connect')) }}</span>
-          <i-ep-loading v-show="trading" class="animate-spin" />
+          <i-ep-loading v-show="trading || calculating" class="animate-spin" />
         </button>
+
+        <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">
+            Maybe listing
+          </div>
         <div v-if="invalidToken" class="text-sm text-red-e6 text-center">
           {{ $t('buyAndSell.invalidTokenSellTip') }}
         </div>
