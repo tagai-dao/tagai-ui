@@ -121,6 +121,7 @@ async function payToken() {
               return;
           }
           const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+          localStorage.setItem('payTokenHash', hash)
           identityInfo.assetId = hash;
           identityInfo.chainName = ChainConfig.name;
           identityInfo.type = 'payToken'
