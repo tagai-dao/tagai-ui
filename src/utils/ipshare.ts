@@ -1,7 +1,7 @@
 import { getContract } from "./contract";
 import { ChainConfig } from "@/config";
 import { ethers } from 'ethers'
-import { IPShareContract } from "@/config";
+import { IPShareContract1, IPShareContract2 } from "@/config";
 import { aggregate } from '@makerdao/multicall'
 import _ from 'lodash'
 
@@ -21,7 +21,7 @@ import _ from 'lodash'
 
 export const create = async (ethAddr: string) => {
     if (!ethers.isAddress(ethAddr)) return;
-    const contract = await getContract('IPShare');
+    const contract = await getContract('IPShare1');
     const tx = await contract.createShare(ethAddr);
     await tx.wait();
     return tx.hash;
@@ -32,7 +32,7 @@ export const getIPShareInfo = async (ethAddr: string) => {
         return {}
     }
     let calls = [{
-        target: IPShareContract,
+        target: IPShareContract1,
         call: [
             ''
         ]
@@ -44,7 +44,7 @@ export const ipshareCreated = async (ethAddr: string) => {
         return {}
     }
     let calls = [{
-        target: IPShareContract,
+        target: IPShareContract1,
         call: [
             'ipshareCreated(address)(bool)',
             ethAddr

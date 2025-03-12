@@ -1,6 +1,6 @@
 import { getContract } from "./contract";
 import type { Community, CreateCommunity, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI } from "@/config";
 import { getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract1, PumpContract2, Ether, ClaimFee } from "@/config";
@@ -11,6 +11,7 @@ import _ from 'lodash'
 import { isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { getDayNumber } from '@/utils/helper'
+import { version } from "os";
 
 export const checkTickUsed = async (tick: string) => {
     const created = await isTokenExist(tick);
@@ -40,17 +41,35 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         sellsman = ethers.ZeroAddress;
     }
     if (listed) {
-        const router = await getContract('UniswapRouter');
-        const tx = await router.swapExactETHForTokens(
-            amount * BigInt(10000 - slippage) / 10000n,
+        // const router = await getContract('UniswapRouter');
+        // const tx = await router.swapExactETHForTokens(
+        //     amount * BigInt(10000 - slippage) / 10000n,
+        //     [WETH, token],
+        //     useAccountStore().ethConnectAddress,
+        //     Math.floor(Date.now() / 1000) + 300,
+        //     {
+        //         value: ethAmount
+        //     }
+        // )
+        
+        // await tx.wait();
+        // return tx.hash;
+
+        // 2% transaction fee
+        const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
+
+        const wrapSwaper = await getContract('WrapSwaper');
+        const tx = await wrapSwaper.buyToken(
+            ethers.ZeroAddress,
+            amountOut * BigInt(10000 - slippage) / 10000n,
             [WETH, token],
             useAccountStore().ethConnectAddress,
             Math.floor(Date.now() / 1000) + 300,
+            version == 1 ? IPShareContract1 : IPShareContract2,
             {
                 value: ethAmount
             }
         )
-        
         await tx.wait();
         return tx.hash;
     }else {
@@ -71,7 +90,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
     }
 }
 
-export const sellToken = async (token: string, amount: bigint, receiveEth: bigint, sellsman: ethers.AddressLike, listed: boolean, slippage = 0) => {
+export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: ethers.AddressLike, listed: boolean, slippage = 0) => {
     if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!ethers.isAddress(sellsman)) {
         sellsman = ethers.ZeroAddress;
@@ -79,18 +98,40 @@ export const sellToken = async (token: string, amount: bigint, receiveEth: bigin
     const tc = await getContract('Token1', token)
     if (listed) {
         // checkout approve
-        const allowance = await tc.allowance(useAccountStore().ethConnectAddress, uniswapV2Router02);
+        // const allowance = await tc.allowance(useAccountStore().ethConnectAddress, uniswapV2Router02);
+        // if (allowance < amount) {
+        //     const res = await tc.approve(uniswapV2Router02, ethers.MaxInt256);
+        //     await res.wait();
+        // }
+        // const router = await getContract('UniswapRouter');
+        // const tx = await router.swapExactTokensForETH(
+        //     amount,
+        //     receiveEth * BigInt(10000 - slippage) / 10000n,
+        //     [token, WETH],
+        //     useAccountStore().ethConnectAddress,
+        //     Math.floor(Date.now() / 1000) + 300
+        // )
+        // await tx.wait();
+        // return tx.hash;
+
+        const allowance = await tc.allowance(useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI);
         if (allowance < amount) {
-            const res = await tc.approve(uniswapV2Router02, ethers.MaxInt256);
+            const res = await tc.approve(wrappedUniswapV2ForTagAI, ethers.MaxInt256);
             await res.wait();
         }
-        const router = await getContract('UniswapRouter');
-        const tx = await router.swapExactTokensForETH(
+
+        const expectedReceive = await getSellAmountUseToken(token, amount);
+
+        const wrapSwaper = await getContract('WrapSwaper');
+
+        const tx = await wrapSwaper.sellToken(
             amount,
-            receiveEth * BigInt(10000 - slippage) / 10000n,
+            expectedReceive * BigInt(10000 - slippage) / 10000n,
             [token, WETH],
             useAccountStore().ethConnectAddress,
-            Math.floor(Date.now() / 1000) + 300
+            Math.floor(Date.now() / 1000) + 300,
+            ethers.ZeroAddress,
+            version == 1 ? IPShareContract1 : IPShareContract2
         )
         await tx.wait();
         return tx.hash;
@@ -354,11 +395,11 @@ const getCreateTokenEventByHash = (tx: any, version: number) => {
 export const getBuyAmountUseEth = async (token: string, ethAmount: BigInt) => {
     let contract = await getContract('UniswapRouter', undefined, true);
     const amount = await contract.getAmountsOut(ethAmount, [WETH, token]);
-    return amount[1];
+    return amount[amount.length - 1];
 }
 
 export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) => {
     let contract = await getContract('UniswapRouter', undefined, true);
     const amount = await contract.getAmountsOut(tokenAmount, [token, WETH]);
-    return amount[1];
+    return amount[amount.length - 1];
 }

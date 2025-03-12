@@ -2,13 +2,15 @@ import { getProvider, setup } from "./wallets";
 import { abis } from './abis'
 import { ethers } from 'ethers'
 import { getReadOnlyProvider } from "./web3";
-import { PumpContract1, IPShareContract, uniswapV2Router02, PumpContract2 } from '@/config'
+import { PumpContract1, IPShareContract1, uniswapV2Router02, PumpContract2, IPShareContract2, wrappedUniswapV2ForTagAI } from '@/config'
 
 const ContractAddress = {
     Pump1: PumpContract1,
     Pump2: PumpContract2,
-    IPShare: IPShareContract,
-    UniswapRouter: uniswapV2Router02
+    IPShare1: IPShareContract1,
+    IPShare2: IPShareContract2,
+    UniswapRouter: uniswapV2Router02,
+    WrapSwaper: wrappedUniswapV2ForTagAI
 }
 
 export const getContract = async (contractName: string, address?: string, readOnly = false): Promise<any> => {

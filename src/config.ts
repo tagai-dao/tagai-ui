@@ -62,7 +62,8 @@ export const RegisterSteemMessage = JSON.stringify(
   4
 );
 
-export const IPShareContract = "0x24328DccA1bA54EeE82e2993F021802e64290486";
+export const IPShareContract1 = "0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0";
+export const IPShareContract2 = "0x24328DccA1bA54EeE82e2993F021802e64290486";
 export const PumpContract1 = "0xa77253Ac630502A35A6FcD210A01f613D33ba7cD";
 export const PumpContract2 = "0x3DC52C69C3C8be568372E16d50E9F3FEc796610c";
 
@@ -70,6 +71,7 @@ export const WETH = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 export const uniswapV2Factory = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
 export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
+export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10'
 
 export const Ether = BigInt(1e18);
 

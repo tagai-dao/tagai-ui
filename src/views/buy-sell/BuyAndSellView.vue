@@ -110,25 +110,36 @@ const invalidToken = computed(() => {
 })
 
 const updateBuyAmount = debounce(async (val: any) => {
-  if (!val) return;
+  if (!val) {
+    trading.value = false
+    calculating.value = false
+    receiveAmount.value = ''
+    return
+  };
+  val = parseFloat(val)
+  if (val == 0) {
+    trading.value = false
+    calculating.value = false
+    receiveAmount.value = ''
+    return
+  };
   showFillInfo.value = false
   const amount = ethers.parseEther(val.toString())
-
  try {
   if (listed.value) {
-    const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount)
+    const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount * 9800n / 10000n)
     receiveAmount.value = receive
   }else {
-   const {receive, supply} = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
-   if (receive > ethers.parseEther('650000000') * 9950n / 10000n - supply) {
-    updatedReveiveAmount = ethers.parseEther('650000010') - supply
-    updatedBuyValue = await getBuyPriceAfterFee(supply, updatedReveiveAmount) * 10000n / 9900n
-    willListing = true
-   }else{
-    updatedReveiveAmount = receive
-    willListing = false
-   }
-   receiveAmount.value = receive
+    const {receive, supply} = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
+    if (receive > ethers.parseEther('650000000') * 9950n / 10000n - supply) {
+      updatedReveiveAmount = ethers.parseEther('650000010') - supply
+      updatedBuyValue = await getBuyPriceAfterFee(supply, updatedReveiveAmount) * 10000n / 9900n
+      willListing = true
+    }else{
+      updatedReveiveAmount = receive
+      willListing = false
+    }
+    receiveAmount.value = receive
   }
  } catch (error) {
     console.log(33, error)
@@ -140,7 +151,12 @@ const updateBuyAmount = debounce(async (val: any) => {
 
 const updateSellAmount = debounce(async (val: any) => {
   try {
-    if (!val || !comStore.currentSelectedCommunity) return;
+    if (!val || !comStore.currentSelectedCommunity) {
+      receiveEth.value = ''
+      sellAmount.value = ''
+      return;
+    }
+    if (parseFloat(val) == 0) return;
     showFillInfo.value = false
     const amount = ethers.parseEther(val.toString())
     if (listed.value) {
@@ -231,13 +247,11 @@ async function confirm() {
       if (!payEth.value) return
 
       // check list
-
-
       const hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        // trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else{
@@ -245,7 +259,7 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      const hash = await sellToken(token!.token, BigInt(sellAmount.value * 1e18), receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
+      const hash = await sellToken(token!.token, token!.version ?? 2, BigInt(sellAmount.value * 1e18), receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined
