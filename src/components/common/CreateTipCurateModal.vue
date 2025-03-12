@@ -93,9 +93,9 @@ const checkSpace = debounce(async () => {}, 10000);
           You can reply the tweet which you like with the following content:
         </p>
         <span class="text-sm text-blue-500 flex items-center">
-        @TagAIDAO tip ${{ comStore.currentSelectedCommunity?.tick }} to the author for this
+        @TagAIDAO tip ${{ comStore.currentSelectedCommunity?.tick }}
         good content!
-        <button class="ml-2" @click="onCopy(`@TagAIDAO tip $${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
+        <button class="ml-2" @click="onCopy(`@TagAIDAO tip $${ comStore.currentSelectedCommunity?.tick }`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
       </span>
@@ -117,7 +117,7 @@ const checkSpace = debounce(async () => {}, 10000);
           你可以回复你喜欢的推文，并在回复内容前加上以下内容：
         </p>
         <span class="text-sm text-blue-500 flex items-center">
-          @TagAIDAO 打赏 ${{ comStore.currentSelectedCommunity?.tick }} 给这位作者，感谢他分享的内容！
+          @TagAIDAO tip ${{ comStore.currentSelectedCommunity?.tick }}
         <button class="ml-2" @click="onCopy(`@TagAIDAO tip $${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
