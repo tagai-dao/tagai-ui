@@ -94,7 +94,6 @@ const checkSpace = debounce(async () => {}, 10000);
         </p>
         <span class="text-sm text-blue-500 flex items-center">
         @TagAIDAO tip ${{ comStore.currentSelectedCommunity?.tick }}
-        good content!
         <button class="ml-2" @click="onCopy(`@TagAIDAO tip $${ comStore.currentSelectedCommunity?.tick }`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
@@ -118,12 +117,12 @@ const checkSpace = debounce(async () => {}, 10000);
         </p>
         <span class="text-sm text-blue-500 flex items-center">
           @TagAIDAO tip ${{ comStore.currentSelectedCommunity?.tick }}
-        <button class="ml-2" @click="onCopy(`@TagAIDAO tip $${ comStore.currentSelectedCommunity?.tick } to the author for this good content!`)">
+        <button class="ml-2" @click="onCopy(`@TagAIDAO tip $${ comStore.currentSelectedCommunity?.tick }`)">
             <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
         </span>
         <p class="text-sm text-grey-normal">
-          这将自动为推文提供10个VP，并从您的帐户中扣除200个OP。
+          这将自动为推文提供10个VP，并从您的帐户中扣除200个OP，如果原推文没有进入社区内容池，则会消耗400个OP。
         </p>
       </div>
     </template>

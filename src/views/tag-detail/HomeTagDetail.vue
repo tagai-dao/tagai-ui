@@ -432,6 +432,11 @@ onMounted(async () => {
                   <i-ep-loading v-show="checkingTweet" class="animate-spin" />
                 </button> -->
 
+                <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+                  {{$t('tip')}} ${{ comStore.currentSelectedCommunity?.tick }}
+                  <i-ep-loading v-show="checkingTweet" class="animate-spin" />
+                </button>
+
                 <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
                   <template #reference>
                     <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">{{$t('postView.postToEarn')}}</button>
