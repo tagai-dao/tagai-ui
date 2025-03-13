@@ -191,7 +191,7 @@ onMounted(async () => {
           <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
           <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
           <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">{{$t('listed')}}</div>
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">{{$t('listed')}}</div>
         </div>
         <div class="flex-1 py-1">
           <div class="flex flex-wrap justify-between gap-x-4 items-center">
@@ -231,13 +231,13 @@ onMounted(async () => {
           </button>
         </div>
         <div class="text-base font-medium flex items-center gap-1">
-          <span>Bonding Curve progress：{{ progressData[1].value.toFixed(2) }}%</span>
+          <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
           <el-popover popper-class="c-popper">
             <template #reference>
               <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
             </template>
             <template #default>
-              <div class="bg-white rounded-xl p-2 shadow-popper-tip">
+              <div class="bg-white rounded-xl p-2 shadow-popper-tip w-[200px]">
                 {{ $t('community.distributionTip') }}
               </div>
             </template>
@@ -331,9 +331,9 @@ onMounted(async () => {
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
-                    class="px-3 rounded-full h-8 text-h3"
+                    class="px-3 rounded-full h-8 text-h3 whitespace-nowrap"
                     :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
-                    @click="activeTab=tab.key">{{tab.label}}</button>
+                    @click="activeTab=tab.key">{{$t(tab.label)}}</button>
           </div>
           <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef)">
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
@@ -379,7 +379,7 @@ onMounted(async () => {
             </div>
             <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
               <div class="flex items-center gap-2 ">
-                <span class="text-sm font-semibold">CA</span>
+                <span class="text-sm font-semibold whitespace-nowrap">CA</span>
                 <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px] flex-1 truncate">
                   {{ comStore.currentSelectedCommunity?.token }}
                 </div>

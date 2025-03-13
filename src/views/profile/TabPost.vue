@@ -114,8 +114,8 @@ onMounted(() => {
 <template>
   <div class="min-h-full h-full">
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh" class="min-h-full h-full overflow-auto"
-      loading-text="Loading" pulling-text="Pull to refresh data" loosing-text="Release to refresh">
-      <van-list :loading="loading" :finished="finished" :immediate-check="false" finished-text="No more"
+      :loading-text="$t('loading')" :lpulling-text="$t('pullToRefreshData')" :loosing-text="$t('releaseToRefresh')">
+      <van-list :loading="loading" :finished="finished" :immediate-check="false" :finished-text="$t('noMore')"
         :scroller="scroller" :offset="50" @load="onLoad">
         <div class="flex items-center gap-1 px-3">
           <span class="font-normal text-sm">{{$t('postView.postReward')}}</span>

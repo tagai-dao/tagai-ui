@@ -169,29 +169,29 @@ onMounted(async () => {
       </div>
     </div> -->
     <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
-      <div class="text-h2 mb-2">Token info</div>
+      <div class="text-h2 mb-2">{{$t('postView.tokenInfo')}}</div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Price</span>
+        <span class="text-h4 text-grey-93">{{ $t('postView.price') }}</span>
         <span class="text-h5 text-black-19">{{ formatPrice((comStore.currentSelectedCommunity.price ?? 0) * useStateStore().ethPrice) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Total Supply</span>
+        <span class="text-h4 text-grey-93">{{$t('postView.totalSupply')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(TotalSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Social Distribution</span>
+        <span class="text-h4 text-grey-93">{{$t('postView.socialSupply')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(SocialSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Bonding curve sold</span>
+        <span class="text-h4 text-grey-93">{{$t('postView.bindCurveSold')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(comStore.currentSelectedCommunity.bondingCurveSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Dex Liquidity</span>
+        <span class="text-h4 text-grey-93">{{$t('postView.dexLiquidity')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(ListSupply) }}</span>
       </div>
       <div class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">Cap</span>
+        <span class="text-h4 text-grey-93">{{$t('postView.cap')}}</span>
         <span class="text-h5 text-black-19">{{ formatPrice((comStore.currentSelectedCommunity.marketCap ?? 0) * useStateStore().ethPrice) }}</span>
       </div>
     </div>
@@ -235,19 +235,19 @@ onMounted(async () => {
       </div>
     </div> -->
     <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
-      <div class="text-h2 mb-2">Holder List</div>
+      <div class="text-h2 mb-2">{{$t('postView.holderList')}}</div>
       <van-pull-refresh
       v-model="refreshing"
       @refresh="onRefresh"
-      loading-text="Loading"
-      pulling-text="Pull to refresh data"
-      loosing-text="Release to refresh"
+      :loading-text="$t('loading')"
+      :lpulling-text="$t('pullToRefreshData')"
+      :loosing-text="$t('releaseToRefresh')"
     >
       <van-list
         :loading="loading"
         :finished="finished"
         :immediate-check="false"
-        finished-text="No more"
+        :finished-text="$t('noMore')"
         :offset="50"
         @load="onLoad"
       >
@@ -280,7 +280,7 @@ onMounted(async () => {
       </div>
       </van-list>
     </van-pull-refresh>
-     
+
     </div>
   </div>
 </template>

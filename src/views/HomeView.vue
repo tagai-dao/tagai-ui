@@ -196,13 +196,13 @@ watch([() => contentWidth.value, () => scrollContainer.value], () => {
     <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
       <van-pull-refresh v-show="activeTab == 'Base'" v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
-                        loading-text="Loading"
-                        pulling-text="Pull to refresh data"
-                        loosing-text="Release to refresh">
+                        :loading-text="$t('loading')"
+                        :lpulling-text="$t('pullToRefreshData')"
+                        :loosing-text="$t('releaseToRefresh')">
         <van-list :loading="loading"
                   :finished="finished"
                   :immediate-check="false"
-                  finished-text="No more"
+                  :finished-text="$t('noMore')"
                   :offset="50"
                   @load="loadMore">
 
