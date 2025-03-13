@@ -1,4 +1,11 @@
 {
+  "Square": "广场",
+  "Proposal": "提议",
+  "Trades": "交易",
+  "Credit": "信用",
+  "Token": "代币",
+  "AI": "AI",
+  "Memory": "Memory",
   "buy": "购买",
   "sell": "出售",
   "tips": "打赏",

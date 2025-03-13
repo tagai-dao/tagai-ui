@@ -112,7 +112,7 @@ onUnmounted(() => {
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
-        <el-popover v-if="tweet.amount" popper-class="c-arrow-popper rounded-sm"
+        <el-popover v-if="tweet.amount" popper-class="c-arrow-popper rounded-sm" position="end"
                     trigger="click" :teleported="true" :persistent="false">
           <template #reference>
             <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold"
@@ -123,18 +123,18 @@ onUnmounted(() => {
           <template #default>
             <div class="text-grey-normal text-sm px-2">
               <div class="flex justify-between items-center h-7 gap-3">
-                <span>{{ $t('postView.author') }}</span>
+                <span class="whitespace-nowrap">{{ $t('postView.author') }}</span>
                 <span class="font-semibold whitespace-nowrap">{{ formatAmount(tweet.authorAmount) }}({{ formatPrice((tweet.authorAmount ?? 0) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
               <div class="flex justify-between items-center h-7 border-t-[0.5px] border-b-[0.5px] border-grey-6f/10 gap-3">
-                <span>{{$t('postView.curator')}}</span>
+                <span class="whitespace-nowrap">{{$t('postView.curator')}}</span>
                 <span class="font-semibold whitespace-nowrap">{{ formatAmount(tweet.curateAmount) }} ({{ formatPrice(((tweet.curateAmount ?? 0)) * (tweet.price ?? 0) * useStateStore().ethPrice) }})</span>
               </div>
               <div v-if="!tweet.listed" class="flex justify-between items-center h-7 gap-3">
                 {{ $t('postView.pendingList') }}
               </div>
               <div v-else class="flex justify-between items-center h-7">
-                <span>{{ $t('postView.endTime') }}:</span>
+                <span class="whitespace-nowrap">{{ $t('postView.endTime') }}:</span>
                 <span class="font-semibold whitespace-nowrap">{{ parseTimestamp(new Date((tweet.dayNumber + 3) * 86400000)) }}</span>
               </div>
             </div>

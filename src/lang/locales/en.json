@@ -1,4 +1,11 @@
 {
+  "Square": "Square",
+  "Proposal": "Proposal",
+  "trades": "Trades",
+  "Credit": "Credit",
+  "Token": "Token",
+  "AI": "AI",
+  "Memory": "Memory",
   "buy": "Buy",
   "sell": "Sell",
   "tips": "Tips",
