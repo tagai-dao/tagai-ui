@@ -1,17 +1,30 @@
 <script setup lang="ts">
 import {ref, watch} from "vue";
 import debounce from "lodash.debounce"
-import { search } from "@/apis/api";
-import { type Community } from "@/types";
+import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, getUsernameTweets } from "@/apis/api";
+import { type Community, type Tweet } from "@/types";
 import TagListItem from "../home/TagListItem.vue";
 import { useCommunityStore } from "@/stores/community";
 import { useRouter } from "vue-router";
 
+type SearchResult = {
+  type: 'tweet' | 'space' | 'user' | 'community'
+  id: string
+}
+
 const searchText = ref('')
 const showSearchList = ref(false);
+const searchResult = ref<SearchResult>({
+  type: 'community',
+  id: ''
+})
 const list = ref<Community[]>([])
+const tweetsList = ref<Tweet[]>([])
 const comStore = useCommunityStore();
 const router = useRouter();
+const spaceRegex = /https:\/\/(twitter|x)\.com\/i\/spaces\/([0-9a-z-A-Z]+)(\/\w)?/
+const tweetRegex = /https:\/\/(twitter|x)\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\/\w)?/
+const userRegex = /^@([a-zA-Z0-9_]+)/
 
 const onSearch = (e: any) => {
   if(searchText.value.trim().length > 0 && e.keyCode === 13) {
@@ -19,9 +32,59 @@ const onSearch = (e: any) => {
   }
 }
 
+const testSearchText = (text: string) => {
+  if(tweetRegex.test(text)) {
+    const match = text.match(tweetRegex);
+    if (match) {
+      return {
+        type: 'tweet',
+        id: match[3]
+      }
+    }
+  }
+  if(spaceRegex.test(text)) {
+    const match = text.match(spaceRegex);
+    if (match) {
+      return {
+        type: 'space',
+        id: match[2]
+      }
+    }
+  }
+  if(userRegex.test(text)) {
+    const match = text.match(userRegex);
+    if (match) {
+      return {
+        type: 'user',
+        id: match[1]
+      }
+    }
+  }
+  return {
+    type: 'community',
+    id: text
+  }
+}
+
 const onInput = debounce(async () => {
+  list.value = []
+  tweetsList.value = []
   if(!searchText.value.trim()) showSearchList.value = false
-  list.value = await search(searchText.value.trim()) as any
+  searchResult.value = testSearchText(searchText.value.trim()) as SearchResult
+  switch(searchResult.value.type) {
+    case 'tweet':
+      tweetsList.value = [await getTweetById(searchResult.value.id as string) as any]
+      break
+    case 'space':
+      tweetsList.value = [await getTweetBySpaceId(searchResult.value.id as string) as any]
+      break
+    case 'user':
+      tweetsList.value = await getUsernameTweets(searchResult.value.id as string) as any
+      break
+    case 'community':
+      list.value = await searchCommunity(searchResult.value.id as string) as any
+      break
+  }
   showSearchList.value = true
 }, 500)
 
@@ -35,6 +98,9 @@ function gotoDetail(com: Community) {
   router.push(`/tag-detail/${com.tick}`)
 }
 
+function gotoTweet(tweet: Tweet) {
+  router.push(`/post-detail/${tweet.tweetId}`)
+}
 
 
 </script>
@@ -56,22 +122,26 @@ function gotoDetail(com: Community) {
     <el-collapse-transition>
       <div v-show="showSearchList"
            class="absolute top-14 bg-white left-0 right-0 rounded-2xl px-4 py-6 z-[999]">
-        <!-- <div class="px-3 font-medium text-lg text-black mb-1">User</div>
-        <div class="grid grid-cols-4 gap-3">
-          <div v-for="i of 2" :key="i"
-               class="col-span-1 bg-white p-3 rounded-2xl shadow-popper-tip flex items-center gap-1.5 mb-2">
-            <img class="h-10 w-10 min-h-10 rounded-full"
-                 src="~@/assets/icons/icon-default-avatar.svg" alt="">
-            <div class="flex-1">
-              <div>@username</div>
-              <div class="text-grey-light-active text-sm">ipShare: 895</div>
-            </div>
+
+        <div v-if="searchResult.type === 'community'" class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
+          <TagListItem v-for="community of list" :community :key="community.tick" @click="gotoDetail(community)"/>
+        </div>
+        <div v-if="searchResult.type != 'community' && tweetsList.length > 0" class="grid h-screen overflow-auto">
+          <div v-for="(tweet, index) of tweetsList" :key="tweet.tweetId" @click="gotoTweet(tweet)" class="mb-2">
+            <SpaceItem
+              v-if="tweet.spaceId"
+              class="bg-white rounded-2xl"
+              :tweet="tweet"
+            >
+            </SpaceItem>
+            <TweetItem
+              v-else
+              class="bg-white rounded-2xl"
+              :tweet="tweet"
+            >
+            </TweetItem>
           </div>
         </div>
-        <div class="px-3 font-medium text-lg text-black mt-4 mb-1">Tag</div> -->
-        <div class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-          <TagListItem v-for="community of list" :community :key="community.tick" @click="gotoDetail(community)"/>
-      </div>
       </div>
     </el-collapse-transition>
   </div>
