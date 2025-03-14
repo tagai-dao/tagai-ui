@@ -3,7 +3,7 @@ import type { Community, CreateCommunity, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI } from "@/config";
 import { getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
-import { PumpContract1, PumpContract2, PumpContract3, Ether, ClaimFee } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, Ether, ClaimFee } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
@@ -16,7 +16,8 @@ import { version } from "os";
 const pumpContract = [
     PumpContract1,
     PumpContract2,
-    PumpContract3
+    PumpContract3,
+    PumpContract4
 ]
 
 export const checkTickUsed = async (tick: string) => {
@@ -25,7 +26,7 @@ export const checkTickUsed = async (tick: string) => {
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
-    const pump = await getContract('Pump3')
+    const pump = await getContract('Pump4')
     let tx: any = await pump.createToken(createParms.tick, {
         value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
