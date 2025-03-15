@@ -44,6 +44,7 @@
   "remain": "Remain",
   "noMore": "No more",
   "loading": "Loading...",
+  "optional": "(Optional)",
   "pullToRefreshData": "Pull to refresh data",
   "releaseToRefresh": "Release to refresh",
   "loginView": {

@@ -50,7 +50,7 @@ onMounted(async () => {
     })
   }
 
-  // useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+  // useModalStore().setModalVisible(true, GlobalModalType.Register)
 
   // update userinfo
   if (account?.twitterId) {

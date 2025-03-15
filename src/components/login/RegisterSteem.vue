@@ -7,11 +7,11 @@ import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } 
 import { checkEns, registerSteem, checkFarcaster } from "@/apis/api";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
-import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
+import { transferEthTo, signMessage as ethSignMessage } from "@/utils/wallets";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
 import { getUserBitip, checkRegister, checkEthUsed } from "@/apis/api";
 import { bytesToHex, sleep } from "@/utils/helper";
-import { box, generateSteemAuth } from "@/utils/web3";
+import { box, generateSteemAuth, getBalance } from "@/utils/web3";
 import { ethers } from 'ethers';
 import type { Account } from "@/types";
 import { useModalStore } from "@/stores/common";
@@ -120,6 +120,7 @@ async function payToken() {
               showInsufficientBalance.value = true;
               return;
           }
+          useModalStore().setModalCloseEnable(false);
           const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
           localStorage.setItem('payTokenHash', hash)
           identityInfo.assetId = hash;
@@ -131,6 +132,7 @@ async function payToken() {
         handleErrorTip(error)
         loading.value = false
     }finally{
+        useModalStore().setModalCloseEnable(true);
     }
 }
 
@@ -236,6 +238,7 @@ async function signInFarcasterEth() {
 
 async function register() {
   try {
+    useModalStore().setModalCloseEnable(false);
     const signature = await ethSignMessage(RegisterSteemMessage)
     const account = accStore.getAccountInfo
     const salt = bytesToHex(ethers.randomBytes(4));
@@ -267,20 +270,21 @@ async function register() {
     }
     await sleep(3)
     const acc: any = await checkRegister(account.twitterId)
-    if (acc.code == 3) {
-      accStore.setAccount({
-        ...acc.account,
-        ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
-        fid: accStore.farcasterUser?.fid,
-        isAuthFarcaster: true,
-        farcasterName: accStore.farcasterUser?.name
-      })
-      localStorage.removeItem('payTokenHash')
-    }
+    accStore.setAccount({
+      ...acc.account,
+      ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
+      fid: accStore.farcasterUser?.fid,
+      isAuthFarcaster: true,
+      farcasterName: accStore.farcasterUser?.name,
+      steemId: accStore.getAccountInfo.twitterUsername + '.tagai'
+    })
+    localStorage.removeItem('payTokenHash')
+    
     useModalStore().setModalVisible(false)
   } catch (error) {
     handleErrorTip(error)
   } finally{
+    useModalStore().setModalCloseEnable(true);
     loading.value = false
   }
     

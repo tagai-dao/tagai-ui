@@ -22,7 +22,6 @@ function tradeTime (token: TokenTrade) {
 }
 
 const onLoad = async () => {
-  console.log('onLoad', finished.value, loading.value, listData.value.length)
   if(finished.value || loading.value || listData.value.length == 0) return
   loading.value = true
   try{
