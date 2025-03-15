@@ -42,7 +42,7 @@ onMounted(() => {
       </div>
       <div class="pl-14 flex justify-between items-center gap-3a mt-1">
         <div class="flex-1 flex items-center flex-wrap gap-4">
-          <span>BSC {{ $t('balance') }}: {{ formatAmount(useAccountStore().ethBalance) }}</span>
+          <span>BNB {{ $t('balance') }}: {{ formatAmount(useAccountStore().ethBalance) }}</span>
         </div>
       </div>
     </div>
