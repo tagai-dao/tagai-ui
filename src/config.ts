@@ -12,7 +12,7 @@ export const ChainConfig = {
     browser: 'https://bscscan.com/',
     decimals: 18,
     multiConfig: {
-        rpcUrl: 'https://bsc-dataseed.binance.org/',
+        rpcUrl: 'https://rpc.48.club',
         multicallAddress: '0x41263cba59eb80dc200f3e2544eda4ed6a90e76c',
         interval: 3000
     }
