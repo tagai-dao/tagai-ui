@@ -30,11 +30,13 @@ export const useUploadImg = () => {
       try {
         if (data.type.startsWith('image')) {
           console.log(data.size);
-          if (data.size > 1024*1024) {
+          const compressedData = await compressImage(data, 0.8, 1024)
+          console.log(compressedData.size);
+          if (compressedData.size > 1024*1024) {
             showPicSizeLimit.value = true
             return;
           }
-          completedImgUrl.value = await addUploadImg(data)
+          completedImgUrl.value = await addUploadImg(compressedData)
           console.log('image url:', completedImgUrl.value);
         }else {
           showOnlyPic.value = true
@@ -49,7 +51,7 @@ export const useUploadImg = () => {
     })
   }
 
-  const addUploadImg = async (img: UploadRawFile):Promise<string> => {
+  const addUploadImg = async (img: UploadRawFile | Blob):Promise<string> => {
     return new Promise(async (resolve, reject) => {
       let param = new FormData();
       param.append("file", img);
@@ -68,6 +70,54 @@ export const useUploadImg = () => {
         });
     })
   }
+
+
+  // 添加图片压缩函数
+  const compressImage = (file: Blob, quality = 0.8, maxWidth = 1024): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          // 计算新的尺寸，保持宽高比
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // 转换为JPEG格式并控制质量
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                // 如果压缩后的图片比原图还大，则返回原图
+                if (blob.size > file.size) {
+                  resolve(file);
+                } else {
+                  resolve(blob);
+                }
+              } else {
+                resolve(file); // 压缩失败，返回原图
+              }
+            },
+            'image/jpeg',
+            quality
+          );
+        };
+      };
+    });
+  };
 
   return {
     uploading,
