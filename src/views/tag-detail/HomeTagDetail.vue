@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed, onActivated, nextTick} from "vue";
+import { onMounted, ref, computed, onActivated, nextTick, onUnmounted } from "vue";
 import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType} from "@/types";
@@ -7,7 +7,7 @@ import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
-import {useRoute, useRouter} from "vue-router";
+import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import { getCommunityDetail, getIpshareInfo } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import {useInterval, usePageScroll, useTools} from "@/composables/useTools";
@@ -26,6 +26,7 @@ import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import CreateTipCurateModal from "@/components/common/CreateTipCurateModal.vue";
+import emitter from "@/utils/emitter";
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -173,9 +174,7 @@ async function checkTweet() {
   }
 }
 
-const preTick = ref('')
 onMounted(async () => {
-
   const tick = route.params.id;
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){
     if (typeof(tick) !== 'string') {
@@ -187,37 +186,32 @@ onMounted(async () => {
     if (!comStore.currentSelectedCommunity?.tick) {
       router.replace('/')
     }
-    preTick.value = tick||''
   }
   updateProgress();
   setInter(updateProgress, 3000);
 })
+onUnmounted(() => {
+  console.log('unmounted')
+})
 
-const isAlive = ref(true)
 onActivated(async () => {
   pageScrollRef.value.scrollTo({top: pageScrollTop.value})
   tabScrollRef.value.scrollTo({top: tabScrollTop.value})
-  const tick = route.params.id;
-  if (preTick.value != tick){
-    isAlive.value = false
-    await nextTick()
-    isAlive.value = true
-    if (typeof(tick) !== 'string') {
-      router.replace('/')
-      return;
-    }
-    comStore.currentSelectedCommunity = null
-    comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
-    updateProgress();
-    preTick.value = tick||''
+})
+
+onBeforeRouteLeave((to, from, next) => {
+  if (to.path.indexOf('/post-detail')>=0) {
+    emitter.emit('setPageAliveState', true)
+  } else {
+    emitter.emit('setPageAliveState', false)
   }
+  next()
 })
 
 </script>
 
 <template>
-  <div v-if="isAlive"
-       class="h-full overflow-auto no-scroll-bar pt-2 pb-[86px] web:pb-2 flex flex-col gap-3 px-3 relative"
+  <div class="h-full overflow-auto no-scroll-bar pt-2 pb-[86px] web:pb-2 flex flex-col gap-3 px-3 relative"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
     <div class="grid grid-cols-1 web:hidden gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">

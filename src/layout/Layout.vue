@@ -14,8 +14,21 @@ import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
 import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
+import { onMounted, ref } from "vue";
+import emitter from "@/utils/emitter";
 
 const modalStore = useModalStore()
+
+const cachedComponents = ref(['HomeView'])
+onMounted( () => {
+  emitter.on('setPageAliveState', async (value) => {
+    if(value) cachedComponents.value.push('HomeTagDetail')
+    else {
+      const index = cachedComponents.value.indexOf('HomeTagDetail')
+      if(index > -1) cachedComponents.value.splice(index, 1)
+    }
+  })
+})
 </script>
 
 <template>
@@ -25,10 +38,9 @@ const modalStore = useModalStore()
       <TopBar v-show="$route.meta.topBar"/>
       <div class="flex-1 overflow-hidden">
         <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" v-if="$route.meta.keepAlive" :key="$route.name"/>
+          <keep-alive :include="cachedComponents">
+            <component :is="Component" :key="$route.name"/>
           </keep-alive>
-          <component :is="Component" v-if="!$route.meta.keepAlive"/>
         </router-view>
       </div>
       <TabBar class="web:hidden" v-if="$route.meta.tabBar"/>
