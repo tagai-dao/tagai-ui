@@ -21,10 +21,10 @@ const modalStore = useModalStore()
 
 const cachedComponents = ref(['HomeView'])
 onMounted( () => {
-  emitter.on('setPageAliveState', async (value) => {
-    if(value) cachedComponents.value.push('HomeTagDetail')
+  emitter.on('setPageAliveState', async (params: any) => {
+    if(params.isAlive) cachedComponents.value.push(params.pageName)
     else {
-      const index = cachedComponents.value.indexOf('HomeTagDetail')
+      const index = cachedComponents.value.indexOf(params.pageName)
       if(index > -1) cachedComponents.value.splice(index, 1)
     }
   })

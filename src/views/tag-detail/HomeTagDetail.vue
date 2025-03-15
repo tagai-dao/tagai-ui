@@ -201,9 +201,9 @@ onActivated(async () => {
 
 onBeforeRouteLeave((to, from, next) => {
   if (to.path.indexOf('/post-detail')>=0) {
-    emitter.emit('setPageAliveState', true)
+    emitter.emit('setPageAliveState', {isAlive: true, pageName: 'HomeTagDetail'})
   } else {
-    emitter.emit('setPageAliveState', false)
+    emitter.emit('setPageAliveState', {isAlive: false, pageName: 'HomeTagDetail'})
   }
   next()
 })
