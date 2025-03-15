@@ -122,7 +122,13 @@
     "deployTip3": "All of that only need you copy the following command to you tweet content.",
     "officialLink": "Official Link",
     "aiCreate": "AI Create",
-    "pendingTip": "Pending new contract deployment..."
+    "pendingTip": "Pending new contract deployment...",
+    "twitter": "Twitter",
+    "twitterUrl": "Twitter link",
+    "telegram": "Telegram",
+    "telegramUrl": "Telegram link",
+    "docs": "Docs",
+    "docsUrl": "Docs link"
   },
   "buyAndSell": {
     "setMaxSlippage": "Set max. slippage (%)",

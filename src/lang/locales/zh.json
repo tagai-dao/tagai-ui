@@ -122,7 +122,13 @@
     "deployTip3": "你只需要将以下命令复制到你的推文内容中即可完成所有操作。",
     "officialLink": "官方链接",
     "aiCreate": "AI创建",
-    "pendingTip": "等待新合约部署中..."
+    "pendingTip": "等待新合约部署中...",
+    "twitter": "Twitter",
+    "twitterUrl": "Twitter 链接",
+    "telegram": "Telegram",
+    "telegramUrl": "Telegram 链接",
+    "docs": "Docs",
+    "docsUrl": "Docs 链接"
   },
   "buyAndSell": {
     "setMaxSlippage": "设置最大滑点 %",

@@ -194,7 +194,7 @@ watch(() => createLoading.value, () => {
 
 <template>
   <chose-wallet v-if="accStore.ethConnectState !== EthWalletState.Connected" />
-  <div v-else class="flex flex-col gap-y-2">
+  <div v-else class="flex flex-col gap-y-2 max-h-[70vh] overflow-auto no-scroll-bar">
     <div class="flex justify-between items-center">
       <span class="text-h2 text-grey-normal-hover">{{ $t('createCommunity.createCommunity') }}</span>
       <img
@@ -327,6 +327,39 @@ watch(() => createLoading.value, () => {
                     :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
                     class="px-2 rounded-md">#{{ tag }}</button>
           </div>
+        </div>
+        <!-- twitter -->
+        <div class="flex flex-col gap-1">
+          <label for="name" class="leading-6 text-lg font-medium text-black">{{$t('createCommunity.twitter')}}:</label>
+          <input
+              class="border-b-[1px] border-grey-e6 leading-6 text-base"
+              v-model="createForm.twitter"
+              type="text"
+              id="name"
+              :placeholder="$t('createCommunity.twitterUrl')"
+          />
+        </div>
+        <!-- telegram -->
+        <div class="flex flex-col gap-1">
+          <label for="name" class="leading-6 text-lg font-medium text-black">{{$t('createCommunity.telegram')}}:</label>
+          <input
+              class="border-b-[1px] border-grey-e6 leading-6 text-base"
+              v-model="createForm.telegram"
+              type="text"
+              id="name"
+              :placeholder="$t('createCommunity.telegramUrl')"
+          />
+        </div>
+        <!-- telegram -->
+        <div class="flex flex-col gap-1">
+          <label for="name" class="leading-6 text-lg font-medium text-black">{{$t('createCommunity.docs')}}:</label>
+          <input
+              class="border-b-[1px] border-grey-e6 leading-6 text-base"
+              v-model="createForm.docs"
+              type="text"
+              id="name"
+              :placeholder="$t('createCommunity.docsUrl')"
+          />
         </div>
         <!-- amount -->
         <div class="flex flex-col gap-1">

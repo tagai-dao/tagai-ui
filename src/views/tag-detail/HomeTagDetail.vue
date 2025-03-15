@@ -43,10 +43,14 @@ enum CurationType {
   TIP_CURATE
 }
 
-const { pageScrollTo} = usePageScroll()
+const { pageScrollTo } = usePageScroll()
 const pageScrollRef = ref()
 const tabScrollRef = ref()
-const pageScroll = (ref: any) => {
+const pageScrollTop = ref(0)
+const tabScrollTop = ref(0)
+const pageScroll = (ref: any, type: string) => {
+  if(type==='page') pageScrollTop.value = pageScrollRef.value.scrollTop
+  if(type==='tab') tabScrollTop.value = tabScrollRef.value.scrollTop
   if(tabScrollRef.value.scrollTop>100 && document.body.clientWidth>1104) {
     pageScrollTo(pageScrollRef.value, 412)
   }
@@ -186,11 +190,17 @@ onMounted(async () => {
   setInter(updateProgress, 3000);
 })
 
+onActivated(() => {
+  console.log(pageScrollRef.value.scrollTop)
+  pageScrollRef.value.scrollTo({top: pageScrollTop.value})
+  tabScrollRef.value.scrollTo({top: tabScrollTop.value})
+})
+
 </script>
 
 <template>
   <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative"
-       ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+       ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
     <div class="grid grid-cols-1 web:hidden gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
@@ -341,7 +351,7 @@ onMounted(async () => {
                     :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
                     @click="activeTab=tab.key">{{$t(tab.label)}}</button>
           </div>
-          <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef)">
+          <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
             <TagContent v-if="activeTab==='content'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
