@@ -245,6 +245,8 @@ export type CreateCommunity = {
   createHash?: string,
   twitterId?: string,
   twitter?: string,
+  telegram?: string,
+  docs?: string,
   sendPubKey?: string,
   sendNonce?: string,
   pwd?: string,

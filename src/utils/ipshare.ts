@@ -21,7 +21,7 @@ import _ from 'lodash'
 
 export const create = async (ethAddr: string) => {
     if (!ethers.isAddress(ethAddr)) return;
-    const contract = await getContract('IPShare1');
+    const contract = await getContract('IPShare2');
     const tx = await contract.createShare(ethAddr);
     await tx.wait();
     return tx.hash;
@@ -44,7 +44,7 @@ export const ipshareCreated = async (ethAddr: string) => {
         return {}
     }
     let calls = [{
-        target: IPShareContract1,
+        target: IPShareContract2,
         call: [
             'ipshareCreated(address)(bool)',
             ethAddr

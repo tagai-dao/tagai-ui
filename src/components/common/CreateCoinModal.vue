@@ -29,6 +29,9 @@ const createForm = reactive<CreateCommunity>({
   tags: [],
   token: "",
   ethAddr: "",
+  twitter: "",
+  telegram: "",
+  docs: "",
 });
 const createLoading = ref(false);
 const showInvalidName = ref(false);
@@ -194,7 +197,7 @@ watch(() => createLoading.value, () => {
 
 <template>
   <chose-wallet v-if="accStore.ethConnectState !== EthWalletState.Connected" />
-  <div v-else class="flex flex-col gap-y-2">
+  <div v-else class="flex flex-col gap-y-2 max-h-[70vh] overflow-auto no-scroll-bar">
     <div class="flex justify-between items-center">
       <span class="text-h2 text-grey-normal-hover">{{ $t('createCommunity.createCommunity') }}</span>
       <img
@@ -303,7 +306,7 @@ watch(() => createLoading.value, () => {
         </div>
         <!-- tag -->
         <div class="flex flex-col gap-1">
-          <label for="tags" class="leading-6 text-lg">{{$t('createCommunity.categoryTag')}} </label>
+          <label for="tags" class="leading-6 text-lg">{{$t('createCommunity.categoryTag') + ' ' + $t('optional')}} </label>
           <div class="border-b-[1px] border-grey-e6 flex items-center pb-1">
             <input
               class="leading-6 text-base flex-1"
@@ -327,6 +330,39 @@ watch(() => createLoading.value, () => {
                     :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
                     class="px-2 rounded-md">#{{ tag }}</button>
           </div>
+        </div>
+        <!-- twitter -->
+        <div class="flex flex-col gap-1">
+          <label for="twitter" class="leading-6 text-lg">{{$t('createCommunity.twitter') + ' ' + $t('optional')}}:</label>
+          <input
+              class="border-b-[1px] border-grey-e6 leading-6 text-base"
+              v-model="createForm.twitter"
+              type="text"
+              id="twitter"
+              :placeholder="$t('createCommunity.twitterUrl')"
+          />
+        </div>
+        <!-- telegram -->
+        <div class="flex flex-col gap-1">
+          <label for="telegram" class="leading-6 text-lg">{{$t('createCommunity.telegram') + ' ' + $t('optional')}}:</label>
+          <input
+              class="border-b-[1px] border-grey-e6 leading-6 text-base"
+              v-model="createForm.telegram"
+              type="text"
+              id="telegram"
+              :placeholder="$t('createCommunity.telegramUrl')"
+          />
+        </div>
+        <!-- telegram -->
+        <div class="flex flex-col gap-1">
+          <label for="docs" class="leading-6 text-lg">{{$t('createCommunity.docs') + ' ' + $t('optional')}}:</label>
+          <input
+              class="border-b-[1px] border-grey-e6 leading-6 text-base"
+              v-model="createForm.docs"
+              type="text"
+              id="docs"
+              :placeholder="$t('createCommunity.docsUrl')"
+          />
         </div>
         <!-- amount -->
         <div class="flex flex-col gap-1">
