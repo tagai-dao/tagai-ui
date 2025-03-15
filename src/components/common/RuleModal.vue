@@ -33,7 +33,7 @@
     <template v-if="$i18n.locale==='zh'">
       <div class="text-h5 leading-6 mt-4 mb-2">
         TagAI Launchpad: <span class="text-green-34">无预售，</span>
-        <span class="text-blue-32">无需团队分配 </span>
+        <span class="text-blue-32">无团队分配 </span>
         - 所有参与者均有平等机会。
       </div>
       <ul class="leading-6 flex flex-col gap-3">
@@ -41,10 +41,10 @@
           1：15%的代币用于社交奖励，激励内容创作和社区参与。
         </li>
         <li>
-          2：65%的代币通过债券曲线分配，以提高初始流动性。
+          2：65%的代币通过销售曲线分配，以提高初始流动性。
         </li>
         <li>
-          3：当足够多的人通过绑定曲线购买代币，使其市值达到6万美元时，就会有1.2万美元的流动性被存入PancakeSwap并进行销毁。
+          3：当足够多的人通过销售曲线购买代币，使其市值达到6万美元时，就会有1.2万美元的流动性被存入PancakeSwap并进行销毁。
         </li>
         <li>
           4：Coin Deployer 或 Blinks 创建者将从交易中获得 1% 的交易费。

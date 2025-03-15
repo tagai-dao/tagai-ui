@@ -140,7 +140,7 @@
     "noTradeData": "暂无交易数据"
   },
   "community": {
-    "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于绑定曲线销售，20%用于进入流动性池。",
+    "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于曲线销售，20%用于进入流动性池。",
     "spaceHasCreated": "这个直播space已经被创建并进行策展。",
     "spaceInvalidLink": "这不是一个有效的Space链接",
     "spaceNotYours": "这个Space不是由您创建的",
@@ -189,14 +189,14 @@
     "price": "价格",
     "totalSupply": "总供应量",
     "socialSupply": "社交分发",
-    "bindCurveSold": "绑定曲线销售",
+    "bindCurveSold": "曲线销售",
     "dexLiquidity": "去中心化交易所流动性",
     "cap": "市值",
     "holderList": "持有者列表",
     "contract": "合约",
     "deployer": "部署者",
     "bridge": "跨链桥",
-    "curveProgress": "绑定曲线进度"
+    "curveProgress": "销售曲线进度"
   },
   "ipshare": {
     "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",
