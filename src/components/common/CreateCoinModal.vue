@@ -128,6 +128,7 @@ const testTick = async () => {
   }
   if (createForm.tick.match(/^[a-zA-Z]{1,16}$/)) {
     const created = await checkTickUsed(createForm.tick);
+    console.log('created', created)
     if (created) {
       showTickUsed.value = true
       return false
@@ -135,6 +136,7 @@ const testTick = async () => {
     return true;
   }
   showInvalidName.value = true
+  return false
 }
 
 const create = async () => {
@@ -148,16 +150,19 @@ const create = async () => {
     let prevForm:any  = localStorage.getItem('createTokenForm')
     if (prevForm){
       prevForm = JSON.parse(prevForm)
-      await createCommunity(prevForm);
+      console.log('prevForm', prevForm)
+      if(await checkTickUsed(prevForm.tick)){
+      }else {
+        await createCommunity(prevForm);
+      }
       localStorage.removeItem('createTokenForm')
-      return;
     }
 
     if (!(await testTick())) {
       console.log('testTick failed')
       return;
     }
-
+    
     if (!createForm.logoUrl || createForm.logoUrl.length === 0) {
       notify({message: 'Need upload an image for your tag'})
       return;
