@@ -74,11 +74,17 @@ export const getCommunityNewTweets = async (tick: string, twitterId?: string, pa
 export const getUserTweets = async (twitterId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/userTweets', {twitterId, pages})
 
+export const getUsernameTweets = async (username: string) =>
+  get(BACKEND_API_URL + '/curation/usernameTweets', {username})
+
 export const getUserBlinks = async (twitterId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/userBlinks', {twitterId, pages})
 
 export const getTweetById = async (tweetId: string, twitterId?: string) =>
   get(BACKEND_API_URL + '/curation/getTweetById', {tweetId, twitterId})
+
+export const getTweetBySpaceId = async (spaceId: string, twitterId?: string) =>
+  get(BACKEND_API_URL + '/curation/getTweetBySpaceId', {spaceId, twitterId})
 
 export const getReplyOfTweet = async (tweetId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/getReplyOfTweet', {tweetId, pages})
@@ -114,7 +120,7 @@ export const updateCommunityInfo = async (community: Community, twitterId: strin
 export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
   get(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
 
-export const search = async (tick: string) =>
+export const searchCommunity = async (tick: string) =>
   get(BACKEND_API_URL + '/community/search', { tick })
 
 export const getCommunityByMarketCap = async (pages?: number) =>

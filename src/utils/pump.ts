@@ -3,7 +3,7 @@ import type { Community, CreateCommunity, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI } from "@/config";
 import { getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
-import { PumpContract1, PumpContract2, Ether, ClaimFee } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, Ether, ClaimFee } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
@@ -13,13 +13,20 @@ import { useAccountStore } from "@/stores/web3";
 import { getDayNumber } from '@/utils/helper'
 import { version } from "os";
 
+const pumpContract = [
+    PumpContract1,
+    PumpContract2,
+    PumpContract3,
+    PumpContract4
+]
+
 export const checkTickUsed = async (tick: string) => {
     const created = await isTokenExist(tick);
     return created
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
-    const pump = await getContract('Pump2')
+    const pump = await getContract('Pump4')
     let tx: any = await pump.createToken(createParms.tick, {
         value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
@@ -262,7 +269,7 @@ export const getTokenOnchainInfo = async (tokens: String[], versions: Record<str
                 ]
             },
             {
-                target: versions[token] == 1 ? PumpContract1 : PumpContract2,
+                target: pumpContract[versions[token] - 1],
                 call: [
                     'totalClaimedSocialRewards(address)(uint256)',
                     token
@@ -301,7 +308,7 @@ export const getTokenOnchainInfo = async (tokens: String[], versions: Record<str
         const token = p[0]
         let info: any = p[1]
         calls.push({
-            target: versions[token] == 1 ? PumpContract1 : PumpContract2,
+            target: pumpContract[versions[token] - 1],
             call: [
                 'getPrice(uint256,uint256)(uint256)',
                 info.bondingCurveSupply.toString(),
@@ -356,7 +363,7 @@ export const getBuyAmountWithETHAfterFee = async (token: string | undefined, ver
     if (!token) return {supply: 0n, receive: 0n}
     const tc = await getContract('Token1', token, true);
     const supply = await tc.bondingCurveSupply();
-    const pumpC = await getContract('Pump' + version, version == 1 ? PumpContract1 : PumpContract2, true);
+    const pumpC = await getContract('Pump' + version, pumpContract[version - 1], true);
     const receive = await pumpC.getBuyAmountByValue(supply, amount * 9800n / 10000n)
     return {supply, receive}
 }
@@ -370,14 +377,14 @@ export const getBuyPriceAfterFee = async (supply: bigint, amount: bigint) => {
 export const getReceivedAmountSellETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
     if (!token) return 0n
     const tc = await getContract('Token1', token, true);
-    const pumpC = await getContract('Pump' + version, version == 1 ? PumpContract1 : PumpContract2, true);
+    const pumpC = await getContract('Pump' + version, pumpContract[version - 1], true);
     const supply = await tc.bondingCurveSupply();
     const receive = await pumpC.getSellPriceAfterFee(supply, amount)
     return receive
 }
 
 const getCreateTokenEventByHash = (tx: any, version: number) => {
-    let contract = new ethers.Contract(version == 1 ? PumpContract1 : PumpContract2, abis.Pump1)
+    let contract = new ethers.Contract(pumpContract[version - 1], abis.Pump1)
     let event;
     tx.logs.forEach((log: any) => {
         try {

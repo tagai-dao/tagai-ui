@@ -66,6 +66,8 @@ export const IPShareContract1 = "0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0";
 export const IPShareContract2 = "0x24328DccA1bA54EeE82e2993F021802e64290486";
 export const PumpContract1 = "0xa77253Ac630502A35A6FcD210A01f613D33ba7cD";
 export const PumpContract2 = "0x3DC52C69C3C8be568372E16d50E9F3FEc796610c";
+export const PumpContract3 = "0xc9FaA3c05a5178C380d9C28Edffa38d90D606F22";
+export const PumpContract4 = "0x0476571a77Cc8Fc28796935Cf173c265F2021448";
 
 export const WETH = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 export const uniswapV2Factory = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';

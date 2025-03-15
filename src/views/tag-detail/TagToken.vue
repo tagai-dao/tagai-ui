@@ -9,7 +9,7 @@ import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, ListSupply } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
-import { PumpContract1, PumpContract2 } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4 } from "@/config";
 
 const comStore = useCommunityStore()
 
@@ -276,7 +276,7 @@ onMounted(async () => {
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Deployer</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.pair" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">DEX</span>
             <span v-show="holder.ethAddr == '0x3758AA66caD9F2606F1F501c9CB31b94b713A6d5'" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">NerveNetwork: Bridge</span>
-            <span v-show="holder.ethAddr == PumpContract1 || holder.ethAddr == PumpContract2" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Social Distribution</span>
+            <span v-show="holder.ethAddr == PumpContract1 || holder.ethAddr == PumpContract2 || holder.ethAddr == PumpContract3 || holder.ethAddr == PumpContract4" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Social Distribution</span>
           </div>
         <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 10000000).toFixed(2) }}%</span>
       </div>
