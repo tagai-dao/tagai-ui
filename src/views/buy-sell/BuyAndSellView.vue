@@ -60,6 +60,7 @@ const receiveEth = ref()
 
 const maxSlippage = ref(5)
 const tokenBalance = ref(0)
+const tokenOriginalBalance = ref(0n)
 const ethBalance = ref(0)
 const listed = computed(() => {
   const listed = comStore.currentSelectedCommunity?.listed
@@ -86,7 +87,9 @@ const percentage = ref(0)
 provide('percentage', percentage)
 watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value], () => {
   if(tradeType.value==='buy') payEth.value = (ethBalance.value * percentage.value / 100).toFixed(8)
-  if(tradeType.value==='sell') sellAmount.value = (tokenBalance.value * percentage.value / 100).toFixed(8)
+  if(tradeType.value==='sell') {
+    sellAmount.value = (tokenBalance.value * percentage.value / 100).toFixed(8)
+  }
 }, {immediate: true})
 
 watch(() => tradeType.value, () => {
@@ -218,11 +221,6 @@ async function confirm() {
       showFillInfo.value = true
       return
     };
-    // check token balance
-    if (tokenBalance.value < sellAmount.value) {
-      notify({message: 'Insufficient token balance'})
-      return
-    }
   }
 
   if (isPostTweet.value){
@@ -259,7 +257,12 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      const hash = await sellToken(token!.token, token!.version ?? 2, BigInt(sellAmount.value * 1e18), receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
+      let finalSellAmount = BigInt(sellAmount.value * 1e18)
+      if (tokenOriginalBalance.value < BigInt(sellAmount.value * 1e18)) {
+        finalSellAmount = BigInt(tokenOriginalBalance.value)
+      }
+
+      const hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined
@@ -282,7 +285,8 @@ async function updateUserTokenInfo () {
   try {
     if (ethers.isAddress(accStore.ethConnectAddress)) {
       let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
-      tokenBalance.value = info.balance;
+      tokenBalance.value = info.balance.toString() / 1e18;
+      tokenOriginalBalance.value = info.balance;
       ethBalance.value = info.ethBalance;
     }
   } catch (error) {
