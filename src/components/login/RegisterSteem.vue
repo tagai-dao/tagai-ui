@@ -7,11 +7,11 @@ import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } 
 import { checkEns, registerSteem, checkFarcaster } from "@/apis/api";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
-import { transferEthTo, getBalance, signMessage as ethSignMessage } from "@/utils/wallets";
+import { transferEthTo, signMessage as ethSignMessage } from "@/utils/wallets";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
 import { getUserBitip, checkRegister, checkEthUsed } from "@/apis/api";
 import { bytesToHex, sleep } from "@/utils/helper";
-import { box, generateSteemAuth } from "@/utils/web3";
+import { box, generateSteemAuth, getBalance } from "@/utils/web3";
 import { ethers } from 'ethers';
 import type { Account } from "@/types";
 import { useModalStore } from "@/stores/common";
