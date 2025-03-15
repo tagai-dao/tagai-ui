@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed, onActivated} from "vue";
+import {onMounted, ref, computed, onActivated, nextTick} from "vue";
 import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType} from "@/types";
@@ -173,7 +173,9 @@ async function checkTweet() {
   }
 }
 
+const preTick = ref('')
 onMounted(async () => {
+
   const tick = route.params.id;
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){
     if (typeof(tick) !== 'string') {
@@ -185,21 +187,37 @@ onMounted(async () => {
     if (!comStore.currentSelectedCommunity?.tick) {
       router.replace('/')
     }
+    preTick.value = tick||''
   }
   updateProgress();
   setInter(updateProgress, 3000);
 })
 
-onActivated(() => {
-  console.log(pageScrollRef.value.scrollTop)
+const isAlive = ref(true)
+onActivated(async () => {
   pageScrollRef.value.scrollTo({top: pageScrollTop.value})
   tabScrollRef.value.scrollTo({top: tabScrollTop.value})
+  const tick = route.params.id;
+  if (preTick.value != tick){
+    isAlive.value = false
+    await nextTick()
+    isAlive.value = true
+    if (typeof(tick) !== 'string') {
+      router.replace('/')
+      return;
+    }
+    comStore.currentSelectedCommunity = null
+    comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
+    updateProgress();
+    preTick.value = tick||''
+  }
 })
 
 </script>
 
 <template>
-  <div class="h-full overflow-auto no-scroll-bar py-2 flex flex-col gap-3 px-3 relative"
+  <div v-if="isAlive"
+       class="h-full overflow-auto no-scroll-bar pt-2 pb-[86px] web:pb-2 flex flex-col gap-3 px-3 relative"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
     <div class="grid grid-cols-1 web:hidden gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
