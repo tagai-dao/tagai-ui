@@ -44,7 +44,10 @@ async function refresh() {
       finished[ListType.MarketCap] = false
       let communities = await getCommunityByMarketCap() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.marketCapCommunities = await getTokenInfo(communities)
+        comStore.marketCapCommunities = communities 
+        getTokenInfo(communities).then((res) => {
+          comStore.marketCapCommunities = [...res]
+        })
       } else {
         finished[ListType.MarketCap] = true
       }
@@ -52,7 +55,10 @@ async function refresh() {
       finished[ListType.New] = false
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.newCommunities = await getTokenInfo(communities)
+        comStore.newCommunities = communities
+        getTokenInfo(communities).then((res) => {
+          comStore.newCommunities = [...res]
+        })
       } else {
         finished[ListType.New] = true
       }
@@ -60,7 +66,10 @@ async function refresh() {
       finished[ListType.Trending] = false
       let communities = await getCommunitiesByTrending() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.trendingCommunities = await getTokenInfo(communities)
+        comStore.trendingCommunities = communities
+        getTokenInfo(communities).then((res) => {
+          comStore.trendingCommunities = [...res]
+        })
       } else {
         finished[ListType.Trending] = true
       }
