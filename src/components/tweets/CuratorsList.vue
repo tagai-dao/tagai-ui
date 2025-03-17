@@ -13,11 +13,12 @@ const curateList = ref<CurateRecord[]>([])
 const props = defineProps<{tweet: Tweet}>()
 
 const onLoad = async () => {
-  if (finished.value || curateList.value.length == 0) return;
+  if (finished.value || curateList.value.length == 0 || loading.value) return;
+  loading.value = true
   try{
     if (props.tweet.tweetId) {
       const list: any = await getTweetCurateList(props.tweet.tweetId, Math.floor((curateList.value.length - 1) / 30) + 1)
-      curateList.value = list
+      curateList.value = curateList.value.concat(list)
       if (list.length < 30) {
         finished.value = true
       }
