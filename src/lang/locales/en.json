@@ -27,6 +27,7 @@
   "complete": "Complete",
   "listed": "listed",
   "address": "Address",
+  "credit": "Credit",
   "claim": "Claim",
   "pendingSettled": "Pending settled",
   "balance": "Balance",

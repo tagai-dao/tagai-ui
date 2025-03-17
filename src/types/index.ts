@@ -271,6 +271,17 @@ export type TokenHoldingList = {
   steemId?: string | null | undefined,
 }
 
+export type CommunityCredit = {
+  credit: number,
+  ethAddr: string,
+  followers?: number | null | undefined,
+  followings?: number | null | undefined,
+  profile?: string | null | undefined,
+  twitterId?: string | null | undefined,
+  twitterName?: string | null | undefined,
+  twitterUsername?: string | null | undefined,
+}
+
 export type TokenTrade = {
   tick: string,
   trader: string,
