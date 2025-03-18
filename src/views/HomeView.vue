@@ -28,7 +28,7 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['BSC', 'Solana', 'Base', 'NULS', 'ENULS']
+const tabOptions = ['BSC', 'NULS']
 const activeTab = ref('BSC')
 
 watch(listType, (val) => {
@@ -145,16 +145,12 @@ async function getSpaces() {
 function gotoChain(chain: string){
   if (chain === 'ENULS') {
     window.open('https://enuls.tagai.fun', '__blank')
-    return;
   } else if (chain === 'Base') {
     window.open('https://base.tagai.fun', '__blank')
-    return;
   } else if (chain === 'NULS') {
     window.open('https://nuls.tagai.fun', '__blank')
-    return;
   } else if (chain === 'Solana') {
     window.open('https://sol.tagai.fun', '__blank')
-    return;
   }
   activeTab.value = 'BSC'
 }
