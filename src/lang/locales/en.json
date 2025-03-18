@@ -50,7 +50,7 @@
   "releaseToRefresh": "Release to refresh",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
-    "p1": "uses progressive web app technolog that combines the best features of traditional websites and platform-specific apps",
+    "p1": "uses progressive web app technology that combines the best features of traditional websites and platform-specific apps",
     "createWallet": "Create Wallet",
     "bindAddress": "Bind ETH address",
     "addressUsed": "This address has been used by other twitter, please change another one in your wallet.",
