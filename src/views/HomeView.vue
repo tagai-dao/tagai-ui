@@ -225,7 +225,7 @@ watch([() => contentWidth.value, () => scrollContainer.value], () => {
         <el-option :value="ListType.New" :label="$t('new')" />
       </el-select>
     </div>
-    <div class="flex-1 px-3 overflow-auto" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+    <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
       <van-pull-refresh v-show="activeTab == 'BSC'" v-model="refreshing" @refresh="refresh"
                         class="min-h-full"
                         :loading-text="$t('loading')"
