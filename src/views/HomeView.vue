@@ -28,7 +28,7 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['BSC', 'Solana', 'Base', 'NULS', 'ENULS']
+const tabOptions = ['BSC', 'NULS']
 const activeTab = ref('BSC')
 
 watch(listType, (val) => {
@@ -44,7 +44,10 @@ async function refresh() {
       finished[ListType.MarketCap] = false
       let communities = await getCommunityByMarketCap() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.marketCapCommunities = await getTokenInfo(communities)
+        comStore.marketCapCommunities = communities 
+        getTokenInfo(communities).then((res) => {
+          comStore.marketCapCommunities = [...res]
+        })
       } else {
         finished[ListType.MarketCap] = true
       }
@@ -52,7 +55,10 @@ async function refresh() {
       finished[ListType.New] = false
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.newCommunities = await getTokenInfo(communities)
+        comStore.newCommunities = communities
+        getTokenInfo(communities).then((res) => {
+          comStore.newCommunities = [...res]
+        })
       } else {
         finished[ListType.New] = true
       }
@@ -60,7 +66,10 @@ async function refresh() {
       finished[ListType.Trending] = false
       let communities = await getCommunitiesByTrending() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.trendingCommunities = await getTokenInfo(communities)
+        comStore.trendingCommunities = communities
+        getTokenInfo(communities).then((res) => {
+          comStore.trendingCommunities = [...res]
+        })
       } else {
         finished[ListType.Trending] = true
       }
@@ -136,16 +145,12 @@ async function getSpaces() {
 function gotoChain(chain: string){
   if (chain === 'ENULS') {
     window.open('https://enuls.tagai.fun', '__blank')
-    return;
   } else if (chain === 'Base') {
     window.open('https://base.tagai.fun', '__blank')
-    return;
   } else if (chain === 'NULS') {
     window.open('https://nuls.tagai.fun', '__blank')
-    return;
   } else if (chain === 'Solana') {
     window.open('https://sol.tagai.fun', '__blank')
-    return;
   }
   activeTab.value = 'BSC'
 }

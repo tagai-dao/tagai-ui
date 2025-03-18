@@ -174,7 +174,7 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
                 ethAddr
             ],
             returns: [
-                ['balance', (val: any) => val.toString() / 1e18]
+                ['balance']
             ]
         },
         {
