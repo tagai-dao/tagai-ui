@@ -208,7 +208,7 @@ const scrollNewCommunities = computed(() => {
 
 const newComDuration = computed(() => {
   const totalWidth = scrollNewCommunities.value.length * 210
-  return (totalWidth / 80) * 1000
+  return (totalWidth / 120) * 1000
 })
 
 const newComContentWidth = computed(() => {
@@ -239,7 +239,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
         <div class="bg-black w-[100px] h-[14px] flex justify-center items-center
                   absolute top-[15px] left-[15px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
                   whitespace-nowrap">
-          <div class="animate-pulse text-white text-xs font-bold">Space</div>
+          <div class="blinking-text text-white text-xs font-bold">Space</div>
         </div>
       </div>
       <div class="mt-3 flex">
@@ -269,7 +269,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
           <div class="bg-red-normal w-[100px] h-[14px] flex justify-center items-center
                   absolute top-[15px] left-[15px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
                   whitespace-nowrap">
-            <div class="animate-pulse text-white text-sm font-bold">New</div>
+            <div class="blinking-text text-white text-sm font-bold">New</div>
           </div>
         </div>
       </div>
@@ -356,10 +356,10 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
 }
 
 .blinking-text {
-  animation: blink 1s linear infinite;
+  animation: blink 0.2s linear infinite;
 }
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  50% { opacity: 0.2; }
 }
+
 </style>
