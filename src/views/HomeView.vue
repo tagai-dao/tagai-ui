@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import {ref, onActivated, onMounted, watch, computed, reactive} from "vue";
+import {ref, onActivated, onMounted, watch, computed, reactive, onUnmounted} from "vue";
 import { ListType, type Community, type Space } from '@/types'
 import { getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
@@ -33,6 +33,8 @@ const pageScrollRef = ref()
 const tabOptions = ['BSC', 'NULS']
 const activeTab = ref('BSC')
 
+let newCommunitiesInterval: NodeJS.Timeout | null = null
+
 watch(listType, (val) => {
   refresh()
 })
@@ -42,16 +44,6 @@ watch(activeTab, (val) => {
 
 async function refresh() {
   try{
-    finished[ListType.New] = false
-    let communities = await getCommunitiesByNew() as Array<Community>;
-    if (communities && communities.length > 0) {
-      comStore.newCommunities = communities
-      getTokenInfo(communities).then((res) => {
-        comStore.newCommunities = [...res]
-      })
-    } else {
-      finished[ListType.New] = true
-    }
     if (listType.value == ListType.MarketCap) {
       finished[ListType.MarketCap] = false
       let communities = await getCommunityByMarketCap() as Array<Community>;
@@ -64,16 +56,16 @@ async function refresh() {
         finished[ListType.MarketCap] = true
       }
     } else if (listType.value == ListType.New) {
-      // finished[ListType.New] = false
-      // let communities = await getCommunitiesByNew() as Array<Community>;
-      // if (communities && communities.length > 0) {
-      //   comStore.newCommunities = communities
-      //   getTokenInfo(communities).then((res) => {
-      //     comStore.newCommunities = [...res]
-      //   })
-      // } else {
-      //   finished[ListType.New] = true
-      // }
+      finished[ListType.New] = false
+      let communities = await getCommunitiesByNew() as Array<Community>;
+      if (communities && communities.length > 0) {
+        // comStore.newCommunities = communities
+        getTokenInfo(communities).then((res) => {
+          comStore.newCommunities = [...res]
+        })
+      } else {
+        finished[ListType.New] = true
+      }
     }else if(listType.value == ListType.Trending) {
       finished[ListType.Trending] = false
       let communities = await getCommunitiesByTrending() as Array<Community>;
@@ -154,6 +146,20 @@ async function getSpaces() {
   }
 }
 
+async function getNewCommunities() {
+  try{
+    let communities = await getCommunitiesByNew() as Array<Community>;
+    if (communities && communities.length > 0) {
+      getTokenInfo(communities).then((res) => {
+        comStore.newCommunities = [...res]
+      })
+    } else {
+      finished[ListType.New] = true
+    }
+  } catch(e) {
+    handleErrorTip(e)
+  }
+}
 function gotoChain(chain: string){
   if (chain === 'ENULS') {
     window.open('https://enuls.tagai.fun', '__blank')
@@ -177,11 +183,19 @@ onMounted(async () => {
   refresh();
   getSpaces();
   setInter(getSpaces, 10000);
+  getNewCommunities();
+  newCommunitiesInterval = setInterval(getNewCommunities, 10000);
   emitter.on('newCommunity', refresh);
 })
 
 onActivated(() => {
   pageScrollTo(pageScrollRef.value)
+})
+
+onUnmounted(() => {
+  if (newCommunitiesInterval) {
+    clearInterval(newCommunitiesInterval)
+  }
 })
 
 const duration = computed(() => {
@@ -246,7 +260,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
         <div class="w-full overflow-x-hidden whitespace-nowrap relative" >
           <div class="flex" :class="newComNeedScroll?'scroll-content':''"
                :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
-            <div class="w-[210px] min-w-[210px] flex justify-end"
+            <div class="w-[210px] min-w-[210px] flex justify-end" @click="gotoDetail(community)"
                  v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
                  :key="index">
               <div class="h-[60px] px-2 rounded-xl shadow-sm bg-white w-full max-w-[200px] flex items-center gap-2">

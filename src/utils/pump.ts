@@ -214,9 +214,9 @@ export const getTokenInfo = async (communities: Community[]) => {
         community.price = tokenInfo.price;
         community.marketCap = ((community.price ?? 0) * TotalSupply);
         community.pair = tokenInfo.pair;
-        const distribution = JSON.parse(community.distribution);
+        // const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
-        community.distributionEnded = checkDistributionEnd(distribution);
+        // community.distributionEnded = checkDistributionEnd(distribution);
     }
 
     return communities;
