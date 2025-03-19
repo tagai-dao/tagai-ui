@@ -122,7 +122,7 @@ const testTick = async () => {
   showInvalidName.value = false;
   showTickUsed.value = false;
   showTagForbidden.value = false;
-  if (createForm.tick.toLowerCase() === 'tiptag' || createForm.tick.toLowerCase() === 'tagai') {
+  if (createForm.tick.toLowerCase() === 'tiptag' || createForm.tick.toLowerCase() === 'tagai' || createForm.tick.toLowerCase() === 'deploy') {
     showTagForbidden.value = true;
     return false;
   }
