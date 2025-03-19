@@ -12,6 +12,8 @@ import { getTokenInfo } from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
+import { formatPrice } from "../utils/helper";
+import { useStateStore } from "@/stores/common";
 
 const listType = ref(ListType.MarketCap)
 const typePopoverVisible = ref(false)
@@ -40,11 +42,21 @@ watch(activeTab, (val) => {
 
 async function refresh() {
   try{
+    finished[ListType.New] = false
+    let communities = await getCommunitiesByNew() as Array<Community>;
+    if (communities && communities.length > 0) {
+      comStore.newCommunities = communities
+      getTokenInfo(communities).then((res) => {
+        comStore.newCommunities = [...res]
+      })
+    } else {
+      finished[ListType.New] = true
+    }
     if (listType.value == ListType.MarketCap) {
       finished[ListType.MarketCap] = false
       let communities = await getCommunityByMarketCap() as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.marketCapCommunities = communities 
+        comStore.marketCapCommunities = communities
         getTokenInfo(communities).then((res) => {
           comStore.marketCapCommunities = [...res]
         })
@@ -52,16 +64,16 @@ async function refresh() {
         finished[ListType.MarketCap] = true
       }
     } else if (listType.value == ListType.New) {
-      finished[ListType.New] = false
-      let communities = await getCommunitiesByNew() as Array<Community>;
-      if (communities && communities.length > 0) {
-        comStore.newCommunities = communities
-        getTokenInfo(communities).then((res) => {
-          comStore.newCommunities = [...res]
-        })
-      } else {
-        finished[ListType.New] = true
-      }
+      // finished[ListType.New] = false
+      // let communities = await getCommunitiesByNew() as Array<Community>;
+      // if (communities && communities.length > 0) {
+      //   comStore.newCommunities = communities
+      //   getTokenInfo(communities).then((res) => {
+      //     comStore.newCommunities = [...res]
+      //   })
+      // } else {
+      //   finished[ListType.New] = true
+      // }
     }else if(listType.value == ListType.Trending) {
       finished[ListType.Trending] = false
       let communities = await getCommunitiesByTrending() as Array<Community>;
@@ -187,26 +199,82 @@ watch([() => contentWidth.value, () => scrollContainer.value], () => {
   if(!scrollContainer.value) return
   needScroll.value = contentWidth.value>scrollContainer.value.clientWidth
 })
+
+const stateStore = useStateStore()
+const scrollNewCommunities = computed(() => {
+  if(!comStore.newCommunities) return []
+  return comStore.newCommunities.slice(0, 10)
+})
+
+const newComDuration = computed(() => {
+  const totalWidth = scrollNewCommunities.value.length * 210
+  return (totalWidth / 80) * 1000
+})
+
+const newComContentWidth = computed(() => {
+  return scrollNewCommunities.value.length * 210;
+})
+
+const newComNeedScroll = ref(true)
+watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
+  if(!scrollContainer.value) return
+  newComNeedScroll.value = newComContentWidth.value>scrollContainer.value.clientWidth
+})
 </script>
 
 <template>
   <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2">
-<!--    <van-swipe :loop="false" :width="320" :autoplay="3000" :show-indicators="false" class="px-3">-->
-<!--      <van-swipe-item v-for="space of curationStore.allSpaces">-->
-<!--        <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>-->
-<!--      </van-swipe-item>-->
-<!--    </van-swipe>-->
-    <div class="w-full overflow-x-hidden whitespace-nowrap relative" ref="scrollContainer">
-      <div class="flex" :class="needScroll?'scroll-content':''"
-           :style="{ width: `${contentWidth}px`, animationDuration: `${duration}ms`, animationDelay: '2s' }">
-        <div class="w-[320px] min-w-[320px] flex justify-end"
-             v-for="(space, index) in (needScroll?curationStore.allSpaces.concat(curationStore.allSpaces):curationStore.allSpaces)"
-             :key="index">
-          <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
+    <div class="web:px-3">
+      <div class="relative flex overflow-hidden">
+        <div class="w-full overflow-x-hidden whitespace-nowrap relative">
+          <div class="flex" :class="needScroll?'scroll-content':''"
+               :style="{ width: `${contentWidth}px`, animationDuration: `${duration}ms`, animationDelay: '2s' }">
+            <div class="w-[320px] min-w-[320px] flex justify-end"
+                 v-for="(space, index) in (needScroll?curationStore.allSpaces.concat(curationStore.allSpaces):curationStore.allSpaces)"
+                 :key="index">
+              <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
+            </div>
+          </div>
+        </div>
+        <div class="bg-black w-[100px] h-[14px] flex justify-center items-center
+                  absolute top-[15px] left-[15px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
+                  whitespace-nowrap">
+          <div class="animate-pulse text-white text-xs font-bold">Space</div>
+        </div>
+      </div>
+      <div class="mt-3 flex">
+        <div class="w-full overflow-x-hidden whitespace-nowrap relative" >
+          <div class="flex" :class="newComNeedScroll?'scroll-content':''"
+               :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
+            <div class="w-[210px] min-w-[210px] flex justify-end"
+                 v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
+                 :key="index">
+              <div class="h-[60px] px-2 rounded-xl shadow-sm bg-white w-full max-w-[200px] flex items-center gap-2">
+                <div class="flex">
+                  <div class="border-[1px] border-white rounded-lg bg-gray-400 w-[40px] h-[40px] z-30">
+                    <img class="w-full h-full rounded-lg" :src="community.logo" alt="">
+                  </div>
+                </div>
+                <div class="flex flex-col">
+                  <div class="flex-1 multi-content multi-content-2 text-sm font-bold leading-4 ">{{community.tick}}</div>
+                  <div class="font-400 flex flex-nowrap text-sm">
+                    <span class="">{{$t('marketCap')}}</span>
+                    <span class="mx-1">·</span>
+                    <span class="font-bold">{{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-red-normal w-[100px] h-[14px] flex justify-center items-center
+                  absolute top-[15px] left-[15px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
+                  whitespace-nowrap">
+            <div class="animate-pulse text-white text-sm font-bold">New</div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="px-3 flex justify-between gap-4 web:gap-10">
+    <div class="px-3 flex justify-between gap-4 web:gap-10" ref="scrollContainer">
       <el-select
           v-model="activeTab"
           class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
@@ -285,5 +353,13 @@ watch([() => contentWidth.value, () => scrollContainer.value], () => {
   100% {
     transform: translateX(-100%);
   }
+}
+
+.blinking-text {
+  animation: blink 1s linear infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 </style>
