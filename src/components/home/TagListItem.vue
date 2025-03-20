@@ -45,7 +45,7 @@ async function trade() {
     </div>
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
-        <span class="text-grey-normal text-h2 font-bold leading-6">{{ community.tick }}</span>
+        <span class="text-grey-normal text-h2 font-bold leading-6" :class="community.listed ? 'text-orange-normal' : ''">{{ community.tick }}</span>
         <div class="flex-1 flex justify-end mt-1">
           <div v-if="community.marketCap" class="flex items-end gap-1">
             <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>

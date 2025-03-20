@@ -270,7 +270,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
                   </div>
                 </div>
                 <div class="flex flex-col">
-                  <div class="flex-1 multi-content multi-content-2 text-sm font-bold leading-4 ">{{community.tick}}</div>
+                  <div class="flex-1 multi-content multi-content-2 text-sm font-bold leading-4 " :class="community.listed ? 'text-orange-normal' : ''">{{community.tick}}</div>
                   <div class="font-400 flex flex-nowrap text-sm">
                     <span class="">{{$t('marketCap')}}</span>
                     <span class="mx-1">·</span>
