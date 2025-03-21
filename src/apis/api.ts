@@ -71,6 +71,9 @@ export const readAllMessage = async (twitterId: string) =>
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})
 
+export const getAgentTweets = async (tick: string) =>
+  get(BACKEND_API_URL + '/curation/agentTweets', {tick})
+
 export const getUserTweets = async (twitterId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/userTweets', {twitterId, pages})
 
