@@ -14,6 +14,7 @@ export const usePost = (tweet: Tweet) => {
   const profileImg = computed(() => {
     if (!tweet.profile) return '';
     if (tweet.profile) {
+      return tweet.profile
       return tweet.profile?.replace("normal", "200x200");
     } else {
       return (
