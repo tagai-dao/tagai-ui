@@ -258,7 +258,7 @@ onMounted(async () => {
             <span class="min-w-4">{{i + 1}}</span>
             <UserAvatar :profile-img="holder.profile" :name="holder.twitterName" :username="holder.twitterUsername"
                     :followers="holder.followers" :followings="holder.followings"
-                    :eth-addr="holder.ethAddr"
+                    :eth-addr="holder.ethAddr" :credit="0"
                     :steem-id="holder.steemId" :teleported="true">
               <template #avatar-img>
                 <img v-if="holder.profile"

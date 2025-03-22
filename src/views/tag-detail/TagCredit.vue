@@ -101,6 +101,7 @@ onMounted(async () => {
               :followers="holder.followers"
               :followings="holder.followings"
               :eth-addr="holder.ethAddr"
+              :credit="holder.credit"
           :teleported="true"
         >
           <template #avatar-img>
