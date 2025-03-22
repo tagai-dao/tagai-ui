@@ -57,6 +57,7 @@ const onUserAvatar = () => {
           :eth-addr="tweet.ethAddr"
           :steem-id="tweet.steemId"
           :teleported="true"
+          :credit="tweet.credit"
         >
           <template #avatar-img>
             <img

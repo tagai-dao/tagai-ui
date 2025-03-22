@@ -85,7 +85,7 @@ onUnmounted(() => {
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
                     :followers="tweet.followers" :followings="tweet.followings"
                     :eth-addr="tweet.ethAddr" :twitter-id="tweet.twitterId"
-                    :steem-id="tweet.steemId" :teleported="true">
+                    :steem-id="tweet.steemId" :teleported="true" :credit="tweet.credit">
           <template #avatar-img>
             <img v-if="profileImg"
                  class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"

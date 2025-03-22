@@ -2,7 +2,7 @@
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { useTools } from "@/composables/useTools";
 import { computed } from "vue";
-import { formatAddress } from "@/utils/helper";
+import { formatAddress, formatAmount } from "@/utils/helper";
 
 const props = withDefaults(defineProps<{
     twitterId?: string | null | undefined,
@@ -13,14 +13,16 @@ const props = withDefaults(defineProps<{
     ethAddr: string | null | undefined,
     teleported: boolean,
     followers: number | null | undefined,
-    followings: number | null | undefined
+    followings: number | null | undefined,
+    credit: number | null | undefined
 }>(), {
     profileImg: '',
     name: '',
     username: '',
     steemId: '',
     ethAddr: '',
-    teleported: false
+    teleported: false,
+    credit: 0
 })
 
 const profile = computed(() => {
@@ -76,6 +78,10 @@ function replaceEmptyImg(e: any) {
           <div class="flex flex-col items-center">
             <span class="font-semibold text-black">{{ props.followings || 0 }}</span>
             <span class="text-sm text-grey-normal">Followings</span>
+          </div>
+          <div class="flex flex-col items-center">
+            <span class="font-semibold text-black">{{ formatAmount(props.credit || 0) }}</span>
+            <span class="text-sm text-grey-normal">{{ $t('credit') }}</span>
           </div>
         </div>
         <div v-if="props.ethAddr" class="pl-10 mt-2 text-grey-normal">
