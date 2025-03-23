@@ -56,6 +56,7 @@ const onLoad = async () => {
 }
 
 onMounted(async () => {
+  agentTweets.value = []
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.2);
   }
