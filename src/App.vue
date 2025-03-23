@@ -72,7 +72,7 @@ onMounted(async () => {
     updateVPOP();
     if (count++ % 6 == 0)
       updateUnreadMessageCount();
-  }, 10000)
+  }, 30000)
   emitter.on('login', updateVPOP);
   emitter.on('login', updateUnreadMessageCount);
 

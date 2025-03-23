@@ -188,7 +188,7 @@ onMounted(async () => {
     }
   }
   updateProgress();
-  setInter(updateProgress, 5000);
+  setInter(updateProgress, 15000);
 })
 onUnmounted(() => {
   console.log('unmounted')

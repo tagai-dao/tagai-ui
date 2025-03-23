@@ -182,9 +182,9 @@ function gotoDetail(com: Community) {
 onMounted(async () => {
   refresh();
   getSpaces();
-  setInter(getSpaces, 10000);
+  setInter(getSpaces, 20000);
   getNewCommunities();
-  newCommunitiesInterval = setInterval(getNewCommunities, 10000);
+  newCommunitiesInterval = setInterval(getNewCommunities, 30000);
   emitter.on('newCommunity', refresh);
 })
 
