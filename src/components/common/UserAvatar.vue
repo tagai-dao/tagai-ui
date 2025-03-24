@@ -80,7 +80,7 @@ function replaceEmptyImg(e: any) {
             <span class="text-sm text-grey-normal">Followings</span>
           </div>
           <div class="flex flex-col items-center">
-            <span class="font-semibold text-black">{{ formatAmount(props.credit || 0) }}</span>
+            <span class="font-semibold text-black">{{ formatAmount(Math.floor(props.credit || 0)) }}</span>
             <span class="text-sm text-grey-normal">{{ $t('credit') }}</span>
           </div>
         </div>
