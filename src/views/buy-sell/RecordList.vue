@@ -67,7 +67,9 @@ onMounted(() => {
   <div>
     <div v-if="comStore.currentSelectedCommunity?.tick"
          class="w-full web:hidden min-w-[320px] mb-2">
-      <Kline :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart2"/>
+      <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart2"/>
+      <iframe v-else :src="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`" 
+        frameborder="0" class="w-full h-[24rem]"></iframe>
     </div>
     <div class="bg-white rounded-2xl p-3">
       <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">

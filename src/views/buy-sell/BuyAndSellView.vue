@@ -333,7 +333,10 @@ onMounted(async () => {
     >
       <div v-if="comStore.currentSelectedCommunity?.tick"
            class="w-full hidden web:flex min-w-[320px] flex-1 gap-3">
-        <Kline :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
+        <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
+        <iframe v-else :src="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`" 
+        frameborder="0" class="w-full h-full"></iframe>
+
       </div>
       <div class="bg-white py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full web:w-[340px]">
         <div

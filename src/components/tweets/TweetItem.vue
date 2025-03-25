@@ -172,6 +172,7 @@ onUnmounted(() => {
                :class="`img-` + (imgurls.length % 5)" v-if="!isIgnoreAccount && imgurls && imgurls.length > 0">
             <el-image v-for="(url, index) of imgurls.slice(0, 4)" :key="url"
                       class="max-h-[300px]"
+                      @click.stop
                       :src="imgurls[index]"
                       :zoom-rate="1.2"
                       :max-scale="7"
