@@ -6,6 +6,10 @@ import { GlobalModalType, type Tweet } from "@/types";
 import { OP_CONSUME, VP_CONSUME } from "@/config";
 import { useModalStore } from "@/stores/common";
 import { ethers } from "ethers";
+import { notify } from "@/utils/notify";
+import i18n from "@/lang";
+
+const t = i18n.global.t
 
 export enum OperateType {
   TWEET,
@@ -58,6 +62,25 @@ export const useTweet = () => {
     const accessToken = await useAccount().checkoutAccessToken();
     if (!accessToken) {
       throw errCode.InvalidAccessToken;
+    }
+    if ([OperateType.TWEET, OperateType.BLINK, OperateType.RETWEET, OperateType.QUOTE, OperateType.REPLY].includes(opType)) {
+      if (!account.authPost) {
+        notify({
+          type: 'warning',
+          message: t('loginView.needPostAuth')
+        })
+        return false;
+      }
+    }
+
+    if ([OperateType.LIKE, OperateType.CURATE, OperateType.TIP_CURATE].includes(opType)) {
+      if (!account.authLike) {
+        notify({
+          type: 'warning',
+          message: t('loginView.needLikeAuth')
+        })
+        return false;
+      }
     }
     switch (opType) {
       case OperateType.TWEET:

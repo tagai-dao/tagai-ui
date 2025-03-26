@@ -71,6 +71,8 @@ export type Account = {
   btcAddr?: string | null | undefined;
   ethAddr?: string | null | undefined;
   steemId?: string | null | undefined;
+  authLike?: boolean;
+  authPost?: boolean;
   lastReadMessageTime?: string,
   vp?: number;
   lastUpdateVpStamp?: number;

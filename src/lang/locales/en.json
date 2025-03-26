@@ -55,6 +55,7 @@
   "auditReport": "Audit report",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
+    "authTwitterTip": "Some functions of the TagAI require corresponding permissions for Twitter, and you can choose the functions that need to be authorized according to your needs",
     "p1": "uses progressive web app technology that combines the best features of traditional websites and platform-specific apps",
     "createWallet": "Create Wallet",
     "bindAddress": "Bind BNB address",
@@ -70,8 +71,10 @@
     "bond": "Bond",
     "fidUsedTip": "This Farcaster account has already been used.",
     "createWalletTip": "Now you need to create a wallet for donut use",
-    "authLikeTip": "点赞权限：平台策展功能需要",
-    "authPostTip": "发帖权限：如需在平台发布推文或 Space 策展，则需选择"
+    "authLikeTip": "Like permission: Curate other tweets/spaces",
+    "authPostTip": "Post permission: Create tweets/spaces on platform",
+    "needPostAuth": "You need to authorize the post permission to create tweets/spaces",
+    "needLikeAuth": "You need to authorize the like permission to curate tweets/spaces"
   },
   "web3": {
     "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet."

@@ -55,6 +55,7 @@
   "auditReport": "审计报告",
   "loginView": {
     "loginWithTwitter": "登录推特",
+    "authTwitterTip": "TagAI 的某些功能需要推特的相应权限，您可以根据需要选择需要授权的功能",
     "p1": "使用渐进式Web应用技术，结合了传统网站和平台特定应用的最佳功能",
     "createWallet": "创建钱包",
     "bindAddress": "绑定以太坊钱包",
@@ -70,8 +71,8 @@
     "bond": "绑定",
     "fidUsedTip": "该 Farcaster 账户已被使用",
     "createWalletTip": "您需要创建一个钱包供 Donut 使用",
-    "authLikeTip": "点赞权限：平台策展功能需要",
-    "authPostTip": "发帖权限：如需在平台发布推文或 Space 策展，则需选择"
+    "authLikeTip": "点赞权限：平台策展(🔥）功能",
+    "authPostTip": "发帖权限：在平台发布推文或 Space 以创建策展"
   },
   "web3": {
     "addressMismatch": "连接的地址不匹配，请在你的钱包地址中更换地址为: {address}"

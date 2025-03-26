@@ -26,7 +26,7 @@ async function login() {
     let isIOS = navigator.userAgent.toUpperCase().indexOf('IPHONE') >= 0
     let isAndroid = navigator.userAgent.toUpperCase().indexOf('ANDROID') >= 0
 
-    const res = await twitterAuth(stateStore.referee) as string;
+    const res = await twitterAuth(stateStore.referee, authLike.value, authPost.value) as string;
     const params = res.split('?')[1].split('&');
     let state: string | null = null;
     for (let p of params) {
@@ -56,11 +56,17 @@ async function login() {
     await sleep(6)
     let count = 0;
     let userInfo: any = await twitterLogin(state);
+    accStore.clear()
     if (userInfo.code === 1) {
       while(count < 80 && logging.value) {
         userInfo = await twitterLogin(state);
         if (userInfo.code === 3) {
-          accStore.setAccount(userInfo.account as Account)
+          accStore.setAccount(
+            {
+              ...userInfo.account,
+              authLike: authLike.value,
+              authPost: authPost.value
+            } as Account)
           modalStore.setModalCloseEnable(true)
           useModalStore().setModalVisible(false);
           emitter.emit('login', true);
@@ -71,7 +77,12 @@ async function login() {
       }
     }else {
       if (userInfo.code === 3) {
-        accStore.setAccount(userInfo.account as Account)
+        accStore.setAccount(
+          {
+            ...userInfo.account,
+            authLike: authLike.value,
+            authPost: authPost.value
+          } as Account)
         modalStore.setModalCloseEnable(true)
         useModalStore().setModalVisible(false);
         emitter.emit('login', true);
@@ -99,7 +110,7 @@ onUnmounted(() => {
         <img class="w-8 min-w-8 object-center object-contain" src="~@/assets/icons/icon-x.svg" alt="">
       </div>
       <div class="flex flex-col gap-2">
-        <div>文字描述内容</div>
+        <div>{{$t('loginView.authTwitterTip')}}</div>
         <div class="">
           <el-checkbox :label="$t('loginView.authLikeTip')" v-model="authLike" />
           <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" />
