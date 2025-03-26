@@ -1,3 +1,14 @@
+:root {
+    --el-color-primary: #FE913F;
+}
+.el-checkbox {
+    --el-checkbox-checked-text-color: #FE913F;
+    align-items: start;
+}
+.el-checkbox__label {
+    white-space: break-spaces;
+    line-height: 16px;
+}
 .el-dialog {
     --el-dialog-border-radius: 24px!important;
 }

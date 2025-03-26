@@ -45,34 +45,65 @@ function onClickWallet() {
               @click="ruleModalVisible = true">{{ $t('rule') }}</button>
     </div>
     <div class="flex items-center gap-3 web:gap-6">
-      <router-link to="/" class="hidden web:block">
-        <img v-if="$route.name==='home'" class="w-6 h-6"
-             src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
-      </router-link>
-      <div v-if="!!useAccountStore().getAccountInfo?.twitterId" class="relative cursor-pointer" @click="$router.push('/notification')">
-        <img class="w-6"
-             src="~@/assets/icons/icon-notification.svg" alt="">
-        <div v-if="useAccountStore().unreadMessageCount > 0" class="bg-red-e6 h-[12px] w-[12px] min-w-[12px] rounded-full text-[10px] text-white
-                    absolute bottom-[2px] right-0 flex justify-center items-center">
-          {{ useAccountStore().unreadMessageCount }}
-        </div>
-      </div>
+<!--      <router-link to="/" class="hidden web:block">-->
+<!--        <img v-if="$route.name==='home'" class="w-6 h-6"-->
+<!--             src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">-->
+<!--        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">-->
+<!--      </router-link>-->
       <img class="w-6 cursor-pointer web:hidden"
            src="~@/assets/icons/icon-search.svg" alt=""
            @click="modalVisible=true">
-      <img class="w-6 cursor-pointer" v-if="!!useAccountStore().getAccountInfo?.twitterId"
-           src="~@/assets/icons/icon-wallet.svg" alt=""
-           @click="onClickWallet">
-       <img v-if="$i18n.locale==='zh'"
-            class="w-5 cursor-pointer"
-            @click="switchLanguage('en')"
-            src="~@/assets/icons/icon-lang-en.svg" alt="">
-       <img v-if="$i18n.locale==='en'"
-            class="w-5 cursor-pointer"
-            @click="switchLanguage('zh')"
-            src="~@/assets/icons/icon-lang-zh.svg" alt="">
       <ProfileBtn class="hidden web:flex"/>
+      <el-popover popper-class="c-select-popper" trigger="click" width="120" :teleported="true" :persistent="false">
+        <template #reference>
+          <img class="w-5 cursor-pointer"
+               src="~@/assets/icons/icon-menu.svg" alt="">
+        </template>
+        <template #default>
+          <div class="p-2 flex flex-col gap-3">
+            <div v-if="!!useAccountStore().getAccountInfo?.twitterId"
+                 @click="$router.push('/notification')"
+                 class="flex gap-2 items-center cursor-pointer">
+              <div class="relative">
+                <img class="w-4" src="~@/assets/icons/icon-notification.svg" alt="">
+                <div v-if="useAccountStore().unreadMessageCount > 0" class="bg-red-e6 h-[12px] w-[12px] min-w-[12px] rounded-full text-[10px] text-white
+                    absolute bottom-[2px] right-0 flex justify-center items-center">
+                  {{ useAccountStore().unreadMessageCount }}
+                </div>
+              </div>
+              <span>{{$t('notification')}}</span>
+            </div>
+            <div v-if="!!useAccountStore().getAccountInfo?.twitterId"
+                 @click="onClickWallet"
+                 class="flex gap-2 items-center cursor-pointer">
+              <img class="w-4" src="~@/assets/icons/icon-wallet.svg" alt="">
+              <span>{{$t('wallet')}}</span>
+            </div>
+            <div v-if="$i18n.locale==='zh'"
+                 @click="switchLanguage('en')"
+                 class="flex gap-2 items-center cursor-pointer">
+              <img class="w-4" src="~@/assets/icons/icon-lang-en.svg" alt="">
+              <span>英文</span>
+            </div>
+            <div v-if="$i18n.locale==='en'"
+                 @click="switchLanguage('zh')"
+                 class="flex gap-2 items-center cursor-pointer">
+              <img class="w-4 cursor-pointer" src="~@/assets/icons/icon-lang-zh.svg" alt="">
+              <span>中文</span>
+            </div>
+            <a class="flex gap-2 items-center cursor-pointer"
+               href="https://tagai.gitbook.io/tagai" target="_blank">
+              <img class="w-4" src="~@/assets/icons/icon-docs.svg" alt="">
+              <span>{{$t('docs')}}</span>
+            </a>
+            <a class="flex gap-2 items-center cursor-pointer"
+               href="https://scalebit.xyz/reports/TagAI-Audit-Report.pdf" target="_blank">
+              <img class="w-4" src="~@/assets/icons/icon-warning.svg" alt="">
+              <span>{{$t('auditReport')}}</span>
+            </a>
+          </div>
+        </template>
+      </el-popover>
       <CreateBtn class="hidden web:block"/>
     </div>
     <el-dialog v-model="modalVisible"

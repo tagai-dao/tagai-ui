@@ -48,6 +48,11 @@
   "optional": "(可选)",
   "pullToRefreshData": "下拉以刷新数据",
   "releaseToRefresh": "释放以刷新",
+  "wallet": "钱包",
+  "language": "语言",
+  "notification": "通知",
+  "docs": "文档",
+  "auditReport": "审计报告",
   "loginView": {
     "loginWithTwitter": "登录推特",
     "p1": "使用渐进式Web应用技术，结合了传统网站和平台特定应用的最佳功能",
@@ -64,7 +69,9 @@
     "mint": "铸造",
     "bond": "绑定",
     "fidUsedTip": "该 Farcaster 账户已被使用",
-    "createWalletTip": "您需要创建一个钱包供 Donut 使用"
+    "createWalletTip": "您需要创建一个钱包供 Donut 使用",
+    "authLikeTip": "点赞权限：平台策展功能需要",
+    "authPostTip": "发帖权限：如需在平台发布推文或 Space 策展，则需选择"
   },
   "web3": {
     "addressMismatch": "连接的地址不匹配，请在你的钱包地址中更换地址为: {address}"

@@ -16,6 +16,8 @@ const stateStore = useStateStore();
 const logging = ref(false);
 const route = useRoute();
 const modalStore = useModalStore()
+const authLike = ref(true)
+const authPost = ref(true)
 
 async function login() {
   try{
@@ -96,13 +98,20 @@ onUnmounted(() => {
         <img class="w-10 min-w-10 object-center object-contain" src="~@/assets/icons/icon-login-arrow.svg" alt="">
         <img class="w-8 min-w-8 object-center object-contain" src="~@/assets/icons/icon-x.svg" alt="">
       </div>
-      <button @click="login" :disabled="logging"
-              class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2">
+      <div>
+        <div class="">
+          <el-checkbox :label="$t('loginView.authLikeTip')" v-model="authLike" />
+          <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" />
+        </div>
+        <button @click="login" :disabled="logging"
+                class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2 mt-2">
           <span class="text-white text-h5">
             {{$t('loginView.loginWithTwitter')}}
           </span>
-        <i-ep-loading v-if="logging" class="animate-spin text-white"/>
-      </button>
+          <i-ep-loading v-if="logging" class="animate-spin text-white"/>
+        </button>
+      </div>
+
       <div class="text-base text-center text-grey-normal">{{$t('loginView.p1')}}</div>
     </div>
   </div>

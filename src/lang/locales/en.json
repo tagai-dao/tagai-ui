@@ -48,6 +48,11 @@
   "optional": "(Optional)",
   "pullToRefreshData": "Pull to refresh data",
   "releaseToRefresh": "Release to refresh",
+  "wallet": "Wallet",
+  "language": "Language",
+  "notification": "Notification",
+  "docs": "Docs",
+  "auditReport": "Audit report",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
     "p1": "uses progressive web app technology that combines the best features of traditional websites and platform-specific apps",
@@ -64,7 +69,9 @@
     "mint": "Mint",
     "bond": "Bond",
     "fidUsedTip": "This Farcaster account has already been used.",
-    "createWalletTip": "Now you need to create a wallet for donut use"
+    "createWalletTip": "Now you need to create a wallet for donut use",
+    "authLikeTip": "点赞权限：平台策展功能需要",
+    "authPostTip": "发帖权限：如需在平台发布推文或 Space 策展，则需选择"
   },
   "web3": {
     "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet."
