@@ -98,13 +98,14 @@ onUnmounted(() => {
         <img class="w-10 min-w-10 object-center object-contain" src="~@/assets/icons/icon-login-arrow.svg" alt="">
         <img class="w-8 min-w-8 object-center object-contain" src="~@/assets/icons/icon-x.svg" alt="">
       </div>
-      <div>
+      <div class="flex flex-col gap-2">
+        <div>文字描述内容</div>
         <div class="">
           <el-checkbox :label="$t('loginView.authLikeTip')" v-model="authLike" />
           <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" />
         </div>
         <button @click="login" :disabled="logging"
-                class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2 mt-2">
+                class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2">
           <span class="text-white text-h5">
             {{$t('loginView.loginWithTwitter')}}
           </span>
