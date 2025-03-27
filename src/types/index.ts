@@ -232,6 +232,7 @@ export type Community = OnchainTokenInfo & {
   createdByAi?: number | null | undefined;
   distribution: string;
   isImport?: boolean;
+  deboxConversationId?: string;
 };
 
 export type ClankerToken = OnchainTokenInfo & {

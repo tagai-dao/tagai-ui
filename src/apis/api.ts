@@ -159,6 +159,9 @@ export const isTokenExist = async (tick: string) =>
 export const getTokenTradeData = async (tick: string, timestamp: number | undefined, isNew: boolean) =>
   get(BACKEND_API_URL + '/community/getTokenTradeData', {tick, timestamp, isNew})
 
+export const getConversationId = async (token: string) =>
+  get(BACKEND_API_URL + '/community/getDeboxConversationIds', {token})
+
 /************************************ commerce **********************************/
 export const newCommerce = async (text: string, twitterId: string, tick: string, token: string) => 
   post(BACKEND_API_URL + '/commerce/newCommerce', {text, twitterId, tick, token})

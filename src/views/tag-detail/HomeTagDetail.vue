@@ -9,7 +9,7 @@ import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
-import { getCommunityDetail, getIpshareInfo } from "@/apis/api";
+import { getCommunityDetail, getIpshareInfo, getConversationId } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import {useInterval, usePageScroll, useTools} from "@/composables/useTools";
 import { handleErrorTip } from "@/utils/notify";
@@ -28,6 +28,8 @@ import PostAI from "@/views/tag-detail/PostAI.vue";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import CreateTipCurateModal from "@/components/common/CreateTipCurateModal.vue";
 import emitter from "@/utils/emitter";
+import { DeBoxChatWidget } from '@debox-pro/chat-widget-html';
+
 
 const tabOptions = [
   // {label: 'Group', key: 'group'},
@@ -189,11 +191,31 @@ onMounted(async () => {
       router.replace('/')
     }
   }
+
   updateProgress();
   setInter(updateProgress, 15000);
+  try {
+    let conversationId: any = comStore.currentSelectedCommunity?.deboxConversationId;
+    if (!conversationId) {
+        // get conversation id from api
+        conversationId = await getConversationId(comStore.currentSelectedCommunity?.token ?? '');
+    }
+    console.log('conversationId:', conversationId)
+    if (conversationId) {
+      DeBoxChatWidget.init({
+          projectId: '0H35zPC1NeleZd59',
+          zIndex: '9999'
+      });
+      // ttai B1R1eRl8'
+      DeBoxChatWidget.setConversation(conversationId);
+    }
+  } catch (error) {
+    console.error('add debox chat widget error:', error)
+  }
 })
 onUnmounted(() => {
   console.log('unmounted')
+  DeBoxChatWidget.destroy();
 })
 
 onActivated(async () => {
