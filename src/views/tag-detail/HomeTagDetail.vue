@@ -218,7 +218,7 @@ onBeforeRouteLeave((to, from, next) => {
     <div class="grid grid-cols-1 web:hidden gap-3">
       <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-          <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
+          <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200'" alt="">
           <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
           <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">{{$t('listed')}}</div>
@@ -380,7 +380,7 @@ onBeforeRouteLeave((to, from, next) => {
           <div class="flex flex-col gap-2">
             <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
               <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-                <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo" alt="">
+                <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200'" alt="">
                 <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
                 <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">{{ $t('listed') }}</div>

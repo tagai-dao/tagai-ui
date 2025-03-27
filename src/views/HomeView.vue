@@ -266,7 +266,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
               <div class="h-[60px] px-2 rounded-xl shadow-sm bg-white w-full max-w-[200px] flex items-center gap-2">
                 <div class="flex">
                   <div class="border-[1px] border-white rounded-lg bg-gray-400 w-[40px] h-[40px] z-30">
-                    <img class="w-full h-full rounded-lg" :src="community.logo" alt="">
+                    <img class="w-full h-full rounded-lg" :src="community.logo + '?x-oss-process=image/resize,w_100'" alt="">
                   </div>
                 </div>
                 <div class="flex flex-col">
