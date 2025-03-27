@@ -11,10 +11,12 @@ export const useTweetsStore = defineStore("tweets", () => {
   const trendingTweets = ref<Tweet[]>([]);
   const currentSelectedTweet = ref<Tweet | null>(null);
   const communityTweets = ref<CommunityTweets>();
+  const communityTippedTweets = ref<CommunityTweets>();
   return {
     allTweets,
     trendingTweets,
     currentSelectedTweet,
-    communityTweets
+    communityTweets,
+    communityTippedTweets
   };
 });

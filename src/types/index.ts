@@ -231,6 +231,7 @@ export type Community = OnchainTokenInfo & {
   createAt?: string | number | null | undefined;
   createdByAi?: number | null | undefined;
   distribution: string;
+  isImport?: boolean;
 };
 
 export type ClankerToken = OnchainTokenInfo & {

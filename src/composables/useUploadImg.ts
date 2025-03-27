@@ -30,11 +30,14 @@ export const useUploadImg = () => {
       try {
         if (data.type.startsWith('image')) {
           console.log(data.size);
-          const compressedData = await compressImage(data, 0.8, 1024)
+          let compressedData = await compressImage(data, 0.5, 600)
           console.log(compressedData.size);
-          if (compressedData.size > 1024*1024) {
-            showPicSizeLimit.value = true
-            return;
+          if (compressedData.size > 600*600) {
+            compressedData = await compressImage(compressedData, 0.5, 600)
+            if (compressedData.size > 600*600) {
+              showPicSizeLimit.value = true
+              return;
+            }
           }
           completedImgUrl.value = await addUploadImg(compressedData)
           console.log('image url:', completedImgUrl.value);

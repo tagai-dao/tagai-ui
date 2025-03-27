@@ -7,6 +7,7 @@ import TagContent from "@/views/tag-detail/TagContent.vue";
 import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
+import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import { getCommunityDetail, getIpshareInfo } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
@@ -31,6 +32,7 @@ import emitter from "@/utils/emitter";
 const tabOptions = [
   // {label: 'Group', key: 'group'},
   {label: 'Square', key: 'content'},
+  {label: 'Tipped', key: 'tipped'},
   {label: 'Proposal', key: 'proposal'},
   {label: 'Trades', key: 'trade'},
   {label: 'Credit', key: 'credit'},
@@ -366,6 +368,7 @@ onBeforeRouteLeave((to, from, next) => {
           <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
             <TagContent v-if="activeTab==='content'"/>
+            <TagTippedContent v-if="activeTab==='tipped'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
             <TagCredit v-if="activeTab==='credit'"/>
