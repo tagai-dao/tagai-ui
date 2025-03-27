@@ -35,7 +35,7 @@ async function trade() {
     <div class="relative w-20 h-20 min-w-20 min-h-20">
       <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo
                 flex items-center justify-center relative overflow-hidden">
-        <img class="w-full h-full object-center object-cover" :src="community.logo + '?x-oss-process=image/resize,w_100'" alt="">
+        <img class="w-full h-full object-center object-cover" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
         <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
       </div>
       <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
