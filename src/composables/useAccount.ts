@@ -199,6 +199,11 @@ export const useAccount = () => {
                 try {
                     const token = await refreshToken();
                     if (token) {
+                        accStore.setAccount({
+                            ...acc,
+                            accessToken: token.accessToken,
+                            expiresAt: token.expiresAt
+                        })
                         return token.accessToken;
                     }else {
                         logout()
