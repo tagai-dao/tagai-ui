@@ -256,7 +256,7 @@
     "cantLikeSelf": "Can't like yourself tweet",
     "cantCurateSelf": "Can't curate your self tweet",
     "cantRetweetSelf": "Can't retweet your self tweet",
-    "likeFrequent": "Like so frequently, please operate later",
-    "retweetFrequent": "Retweet so frequently, please operate later"
+    "likeFrequent": "Like so frequently, please operate 15 minutes later",
+    "retweetFrequent": "Retweet so frequently, please operate 15 minutes later"
   }
 }

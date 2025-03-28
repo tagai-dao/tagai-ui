@@ -254,7 +254,7 @@
     "cantLikeSelf": "不能点赞自己的推文",
     "cantCurateSelf": "不能策展自己的推文",
     "cantRetweetSelf": "不能转发自己的推文",
-    "likeFrequent": "点赞太频繁，请稍后再操作",
-    "retweetFrequent": "转发太频繁，请稍后再操作"
+    "likeFrequent": "点赞太频繁，请15分钟后再操作",
+    "retweetFrequent": "转发太频繁，请15分钟后再操作"
   }
 }
