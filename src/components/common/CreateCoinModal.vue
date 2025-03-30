@@ -405,6 +405,16 @@ watch(() => createLoading.value, () => {
         <!-- <div v-show="accountMismatch && !accStore.getAccountInfo?.twitterId" class="mt-2 text-sm px-3 text-red-e6">
           {{ $t("web3.addressMismatch", { address: accStore.getAccountInfo?.ethAddr }) }}
         </div> -->
+
+        <div class="text-red-e6 text-sm" v-show="showInvalidName">
+          {{ $t('createCommunity.invalidTickTip') }}
+        </div>
+        <div class="text-red-e6 text-sm" v-show="showTickUsed">
+          {{ $t('createCommunity.tickUsed') }}
+        </div>
+        <div class="text-red-e6 text-sm" v-show="showTagForbidden">
+          {{ $t('createCommunity.tagForbidden') }}
+        </div>
         <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
           <span class="text-grey-normal">{{$t('createCommunity.costTopDeploy')}}</span>
           <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} BNB</span>
