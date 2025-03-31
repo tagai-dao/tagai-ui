@@ -8,7 +8,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div class="h-4 flex ml-2 gap-2">
+  <div @click.stop class="h-4 flex ml-2 gap-2">
     <a v-if="community?.twitter" :href="community?.twitter ?? ''" target="_blank">
       <img class="w-4 min-w-4" src="~@/assets/icons/icon-link-x.svg" alt="">
     </a>
