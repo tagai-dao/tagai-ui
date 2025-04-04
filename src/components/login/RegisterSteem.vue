@@ -270,14 +270,7 @@ async function register() {
     }
     await sleep(3)
     const acc: any = await checkRegister(account.twitterId)
-    accStore.setAccount({
-      ...acc.account,
-      ethAddr: ethers.getAddress(accStore.farcasterUser?.ethAddr ?? ''),
-      fid: accStore.farcasterUser?.fid,
-      isAuthFarcaster: true,
-      farcasterName: accStore.farcasterUser?.name,
-      steemId: accStore.getAccountInfo.twitterUsername + '.tagai'
-    })
+    accStore.setAccount(acc.account)
     localStorage.removeItem('payTokenHash')
     
     useModalStore().setModalVisible(false)

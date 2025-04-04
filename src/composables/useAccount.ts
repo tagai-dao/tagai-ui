@@ -134,7 +134,7 @@ export const useAccount = () => {
         return false;
     }
 
-    const udpateUserOPLocal = (opConsume: number) => {
+    const updateUserOPLocal = (opConsume: number) => {
         if (opConsume == 0) return;
         const account = useAccountStore().getAccountInfo;
         if (op.value >= opConsume) {
@@ -247,7 +247,7 @@ export const useAccount = () => {
         checkoutAccessToken,
         updateVPOP,
         updateUserVpLocal,
-        udpateUserOPLocal,
+        updateUserOPLocal,
         vp,
         op,
         addBackOp,

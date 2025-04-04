@@ -25,7 +25,7 @@ export enum OperateType {
 const TweetRex = /https:\/\/(twitter|x)\.com\/[0-9a-zA-Z]+\/status\/([0-9]+)(\/\w)?/
 
 export const useTweet = () => {
-  const { updateUserVpLocal, udpateUserOPLocal, vp, op, addBackOp, addBackVp } =
+  const { updateUserVpLocal, updateUserOPLocal, vp, op, addBackOp, addBackVp } =
     useAccount();
   const formatEmojiText = (str: string) => {
     if (!str || str.trim().length === 0) return "";
@@ -185,34 +185,37 @@ export const useTweet = () => {
 
   const userLike = async (t: Tweet, tick: string) => {
     await newLike(useAccountStore().getAccountInfo.twitterId, t.tweetId, tick);
-    udpateUserOPLocal(OP_CONSUME.LIKE);
+    updateUserOPLocal(OP_CONSUME.LIKE);
     // updateUserVpLocal(VP_CONSUME.LIKE);
   };
 
   const userRetweet = async (t: Tweet, tick: string) => {
     const account = useAccountStore().getAccountInfo;
     await newRetweet(account.twitterId, t.tweetId, tick);
-    udpateUserOPLocal(OP_CONSUME.RETWEET);
+    updateUserOPLocal(OP_CONSUME.RETWEET);
     // updateUserVpLocal(VP_CONSUME.RETWEET);
   };
 
   const userCurate = async (t: Tweet, tick: string, vp: number) => {
     const account = useAccountStore().getAccountInfo;
     await newCurate(account.twitterId, t.tweetId, tick, vp);
-    udpateUserOPLocal(vp);
+    updateUserOPLocal(vp);
     updateUserVpLocal(vp);
   }
 
   const userReply = async (t: Tweet, text: string, tick: string) => {
     const account = useAccountStore().getAccountInfo;
-    await newReply(account.twitterId, t.tweetId, text, tick);
-    udpateUserOPLocal(OP_CONSUME.REPLY);
+    const res: any = await newReply(account.twitterId, t.tweetId, text, tick);
+    if (res?.curated) {
+      updateUserVpLocal(VP_CONSUME.REPLY);
+    }
+    updateUserOPLocal(OP_CONSUME.REPLY);
   }
 
   const userQuote = async (t: Tweet, text: string, tick: string) => {
     const account = useAccountStore().getAccountInfo;
     await newQuote(account.twitterId, t.tweetId, text, tick);
-    udpateUserOPLocal(OP_CONSUME.QUOTE)
+    updateUserOPLocal(OP_CONSUME.QUOTE)
   }
 
   return {

@@ -86,7 +86,8 @@ export const SendPubKey = new Uint8Array([
 // vp consume
 export const VP_CONSUME = Object.freeze({
     RETWEET: 5,
-    LIKE: 3
+    LIKE: 3,
+    REPLY: 3
 });
 // op consume
 export const OP_CONSUME = Object.freeze({
