@@ -68,9 +68,9 @@ onMounted(async () => {
              class="bg-white rounded-2xl py-3 px-3.5 flex items-stretch gap-3 mb-2">
           <div class="py-2">
             <!--            like-->
-            <img v-if="(curate.curateRecord & 1) == 1" src="~@/assets/icons/icon-like-active.svg" alt="">
+            <!-- <img v-if="(curate.curateRecord & 1) == 1" src="~@/assets/icons/icon-like-active.svg" alt=""> -->
             <!--            retweet-->
-            <img v-if="(curate.curateRecord & 2) == 2" class="mt-2" src="~@/assets/icons/btn-retweet-active.svg" alt="">
+            <!-- <img v-if="(curate.curateRecord & 2) == 2" class="mt-2" src="~@/assets/icons/btn-retweet-active.svg" alt=""> -->
             <!--            reply-->
             <!--            <img src="~@/assets/icons/btn-reply-active.svg" alt="">-->
             <!--            quote-->
@@ -82,6 +82,12 @@ onMounted(async () => {
             <span class="text-grey-8d font-normal">@{{ curate.twitterUsername }}</span>
             </div>
             <!-- <span class="text-grey-normal text-h5">Username</span> -->
+          </div>
+          <div class="flex flex-row items-center">
+            <img v-if="curate.replyVp && curate.replyVp > 0" src="~@/assets/icons/vp3.gif" alt="" class="w-5 h-7">
+            <img v-if="curate.curationVp && curate.curationVp >= 5" src="~@/assets/icons/vp5.gif" alt="" class="w-6 h-6">
+            <img v-if="curate.curationVp && curate.curationVp == 10" src="~@/assets/icons/vp5.gif" alt="" class="w-6 h-6">
+            <img v-if="curate.curationVp && curate.curationVp % 5 > 0" v-for="i in curate.curationVp % 5" :key="i" src="~@/assets/icons/vp1.gif" alt="" class="w-6 h-6">
           </div>
           <div class="flex flex-col items-end">
             <div class="whitespace-pre-line text-grey-normal font-normal">

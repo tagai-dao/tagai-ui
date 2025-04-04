@@ -185,6 +185,8 @@ export type CurateRecord = Account & {
   speakerAmount?: number,
   speakerTime?: number,
   createAt: string,
+  curationVp?: number,
+  replyVp?: number
 }
 
 export type Reply = {
