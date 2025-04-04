@@ -64,6 +64,7 @@ export const RegisterSteemMessage = JSON.stringify(
 
 export const IPShareContract1 = "0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0";
 export const IPShareContract2 = "0x24328DccA1bA54EeE82e2993F021802e64290486";
+
 export const PumpContract1 = "0xa77253Ac630502A35A6FcD210A01f613D33ba7cD";
 export const PumpContract2 = "0x3DC52C69C3C8be568372E16d50E9F3FEc796610c";
 export const PumpContract3 = "0xc9FaA3c05a5178C380d9C28Edffa38d90D606F22";
@@ -133,6 +134,3 @@ export const IgnoreAuthor = [
   "1062560079847682048",
   "1608018167049355265",
 ];
-
-const graphView =
-  "http://146.190.44.174:8000/subgraphs/name/donut/bitip/graphql?query=%23%0A%23+Welcome+to+The+GraphiQL%0A%23%0A%23+The+GraphiQL+is+an+in-browser+tool+for+writing%2C+validating%2C+and%0A%23+testing+GraphQL+queries.%0A%23%0A%23+Type+queries+into+this+side+of+the+screen%2C+and+you+will+see+intelligent%0A%23+typeaheads+aware+of+the+current+GraphQL+type+schema+and+live+syntax+and%0A%23+validation+errors+highlighted+within+the+text.%0A%23%0A%23+GraphQL+queries+typically+start+with+a+%22%7B%22+character.+Lines+that+start%0A%23+with+a+%23+are+ignored.%0A%23%0A%23+An+example+GraphQL+query+might+look+like%3A%0A%23%0A%23+++++%7B%0A%23+++++++field%28arg%3A+%22value%22%29+%7B%0A%23+++++++++subField%0A%23+++++++%7D%0A%23+++++%7D%0A%23%0A%23+Keyboard+shortcuts%3A%0A%23%0A%23++Prettify+Query%3A++Shift-Ctrl-P+%28or+press+the+prettify+button+above%29%0A%23%0A%23+++++Merge+Query%3A++Shift-Ctrl-M+%28or+press+the+merge+button+above%29%0A%23%0A%23+++++++Run+Query%3A++Ctrl-Enter+%28or+press+the+play+button+above%29%0A%23%0A%23+++Auto+Complete%3A++Ctrl-Space+%28or+just+start+typing%29%0A%23%0A";
