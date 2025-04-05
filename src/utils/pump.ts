@@ -11,7 +11,6 @@ import _ from 'lodash'
 import { isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { getDayNumber } from '@/utils/helper'
-import { version } from "os";
 
 const pumpContract = [
     PumpContract1,
