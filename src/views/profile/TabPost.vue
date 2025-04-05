@@ -146,7 +146,7 @@ onMounted(() => {
             class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
             <div v-if="claimableRewards.length > 0" class="pb-5 snap-start shrink-0 first:pl-3 last:pr-3"
               v-for="reward of claimableRewards" :key="reward.tick + 'claimable'">
-              <TagCurationReward :reward :can-claim="true" />
+              <TagCurationReward v-if="reward.amount > 0" :reward :can-claim="true" />
             </div>
             <div v-else class="w-full flex my-8 justify-center items-center">
               <img src="~@/assets/images/empty-data.svg" alt="">
@@ -157,7 +157,7 @@ onMounted(() => {
             class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
             <div v-if="unclaimableRewards.length > 0" class="snap-start shrink-0 first:pl-3 last:pr-3"
               v-for="reward of unclaimableRewards" :key="reward.tick + 'unclaimable'">
-              <TagCurationReward :reward :can-claim="false" />
+              <TagCurationReward v-if="reward.amount > 0" :reward :can-claim="false" />
             </div>
             <div v-else class="w-full flex my-8 justify-center items-center">
               <img src="~@/assets/images/empty-data.svg" alt="">
