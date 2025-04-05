@@ -5,9 +5,11 @@
     <!-- retweet -->
     <TweetBtnRetweet :tweet/>
     <!-- like-->
-    <TweetBtnLike :tweet/>
+    <!-- <TweetBtnLike :tweet/> -->
     <!-- quote-->
     <TweetBtnQuote :tweet/>
+    <!-- share -->
+    <TweetShare :tweet/>
     <!-- curate -->
     <TweetBtnCurate :tweet/>
   </div>
@@ -16,6 +18,7 @@
 <script setup lang="ts">
 import type { Tweet } from "@/types";
 import TweetBtnLike from "@/components/tweets/TweetBtnLike.vue";
+import TweetShare from "@/components/tweets/TweetShare.vue";
 import TweetBtnRetweet from "@/components/tweets/TweetBtnRetweet.vue";
 import TweetBtnReply from "@/components/tweets/TweetBtnReply.vue";
 import TweetBtnQuote from "@/components/tweets/TweetBtnQuote.vue";

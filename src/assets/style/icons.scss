@@ -15,6 +15,11 @@
   background-image: url("~@/assets/icons/btn-like-active.svg");
 }
 
+.btn-icon-share {
+  @extend .icon;
+  background-image: url("~@/assets/icons/btn-share.svg");
+}
+
 .btn-icon-retweet {
   @extend .icon;
   background-image: url("~@/assets/icons/btn-retweet.svg");
