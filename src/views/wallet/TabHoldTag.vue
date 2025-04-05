@@ -24,7 +24,7 @@ const onLoad = async () => {
   try{
     loading.value = true
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
-    accStore.tokenHoldingList = accStore.tokenHoldingList.concat(list)
+    accStore.tokenHoldingList = accStore.tokenHoldingList.concat(list.filter((item: any) => item.amount / 1e18 > 0))
     if (list.length == 0) finished.value = true;
   } catch (e) {
     handleErrorTip(e)
@@ -40,7 +40,7 @@ const onRefresh = async () => {
     finished.value = false;
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!)
     if (list && list.length > 0) {
-      accStore.tokenHoldingList = list
+      accStore.tokenHoldingList = list.filter((item: any) => item.amount / 1e18 > 0)
     }
     if (list.length === 0) {
       finished.value = true
