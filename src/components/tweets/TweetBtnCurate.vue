@@ -72,6 +72,9 @@ async function confirmCurate() {
     <i-ep-loading v-if="isCurating" class="animate-spin w-6 h-6"/>
     <i v-else class="w-6 h-6 min-w-6"
        :class="tweet.curated ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
+    <span class="text-sm font-bold"
+      :class="tweet.liked ? 'text-red-e6' : 'text-grey-bd'">
+    {{ tweet.likeCount ?? 0 }}</span>
   </button>
   <el-dialog v-model="curateVisible"
            modal-class="overlay-white"
