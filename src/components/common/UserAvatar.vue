@@ -3,6 +3,9 @@ import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { useTools } from "@/composables/useTools";
 import { computed } from "vue";
 import { formatAddress, formatAmount } from "@/utils/helper";
+import { useRouter } from 'vue-router';
+
+const router = useRouter()
 
 const props = withDefaults(defineProps<{
     twitterId?: string | null | undefined,
@@ -43,6 +46,10 @@ function replaceEmptyImg(e: any) {
     e.target.src = emptyAvatar;
 }
 
+function gotoUser() {
+    router.push('/user/' + props.username)
+}
+
 </script>
 
 <template>
@@ -57,7 +64,8 @@ function replaceEmptyImg(e: any) {
             Address not registed
         </div>
         <div v-else class="flex items-center gap-x-1">
-          <img class="w-9 h-9 object-cover rounded-full"
+          <img class="w-9 h-9 object-cover rounded-full cursor-pointer"
+              @click.stop="gotoUser"
                @error="replaceEmptyImg"
                :src="profile" alt="">
           <div class="flex-1 flex flex-col gap-y-4px">

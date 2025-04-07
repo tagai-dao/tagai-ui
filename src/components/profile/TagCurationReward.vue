@@ -12,11 +12,13 @@ import emitter from '@/utils/emitter';
 import { ethers } from 'ethers';
 import { ClaimFee } from '@/config';
 import errCode from '@/errCode';
+import { useRouter } from 'vue-router';
 
-const props = defineProps<{reward: CurationReward, canClaim: Boolean}>()
+const props = defineProps<{reward: CurationReward, canClaim: Boolean, isProfile: Boolean}>()
 const claiming = ref(false)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
+const router = useRouter()
 
 const { accountMismatch, updateBalance } = useAccount();
 
@@ -52,6 +54,14 @@ async function claim() {
     updateBalance()
   }
 }
+
+function login() {
+  if (accStore.getAccountInfo?.twitterId) {
+    router.push('/profile')
+  } else {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+  }
+}
 </script>
 
 <template>
@@ -64,12 +74,17 @@ async function claim() {
         <div class="text-h5">{{ formatAmount(reward.amount) }} ({{ formatPrice(reward.amount * reward.price) }})</div>
       </div>
     </div>
-    <button @click="claim" :disabled="claiming || !canClaim || accountMismatch"
+    
+    <button v-if="isProfile" @click="claim" :disabled="claiming || !canClaim || accountMismatch"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
       {{ canClaim ? $t('claim') : $t('pendingSettled') }}
       <i-ep-loading v-if="claiming" class="animate-spin" />
     </button>
-    <div v-if="accountMismatch && accStore.ethConnectState == EthWalletState.Connected"
+    <button v-else @click="login"
+     class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
+      {{ $t('claim') }}
+    </button>
+    <div v-if="isProfile && accountMismatch && accStore.ethConnectState == EthWalletState.Connected"
          class="text-red-e6 w-full text-sm break-words">
       {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
     </div>
