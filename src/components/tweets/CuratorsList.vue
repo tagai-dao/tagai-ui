@@ -94,7 +94,7 @@ onMounted(async () => {
               {{ formatAmount(curate.amount) }}
             </div>
             <div class="text-sm text-grey-light-active">
-              {{ parseTimestamp(curate.createAt) }}
+              {{ parseTimestamp(new Date(curate.createAt).getTime() - 8*60*60*1000) }}
             </div>
           </div>
         </div>
