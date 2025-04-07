@@ -107,7 +107,7 @@ async function reply() {
       <div class="mt-3">
         <TweetInput ref="tweetInput" :max-length="280" :tick="tweet.tick">
           <template #placeholder>
-            {{$t('postView.writeCommentTip')}}}}
+            {{$t('postView.writeCommentTip')}}
           </template>
         </TweetInput>
       </div>
