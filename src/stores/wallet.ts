@@ -1,18 +1,21 @@
+import type { SocialAccountTokens } from "@/types";
+import { getTokensInfo } from "@/utils/twitterTip";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
 export enum SocialAccountModalType {
   AddToken,
   WrapBNB,
-  EditAvailableBalance,
-  EditCreditLimit
+  EditAllowance,
+  EditLimit
 }
 export const useSocialAccountModalStore = defineStore(
   'socialAccountModal', () => {
     const modalVisible = ref(false)
     const modalType = ref(SocialAccountModalType.AddToken)
     const modalCloseEnable = ref(true)
-    const editTokenInfo = ref('')
+    const socialAccountTokens = ref<SocialAccountTokens[]>([])
+    const editTokenInfo = ref<SocialAccountTokens|null>(null)
 
     const setModalVisible = (visible: boolean, type: SocialAccountModalType = SocialAccountModalType.AddToken) => {
       if(!modalCloseEnable.value) return
@@ -20,19 +23,23 @@ export const useSocialAccountModalStore = defineStore(
       modalType.value = type
     }
 
+    const updateSocialAccountTokens = async () => {
+      socialAccountTokens.value = await getTokensInfo(socialAccountTokens.value);
+    }
+
     const setModalCloseEnable = (value: boolean) => {
       modalCloseEnable.value = value
     }
 
-    const openAvailableBalanceModal = (tokenValue: string) => {
-      editTokenInfo.value = tokenValue
-      modalType.value = SocialAccountModalType.EditAvailableBalance
+    const openAllowanceModal = (token: SocialAccountTokens) => {
+      editTokenInfo.value = token
+      modalType.value = SocialAccountModalType.EditAllowance
       modalVisible.value = true
     }
 
-    const openCreditLimitModal = (tokenValue: string) => {
-      editTokenInfo.value = tokenValue
-      modalType.value = SocialAccountModalType.EditCreditLimit
+    const openLimitModal = (token: SocialAccountTokens) => {
+      editTokenInfo.value = token
+      modalType.value = SocialAccountModalType.EditLimit
       modalVisible.value = true
     }
 
@@ -43,7 +50,9 @@ export const useSocialAccountModalStore = defineStore(
       modalCloseEnable,
       setModalCloseEnable,
       editTokenInfo,
-      openAvailableBalanceModal,
-      openCreditLimitModal
+      openAllowanceModal,
+      openLimitModal,
+      socialAccountTokens,
+      updateSocialAccountTokens
     }
   })

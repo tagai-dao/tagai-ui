@@ -2,7 +2,6 @@
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
 import { handleError, ref } from "vue";
 import { getTokenByTickOrCA, setNewToken } from "@/apis/api";
-import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
 import { handleErrorTip } from "@/utils/notify";
 import { ethers } from "ethers";
 import { EthWalletState, useAccountStore } from "@/stores/web3";

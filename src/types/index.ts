@@ -298,6 +298,18 @@ export type TokenTrade = {
   isBuy: boolean
 }
 
+export type SocialAccountTokens = {
+  token: string,
+  tick: string,
+  logo: string,
+  maxPerTx: number,
+  maxPerDay: number,
+  spentToday: number,
+  lastUpdatedDay: number,
+  allowance: number,
+  balance: number
+}
+
 export enum WalletType {
   Okx,
   Unisat,

@@ -118,7 +118,9 @@
     "inputBNB": "输入BNB数量",
     "inputWBNB": "输入WBNB数量",
     "wrapSuccess": "转换成功",
-    "unwrapSuccess": "转换成功"
+    "unwrapSuccess": "转换成功",
+    "allowance": "授权额度",
+    "limit": "交易限额"
   },
   "notificationView": {
     "ipShare": "IPShare",

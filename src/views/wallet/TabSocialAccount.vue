@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import AddTokenList from "@/views/wallet/social/AddTokenList.vue";
-import EditAvailableBalance from "@/views/wallet/social/EditAvailableBalance.vue";
+import EditAllowance from "@/views/wallet/social/EditAllowance.vue";
 import AddNewToken from "@/views/wallet/social/AddNewToken.vue";
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
-import EditCreditLimit from "@/views/wallet/social/EditCreditLimit.vue";
+import EditLimit from "@/views/wallet/social/EditLimit.vue";
 import { useAccountStore } from "@/stores/web3";
 import { formatAmount } from "@/utils/helper";
 import { onMounted, ref } from "vue";
@@ -78,10 +78,10 @@ onMounted(() => {
                width="90%" :show-close="false"
                align-center
                destroy-on-close >
+      <EditAllowance v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditAllowance"/>
+      <EditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditLimit"/>
       <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken"/>
       <WrapBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.WrapBNB"/>
-      <EditAvailableBalance v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditAvailableBalance"/>
-      <EditCreditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditCreditLimit"/>
     </el-dialog>
   </div>
 </template>
