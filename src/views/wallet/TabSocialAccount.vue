@@ -9,6 +9,8 @@ import { formatAmount } from "@/utils/helper";
 import { onMounted, ref } from "vue";
 import { getRewardsClaimd } from "@/utils/twitterTip";
 import { ethers } from "ethers";
+import WrapBNB from "@/views/wallet/social/WrapBNB.vue";
+
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
 const needClaim = ref(false)
@@ -59,7 +61,8 @@ onMounted(() => {
           @click="setModalType(SocialAccountModalType.AddToken)">
           {{$t('profileView.addToken')}}
         </button>
-        <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5">
+        <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
+          @click="setModalType(SocialAccountModalType.WrapBNB)">
           {{$t('profileView.wrap')}}
         </button>
         <button @click="$router.push('/tip-record')" class="relative">
@@ -76,6 +79,7 @@ onMounted(() => {
                align-center
                destroy-on-close >
       <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken"/>
+      <WrapBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.WrapBNB"/>
       <EditAvailableBalance v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditAvailableBalance"/>
       <EditCreditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditCreditLimit"/>
     </el-dialog>

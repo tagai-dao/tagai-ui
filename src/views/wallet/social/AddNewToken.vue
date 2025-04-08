@@ -110,16 +110,19 @@ async function confirm() {
         <label for="docs" class="leading-6 text-lg">{{$t('profileView.inputAllowance')}}:</label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="allowance" type="number" :placeholder="$t('profileView.inputAllowancePlaceholder')"/>
+        <span class="text-red-500 text-sm" v-if="showInputAllowance">{{$t('profileView.inputAllowancePlaceholder')}}</span>
       </div>
       <div class="flex flex-col gap-1">
         <label for="docs" class="leading-6 text-lg">{{$t('profileView.inputTransactionLimit')}}:</label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="transactionLimit" type="number" :placeholder="$t('profileView.inputTransactionLimitPlaceholder')"/>
+        <span class="text-red-500 text-sm" v-if="showInputTransactionLimit">{{$t('profileView.inputTransactionLimitPlaceholder')}}</span>
       </div>
       <div class="flex flex-col gap-1">
         <label for="docs" class="leading-6 text-lg">{{$t('profileView.inputDailyLimit')}}:</label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="dailyLimit" type="number" :placeholder="$t('profileView.inputDailyLimitPlaceholder')"/>
+        <span class="text-red-500 text-sm" v-if="showInputDailyLimit">{{$t('profileView.inputDailyLimitPlaceholder')}}</span>
       </div>
       <button @click="confirm" class="h-10 w-full flex flex-row items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5" :disabled="loading">
         {{ accStore.ethConnectAddress ? $t('confirm') : $t('connect')}}

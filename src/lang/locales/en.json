@@ -116,7 +116,11 @@
     "newTokenStep1": "Check token exist",
     "newTokenStep2": "Set token allowance",
     "newTokenStep3": "Set token limit",
-    "tickerError": "This ticker is not a TagAI token"
+    "tickerError": "This ticker is not a TagAI token",
+    "inputBNB": "Input BNB amount",
+    "inputWBNB": "Input WBNB amount",
+    "wrapSuccess": "Wrap success",
+    "unwrapSuccess": "Unwrap success"
   },
   "notificationView": {
     "ipShare": "IPShare",

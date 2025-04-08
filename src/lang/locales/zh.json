@@ -113,7 +113,12 @@
     "inputDailyLimitPlaceholder": "输入限额",
     "newTokenStep1": "代币检查",
     "newTokenStep2": "设置授权额度",
-    "newTokenStep3": "设置限额"
+    "newTokenStep3": "设置限额",
+    "tickerError": "这不是一个TagAI代币",
+    "inputBNB": "输入BNB数量",
+    "inputWBNB": "输入WBNB数量",
+    "wrapSuccess": "转换成功",
+    "unwrapSuccess": "转换成功"
   },
   "notificationView": {
     "ipShare": "IPShare",

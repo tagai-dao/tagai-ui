@@ -3,7 +3,7 @@ import { ref } from "vue";
 
 export enum SocialAccountModalType {
   AddToken,
-  WrapToken,
+  WrapBNB,
   EditAvailableBalance,
   EditCreditLimit
 }
