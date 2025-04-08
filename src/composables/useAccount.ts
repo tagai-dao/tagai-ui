@@ -14,6 +14,13 @@ import { ethers } from "ethers";
 import { getBalance } from '@/utils/web3'
 import { aggregate } from '@makerdao/multicall'
 
+export enum AccountAuthType {
+    TWITTER,
+    ETH,
+    STEEM,
+    IPSHARE
+  }
+
 export const useAccount = () => {
     const accountMismatch = computed(() => {
         const accStore = useAccountStore()
@@ -224,6 +231,35 @@ export const useAccount = () => {
         }
     }
 
+    const checkAccount = async (accountType: AccountAuthType) => {
+        switch (accountType) {
+            case AccountAuthType.TWITTER:
+                await checkLogin()
+                break;
+            case AccountAuthType.ETH: {
+                if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
+                    return true
+                }else {
+                    useModalStore().setModalVisible(true, GlobalModalType.BondEth);
+                }
+            }
+            case AccountAuthType.STEEM:
+                if (useAccountStore().getAccountInfo.steemId) {
+                    return true
+                }else {
+                    useModalStore().setModalVisible(true, GlobalModalType.Register);
+                }
+                break;
+            case AccountAuthType.IPSHARE:
+                if (useAccountStore().ipshare) {
+                    return true
+                }else {
+                    useModalStore().setModalVisible(true, GlobalModalType.CreateIPShare);
+                }
+                break;
+        }
+    }
+
     const updateBalance = () => {
         if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
             const ethAddr = useAccountStore().getAccountInfo.ethAddr;
@@ -272,6 +308,7 @@ export const useAccount = () => {
         updateVPOP,
         updateUserVpLocal,
         updateUserOPLocal,
+        checkAccount,
         vp,
         op,
         addBackOp,

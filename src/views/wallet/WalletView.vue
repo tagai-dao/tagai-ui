@@ -10,6 +10,7 @@ import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 const accStore = useAccountStore()
 const tabOptions = ['holding', 'socialAccount']
 const activeTab = ref('socialAccount')
+const needClaim = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
 

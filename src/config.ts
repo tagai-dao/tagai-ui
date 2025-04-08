@@ -1,7 +1,7 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
-// export const BACKEND_API_URL = "http://localhost:3000";
+// export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
+export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
@@ -76,7 +76,7 @@ export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10'
 
-export const CoinPurse = '0x0000000000000000000000000000000000000000'
+export const CoinPurse = '0xA72D057Ac335FdDE8B4b28A2a6966FA77aa59550'
 
 export const Ether = BigInt(1e18);
 

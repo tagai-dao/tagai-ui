@@ -2871,6 +2871,17 @@ export const abis = {
       "error RefundFail()",
       "error CostFeeFail()",
       "error CanntSellLockedToken()",
+      "error ExceedsPerLimit()",
+      "error ExceedsDailyLimit()",
+      "error InvalidToXId()",
+      "error AlreadyWithdraw()",
+      "error TransferFailed()",
+      "error TransferFromFailed()",
+      "error BuyTokenFailed()",
+      "error InvalidPath()",
+      "error CostFeeFailed()",
+      "error InvalidAddress()",
+      "error InsufficientFee()",
     ],
      "CoinPurse": [
       {
@@ -3023,5 +3034,56 @@ export const abis = {
         "stateMutability": "payable",
         "type": "receive"
       }
+    ],
+    "WETH": [
+      {
+        "constant": false,
+        "inputs": [],
+        "name": "deposit",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "wad",
+            "type": "uint256"
+          }
+        ],
+        "name": "withdraw",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "ERC20": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "spender",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          }
+        ],
+        "name": "approve",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
     ]
 }

@@ -6,15 +6,24 @@ import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wal
 import EditCreditLimit from "@/views/wallet/social/EditCreditLimit.vue";
 import { useAccountStore } from "@/stores/web3";
 import { formatAmount } from "@/utils/helper";
-
+import { onMounted, ref } from "vue";
+import { getRewardsClaimd } from "@/utils/twitterTip";
+import { ethers } from "ethers";
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
-
+const needClaim = ref(false)
 
 function setModalType(type: SocialAccountModalType) {
   socialAccountModalStore.modalType = type
   socialAccountModalStore.modalVisible = true
 }
+
+onMounted(() => {
+  getRewardsClaimd(accStore.getAccountInfo.twitterId).then((res:any) => {
+    needClaim.value = res == ethers.ZeroAddress;
+  })
+})
+
 </script>
 
 <template>
@@ -53,8 +62,9 @@ function setModalType(type: SocialAccountModalType) {
         <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5">
           {{$t('profileView.wrap')}}
         </button>
-        <button @click="$router.push('/tip-record')">
+        <button @click="$router.push('/tip-record')" class="relative">
           <img class="w-10 h-10" src="~@/assets/icons/icon-record.svg" alt="">
+          <div class="absolute top-[-3px] right-[-3px] w-4 h-4 bg-red-normal rounded-full" v-if="needClaim"></div>
         </button>
       </div>
     </div>

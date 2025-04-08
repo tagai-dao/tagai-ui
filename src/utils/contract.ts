@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { getReadOnlyProvider } from "./web3";
 import { PumpContract1, IPShareContract1, uniswapV2Router02, 
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
-    wrappedUniswapV2ForTagAI, CoinPurse } from '@/config'
+    wrappedUniswapV2ForTagAI, CoinPurse, WETH } from '@/config'
 
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -15,7 +15,8 @@ const ContractAddress = {
     IPShare2: IPShareContract2,
     UniswapRouter: uniswapV2Router02,
     WrapSwaper: wrappedUniswapV2ForTagAI,
-    CoinPurse: CoinPurse
+    CoinPurse: CoinPurse,
+    WETH: WETH
 }
 
 export const getContract = async (contractName: string, address?: string, readOnly = false): Promise<any> => {

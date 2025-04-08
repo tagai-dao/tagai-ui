@@ -6,11 +6,13 @@ import { type CommunityCredit } from '@/types';
 import { formatAddress, formatAmount, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
 import { onMounted, ref } from 'vue';
+import { useAccount } from '@/composables/useAccount';
 
 const comStore = useCommunityStore()
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
+const { checkAccount } = useAccount()
 
 const holdingList = ref<CommunityCredit[]>([]);
 const { onCopy } = useTools()
@@ -25,6 +27,7 @@ async function onRefresh() {
       holdingList.value = list as CommunityCredit[];
     }
     if (list.length < 30) {
+      console.log('finished')
       finished.value = true
     }
   } catch (e) {
@@ -35,8 +38,10 @@ async function onRefresh() {
 }
 
 async function onLoad() {
+  console.log('onLoad')
   if (refreshing.value || finished.value || holdingList.value.length == 0) return;
   loading.value = true;
+  console.log('onLoad 2')
   try{
     let list: any = await getCommunityCredits(comStore.currentSelectedCommunity!.tick, Math.floor((holdingList.value.length - 1) / 30) + 1);
 
@@ -102,6 +107,7 @@ onMounted(async () => {
               :followings="holder.followings"
               :eth-addr="holder.ethAddr"
               :credit="holder.credit"
+              :steem-id="''"
           :teleported="true"
         >
           <template #avatar-img>

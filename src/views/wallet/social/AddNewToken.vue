@@ -1,32 +1,92 @@
 <script setup lang="ts">
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
-import { ref } from "vue";
-import { getTokenByTickOrCA } from "@/apis/api";
+import { handleError, ref } from "vue";
+import { getTokenByTickOrCA, setNewToken } from "@/apis/api";
+import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
+import { handleErrorTip } from "@/utils/notify";
+import { ethers } from "ethers";
+import { EthWalletState, useAccountStore } from "@/stores/web3";
+import { GlobalModalType } from "@/types";
+import { useModalStore } from "@/stores/common";
+import { useAccount } from "@/composables/useAccount";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
 const showTickerError = ref(false)
 const allowance = ref<number | null>(null)
+const showInputAllowance = ref(false)
 const transactionLimit = ref<number | null>(null)
+const showInputTransactionLimit = ref(false)
 const dailyLimit = ref<number | null>(null)
+const showInputDailyLimit = ref(false)
 const state = ref(0)
+const accStore = useAccountStore()
+const modalStore = useModalStore()
+const loading = ref(false)
+
+const emit = defineEmits(['added'])
 
 async function confirm() {
-    showTickerError.value = false
-    if (!tick.value) {
-        showTickerError.value = true
+    try {
+        loading.value = true
+        showTickerError.value = false
+        showInputAllowance.value = false
+        showInputTransactionLimit.value = false
+        showInputDailyLimit.value = false
+
+        if (!useAccount().checkoutAccessToken()) {
+            modalStore.setModalVisible(true, GlobalModalType.Login)
+            return;
+        }
+        // check wallet connect
+        if (accStore.ethConnectState !== EthWalletState.Connected) {
+            modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+            return;
+        }
+
+        if (!tick.value) {
+            showTickerError.value = true
+            state.value = 0
+            return
+        }
+        if (!allowance.value || allowance.value <= 0) {
+            showInputAllowance.value = true
+            state.value = 0
+            return
+        }
+        if (!transactionLimit.value || transactionLimit.value <= 0) {
+            showInputTransactionLimit.value = true
+            state.value = 0
+            return
+        }
+        if (!dailyLimit.value || dailyLimit.value <= 0) {
+            showInputDailyLimit.value = true
+            state.value = 0
+            return
+        }
+        state.value = 1
+        const res:any = await getTokenByTickOrCA(tick.value)
+        if (!res?.token) {
+            showTickerError.value = true
+            state.value = 0
+            return
+        }
+        state.value = 2
+        // await approveCoinPurse(res.token, ethers.parseEther(allowance.value!.toString()))
+
+        state.value = 3
+        // await setTokenLimit(res.token, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()))
+
+        await setNewToken(accStore.getAccountInfo?.twitterId!, tick.value)
+        emit('added');
         state.value = 0
-        return
-    }
-    state.value = 1
-    const res:any = await getTokenByTickOrCA(tick.value)
-    if (!res?.token) {
-        showTickerError.value = true
+        socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)
+    } catch (error) {
         state.value = 0
-        return
+        handleErrorTip(error)
+    } finally {
+        loading.value = false
     }
-    
-  
 }
 
 </script>
@@ -61,8 +121,9 @@ async function confirm() {
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="dailyLimit" type="number" :placeholder="$t('profileView.inputDailyLimitPlaceholder')"/>
       </div>
-      <button @click="confirm" class="h-10 w-full bg-orange-normal rounded-full text-white text-h5 mt-5">
-        {{$t('confirm')}}
+      <button @click="confirm" class="h-10 w-full flex flex-row items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5" :disabled="loading">
+        {{ accStore.ethConnectAddress ? $t('confirm') : $t('connect')}}
+        <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
       
       <!-- 进度条组件 -->
@@ -80,7 +141,7 @@ async function confirm() {
           <div class="flex-1 h-[2px] mx-2" :class="state >= 3 ? 'bg-orange-normal' : 'bg-grey-e6'"></div>
           <div class="flex flex-col items-center">
             <div class="w-3 h-3 rounded-full" :class="state >= 3 ? 'bg-orange-normal' : 'bg-grey-e6'"></div>
-            <span class="text-sm mt-1">{{$t('profileView.step3')}}</span>
+            <span class="text-sm mt-1">{{$t('profileView.newTokenStep3')}}</span>
           </div>
         </div>
       </div>
