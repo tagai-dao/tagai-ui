@@ -18,6 +18,7 @@ export const useAccountStore = defineStore('account', {
             this.blinksList = [];
             this.createdTokenList = [];
             this.ethBalance = 0
+            this.wethBalance = 0
             this.ipshare = {}
             this.pubKey = ''
             this.ethWalletType = 'none' // metamask, okx, none
@@ -48,6 +49,7 @@ export const useAccountStore = defineStore('account', {
             createdTokenList: [] as Community[],
             setAccount,
             ethBalance: 0,
+            wethBalance: 0,
             ipshare: {} as IPShare,
             pubKey: '',
             ethWalletType: '',

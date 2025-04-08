@@ -76,6 +76,8 @@ export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10'
 
+export const CoinPurse = '0x0000000000000000000000000000000000000000'
+
 export const Ether = BigInt(1e18);
 
 export const SendPubKey = new Uint8Array([

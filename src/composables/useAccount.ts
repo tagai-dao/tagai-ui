@@ -4,13 +4,15 @@ import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
 import { twitterRefreshAccessToken, getVPOP, needLogin,
     getNewMessageCount, getMessages as gm, readAllMessage
  } from '@/apis/api'
-import { MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY } from '@/config'
+import { MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY, WETH } from '@/config'
+import { ChainConfig } from '@/config'
 import errCode from "@/errCode";
 import { formatDate } from '@/utils/helper'
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { ethers } from "ethers";
 import { getBalance } from '@/utils/web3'
+import { aggregate } from '@makerdao/multicall'
 
 export const useAccount = () => {
     const accountMismatch = computed(() => {
@@ -224,10 +226,32 @@ export const useAccount = () => {
 
     const updateBalance = () => {
         if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
-            getBalance(useAccountStore().getAccountInfo.ethAddr!).then(balance => {
-                // @ts-ignore
-                useAccountStore().ethBalance = balance.toString() / 1e18
-            }).catch()
+            const ethAddr = useAccountStore().getAccountInfo.ethAddr;
+            let calls = [{
+                call: [
+                    'getEthBalance(address)(uint256)', 
+                    ethAddr
+                  ],
+                  returns: [['ethBalance', (val: any) => val / 10 ** 18]]
+            }, {
+                target: WETH,
+                call: [
+                    'balanceOf(address)(uint256)',
+                    ethAddr
+                ],
+                returns: [['wethBalance', (val: any) => val / 10 ** 18]]
+            }];
+
+           aggregate(calls, ChainConfig.multiConfig).then((res: any) => {
+            useAccountStore().ethBalance = res.results.transformed.ethBalance;
+            useAccountStore().wethBalance = res.results.transformed.wethBalance;
+           }).catch()
+            
+
+            // getBalance(useAccountStore().getAccountInfo.ethAddr!).then(balance => {
+            //     // @ts-ignore
+            //     useAccountStore().ethBalance = balance.toString() / 1e18
+            // }).catch()
         }
     }
 
