@@ -44,8 +44,8 @@ export const bondEth = async (ethAddr: string, twitterId: string, signature: str
   post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
 
 /************************************ user api **********************************/
-export const getUserProfile = (twitterId: string) =>
-  get(BACKEND_API_URL + '/user/getUserProfile', {twitterId})
+export const getUserProfile = (twitterId?: string, username?: string) =>
+  get(BACKEND_API_URL + '/user/getUserProfile', {twitterId, username})
 
 export const checkEthUsed = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/checkEthUsed', { ethAddr })
@@ -186,10 +186,10 @@ export const getSpaceCurationList = async (tweetId: string) =>
   get(BACKEND_API_URL + '/curation/spaceCurationList', {tweetId})
 
 export const getMyCurationRewards = async (twitterId: string) =>
-  post(BACKEND_API_URL + '/curation/userCurationRewards', {twitterId})
+  get(BACKEND_API_URL + '/curation/userCurationRewards', {twitterId})
 
 export const userUnclaimableCurationRewards = async (twitterId: string) =>
-  post(BACKEND_API_URL + '/curation/userUnclaimableCurationRewards', {twitterId})
+  get(BACKEND_API_URL + '/curation/userUnclaimableCurationRewards', {twitterId})
 
 export const getClaimSignature = async (twitterId: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/getUserClaimTagRewardSignature', {twitterId, tick})

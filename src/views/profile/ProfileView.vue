@@ -11,6 +11,7 @@ import { useInterval } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
+import { useRoute } from "vue-router";
 
 const accStore = useAccountStore()
 const tabOptions = ['post', 'createCoin']
