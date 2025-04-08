@@ -56,7 +56,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 max-w-[500px] mx-auto">
         <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
           @click="setModalType(SocialAccountModalType.AddToken)">
           {{$t('profileView.addToken')}}
