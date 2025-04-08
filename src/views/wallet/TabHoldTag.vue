@@ -83,7 +83,7 @@ onMounted(async () => {
                 :loading="loading"
                 :finished="finished"
                 :immediate-check="false"
-                :finished-text="$t('noMore')"
+                :finished-text="accStore.tokenHoldingList.length == 0?'':$t('noMore')"
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">

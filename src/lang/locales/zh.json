@@ -88,7 +88,14 @@
     "captureDesc": "用户交易代币产生的部分交易费用将被注入到IPShare中由IPShare质押者瓜分",
     "bindEthAddress": "绑定你的BNB地址",
     "createYourCoin": "创建您的社区代币",
-    "bindFacaster": "绑定你的 Farcaster"
+    "bindFacaster": "绑定你的 Farcaster",
+    "holding": "Holding",
+    "socialAccount": "Social account",
+    "addToken": "Add token",
+    "wrap": "Wrap",
+    "availableBalance": "Available balance",
+    "creditLimit": "Credit limit",
+    "tipRecord": "Tip"
   },
   "notificationView": {
     "ipShare": "IPShare",
