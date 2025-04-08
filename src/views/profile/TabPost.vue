@@ -131,7 +131,7 @@ onMounted(() => {
     rewardType.value = 'Processing'
   }
   onRefresh()
-  // updateReward();
+  updateReward();
   emitter.on('claimedReward', updateReward)
 })
 
@@ -154,7 +154,7 @@ onMounted(() => {
             </template>
           </el-popover>
         </div>
-        <div class="my-3 gap-2 bg-white rounded-xl py-3 mx-3">
+        <div v-if="userInfo || accStore.getAccountInfo.twitterId" class="my-3 gap-2 bg-white rounded-xl py-3 mx-3">
           <div class="flex justify-start mb-2">
             <button v-for="tab of tabOptions" :key="tab" class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
               :class="tab === rewardType ? 'text-gradient bg-gradient-primary' : 'text-grey-normal'"
