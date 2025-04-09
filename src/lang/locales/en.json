@@ -127,7 +127,8 @@
     "addToken2": "The input allowance amount is just a authorization allowance, this will not cost your token directly. When you don't need to use social account, set the allowance to 0.",
     "addToken3": "When you tip or swap token on Twitter, the operation will be ignored if the transaction amount is larger than the limit.",
     "addToken4": "All the tip or swap amount in a day will be counted as daily limit. The new tip or swap will be ignored if the daily limit is reached until you reset the amount or operate next day.",
-    "wbnbDesc": "You can not tip WBNB on Twitter, the WBNB allowance and limit is only for tip gas fee. Every Tip on twitter will cost you 0.0005 WBNB."
+    "wbnbDesc": "You can not tip WBNB on Twitter, the WBNB allowance and limit is only for tip gas fee. Every Tip on twitter will cost you 0.0005 WBNB.",
+    "refreshBalance": "Refresh"
   },
   "notificationView": {
     "ipShare": "IPShare",

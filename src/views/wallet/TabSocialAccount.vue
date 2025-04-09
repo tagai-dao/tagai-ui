@@ -60,9 +60,16 @@ onMounted(() => {
                 </div>
               </template>
             </el-popover>
-            <button @click="refreshBalance">
-              <img class="w-5 min-w-5 min-h-5" src="~@/assets/icons/icon-refresh.svg" alt="">
-            </button>
+            <el-popover @click="refreshBalance" popper-class="c-popper" placement="right-start">
+              <template #reference>
+                <img class="w-5 min-w-5 min-h-5 cursor-pointer" src="~@/assets/icons/icon-refresh.svg" alt="">
+              </template>
+              <template #default>
+                <div class="bg-white rounded-xl flex p-3 shadow-popper-tip">
+                  <div class="mb-1">{{ $t('profileView.refreshBalance') }}</div>
+                  </div>
+              </template>
+            </el-popover>
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ const availableBalance = ref(0)
 <template>
   <div class="py-2">
     <div class="flex justify-between items-center">
-      <span class="text-h2 text-grey-normal-hover">{{ socialAccountModalStore.editTokenInfo }}</span>
+      <span class="text-h2 text-grey-normal-hover">{{ socialAccountModalStore.editTokenInfo?.tick }}</span>
       <img class="cursor-pointer"
            @click="socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)"
            src="../../../assets/icons/icon-modal-close.svg" alt=""/>
