@@ -112,7 +112,7 @@ async function confirm() {
               </template>
             </el-popover>
         </label>
-        <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
+        <input class="border-[1px] mb-5 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
                v-model="tick" type="text" :placeholder="$t('profileView.inputTickPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showTickerError">{{$t('profileView.tickerError')}}</span>
       </div>
@@ -129,7 +129,7 @@ async function confirm() {
               </template>
             </el-popover>
         </label>
-        <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
+        <input class="border-[1px] mb-5 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
                v-model="allowance" type="number" :placeholder="$t('profileView.inputAllowancePlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showInputAllowance">{{$t('profileView.inputAllowancePlaceholder')}}</span>
       </div>
@@ -146,7 +146,7 @@ async function confirm() {
               </template>
             </el-popover>
         </label>
-        <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
+        <input class="border-[1px] mb-5 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
                v-model="transactionLimit" type="number" :placeholder="$t('profileView.inputTransactionLimitPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showInputTransactionLimit">{{$t('profileView.inputTransactionLimitPlaceholder')}}</span>
       </div>
@@ -163,11 +163,11 @@ async function confirm() {
               </template>
             </el-popover>
         </label>
-        <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
+        <input class="border-[1px] mb-3 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
                v-model="dailyLimit" type="number" :placeholder="$t('profileView.inputDailyLimitPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showInputDailyLimit">{{$t('profileView.inputDailyLimitPlaceholder')}}</span>
       </div>
-      <button @click="confirm" class="h-10 w-full flex flex-row items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5" :disabled="loading">
+      <button @click="confirm" class="h-12 w-full flex flex-row items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5" :disabled="loading">
         {{ accStore.ethConnectAddress ? $t('confirm') : $t('connect')}}
         <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
