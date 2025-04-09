@@ -1,4 +1,4 @@
-import type { SocialAccountTokens } from "@/types";
+import type { SocialAccountTokens, TwitterTipRecord, TwitterTipErrorType } from "@/types";
 import { getTokensInfo } from "@/utils/twitterTip";
 import { defineStore } from "pinia";
 import { ref } from "vue";
@@ -17,6 +17,7 @@ export const useSocialAccountModalStore = defineStore(
     const modalCloseEnable = ref(true)
     const socialAccountTokens = ref<SocialAccountTokens[]>([])
     const editTokenInfo = ref<SocialAccountTokens|null>(null)
+    const tipTokenRecords = ref<TwitterTipRecord[]>([])
 
     const setModalVisible = (visible: boolean, type: SocialAccountModalType = SocialAccountModalType.AddToken) => {
       if(!modalCloseEnable.value) return
@@ -61,6 +62,7 @@ export const useSocialAccountModalStore = defineStore(
       openLimitModal,
       socialAccountTokens,
       updateSocialAccountTokens,
-      openTipTokenModal
+      openTipTokenModal,
+      tipTokenRecords
     }
   })

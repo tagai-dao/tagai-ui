@@ -3,6 +3,14 @@
 import { formatAddress, formatAmount, formatPastTime } from "@/utils/helper";
 import { ref } from "vue";
 import BackHeader from "@/layout/BackHeader.vue";
+import { getTipRecord } from "@/apis/api";
+import { handleErrorTip } from "@/utils/notify";
+import { EthWalletState, useAccountStore } from "@/stores/web3";
+import { useSocialAccountModalStore } from "@/stores/wallet";
+import { type TwitterTipRecord, TwitterTipStatus, TwitterTipClaimStatus, TwitterTipErrorType } from "@/types";
+
+const accStore = useAccountStore()
+const socialAccountModalStore = useSocialAccountModalStore()
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -13,7 +21,16 @@ const onLoad = async () => {
 }
 
 const onRefresh = async () => {
-
+  try {
+    if (refreshing.value) return
+    refreshing.value = true 
+    const res = await getTipRecord(accStore.getAccountInfo.twitterId)
+    socialAccountModalStore.tipTokenRecords = res as TwitterTipRecord[]
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    refreshing.value = false
+  }
 }
 
 </script>

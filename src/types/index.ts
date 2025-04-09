@@ -16,6 +16,29 @@ export enum ListType {
   New
 }
 
+export enum TwitterTipStatus {
+  Pending,
+  Success,
+  Fail
+}
+
+export enum TwitterTipClaimStatus {
+  NoNeedClaim,
+  PendingClaim,
+  ClaimSuccess
+}
+
+export enum TwitterTipErrorType {
+  Success,
+  ExceedMaxPerTx,
+  ExceedMaxPerDay,
+  InsufficientFee,
+  InsufficientAllowance,
+  InsufficientBalance,
+  NotBoundSocialAddress,
+  Closed
+}
+
 export type IPShareHolder = {
   ethAddr?: string;
   holder?: string;
@@ -308,6 +331,28 @@ export type SocialAccountTokens = {
   lastUpdatedDay: number,
   allowance: number,
   balance: number
+}
+
+export type TwitterTipRecord = {
+  fromTwitterId: string,
+  fromTwitterName: string,
+  fromTwitterUsername: string,
+  fromProfile: string,
+  fromEthAddr: string,
+  toTwitterId: string,
+  toTwitterName: string,
+  toTwitterUsername: string,
+  toProfile: string,
+  toEthAddr: string,
+  tick: string,
+  token: string,
+  transHash: string,
+  tweetId: string,
+  amount: number,
+  status: TwitterTipStatus, // 0:pending,1.success, 2.fail
+  claimStatus: TwitterTipClaimStatus, // 0,无须cliam， 1，待claim， 2.claim成功
+  time: string,
+  errorType: TwitterTipErrorType
 }
 
 export enum WalletType {
