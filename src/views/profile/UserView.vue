@@ -14,9 +14,10 @@ import { GlobalModalType, type Account } from "@/types";
 import { useRoute, useRouter } from "vue-router";
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
 import { getUserProfile } from '@/apis/api'
+import TipTokenRecord from "@/views/wallet/TipTokenRecord.vue";
 
 const accStore = useAccountStore()
-const tabOptions = ['post', 'createCoin']
+const tabOptions = ['post', 'tipRecord']
 const activeTab = ref('post')
 const vp = ref(0)
 const op = ref(0)
@@ -87,16 +88,15 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-    <!-- <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
+    <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
       <button v-for="tab of tabOptions" :key="tab"
               class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
               :class="tab===activeTab?'text-gradient bg-gradient-primary':'text-grey-normal'"
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
-    </div> -->
+    </div>
     <div v-if="userInfo?.twitterId" class="flex-1 overflow-auto " id="profile-tab-scroller">
       <TabPost v-if="activeTab==='post'" :userInfo="userInfo"/>
-      <TabBlink v-if="activeTab==='blink'"/>
-      <TabCreateCoin v-if="activeTab==='createCoin'"/>
+      <TipTokenRecord v-if="activeTab==='tipRecord'" :userInfo="userInfo"/>
     </div>
   </div>
 </template>

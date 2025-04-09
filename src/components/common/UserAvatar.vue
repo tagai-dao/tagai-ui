@@ -69,7 +69,7 @@ function gotoUser() {
                @error="replaceEmptyImg"
                :src="profile" alt="">
           <div class="flex-1 flex flex-col gap-y-4px">
-            <div class="flex items-end whitespace-nowrap">
+            <div class="flex items-end whitespace-nowrap items-center gap-2">
               <span class="font-semibold text-black text-lg">{{(props.name??'').substring(0, 10)}}</span>
               <span class="text-sm italic leading-[16px]">@{{props.username??''.substring(0, 10)}}</span>
               <button class="mb-6px" @click="gotoTwitter()">
@@ -87,7 +87,7 @@ function gotoUser() {
             <span class="font-semibold text-black">{{ props.followings || 0 }}</span>
             <span class="text-sm text-grey-normal">Followings</span>
           </div>
-          <div class="flex flex-col items-center">
+          <div v-if="props.credit" class="flex flex-col items-center">
             <span class="font-semibold text-black">{{ formatAmount(Math.floor(props.credit || 0)) }}</span>
             <span class="text-sm text-grey-normal">{{ $t('credit') }}</span>
           </div>

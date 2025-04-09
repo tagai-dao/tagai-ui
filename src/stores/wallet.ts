@@ -17,7 +17,6 @@ export const useSocialAccountModalStore = defineStore(
     const modalCloseEnable = ref(true)
     const socialAccountTokens = ref<SocialAccountTokens[]>([])
     const editTokenInfo = ref<SocialAccountTokens|null>(null)
-    const tipTokenRecords = ref<TwitterTipRecord[]>([])
 
     const setModalVisible = (visible: boolean, type: SocialAccountModalType = SocialAccountModalType.AddToken) => {
       if(!modalCloseEnable.value) return
@@ -62,7 +61,6 @@ export const useSocialAccountModalStore = defineStore(
       openLimitModal,
       socialAccountTokens,
       updateSocialAccountTokens,
-      openTipTokenModal,
-      tipTokenRecords
+      openTipTokenModal
     }
   })
