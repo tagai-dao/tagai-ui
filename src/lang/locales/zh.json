@@ -54,6 +54,7 @@
   "notification": "通知",
   "docs": "文档",
   "auditReport": "审计报告",
+  "Amount": "数量",
   "loginView": {
     "loginWithTwitter": "登录推特",
     "authTwitterTip": "TagAI 的某些功能需要推特的相应权限，您可以根据需要选择需要授权的功能",
@@ -126,7 +127,12 @@
     "addToken3": "当你在推特上打赏或兑换代币时，如果交易金额大于限额，操作将被忽略。",
     "addToken4": "一天内所有打赏或兑换的金额都将计入每日限额。如果达到每日限额，您的交易都会被忽略，直到你重新设置限额或第二天再操作。",
     "wbnbDesc": "你不可以在推特上打赏WBNB，WBNB的授权额度和限额只用于打赏手续费。每次在推特上的打赏将消耗0.0005 WBNB。",
-    "refreshBalance": "刷新"
+    "refreshBalance": "刷新",
+    "toTwitterUsername": "输入推特用户名，比如：elonmusk",
+    "tipError1": "授权额度不足，请增加额度后再操作",
+    "tipError2": "超过交易限额，请增加限额后再操作",
+    "tipError3": "超过每日限额，请增加限额后再操作",
+    "tipError4": "余额不足"
   },
   "notificationView": {
     "ipShare": "IPShare",

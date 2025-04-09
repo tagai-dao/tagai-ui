@@ -53,7 +53,7 @@ onMounted(async () => {
       <div v-for="token of socialAccountModalStore.socialAccountTokens" :key="token.token"
            class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3 mb-2">
         <div class="flex items-start gap-2">
-          <div class="w-10 min-w-10 h-10 rounded-full bg-grey-normal-active shadow-tag-logo
+          <div class="w-10 min-w-10 h-10 cursor-pointer rounded-full bg-grey-normal-active shadow-tag-logo
                       flex items-center justify-center relative overflow-hidden">
             <img class="w-10" :src="token.logo" alt="">
           </div>
@@ -75,7 +75,9 @@ onMounted(async () => {
               {{ $t('balance') }}: {{ formatAmount(token.balance) }}
             </div>
           </div>
-          <button v-if="token.token != WETH" class="h-8 bg-gradient-primary rounded-full px-5 text-white text-h5">
+          <button v-if="token.token != WETH" 
+          class="h-8 bg-gradient-primary rounded-full px-5 text-white text-h5"
+          @click="socialAccountModalStore.openTipTokenModal(token)">
             {{$t('tip')}}
           </button>
         </div>

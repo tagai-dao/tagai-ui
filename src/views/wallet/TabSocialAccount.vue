@@ -2,6 +2,7 @@
 import AddTokenList from "@/views/wallet/social/AddTokenList.vue";
 import EditAllowance from "@/views/wallet/social/EditAllowance.vue";
 import AddNewToken from "@/views/wallet/social/AddNewToken.vue";
+import TipToken from "@/views/wallet/social/TipToken.vue";
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
 import EditLimit from "@/views/wallet/social/EditLimit.vue";
 import { useAccountStore } from "@/stores/web3";
@@ -99,6 +100,7 @@ onMounted(() => {
       <EditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditLimit"/>
       <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken"/>
       <WrapBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.WrapBNB"/>
+      <TipToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.TipToken"/>
     </el-dialog>
   </div>
 </template>

@@ -55,7 +55,7 @@ async function confirm() {
         class="h-12 w-full flex items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5"
         :disabled="loading"
         >
-        {{ accStore.ethConnectState == EthWalletState.Connected ? $t('confirm') : $t('connectWallet')}}
+        {{ accStore.ethConnectState == EthWalletState.Connected ? $t('confirm') : $t('connect')}}
         <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
     </div>
