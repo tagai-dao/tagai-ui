@@ -129,10 +129,17 @@
     "wbnbDesc": "你不可以在推特上打赏WBNB，WBNB的授权额度和限额只用于打赏手续费。每次在推特上的打赏将消耗0.0005 WBNB。",
     "refreshBalance": "刷新",
     "toTwitterUsername": "输入推特用户名，比如：elonmusk",
-    "tipError1": "授权额度不足，请增加额度后再操作",
-    "tipError2": "超过交易限额，请增加限额后再操作",
-    "tipError3": "超过每日限额，请增加限额后再操作",
-    "tipError4": "余额不足"
+    "tipError1": "授权额度不足",
+    "tipError2": "超过交易限额",
+    "tipError3": "超过每日限额",
+    "tipError4": "余额不足",
+    "tipError5": "手续费用不足",
+    "tipError6": "未绑定社交账户",
+    "tipError7": "已关闭",
+    "tipOut": "打赏 ${tick} 给 ${username}",
+    "receiveTip": "收到 ${tick} 来自 ${username}",
+    "viewOnBrowser": "在浏览器中查看",
+    "pending": "处理中"
   },
   "notificationView": {
     "ipShare": "IPShare",

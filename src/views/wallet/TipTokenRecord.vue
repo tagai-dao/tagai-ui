@@ -1,12 +1,13 @@
 <script setup lang="ts">
 
-import { formatAddress, formatAmount, formatPastTime } from "@/utils/helper";
-import { ref } from "vue";
+import { formatAddress, formatAmount, parseTimestamp } from "@/utils/helper";
+import { onMounted, ref } from "vue";
 import BackHeader from "@/layout/BackHeader.vue";
 import { getTipRecord } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useSocialAccountModalStore } from "@/stores/wallet";
+import { ChainConfig } from "@/config";
 import { type TwitterTipRecord, TwitterTipStatus, TwitterTipClaimStatus, TwitterTipErrorType } from "@/types";
 
 const accStore = useAccountStore()
@@ -16,8 +17,8 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 
-const gotoTweet = (tweet?: any) => {
-  window.open(`https://twitter.com/${tweet.twitterUsername}/status/${tweet.tweetId}`)
+const isOut = (twitterTipRecord: TwitterTipRecord) => {
+  return twitterTipRecord.fromTwitterId === accStore.getAccountInfo.twitterId
 }
 
 const onLoad = async () => {
@@ -30,12 +31,29 @@ const onRefresh = async () => {
     refreshing.value = true
     const res = await getTipRecord(accStore.getAccountInfo.twitterId)
     socialAccountModalStore.tipTokenRecords = res as TwitterTipRecord[]
+    console.log(socialAccountModalStore.tipTokenRecords)
   } catch (error) {
     handleErrorTip(error)
   } finally {
     refreshing.value = false
   }
 }
+
+const gotoTweet = (twitterTipRecord: TwitterTipRecord) => {
+  window.open(`https://twitter.com/${twitterTipRecord.fromTwitterUsername}/status/${twitterTipRecord.tweetId}`)
+}
+
+const gotoBrowser = (twitterTipRecord: TwitterTipRecord) => {
+  window.open(`${ChainConfig.browser}tx/${twitterTipRecord.transHash}`)
+}
+
+async function claim() {
+
+}
+
+onMounted(() => {
+  onRefresh()
+})
 
 </script>
 
@@ -57,49 +75,62 @@ const onRefresh = async () => {
                 :finished-text="$t('noMore')"
                 :offset="50"
                 @load="onLoad">
-        <div class="flex items-center gap-3 text-h4 bg-white p-3 rounded-xl mb-2">
-          <img class="w-10 h-10 min-w-10 transform rotate-180" src="~@/assets/icons/icon-tips-send.svg" alt="">
-          <div class="flex-1 flex justify-between flex-col gap-1 web:flex-row web:items-stretch">
-            <div class="flex-1 truncate flex items-center gap-1 cursor-pointer">
-              <img class="w-5 h-5 min-w-5" src="~@/assets/icons/icon-default-avatar.svg" alt="">
-              <span class="truncate text-lg">username tiped $TTAI to you</span>
-            </div>
-            <div class="flex items-center">
-              <div class="text-h3 text-green-34">+10000 $TTAI</div>
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3 text-h4 bg-white p-3 rounded-xl mb-2">
-          <img class="w-10 h-10 min-w-10 transform rotate-180" src="~@/assets/icons/icon-tips-received.svg" alt="">
+        <div v-for="(twitterTipRecord, index) in socialAccountModalStore.tipTokenRecords" :key="index" class="flex items-center gap-3 text-h4 bg-white p-3 rounded-xl mb-2">
+          <img class="w-6 h-6 min-w-6 rotate-180" v-if="isOut(twitterTipRecord)" src="~@/assets/icons/icon-tips-received.svg" alt="">
+          <img class="w-6 h-6 min-w-6 rotate-180" v-else src="~@/assets/icons/icon-tips-send.svg" alt="">
           <div class="flex-1 flex flex-col gap-1">
             <div class="flex justify-between flex-col gap-1 web:flex-row web:items-stretch">
               <div class="flex flex-col gap-1">
                 <div class="truncate flex items-center gap-1 cursor-pointer">
                   <div class="flex items-center">
-                    <img class="w-5 h-5 min-w-5" src="~@/assets/icons/icon-default-avatar.svg" alt="">
-                    <img class="w-5 h-5 min-w-5 -ml-[6px] z-9" src="~@/assets/icons/icon-default-coin.svg" alt="">
+                    <img class="w-7 h-7 min-w-7 rounded-full" :src="twitterTipRecord.fromProfile" alt="">
+                    <img class="w-7 h-7 min-w-7 -ml-[6px] z-9 rounded-full" :src="twitterTipRecord.toProfile" alt="">
                   </div>
-                  <div class="flex items-center gap-1">
-                    <span class="truncate text-lg">tiped $TTAI to @username</span>
+                  <div class="flex items-center gap-1 ml-2">
+                    <span v-if="isOut(twitterTipRecord)" class="truncate text-lg">{{$t('profileView.tipOut', {tick: twitterTipRecord.tick, username: twitterTipRecord.toTwitterUsername})}}</span>
+                    <span v-else class="truncate text-lg">{{$t('profileView.receiveTip', {tick: twitterTipRecord.tick, username: twitterTipRecord.fromTwitterUsername})}}</span>
                     <span class="mx-4px"> · </span>
-                    <button @click="gotoTweet">
-                      <img class="w-4 h-4" src="~@/assets/icons/icon-link-x.svg" alt="">
-                    </button>
-                    <button @click="gotoTweet">
-                      <img class="w-4 h-4" src="~@/assets/icons/icon-link-official.svg" alt="">
+                    <span class="text-sm text-gray-normal">{{ parseTimestamp(new Date(twitterTipRecord.time).getTime() - 8000 * 3600) }}</span>
+                    <span class="mx-4px"> · </span>
+                    <button v-if="twitterTipRecord.tweetId" @click="gotoTweet(twitterTipRecord)">
+                      <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
                     </button>
                   </div>
                 </div>
                 <div class="h-7 hidden web:flex items-center">
-                  <div class="text-red-normal opacity-80 text-sm">Fail: exceed</div>
+                  <button v-if="twitterTipRecord.status === TwitterTipStatus.Success" class="text-sm text-green-400 underline">
+                    {{ $t('profileView.viewOnBrowser') }}
+                  </button>
+                  <div v-else-if="twitterTipRecord.status === TwitterTipStatus.Pending" class="text-yellow-400 opacity-80 text-sm">
+                    {{ $t('profileView.pending') }}
+                  </div>
+                  <div v-else-if="twitterTipRecord.errorType != TwitterTipErrorType.Success" class="text-red-normal opacity-80 text-sm">
+                      <span>Fail: </span>
+                      <span>{{ $t(`profileView.tipError${twitterTipRecord.errorType}`) }}</span> 
+                  </div>
                 </div>
               </div>
               <div class="flex justify-between items-center web:flex-col web:items-end">
-                <div class="text-h3 text-red-normal leading-6">-10000 $TTAI</div>
-                <button class="bg-orange-normal text-white h-7 rounded-full px-4">{{$t('claim')}}</button>
+                <div class="text-h3 text-red-normal leading-6" :class="{'text-green-400': !isOut(twitterTipRecord)}">{{ (isOut(twitterTipRecord) ? '-' : "+")  + formatAmount(twitterTipRecord.amount) }} ${{ twitterTipRecord.tick }}</div>
+                <button v-if="twitterTipRecord.claimStatus === TwitterTipClaimStatus.PendingClaim" 
+                  class="bg-orange-normal text-white h-7 rounded-full px-4"
+                  @claim="claim">
+                  {{$t('claim')}}
+                </button>
               </div>
               <div class="web:hidden">
-                <div class="text-red-normal opacity-80 text-sm">Fail: exceed</div>
+                <button v-if="twitterTipRecord.status === TwitterTipStatus.Success" 
+                  class="text-sm text-green-400 underline"
+                  @click="gotoBrowser(twitterTipRecord)">
+                    {{ $t('profileView.viewOnBrowser') }}
+                  </button>
+                <div v-else-if="twitterTipRecord.status === TwitterTipStatus.Pending" class="text-yellow-400 opacity-80 text-sm">
+                  {{ $t('profileView.pending') }}
+                </div>
+                <div v-else-if="twitterTipRecord.errorType != TwitterTipErrorType.Success" class="text-red-normal opacity-80 text-sm">
+                    <span>Fail: </span>
+                    <span>{{ $t(`profileView.tipError${twitterTipRecord.errorType}`) }}</span> 
+                </div>
               </div>
             </div>
           </div>

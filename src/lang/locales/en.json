@@ -134,7 +134,14 @@
     "tipError1": "Insufficient allowance",
     "tipError2": "Over transaction limit",
     "tipError3": "Over daily limit",
-    "tipError4": "Insufficient balance"
+    "tipError4": "Insufficient balance",
+    "tipError5": "Insufficient fee",
+    "tipError6": "Not bound social account",
+    "tipError7": "Closed",
+    "tipOut": "Tip ${tick} to ${username}",
+    "receiveTip": "Received ${tick} from ${username}",
+    "viewOnBrowser": "View on browser",
+    "pending": "Pending"
   },
   "notificationView": {
     "ipShare": "IPShare",
