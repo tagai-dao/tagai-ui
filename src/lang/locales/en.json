@@ -141,7 +141,8 @@
     "tipOut": "Tip ${tick} to ${username}",
     "receiveTip": "Received ${tick} from ${username}",
     "viewOnBrowser": "View on browser",
-    "pending": "Pending"
+    "pending": "Pending",
+    "fail": "Fail"
   },
   "notificationView": {
     "ipShare": "IPShare",

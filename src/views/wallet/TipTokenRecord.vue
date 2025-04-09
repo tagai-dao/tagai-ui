@@ -1,14 +1,15 @@
 <script setup lang="ts">
 
 import { formatAddress, formatAmount, parseTimestamp } from "@/utils/helper";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, type PropType } from "vue";
 import BackHeader from "@/layout/BackHeader.vue";
 import { getTipRecord } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useSocialAccountModalStore } from "@/stores/wallet";
 import { ChainConfig } from "@/config";
-import { type TwitterTipRecord, TwitterTipStatus, TwitterTipClaimStatus, TwitterTipErrorType } from "@/types";
+import { type TwitterTipRecord, TwitterTipStatus, TwitterTipClaimStatus, TwitterTipErrorType, type Account } from "@/types";
+import { userInfo } from "os";
 
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
@@ -16,9 +17,15 @@ const socialAccountModalStore = useSocialAccountModalStore()
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
+const props = defineProps({
+  userInfo: {
+    type: Object as PropType<Account>,
+    required: false
+  }
+})
 
 const isOut = (twitterTipRecord: TwitterTipRecord) => {
-  return twitterTipRecord.fromTwitterId === accStore.getAccountInfo.twitterId
+  return twitterTipRecord.fromTwitterId === (props.userInfo?.twitterId ?? accStore.getAccountInfo.twitterId)
 }
 
 const onLoad = async () => {
@@ -29,7 +36,7 @@ const onRefresh = async () => {
   try {
     if (refreshing.value) return
     refreshing.value = true
-    const res = await getTipRecord(accStore.getAccountInfo.twitterId)
+    const res = await getTipRecord(props.userInfo?.twitterId ?? accStore.getAccountInfo.twitterId)
     socialAccountModalStore.tipTokenRecords = res as TwitterTipRecord[]
     console.log(socialAccountModalStore.tipTokenRecords)
   } catch (error) {
@@ -105,13 +112,13 @@ onMounted(() => {
                     {{ $t('profileView.pending') }}
                   </div>
                   <div v-else-if="twitterTipRecord.errorType != TwitterTipErrorType.Success" class="text-red-normal opacity-80 text-sm">
-                      <span>Fail: </span>
+                      <span>{{ $t('profileView.fail') }}: </span>
                       <span>{{ $t(`profileView.tipError${twitterTipRecord.errorType}`) }}</span> 
                   </div>
                 </div>
               </div>
               <div class="flex justify-between items-center web:flex-col web:items-end">
-                <div class="text-h3 text-red-normal leading-6" :class="{'text-green-400': !isOut(twitterTipRecord)}">{{ (isOut(twitterTipRecord) ? '-' : "+")  + formatAmount(twitterTipRecord.amount) }} ${{ twitterTipRecord.tick }}</div>
+                <div class="text-h3 leading-6" :class="isOut(twitterTipRecord) ? 'text-red-normal' : 'text-green-400'">{{ (isOut(twitterTipRecord) ? '-' : "+")  + formatAmount(twitterTipRecord.amount) }} ${{ twitterTipRecord.tick }}</div>
                 <button v-if="twitterTipRecord.claimStatus === TwitterTipClaimStatus.PendingClaim" 
                   class="bg-orange-normal text-white h-7 rounded-full px-4"
                   @claim="claim">
@@ -128,7 +135,7 @@ onMounted(() => {
                   {{ $t('profileView.pending') }}
                 </div>
                 <div v-else-if="twitterTipRecord.errorType != TwitterTipErrorType.Success" class="text-red-normal opacity-80 text-sm">
-                    <span>Fail: </span>
+                    <span>{{ $t('profileView.fail') }}: </span>
                     <span>{{ $t(`profileView.tipError${twitterTipRecord.errorType}`) }}</span> 
                 </div>
               </div>

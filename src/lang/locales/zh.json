@@ -139,7 +139,8 @@
     "tipOut": "打赏 ${tick} 给 ${username}",
     "receiveTip": "收到 ${tick} 来自 ${username}",
     "viewOnBrowser": "在浏览器中查看",
-    "pending": "处理中"
+    "pending": "处理中",
+    "fail": "失败"
   },
   "notificationView": {
     "ipShare": "IPShare",
