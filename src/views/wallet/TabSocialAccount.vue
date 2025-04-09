@@ -10,14 +10,21 @@ import { onMounted, ref } from "vue";
 import { getRewardsClaimd } from "@/utils/twitterTip";
 import { ethers } from "ethers";
 import WrapBNB from "@/views/wallet/social/WrapBNB.vue";
+import { useAccount } from "@/composables/useAccount";
 
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
 const needClaim = ref(false)
+const { updateBalance } = useAccount();
 
 function setModalType(type: SocialAccountModalType) {
   socialAccountModalStore.modalType = type
   socialAccountModalStore.modalVisible = true
+}
+
+function refreshBalance() {
+  updateBalance()
+  socialAccountModalStore.updateSocialAccountTokens()
 }
 
 onMounted(() => {
@@ -53,6 +60,9 @@ onMounted(() => {
                 </div>
               </template>
             </el-popover>
+            <button @click="refreshBalance">
+              <img class="w-5 min-w-5 min-h-5" src="~@/assets/icons/icon-refresh.svg" alt="">
+            </button>
           </div>
         </div>
       </div>
@@ -66,7 +76,7 @@ onMounted(() => {
           {{$t('profileView.wrap')}}
         </button>
         <button @click="$router.push('/tip-record')" class="relative">
-          <img class="w-10 h-10" src="~@/assets/icons/icon-record.svg" alt="">
+          <img class="w-8 h-8" src="~@/assets/icons/icon-record.svg" alt="">
           <div class="absolute top-[-3px] right-[-3px] w-4 h-4 bg-red-normal rounded-full" v-if="needClaim"></div>
         </button>
       </div>

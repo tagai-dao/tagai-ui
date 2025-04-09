@@ -100,25 +100,69 @@ async function confirm() {
     </div>
     <div class="py-3">
       <div class="flex flex-col gap-1">
-        <label for="docs" class="leading-6 text-lg">{{$t('profileView.inputTick')}}:</label>
+        <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputTick')}}:
+            <el-popover popper-class="c-popper" width="300">
+              <template #reference>
+                <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
+              </template>
+              <template #default>
+                <div class="bg-white rounded-xl p-3 shadow-popper-tip">
+                  <div class="mb-1">{{ $t('profileView.addToken1') }}</div>
+                </div>
+              </template>
+            </el-popover>
+        </label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="tick" type="text" :placeholder="$t('profileView.inputTickPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showTickerError">{{$t('profileView.tickerError')}}</span>
       </div>
       <div class="flex flex-col gap-1">
-        <label for="docs" class="leading-6 text-lg">{{$t('profileView.inputAllowance')}}:</label>
+        <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputAllowance')}}:
+            <el-popover popper-class="c-popper" width="300">
+              <template #reference>
+                <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
+              </template>
+              <template #default>
+                <div class="bg-white rounded-xl p-3 shadow-popper-tip">
+                  <div class="mb-1">{{ $t('profileView.addToken2') }}</div>
+                </div>
+              </template>
+            </el-popover>
+        </label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="allowance" type="number" :placeholder="$t('profileView.inputAllowancePlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showInputAllowance">{{$t('profileView.inputAllowancePlaceholder')}}</span>
       </div>
       <div class="flex flex-col gap-1">
-        <label for="docs" class="leading-6 text-lg">{{$t('profileView.inputTransactionLimit')}}:</label>
+        <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputTransactionLimit')}}:
+            <el-popover popper-class="c-popper" width="300">
+              <template #reference>
+                <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
+              </template>
+              <template #default>
+                <div class="bg-white rounded-xl p-3 shadow-popper-tip">
+                  <div class="mb-1">{{ $t('profileView.addToken3') }}</div>
+                </div>
+              </template>
+            </el-popover>
+        </label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="transactionLimit" type="number" :placeholder="$t('profileView.inputTransactionLimitPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showInputTransactionLimit">{{$t('profileView.inputTransactionLimitPlaceholder')}}</span>
       </div>
       <div class="flex flex-col gap-1">
-        <label for="docs" class="leading-6 text-lg">{{$t('profileView.inputDailyLimit')}}:</label>
+        <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputDailyLimit')}}:
+            <el-popover popper-class="c-popper" width="300">
+              <template #reference>
+                <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
+              </template>
+              <template #default>
+                <div class="bg-white rounded-xl p-3 shadow-popper-tip">
+                  <div class="mb-1">{{ $t('profileView.addToken4') }}</div>
+                </div>
+              </template>
+            </el-popover>
+        </label>
         <input class="border-b-[1px] border-grey-e6 leading-6 text-h3 my-3"
                v-model="dailyLimit" type="number" :placeholder="$t('profileView.inputDailyLimitPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showInputDailyLimit">{{$t('profileView.inputDailyLimitPlaceholder')}}</span>

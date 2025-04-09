@@ -60,12 +60,22 @@ onMounted(async () => {
           <div class="flex-1">
             <div class="flex gap-2 items-center">
               <span class="text-grey-normal text-h3 leading-5">{{ token.tick }}</span>
+              <el-popover v-if="token.tick == 'WBNB'" popper-class="c-popper" width="300">
+              <template #reference>
+                <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
+              </template>
+              <template #default>
+                <div class="bg-white rounded-xl p-3 shadow-popper-tip">
+                  <div class="mb-1">{{ $t('profileView.wbnbDesc') }}</div>
+                </div>
+              </template>
+            </el-popover>
             </div>
             <div class="flex justify-between items-center mt-1 text-h4">
               {{ $t('balance') }}: {{ formatAmount(token.balance) }}
             </div>
           </div>
-          <button class="h-8 bg-gradient-primary rounded-full px-5 text-white text-h5">
+          <button v-if="token.token != WETH" class="h-8 bg-gradient-primary rounded-full px-5 text-white text-h5">
             {{$t('tip')}}
           </button>
         </div>
