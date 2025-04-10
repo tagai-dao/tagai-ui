@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, reactive } from "vue";
+import { ref, onMounted, computed, reactive, ErrorCodes } from "vue";
 import BondEthModal from "@/components/login/BondEthModal.vue";
 import { useAccountStore } from "@/stores/web3";
 import { EthWalletState } from "@/stores/web3";
 import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } from "@/config";
+import ErrCode from '@/errCode'
 import { checkEns, registerSteem, checkFarcaster } from "@/apis/api";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
@@ -275,6 +276,9 @@ async function register() {
     
     useModalStore().setModalVisible(false)
   } catch (error) {
+    if(error === ErrCode.TRANSACTION_INVALID) {
+      localStorage.removeItem('payTokenHash')
+    }
     handleErrorTip(error)
   } finally{
     useModalStore().setModalCloseEnable(true);
