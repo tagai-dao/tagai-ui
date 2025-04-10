@@ -136,11 +136,13 @@
     "tipError5": "手续费用不足",
     "tipError6": "未绑定社交账户",
     "tipError7": "已关闭",
-    "tipOut": "打赏 ${tick} 给 ${username}",
-    "receiveTip": "收到 ${tick} 来自 ${username}",
+    "tipOut": "打赏 ${tick} 给 {username}",
+    "receiveTip": "收到 ${tick} 来自 {username}",
     "viewOnBrowser": "在浏览器中查看",
     "pending": "处理中",
-    "fail": "失败"
+    "fail": "失败",
+    "claimToken": "领取打赏",
+    "claimTokenDesc": "你可以一次性领取以下所有打赏的代币。"
   },
   "notificationView": {
     "ipShare": "IPShare",

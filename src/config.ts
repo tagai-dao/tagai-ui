@@ -13,7 +13,7 @@ export const ChainConfig = {
     decimals: 18,
     multiConfig: {
         rpcUrl: 'https://bsc-dataseed.binance.org',
-        multicallAddress: '0x41263cba59eb80dc200f3e2544eda4ed6a90e76c',
+        multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
         interval: 3000
     }
 }

@@ -7,14 +7,17 @@ import BackHeader from "@/layout/BackHeader.vue";
 import { getTipRecord } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
-import { useSocialAccountModalStore } from "@/stores/wallet";
+import { useSocialAccountModalStore, SocialAccountModalType } from "@/stores/wallet";
 import { ChainConfig } from "@/config";
-import { type TwitterTipRecord, TwitterTipStatus, TwitterTipClaimStatus, TwitterTipErrorType, type Account } from "@/types";
-import { useRoute } from "vue-router";
-
+import { type TwitterTipRecord, TwitterTipStatus, TwitterTipClaimStatus, TwitterTipErrorType, type Account, GlobalModalType } from "@/types";
+import { useRoute, useRouter } from "vue-router";
+import { useModalStore } from "@/stores/common";
+import ClaimTipToken from "@/views/wallet/social/ClaimTipToken.vue";
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
+const modalStore = useModalStore()
 const route = useRoute()
+const router = useRouter()
 
 const list = ref<TwitterTipRecord[]>([])
 
@@ -73,7 +76,19 @@ const gotoBrowser = (twitterTipRecord: TwitterTipRecord) => {
 }
 
 async function claim() {
+  if (!accStore.getAccountInfo?.twitterId) {
+    console.log(1)
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return;
+  }
+  if (!route.path.includes('tip-record')) {
+    console.log(2)
+    router.push('/tip-record')
+    return;
+  }
+  console.log(3)
 
+  socialAccountModalStore.openClaimTipTokenModal()
 }
 
 onMounted(() => {
@@ -127,8 +142,8 @@ onMounted(() => {
                     </UserAvatar>
                   </div>
                   <div class="flex items-center gap-1 ml-2">
-                    <span v-if="isOut(twitterTipRecord)" class="truncate text-lg">{{$t('profileView.tipOut', {tick: twitterTipRecord.tick, username: twitterTipRecord.toTwitterUsername})}}</span>
-                    <span v-else class="truncate text-lg">{{$t('profileView.receiveTip', {tick: twitterTipRecord.tick, username: twitterTipRecord.fromTwitterUsername})}}</span>
+                    <span v-if="isOut(twitterTipRecord)" class="truncate text-lg">{{$t('profileView.tipOut', {tick: twitterTipRecord.tick, username: '@' + twitterTipRecord.toTwitterUsername})}}</span>
+                    <span v-else class="truncate text-lg">{{$t('profileView.receiveTip', {tick: twitterTipRecord.tick, username: '@' + twitterTipRecord.fromTwitterUsername})}}</span>
                     <span class="mx-4px"> · </span>
                     <span class="text-sm text-gray-normal">{{ parseTimestamp(new Date(twitterTipRecord.time).getTime() - 8000 * 3600) }}</span>
                     <span class="mx-4px"> · </span>
@@ -154,7 +169,7 @@ onMounted(() => {
                 <div class="text-h3 leading-6" :class="isOut(twitterTipRecord) ? 'text-red-normal' : 'text-green-400'">{{ (isOut(twitterTipRecord) ? '-' : "+")  + formatAmount(twitterTipRecord.amount) }} ${{ twitterTipRecord.tick }}</div>
                 <button v-if="twitterTipRecord.claimStatus === TwitterTipClaimStatus.PendingClaim" 
                   class="bg-orange-normal text-white h-7 rounded-full px-4"
-                  @claim="claim">
+                  @click="claim">
                   {{$t('claim')}}
                 </button>
               </div>
@@ -177,6 +192,14 @@ onMounted(() => {
         </div>
       </van-list>
     </van-pull-refresh>
+    <el-dialog v-model="socialAccountModalStore.modalVisible"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px]"
+               width="90%" :show-close="false"
+               align-center
+               destroy-on-close >
+      <ClaimTipToken @claimed="onRefresh" v-if="socialAccountModalStore.modalType==SocialAccountModalType.ClaimTipToken"/>
+    </el-dialog>
   </div>
 </template>
 

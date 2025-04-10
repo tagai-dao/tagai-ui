@@ -1,19 +1,40 @@
 import { getContract } from "./contract";
-import type { Community, CreateCommunity, SocialAccountTokens, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, CoinPurse } from "@/config";
-import { getTransactionReceipt } from "./web3";
+import type { SocialAccountTokens } from "@/types";
+import { ChainConfig, CoinPurse } from "@/config";
 import { ethers } from 'ethers'
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, Ether, ClaimFee } from "@/config";
-import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
-import errCode from "@/errCode";
-import _ from 'lodash'
 import { useAccountStore } from "@/stores/web3";
 
 export const getRewardsClaimd = async (twitterId: string) => {
     let coinPurse = await getContract('CoinPurse', undefined, true);
     let claimEthAddress = await coinPurse.alreadyWithdraw(twitterId);
     return claimEthAddress;
+}
+
+export const getPendingClaimTokens = async (twitterId: string, tokens: string[]) => {
+    tokens = tokens.filter(ethers.isAddress)
+    if (tokens.length === 0) {
+        return []
+    }
+    let calls = []
+    for (let token of tokens) {
+        calls.push({
+            target: CoinPurse,
+            call: ['hostingAmount(uint256,address)(uint256)', twitterId, token],
+            returns: [
+                [token, (val: any) => val.toString() / 1e18]
+            ]
+        })
+    }
+    let res = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed
+}
+
+export const claimTokens = async (twitterId: string, signature: string, tokens: string[]) => {
+    let coinPurse = await getContract('CoinPurse');
+    let tx = await coinPurse.withdraw(BigInt(twitterId), tokens, signature);
+    await tx.wait();
+    return tx;
 }
 
 export const wrapBNB = async (amount: bigint) => {

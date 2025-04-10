@@ -213,8 +213,11 @@ export const getClankerTickTweets = async (contract: string, pageIndex?: number)
 export const getPendingClaimTokens = async (twitterId: string) =>
   get(BACKEND_API_URL + '/twitterTip/pendingClaimTokens', {twitterId})
 
+export const getClaimTipTokenSignature = async (twitterId: string) =>
+  post(BACKEND_API_URL + '/twitterTip/getClaimSignature', {twitterId})
+
 export const claimTokens = async (twitterId: string) =>
-  get(BACKEND_API_URL + '/twitterTip/claimTokens', {twitterId})
+  post(BACKEND_API_URL + '/twitterTip/claimTokens', {twitterId})
 
 export const getTipRecord = async (twitterId: string, pageIndex?: number, pages?: number) =>
   get(BACKEND_API_URL + '/twitterTip/tipList', {twitterId, pageIndex, pages})

@@ -8,13 +8,16 @@ export enum SocialAccountModalType {
   WrapBNB,
   EditAllowance,
   EditLimit,
-  TipToken
+  TipToken,
+  ClaimTipToken
 }
 export const useSocialAccountModalStore = defineStore(
   'socialAccountModal', () => {
     const modalVisible = ref(false)
     const modalType = ref(SocialAccountModalType.AddToken)
     const modalCloseEnable = ref(true)
+
+    const needClaim = ref(false)
     const socialAccountTokens = ref<SocialAccountTokens[]>([])
     const editTokenInfo = ref<SocialAccountTokens|null>(null)
 
@@ -50,6 +53,11 @@ export const useSocialAccountModalStore = defineStore(
       modalVisible.value = true
     }
 
+    const openClaimTipTokenModal = () => {
+      modalType.value = SocialAccountModalType.ClaimTipToken
+      modalVisible.value = true
+    }
+
     return {
       modalType,
       modalVisible,
@@ -61,6 +69,8 @@ export const useSocialAccountModalStore = defineStore(
       openLimitModal,
       socialAccountTokens,
       updateSocialAccountTokens,
-      openTipTokenModal
+      openTipTokenModal,
+      needClaim,
+      openClaimTipTokenModal
     }
   })

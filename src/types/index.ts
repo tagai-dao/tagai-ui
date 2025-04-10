@@ -333,6 +333,13 @@ export type SocialAccountTokens = {
   balance: number
 }
 
+export type PendingClaimToken = {
+  token: string,
+  amount: number,
+  logo: string,
+  tick: string
+}
+
 export type TwitterTipRecord = {
   fromTwitterId: string,
   fromTwitterName: string,

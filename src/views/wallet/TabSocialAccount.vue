@@ -15,7 +15,6 @@ import { useAccount } from "@/composables/useAccount";
 
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
-const needClaim = ref(false)
 const { updateBalance } = useAccount();
 
 function setModalType(type: SocialAccountModalType) {
@@ -30,7 +29,7 @@ function refreshBalance() {
 
 onMounted(() => {
   getRewardsClaimd(accStore.getAccountInfo.twitterId).then((res:any) => {
-    needClaim.value = res == ethers.ZeroAddress;
+    socialAccountModalStore.needClaim = res == ethers.ZeroAddress;
   })
 })
 
@@ -85,7 +84,7 @@ onMounted(() => {
         </button>
         <button @click="$router.push('/tip-record')" class="relative">
           <img class="w-8 h-8" src="~@/assets/icons/icon-record.svg" alt="">
-          <div class="absolute top-[-3px] right-[-3px] w-4 h-4 bg-red-normal rounded-full" v-if="needClaim"></div>
+          <div class="absolute top-[-3px] right-[-3px] w-4 h-4 bg-red-normal rounded-full" v-if="socialAccountModalStore.needClaim"></div>
         </button>
       </div>
     </div>
