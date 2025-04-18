@@ -48,6 +48,7 @@ export const setMetaMaskSDK = async () => {
         switch: true
     })
     console.log(tpWallet)
+    return;
     mmSdk = new MetaMaskSDK({
         checkInstallationImmediately: true,
         dappMetadata: {
