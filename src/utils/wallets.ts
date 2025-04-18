@@ -48,6 +48,8 @@ export const setMetaMaskSDK = async () => {
         switch: true
     })
     console.log(tpWallet)
+    alert(tpWallet)
+    alert(JSON.stringify(tpWallet))
     return;
     mmSdk = new MetaMaskSDK({
         checkInstallationImmediately: true,
