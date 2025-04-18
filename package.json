@@ -30,6 +30,7 @@
     "mitt": "^3.0.1",
     "pinia": "^2.1.7",
     "steem": "^0.7.11",
+    "tp-js-sdk": "^3.7.14",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "vant": "^4.9.1",

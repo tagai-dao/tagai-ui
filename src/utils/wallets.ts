@@ -1,8 +1,9 @@
-import { ethers } from 'ethers';
+import { ethers, Wallet } from 'ethers';
 import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { uiLog } from '@/apis/api';
 import { MetaMaskSDK } from '@metamask/sdk';
+import tp from 'tp-js-sdk'
 
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
@@ -42,6 +43,11 @@ const detectEip6963 = () => {
 
 export const setMetaMaskSDK = async () => {
     console.log(1)
+    const tpWallet = tp.getWallet({
+        walletTypes: ['eth'],
+        switch: true
+    })
+    console.log(tpWallet)
     mmSdk = new MetaMaskSDK({
         checkInstallationImmediately: true,
         dappMetadata: {
