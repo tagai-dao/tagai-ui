@@ -41,7 +41,7 @@ export const usePost = (tweet: Tweet) => {
       }else {
         tempContent += `${strList[0]}<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`
       }
-      content = strList.slice(1).join(url)
+      tempContent = strList.slice(1).join(url)
     }
     return tempContent || content;
   });
