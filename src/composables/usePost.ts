@@ -1,6 +1,6 @@
 import { ref, computed, onMounted } from "vue";
 import { IgnoreAuthor } from "@/config";
-import type {Tweet} from "@/types";
+import type { Tweet } from "@/types";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 export const usePost = (tweet: Tweet) => {
   const urlReg =
@@ -29,25 +29,21 @@ export const usePost = (tweet: Tweet) => {
 
   const content = computed(() => {
     let content = "";
-    content = tweet.content??'';
+    content = tweet.content ?? '';
     content = content.replace(reg, "");
-    let tempContent = ''
-    for (let i = 0 ; i < urls.value.length; i++) {
+    for (let i = 0; i < urls.value.length; i++) {
       const url = urls.value[i]
-      const strList = content.split(url)
       if (url.startsWith(window.location.origin + '/commerce') || url.startsWith('https://x.com') || url.startsWith('https://twitter.com')) {
-        // content = content.replaceAll(url, '');
-        tempContent += `${strList[0]}`
-      }else {
-        tempContent += `${strList[0]}<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`
+        content = content.replace(url, '');
+      } else {
+        content = content.replace(url, `<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`)
       }
-      tempContent = strList.slice(1).join(url)
     }
-    return tempContent || content;
+    return content;
   });
 
   const isIgnoreAccount = computed(() => {
-    return IgnoreAuthor.indexOf(tweet?.twitterId??'') > 0;
+    return IgnoreAuthor.indexOf(tweet?.twitterId ?? '') > 0;
   });
 
   const replaceEmptyImg = (e: any) => {
@@ -69,8 +65,8 @@ export const usePost = (tweet: Tweet) => {
 
   const clickLinkView = () => {
     try {
-      const info = JSON.parse(tweet?.pageInfo??'{}')
-      if(!info.url) return
+      const info = JSON.parse(tweet?.pageInfo ?? '{}')
+      if (!info.url) return
       window.open(info.url, '__blank')
     } catch (e) {
     }
@@ -78,8 +74,8 @@ export const usePost = (tweet: Tweet) => {
 
   const clickRetweetView = () => {
     try {
-      const info = JSON.parse(tweet?.retweetInfo??'{}');
-      if(!info.id) return
+      const info = JSON.parse(tweet?.retweetInfo ?? '{}');
+      if (!info.id) return
       window.open(`https://twitter.com/${info.author.username}/status/${info.id}`)
     } catch (e) {
 
