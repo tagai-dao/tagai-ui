@@ -122,7 +122,7 @@ const testTick = async () => {
   showInvalidName.value = false;
   showTickUsed.value = false;
   showTagForbidden.value = false;
-  const invalidTick = ['tiptag', 'tagai', 'deploy', 'no-tick-of-tiptag', 'no-tick-of-tagai']
+  const invalidTick = ['tiptag', 'tagai', 'deploy', 'no-tick-of-tiptag', 'no-tick-of-tagai', 'weth', 'wbnb', 'bnb', 'usdt', 'usdc', 'eth', 'btc', 'sol']
   if (invalidTick.includes(createForm.tick.toLowerCase())) {
     showTagForbidden.value = true;
     return false;

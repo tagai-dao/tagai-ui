@@ -1,7 +1,7 @@
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
-// export const BACKEND_API_URL = "http://localhost:3000";
+// export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
+export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
@@ -13,7 +13,7 @@ export const ChainConfig = {
     decimals: 18,
     multiConfig: {
         rpcUrl: 'https://bsc-dataseed.binance.org',
-        multicallAddress: '0x41263cba59eb80dc200f3e2544eda4ed6a90e76c',
+        multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
         interval: 3000
     }
 }
@@ -75,6 +75,8 @@ export const uniswapV2Factory = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
 export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10'
+
+export const CoinPurse = '0x2e95d469741564F2BA09b266625Db93D25793780'
 
 export const Ether = BigInt(1e18);
 

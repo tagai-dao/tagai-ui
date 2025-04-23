@@ -14,16 +14,19 @@ const modalVisible = ref(false)
 const ruleModalVisible = ref(false)
 const router = useRouter();
 const accStore = useAccountStore();
+const menuRef = ref()
 
 
 const { locale } = useI18n()
 
 const switchLanguage = (lang: string) => {
+  menuRef.value?.hide()
   locale.value = lang
   localStorage.setItem('language', lang)
 }
 
 function onClickWallet() {
+  menuRef.value?.hide()
   if (accStore.getAccountInfo?.ethAddr) {
     router.push('/wallet')
     return;
@@ -54,7 +57,8 @@ function onClickWallet() {
            src="~@/assets/icons/icon-search.svg" alt=""
            @click="modalVisible=true">
       <ProfileBtn class="hidden web:flex"/>
-      <el-popover popper-class="c-select-popper" trigger="click" width="120" :teleported="true" :persistent="false">
+      <el-popover popper-class="c-select-popper" ref="menuRef"
+                  trigger="click" width="120" :teleported="true" :persistent="false">
         <template #reference>
           <img class="w-5 cursor-pointer"
                src="~@/assets/icons/icon-menu.svg" alt="">
@@ -62,7 +66,7 @@ function onClickWallet() {
         <template #default>
           <div class="p-2 flex flex-col gap-3">
             <div v-if="!!useAccountStore().getAccountInfo?.twitterId"
-                 @click="$router.push('/notification')"
+                 @click="menuRef.hide(); $router.push('/notification')"
                  class="flex gap-2 items-center cursor-pointer">
               <div class="relative">
                 <img class="w-4" src="~@/assets/icons/icon-notification.svg" alt="">
@@ -92,11 +96,13 @@ function onClickWallet() {
               <span>中文</span>
             </div>
             <a class="flex gap-2 items-center cursor-pointer"
+               @click="menuRef.hide()"
                href="https://tagai.gitbook.io/tagai" target="_blank">
               <img class="w-4" src="~@/assets/icons/icon-docs.svg" alt="">
               <span>{{$t('docs')}}</span>
             </a>
             <a class="flex gap-2 items-center cursor-pointer"
+               @click="menuRef.hide()"
                href="https://scalebit.xyz/reports/TagAI-Audit-Report.pdf" target="_blank">
               <img class="w-4" src="~@/assets/icons/icon-warning.svg" alt="">
               <span>{{$t('auditReport')}}</span>
