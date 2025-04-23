@@ -76,7 +76,7 @@ export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10'
 
-export const CoinPurse = '0xA72D057Ac335FdDE8B4b28A2a6966FA77aa59550'
+export const CoinPurse = '0x2e95d469741564F2BA09b266625Db93D25793780'
 
 export const Ether = BigInt(1e18);
 
