@@ -8,6 +8,7 @@ import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { GlobalModalType } from "@/types";
 import { useModalStore } from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
+import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
@@ -71,10 +72,10 @@ async function confirm() {
             return
         }
         state.value = 2
-        // await approveCoinPurse(res.token, ethers.parseEther(allowance.value!.toString()))
+        await approveCoinPurse(res.token, ethers.parseEther(allowance.value!.toString()))
 
         state.value = 3
-        // await setTokenLimit(res.token, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()))
+        await setTokenLimit(res.token, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()))
 
         await setNewToken(accStore.getAccountInfo?.twitterId!, tick.value)
         emit('added');
