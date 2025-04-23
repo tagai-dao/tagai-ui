@@ -138,6 +138,7 @@
     "tipError5": "Insufficient fee",
     "tipError6": "Not bound social account",
     "tipError7": "Closed",
+    "tipError8": "WBNB allowance must be greater than 0.0005 WBNB",
     "tipOut": "Tip ${tick} to {username}",
     "receiveTip": "Received ${tick} from {username}",
     "viewOnBrowser": "View on browser",

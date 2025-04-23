@@ -18,6 +18,7 @@ const isValid = ref(false)
 const showInvalidAllowance = ref(false)
 const showInvalidTransLimit = ref(false)
 const showInvalidDayLimit = ref(false)
+const showInvalidWBNBAllowance = ref(false)
 const showInsufficientBalance = ref(false)
 
 watch(amount, () => {
@@ -52,6 +53,11 @@ function checkTipError() {
         isValid.value = false
         return;
     }
+    if (socialAccountModalStore.socialAccountTokens[0].allowance < 0.0001) {
+        showInvalidWBNBAllowance.value = true
+        isValid.value = false
+        return;
+    }
     if (token.allowance < amount.value) {
         showInvalidAllowance.value = true
         isValid.value = false
@@ -81,6 +87,7 @@ function resetTipError() {
     showInvalidAllowance.value = false
     showInvalidTransLimit.value = false
     showInvalidDayLimit.value = false
+    showInvalidWBNBAllowance.value = false
     showInsufficientBalance.value = false
     isValid.value = false
 }
@@ -108,6 +115,7 @@ function resetTipError() {
             <span v-else-if="showInvalidTransLimit">{{ $t('profileView.tipError2') }}</span>
             <span v-else-if="showInvalidDayLimit">{{ $t('profileView.tipError3') }}</span>
             <span v-else-if="showInsufficientBalance">{{ $t('profileView.tipError4') }}</span>
+            <span v-else-if="showInvalidWBNBAllowance">{{ $t('profileView.tipError8') }}</span>
         </div>
         <label for="docs" class="leading-6 text-lg flex gap-2">To:
         </label>

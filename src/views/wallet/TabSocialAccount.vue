@@ -97,7 +97,7 @@ onMounted(() => {
                destroy-on-close >
       <EditAllowance v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditAllowance"/>
       <EditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditLimit"/>
-      <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken" @added="refreshBalance"/>
+      <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken"/>
       <WrapBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.WrapBNB"/>
       <TipToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.TipToken"/>
     </el-dialog>

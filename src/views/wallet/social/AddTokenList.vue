@@ -20,10 +20,6 @@ const onLoad = async () => {
 }
 
 const onRefresh = async () => {
-
-}
-
-onMounted(async () => {
   let res: any = await getSettledTokens(accStore.getAccountInfo.twitterId!)
   if (!res || res.length == 0) {
     res = []
@@ -35,6 +31,10 @@ onMounted(async () => {
   }].concat(res)
   socialAccountModalStore.socialAccountTokens = res
   await socialAccountModalStore.updateSocialAccountTokens()
+}
+
+onMounted(async () => {
+  onRefresh()
 })
 
 </script>

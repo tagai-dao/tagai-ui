@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
 import { handleError, ref } from "vue";
-import { getTokenByTickOrCA, setNewToken } from "@/apis/api";
+import { getSettledTokens, getTokenByTickOrCA, setNewToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { ethers } from "ethers";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -9,6 +9,7 @@ import { GlobalModalType } from "@/types";
 import { useModalStore } from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
 import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
+import { WETH } from "@/config";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
@@ -78,6 +79,18 @@ async function confirm() {
         await setTokenLimit(res.token, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()))
 
         await setNewToken(accStore.getAccountInfo?.twitterId!, tick.value)
+
+        let updatedTokens: any = await getSettledTokens(accStore.getAccountInfo.twitterId!)
+        if (!updatedTokens || updatedTokens.length == 0) {
+          updatedTokens = []
+        }
+        updatedTokens = [{
+          token: WETH,
+          tick: 'WBNB',
+          logo: 'https://tiptag.oss-cn-shenzhen.aliyuncs.com/tagai/community/bnb-logo.svg'
+        }].concat(updatedTokens)
+        socialAccountModalStore.socialAccountTokens = updatedTokens
+        await socialAccountModalStore.updateSocialAccountTokens()
         emit('added');
         state.value = 0
         socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)
