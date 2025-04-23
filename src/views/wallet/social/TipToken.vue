@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useAccountStore, EthWalletState } from "@/stores/web3";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
@@ -14,12 +14,14 @@ const modalStore = useModalStore()
 const amount = ref<number|null>(null)
 const to = ref<string|null>(null)
 const loading = ref(false)
+const isValid = ref(false)
 const showInvalidAllowance = ref(false)
 const showInvalidTransLimit = ref(false)
 const showInvalidDayLimit = ref(false)
 const showInsufficientBalance = ref(false)
 
 watch(amount, () => {
+  console.log(1)
     checkTipError()
 })
 
@@ -43,29 +45,36 @@ function checkTipError() {
     resetTipError()
     const token = socialAccountModalStore.editTokenInfo;
     if (!token) {
+        isValid.value = false 
         return;
     }
     if (!amount.value) {
+        isValid.value = false
         return;
     }
     if (token.allowance < amount.value) {
         showInvalidAllowance.value = true
-        return false
+        isValid.value = false
+        return;
     }
     if (token.maxPerTx < amount.value) {
         showInvalidTransLimit.value = true
-        return false
+        isValid.value = false
+        return;
     }
     if (token.maxPerDay < amount.value) {
         showInvalidDayLimit.value = true
-        return false
+        isValid.value = false
+        return;
     }
     if (token.balance < amount.value) {
         showInsufficientBalance.value = true
-        return false
+        isValid.value = false
+        return;
     }
 
-    return true
+    isValid.value = true
+    return true;
 }
 
 function resetTipError() {
@@ -73,6 +82,7 @@ function resetTipError() {
     showInvalidTransLimit.value = false
     showInvalidDayLimit.value = false
     showInsufficientBalance.value = false
+    isValid.value = false
 }
 </script>
 
@@ -108,7 +118,7 @@ function resetTipError() {
       </div>
       <button class="h-12 w-full bg-orange-normal rounded-full flex gap-2 items-center justify-center text-white text-h5 mt-5"
         @click="confirm"
-        :disabled="!checkTipError()"
+        :disabled="!isValid"
       >
         {{ $t('confirm')}}
       </button>
