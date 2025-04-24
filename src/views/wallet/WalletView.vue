@@ -9,7 +9,7 @@ import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 
 const accStore = useAccountStore()
 const tabOptions = ['holding', 'socialAccount']
-const activeTab = ref('holding')
+const activeTab = ref('socialAccount')
 const needClaim = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
@@ -48,12 +48,12 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <!-- <div class="flex justify-around items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mx-3">
+    <div class="flex justify-around items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mx-3">
       <button v-for="tab of tabOptions" :key="tab"
               class="px-3 rounded-full h-8 text-h3 whitespace-nowrap"
               :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
-    </div> -->
+    </div>
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabHoldTag v-if="activeTab==='holding'"/>
