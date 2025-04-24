@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useSocialAccountModalStore } from "@/stores/wallet";
-import { getPendingClaimTokens, getSettledTokens } from "@/apis/api";
-import { useAccountStore } from "@/stores/web3";
-import { getTokensInfo } from "@/utils/twitterTip";
 import { WETH } from "@/config";
 import { type SocialAccountTokens } from "@/types";
 import { formatAmount } from "@/utils/helper";
 
 const socialAccountModalStore = useSocialAccountModalStore()
-const accStore = useAccountStore()
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
@@ -20,16 +16,6 @@ const onLoad = async () => {
 }
 
 const onRefresh = async () => {
-  let res: any = await getSettledTokens(accStore.getAccountInfo.twitterId!)
-  if (!res || res.length == 0) {
-    res = []
-  }
-  res = [{
-    token: WETH,
-    tick: 'WBNB',
-    logo: 'https://tiptag.oss-cn-shenzhen.aliyuncs.com/tagai/community/bnb-logo.svg'
-  }].concat(res)
-  socialAccountModalStore.socialAccountTokens = res
   await socialAccountModalStore.updateSocialAccountTokens()
 }
 

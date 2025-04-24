@@ -7,13 +7,15 @@ import { GlobalModalType } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { setTokenLimit } from "@/utils/twitterTip";
 import { ethers } from "ethers";
-
+import { useAccount } from "@/composables/useAccount";
 const socialAccountModalStore = useSocialAccountModalStore()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const transLimit = ref(0)
 const dayLimit = ref(0)
 const loading = ref(false)
+const emit = defineEmits(['added'])
+const { accountMismatch } = useAccount()
 
 async function confirm() {
   try {
@@ -24,7 +26,7 @@ async function confirm() {
       }
       loading.value = true
       await setTokenLimit(socialAccountModalStore.editTokenInfo!.token, ethers.parseEther(transLimit.value.toString()), ethers.parseEther(dayLimit.value.toString()))
-      await socialAccountModalStore.updateSocialAccountTokens()      
+      emit('added')
       socialAccountModalStore.setModalVisible(false, SocialAccountModalType.EditLimit)
   } catch (error) {
     handleErrorTip(error)
@@ -78,12 +80,15 @@ async function confirm() {
         </div>
       </div>
       <button class="h-12 w-full bg-orange-normal rounded-full flex gap-2 items-center justify-center text-white text-h5 mt-5"
-        :disabled="loading"
+        :disabled="loading || accountMismatch"
         @click="confirm"
       >
         {{ accStore.ethConnectState == EthWalletState.Connected ? $t('confirm') : $t('connect')}}
         <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
+      <div v-if="accountMismatch" class="text-red-500 text-sm mt-2">
+        {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
+      </div>
     </div>
   </div>
 </template>

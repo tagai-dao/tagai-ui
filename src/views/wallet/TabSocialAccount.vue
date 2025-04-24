@@ -16,6 +16,7 @@ import { useAccount } from "@/composables/useAccount";
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
 const { updateBalance } = useAccount();
+const isLoading = ref(false)
 
 function setModalType(type: SocialAccountModalType) {
   socialAccountModalStore.modalType = type
@@ -23,8 +24,13 @@ function setModalType(type: SocialAccountModalType) {
 }
 
 function refreshBalance() {
+  isLoading.value = true
   updateBalance()
-  socialAccountModalStore.updateSocialAccountTokens()
+  socialAccountModalStore.updateSocialAccountTokens().finally(() => {
+    setTimeout(() => {
+      isLoading.value = false
+    }, 500)
+  })
 }
 
 onMounted(() => {
@@ -62,7 +68,7 @@ onMounted(() => {
             </el-popover>
             <el-popover @click="refreshBalance" popper-class="c-popper" placement="right-start">
               <template #reference>
-                <img class="w-5 min-w-5 min-h-5 cursor-pointer" src="~@/assets/icons/icon-refresh.svg" alt="">
+                <img @click="refreshBalance" class="w-5 min-w-5 min-h-5 cursor-pointer" src="~@/assets/icons/icon-refresh.svg" alt="" :class="isLoading ? 'animate-spin' : ''">
               </template>
               <template #default>
                 <div class="bg-white rounded-xl flex p-3 shadow-popper-tip">
@@ -95,9 +101,9 @@ onMounted(() => {
                width="90%" :show-close="false"
                align-center
                destroy-on-close >
-      <EditAllowance v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditAllowance"/>
-      <EditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditLimit"/>
-      <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken"/>
+      <EditAllowance v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditAllowance" @added="refreshBalance"/>
+      <EditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditLimit" @added="refreshBalance"/>
+      <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken" @added="refreshBalance"/>
       <WrapBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.WrapBNB"/>
       <TipToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.TipToken"/>
     </el-dialog>

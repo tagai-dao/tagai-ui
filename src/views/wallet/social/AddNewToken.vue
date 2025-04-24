@@ -24,6 +24,7 @@ const state = ref(0)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const loading = ref(false)
+const { accountMismatch } = useAccount()
 
 const emit = defineEmits(['added'])
 
@@ -80,17 +81,6 @@ async function confirm() {
 
         await setNewToken(accStore.getAccountInfo?.twitterId!, tick.value)
 
-        let updatedTokens: any = await getSettledTokens(accStore.getAccountInfo.twitterId!)
-        if (!updatedTokens || updatedTokens.length == 0) {
-          updatedTokens = []
-        }
-        updatedTokens = [{
-          token: WETH,
-          tick: 'WBNB',
-          logo: 'https://tiptag.oss-cn-shenzhen.aliyuncs.com/tagai/community/bnb-logo.svg'
-        }].concat(updatedTokens)
-        socialAccountModalStore.socialAccountTokens = updatedTokens
-        await socialAccountModalStore.updateSocialAccountTokens()
         emit('added');
         state.value = 0
         socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)
@@ -181,11 +171,13 @@ async function confirm() {
                v-model="dailyLimit" type="number" :placeholder="$t('profileView.inputDailyLimitPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showInputDailyLimit">{{$t('profileView.inputDailyLimitPlaceholder')}}</span>
       </div>
-      <button @click="confirm" class="h-12 w-full flex flex-row items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5" :disabled="loading">
+      <button @click="confirm" class="h-12 w-full flex flex-row items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5" :disabled="loading || accountMismatch">
         {{ accStore.ethConnectAddress ? $t('confirm') : $t('connect')}}
         <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
-      
+      <div v-if="accountMismatch" class="text-red-500 text-sm mt-2">
+        {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
+      </div>
       <!-- 进度条组件 -->
       <div class="mt-6">
         <div class="flex items-center justify-between mb-2">

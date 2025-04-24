@@ -15,12 +15,11 @@ const t = i18n.global.t;
 const modalStore = useModalStore();
 const accStore = useAccountStore();
 const socialAccountModalStore = useSocialAccountModalStore()
-const { updateBalance } = useAccount();
+const { updateBalance, accountMismatch } = useAccount();
 // 状态变量
 const loading = ref(false);
 const bnbAmount = ref('');
 const isWrap = ref(true); // true: BNB -> WBNB, false: WBNB -> BNB
-
 
 const onSwitch = () => {
   isWrap.value = !isWrap.value;
@@ -108,11 +107,14 @@ const onConvert = async () => {
       <button
         class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
         @click="onConvert"
-        :disabled="loading || !bnbAmount"
+        :disabled="loading || !bnbAmount || accountMismatch"
       >
         <span>{{ accStore.ethConnectState === EthWalletState.Connected ? (isWrap ? 'Wrap BNB' : 'Unwrap WBNB') : $t('connect') }}</span>
         <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
+      <div v-if="accountMismatch" class="text-red-500 text-sm mt-2">
+        {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
+      </div>
     </div>
   </div>
 </template>

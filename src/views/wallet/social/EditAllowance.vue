@@ -7,13 +7,15 @@ import { GlobalModalType } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { approveCoinPurse } from "@/utils/twitterTip";
 import { ethers } from "ethers";
-
+import { useAccount } from "@/composables/useAccount";
+// 
 const socialAccountModalStore = useSocialAccountModalStore()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const loading = ref(false)
 const newAllowance = ref()
-
+const emit = defineEmits(['added'])
+const { accountMismatch } = useAccount()
 async function confirm() {
   try {
      // check wallet connect
@@ -27,7 +29,7 @@ async function confirm() {
     }
     loading.value = true;
     await approveCoinPurse(socialAccountModalStore.editTokenInfo!.token, ethers.parseEther(newAllowance.value.toString()))
-    await socialAccountModalStore.updateSocialAccountTokens()
+    emit('added')
     socialAccountModalStore.setModalVisible(false, SocialAccountModalType.EditAllowance)
   } catch (error) {
     handleErrorTip(error)
@@ -53,11 +55,14 @@ async function confirm() {
       </div>
       <button @click="confirm" 
         class="h-12 w-full flex items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5"
-        :disabled="loading"
+        :disabled="loading || accountMismatch"
         >
         {{ accStore.ethConnectState == EthWalletState.Connected ? $t('confirm') : $t('connect')}}
         <i-ep-loading v-if="loading" class="animate-spin" />
       </button>
+      <div v-if="accountMismatch" class="text-red-500 text-sm mt-2">
+        {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
+      </div>
     </div>
   </div>
 </template>
