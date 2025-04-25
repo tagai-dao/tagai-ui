@@ -77,6 +77,7 @@ export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea2
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10'
 
 export const CoinPurse = '0x2e95d469741564F2BA09b266625Db93D25793780'
+export const Multicall3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
 
 export const Ether = BigInt(1e18);
 
