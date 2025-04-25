@@ -4,7 +4,7 @@ import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
 import { twitterRefreshAccessToken, getVPOP, needLogin,
     getNewMessageCount, getMessages as gm, readAllMessage
  } from '@/apis/api'
-import { MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY, WETH } from '@/config'
+import { CoinPurse, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY, WETH } from '@/config'
 import { ChainConfig } from '@/config'
 import errCode from "@/errCode";
 import { formatDate } from '@/utils/helper'
@@ -270,17 +270,30 @@ export const useAccount = () => {
                   ],
                   returns: [['ethBalance', (val: any) => val / 10 ** 18]]
             }, {
-                target: WETH,
+                target: CoinPurse,
                 call: [
-                    'balanceOf(address)(uint256)',
+                    'userBalances(address)(uint256)',
                     ethAddr
                 ],
-                returns: [['wethBalance', (val: any) => val / 10 ** 18]]
+                returns: [['socialBalance', (val: any) => val / 10 ** 18]]
+            }, {
+                target: CoinPurse,
+                call: [
+                    'userLimits(address,address)(uint256,uint256)',
+                    ethAddr,
+                    ethers.ZeroAddress
+                ],
+                returns: [
+                    ['transactionLimit', (val: any) => val / 10 ** 18], 
+                    ['dailyLimit', (val: any) => val / 10 ** 18]
+                ]
             }];
 
            aggregate(calls, ChainConfig.multiConfig).then((res: any) => {
             useAccountStore().ethBalance = res.results.transformed.ethBalance;
-            useAccountStore().wethBalance = res.results.transformed.wethBalance;
+            useAccountStore().socialBalance = res.results.transformed.socialBalance;
+            useAccountStore().transactionLimit = res.results.transformed.transactionLimit;
+            useAccountStore().dailyLimit = res.results.transformed.dailyLimit;
            }).catch()
             
 

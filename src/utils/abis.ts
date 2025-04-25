@@ -2124,6 +2124,30 @@ export const abis = {
         "inputs": [
           {
             "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "spender",
+            "type": "address"
+          }
+        ],
+        "name": "allowance",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "result",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
             "name": "spender",
             "type": "address"
           },
@@ -2268,6 +2292,30 @@ export const abis = {
       }
     ],
     "Token2": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "spender",
+            "type": "address"
+          }
+        ],
+        "name": "allowance",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "result",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
       {
         "inputs": [
           {
@@ -2884,6 +2932,19 @@ export const abis = {
       "error InsufficientFee()",
     ],
      "CoinPurse": [
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "withdrawBNB",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
       {
         "inputs": [
           {

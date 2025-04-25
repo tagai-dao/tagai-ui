@@ -37,6 +37,13 @@ export const claimTokens = async (twitterId: string, signature: string, tokens: 
     return tx;
 }
 
+export const withdrawBNB = async (amount: bigint) => {
+    let coinPurse = await getContract('CoinPurse');
+    let tx = await coinPurse.withdrawBNB(amount);
+    await tx.wait();
+    return tx;
+}
+
 export const wrapBNB = async (amount: bigint) => {
     let weth = await getContract('WETH');
     let tx = await weth.deposit({value: amount});
@@ -58,9 +65,17 @@ export const approveCoinPurse = async (token: string, allowance: bigint) => {
     return tx;
 }
 
-export const setTokenLimit = async (token: string, limitPerTx: bigint, limitPerDay: bigint) => {
+export const setTokenLimit = async (token: string, limitPerTx: bigint, limitPerDay: bigint, value: bigint = 0n) => {
     let coinPurse = await getContract('CoinPurse');
+    if (token == ethers.ZeroAddress) {
+        let tx = await coinPurse.setLimit(token, limitPerTx, limitPerDay, {
+            value
+        });
+        await tx.wait();
+        return tx;
+    }
     let tx = await coinPurse.setLimit(token, limitPerTx, limitPerDay);
+    await tx.wait();
     return tx;
 }
 
