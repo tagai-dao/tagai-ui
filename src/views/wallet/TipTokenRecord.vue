@@ -167,7 +167,7 @@ onMounted(() => {
               </div>
               <div class="flex justify-between items-center web:flex-col web:items-end">
                 <div class="text-h3 leading-6" :class="isOut(twitterTipRecord) ? 'text-red-normal' : 'text-green-400'">{{ (isOut(twitterTipRecord) ? '-' : "+")  + formatAmount(twitterTipRecord.amount) }} ${{ twitterTipRecord.tick }}</div>
-                <button v-if="twitterTipRecord.claimStatus === TwitterTipClaimStatus.PendingClaim" 
+                <button v-if="twitterTipRecord.claimStatus === TwitterTipClaimStatus.PendingClaim && (!accStore.getAccountInfo?.twitterId || accStore.getAccountInfo?.twitterId === twitterTipRecord.toTwitterId)" 
                   class="bg-orange-normal text-white h-7 rounded-full px-4"
                   @click="claim">
                   {{$t('claim')}}
