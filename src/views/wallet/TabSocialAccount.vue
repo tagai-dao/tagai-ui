@@ -61,7 +61,7 @@ onMounted(() => {
                     <li>{{ $t('profileView.tipDes3') }}</li>
                     <li>{{ $t('profileView.tipDes4') }}</li>
                     <li>{{ $t('profileView.tipDes5') }}</li>
-                    <li>{{ $t('profileView.tipDes6') }}</li>
+                    <li>{{ $t('profileView.tipDes6') + ' @TagAITIP tip [amount] $[ticker] to @[user]' }}</li>
                   </ul>
                 </div>
               </template>
