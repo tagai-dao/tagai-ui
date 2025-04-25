@@ -8,7 +8,8 @@ import { useAccountStore } from "./web3";
 
 export enum SocialAccountModalType {
   AddToken,
-  WrapBNB,
+  Recharge,
+  Withdraw,
   EditAllowance,
   EditLimit,
   TipToken,
@@ -36,11 +37,11 @@ export const useSocialAccountModalStore = defineStore(
       if (!updatedTokens || updatedTokens.length == 0) {
         updatedTokens = []
       }
-      updatedTokens = [{
-        token: WETH,
-        tick: 'WBNB',
-        logo: 'https://tiptag.oss-cn-shenzhen.aliyuncs.com/tagai/community/bnb-logo.svg'
-      }].concat(updatedTokens)
+      // updatedTokens = [{
+      //   token: WETH,
+      //   tick: 'WBNB',
+      //   logo: 'https://tiptag.oss-cn-shenzhen.aliyuncs.com/tagai/community/bnb-logo.svg'
+      // }].concat(updatedTokens)
       socialAccountTokens.value = await getTokensInfo(updatedTokens);
     }
 

@@ -53,7 +53,7 @@ function checkTipError() {
         isValid.value = false
         return;
     }
-    if (socialAccountModalStore.socialAccountTokens[0].allowance < 0.0001) {
+    if (accStore.socialBalance < 0.0005) {
         showInvalidWBNBAllowance.value = true
         isValid.value = false
         return;

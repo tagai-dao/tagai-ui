@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
-import { handleError, ref } from "vue";
+import { handleError, onMounted, ref } from "vue";
 import { getSettledTokens, getTokenByTickOrCA, setNewToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { ethers } from "ethers";
@@ -10,6 +10,7 @@ import { useModalStore } from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
 import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
 import { WETH } from "@/config";
+import { sleep } from "@/utils/helper";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
@@ -24,7 +25,7 @@ const state = ref(0)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const loading = ref(false)
-const { accountMismatch } = useAccount()
+const { accountMismatch, updateBalance } = useAccount()
 
 const emit = defineEmits(['added'])
 
@@ -46,97 +47,73 @@ async function confirm() {
             return;
         }
 
-        if (!tick.value) {
-            showTickerError.value = true
-            state.value = 0
-            return
-        }
         if (!allowance.value || allowance.value <= 0) {
             showInputAllowance.value = true
             state.value = 0
             return
         }
-        if (!transactionLimit.value || transactionLimit.value <= 0) {
+        if (!transactionLimit.value || transactionLimit.value < 0.0005) {
             showInputTransactionLimit.value = true
             state.value = 0
             return
         }
-        if (!dailyLimit.value || dailyLimit.value <= 0) {
+        if (!dailyLimit.value || dailyLimit.value < 0.0005) {
             showInputDailyLimit.value = true
             state.value = 0
             return
         }
-        state.value = 1
-        tick.value = tick.value.trim();
-        const res:any = await getTokenByTickOrCA(tick.value)
-        if (!res?.token) {
-            showTickerError.value = true
-            state.value = 0
-            return
-        }
-        state.value = 2
-        await approveCoinPurse(res.token, ethers.parseEther(allowance.value!.toString()))
+        
 
-        state.value = 3
-        await setTokenLimit(res.token, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()))
-
-        await setNewToken(accStore.getAccountInfo?.twitterId!, tick.value)
+        await setTokenLimit(ethers.ZeroAddress, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()), ethers.parseEther(allowance.value!.toString()))
 
         emit('added');
-        state.value = 0
         socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)
     } catch (error) {
-        state.value = 0
         handleErrorTip(error)
     } finally {
         loading.value = false
     }
 }
 
+onMounted(async () => {
+    let count = 0
+    while(count++ < 10) {
+        transactionLimit.value = accStore.transactionLimit
+        dailyLimit.value = accStore.dailyLimit
+        await sleep(0.2)
+        if (accStore.transactionLimit > 0) {
+            break
+        }
+    }
+})
+
 </script>
 
 <template>
   <div class="py-2">
     <div class="flex justify-between items-center">
-      <span class="text-h2 text-grey-normal-hover">{{ $t('profileView.addToken') }}</span>
+      <span class="text-h2 text-grey-normal-hover">{{ $t('profileView.recharge') }}</span>
       <img class="cursor-pointer"
            @click="socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)"
            src="../../../assets/icons/icon-modal-close.svg" alt=""/>
     </div>
     <div class="py-3">
       <div class="flex flex-col gap-1">
-        <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputTick')}}:
+        <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputBNB')}}:
             <el-popover popper-class="c-popper" width="300">
               <template #reference>
                 <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
               </template>
               <template #default>
                 <div class="bg-white rounded-xl p-3 shadow-popper-tip">
-                  <div class="mb-1">{{ $t('profileView.addToken1') }}</div>
+                  <div class="mb-1">{{ $t('profileView.addTokenBnb') }}</div>
                 </div>
               </template>
             </el-popover>
         </label>
         <input class="border-[1px] mb-5 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
-               v-model="tick" type="text" :placeholder="$t('profileView.inputTickPlaceholder')"/>
-        <span class="text-red-500 text-sm" v-if="showTickerError">{{$t('profileView.tickerError')}}</span>
-      </div>
-      <div class="flex flex-col gap-1">
-        <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputAllowance')}}:
-            <el-popover popper-class="c-popper" width="300">
-              <template #reference>
-                <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
-              </template>
-              <template #default>
-                <div class="bg-white rounded-xl p-3 shadow-popper-tip">
-                  <div class="mb-1">{{ $t('profileView.addToken2') }}</div>
-                </div>
-              </template>
-            </el-popover>
-        </label>
-        <input class="border-[1px] mb-5 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
-               v-model="allowance" type="number" :placeholder="$t('profileView.inputAllowancePlaceholder')"/>
-        <span class="text-red-500 text-sm" v-if="showInputAllowance">{{$t('profileView.inputAllowancePlaceholder')}}</span>
+               v-model="allowance" type="number" :placeholder="$t('profileView.inputBNB')"/>
+        <span class="text-red-500 text-sm" v-if="showInputAllowance">{{$t('profileView.inputBNB')}}</span>
       </div>
       <div class="flex flex-col gap-1">
         <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputTransactionLimit')}}:
@@ -151,9 +128,9 @@ async function confirm() {
               </template>
             </el-popover>
         </label>
-        <input class="border-[1px] mb-5 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
+        <input class="border-[1px] mb-3 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
                v-model="transactionLimit" type="number" :placeholder="$t('profileView.inputTransactionLimitPlaceholder')"/>
-        <span class="text-red-500 text-sm" v-if="showInputTransactionLimit">{{$t('profileView.inputTransactionLimitPlaceholder')}}</span>
+        <span class="text-red-500 text-sm mb-2" v-if="showInputTransactionLimit">{{$t('profileView.tipError9')}}</span>
       </div>
       <div class="flex flex-col gap-1">
         <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputDailyLimit')}}:
@@ -170,7 +147,7 @@ async function confirm() {
         </label>
         <input class="border-[1px] mb-3 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
                v-model="dailyLimit" type="number" :placeholder="$t('profileView.inputDailyLimitPlaceholder')"/>
-        <span class="text-red-500 text-sm" v-if="showInputDailyLimit">{{$t('profileView.inputDailyLimitPlaceholder')}}</span>
+        <span class="text-red-500 text-sm" v-if="showInputDailyLimit">{{$t('profileView.tipError10')}}</span>
       </div>
       <button @click="confirm" class="h-12 w-full flex flex-row items-center justify-center gap-2 bg-orange-normal rounded-full text-white text-h5 mt-5" :disabled="loading || accountMismatch">
         {{ accStore.ethConnectAddress ? $t('confirm') : $t('connect')}}
@@ -178,25 +155,6 @@ async function confirm() {
       </button>
       <div v-if="accountMismatch" class="text-red-500 text-sm mt-2">
         {{ $t('web3.addressMismatch', {address: accStore.getAccountInfo.ethAddr}) }}
-      </div>
-      <!-- 进度条组件 -->
-      <div class="mt-6">
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex flex-col items-center">
-            <div class="w-3 h-3 rounded-full" :class="state >= 1 ? 'bg-orange-normal' : 'bg-grey-e6'"></div>
-            <span class="text-sm mt-1">{{$t('profileView.newTokenStep1')}}</span>
-          </div>
-          <div class="flex-1 h-[2px] mx-2" :class="state >= 2 ? 'bg-orange-normal' : 'bg-grey-e6'"></div>
-          <div class="flex flex-col items-center">
-            <div class="w-3 h-3 rounded-full" :class="state >= 2 ? 'bg-orange-normal' : 'bg-grey-e6'"></div>
-            <span class="text-sm mt-1">{{$t('profileView.newTokenStep2')}}</span>
-          </div>
-          <div class="flex-1 h-[2px] mx-2" :class="state >= 3 ? 'bg-orange-normal' : 'bg-grey-e6'"></div>
-          <div class="flex flex-col items-center">
-            <div class="w-3 h-3 rounded-full" :class="state >= 3 ? 'bg-orange-normal' : 'bg-grey-e6'"></div>
-            <span class="text-sm mt-1">{{$t('profileView.newTokenStep3')}}</span>
-          </div>
-        </div>
       </div>
     </div>
   </div>

@@ -10,7 +10,8 @@ import { formatAmount } from "@/utils/helper";
 import { onMounted, ref } from "vue";
 import { getRewardsClaimd } from "@/utils/twitterTip";
 import { ethers } from "ethers";
-import WrapBNB from "@/views/wallet/social/WrapBNB.vue";
+import RechargeBNB from "@/views/wallet/social/RechargeBNB.vue";
+import WithdrawBNB from "@/views/wallet/social/WithdrawBNB.vue";
 import { useAccount } from "@/composables/useAccount";
 
 const accStore = useAccountStore()
@@ -46,9 +47,9 @@ onMounted(() => {
     <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3 relative mb-2">
       <div class="flex justify-center items-center mb-2">
         <div class="relative w-min">
-          <span class="text-grey-normal text-h1">{{ formatAmount(accStore.wethBalance) }}</span>
+          <span class="text-grey-normal text-h1">{{ formatAmount(accStore.socialBalance) }}</span>
           <div class="absolute left-[120%] bottom-1 flex items-center gap-2">
-            <span class="whitespace-nowrap text-h5 text-gradient bg-gradient-primary">WBNB</span>
+            <span class="whitespace-nowrap text-h5 text-gradient bg-gradient-primary">BNB</span>
             <el-popover popper-class="c-popper" width="300">
               <template #reference>
                 <img class="w-4 min-w-4 min-h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
@@ -58,8 +59,6 @@ onMounted(() => {
                   <div class="mb-1">{{ $t('profileView.tipDes1') }}</div>
                   <ul class="list-decimal pl-5">
                     <li>{{ $t('profileView.tipDes2') }}</li>
-                    <li>{{ $t('profileView.tipDes3') }}</li>
-                    <li>{{ $t('profileView.tipDes4') }}</li>
                     <li>{{ $t('profileView.tipDes5') }}</li>
                     <li>{{ $t('profileView.tipDes6') + ' @TagAITIP tip [amount] $[ticker] to @[user]' }}</li>
                   </ul>
@@ -85,8 +84,12 @@ onMounted(() => {
           {{$t('profileView.addToken')}}
         </button>
         <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
-          @click="setModalType(SocialAccountModalType.WrapBNB)">
-          {{$t('profileView.wrap')}}
+          @click="setModalType(SocialAccountModalType.Recharge)">
+          {{$t('profileView.recharge')}}
+        </button>
+        <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
+          @click="setModalType(SocialAccountModalType.Withdraw)">
+          {{$t('profileView.withdraw')}}
         </button>
         <button @click="$router.push('/tip-record')" class="relative">
           <img class="w-8 h-8" src="~@/assets/icons/icon-record.svg" alt="">
@@ -104,8 +107,9 @@ onMounted(() => {
       <EditAllowance v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditAllowance" @added="refreshBalance"/>
       <EditLimit v-if="socialAccountModalStore.modalType==SocialAccountModalType.EditLimit" @added="refreshBalance"/>
       <AddNewToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.AddToken" @added="refreshBalance"/>
-      <WrapBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.WrapBNB"/>
       <TipToken v-if="socialAccountModalStore.modalType==SocialAccountModalType.TipToken"/>
+      <RechargeBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.Recharge" @added="refreshBalance"/>
+      <WithdrawBNB v-if="socialAccountModalStore.modalType==SocialAccountModalType.Withdraw" @withdraw="refreshBalance"/>
     </el-dialog>
   </div>
 </template>
