@@ -79,10 +79,10 @@ onMounted(() => {
         </div>
       </div>
       <div class="flex items-center gap-3 max-w-[500px] mx-auto">
-        <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
+        <!-- <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
           @click="setModalType(SocialAccountModalType.AddToken)">
           {{$t('profileView.addToken')}}
-        </button>
+        </button> -->
         <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
           @click="setModalType(SocialAccountModalType.Recharge)">
           {{$t('profileView.recharge')}}
@@ -96,6 +96,12 @@ onMounted(() => {
           <div class="absolute top-[-3px] right-[-3px] w-4 h-4 bg-red-normal rounded-full" v-if="socialAccountModalStore.needClaim"></div>
         </button>
       </div>
+    </div>
+    <div class="flex items-end gap-3 justify-end my-2">
+      <button class="text-lg rounded-full px-3 text-h5 underline text-orange-normal"
+          @click="setModalType(SocialAccountModalType.AddToken)">
+          {{$t('profileView.addToken')}}
+        </button>
     </div>
     <AddTokenList></AddTokenList>
     <el-dialog v-model="socialAccountModalStore.modalVisible"
