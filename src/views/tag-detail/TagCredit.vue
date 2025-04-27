@@ -7,15 +7,39 @@ import { formatAddress, formatAmount, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
 import { onMounted, ref } from 'vue';
 import { useAccount } from '@/composables/useAccount';
+import VueApexCharts from 'vue3-apexcharts';
+import i18n from '@/lang';
+
+const t = i18n.global.t;
 
 const comStore = useCommunityStore()
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
-const { checkAccount } = useAccount()
-
+const showCreditChart = ref(false);
 const holdingList = ref<CommunityCredit[]>([]);
 const { onCopy } = useTools()
+const colors = ['#FE913F', '#FACA83', '#FFDDC3', '#E58339', '#CB7432']
+
+const pieChartOptions = ref({
+  chart: {
+    type: 'pie',
+  },
+  labels: ['User 1', 'User 2', 'User 3', 'User 4', 'User 5'],
+  series: [44, 55, 13, 43, 22],
+  colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
+  responsive: [{
+    breakpoint: 480,
+    options: {
+      chart: {
+        width: 200
+      },
+      legend: {
+        position: 'bottom'
+      }
+    }
+  }]
+});
 
 async function onRefresh() {
   if (loading.value) return;
@@ -66,16 +90,43 @@ onMounted(async () => {
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
   }
+  pieChartOptions.value = {
+    chart: {
+      type: 'pie',
+    },
+    labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance')],
+    series: [40, 60],
+    colors,
+    responsive: [{
+      breakpoint: 480,
+      options: {
+        chart: {
+          width: 200
+        },
+        legend: {
+          position: 'bottom'
+        }
+      }
+    }]
+  }
   onRefresh()
 })
 </script>
 
 <template>
+  <!-- <div class="flex justify-end mb-2 mr-2">
+    <img class="w-6 h-6 cursor-pointer" @click="showCreditChart = true" src="~@/assets/icons/icon-pie-chart.svg" alt="">
+  </div> -->
   <div class="bg-white rounded-2xl p-3" v-if="comStore.currentSelectedCommunity?.tick">
     <div class="grid grid-cols-8 gap-x-2 web:grid-cols-9 text-h5 h-10 items-center">
       <span class="col-span-3 web:col-span-3 pl-8">{{ $t('account') }}</span>
       <span class="col-span-3 web:col-span-3">{{ $t('address') }}</span>
-      <span class="col-span-2 web:col-span-3 text-right">{{ $t('credit') }}</span>
+      <span class="col-span-2 web:col-span-3 text-right flex justify-end items-center cursor-pointer gap-1"
+        @click="showCreditChart = true">
+        {{ $t('credit') }}
+        <img class="w-4 h-4" 
+        src="~@/assets/icons/icon-warning-gray.svg" alt="">
+      </span>
     </div>
     <van-pull-refresh
       v-model="refreshing"
@@ -134,6 +185,22 @@ onMounted(async () => {
         </div>
       </van-list>
     </van-pull-refresh>
+    <el-dialog v-model="showCreditChart"
+          class="max-w-[500px] rounded-[20px]"
+          width="90%" :show-close="false" align-center destroy-on-close>
+          <div class="flex flex-col items-center p-4">
+            <h3 class="text-xl font-bold mb-4">{{ t('credit') }}</h3>
+            <VueApexCharts
+              type="pie"
+              :options="pieChartOptions"
+              :series="pieChartOptions.series"
+              class="w-full"
+            />
+            <p class="text-gray-600 text-center mt-4">
+              {{ t('community.creditDescription') }}
+            </p>
+          </div>
+      </el-dialog>
   </div>
 </template>
 
