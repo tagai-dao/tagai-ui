@@ -34,7 +34,7 @@ import { DeBoxChatWidget } from '@debox-pro/chat-widget-html';
 const tabOptions = [
   // {label: 'Group', key: 'group'},
   {label: 'Square', key: 'content'},
-  {label: 'Tipped', key: 'tipped'},
+  // {label: 'Tipped', key: 'tipped'},
   {label: 'Proposal', key: 'proposal'},
   {label: 'Trades', key: 'trade'},
   {label: 'Credit', key: 'credit'},
