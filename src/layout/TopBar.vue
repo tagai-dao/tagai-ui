@@ -107,6 +107,18 @@ function onClickWallet() {
               <img class="w-4" src="~@/assets/icons/icon-warning.svg" alt="">
               <span>{{$t('auditReport')}}</span>
             </a>
+            <a class="flex gap-2 items-center cursor-pointer"
+               @click="menuRef.hide()"
+               href="https://x.com/tagaidao" target="_blank">
+              <img class="w-4" src="~@/assets/icons/icon-link-x.svg" alt="">
+              <span>{{$t('Twitter')}}</span>
+            </a>
+            <a class="flex gap-2 items-center cursor-pointer"
+               @click="menuRef.hide()"
+               href="https://t.me/tagaidotfun" target="_blank">
+              <img class="w-4" src="~@/assets/icons/icon-link-tg.svg" alt="">
+              <span>{{$t('Telegram')}}</span>
+            </a>
           </div>
         </template>
       </el-popover>
