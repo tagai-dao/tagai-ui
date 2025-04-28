@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
-import TabBlink from "@/views/profile/TabBlink.vue";
+import TabIPShare from "@/views/profile/TabIPShare.vue";
 import TabPost from "@/views/profile/TabPost.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import { useAccountStore } from "@/stores/web3";
@@ -136,7 +136,7 @@ onMounted(() => {
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabPost v-if="activeTab==='post'"/>
-      <TabBlink v-if="activeTab==='blink'"/>
+      <TabIPShare v-if="activeTab==='ipshare'"/>
       <TabCreateCoin v-if="activeTab==='createCoin'"/>
     </div>
   </div>
