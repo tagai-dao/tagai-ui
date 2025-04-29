@@ -16,7 +16,7 @@ import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 
 enum ListType {
-  Trending = 'trending',
+  // Trending = 'trending',
   New = 'new',
   Space = 'space',
   Tipped = 'tipped'
@@ -28,7 +28,7 @@ const loading = ref(false);
 const finished = ref({
   'new': false,
   'space': false,
-  'trending': false,
+  // 'trending': false,
   'tipped': false
 });
 const comStore = useCommunityStore();
@@ -44,9 +44,6 @@ const showingTweets = computed(() => {
       }else if (listType.value === ListType.Space &&
       tweetsStore.communitySpaceTweets) {
         return tweetsStore.communitySpaceTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
-      }else if (listType.value === ListType.Trending &&
-      tweetsStore.communityTrendingTweets) {
-        return tweetsStore.communityTrendingTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
       }else if (listType.value === ListType.Tipped &&
       tweetsStore.communityTippedTweets) {
         return tweetsStore.communityTippedTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
@@ -80,15 +77,7 @@ async function onRefresh() {
       }
       tweetsStore.communitySpaceTweets[tick] = list as Tweet[];
       tweetsStore.communitySpaceTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communitySpaceTweets[tick])
-    }else if (listType.value === ListType.Trending) {
-      list = await getCommunityTrendingTweets(tick, twitterId)
-
-      if (!tweetsStore.communityTrendingTweets) {
-        tweetsStore.communityTrendingTweets = {};
-      }
-      tweetsStore.communityTrendingTweets[tick] = list as Tweet[];
-      tweetsStore.communityTrendingTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communityTrendingTweets[tick])
-    }else if (listType.value === ListType.Tipped) {
+    } else if (listType.value === ListType.Tipped) {
       list = await getCommunityTippedTweets(tick, twitterId)
 
       if (!tweetsStore.communityTippedTweets) {
@@ -138,17 +127,7 @@ async function onLoad() {
       ] = await getTokenInfoOfTweets(tweetsStore.communitySpaceTweets![
         tick
       ])
-    } else if (listType.value === ListType.Trending) {
-      list = await getCommunityTrendingTweets(tick, twitterId, page)
-      tweetsStore.communityTrendingTweets![
-        tick
-      ] = showingTweets.value.concat(list as Tweet[])
-      tweetsStore.communityTrendingTweets![
-        tick
-      ] = await getTokenInfoOfTweets(tweetsStore.communityTrendingTweets![
-        tick
-      ])
-    }else if (listType.value === ListType.Tipped) {
+    } else if (listType.value === ListType.Tipped) {
       list = await getCommunityTippedTweets(tick, twitterId, page)
       tweetsStore.communityTippedTweets![
         tick
@@ -188,7 +167,6 @@ onMounted(async () => {
         @change="onRefresh"
       >
         <el-option :value="ListType.New" :label="$t('new')" />
-        <el-option :value="ListType.Trending" :label="$t('trending')" />
         <el-option :value="ListType.Tipped" :label="$t('Tipped')" />
         <el-option :value="ListType.Space" :label="$t('Space')" />
       </el-select>
