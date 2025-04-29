@@ -37,11 +37,8 @@ async function updateIPShare() {
     if (acc.ethAddr) {
       updateBalance();
       const ipshare: any = await getIpshareInfo(acc.ethAddr);
-      console.log(38, ipshare)
       useAccountStore().ipshare = ipshare;
-      console.log(40, BigInt(ipshare.shareSupply), BigInt(1e18))
-      const price = await getPrice(BigInt(ipshare.shareSupply), BigInt(1e18));
-      console.log(41, price.toString() / 1e18)
+      console.log(48, ipshare)
     }
   } catch (error) {
     console.log(48, error)
