@@ -12,7 +12,7 @@ import AuthTwitter from "@/components/login/AuthTwitter.vue";
 import BondEthModal from "@/components/login/BondEthModal.vue";
 import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
-import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
+import CreateIPShareModal from "@/components/IPShare/CreateIPShareModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
 import { onMounted, ref } from "vue";
 import emitter from "@/utils/emitter";

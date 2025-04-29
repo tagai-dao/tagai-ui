@@ -26,7 +26,14 @@ async function createIPShare() {
       return;
     }
     const ipshare: any = await getIpshareInfo(acc.ethAddr!);
-    useAccountStore().ipshare = ipshare;
+    if (ipshare?.ethAddr){
+      useAccountStore().ipshare = ipshare;
+    }else {
+      useAccountStore().ipshare = {
+        ethAddr: acc.ethAddr!,
+        totalStaked: "10000000000000000000"
+      };
+    }
     modalStore.setModalVisible(false)
   } catch (e) {
     handleErrorTip(e)

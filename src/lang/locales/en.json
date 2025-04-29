@@ -149,7 +149,10 @@
     "pending": "Pending",
     "fail": "Fail",
     "claimToken": "Claim Tip Token",
-    "claimTokenDesc": "You can claim all the following tokens in one transaction."
+    "claimTokenDesc": "You can claim all the following tokens in one transaction.",
+    "createIPShare": "Create IPShare",
+    "ipsharePrice": "IPShare Price",
+    "tvl": "TVL"
   },
   "notificationView": {
     "ipShare": "IPShare",
@@ -270,7 +273,7 @@
     "curveProgress": "Bonding Curve progress"
   },
   "ipshare": {
-    "desc": "Create IPShare, become a personal IP, receive support, and earn IPShare transaction fees.",
+    "desc": "Create IPShare, become a personal IP, and earn IPShare transaction fees and token transaction fees.",
     "createIpShare": "Create IPShare"
   },
   "errMessage": {

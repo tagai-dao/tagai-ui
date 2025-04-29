@@ -147,7 +147,10 @@
     "pending": "处理中",
     "fail": "失败",
     "claimToken": "领取打赏",
-    "claimTokenDesc": "你可以一次性领取以下所有打赏的代币。"
+    "claimTokenDesc": "你可以一次性领取以下所有打赏的代币。",
+    "createIPShare": "创建 IPShare",
+    "ipsharePrice": "IPShare 价格",
+    "tvl": "TVL"
   },
   "notificationView": {
     "ipShare": "IPShare",
@@ -268,7 +271,7 @@
     "curveProgress": "销售曲线进度"
   },
   "ipshare": {
-    "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",
+    "desc": "创建IPShare，成为个人IP，并赚取IPShare交易费用和代币交易费用。",
     "createIpShare": "创建 IPShare"
   },
   "errMessage": {

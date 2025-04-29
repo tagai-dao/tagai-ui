@@ -39,6 +39,24 @@ export const getIPShareInfo = async (ethAddr: string) => {
     }]
 }
 
+export const calculateIPSharePrice = (supply: number) => {
+    const price = 1 + 3 * supply + 3 * (supply ** 2);
+    return price / 3 / 100000;
+}
+
+export const getTvl = (supply: number) => {
+    const amount = supply - 10;
+    const price = (amount *
+        (amount ** 2 + 3 * amount * 10 + 3 * (10 ** 2)));
+    return price / 3/ 100000
+}
+
+export const getPrice = async (supply: BigInt, amount: BigInt) => {
+    const contract = await getContract('IPShare2');
+    const price = await contract.getPrice(supply, amount);
+    return price;
+}
+
 export const ipshareCreated = async (ethAddr: string) => {
     if (!ethers.isAddress(ethAddr)) {
         return {}

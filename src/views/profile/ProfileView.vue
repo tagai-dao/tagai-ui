@@ -11,13 +11,15 @@ import { useInterval } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
-import { useRoute } from "vue-router";
-
+import { formatAmount, formatPrice } from "@/utils/helper";
+import { calculateIPSharePrice, getPrice, getTvl } from "@/utils/ipshare";
+import { useStateStore } from "@/stores/common";
 const accStore = useAccountStore()
 const tabOptions = ['post', 'createCoin']
 const activeTab = ref('post')
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
 const { setInter } = useInterval()
+const stateStore = useStateStore()
 
 const profileTableData = ref([
   { action: 'Curation', vp: 'Selected vp', op: 'Selected vp'},
@@ -35,11 +37,19 @@ async function updateIPShare() {
     if (acc.ethAddr) {
       updateBalance();
       const ipshare: any = await getIpshareInfo(acc.ethAddr);
+      console.log(38, ipshare)
       useAccountStore().ipshare = ipshare;
+      console.log(40, BigInt(ipshare.shareSupply), BigInt(1e18))
+      const price = await getPrice(BigInt(ipshare.shareSupply), BigInt(1e18));
+      console.log(41, price.toString() / 1e18)
     }
   } catch (error) {
-
+    console.log(48, error)
   }
+}
+
+async function createIPShare() {
+  useModalStore().setModalVisible(true, GlobalModalType.CreateIPShare)
 }
 
 onMounted(() => {
@@ -126,6 +136,40 @@ onMounted(() => {
           </span>
         </button>
       </div> -->
+      <div v-if="!accStore.ipshare?.ethAddr" class="flex justify-center">
+        <button @click="createIPShare()" class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-[200px] text-white text-h3 mt-4">
+          {{$t('profileView.createIPShare')}}
+        </button>
+      </div>
+      <div class="flex justify-center gap-5 my-3 mx-14 card rounded-xl bg-white px-4 py-5">
+        <span>
+          IPShare supply
+        </span>
+        <span class="text-h2">
+          {{ formatAmount((accStore.ipshare?.shareSupply as any) / 1e18) }}
+        </span>
+      </div>
+      <div class="flex justify-between px-14">
+        <div class="flex gap-1">
+          <span>
+            {{ $t('profileView.ipsharePrice') }}
+          </span>
+          <span class="text-h2">
+            {{ formatPrice(calculateIPSharePrice(accStore.ipshare?.shareSupply as any / 1e18) * stateStore.ethPrice) }}
+          </span>
+        </div>
+        <div class="flex gap-1">
+          <span>
+            {{ $t('profileView.tvl') }}
+          </span>
+          <span class="text-h2">
+          {{ formatPrice(calculateIPSharePrice(accStore.ipshare?.shareSupply as any / 1e18) * stateStore.ethPrice * (accStore.ipshare?.shareSupply as any / 1e18)) }}
+        </span>
+        </div>
+      </div>
+      <div>
+
+      </div>
     </div>
     <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
       <button v-for="tab of tabOptions" :key="tab"
@@ -143,5 +187,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-
+.card{
+  border: 1px solid #FF7A00;
+}
 </style>
