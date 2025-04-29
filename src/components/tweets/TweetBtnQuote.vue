@@ -31,6 +31,7 @@ const {
   showClear,
   leftWordsLength,
   tweetLength,
+  checkSpecialCommand,
   formatElToTextContent
 } = useCreateTweet()
 
@@ -65,6 +66,13 @@ const quote = async () => {
       return;
     }
     const text = formatElToTextContent(contentRef.value);
+
+    const { isTip, isDeployCmd, isTwitterTip } = checkSpecialCommand(text)
+    if (isTip || isDeployCmd || isTwitterTip) {
+      window.open(`https://x.com/intent/tweet?url=https://x.com/${props.tweet.twitterUsername}/status/${props.tweet.tweetId}&text=${encodeURIComponent(text)}`, '_blank')
+      quoteVisible.value = false
+      return;
+    }
     isQuoting.value = true;
     await userQuote(props.tweet, text, props.tweet.tick!)
     quoteVisible.value = false

@@ -14,6 +14,7 @@ const {
   contentEl,
   leftWordsLength,
   tweetLength,
+  checkSpecialCommand,
   contentInput,
   getBlur,
   onPaste,
@@ -38,6 +39,12 @@ const onPostTweet = async () => {
       return;
     }
     let content = formatElToTextContent(contentRef.value)
+    const { isTip, isDeployCmd, isTwitterTip } = checkSpecialCommand(content)
+    if (isTip || isDeployCmd || isTwitterTip) {
+      window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(content)}`, '_blank')
+      emit('close')
+      return;
+    }
     userTweet(content, useCommunityStore().currentSelectedCommunity!.tick!).then(res => {
       emitter.emit('tweeted')
       notify({message: "Tweet success", type: 'success'})
