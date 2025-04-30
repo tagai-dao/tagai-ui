@@ -101,3 +101,9 @@ button:disabled {
     left: 0;
   }
 }
+.text-gradient-primary {
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  width: fit-content;
+  background-image: linear-gradient(90deg, #f79947 11.46%, #f64ce2 98.96%);
+}

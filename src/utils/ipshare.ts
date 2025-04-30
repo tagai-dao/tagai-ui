@@ -4,6 +4,7 @@ import { ethers } from 'ethers'
 import { IPShareContract1, IPShareContract2 } from "@/config";
 import { aggregate } from '@makerdao/multicall'
 import _ from 'lodash'
+import { useAccountStore } from "@/stores/web3";
 
 // ethAddr?: string;
 //   shareSupply?: bigint | string | number;
@@ -34,9 +35,35 @@ export const getIPShareInfo = async (ethAddr: string) => {
     let calls = [{
         target: IPShareContract1,
         call: [
-            ''
+            'ipshareBalance(address,address)(uint256,uint256)',
+            ethAddr,
+            useAccountStore().ethConnectAddress
+        ],
+        returns: [
+            ['balance']
         ]
     }]
+    const res = await aggregate(calls, ChainConfig.multiConfig);
+    return res.results.transformed.balance;
+}
+
+export const getIPShareBalance = async (ethAddr: string) => {
+    if (!ethers.isAddress(ethAddr)) {
+        return 0n
+    }
+    let calls = [{
+        target: IPShareContract1,
+        call: [
+            'ipshareBalance(address,address)(uint256,uint256)',
+            ethAddr,
+            useAccountStore().ethConnectAddress
+        ],
+        returns: [
+            ['balance']
+        ]
+    }]
+    const res = await aggregate(calls, ChainConfig.multiConfig);
+    return res.results.transformed.balance;
 }
 
 export const calculateIPSharePrice = (supply: number) => {

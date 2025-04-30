@@ -14,6 +14,7 @@ import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
 import CreateIPShareModal from "@/components/IPShare/CreateIPShareModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
+import IPShareTrade from "@/components/IPShare/Trade.vue";
 import { onMounted, ref } from "vue";
 import emitter from "@/utils/emitter";
 
@@ -59,6 +60,7 @@ onMounted( () => {
         <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
         <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
         <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
+        <IPShareTrade v-if="modalStore.modalType === GlobalModalType.IPShareTrade" />
       </el-dialog>
     </main>
   </main>

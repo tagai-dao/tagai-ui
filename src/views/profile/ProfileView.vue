@@ -14,12 +14,15 @@ import { GlobalModalType } from "@/types";
 import { formatAmount, formatPrice } from "@/utils/helper";
 import { calculateIPSharePrice, getPrice, getTvl } from "@/utils/ipshare";
 import { useStateStore } from "@/stores/common";
+import { useRouter } from "vue-router";
+
 const accStore = useAccountStore()
 const tabOptions = ['post', 'createCoin']
 const activeTab = ref('post')
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
 const { setInter } = useInterval()
 const stateStore = useStateStore()
+const router = useRouter()
 
 const profileTableData = ref([
   { action: 'Curation', vp: 'Selected vp', op: 'Selected vp'},
@@ -47,6 +50,15 @@ async function updateIPShare() {
 
 async function createIPShare() {
   useModalStore().setModalVisible(true, GlobalModalType.CreateIPShare)
+}
+
+async function showTradeModal() {
+  stateStore.currentSelectedIPShare = accStore.ipshare?.ethAddr
+  useModalStore().setModalVisible(true, GlobalModalType.IPShareTrade)
+}
+
+function gotoStake() {
+  router.push('/stake/' + accStore.getAccountInfo.ethAddr)
 }
 
 onMounted(() => {
@@ -138,34 +150,43 @@ onMounted(() => {
           {{$t('profileView.createIPShare')}}
         </button>
       </div>
-      <div class="flex justify-center gap-5 my-3 mx-14 card rounded-xl bg-white px-4 py-5">
-        <span>
-          IPShare supply
-        </span>
-        <span class="text-h2">
-          {{ formatAmount((accStore.ipshare?.shareSupply as any) / 1e18) }}
-        </span>
-      </div>
-      <div class="flex justify-between px-14">
-        <div class="flex gap-1">
+      <div v-else class="max-w-[720px] mx-auto">
+        <div class="flex justify-center gap-5 my-3 card rounded-xl bg-white px-4 py-5">
           <span>
-            {{ $t('profileView.ipsharePrice') }}
+            IPShare supply
           </span>
-          <span class="text-h2">
-            {{ formatPrice(calculateIPSharePrice(accStore.ipshare?.shareSupply as any / 1e18) * stateStore.ethPrice) }}
+          <span class="text-h2 text-gradient-primary">
+            {{ formatAmount((accStore.ipshare?.shareSupply as any) / 1e18) }}
           </span>
         </div>
-        <div class="flex gap-1">
-          <span>
-            {{ $t('profileView.tvl') }}
+        <div class="flex justify-between text-sm">
+          <div class="flex gap-1 items-center">
+            <span>
+              {{ $t('profileView.ipsharePrice') }}
+            </span>
+            <span class="text-h3 text-gradient-primary">
+              {{ formatPrice(calculateIPSharePrice(accStore.ipshare?.shareSupply as any / 1e18) * stateStore.ethPrice) }}
+            </span>
+          </div>
+          <div class="flex gap-1 items-center">
+            <span>
+              {{ $t('profileView.tvl') }}
+            </span>
+            <span class="text-h3 text-gradient-primary">
+            {{ formatPrice(calculateIPSharePrice(accStore.ipshare?.shareSupply as any / 1e18) * stateStore.ethPrice * (accStore.ipshare?.shareSupply as any / 1e18)) }}
           </span>
-          <span class="text-h2">
-          {{ formatPrice(calculateIPSharePrice(accStore.ipshare?.shareSupply as any / 1e18) * stateStore.ethPrice * (accStore.ipshare?.shareSupply as any / 1e18)) }}
-        </span>
+          </div>
         </div>
-      </div>
-      <div>
-
+        <div class="flex justify-center">
+          <div class="flex gap-5">
+            <button @click="showTradeModal()" class="bg-gradient-primary text-white text-h3 rounded-full my-2 w-[140px] h-[40px]">
+              {{ $t('trade') }}
+            </button>
+            <button @click="gotoStake()" class="bg-gradient-primary text-white text-h3 rounded-full my-2 w-[140px] h-[40px]">
+              {{ $t('stake') }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
