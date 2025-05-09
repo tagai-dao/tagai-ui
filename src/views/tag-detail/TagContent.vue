@@ -16,7 +16,7 @@ import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 
 enum ListType {
-  // Trending = 'trending',
+  Trending = 'trending',
   New = 'new',
   Space = 'space',
   Tipped = 'tipped'
@@ -28,12 +28,12 @@ const loading = ref(false);
 const finished = ref({
   'new': false,
   'space': false,
-  // 'trending': false,
+  'trending': false,
   'tipped': false
 });
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
-const listType = ref<ListType>(ListType.New)
+const listType = ref<ListType>(ListType.Trending)
 
 const showingTweets = computed(() => {
   if (comStore.currentSelectedCommunity?.tick &&
@@ -47,6 +47,9 @@ const showingTweets = computed(() => {
       }else if (listType.value === ListType.Tipped &&
       tweetsStore.communityTippedTweets) {
         return tweetsStore.communityTippedTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
+      }else if (listType.value === ListType.Trending &&
+      tweetsStore.communityTrendingTweets) {
+        return tweetsStore.communityTrendingTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
       }
     }
   return [] as Tweet[];
@@ -69,6 +72,13 @@ async function onRefresh() {
         tick
       ] = list as Tweet[];
       tweetsStore.communityTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communityTweets[tick])
+    } else if (listType.value === ListType.Trending) {
+      list = await getCommunityTrendingTweets(tick, twitterId)
+      if (!tweetsStore.communityTrendingTweets) {
+        tweetsStore.communityTrendingTweets = {};
+      }
+      tweetsStore.communityTrendingTweets[tick] = list as Tweet[];
+      tweetsStore.communityTrendingTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communityTrendingTweets[tick])
     } else if (listType.value === ListType.Space) {
       list = await getCommunitySpaceTweets(tick, twitterId)
 
@@ -117,6 +127,16 @@ async function onLoad() {
       ] = await getTokenInfoOfTweets(tweetsStore.communityTweets![
         tick
       ])
+    } else if (listType.value === ListType.Trending) {
+      list = await getCommunityTrendingTweets(tick, twitterId, page)
+      tweetsStore.communityTrendingTweets![
+        tick
+      ] = showingTweets.value.concat(list as Tweet[])
+      tweetsStore.communityTrendingTweets![
+        tick
+      ] = await getTokenInfoOfTweets(tweetsStore.communityTrendingTweets![
+        tick
+      ])
     } else if (listType.value === ListType.Space) {
       list = await getCommunitySpaceTweets(tick, twitterId, page)
       tweetsStore.communitySpaceTweets![
@@ -158,18 +178,34 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex justify-end mr-2 mb-2">
-    <el-select
+  <div class="flex justify-between mr-3 mb-2">
+    <div class="flex items-center justify-between gap-2 ">
+      <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.New || listType === ListType.Trending) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+        @click="listType = ListType.Trending; onRefresh()">
+        {{ $t('Tweets') }}
+      </button>
+      <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.Tipped) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+        @click="listType = ListType.Tipped; onRefresh()">
+        {{ $t('Tipped') }}
+      </button>
+      <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.Space) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+        @click="listType = ListType.Space; onRefresh()">
+        {{ $t('Space') }}
+      </button>
+    </div>
+    <div>
+      <el-select
+        v-if="listType === ListType.Trending || listType === ListType.New"
         v-model="listType"
-        class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-10 flex items-center text-h3 text-black"
+        class="bg-white rounded-full overflow-hidden max-w-[100px] min-w-[100px] c-select h-10 flex items-center text-h3 text-black"
         popper-class="c-select-popper rounded-xl"
         :disabled="refreshing || loading"
         @change="onRefresh"
       >
+        <el-option :value="ListType.Trending" :label="$t('trending')" />
         <el-option :value="ListType.New" :label="$t('new')" />
-        <el-option :value="ListType.Tipped" :label="$t('Tipped')" />
-        <el-option :value="ListType.Space" :label="$t('Space')" />
       </el-select>
+    </div>
   </div>
   <div class="flex-1">
     <van-pull-refresh class="h-full min-h-full"
