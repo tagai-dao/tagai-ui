@@ -18,7 +18,7 @@ const props = withDefaults(defineProps<{
     followers: number | null | undefined,
     followings: number | null | undefined,
     credit: number | null | undefined,
-    creditFactor: string | null | undefined
+    creditFactor?: string | null | undefined
 }>(), {
     profileImg: '',
     name: '',
