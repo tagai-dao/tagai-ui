@@ -17,7 +17,8 @@ const props = withDefaults(defineProps<{
     teleported: boolean,
     followers: number | null | undefined,
     followings: number | null | undefined,
-    credit: number | null | undefined
+    credit: number | null | undefined,
+    creditFactor: string | null | undefined
 }>(), {
     profileImg: '',
     name: '',
@@ -25,8 +26,15 @@ const props = withDefaults(defineProps<{
     steemId: '',
     ethAddr: '',
     teleported: false,
-    credit: 0
+    credit: 0,
+    creditFactor: ''
 })
+
+const creditType = [
+  "Balance",
+  "LP",
+  "Net buy"
+]
 
 const profile = computed(() => {
     if (!props.profileImg) return ''
@@ -90,6 +98,15 @@ function gotoUser() {
           <div v-if="props.credit" class="flex flex-col items-center">
             <span class="font-semibold text-black">{{ formatAmount(Math.floor(props.credit || 0)) }}</span>
             <span class="text-sm text-grey-normal">{{ $t('credit') }}</span>
+          </div>
+        </div>
+        <div v-if="props.creditFactor" class="pl-10 my-3 w-full"
+            v-for="(factor, index) in JSON.parse(props.creditFactor)"
+            :key="index"
+        >
+          <div class="flex justify-between">
+            <span class="text-sm text-grey-normal">{{ creditType[index] }}</span>
+            <span class="text-sm text-black font-semibold">{{ formatAmount(Math.floor(factor || 0)) }}</span>
           </div>
         </div>
         <div v-if="props.ethAddr" class="pl-10 mt-2 text-grey-normal">

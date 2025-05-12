@@ -94,8 +94,8 @@ onMounted(async () => {
     chart: {
       type: 'pie',
     },
-    labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance')],
-    series: [40, 60],
+    labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days"],
+    series: [40, 30, 30],
     colors,
     responsive: [{
       breakpoint: 480,
@@ -159,6 +159,7 @@ onMounted(async () => {
               :eth-addr="holder.ethAddr"
               :credit="holder.credit"
               :steem-id="''"
+              :credit-factor="holder.creditFactor"
           :teleported="true"
         >
           <template #avatar-img>

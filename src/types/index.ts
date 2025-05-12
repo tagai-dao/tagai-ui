@@ -310,6 +310,7 @@ export type CommunityCredit = {
   twitterId?: string | null | undefined,
   twitterName?: string | null | undefined,
   twitterUsername?: string | null | undefined,
+  creditFactor?: string | null | undefined,
 }
 
 export type TokenTrade = {
