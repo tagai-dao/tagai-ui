@@ -4,6 +4,7 @@ import {handleErrorTip} from "@/utils/notify";
 import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
 import {OperateType, useTweet} from "@/composables/useTweet";
+import { useCreateTweet } from "@/composables/useCreateTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
 import { type Tweet } from "@/types";
@@ -14,6 +15,7 @@ const props = defineProps<{
   }>()
 const emits = defineEmits(['newComment'])
 const { content, imgurls, profileImg } = usePost(props.tweet);
+const { checkSpecialCommand } = useCreateTweet()
 
 const tweetInput = ref()
 
@@ -42,6 +44,13 @@ async function reply() {
   if (tweetInput.value.leftWordsLength.value < 0 || tweetInput.value.tweetLength.value == 0) {
     return;
   }
+
+    const { isTip, isDeployCmd, isTwitterTip } = checkSpecialCommand(text)
+    if (isTip || isDeployCmd || isTwitterTip) {
+      window.open(`https://x.com/intent/tweet?in_reply_to=${props.tweet.tweetId}&text=${encodeURIComponent(text)}`, '_blank')
+      replyVisible.value = false
+      return;
+    }
   try{
     isRepling.value = true
     await userReply(props.tweet, text, props.tweet.tick!)

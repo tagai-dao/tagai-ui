@@ -16,6 +16,20 @@ export const useCreateTweet = (maxLength: number = 240) => {
   const contentRange = ref<Range | null>(null);
   const emojiPopover = ref();
   const tweetLength = ref<number>(0)
+  const regex_tip = /@TagAIDAO[ | ]tip \$([a-zA-Z]+)/i
+  const regex_deploy_cmd = /@TagAIDAO #deploy/i
+  const regex_twitter_tip = /@TagAITIP[ | ]tip[ | ](\d+(\.\d+)?)[ | ]\$([a-zA-Z]+)[ | ]to[ | ]@([a-zA-Z0-9\_]+)/i
+
+  function checkSpecialCommand(text: string) {
+      const isTip = regex_tip.test(text)
+      const isDeployCmd = regex_deploy_cmd.test(text)
+      const isTwitterTip = regex_twitter_tip.test(text)
+      return {
+          isTip,
+          isDeployCmd,
+          isTwitterTip
+      }
+  }
 
   const leftWordsLength = computed(() => {
     return maxLength - tweetLength.value
@@ -120,6 +134,7 @@ export const useCreateTweet = (maxLength: number = 240) => {
     contentRef,
     contentEl,
     leftWordsLength,
+    checkSpecialCommand,
     contentInput,
     getBlur,
     onPaste,
