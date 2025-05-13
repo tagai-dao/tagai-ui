@@ -108,9 +108,8 @@ async function payToken() {
     resetTips()
     try {
         loading.value = true
-        const payTokenHash = localStorage.getItem('payTokenHash')
+        const payTokenHash = null // localStorage.getItem('payTokenHash')
         if (payTokenHash) {
-            // const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
             identityInfo.assetId = payTokenHash;
             identityInfo.chainName = ChainConfig.name;
             identityInfo.type = 'payToken'
