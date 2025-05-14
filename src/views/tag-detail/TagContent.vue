@@ -33,7 +33,7 @@ const finished = ref({
 });
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
-const listType = ref<ListType>(ListType.Trending)
+const listType = ref<ListType>(ListType.New)
 
 const showingTweets = computed(() => {
   if (comStore.currentSelectedCommunity?.tick &&
