@@ -29,6 +29,7 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import CreateTipCurateModal from "@/components/common/CreateTipCurateModal.vue";
 import emitter from "@/utils/emitter";
 import { DeBoxChatWidget } from '@debox-pro/chat-widget-html';
+import { useWindowSize } from "@vant/use";
 
 
 const tabOptions = [
@@ -75,6 +76,9 @@ const accStore = useAccountStore();
 const { setInter } = useInterval()
 const {onCopy} = useTools()
 const { preCheckCuration } = useTweet()
+
+const showTradeBox = ref(false)
+const {width} = useWindowSize()
 
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
@@ -346,7 +350,12 @@ onBeforeRouteLeave((to, from, next) => {
             Blinks
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button> -->
-
+          <button class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 gap-1 rounded-full h-11"
+                  @click="showTradeBox=!showTradeBox">
+            <span>{{$t('trade')}}</span>
+            <i-ep-caret-bottom  class="transition-transform duration-300"
+                                :class="{ 'rotate-180': showTradeBox }"></i-ep-caret-bottom>
+          </button>
           <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
             {{$t('tip')}} ${{ comStore.currentSelectedCommunity?.tick }}
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
@@ -377,7 +386,7 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
     </div>
-    <BuyAndSellView />
+    <BuyAndSellView v-if="showTradeBox || width>1104"/>
     <div class="h-full sticky top-[0px]">
       <div class="h-full flex gap-2">
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
