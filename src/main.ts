@@ -15,6 +15,6 @@ app.config.globalProperties.$apexcharts = VueApexCharts;
 app.use(createPinia())
 app.use(router)
 app.use(i18n)
-app.use(VueApexCharts)
+app.use(VueApexCharts as any)
 
 app.mount('#app')
