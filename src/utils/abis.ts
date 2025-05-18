@@ -1998,6 +1998,30 @@ export const abis = {
       {
         "inputs": [
           {
+            "internalType": "uint256",
+            "name": "bondingCurveSupply",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "ethAmount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getBuyAmountByValue",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
             "internalType": "address",
             "name": "",
             "type": "address"
@@ -2120,6 +2144,32 @@ export const abis = {
       }
     ],
     "Token1": [
+      {
+        "inputs": [],
+        "name": "bondingCurveSupply",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "bondingCurveSupply",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
       {
         "inputs": [
           {
