@@ -78,8 +78,35 @@ onMounted(async () => {
           </div>
           <div class="flex-1 items-center flex">
             <div class="flex items-center gap-2">
-              <img class="w-8 h-8 min-w-8 min-h-8 rounded-full" :src="curate.profile" alt="">
-            <span class="text-grey-8d font-normal">@{{ curate.twitterUsername }}</span>
+              
+            <UserAvatar
+              :profile-img="curate.profile"
+              :name="curate.twitterName"
+              :username="curate.twitterUsername"
+              :followers="curate.followers"
+              :followings="curate.followings"
+              :eth-addr="curate.ethAddr"
+              :credit="curate.credit"
+              :steem-id="''"
+              :credit-factor="curate.creditFactor"
+          :teleported="true"
+        >
+          <template #avatar-img>
+            <img
+              v-if="curate.profile"
+              class="w-7 h-7 min-w-7 min-h-7 rounded-full cursor-pointer bg-color2A"
+              :src="curate.profile"
+              alt=""
+            />
+            <img
+              v-else
+              class="w-7 h-7 min-w-7 min-h-7 rounded-full cursor-pointer bg-color2A"
+              src="~@/assets/icons/icon-default-avatar.svg"
+              alt=""
+            />
+          </template>
+            </UserAvatar>
+              <span class="text-grey-8d font-normal">@{{ curate.twitterUsername }}</span>
             </div>
             <!-- <span class="text-grey-normal text-h5">Username</span> -->
           </div>
