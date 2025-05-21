@@ -15,7 +15,7 @@ let providerInfo: any;
 let accounts: any = []
 let initialized = false
 
-export const isMetaMaskInstalled = () => provider && (provider.isMetaMask || provider.isOkxWallet || provider.isOKExWallet || provider.isOKx || provider.isCoinbaseWallet);
+export const isMetaMaskInstalled = () => provider && (provider.isMetaMask || provider.isOkxWallet || provider.isOKExWallet || provider.isOKx || provider.isCoinbaseWallet || provider.isTokenPocket);
 export const isMetaMaskConnected = () => accounts && accounts.length > 0;
 export const isInitinalized = () => initialized;
 export const getProviders = () => providerDetails;
