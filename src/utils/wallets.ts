@@ -42,15 +42,15 @@ const detectEip6963 = () => {
     // 同时检测 window.ethereum
     if (window.ethereum) {
         if (window.ethereum.isTokenPocket) {
-        console.log("检测到 TP 钱包（传统）");
-        providerDetails.push({
-            provider: window.ethereum,
-            info: {
-                name: 'TokenPocket',
-                icon: 'https://help.tokenpocket.pro/~gitbook/image?url=https%3A%2F%2F261497644-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252F-MMF2k4MCaxErpZyah2d%252Ficon%252F8FIvhACj72GmT8skuG39%252Fic_launcher.png%3Falt%3Dmedia%26token%3D8ef812d4-b6eb-43f4-a731-c6efedf020d0&width=32&dpr=2&quality=100&sign=19ac625a&sv=2',
-                uuid: 'tokenpocket'
-            }
-        })
+            console.log("检测到 TP 钱包（传统）");
+            providerDetails.push({
+                provider: window.ethereum,
+                info: {
+                    name: 'TokenPocket',
+                    icon: 'https://help.tokenpocket.pro/~gitbook/image?url=https%3A%2F%2F261497644-files.gitbook.io%2F%7E%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252F-MMF2k4MCaxErpZyah2d%252Ficon%252F8FIvhACj72GmT8skuG39%252Fic_launcher.png%3Falt%3Dmedia%26token%3D8ef812d4-b6eb-43f4-a731-c6efedf020d0&width=32&dpr=2&quality=100&sign=19ac625a&sv=2',
+                    uuid: 'tokenpocket'
+                }
+            })
         } else {
         console.log("检测到其他钱包");
         }
