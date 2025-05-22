@@ -128,7 +128,11 @@ const handleNewProviderDetail = (newProviderDetail: any) => {
     if (existsProviderDetail(newProviderDetail)) {
         return;
     }
-    providerDetails.push(newProviderDetail);
+    if (newProviderDetail.info.name === 'Binance Wallet') {
+        providerDetails.unshift(newProviderDetail);
+    }else {
+        providerDetails.push(newProviderDetail);
+    }
 };
 
 const handleNewAccounts = async (accounts: any) => {
