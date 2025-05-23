@@ -11,7 +11,12 @@
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
+  "overrides": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
   "dependencies": {
+    "@binance/w3w-ethereum-provider": "^1.1.8-alpha.0",
     "@debox-pro/chat-widget-html": "^0.0.3",
     "@element-plus/icons-vue": "^2.3.1",
     "@makerdao/multicall": "^0.12.0",

@@ -3,6 +3,8 @@ import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { uiLog } from '@/apis/api';
 import { MetaMaskSDK } from '@metamask/sdk';
+import { getProvider as getBNProvider } from "@binance/w3w-ethereum-provider";
+import { ChainConfig } from "@/config"
 
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
@@ -15,10 +17,23 @@ let providerInfo: any;
 let accounts: any = []
 let initialized = false
 
-export const isMetaMaskInstalled = () => provider && (provider.isMetaMask || provider.isOkxWallet || provider.isOKExWallet || provider.isOKx || provider.isCoinbaseWallet || provider.isTokenPocket);
+export const isMetaMaskInstalled = () => provider && (provider.isMetaMask || provider.isOkxWallet || provider.isOKExWallet || provider.isOKx || provider.isCoinbaseWallet || provider.isTokenPocket || provider.isBinanceWallet);
 export const isMetaMaskConnected = () => accounts && accounts.length > 0;
 export const isInitinalized = () => initialized;
-export const getProviders = () => providerDetails;
+export const getProviders = () => {
+    const index = providerDetails.findIndex((p: any) => p.info.name === "Binance Wallet")
+    if (index === -1) {
+        handleNewProviderDetail({
+            provider: { isBinanceWallet: true },
+            info: {
+                name: "Binance Wallet",
+                icon: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="130" height="130" fill="none"><path fill="%23000" d="M0 0h130v130H0z"/><path fill="%23F3BA2F" d="M45.587 57.02 65.01 37.606l19.43 19.43 11.295-11.303L65.01 15 34.284 45.725zM15 65.004l11.299-11.299 11.298 11.299L26.3 76.302zM45.587 72.983 65.01 92.406l19.43-19.43 11.303 11.287-.008.007-30.725 30.734-30.725-30.718-.016-.016zM92.403 65.006 103.7 53.708 115 65.006l-11.299 11.299z"/><path fill="%23F3BA2F" d="m76.471 64.998-11.46-11.469-8.476 8.475-.98.972-2.005 2.006-.016.016.016.024 11.46 11.453 11.461-11.47.008-.007z"/></svg>`,
+                uuid: "BinanceW3WSDK"
+            }
+        })
+    }
+    return providerDetails
+};
 export const getProvider = () => provider
 export const getProviderInfo = () => providerInfo
 
@@ -26,16 +41,16 @@ const detectEip6963 = () => {
     const accStore = useAccountStore();
     let walletType = accStore.ethWalletType;
     window.addEventListener('eip6963:announceProvider', (event: any) => {
-      if (event.detail.info.uuid) {
-        if (walletType && walletType !== 'none') {
-            if (walletType == event.detail.info.name) {
-                setActiveProviderDetail(event.detail)
+        if (event.detail.info.uuid) {
+            if (walletType && walletType !== 'none') {
+                if (walletType == event.detail.info.name) {
+                    setActiveProviderDetail(event.detail)
+                }
             }
+
+            handleNewProviderDetail(event.detail);
+            initialized = true;
         }
-        
-        handleNewProviderDetail(event.detail);
-        initialized = true;
-      }
     });
     window.dispatchEvent(new Event('eip6963:requestProvider'));
 
@@ -52,7 +67,7 @@ const detectEip6963 = () => {
                 }
             })
         } else {
-        console.log("检测到其他钱包");
+            console.log("检测到其他钱包");
         }
     }
 };
@@ -92,6 +107,13 @@ export const setActiveProviderDetail = (providerDetail: any) => {
 
 export const initializeProvider = async () => {
     if (isMetaMaskInstalled()) {
+        if (provider.isBinanceWallet) {
+            const rpc: { [chainId: number]: string } = {}
+            rpc[ChainConfig.chainId] = ChainConfig.rpc
+            provider = Object.assign(getBNProvider({
+                rpc: rpc
+            }), { isBinanceWallet: true })
+        }
         provider.on('accountsChanged', handleNewAccounts);
         try {
             const newAccounts = await provider.request({
@@ -101,10 +123,13 @@ export const initializeProvider = async () => {
                 console.error('read wallet accoutn fail', newAccounts)
             }
             handleNewAccounts(newAccounts);
-        } catch (e) {
+        } catch (e: any) {
             console.error('Error on init when getting accounts', e);
+            if (e.message.includes("User closed modal")) {
+                provider.disconnect()
+            }
         }
-    }else {
+    } else {
         console.error('not plugin installed')
     }
 }
@@ -112,13 +137,13 @@ export const initializeProvider = async () => {
 export const setup = async () => {
     await setupNetwork(provider)
 }
-  
+
 const existsProviderDetail = (newProviderDetail: any) => {
     const existingProvider = providerDetails.find(
         (providerDetail: any) =>
-        providerDetail.info &&
-        newProviderDetail.info &&
-        providerDetail.info.uuid === newProviderDetail.info.uuid,
+            providerDetail.info &&
+            newProviderDetail.info &&
+            providerDetail.info.uuid === newProviderDetail.info.uuid,
     );
 
     return existingProvider;
@@ -130,7 +155,7 @@ const handleNewProviderDetail = (newProviderDetail: any) => {
     }
     if (newProviderDetail.info.name === 'Binance Wallet') {
         providerDetails.unshift(newProviderDetail);
-    }else {
+    } else {
         providerDetails.push(newProviderDetail);
     }
 };

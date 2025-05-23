@@ -23,19 +23,19 @@ const router = createRouter({
       path: '/:commerceid?',
       name: 'home',
       component: HomeView,
-      meta: {tabBar: true, topBar: true, keepAlive: true}
+      meta: { tabBar: true, topBar: true, keepAlive: true }
     },
     {
       path: '/commerce/:commerceid?',
       name: 'commerce',
       component: HomeView,
-      meta: {tabBar: true, topBar: true, keepAlive: true}
+      meta: { tabBar: true, topBar: true, keepAlive: true }
     },
     {
       path: '/tag-detail/:id/:sellsman?',
       name: 'tag-detail',
       component: HomeTagDetail,
-      meta: {tabBar: true, topBar: true, keepAlive: true}
+      meta: { tabBar: true, topBar: true, keepAlive: true }
     },
     {
       path: '/buy-sell/:id/:sellsman?',
@@ -56,19 +56,19 @@ const router = createRouter({
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: {tabBar: true, topBar: true, gotoHome: true, keepAlive: true}
+      meta: { tabBar: true, topBar: true, gotoHome: true, keepAlive: true }
     },
     {
       path: '/user/:username',
       name: 'user',
       component: UserView,
-      meta: {tabBar: true, topBar: true}
+      meta: { tabBar: true, topBar: true }
     },
     {
       path: '/wallet',
       name: 'wallet',
       component: WalletView,
-      meta: {tabBar: true, topBar: true, gotoHome: true, keepAlive: true}
+      meta: { tabBar: true, topBar: true, gotoHome: true, keepAlive: true }
     },
     {
       path: '/notification',
@@ -84,7 +84,7 @@ const router = createRouter({
       path: '/clanker/token/:token',
       name: 'clanker-token',
       component: ClankerDetail,
-      meta: {tabBar: true, topBar: true}
+      meta: { tabBar: true, topBar: true }
     },
     {
       path: '/tip-record',
