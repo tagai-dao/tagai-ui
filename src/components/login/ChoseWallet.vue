@@ -29,7 +29,7 @@ async function connectMetaMask() {
         <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
              @click="modalStore.setModalVisible(false)"/>
       </div>
-      <div class="flex flex-col gap-2 pt-4 pb-6" v-if="providers.length > 0">
+      <div class="flex flex-col gap-2 pt-4 pb-6">
         <button
             class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
                    flex justify-center items-center gap-10px
@@ -44,12 +44,12 @@ async function connectMetaMask() {
             {{ wallet.info.name }}
           </span>
         </button>
-      </div>
-      <div class="flex flex-col gap-2 pt-4 pb-6" v-else>
+
         <button
             class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
                    flex justify-center items-center gap-10px
                    hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
+            v-if="providers.length <= 1"
             :disabled="loading"
             @click="connectMetaMask()"
         >

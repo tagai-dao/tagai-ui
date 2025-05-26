@@ -73,7 +73,6 @@ const detectEip6963 = () => {
 };
 
 export const setMetaMaskSDK = async () => {
-    console.log(1)
     mmSdk = new MetaMaskSDK({
         checkInstallationImmediately: true,
         dappMetadata: {
