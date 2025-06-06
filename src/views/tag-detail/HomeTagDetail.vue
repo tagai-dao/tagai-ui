@@ -254,7 +254,7 @@ onBeforeRouteLeave((to, from, next) => {
             <div class="flex items-center">
               <span class="text-black text-h2" :class="comStore.currentSelectedCommunity?.listed ? 'text-orange-normal' : ''">{{ comStore.currentSelectedCommunity?.tick }}</span>
               <button v-if="comStore.currentSelectedCommunity?.createdByAi" class="pl-2 h-5 text-sm rounded-md gradient-text glow-effect">
-                {{$t('postView.aiCreate')}}
+                {{comStore.currentSelectedCommunity?.version === 5 ? $t('postView.ixo') : $t('postView.aiCreate')}}
               </button>
               <IconLinks :community="comStore.currentSelectedCommunity"/>
             </div>

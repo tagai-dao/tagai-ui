@@ -78,7 +78,7 @@ async function trade() {
               {{ tag }}
             </button>
             <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
-              {{$t('createCommunity.aiCreate')}}
+              {{community.version === 5 ? $t('createCommunity.ixo') : $t('createCommunity.aiCreate')}}
             </button>
           </template>
         </div>
