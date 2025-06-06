@@ -1,6 +1,6 @@
 import { getContract } from "./contract";
 import type { Community, CreateCommunity, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5 } from "@/config";
 import { getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, Ether, ClaimFee } from "@/config";
@@ -8,7 +8,7 @@ import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
 import _ from 'lodash'
-import { isTokenExist } from "@/apis/api";
+import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { getDayNumber } from '@/utils/helper'
 
@@ -16,7 +16,8 @@ const pumpContract = [
     PumpContract1,
     PumpContract2,
     PumpContract3,
-    PumpContract4
+    PumpContract4,
+    PumpContract5
 ]
 
 export const checkTickUsed = async (tick: string) => {
@@ -82,6 +83,14 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         const tc = await getContract('Token' + version, token)
         if (version == 1) {
             const tx = await tc.buyToken(amount, sellsman, slippage, ethers.ZeroAddress, {
+                value: ethAmount
+            })
+            await tx.wait();
+            return tx.hash;
+        }else if (version == 5) {
+            // get trade signature
+            const result: any = await getTradeSignature(useAccountStore().ethConnectAddress);
+            const tx = await tc.buyToken(amount, sellsman, slippage, result.signature, {
                 value: ethAmount
             })
             await tx.wait();
@@ -360,6 +369,7 @@ export const getTokenOnchainInfo = async (tokens: String[], versions: Record<str
 
 export const getBuyAmountWithETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
     if (!token) return {supply: 0n, receive: 0n}
+    console.log('token', token, version)
     const tc = await getContract('Token1', token, true);
     const supply = await tc.bondingCurveSupply();
     const pumpC = await getContract('Pump' + version, pumpContract[version - 1], true);
@@ -368,7 +378,7 @@ export const getBuyAmountWithETHAfterFee = async (token: string | undefined, ver
 }
 
 export const getBuyPriceAfterFee = async (supply: bigint, amount: bigint) => {
-    const pump = await getContract('Pump2', undefined, true);
+    const pump = await getContract('Pump4', undefined, true);
     const price = await pump.getBuyPriceAfterFee(supply, amount);
     return price;
 }

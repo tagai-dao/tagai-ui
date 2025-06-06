@@ -206,7 +206,8 @@
     "blinkTip": "You can make blink to Twitter if you have created IPShare, user trade tag from your blink can bring you reward.",
     "invalidTokenSellTip": "This token is created by the old version which has an abnormality and has been closed for buying. Please sell as soon as possible.",
     "fillInfoTip": "Please complete the amount",
-    "noTradeData": "No trade data"
+    "noTradeData": "No trade data",
+    "notBondEthTip": "Please change to a BNB address which has been bound to your twitter account."
   },
   "community": {
     "distributionTip": "The total amount of tokens is distributed through three parts, including 15% for social distribution, 65% for bonding curve sales, and 20% for entering the liquidity pool",
@@ -316,6 +317,7 @@
     "cantCurateSelf": "Can't curate your self tweet",
     "cantRetweetSelf": "Can't retweet your self tweet",
     "likeFrequent": "Like so frequently, please operate 15 minutes later",
-    "retweetFrequent": "Retweet so frequently, please operate 15 minutes later"
+    "retweetFrequent": "Retweet so frequently, please operate 15 minutes later",
+    "userScoreTooLow": "Your score is too low"
   }
 }

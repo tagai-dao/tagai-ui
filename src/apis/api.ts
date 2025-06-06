@@ -214,6 +214,9 @@ export const getClankerTickers = async () =>
 export const getClankerTickTweets = async (contract: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/clanker/tickTweets', {contract, pageIndex})
 
+/************************************ twitter tip **********************************/
+export const getTradeSignature = async (ethAddr: string) =>
+  get(BACKEND_API_URL + '/pump/getTradeSignature', {ethAddr})
 
 /************************************ twitter tip **********************************/
 export const getPendingClaimTokens = async (twitterId: string) =>

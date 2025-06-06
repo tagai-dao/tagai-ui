@@ -204,7 +204,8 @@
     "blinkTip": "如果您已经创建了IPShare，您可以通过Blink与Twitter互动。您在Blink上的交易标签可以为您带来奖励",
     "invalidTokenSellTip": "该代币由旧版本创建，存在异常且已关闭购买功能。请尽快出售。",
     "fillInfoTip": "请填写数量",
-    "noTradeData": "暂无交易数据"
+    "noTradeData": "暂无交易数据",
+    "notBondEthTip": "请更换一个已绑定推特的BNB地址"
   },
   "community": {
     "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于曲线销售，20%用于进入流动性池。",
@@ -314,6 +315,7 @@
     "cantCurateSelf": "不能策展自己的推文",
     "cantRetweetSelf": "不能转发自己的推文",
     "likeFrequent": "点赞太频繁，请15分钟后再操作",
-    "retweetFrequent": "转发太频繁，请15分钟后再操作"
+    "retweetFrequent": "转发太频繁，请15分钟后再操作",
+    "userScoreTooLow": "您的推特评分分太低"
   }
 }

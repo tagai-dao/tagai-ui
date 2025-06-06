@@ -35,6 +35,7 @@ const route = useRoute()
 const tokenInfo = ref()
 const trading = ref(false)
 const showFillInfo = ref(false)
+const showNotBondEth = ref(false)
 const defaultAmount = ref([0.02, 0.05, 0.1, 0.2])
 const { preCheckCuration, userTweet } = useTweet();
 const stateStore = useStateStore()
@@ -206,6 +207,7 @@ async function confirm() {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
+  showNotBondEth.value = false
   if (tradeType.value === 'buy') {
     if (!payEth.value) {
       showFillInfo.value = true
@@ -275,7 +277,12 @@ async function confirm() {
       }
     }
   } catch (e) {
-    handleErrorTip(e)
+    if (e == errCode.NOT_BOND_ETH) {
+      showNotBondEth.value = true
+    } else {
+      handleErrorTip(e)
+    }
+    
   } finally {
     trading.value = false
   }
@@ -493,6 +500,9 @@ onMounted(async () => {
           </div>
         <div v-if="invalidToken" class="text-sm text-red-e6 text-center">
           {{ $t('buyAndSell.invalidTokenSellTip') }}
+        </div>
+        <div v-if="showNotBondEth" class="text-sm text-red-e6 text-center">
+          {{ $t('buyAndSell.notBondEthTip') }}
         </div>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
           {{ $t('buyAndSell.fillInfoTip') }}

@@ -202,6 +202,9 @@ export const handleServerError = (code: number) => {
     case errCode.RETWEET_FREQUENT:
       notify({ message: t('errMessage.retweetFrequent'), type: 'error'});
       break;
+    case errCode.USER_SCORE_TOO_LOW:
+      notify({ message: t('errMessage.userScoreTooLow'), type: 'error'});
+      break;
     default:
       break;
   }
