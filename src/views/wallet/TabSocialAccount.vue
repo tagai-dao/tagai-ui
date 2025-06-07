@@ -60,7 +60,7 @@ onMounted(() => {
                   <ul class="list-decimal pl-5">
                     <li>{{ $t('profileView.tipDes2') }}</li>
                     <li>{{ $t('profileView.tipDes5') }}</li>
-                    <li>{{ $t('profileView.tipDes6') + ' @TagAITIP tip [amount] $[ticker] to @[user]' }}</li>
+                    <li>{{ $t('profileView.tipDes6') + ' @TagAIDAO tip [amount] $[ticker] to @[user]' }}</li>
                   </ul>
                 </div>
               </template>
