@@ -4,9 +4,11 @@ import TagListItem from "@/components/home/TagListItem.vue";
 import { getCreatedList } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
-import { getTokenInfo } from "@/utils/pump";
+import { getTokenInfo, getAIBalance } from "@/utils/pump";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
+import { formatAmount } from "@/utils/helper";
+import { redeemIxoReward } from '@/apis/api'
 
 const accStore = useAccountStore()
 
@@ -14,6 +16,7 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const scroller = document.querySelector('#profile-tab-scroller')
+let aiBalance: any = {}
 
 const onLoad = async () => {
   if(loading.value || finished.value || !accStore.getAccountInfo.ethAddr || accStore.createdTokenList.length == 0) return
@@ -28,8 +31,10 @@ const onRefresh = async () => {
     refreshing.value = true
     finished.value = false
     let list: any = await getCreatedList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!)
+    console.log('list', list)
     if (list && list.length > 0) {
       list = await getTokenInfo(list)
+      aiBalance = await getAIBalance(list.map((item: any) => item.token))
       accStore.createdTokenList = list
       if (list.length < 30) finished.value = true
     }
@@ -39,6 +44,17 @@ const onRefresh = async () => {
     refreshing.value = false
   }
 };
+
+const claimReward = async (token: string) => {
+  console.log('claimReward', token)
+  try {
+    const res = await redeemIxoReward(accStore.getAccountInfo.twitterId, token)
+    console.log('res', res)
+    onRefresh()
+  } catch (e) {
+    handleErrorTip(e)
+  }
+}
 
 onMounted(() => {
   onRefresh()
@@ -64,7 +80,13 @@ onMounted(() => {
           <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i"
                        @click="$router.push(`/tag-detail/${community.tick}`)"
                        :community>
-            <template #default-btn><div></div></template>
+            <template #default-btn><div>
+              <button v-if="aiBalance[community.token] > 0 && community.createdByAi && community.listed"
+                class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full"
+                @click.stop="claimReward(community.token)">
+                {{ formatAmount(aiBalance[community.token]) }} To Claim
+              </button>
+            </div></template>
           </TagListItem>
         </div>
         <template v-else>

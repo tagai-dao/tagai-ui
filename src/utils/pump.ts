@@ -1,6 +1,6 @@
 import { getContract } from "./contract";
 import type { Community, CreateCommunity, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5 } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer } from "@/config";
 import { getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, Ether, ClaimFee } from "@/config";
@@ -418,4 +418,22 @@ export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) 
     let contract = await getContract('UniswapRouter', undefined, true);
     const amount = await contract.getAmountsOut(tokenAmount, [token, WETH]);
     return amount[amount.length - 1];
+}
+
+export const getAIBalance = async (tokens: string[]) => {
+    let calls: any[] = []
+    for (let token of tokens) {
+        calls.push({
+            target: token,
+            call: [
+                'balanceOf(address)(uint256)',
+                AIDeployer
+            ],
+            returns: [
+                [token, (val: any) => val.toString() / 1e18]
+            ]
+        })
+    }
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed
 }

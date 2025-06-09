@@ -79,6 +79,7 @@ export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2
 
 export const Multicall3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
 export const CoinPurse = '0x6C818c610F3D9db65f5e0c0838f3F68600b80C85'
+export const AIDeployer = '0xf0a27ec9bb8AC28007cB474fC1ea0A9396fe6991'
 
 export const Ether = BigInt(1e18);
 

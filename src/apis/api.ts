@@ -67,6 +67,9 @@ export const getMessages = async (twitterId: string) =>
 
 export const readAllMessage = async (twitterId: string) =>
   post(BACKEND_API_URL + '/user/readAllMessage', {twitterId})
+
+export const redeemIxoReward = async (twitterId: string, token: string) =>
+  post(BACKEND_API_URL + '/community/redeemToken', {twitterId, token})
 /************************************ tweets **********************************/
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})
@@ -214,7 +217,7 @@ export const getClankerTickers = async () =>
 export const getClankerTickTweets = async (contract: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/clanker/tickTweets', {contract, pageIndex})
 
-/************************************ twitter tip **********************************/
+/************************************ ixo **********************************/
 export const getTradeSignature = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/pump/getTradeSignature', {ethAddr})
 
