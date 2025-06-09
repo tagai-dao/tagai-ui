@@ -33,7 +33,7 @@ async function confirm() {
       if (!checkTipError()) {
         return;
       }
-      window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`@TagAITIP tip ${amount.value} $${socialAccountModalStore.editTokenInfo?.tick} to @${to.value}`)}`, '_blank')
+      window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`@TagAIDAO tip ${amount.value} $${socialAccountModalStore.editTokenInfo?.tick} to @${to.value}`)}`, '_blank')
       socialAccountModalStore.setModalVisible(false, SocialAccountModalType.TipToken)
   } catch (error) {
     handleErrorTip(error)
