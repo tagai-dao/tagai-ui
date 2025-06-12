@@ -209,7 +209,7 @@ async function confirm() {
   }
   showNotBondEth.value = false
   if (tradeType.value === 'buy') {
-    if (!payEth.value) {
+    if (!payEth.value || parseFloat(payEth.value) == 0) {
       showFillInfo.value = true
       return
     }
@@ -219,7 +219,7 @@ async function confirm() {
     //   return
     // }
   }else {
-    if (!sellAmount.value) {
+    if (!sellAmount.value || parseFloat(sellAmount.value) == 0) {
       showFillInfo.value = true
       return
     };
