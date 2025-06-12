@@ -4,6 +4,7 @@ import { ElNotification } from "element-plus";
 import { ethers } from 'ethers'
 import { abis } from './abis'
 import _ from 'lodash';
+import { useAccount } from "@/composables/useAccount";
 
 const t = i18n.global.t;
 
@@ -207,6 +208,9 @@ export const handleServerError = (code: number) => {
       break;
     default:
       break;
+  }
+  if (code === errCode.InvalidAccessToken || code === errCode.InvalidState || code === errCode.UserCancelAuth) {
+    useAccount().logout()
   }
 };
 

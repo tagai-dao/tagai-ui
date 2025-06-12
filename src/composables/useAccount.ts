@@ -198,31 +198,6 @@ export const useAccount = () => {
         const accStore = useAccountStore();
         const acc = accStore.getAccountInfo;
         if (acc && acc.accessToken) {
-            const { expiresAt } = acc;
-            if (typeof(expiresAt) !== 'number') {
-                logout();
-                return;
-            }
-            if (expiresAt - new Date().getTime() < 600000) {
-                // refresh token 
-                try {
-                    const token = await refreshToken();
-                    if (token) {
-                        accStore.setAccount({
-                            ...acc,
-                            accessToken: token.accessToken,
-                            expiresAt: token.expiresAt
-                        })
-                        return token.accessToken;
-                    }else {
-                        logout()
-                        return false
-                    }
-                }catch(e) {
-                    logout()
-                    return false
-                }
-            }
             return acc.accessToken
         }else {
             // need auth again

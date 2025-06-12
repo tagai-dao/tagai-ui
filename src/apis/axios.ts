@@ -46,6 +46,15 @@ export function post(url: string, params?: object) {
     axios
       .post(url, params)
       .then(res => {
+        if (res.data.jwt) {
+          const accStore = useAccountStore();
+          accStore.setAccount({
+            ...accStore.getAccountInfo,
+            accessToken: res.data.jwt
+          })
+          return resolve(res.data.data)
+        }
+
         resolve(res.data);
       })
       .catch(err => {
