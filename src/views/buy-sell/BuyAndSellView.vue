@@ -247,7 +247,7 @@ async function confirm() {
       if (!payEth.value) return
 
       // check list
-      const hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), stateStore.sellsman, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -264,7 +264,7 @@ async function confirm() {
         finalSellAmount = BigInt(tokenOriginalBalance.value)
       }
 
-      const hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, stateStore.sellsman, listed.value!, Math.ceil(maxSlippage.value * 100))
+      const hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, stateStore.sellsman, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined

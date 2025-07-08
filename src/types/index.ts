@@ -232,15 +232,18 @@ export type Reply = {
 
 export type OnchainTokenInfo = {
   tick?: string,
-  token?: string,
+  token: string,
   marketCap?: number;
   listed?: boolean;
   bondingCurveSupply?: number;
+  totalSupply?: number;
   totalClaimedSocialRewards?: number;
+  isImport?: boolean;
   price?: number;
   pair?: string;
   listedDayNumber?: number | null | undefined;
   distributionEnded?: boolean | null | undefined;
+  dexVersion?: number | null | undefined;
 }
 
 export type Community = OnchainTokenInfo & {
@@ -249,7 +252,6 @@ export type Community = OnchainTokenInfo & {
   logo: string;
   creator: string; // ethAddr
   tags?: string | string[];
-  token: string,
   version?: number | null | undefined,
   tick: string,
   twitter?: string | undefined | null;
@@ -258,7 +260,6 @@ export type Community = OnchainTokenInfo & {
   createAt?: string | number | null | undefined;
   createdByAi?: number | null | undefined;
   distribution: string;
-  isImport?: boolean;
   deboxConversationId?: string;
 };
 

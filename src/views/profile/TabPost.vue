@@ -8,7 +8,7 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import { getUserTweets, getMyCurationRewards, userUnclaimableCurationRewards } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { useAccountStore } from "@/stores/web3";
-import { getTokenInfoOfTweets, getTokenOnchainInfo } from '@/utils/pump'
+import { getImportTokenOnchainInfo, getTokenInfoOfTweets, getTokenOnchainInfo } from '@/utils/pump'
 import { formatPrice } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type CurationReward, type Tweet } from "@/types";
@@ -92,9 +92,16 @@ function updateReward() {
         for (let t of list) {
           versions[t.token] = t.version ?? 2
         }
-        getTokenOnchainInfo(list.map((l: any) => l.token), versions).then((tokeninfo: any) => {
+        getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions).then((tokeninfo: any) => {
           for (let t of list) {
             t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
+          }
+          claimableRewards.value = list
+        })
+
+        getImportTokenOnchainInfo(list.filter((l: any) => l.isImport)).then((tokeninfo: any) => {
+          for (let t of list) {
+            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
           }
           claimableRewards.value = list
         })
@@ -109,9 +116,15 @@ function updateReward() {
         for (let t of list) {
           versions[t.token] = t.version ?? 2
         }
-        getTokenOnchainInfo(list.map((l: any) => l.token), versions).then((tokeninfo: any) => {
+        getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions).then((tokeninfo: any) => {
           for (let t of list) {
-            t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
+            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
+          }
+          unclaimableRewards.value = list
+        })
+        getImportTokenOnchainInfo(list.filter((l: any) => l.isImport)).then((tokeninfo: any) => {
+          for (let t of list) {
+            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
           }
           unclaimableRewards.value = list
         })

@@ -75,7 +75,8 @@ export const WETH = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 export const uniswapV2Factory = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
 export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
-export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10'
+export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10';
+export const wrappedUniswapV2ForTagAI2 = '0x72D353c0469C10F6B769F13b67EEdB2E1F26FB01';
 
 export const Multicall3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
 export const CoinPurse = '0x6C818c610F3D9db65f5e0c0838f3F68600b80C85'

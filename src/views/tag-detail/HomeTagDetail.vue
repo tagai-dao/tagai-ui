@@ -31,17 +31,29 @@ import emitter from "@/utils/emitter";
 import { DeBoxChatWidget } from '@debox-pro/chat-widget-html';
 import { useWindowSize } from "@vant/use";
 
-
-const tabOptions = [
-  // {label: 'Group', key: 'group'},
-  {label: 'Square', key: 'content'},
-  // {label: 'Tipped', key: 'tipped'},
-  {label: 'Proposal', key: 'proposal'},
-  {label: 'Trades', key: 'trade'},
-  {label: 'Credit', key: 'credit'},
-  {label: 'Token', key: 'token'},
-  {label: 'AI', key: 'ai'},
-]
+const tabOptions = computed(() => {
+  if (comStore.currentSelectedCommunity?.isImport) {
+    return [
+      // {label: 'Group', key: 'group'},
+      {label: 'Square', key: 'content'},
+      // {label: 'Tipped', key: 'tipped'},
+      {label: 'Proposal', key: 'proposal'},
+      // {label: 'Trades', key: 'trade'},
+      {label: 'Credit', key: 'credit'},
+      {label: 'AI', key: 'ai'},
+    ]
+  }
+  return [
+    // {label: 'Group', key: 'group'},
+    {label: 'Square', key: 'content'},
+    // {label: 'Tipped', key: 'tipped'},
+    {label: 'Proposal', key: 'proposal'},
+    {label: 'Trades', key: 'trade'},
+    {label: 'Credit', key: 'credit'},
+    {label: 'Token', key: 'token'},
+    {label: 'AI', key: 'ai'},
+  ]
+})
 enum CurationType {
   TWEET,
   SPACE,
@@ -247,7 +259,9 @@ onBeforeRouteLeave((to, from, next) => {
           <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
           <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
           <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">{{$t('listed')}}</div>
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
+                  {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
+                </div>
         </div>
         <div class="flex-1 py-1">
           <div class="flex flex-wrap justify-between gap-x-4 items-center">
@@ -286,7 +300,7 @@ onBeforeRouteLeave((to, from, next) => {
             <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
         </div>
-        <div class="text-base font-medium flex items-center gap-1">
+        <div v-if="!comStore.currentSelectedCommunity?.isImport" class="text-base font-medium flex items-center gap-1">
           <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
           <el-popover popper-class="c-popper">
             <template #reference>
@@ -299,7 +313,7 @@ onBeforeRouteLeave((to, from, next) => {
             </template>
           </el-popover>
         </div>
-        <div class="flex items-center gap-3">
+        <div v-if="!comStore.currentSelectedCommunity?.isImport" class="flex items-center gap-3">
           <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
                       bg-white gap-[2px]">
             <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
@@ -414,7 +428,9 @@ onBeforeRouteLeave((to, from, next) => {
                 <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
                 <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
                 <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">{{ $t('listed') }}</div>
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">
+                  {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
+                </div>
               </div>
               <div class="flex-1 py-1">
                 <div class="flex flex-wrap justify-between gap-x-4 items-center">
@@ -450,7 +466,7 @@ onBeforeRouteLeave((to, from, next) => {
                   <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
                 </button>
               </div>
-              <div class="text-base font-medium flex items-center gap-1">
+              <div v-if="!comStore.currentSelectedCommunity?.isImport" class="text-base font-medium flex items-center gap-1">
                 <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
                 <el-popover popper-class="c-popper">
                   <template #reference>
@@ -463,7 +479,7 @@ onBeforeRouteLeave((to, from, next) => {
                   </template>
                 </el-popover>
               </div>
-              <div class="flex items-center gap-3">
+              <div v-if="!comStore.currentSelectedCommunity?.isImport" class="flex items-center gap-3">
                 <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
                       bg-white gap-[2px]">
                   <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
