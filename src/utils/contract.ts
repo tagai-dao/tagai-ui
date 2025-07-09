@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import { getReadOnlyProvider } from "./web3";
 import { PumpContract1, IPShareContract1, uniswapV2Router02, 
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
-    wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, wrappedUniswapV2ForTagAI2 } from '@/config'
+    wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, wrappedUniswapV2ForTagAI2 } from '@/config'
 
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -12,6 +12,7 @@ const ContractAddress = {
     Pump3: PumpContract3,
     Pump4: PumpContract4,
     Pump5: PumpContract5,
+    Pump6: PumpContract6,
     IPShare1: IPShareContract1,
     IPShare2: IPShareContract2,
     UniswapRouter: uniswapV2Router02,

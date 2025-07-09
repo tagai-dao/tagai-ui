@@ -86,48 +86,39 @@ const onRefresh = async () => {
 function updateReward() {
   const acc = props.userInfo ?? accStore.getAccountInfo
   if (rewardType.value === 'Claimable') {
-    getMyCurationRewards(acc.twitterId).then((list: any) => {
+    getMyCurationRewards(acc.twitterId).then(async (list: any) => {
       if (list && list.length > 0) {
         let versions: Record<string, number> = {}
         for (let t of list) {
           versions[t.token] = t.version ?? 2
         }
-        getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions).then((tokeninfo: any) => {
-          for (let t of list) {
-            t.price = (tokeninfo[t.token].price ?? 0) * useStateStore().ethPrice;
-          }
-          claimableRewards.value = list
-        })
+        const list1 = await getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions)
+        const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
 
-        getImportTokenOnchainInfo(list.filter((l: any) => l.isImport)).then((tokeninfo: any) => {
-          for (let t of list) {
-            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
-          }
-          claimableRewards.value = list
-        })
+        for (let t of list) {
+          t.price = (list1[t.token]?.price ?? list2[t.token]?.price ?? 0) * useStateStore().ethPrice;
+        }
+
+        claimableRewards.value = list
       }else {
         claimableRewards.value = []
       }
     })
   } else {
-    userUnclaimableCurationRewards(acc.twitterId).then((list: any) => {
+    userUnclaimableCurationRewards(acc.twitterId).then(async (list: any) => {
       if (list && list.length > 0) {
         let versions: Record<string, number> = {}
         for (let t of list) {
           versions[t.token] = t.version ?? 2
         }
-        getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions).then((tokeninfo: any) => {
-          for (let t of list) {
-            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
-          }
-          unclaimableRewards.value = list
-        })
-        getImportTokenOnchainInfo(list.filter((l: any) => l.isImport)).then((tokeninfo: any) => {
-          for (let t of list) {
-            t.price = (tokeninfo[t.token]?.price ?? 0) * useStateStore().ethPrice;
-          }
-          unclaimableRewards.value = list
-        })
+        const list1 = await getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions)
+        const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
+
+        for (let t of list) {
+          t.price = (list1[t.token]?.price ?? list2[t.token]?.price ?? 0) * useStateStore().ethPrice;
+        }
+
+        unclaimableRewards.value = list
       }else {
         unclaimableRewards.value = []
       }

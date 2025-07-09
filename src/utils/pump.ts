@@ -3,7 +3,7 @@ import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/type
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
 import { getTransactionReceipt } from "./web3";
 import { ethers } from 'ethers'
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, Ether, ClaimFee } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
@@ -17,7 +17,8 @@ const pumpContract = [
     PumpContract2,
     PumpContract3,
     PumpContract4,
-    PumpContract5
+    PumpContract5,
+    PumpContract6
 ]
 
 export const checkTickUsed = async (tick: string) => {
