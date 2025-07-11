@@ -106,7 +106,7 @@ function gotoUser() {
         >
           <div class="flex justify-between">
             <span class="text-sm text-grey-normal">{{ creditType[index] }}</span>
-            <span class="text-sm text-black font-semibold">{{ formatAmount(Math.floor(factor || 0)) }}</span>
+            <span class="text-sm text-black font-semibold">{{ formatAmount(factor || 0) }}</span>
           </div>
         </div>
         <div v-if="props.ethAddr" class="pl-10 mt-2 text-grey-normal">
