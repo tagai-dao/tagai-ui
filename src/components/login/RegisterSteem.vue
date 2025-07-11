@@ -11,7 +11,7 @@ import { useAccount } from "@/composables/useAccount";
 import { transferEthTo, signMessage as ethSignMessage } from "@/utils/wallets";
 import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
 import { getUserBitip, checkRegister, checkEthUsed } from "@/apis/api";
-import { bytesToHex, sleep } from "@/utils/helper";
+import { bytesToHex, reportLog, sleep } from "@/utils/helper";
 import { box, generateSteemAuth, getBalance } from "@/utils/web3";
 import { ethers } from 'ethers';
 import type { Account } from "@/types";
@@ -278,6 +278,10 @@ async function register() {
     if(error === ErrCode.TRANSACTION_INVALID) {
       localStorage.removeItem('payTokenHash')
     }
+    reportLog('register_steem_error', {
+      error,
+      identityInfo: identityInfo
+    })
     handleErrorTip(error)
   } finally{
     useModalStore().setModalCloseEnable(true);

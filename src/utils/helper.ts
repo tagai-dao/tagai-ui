@@ -1,6 +1,7 @@
 import type { Space } from '@/types';
 import { dayjs } from 'element-plus';
 import utc from 'dayjs/plugin/utc';
+import { BACKEND_API_URL } from '@/config';
 dayjs.extend(utc)
 
 export const sleep = async (time: number) => {
@@ -321,4 +322,18 @@ export function parseSpaceLastTime(space: Space) {
 
 export const getDayNumber = () => {
   return Math.floor(Date.now() / 86400000)
+}
+
+export function reportLog(type: string, data: any) {
+  try {
+    navigator.sendBeacon(BACKEND_API_URL + '/tiptag/log', JSON.stringify({
+      type,
+      data,
+      time: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      url: location.href
+    }));
+  } catch (error) {
+    console.log(error)
+  }
 }
