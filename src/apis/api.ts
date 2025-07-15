@@ -12,6 +12,9 @@ export const getUserBitip = async (btcAddress: string) =>
 export const uiLog = async (info: any) =>
   get(BACKEND_API_URL + '/tiptag/ui-log', info)
 
+export const reportLog = async (info: any) =>
+  post(BACKEND_API_URL + '/tiptag/log', {log: info})
+
 /************************************ twitter auth **********************************/
 export const checkAccessToken = async (twitterId: string) =>
   post(BACKEND_API_URL + '/auth/checkAccessToken', {twitterId})

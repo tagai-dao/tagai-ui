@@ -2,6 +2,7 @@ import type { Space } from '@/types';
 import { dayjs } from 'element-plus';
 import utc from 'dayjs/plugin/utc';
 import { BACKEND_API_URL } from '@/config';
+import { reportLog as reportLogApi } from '@/apis/api';
 dayjs.extend(utc)
 
 export const sleep = async (time: number) => {
@@ -326,13 +327,13 @@ export const getDayNumber = () => {
 
 export function reportLog(type: string, data: any) {
   try {
-    navigator.sendBeacon(BACKEND_API_URL + '/tiptag/log', JSON.stringify({
+    reportLogApi(JSON.stringify({
       type,
       data,
       time: new Date().toISOString(),
       userAgent: navigator.userAgent,
       url: location.href
-    }));
+    })).catch()
   } catch (error) {
     console.log(error)
   }
