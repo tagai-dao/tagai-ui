@@ -56,6 +56,8 @@
   "docs": "文档",
   "auditReport": "审计报告",
   "Amount": "数量",
+  "posts": "帖子",
+  "communities": "社区",
   "loginView": {
     "loginWithTwitter": "登录推特",
     "authTwitterTip": "TagAI 的某些功能需要推特的相应权限，您可以根据需要选择需要授权的功能",

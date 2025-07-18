@@ -178,7 +178,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex justify-between mr-3 mb-2">
+  <div class="flex justify-between mb-2">
     <div class="flex items-center justify-between gap-2 ">
       <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.New || listType === ListType.Trending) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
         @click="listType = ListType.Trending; onRefresh()">

@@ -6,8 +6,14 @@ export interface CommunityTweets {
   [key: string]: Tweet[]
 }
 
+export enum TweetListType {
+  Trending = 'trending',
+  New = 'new'
+}
+
 export const useTweetsStore = defineStore("tweets", () => {
-  const allTweets = ref<Tweet[]>([]);
+  const homeTweetType = ref<TweetListType>(TweetListType.New)
+  const newTweets = ref<Tweet[]>([]);
   const trendingTweets = ref<Tweet[]>([]);
   const currentSelectedTweet = ref<Tweet | null>(null);
   const communityTweets = ref<CommunityTweets>();
@@ -15,7 +21,8 @@ export const useTweetsStore = defineStore("tweets", () => {
   const communityTrendingTweets = ref<CommunityTweets>();
   const communityTippedTweets = ref<CommunityTweets>();
   return {
-    allTweets,
+    homeTweetType,
+    newTweets,
     trendingTweets,
     currentSelectedTweet,
     communityTweets,

@@ -379,3 +379,17 @@ export enum ConnectState {
   Disconnect,
   WrongAddress
 }
+
+export type IpShareUser = {
+  twitterId: string,
+  btcAddr: string | null,
+  ethAddr: string | null,
+  steemId: string | null,
+  twitterName: string,
+  twitterUsername: string,
+  profile: string
+  followers: number
+  followings: number
+  lastReadMessageTime: string
+  supply: number
+}

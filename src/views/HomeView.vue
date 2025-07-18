@@ -14,6 +14,8 @@ import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
 import { formatPrice } from "../utils/helper";
 import { useStateStore } from "@/stores/common";
+import HomePost from "@/views/home/HomePost.vue";
+import PostTypeOption from "@/views/home/PostTypeOption.vue";
 
 const listType = ref(ListType.MarketCap)
 const typePopoverVisible = ref(false)
@@ -30,8 +32,8 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['BSC', 'NULS']
-const activeTab = ref('BSC')
+const tabOptions = ['posts', 'communities']
+const activeTab = ref('posts')
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -39,7 +41,7 @@ watch(listType, (val) => {
   refresh()
 })
 watch(activeTab, (val) => {
-  gotoChain(val)
+  // gotoChain(val)
 })
 
 async function refresh() {
@@ -189,6 +191,7 @@ onMounted(async () => {
 })
 
 onActivated(() => {
+  if(pageScrollRef.value)
   pageScrollTo(pageScrollRef.value)
 })
 
@@ -289,64 +292,69 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
       </div>
     </div>
     <div class="px-3 flex justify-between gap-4 web:gap-10" ref="scrollContainer">
-      <el-select
-          v-model="activeTab"
-          class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
-          popper-class="c-select-popper rounded-xl"
-      >
-        <el-option v-for="tab of tabOptions" :key="tab" :value="tab" :label="tab" />
-      </el-select>
+      <div class="bg-white flex rounded-full overflow-hidden shadow-popper-tip">
+        <div v-for="tab of tabOptions" :key="tab"
+             class="h-10 px-3 flex items-center text-h3 text-black rounded-full cursor-pointer"
+             :class="activeTab===tab?'bg-gradient-primary text-white':''"
+             @click="activeTab=tab">{{$t(tab)}}</div>
+      </div>
       <SearchBar class="hidden web:flex"/>
-      <el-select
-        v-model="listType"
-        class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
-        popper-class="c-select-popper rounded-xl"
-      >
-        <el-option :value="ListType.MarketCap" :label="$t('marketCap')" />
-        <el-option :value="ListType.Trending" :label="$t('trending')" />
-        <el-option :value="ListType.New" :label="$t('new')" />
-      </el-select>
+      <PostTypeOption v-if="activeTab==='posts'"/>
+      <template v-if="activeTab==='communities'">
+        <el-select
+            v-model="listType"
+            class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
+            popper-class="c-select-popper rounded-xl"
+        >
+          <el-option :value="ListType.MarketCap" :label="$t('marketCap')" />
+          <el-option :value="ListType.Trending" :label="$t('trending')" />
+          <el-option :value="ListType.New" :label="$t('new')" />
+        </el-select>
+      </template>
     </div>
-    <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-      <van-pull-refresh v-show="activeTab == 'BSC'" v-model="refreshing" @refresh="refresh"
-                        class="min-h-full"
-                        :loading-text="$t('loading')"
-                        :lpulling-text="$t('pullToRefreshData')"
-                        :loosing-text="$t('releaseToRefresh')">
-        <van-list :loading="loading"
-                  :finished="finished[listType]"
-                  :immediate-check="false"
-                  :finished-text="comStore.marketCapCommunities.length==0?'':$t('noMore')"
-                  :offset="50"
-                  @load="loadMore">
+    <HomePost v-if="activeTab==='posts'"/>
+    <template v-if="activeTab==='communities'">
+      <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+        <van-pull-refresh v-model="refreshing" @refresh="refresh"
+                          class="min-h-full"
+                          :loading-text="$t('loading')"
+                          :lpulling-text="$t('pullToRefreshData')"
+                          :loosing-text="$t('releaseToRefresh')">
+          <van-list :loading="loading"
+                    :finished="finished[listType]"
+                    :immediate-check="false"
+                    :finished-text="comStore.marketCapCommunities.length==0?'':$t('noMore')"
+                    :offset="50"
+                    @load="loadMore">
 
-          <div v-if="comStore.trendingCommunities.length == 0 && !loading && listType == ListType.Trending"
-            class="flex justify-center py-6 w-full">
-            <img src="~@/assets/images/empty-data.svg" alt="">
-          </div>
-          <div v-else v-show="listType == ListType.Trending"
-               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-            <TagListItem v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
-          </div>
-          <div v-if="comStore.newCommunities.length == 0 && !loading && listType == ListType.New"
-                  class="flex justify-center py-6 w-full">
-                  <img src="~@/assets/images/empty-data.svg" alt="">
-                </div>
-          <div v-else v-show="listType == ListType.New"
-               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-            <TagListItem v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
-          </div>
-          <div v-if="comStore.marketCapCommunities.length == 0 && !loading && listType == ListType.MarketCap"
-                  class="flex justify-center py-6 w-full">
-                  <img src="~@/assets/images/empty-data.svg" alt="">
-                </div>
-          <div v-else v-show="listType == ListType.MarketCap"
-               class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-            <TagListItem v-for="community of comStore.marketCapCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
-          </div>
-        </van-list>
-      </van-pull-refresh>
-    </div>
+            <div v-if="comStore.trendingCommunities.length == 0 && !loading && listType == ListType.Trending"
+                 class="flex justify-center py-6 w-full">
+              <img src="~@/assets/images/empty-data.svg" alt="">
+            </div>
+            <div v-else v-show="listType == ListType.Trending"
+                 class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
+              <TagListItem v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
+            </div>
+            <div v-if="comStore.newCommunities.length == 0 && !loading && listType == ListType.New"
+                 class="flex justify-center py-6 w-full">
+              <img src="~@/assets/images/empty-data.svg" alt="">
+            </div>
+            <div v-else v-show="listType == ListType.New"
+                 class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
+              <TagListItem v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+            </div>
+            <div v-if="comStore.marketCapCommunities.length == 0 && !loading && listType == ListType.MarketCap"
+                 class="flex justify-center py-6 w-full">
+              <img src="~@/assets/images/empty-data.svg" alt="">
+            </div>
+            <div v-else v-show="listType == ListType.MarketCap"
+                 class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
+              <TagListItem v-for="community of comStore.marketCapCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+            </div>
+          </van-list>
+        </van-pull-refresh>
+      </div>
+    </template>
   </div>
 </template>
 

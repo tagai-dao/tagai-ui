@@ -128,6 +128,13 @@ export const newReply = async (twitterId: string, tweetId: string, text: string,
 export const newQuote = async (twitterId: string, tweetId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/quote', { twitterId, tweetId, text, tick })
 
+export const getNewTweets = async (pages?: number) =>
+    get(BACKEND_API_URL + '/tweets/byTime', {pages})
+
+export const getTrendingTweets = async (pages?: number) =>
+    get(BACKEND_API_URL + '/tweets/byTrending', {pages})
+
+
 /************************************ community **********************************/
 export const createCommunity = async (params: CreateCommunity) => 
   post(BACKEND_API_URL + '/community/createCommunity', params)
@@ -212,6 +219,9 @@ export const setOrderClaimed = async (twitterId: string, orderId: string, hash: 
 /************************************ ipshare **********************************/
 export const getIpshareInfo = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/ipshare', {ethAddr})
+
+export const getIPShareList = async (pages?: number) =>
+    get(BACKEND_API_URL + '/ipshare/list', {pages})
 
 /************************************ clanker **********************************/
 export const getClankerTickers = async () =>

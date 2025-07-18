@@ -56,6 +56,8 @@
   "docs": "Docs",
   "auditReport": "Audit report",
   "amount": "Amount",
+  "posts": "Posts",
+  "communities": "Community",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
     "authTwitterTip": "Some functions of the TagAI require corresponding permissions for Twitter, and you can choose the functions that need to be authorized according to your needs",
