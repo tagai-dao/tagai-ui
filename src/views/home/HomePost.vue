@@ -92,8 +92,8 @@ watch([() => tweetsStore.homeTweetType], async () => {
 </script>
 
 <template>
-  <div class="flex-1 overflow-hidden flex gap-3 px-3">
-    <div class="flex-1 h-full overflow-auto no-scroll-bar">
+  <div class="flex-1 overflow-hidden grid grid-cols-2 web:grid-cols-3 gap-3 px-3">
+    <div class="col-span-2 h-full overflow-auto no-scroll-bar">
       <van-pull-refresh class="min-h-full"
                         v-model="refreshing"
                         @refresh="onRefresh"
@@ -142,7 +142,7 @@ watch([() => tweetsStore.homeTweetType], async () => {
         </van-list>
       </van-pull-refresh>
     </div>
-    <div class="hidden web:flex flex-col w-[400px] max-w-[400px] bg-white rounded-2xl">
+    <div class="hidden web:block col-span-1 flex-col bg-white rounded-2xl">
       <div class="font-bold text-h3 py-3 px-4">User</div>
       <div class="flex-1 h-full overflow-auto no-scroll-bar">
         <UserList/>
