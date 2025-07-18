@@ -63,19 +63,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <van-pull-refresh class="min-h-full"
-                    v-model="refreshing"
+  <van-pull-refresh v-model="refreshing"
                     @refresh="onRefresh"
                     :loading-text="$t('loading')"
                     :lpulling-text="$t('pullToRefreshData')"
                     :loosing-text="$t('releaseToRefresh')">
-    <van-list :loading="loading"
-              :finished="finished"
-              :immediate-check="false"
-              :loading-text="$t('loading')"
-              :finished-text="list.length!==0?$t('noMore'):''"
-              :offset="50"
-              @load="onLoad">
       <div v-if="!refreshing && list.length === 0"
            class="flex justify-center py-5 w-full bg-white rounded-2xl">
         <img class="my-8" src="~@/assets/images/empty-data.svg" alt="">
@@ -84,12 +76,14 @@ onMounted(async () => {
         <div class="flex items-stretch gap-2 py-3 px-4 border-t-[0.5px] border-grey-light"
              v-for="following of list" :key="following.twitterId">
           <UserAvatar :profile-img="profile(following)"
+                      :credit="null"
                       :name="following.twitterName"
                       :username="following.twitterUsername"
                       :followers="following.followers"
                       :followings="following.followings"
                       :eth-addr="following.ethAddr"
-                      :twitter-id="following.twitterId">
+                      :steem-id="following.steemId"
+                      :twitter-id="following.twitterId" teleported>
             <template #avatar-img>
               <img v-if="profile(following)" class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
                    :src="profile(following)" alt="">
@@ -98,11 +92,11 @@ onMounted(async () => {
                    src="~@/assets/icons/icon-default-avatar.svg" alt="">
             </template>
           </UserAvatar>
-          <div class="flex-1">
-
+          <div class="flex-1 max-w-[2/3] truncate">
             <div class="flex flex-col gap-4px truncate text-12px xs:text-14px">
-              <div class="font-bold text-lg">{{ following.twitterName }}</div>
-              <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">@{{ following.twitterUsername }}</div>
+              <div class="font-bold text-h4 truncate">{{ following.twitterName }}</div>
+              <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1 truncate">
+                @{{ following.twitterUsername }}</div>
             </div>
           </div>
           <div class="flex-1 text-center flex justify-end items-center gap-x-10px">
@@ -116,8 +110,13 @@ onMounted(async () => {
             </div>
           </div>
         </div>
+        <template v-if="!loading && !refreshing">
+          <div v-if="!finished" class="px-4 py-2 text-center">
+            <button class="py-2 text-sm text-orange-normal" @click="onLoad">{{$t('showMore')}}</button>
+          </div>
+          <div v-else class="text-center text-sm text-grey-light-active pb-3">{{$t('noMore')}}</div>
+        </template>
       </div>
-    </van-list>
   </van-pull-refresh>
 </template>
 

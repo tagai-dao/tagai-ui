@@ -93,59 +93,63 @@ watch([() => tweetsStore.homeTweetType], async () => {
 
 <template>
   <div class="flex-1 overflow-hidden grid grid-cols-2 web:grid-cols-3 gap-3 px-3">
-    <div class="col-span-2 h-full overflow-auto no-scroll-bar">
-      <van-pull-refresh class="min-h-full"
-                        v-model="refreshing"
-                        @refresh="onRefresh"
-                        :loading-text="$t('loading')"
-                        :lpulling-text="$t('pullToRefreshData')"
-                        :loosing-text="$t('releaseToRefresh')">
-        <van-list
-            :loading="loading"
-            :finished="finished[tweetsStore.homeTweetType]"
-            :immediate-check="false"
-            :finished-text="$t('noMore')"
-            :offset="50"
-            @load="onLoad"
-        >
-          <div v-for="(tweet, index) of showingTweets" :key="tweet.tweetId" class="mb-2">
-            <SpaceItem
-                v-if="tweet.spaceId"
-                class="bg-white rounded-2xl"
-                :tweet="tweet"
-                @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
-            >
-              <template #tweet-action-bar>
-                <PostButtonGroup
-                    @click.stop
-                    :tweet="tweet"
-                />
-              </template>
-            </SpaceItem>
-            <TweetItem
-                v-else
-                class="bg-white rounded-2xl"
-                :tweet="tweet"
-                @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
-            >
-              <template #tweet-trade v-if="tweet.commerceId">
-                <CommerceBtn :tweet="tweet"/>
-              </template>
-              <template #tweet-action-bar>
-                <PostButtonGroup
-                    @click.stop
-                    :tweet="tweet"
-                />
-              </template>
-            </TweetItem>
-          </div>
-        </van-list>
-      </van-pull-refresh>
+    <div class="col-span-2 h-full overflow-hidden">
+      <div class="h-full overflow-auto no-scroll-bar">
+        <van-pull-refresh class="min-h-full"
+                          v-model="refreshing"
+                          @refresh="onRefresh"
+                          :loading-text="$t('loading')"
+                          :lpulling-text="$t('pullToRefreshData')"
+                          :loosing-text="$t('releaseToRefresh')">
+          <van-list
+              :loading="loading"
+              :finished="finished[tweetsStore.homeTweetType]"
+              :immediate-check="false"
+              :finished-text="$t('noMore')"
+              :offset="50"
+              @load="onLoad"
+          >
+            <div v-for="(tweet, index) of showingTweets" :key="tweet.tweetId" class="mb-2">
+              <SpaceItem
+                  v-if="tweet.spaceId"
+                  class="bg-white rounded-2xl"
+                  :tweet="tweet"
+                  @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
+              >
+                <template #tweet-action-bar>
+                  <PostButtonGroup
+                      @click.stop
+                      :tweet="tweet"
+                  />
+                </template>
+              </SpaceItem>
+              <TweetItem
+                  v-else
+                  class="bg-white rounded-2xl"
+                  :tweet="tweet"
+                  @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
+              >
+                <template #tweet-trade v-if="tweet.commerceId">
+                  <CommerceBtn :tweet="tweet"/>
+                </template>
+                <template #tweet-action-bar>
+                  <PostButtonGroup
+                      @click.stop
+                      :tweet="tweet"
+                  />
+                </template>
+              </TweetItem>
+            </div>
+          </van-list>
+        </van-pull-refresh>
+      </div>
     </div>
-    <div class="hidden web:block col-span-1 flex-col bg-white rounded-2xl">
-      <div class="font-bold text-h3 py-3 px-4">User</div>
-      <div class="flex-1 h-full overflow-auto no-scroll-bar">
-        <UserList/>
+    <div class="col-span-1 h-full overflow-hidden hidden web:block">
+      <div class="h-auto max-h-full bg-white rounded-2xl flex flex-col">
+        <div class="font-bold text-h3 py-3 px-4">User</div>
+        <div class="flex-1 overflow-auto no-scroll-bar">
+          <UserList/>
+        </div>
       </div>
     </div>
 
