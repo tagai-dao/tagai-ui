@@ -254,37 +254,31 @@ async function register() {
       identityInfo,
       signature
     }
-    await registerSteem(createForm);
-    if (accStore.getAccountInfo.steemId) {
-      accStore.setAccount({
-        ...accStore.getAccountInfo,
-        ethAddr: ethers.getAddress(account.ethAddr ?? accStore.ethConnectAddress ?? ''),
-        fid: accStore.farcasterUser?.fid,
-        isAuthFarcaster: true,
-        farcasterName: accStore.farcasterUser?.name
-      })
-      accStore.farcasterUser = null;
-      localStorage.removeItem('payTokenHash')
-      useModalStore().setModalVisible(false)
-      return;
-    }
-    await sleep(3)
-    const acc: any = await checkRegister(account.twitterId)
-    accStore.setAccount(acc.account)
-    localStorage.removeItem('payTokenHash')
     
+    await registerSteem(createForm);
+    accStore.setAccount({
+      ...accStore.getAccountInfo,
+      ethAddr: ethers.getAddress(account.ethAddr ?? accStore.ethConnectAddress ?? ''),
+      fid: accStore.farcasterUser?.fid,
+      isAuthFarcaster: true,
+      farcasterName: accStore.farcasterUser?.name,
+      steemId: account.twitterUsername
+    })
+    accStore.farcasterUser = null;
+    localStorage.removeItem('payTokenHash')
+    useModalStore().setModalCloseEnable(true);
     useModalStore().setModalVisible(false)
   } catch (error) {
     if(error === ErrCode.TRANSACTION_INVALID) {
       localStorage.removeItem('payTokenHash')
     }
+    console.error(error)
     reportLog('register_steem_error', {
       error,
       identityInfo: identityInfo
     })
     handleErrorTip(error)
   } finally{
-    useModalStore().setModalCloseEnable(true);
     loading.value = false
   }
     
@@ -295,9 +289,7 @@ const openDonut = () => {
 }
 
 onMounted(() => {
-  if (localStorage.getItem('payTokenHash')){
-    payToken()
-  }
+  
 });
 </script>
 
