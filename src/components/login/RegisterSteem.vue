@@ -261,7 +261,8 @@ async function register() {
       ethAddr: ethers.getAddress(account.ethAddr ?? accStore.ethConnectAddress ?? ''),
       fid: accStore.farcasterUser?.fid,
       isAuthFarcaster: true,
-      farcasterName: accStore.farcasterUser?.name
+      farcasterName: accStore.farcasterUser?.name,
+      steemId: account.twitterUsername
     })
     accStore.farcasterUser = null;
     localStorage.removeItem('payTokenHash')
