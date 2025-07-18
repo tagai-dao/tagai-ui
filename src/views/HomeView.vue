@@ -294,7 +294,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
     <div class="px-3 flex justify-between gap-4 web:gap-10" ref="scrollContainer">
       <div class="bg-white flex rounded-full overflow-hidden shadow-popper-tip">
         <div v-for="tab of tabOptions" :key="tab"
-             class="h-10 px-3 flex items-center text-h3 text-black rounded-full cursor-pointer"
+             class="h-10 min-w-[110px] px-3 flex justify-center items-center text-h3 text-black rounded-full cursor-pointer"
              :class="activeTab===tab?'bg-gradient-primary text-white':''"
              @click="activeTab=tab">{{$t(tab)}}</div>
       </div>
