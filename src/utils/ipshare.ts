@@ -46,13 +46,18 @@ export const ipshareCreated = async (ethAddr: string) => {
     let calls = [{
         target: IPShareContract2,
         call: [
-            'ipshareCreated(address)(bool)',
-            ethAddr
-        ],
-        returns: [
-            ['created']
-        ]
-    }]
-    const res = await aggregate(calls, ChainConfig.multiConfig);
+                'ipshareCreated(address)(bool)',
+                ethAddr
+            ],
+            returns: [
+                ['created']
+            ]
+        }]
+        const res = await aggregate(calls, ChainConfig.multiConfig);
     return res.results.transformed.created;
+}
+
+export const calculateIPsharePriceLocal = (supply: number | string | undefined) => {
+    supply = parseFloat(supply?.toString() ?? '0')
+    return supply * supply / 100000;
 }
