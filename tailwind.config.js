@@ -94,7 +94,7 @@ export default {
       'h5': ['14px', {lineHeight: '16px', fontWeight: '700', letterSpacing: '-0.02em'}],
     },
     screens: {
-      'web': '1104px',
+      'web': '804px',
       ...defaultTheme.screens,
     }
   },
