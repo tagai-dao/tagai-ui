@@ -303,7 +303,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
       <template v-if="activeTab==='communities'">
         <el-select
             v-model="listType"
-            class="bg-white rounded-full overflow-hidden max-w-[160px] c-select h-10 flex items-center text-h3 text-black"
+            class="bg-white rounded-full overflow-hidden max-w-[120px] c-select h-10 flex items-center text-h3 text-black"
             popper-class="c-select-popper rounded-xl"
         >
           <el-option :value="ListType.MarketCap" :label="$t('marketCap')" />
