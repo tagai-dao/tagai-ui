@@ -291,10 +291,10 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
         </div>
       </div>
     </div>
-    <div class="px-3 flex justify-between gap-4 web:gap-10" ref="scrollContainer">
+    <div class="px-3 flex justify-between gap-2 web:gap-10" ref="scrollContainer">
       <div class="bg-white flex rounded-full overflow-hidden shadow-popper-tip">
         <div v-for="tab of tabOptions" :key="tab"
-             class="h-10 min-w-[110px] px-3 flex justify-center items-center text-h3 text-black rounded-full cursor-pointer"
+             class="h-10 min-w-[80px] web:min-w-[110px] px-2 flex justify-center items-center text-h5 web:text-h3 text-black rounded-full cursor-pointer"
              :class="activeTab===tab?'bg-gradient-primary text-white':''"
              @click="activeTab=tab">{{$t(tab)}}</div>
       </div>
@@ -303,7 +303,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
       <template v-if="activeTab==='communities'">
         <el-select
             v-model="listType"
-            class="bg-white rounded-full overflow-hidden max-w-[200px] c-select h-10 flex items-center text-h3 text-black"
+            class="bg-white rounded-full overflow-hidden max-w-[160px] c-select h-10 flex items-center text-h3 text-black"
             popper-class="c-select-popper rounded-xl"
         >
           <el-option :value="ListType.MarketCap" :label="$t('marketCap')" />
