@@ -32,8 +32,8 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['posts', 'communities']
-const activeTab = ref('posts')
+const tabOptions = ['tweets', 'communities']
+const activeTab = ref('tweets')
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -299,7 +299,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
              @click="activeTab=tab">{{$t(tab)}}</div>
       </div>
       <SearchBar class="hidden web:flex"/>
-      <PostTypeOption v-if="activeTab==='posts'"/>
+      <PostTypeOption v-if="activeTab==='tweets'"/>
       <template v-if="activeTab==='communities'">
         <el-select
             v-model="listType"
@@ -312,7 +312,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
         </el-select>
       </template>
     </div>
-    <HomePost v-if="activeTab==='posts'"/>
+    <HomePost v-if="activeTab==='tweets'"/>
     <template v-if="activeTab==='communities'">
       <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh v-model="refreshing" @refresh="refresh"

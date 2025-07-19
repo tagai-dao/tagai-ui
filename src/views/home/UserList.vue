@@ -3,9 +3,15 @@ import type {IpShareUser, Tweet} from "@/types";
 import {getIPShareList} from "@/apis/api";
 import {handleErrorTip} from "@/utils/notify";
 import {onMounted, ref} from "vue";
-import {formatAmount} from "@/utils/helper";
+import {formatAmount, formatPrice} from "@/utils/helper";
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import { useRouter } from "vue-router";
+import { calculateIPsharePriceLocal } from "@/utils/ipshare";
+import { useStateStore } from "@/stores/common";
 
+const stateStore = useStateStore();
+
+const router = useRouter();
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
@@ -16,7 +22,7 @@ async function onRefresh() {
     refreshing.value = true;
     finished.value = false;
     list.value = await getIPShareList() as IpShareUser[]
-    if (list.value.length < 30) {
+    if (list.value.length < 8) {
       finished.value = true
     }
   } catch (e) {
@@ -30,9 +36,9 @@ async function onLoad() {
   try{
     if (refreshing.value || finished.value) return
     loading.value = true
-    const tempList = await getIPShareList(Math.floor((list.value.length - 1) / 30) + 1) as IpShareUser[]
+    const tempList = await getIPShareList(Math.floor((list.value.length - 1) / 8) + 1) as IpShareUser[]
     list.value = list.value.concat(tempList)
-    if (tempList && tempList.length < 30) {
+    if (tempList && tempList.length < 8) {
       finished.value = true
     }
   } catch (e) {
@@ -42,7 +48,7 @@ async function onLoad() {
   }
 }
 
-function profile(ips) {
+function profile(ips: IpShareUser) {
   if (!ips.profile) return null
   if (ips.profile) {
     return ips.profile.replace('normal', '200x200')
@@ -51,9 +57,9 @@ function profile(ips) {
   }
 }
 
-function  gotoUserPage(ips) {
+function  gotoUserPage(ips: IpShareUser) {
   console.log('ips', ips)
-  this.$router.push({path : '/account-info/@' + ips.twitterUsername})
+  router.push({path : '/account-info/@' + ips.twitterUsername})
 }
 
 onMounted(async () => {
@@ -86,7 +92,7 @@ onMounted(async () => {
                       :twitter-id="following.twitterId" teleported>
             <template #avatar-img>
               <img v-if="profile(following)" class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-                   :src="profile(following)" alt="">
+                   :src="profile(following) ?? ''" alt="">
               <img v-else
                    class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
                    src="~@/assets/icons/icon-default-avatar.svg" alt="">
@@ -102,7 +108,7 @@ onMounted(async () => {
           <div class="flex-1 text-center flex justify-end items-center gap-x-10px">
             <div class="text-right flex flex-col gap-4px">
               <div class="font-bold text-h4">
-                -- / {{ formatAmount(following.supply) }}
+                {{ formatPrice(calculateIPsharePriceLocal(following.supply) * stateStore.ethPrice) }} / {{ formatAmount(following.supply) }}
               </div>
               <div class="text-sm italic text-grey-bd flex flex-wrap gap-x-4 gap-y-1">
                 Price / Supply

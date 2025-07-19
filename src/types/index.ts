@@ -391,5 +391,6 @@ export type IpShareUser = {
   followers: number
   followings: number
   lastReadMessageTime: string
-  supply: number
+  supply: number,
+  price?: number | null | undefined,
 }

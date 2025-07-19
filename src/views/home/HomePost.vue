@@ -12,6 +12,7 @@ import type { Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { useCurationStore } from "@/stores/curation";
 import UserList from "@/views/home/UserList.vue";
+import { getTokenInfoOfTweets } from "@/utils/pump";
 
 
 const tweetsStore = useTweetsStore();
@@ -39,13 +40,13 @@ async function onRefresh() {
   try {
     refreshing.value = true;
     finished.value[tweetsStore.homeTweetType as TweetListType] = false;
-    let list: Tweet[]
+    let list: Tweet[] = []
     if (tweetsStore.homeTweetType === TweetListType.New) {
       list = await getNewTweets() as Tweet[]
-      tweetsStore.newTweets = list
+      tweetsStore.newTweets = await getTokenInfoOfTweets(list)
     } else if (tweetsStore.homeTweetType === TweetListType.Trending) {
       list = await getTrendingTweets() as Tweet[]
-      tweetsStore.trendingTweets = list
+      tweetsStore.trendingTweets = await getTokenInfoOfTweets(list)
     }
 
     if (list.length < 30) {
@@ -67,9 +68,11 @@ async function onLoad() {
     let list: Tweet[] = []
     if (tweetsStore.homeTweetType === TweetListType.New) {
       list = await getNewTweets(Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
+      list = await getTokenInfoOfTweets(list)
       tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
     } else if (tweetsStore.homeTweetType === TweetListType.Trending) {
       list = await getTrendingTweets(Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
+      list = await getTokenInfoOfTweets(list)
       tweetsStore.trendingTweets = tweetsStore.trendingTweets.concat(list)
     }
     if (list && list.length < 30) {
@@ -146,7 +149,7 @@ watch([() => tweetsStore.homeTweetType], async () => {
     </div>
     <div class="col-span-1 h-full overflow-hidden hidden web:block">
       <div class="h-auto max-h-full bg-white rounded-2xl flex flex-col">
-        <div class="font-bold text-h3 py-3 px-4">User</div>
+        <div class="font-bold text-h3 py-3 px-4">IP Share</div>
         <div class="flex-1 overflow-auto no-scroll-bar">
           <UserList/>
         </div>

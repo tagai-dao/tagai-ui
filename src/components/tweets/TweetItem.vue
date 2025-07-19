@@ -10,6 +10,9 @@ import {usePost} from "@/composables/usePost";
 import type {Tweet} from "@/types";
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import { useStateStore } from '@/stores/common';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const video = ref();
 let observer: any = null
@@ -50,6 +53,10 @@ const showPageInfo = computed(() => {
 
 const onUserAvatar = () => {
 
+}
+
+const gotoTick = (tag: string) => {
+  router.push(`/tag-detail/${tag}`)
 }
 
 onMounted(() => {
@@ -153,6 +160,7 @@ onUnmounted(() => {
           <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">
             <button v-for="(tag, index) of JSON.parse(tweet.tags!)" :key="tag"
                     :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                    @click.stop="gotoTick(tag)"
                     class="px-2 text-base rounded-md">#{{ tag }}</button>
           </div>
         </div>

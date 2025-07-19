@@ -50,7 +50,7 @@ async function trade() {
         <span class="text-grey-normal text-h2 font-bold leading-6" :class="community.listed ? 'text-orange-normal' : ''">{{ community.tick }}</span>
         <div class="flex-1 flex justify-end mt-1">
           <div v-if="community.marketCap" class="flex items-end gap-1">
-            <span class="font-normal italic text-grey-64 leading-5 text-sm">market cap</span>
+            <span class="font-normal italic text-grey-64 leading-5 text-sm">{{ $t('marketCap') }}</span>
             <span class="font-medium italic text-orange-normal leading-5 text-sm">
               {{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}
             </span>
