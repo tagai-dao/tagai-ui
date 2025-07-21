@@ -69,7 +69,7 @@ const tabScrollTop = ref(0)
 const pageScroll = (ref: any, type: string) => {
   if(type==='page') pageScrollTop.value = pageScrollRef.value.scrollTop
   if(type==='tab') tabScrollTop.value = tabScrollRef.value.scrollTop
-  if(tabScrollRef.value.scrollTop>100 && document.body.clientWidth>1104) {
+  if(tabScrollRef.value.scrollTop>100 && document.body.clientWidth>800) {
     pageScrollTo(pageScrollRef.value, 412)
   }
 }
@@ -400,7 +400,7 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
     </div>
-    <BuyAndSellView v-if="showTradeBox || width>1104"/>
+    <BuyAndSellView v-if="showTradeBox || width>800"/>
     <div class="h-full sticky top-[0px]">
       <div class="h-full flex gap-2">
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
