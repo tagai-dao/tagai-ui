@@ -6,15 +6,17 @@ import {TweetListType, useTweetsStore} from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import { getNewTweets, getTrendingTweets} from "@/apis/api";
-import {computed, onMounted, ref, watch} from "vue";
+import {computed, onActivated, onMounted, ref, watch} from "vue";
 import { useCommunityStore } from "@/stores/community";
 import type { Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { useCurationStore } from "@/stores/curation";
 import UserList from "@/views/home/UserList.vue";
 import { getTokenInfoOfTweets } from "@/utils/pump";
+import {usePageScroll} from "@/composables/useTools";
 
-
+const { pageScroll, pageScrollTo} = usePageScroll()
+const pageScrollRef = ref()
 const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
 const refreshing = ref(false);
@@ -92,12 +94,18 @@ onMounted(async () => {
 watch([() => tweetsStore.homeTweetType], async () => {
   await onRefresh()
 })
+
+onActivated(() => {
+  if(pageScrollRef.value)
+    pageScrollTo(pageScrollRef.value)
+})
+
 </script>
 
 <template>
   <div class="flex-1 overflow-hidden grid grid-cols-2 web:grid-cols-3 gap-3 px-3">
     <div class="col-span-2 h-full overflow-hidden">
-      <div class="h-full overflow-auto no-scroll-bar">
+      <div class="h-full overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh class="min-h-full"
                           v-model="refreshing"
                           @refresh="onRefresh"
