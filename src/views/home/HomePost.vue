@@ -42,10 +42,10 @@ async function onRefresh() {
     finished.value[tweetsStore.homeTweetType as TweetListType] = false;
     let list: Tweet[] = []
     if (tweetsStore.homeTweetType === TweetListType.New) {
-      list = await getNewTweets() as Tweet[]
+      list = await getNewTweets(accStore.getAccountInfo.twitterId) as Tweet[]
       tweetsStore.newTweets = await getTokenInfoOfTweets(list)
     } else if (tweetsStore.homeTweetType === TweetListType.Trending) {
-      list = await getTrendingTweets() as Tweet[]
+      list = await getTrendingTweets(accStore.getAccountInfo.twitterId) as Tweet[]
       tweetsStore.trendingTweets = await getTokenInfoOfTweets(list)
     }
 
@@ -67,11 +67,11 @@ async function onLoad() {
     loading.value = true
     let list: Tweet[] = []
     if (tweetsStore.homeTweetType === TweetListType.New) {
-      list = await getNewTweets(Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
+      list = await getNewTweets(accStore.getAccountInfo.twitterId, Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
       list = await getTokenInfoOfTweets(list)
       tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
     } else if (tweetsStore.homeTweetType === TweetListType.Trending) {
-      list = await getTrendingTweets(Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
+      list = await getTrendingTweets(accStore.getAccountInfo.twitterId, Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
       list = await getTokenInfoOfTweets(list)
       tweetsStore.trendingTweets = tweetsStore.trendingTweets.concat(list)
     }

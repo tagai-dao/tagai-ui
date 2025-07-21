@@ -128,11 +128,11 @@ export const newReply = async (twitterId: string, tweetId: string, text: string,
 export const newQuote = async (twitterId: string, tweetId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/quote', { twitterId, tweetId, text, tick })
 
-export const getNewTweets = async (pages?: number) =>
-    get(BACKEND_API_URL + '/tweets/byTime', {pages})
+export const getNewTweets = async (twitterId: string | null | undefined, pages?: number) =>
+    get(BACKEND_API_URL + '/tweets/byTime', {pages, twitterId})
 
-export const getTrendingTweets = async (pages?: number) =>
-    get(BACKEND_API_URL + '/tweets/byTrending', {pages})
+export const getTrendingTweets = async (twitterId: string | null | undefined, pages?: number) =>
+    get(BACKEND_API_URL + '/tweets/byTrending', {pages, twitterId})
 
 
 /************************************ community **********************************/
