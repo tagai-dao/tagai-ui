@@ -9,7 +9,7 @@ import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
-import { getCommunityDetail, getIpshareInfo, getConversationId } from "@/apis/api";
+import { getCommunityDetail, getIpshareInfo, getConversationId, getCommunityDeployTweet } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import {useInterval, usePageScroll, useTools} from "@/composables/useTools";
 import { handleErrorTip } from "@/utils/notify";
@@ -206,6 +206,12 @@ onMounted(async () => {
     if (!comStore.currentSelectedCommunity?.tick) {
       router.replace('/')
     }
+  }
+
+  // get deploy tweet
+  if (comStore.currentSelectedCommunity?.createdByAi) {
+    const deployTweet = await getCommunityDeployTweet(comStore.currentSelectedCommunity?.tick, accStore.getAccountInfo?.twitterId)
+    console.log('deployTweet:', deployTweet)
   }
 
   updateProgress();

@@ -181,6 +181,9 @@ export const getTokenTradeData = async (tick: string, timestamp: number | undefi
 export const getConversationId = async (token: string) =>
   get(BACKEND_API_URL + '/community/getDeboxConversationIds', {token})
 
+export const getCommunityDeployTweet = async (tick: string, twitterId: string) =>
+  get(BACKEND_API_URL + '/curation/communityDeployTweet', {tick, twitterId})
+
 /************************************ commerce **********************************/
 export const newCommerce = async (text: string, twitterId: string, tick: string, token: string) => 
   post(BACKEND_API_URL + '/commerce/newCommerce', {text, twitterId, tick, token})
