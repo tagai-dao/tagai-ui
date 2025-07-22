@@ -199,6 +199,7 @@ export type Tweet = OnchainTokenInfo & Space &
     curateCount?: number;
     spaceCurateCount?: number;
     credit?: number;
+    isDeployTweet?: number;
   };
 
 export type CurateRecord = Account & {

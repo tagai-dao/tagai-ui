@@ -11,7 +11,7 @@
     <!-- share -->
     <TweetShare :tweet/>
     <!-- curate -->
-    <TweetBtnCurate :tweet/>
+    <TweetBtnCurate v-if="!tweet.isDeployTweet" :tweet/>
   </div>
 </template>
 
