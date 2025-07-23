@@ -151,7 +151,7 @@ onUnmounted(() => {
         <el-popover v-else-if="tweet.isDeployTweet && showMarketCap" popper-class="c-arrow-popper rounded-sm" position="end"
                     trigger="click" :teleported="true" :persistent="false">
           <template #reference>
-            <button @click.stop class="h-6 rounded-full px-3 text-white flex items-center gap-2 text-sm font-semibold"
+            <button @click.stop="gotoTick(tweet.tick!)" class="h-6 rounded-full px-3 text-white flex items-center gap-2 text-sm font-semibold"
                     :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
               <img class="w-4 h-4" src="~@/assets/icons/icon-kline-white.svg" alt="">
               {{ formatPrice(useStateStore().ethPrice * (tweet.marketCap ?? 0)) }}
