@@ -168,10 +168,10 @@ onUnmounted(() => {
                  v-else v-html="formatEmojiText(content)"></div>
           </div>
           <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">
-            <button v-for="(tag, index) of JSON.parse(tweet.tags!)" :key="tag"
-                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
-                    @click.stop="gotoTick(tag)"
-                    class="px-2 text-base rounded-md">#{{ tag }}</button>
+            <button 
+                    :style="{backgroundColor: tagBgColors[0], color: tagTextColors[0]}"
+                    @click.stop="gotoTick(tweet.tick!)"
+                    class="px-2 text-base rounded-md">#{{ tweet.tick }}</button>
           </div>
         </div>
         <div v-if="tweet.videoLink" class="pl-12">
