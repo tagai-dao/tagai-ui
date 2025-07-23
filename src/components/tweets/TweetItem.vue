@@ -19,7 +19,8 @@ let observer: any = null
 
 const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,},
-  multiline: {type: Boolean, required: false}
+  multiline: {type: Boolean, required: false},
+  showMarketCap: {type: Boolean, required: false, default: true}
 })
 
 const {formatEmojiText} = useTweet()
@@ -119,7 +120,7 @@ onUnmounted(() => {
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
         </div>
-        <el-popover v-if="tweet.amount && !tweet.isDeployTweet" popper-class="c-arrow-popper rounded-sm" position="end"
+        <el-popover v-if="tweet.amount && !tweet.isDeployTweet && showMarketCap" popper-class="c-arrow-popper rounded-sm" position="end"
                     trigger="click" :teleported="true" :persistent="false">
           <template #reference>
             <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold"
@@ -147,7 +148,7 @@ onUnmounted(() => {
             </div>
           </template>
         </el-popover>
-        <el-popover v-else-if="tweet.isDeployTweet" popper-class="c-arrow-popper rounded-sm" position="end"
+        <el-popover v-else-if="tweet.isDeployTweet && showMarketCap" popper-class="c-arrow-popper rounded-sm" position="end"
                     trigger="click" :teleported="true" :persistent="false">
           <template #reference>
             <button @click.stop class="h-6 rounded-full px-3 text-white flex items-center gap-2 text-sm font-semibold"

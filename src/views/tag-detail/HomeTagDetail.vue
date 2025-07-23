@@ -31,6 +31,8 @@ import emitter from "@/utils/emitter";
 import { DeBoxChatWidget } from '@debox-pro/chat-widget-html';
 import { useWindowSize } from "@vant/use";
 import TweetItem from "@/components/tweets/TweetItem.vue";
+import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
+import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 
 const tabOptions = computed(() => {
   if (comStore.currentSelectedCommunity?.isImport) {
@@ -263,7 +265,18 @@ onBeforeRouteLeave((to, from, next) => {
   <div class="h-full overflow-auto no-scroll-bar pt-2 pb-2 flex flex-col gap-3 px-3 relative"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
     <div class="grid grid-cols-1 web:hidden gap-3">
-      <div class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
+      <div v-if="deployTweetList.length>0"
+           class="col-span-1 border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide">
+        <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">
+          <template #tweet-action-bar>
+            <PostButtonGroup :tweet="deployTweetList[0]"/>
+          </template>
+          <template #tweet-trade>
+            <CommerceBtn :tweet="deployTweetList[0]"/>
+          </template>
+        </TweetItem>
+      </div>
+      <div v-else class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
         <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
           <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
           <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
@@ -299,6 +312,28 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
       <div class="col-span-1 web:col-span-3 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
+        <div v-if="deployTweetList.length>0"  class="flex gap-3 overflow-hide">
+          <div class="w-10 h-10 rounded-xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
+            <img class="w-full h-full rounded-xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
+            <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+            <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-xs
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] scale-75">
+              {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
+            </div>
+          </div>
+          <div class="flex-1 py-1">
+            <div class="flex flex-wrap justify-between gap-x-4 items-center">
+              <div class="flex items-center">
+                <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
+                <IconLinks :community="comStore.currentSelectedCommunity"/>
+              </div>
+              <div class="text-base flex gap-1">
+                <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
+                <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="flex items-center gap-2">
           <span class="text-sm font-semibold whitespace-nowrap">CA</span>
           <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px]">
@@ -434,7 +469,14 @@ onBeforeRouteLeave((to, from, next) => {
           <div class="flex flex-col gap-2">
             <div v-if="deployTweetList.length>0"
                  class="border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide">
-              <TweetItem :tweet="deployTweetList[0]"/>
+              <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">
+                <template #tweet-action-bar>
+                  <PostButtonGroup :tweet="deployTweetList[0]"/>
+                </template>
+                <template #tweet-trade>
+                  <CommerceBtn :tweet="deployTweetList[0]"/>
+                </template>
+              </TweetItem>
             </div>
             <div v-else class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
               <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
@@ -470,11 +512,11 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
             <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
               <div v-if="deployTweetList.length>0"  class="flex gap-3 overflow-hide">
-                <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-                  <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
+                <div class="w-10 h-10 rounded-xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
+                  <img class="w-full h-full rounded-xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
                   <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
-                  <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">
+                  <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-xs
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] scale-75">
                     {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
                   </div>
                 </div>
@@ -488,16 +530,6 @@ onBeforeRouteLeave((to, from, next) => {
                       <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
                       <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
                     </div>
-                  </div>
-                  <div class="flex justify-between items-end gap-3 mt-1">
-                    <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
-                      {{ comStore.currentSelectedCommunity?.description }}
-                    </div>
-                    <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
-                            @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
-                            :disabled="!comStore.currentSelectedCommunity">
-                      <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
-                    </button>
                   </div>
                 </div>
               </div>
