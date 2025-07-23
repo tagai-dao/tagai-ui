@@ -57,7 +57,7 @@ onMounted(async () => {
   // get user info
   const res = await getUserProfile(undefined, route.params.username as string)
   userInfo.value = res as Account
-  console.log(1235, userInfo.value)
+  console.log(1235, userInfo.value, route.params.username)
   // updateIPShare()
   // setInter(updateIPShare, 100000)
 })

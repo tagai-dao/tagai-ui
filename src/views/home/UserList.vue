@@ -59,7 +59,7 @@ function profile(ips: IpShareUser) {
 
 function  gotoUserPage(ips: IpShareUser) {
   console.log('ips', ips)
-  router.push({path : '/account-info/@' + ips.twitterUsername})
+  router.push({path : '/user/' + ips.twitterUsername})
 }
 
 onMounted(async () => {
@@ -89,7 +89,8 @@ onMounted(async () => {
                       :followings="following.followings"
                       :eth-addr="following.ethAddr"
                       :steem-id="following.steemId"
-                      :twitter-id="following.twitterId" teleported>
+                      :twitter-id="following.twitterId" teleported
+                      @click.stop="gotoUserPage(following)">
             <template #avatar-img>
               <img v-if="profile(following)" class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
                    :src="profile(following) ?? ''" alt="">
