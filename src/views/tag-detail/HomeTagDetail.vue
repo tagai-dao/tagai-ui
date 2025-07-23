@@ -213,8 +213,8 @@ onMounted(async () => {
   // get deploy tweet
   if (comStore.currentSelectedCommunity?.createdByAi) {
     const deployTweet = await getCommunityDeployTweet(comStore.currentSelectedCommunity?.tick, accStore.getAccountInfo?.twitterId)
+    // @ts-ignore
     deployTweetList.value = deployTweet as Tweet[]
-    console.log('deployTweet:', deployTweet)
   }
 
   updateProgress();
