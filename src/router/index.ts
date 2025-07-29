@@ -91,6 +91,9 @@ const router = createRouter({
       name: 'tip-record',
       component: TipTokenRecord
     },
+    {
+      path: "/callback", component: () => import("@/views/Callback.vue")
+    }
   ]
 })
 

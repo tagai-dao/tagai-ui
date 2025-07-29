@@ -18,6 +18,17 @@ export const ChainConfig = {
     }
 }
 
+export const PrivyConfig = {
+    appId: import.meta.env.VITE_APP_PRIVY_APP_ID,
+    clientId: import.meta.env.VITE_APP_PRIVY_CLIENT_ID,
+    redirectUri: import.meta.env.VITE_APP_PRIVY_REDIRECT_URI,
+    logoutRedirectUri: import.meta.env.VITE_APP_PRIVY_LOGOUT_REDIRECT_URI,
+    loginRedirectUri: import.meta.env.VITE_APP_PRIVY_LOGIN_REDIRECT_URI,
+}
+
+
+console.log(1235123, PrivyConfig);
+
 export const DefaultCommunityTick = 'no-tick-of-tiptag'
 
 export const SPACE_STATE = {
