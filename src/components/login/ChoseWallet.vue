@@ -3,19 +3,14 @@ import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail, setMetaMaskSDK } from "@/utils/wallets";
 import { computed, ref, onMounted } from "vue";
 import { useUserStore } from "@/stores/privy";
-import { usePrivyIframe } from "@/composables/usePrivyIframe";
-
-const store = useUserStore();
+const privyStore = useUserStore();
 const modalStore = useModalStore();
 const loading = ref(false);
-const initedPrivy = ref(false);
 const providers = computed(() => {
   return getProviders() ?? [];
 });
 
 const emits = defineEmits(['chosedWallet'])
-
-const { initPrivyIframe } = usePrivyIframe();
 
 async function onSelectWalletMeta(wallet: any) {
   setActiveProviderDetail(wallet);
@@ -27,14 +22,7 @@ async function connectMetaMask() {
   emits('chosedWallet')
 }
 
-onMounted(async () => {
-  try {
-    await initPrivyIframe();
-    initedPrivy.value = true;
-  } catch (error) {
-    console.error('Error initializing privy embedded wallet:', error);
-  }
-});
+// 移除onMounted中的iframe初始化，因为现在在App.vue中全局初始化
 </script>
 
 <template>
@@ -73,11 +61,14 @@ onMounted(async () => {
             MetaMask
           </span> -->
         </button>
-        <button v-if="initedPrivy" class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
+
+        <!-- 使用全局iframe状态来控制按钮显示 -->
+        <button v-if="privyStore.iframeInitialized" class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
                    flex justify-center items-center gap-10px
                    hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
-                   @click="store.loginWithTwitter()">
-          使用推特登录
+                   @click="loading=true;privyStore.loginWithTwitter()">
+                   <img class="w-36 h-8" src="https://auth.privy.io/logos/privy-logo.png" alt="">
+                  <i-ep-loading v-if="loading" class="animate-spin text-white"/>
         </button>
       </div>
     </div>

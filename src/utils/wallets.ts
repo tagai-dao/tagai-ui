@@ -57,7 +57,7 @@ const detectEip6963 = () => {
     // 同时检测 window.ethereum
     if (window.ethereum) {
         if (window.ethereum.isTokenPocket) {
-            console.log("检测到 TP 钱包（传统）");
+            console.log("detecte TP 钱包（传统）");
             providerDetails.push({
                 provider: window.ethereum,
                 info: {
@@ -67,7 +67,7 @@ const detectEip6963 = () => {
                 }
             })
         } else {
-            console.log("检测到其他钱包");
+            console.log("No TP wallet detected");
         }
     }
 };
