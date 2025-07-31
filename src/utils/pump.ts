@@ -133,7 +133,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                 [token, WETH],
                 useAccountStore().ethConnectAddress,
                 Math.floor(Date.now() / 1000) + 300,
-                ethers.ZeroAddress,
+                sellsman,
                 uniswapV2Router02
             )
             await tx.wait();
@@ -156,7 +156,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
             [token, WETH],
             useAccountStore().ethConnectAddress,
             Math.floor(Date.now() / 1000) + 300,
-            ethers.ZeroAddress,
+            sellsman,
             version == 1 ? IPShareContract1 : IPShareContract2
         )
         await tx.wait();

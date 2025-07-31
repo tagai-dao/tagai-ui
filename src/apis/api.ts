@@ -163,6 +163,9 @@ export const getCommunitiesByNew = async (pages?: number) =>
 export const getCommunityDetail = async (tick: string) =>
   get(BACKEND_API_URL + '/community/detail', { tick })
 
+export const getCommunityDeployerIpshare = async (tick: string) =>
+  get(BACKEND_API_URL + '/community/getDeployerIpshare', {tick})
+
 export const getCreatedList = async (twitterId: string, ethAddr: string) =>
   post(BACKEND_API_URL + '/community/createdList', {twitterId, ethAddr})
 
