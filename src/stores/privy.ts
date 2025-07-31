@@ -12,7 +12,7 @@ import { useRoute } from "vue-router";
 export const useUserStore = defineStore("user", () => {
   const user = ref<OAuthResult["user"] | null>(null);
   const wallet = ref<ConnectedWallet | null>(null);
-  const ethersProvider = ref<BrowserProvider | null>(null);
+  const ethersProvider = ref<any>(null);
   const signer = ref<JsonRpcSigner | null>(null);
   const route = useRoute();
   // iframe相关状态
@@ -207,11 +207,11 @@ export const useUserStore = defineStore("user", () => {
       const provider = await privy.embeddedWallet.getEthereumProvider({  
           wallet: wallet as any,
           entropyId,
-          entropyIdVerifier 
+          entropyIdVerifier
       });
       
       const bp = new BrowserProvider(provider);
-      ethersProvider.value = bp;
+      ethersProvider.value = provider;
       signer.value = await bp.getSigner();
       console.log('Wallet initialized successfully:', signer.value, bp);
 

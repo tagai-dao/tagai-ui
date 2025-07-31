@@ -59,7 +59,9 @@ export const unwrapBNB = async (amount: bigint) => {
 }
 
 export const approveCoinPurse = async (token: string, allowance: bigint) => {
+    console.log(3, token, allowance)
     let coinPurse = await getContract('ERC20', token);
+    console.log(4, coinPurse)
     let tx = await coinPurse.approve(CoinPurse, allowance);
     await tx.wait();
     return tx;

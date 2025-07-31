@@ -9,6 +9,11 @@ import steem from "steem";
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
+  if (accStore.ethWalletType === 'privy-twitter') {
+    accStore.chainId = ChainConfig.chainId;
+    return;
+  }
+  console.log({ethereum})
   try {
     const chainInfo = await ethereum.request({
       method: "eth_chainId",

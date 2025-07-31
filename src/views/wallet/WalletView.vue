@@ -55,11 +55,12 @@ onMounted(() => {
         </div>
       </div>
       <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
-        <div class="flex-1 flex items-center flex-wrap gap-4">
+        <div @click="onCopy(useAccountStore().ethConnectAddress)" 
+          class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer">
           <span>Connected: {{ formatAddress(useAccountStore().ethConnectAddress) }}</span>
-          <button @click="disconnect">
-          <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
-        </button>
+          <button @click.stop="disconnect">
+            <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
+          </button>
         </div>
       </div>
     </div>

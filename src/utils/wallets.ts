@@ -5,6 +5,7 @@ import { uiLog } from '@/apis/api';
 import { MetaMaskSDK } from '@metamask/sdk';
 import { getProvider as getBNProvider } from "@binance/w3w-ethereum-provider";
 import { ChainConfig } from "@/config"
+import { useUserStore } from '@/stores/privy';
 
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
@@ -34,7 +35,19 @@ export const getProviders = () => {
     }
     return providerDetails
 };
-export const getProvider = () => provider
+
+export const getProvider = () => {
+    const accStore = useAccountStore();
+    const privyStore = useUserStore();
+    if (accStore.ethWalletType === 'privy-twitter') {
+        return privyStore.ethersProvider;
+    }
+    if (provider) {
+        return provider
+    }
+    return window.ethereum
+}
+
 export const getProviderInfo = () => providerInfo
 
 const detectEip6963 = () => {
@@ -134,7 +147,7 @@ export const initializeProvider = async () => {
 }
 
 export const setup = async () => {
-    await setupNetwork(provider)
+    await setupNetwork(getProvider())
 }
 
 const existsProviderDetail = (newProviderDetail: any) => {
