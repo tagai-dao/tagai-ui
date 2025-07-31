@@ -13,6 +13,7 @@ import { GlobalModalType } from "@/types";
 import { ethers } from "ethers";
 import { getBalance } from '@/utils/web3'
 import { aggregate } from '@makerdao/multicall'
+import { useUserStore } from "@/stores/privy";
 
 export enum AccountAuthType {
     TWITTER,

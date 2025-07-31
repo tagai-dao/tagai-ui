@@ -24,5 +24,5 @@ onMounted(async () => {
 });
 </script>
 <template>
-  <div>登录中…</div>
+  <div>Waiting for login...</div>
 </template>

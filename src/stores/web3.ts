@@ -21,11 +21,14 @@ export const useAccountStore = defineStore('account', {
             this.socialBalance = 0
             this.ipshare = {}
             this.pubKey = ''
-            this.ethWalletType = 'none' // metamask, okx, privy-twitter, none
-            this.ethConnectState = EthWalletState.Disconnect
-            this.ethConnectAddress = '',
-            this.unreadMessageCount = 0,
-            this.socialMessages = [],
+            // privy wallet only logout when user clike disconnect button
+            if (this.ethWalletType !== 'privy-twitter') {
+                this.ethWalletType = 'none' // metamask, okx, privy-twitter, none
+                this.ethConnectState = EthWalletState.Disconnect
+                this.ethConnectAddress = '';
+            }
+            this.unreadMessageCount = 0;
+            this.socialMessages = []
             this.farcasterUser = null
         }
     },

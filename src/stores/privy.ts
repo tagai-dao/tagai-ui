@@ -185,13 +185,13 @@ export const useUserStore = defineStore("user", () => {
       }
       
       // 5. 检查embedded钱包是否已创建
-      let embeddedAccount = currentUser.user.linked_accounts.find((item: any) => item.type === 'embedded');
+      let embeddedAccount = currentUser.user.linked_accounts.find((item: any) => item.type === 'wallet' && item.connector_type === 'embedded');
       
       if (!embeddedAccount) {
         // 6. 如果没有创建，则创建一个新的embedded钱包
         console.log('No embedded wallet found, creating new one...');
         const updatedUser = await privy.embeddedWallet.create({});
-        embeddedAccount = updatedUser.user.linked_accounts.find((item: any) => item.type === 'embedded');
+        embeddedAccount = updatedUser.user.linked_accounts.find((item: any) => item.type === 'wallet' && item.connector_type === 'embedded');
         console.log('Created embedded wallet:', embeddedAccount);
         currentUser.user = updatedUser.user;
       } else {
