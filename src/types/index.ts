@@ -251,7 +251,8 @@ export type Community = OnchainTokenInfo & {
   name: string;
   description: string;
   logo: string;
-  creator: string; // ethAddr
+  creator: string; // ethAddr, can be tagai deployer if the token deployed by tagai
+  ipshare?: string | null; // ethAddr, can be null if the token deployer does not create ipshare
   tags?: string | string[];
   version?: number | null | undefined,
   tick: string,
