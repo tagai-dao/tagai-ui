@@ -8,12 +8,15 @@ import { PrivyConfig } from "@/config";
 import {getUserEmbeddedEthereumWallet, getEntropyDetailsFromUser} from '@privy-io/js-sdk-core';
 import { EthWalletState, useAccountStore } from "./web3";
 import { useRoute } from "vue-router";
+import { createWalletClient, custom, type WalletClient } from "viem";
+import { bsc } from "viem/chains";
 
 export const useUserStore = defineStore("user", () => {
   const user = ref<OAuthResult["user"] | null>(null);
   const wallet = ref<ConnectedWallet | null>(null);
   const ethersProvider = ref<any>(null);
   const signer = ref<JsonRpcSigner | null>(null);
+  const viemWalletClient = ref<WalletClient | null>(null);
   const route = useRoute();
   // iframe相关状态
   const iframeInitialized = ref(false);
@@ -197,6 +200,8 @@ export const useUserStore = defineStore("user", () => {
       } else {
         console.log('Embedded wallet already exists:', embeddedAccount);
       }
+
+      
       
       // 7. 构建provider
       const wallet = getUserEmbeddedEthereumWallet(currentUser.user);
@@ -219,6 +224,11 @@ export const useUserStore = defineStore("user", () => {
       accStore.ethConnectAddress = signer.value.address;
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy-twitter';
+
+      viemWalletClient.value = createWalletClient({
+        chain: bsc,
+        transport: custom(provider)
+      })
     } catch (error) {
       console.error('Error initializing wallet:', error);
       throw error;

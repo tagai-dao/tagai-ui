@@ -4,6 +4,7 @@ import { ChainConfig, CoinPurse } from "@/config";
 import { ethers } from 'ethers'
 import { aggregate } from '@makerdao/multicall'
 import { useAccountStore } from "@/stores/web3";
+import { useUserStore } from "@/stores/privy";
 
 export const getRewardsClaimd = async (twitterId: string) => {
     let coinPurse = await getContract('CoinPurse', undefined, true);
@@ -59,9 +60,7 @@ export const unwrapBNB = async (amount: bigint) => {
 }
 
 export const approveCoinPurse = async (token: string, allowance: bigint) => {
-    console.log(3, token, allowance)
     let coinPurse = await getContract('ERC20', token);
-    console.log(4, coinPurse)
     let tx = await coinPurse.approve(CoinPurse, allowance);
     await tx.wait();
     return tx;
