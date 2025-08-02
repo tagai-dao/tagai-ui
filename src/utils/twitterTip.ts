@@ -1,19 +1,18 @@
-import { getContract } from "./contract";
 import type { SocialAccountTokens } from "@/types";
 import { ChainConfig, CoinPurse } from "@/config";
-import { ethers } from 'ethers'
 import { aggregate } from '@makerdao/multicall'
 import { useAccountStore } from "@/stores/web3";
-import { useUserStore } from "@/stores/privy";
+import { readContract, writeContract } from "./contract";
+import { zeroAddress } from "viem";
+import { isAddress } from 'viem/utils'
+import { transferEthTo } from "./wallets";
 
 export const getRewardsClaimd = async (twitterId: string) => {
-    let coinPurse = await getContract('CoinPurse', undefined, true);
-    let claimEthAddress = await coinPurse.alreadyWithdraw(twitterId);
-    return claimEthAddress;
+    return await readContract('CoinPurse', 'alreadyWithdraw', [twitterId])
 }
 
 export const getPendingClaimTokens = async (twitterId: string, tokens: string[]) => {
-    tokens = tokens.filter(ethers.isAddress)
+    tokens = tokens.filter((token: string) => isAddress(token))
     if (tokens.length === 0) {
         return []
     }
@@ -32,57 +31,66 @@ export const getPendingClaimTokens = async (twitterId: string, tokens: string[])
 }
 
 export const claimTokens = async (twitterId: string, signature: string, tokens: string[]) => {
-    let coinPurse = await getContract('CoinPurse');
-    let tx = await coinPurse.withdraw(BigInt(twitterId), tokens, signature);
-    await tx.wait();
-    return tx;
+    // return await writeContract('CoinPurse', 'withdraw', [BigInt(twitterId), tokens, signature])
+    return await writeContract({
+        contractName: 'CoinPurse',
+        functionName: 'withdraw',
+        args: [BigInt(twitterId), tokens, signature]
+    })
 }
 
 export const withdrawBNB = async (amount: bigint) => {
-    let coinPurse = await getContract('CoinPurse');
-    let tx = await coinPurse.withdrawBNB(amount);
-    await tx.wait();
-    return tx;
+    return await writeContract({
+        contractName: 'CoinPurse',
+        functionName: 'withdrawBNB',
+        args: [amount]
+    })
 }
 
 export const wrapBNB = async (amount: bigint) => {
-    let weth = await getContract('WETH');
-    let tx = await weth.deposit({value: amount});
-    await tx.wait();
-    return tx;
+    return await writeContract({
+        contractName: 'WETH',
+        functionName: 'deposit',
+        args: [],
+        value: amount
+    })
 }
 
 export const unwrapBNB = async (amount: bigint) => {
-    let weth = await getContract('WETH');
-    let tx = await weth.withdraw(amount);
-    await tx.wait();
-    return tx;
+    return await writeContract({
+        contractName: 'WETH',
+        functionName: 'withdraw',
+        args: [amount]
+    })
 }
 
-export const approveCoinPurse = async (token: string, allowance: bigint) => {
-    let coinPurse = await getContract('ERC20', token);
-    let tx = await coinPurse.approve(CoinPurse, allowance);
-    await tx.wait();
-    return tx;
+export const approveCoinPurse = async (token: `0x${string}`, allowance: bigint) => {
+    return await writeContract({
+        contractName: 'ERC20',
+        functionName: 'approve',
+        args: [CoinPurse, allowance],
+        address: token
+    })
 }
 
-export const setTokenLimit = async (token: string, limitPerTx: bigint, limitPerDay: bigint, value: bigint = 0n) => {
-    let coinPurse = await getContract('CoinPurse');
-    if (token == ethers.ZeroAddress) {
-        let tx = await coinPurse.setLimit(token, limitPerTx, limitPerDay, {
-            value
-        });
-        await tx.wait();
-        return tx;
+export const setTokenLimit = async (token: `0x${string}`, limitPerTx: bigint, limitPerDay: bigint, value: bigint = 0n) => {
+    if (token == zeroAddress) {
+        return await writeContract({
+            contractName: 'CoinPurse',
+            functionName: 'setLimit',
+            args: [token, limitPerTx, limitPerDay]
+        })
     }
-    let tx = await coinPurse.setLimit(token, limitPerTx, limitPerDay);
-    await tx.wait();
-    return tx;
+    return await writeContract({
+        contractName: 'CoinPurse',
+        functionName: 'setLimit',
+        args: [token, limitPerTx, limitPerDay]
+    })
 }
 
 export const getTokensInfo = async (tokens: SocialAccountTokens[]) => {
     let calls = []
-    let tokensCA = tokens.map((item: any) => item.token).filter(ethers.isAddress)
+    let tokensCA = tokens.map((item: any) => item.token).filter((token: string) => isAddress(token))
     if (tokensCA.length === 0) {
         return []
     }

@@ -13,8 +13,6 @@ import { bsc } from "viem/chains";
 
 export const useUserStore = defineStore("user", () => {
   const user = ref<OAuthResult["user"] | null>(null);
-  const wallet = ref<ConnectedWallet | null>(null);
-  const ethersProvider = ref<any>(null);
   const signer = ref<JsonRpcSigner | null>(null);
   const viemWalletClient = ref<WalletClient | null>(null);
   const route = useRoute();
@@ -130,8 +128,6 @@ export const useUserStore = defineStore("user", () => {
   async function logout() {
     await privy.auth.logout();
     user.value = null;
-    wallet.value = null;
-    ethersProvider.value = null;
     signer.value = null;
   }
 
@@ -201,8 +197,6 @@ export const useUserStore = defineStore("user", () => {
         console.log('Embedded wallet already exists:', embeddedAccount);
       }
 
-      
-      
       // 7. 构建provider
       const wallet = getUserEmbeddedEthereumWallet(currentUser.user);
       const { entropyId, entropyIdVerifier } = getEntropyDetailsFromUser(currentUser.user) as any;
@@ -216,7 +210,6 @@ export const useUserStore = defineStore("user", () => {
       });
       
       const bp = new BrowserProvider(provider);
-      ethersProvider.value = provider;
       signer.value = await bp.getSigner();
       console.log('Wallet initialized successfully:', signer.value, bp);
 
@@ -229,6 +222,16 @@ export const useUserStore = defineStore("user", () => {
         chain: bsc,
         transport: custom(provider)
       })
+
+      // const tx = await viemWalletClient.value.writeContract({
+      //   account: useAccountStore().ethConnectAddress as `0x${string}`,
+      //   address: '0x6C818c610F3D9db65f5e0c0838f3F68600b80C85' as `0x${string}`,
+      //   abi: abis['ERC20'],
+      //   functionName: 'approve',
+      //   args: [useAccountStore().ethConnectAddress as `0x${string}`, 235235235n],
+      //   chain: bsc
+      // })
+      // console.log('tx', tx);
     } catch (error) {
       console.error('Error initializing wallet:', error);
       throw error;
@@ -237,8 +240,7 @@ export const useUserStore = defineStore("user", () => {
 
   return { 
     user, 
-    wallet, 
-    ethersProvider, 
+    viemWalletClient,
     signer, 
     iframeInitialized, 
     iframeRef,

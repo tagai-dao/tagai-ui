@@ -1,10 +1,12 @@
-import { getProvider, setup } from "./wallets";
+import { getProvider, getReadOnlyClient, getWalletClient, setup, waitForTx } from "./wallets";
 import { abis } from './abis'
 import { ethers } from 'ethers'
 import { getReadOnlyProvider } from "./web3";
 import { PumpContract1, IPShareContract1, uniswapV2Router02, 
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, wrappedUniswapV2ForTagAI2 } from '@/config'
+import { bsc } from "viem/chains";
+import { useAccountStore } from "@/stores/web3";
 
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -20,6 +22,57 @@ const ContractAddress = {
     WrapSwaper2: wrappedUniswapV2ForTagAI2,
     CoinPurse: CoinPurse,
     WETH: WETH
+}
+
+export const readContract = async (contractName: string, functionName: string, args: any, address?: `0x${string}`) => {
+    const client = getReadOnlyClient();
+    if (!address) {
+        // @ts-ignore
+        address = ContractAddress[contractName] as `0x${string}`
+    }
+    const abi = abis[contractName as keyof typeof abis]
+    const result = await client.readContract({
+        address,
+        abi,
+        functionName,
+        args
+    });
+    return result;
+}
+
+export const writeContract = async ({
+    contractName, 
+    functionName, 
+    args,
+    address,
+    value = 0n
+}: {
+    contractName: string, 
+    functionName: string, 
+    args: any,
+    address?: `0x${string}`,
+    value?: bigint
+}) => {
+    const client = getWalletClient();
+    if (!client) {
+        throw 'no wallet client'
+    }
+    if (!address) {
+        // @ts-ignore
+        address = ContractAddress[contractName] as `0x${string}`
+    }
+
+    const abi = abis[contractName as keyof typeof abis]
+    const tx = await client.writeContract({
+        account: useAccountStore().ethConnectAddress as `0x${string}`,
+        address,
+        abi,
+        functionName,
+        args,
+        chain: bsc,
+        value
+    });
+    return await waitForTx(tx);
 }
 
 export const getContract = async (contractName: string, address?: string, readOnly = false): Promise<any> => {

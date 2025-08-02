@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { isAddress, checksumAddress, type WalletClient, type PublicClient } from 'viem';
 import { setupNetwork } from './web3';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { uiLog } from '@/apis/api';
@@ -6,6 +6,9 @@ import { MetaMaskSDK } from '@metamask/sdk';
 import { getProvider as getBNProvider } from "@binance/w3w-ethereum-provider";
 import { ChainConfig } from "@/config"
 import { useUserStore } from '@/stores/privy';
+import { createWalletClient, createPublicClient, custom, http } from 'viem';
+import { bsc } from 'viem/chains';
+
 
 // this.ethWalletType = 'none' // metamask, okx, none
 // this.ethConnectState = EthWalletState.Disconnect
@@ -17,6 +20,7 @@ let provider: any;
 let providerInfo: any;
 let accounts: any = []
 let initialized = false
+let readOnlyClient: PublicClient | undefined;
 
 export const isMetaMaskInstalled = () => provider && (provider.isMetaMask || provider.isOkxWallet || provider.isOKExWallet || provider.isOKx || provider.isCoinbaseWallet || provider.isTokenPocket || provider.isBinanceWallet);
 export const isMetaMaskConnected = () => accounts && accounts.length > 0;
@@ -46,6 +50,40 @@ export const getProvider = () => {
         return provider
     }
     return window.ethereum
+}
+
+export const getReadOnlyClient = () => {
+    if (readOnlyClient) {
+        return readOnlyClient;
+    }
+    readOnlyClient = createPublicClient({
+        chain: bsc,
+        transport: http()
+    });
+    return readOnlyClient;
+}
+
+export const getWalletClient = () => {
+    const accStore = useAccountStore();
+    if (accStore.ethWalletType === 'privy-twitter') {
+        const privyStore = useUserStore();
+        if (!privyStore.viemWalletClient) {
+            return null;
+        }
+        return privyStore.viemWalletClient;
+        // const walletClient = createWalletClient({
+        //     chain: bsc,
+        //     transport: custom(privyStore.ethersProvider)
+        // }) as WalletClient;
+        // return walletClient;
+    }
+    if (provider) {
+        const walletClient = createWalletClient({
+            chain: bsc,
+            transport: custom(provider) // 使用插件钱包（如 MetaMask）
+        }) as WalletClient;
+        return walletClient;
+    }
 }
 
 export const getProviderInfo = () => providerInfo
@@ -180,7 +218,7 @@ const handleNewAccounts = async (accounts: any) => {
         accStore.ethWalletType = 'none'
         return;
     }
-    const account = ethers.getAddress(accounts[0])
+    const account = checksumAddress(accounts[0])
     if (!account) {
         accStore.ethConnectState = EthWalletState.Disconnect
         accStore.ethWalletType = 'none'
@@ -201,32 +239,55 @@ export const closeProvider = () => {
 }
 
 export const signMessage = async (message: string) => {
-    let eth = getProvider();
-    const provider = new ethers.BrowserProvider(eth);
-    const signer = await provider.getSigner();
-    return await signer.signMessage(message);
+    let wallet = getWalletClient() as WalletClient;
+    if (!wallet) {
+        return null;
+    }
+    return await wallet.signMessage({
+        account: useAccountStore().ethConnectAddress as `0x${string}`,
+        message: message
+    });
 }
 
 export const getBalance = async (addr: string) => {
-    // @ts-ignore
-    if (!ethers.isAddress(addr)) return 0n;
-    let eth = getProvider();
-    const provider = new ethers.BrowserProvider(eth);
-    const balance = await provider.getBalance(addr);
+    if (!isAddress(addr)) return 0n;
+    let wallet = getReadOnlyClient();
+    const balance = await wallet.getBalance({
+        address: addr as `0x${string}`
+    });
     return balance;
 }
 
+export const getBlockNumber = async () => {
+    let wallet = getReadOnlyClient();
+    const blockNumber = await wallet.getBlockNumber();
+    return blockNumber;
+}
+
 export const transferEthTo = async (to: string, value: bigint) => {
-    let eth = getProvider();
+    let wallet = getWalletClient();
+    if (!wallet) {
+        return null;
+    }
     await setup()
-    const provider = new ethers.BrowserProvider(eth);
-    const signer = await provider.getSigner();
-    const tx = await signer.sendTransaction({
-        to,
-        value
+    const hash = await wallet.sendTransaction({
+        account: useAccountStore().ethConnectAddress as `0x${string}`,
+        to: to as `0x${string}`,
+        value: value,
+        chain: bsc
     })
-    await tx.wait();
-    return tx.hash;
+    return await waitForTx(hash);
+}
+
+export const waitForTx = async (hash: `0x${string}`) => {
+    let wallet = getReadOnlyClient();
+    const receipt = await wallet.waitForTransactionReceipt({
+        hash
+    });
+    if (receipt.status === 'success') {
+        return hash;
+    }
+    return null;
 }
 
 export async function initPlugin() {
