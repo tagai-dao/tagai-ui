@@ -3,7 +3,6 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { ConnectedWallet, OAuthResult, OAuthProviderType } from "@/types/privy-types";
 import { privy } from "@/utils/privy";
-import { BrowserProvider, JsonRpcSigner, type Signer } from "ethers";
 import { PrivyConfig } from "@/config";
 import {getUserEmbeddedEthereumWallet, getEntropyDetailsFromUser} from '@privy-io/js-sdk-core';
 import { EthWalletState, useAccountStore } from "./web3";
@@ -13,9 +12,9 @@ import { bsc } from "viem/chains";
 
 export const useUserStore = defineStore("user", () => {
   const user = ref<OAuthResult["user"] | null>(null);
-  const signer = ref<JsonRpcSigner | null>(null);
   const viemWalletClient = ref<WalletClient | null>(null);
   const route = useRoute();
+  const ethersProvider = ref<any>(null);
   // iframe相关状态
   const iframeInitialized = ref(false);
   const iframeRef = ref<HTMLIFrameElement | null>(null);
@@ -128,7 +127,7 @@ export const useUserStore = defineStore("user", () => {
   async function logout() {
     await privy.auth.logout();
     user.value = null;
-    signer.value = null;
+    viemWalletClient.value = null;
   }
 
   async function handleCallback() {
@@ -208,20 +207,18 @@ export const useUserStore = defineStore("user", () => {
           entropyId,
           entropyIdVerifier
       });
-      
-      const bp = new BrowserProvider(provider);
-      signer.value = await bp.getSigner();
-      console.log('Wallet initialized successfully:', signer.value, bp);
-
-      const accStore = useAccountStore();
-      accStore.ethConnectAddress = signer.value.address;
-      accStore.ethConnectState = EthWalletState.Connected;
-      accStore.ethWalletType = 'privy-twitter';
 
       viemWalletClient.value = createWalletClient({
         chain: bsc,
         transport: custom(provider)
       })
+
+      ethersProvider.value = provider;
+
+      const accStore = useAccountStore();
+      accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
+      accStore.ethConnectState = EthWalletState.Connected;
+      accStore.ethWalletType = 'privy-twitter';
 
       // const tx = await viemWalletClient.value.writeContract({
       //   account: useAccountStore().ethConnectAddress as `0x${string}`,
@@ -241,10 +238,10 @@ export const useUserStore = defineStore("user", () => {
   return { 
     user, 
     viemWalletClient,
-    signer, 
     iframeInitialized, 
     iframeRef,
     messageListener,
+    ethersProvider,
     loginWithTwitter, 
     logout, 
     handleCallback, 

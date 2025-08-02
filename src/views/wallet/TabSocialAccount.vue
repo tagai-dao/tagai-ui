@@ -9,10 +9,10 @@ import { useAccountStore } from "@/stores/web3";
 import { formatAmount } from "@/utils/helper";
 import { onMounted, ref } from "vue";
 import { getRewardsClaimd } from "@/utils/twitterTip";
-import { ethers } from "ethers";
 import RechargeBNB from "@/views/wallet/social/RechargeBNB.vue";
 import WithdrawBNB from "@/views/wallet/social/WithdrawBNB.vue";
 import { useAccount } from "@/composables/useAccount";
+import { zeroAddress } from "viem";
 
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
@@ -36,7 +36,7 @@ function refreshBalance() {
 
 onMounted(() => {
   getRewardsClaimd(accStore.getAccountInfo.twitterId).then((res:any) => {
-    socialAccountModalStore.needClaim = res == ethers.ZeroAddress;
+    socialAccountModalStore.needClaim = res == zeroAddress;
   })
 })
 

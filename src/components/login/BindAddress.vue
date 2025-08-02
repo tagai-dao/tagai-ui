@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import { useAccountStore } from "@/stores/web3";
 import { ref, watch } from "vue";
-import { ethers } from "ethers";
 import { checkEthUsed, bondEth } from '@/apis/api'
 import { BondEthMessage } from '@/config'
 import { signMessage } from "@/utils/wallets";
 import { handleErrorTip } from "@/utils/notify";
 import { useModalStore } from "@/stores/common";
+import { isAddress } from "viem";
 
 const accStore = useAccountStore();
 const loading = ref(false);
 const ethAddrUsed = ref(false);
 
 async function checkEth(address: string): Promise<boolean> {
-  if (ethers.isAddress(address)) {
+  if (isAddress(address)) {
       loading.value = true
       // check if address been bonded
       try {
@@ -47,6 +47,9 @@ async function confirm() {
       return;
     }
     const signature = await signMessage(BondEthMessage);
+    if (!signature) {
+      return;
+    }
     await bondEth(accStore.ethConnectAddress, accStore.getAccountInfo!.twitterId, signature, BondEthMessage)
     accStore.getAccountInfo!.ethAddr = accStore.ethConnectAddress
     accStore.setAccount({

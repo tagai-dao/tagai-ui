@@ -8,8 +8,8 @@ import { wrapBNB, unwrapBNB, withdrawBNB } from "@/utils/twitterTip";
 import { SocialAccountModalType, useSocialAccountModalStore } from '@/stores/wallet';
 import { GlobalModalType } from '@/types';
 import i18n from "@/lang";
-import { ethers } from 'ethers';
 import { useAccount } from '@/composables/useAccount';
+import { parseEther } from 'viem';
 const t = i18n.global.t;
 
 const modalStore = useModalStore();
@@ -29,7 +29,7 @@ const withdraw = async () => {
             return;
         }
     loading.value = true;
-    const amountBigInt = ethers.parseEther(bnbAmount.value.toString());
+    const amountBigInt = parseEther(bnbAmount.value.toString());
     await withdrawBNB(amountBigInt);
     updateBalance();
     modalStore.setModalVisible(false);

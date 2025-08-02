@@ -6,8 +6,8 @@ import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { approveCoinPurse } from "@/utils/twitterTip";
-import { ethers } from "ethers";
 import { useAccount } from "@/composables/useAccount";
+import { parseEther } from "viem";
 // 
 const socialAccountModalStore = useSocialAccountModalStore()
 const accStore = useAccountStore()
@@ -28,7 +28,7 @@ async function confirm() {
       return
     }
     loading.value = true;
-    await approveCoinPurse(socialAccountModalStore.editTokenInfo!.token, ethers.parseEther(newAllowance.value.toString()))
+    await approveCoinPurse(socialAccountModalStore.editTokenInfo!.token as `0x${string}`, parseEther(newAllowance.value.toString()))
     emit('added')
     socialAccountModalStore.setModalVisible(false, SocialAccountModalType.EditAllowance)
   } catch (error) {

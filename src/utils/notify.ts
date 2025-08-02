@@ -1,10 +1,10 @@
 import i18n from "@/lang";
 import errCode from "@/errCode";
 import { ElNotification } from "element-plus";
-import { ethers } from 'ethers'
 import { abis } from './abis'
 import _ from 'lodash';
 import { useAccount } from "@/composables/useAccount";
+import { decodeErrorResult } from 'viem';
 
 const t = i18n.global.t;
 
@@ -20,17 +20,19 @@ export const handleErrorTip = (e: any) => {
 
   const errorData = e.data;
   if (errorData) {
-    const iface = new ethers.Interface(abis.errors);
     try {
-      const decodeError = iface.parseError(errorData);
+      const decodedError = decodeErrorResult({
+        abi: abis.errors,      // 错误 ABI 列表
+        data: errorData               // 合约抛出的错误 revert data
+      });
+    
       notify({
-        message: decodeError?.name,
+        message: decodedError.errorName, // 自定义错误名称
         type: 'error',
         duration: 5000
-      })
-      return;
+      });
     } catch (error) {
-      console.log(453, error)
+      console.log('decodeError fail:', error);
     }
   }
   

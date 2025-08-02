@@ -3,13 +3,12 @@ import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wal
 import { handleError, ref } from "vue";
 import { getSettledTokens, getTokenByTickOrCA, setNewToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
-import { ethers } from "ethers";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { GlobalModalType } from "@/types";
 import { useModalStore } from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
 import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
-import { WETH } from "@/config";
+import { parseEther } from "viem";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
@@ -75,10 +74,10 @@ async function confirm() {
             return
         }
         state.value = 2
-        await approveCoinPurse(res.token, ethers.parseEther(allowance.value!.toString()))
+        await approveCoinPurse(res.token, parseEther(allowance.value!.toString()))
 
         state.value = 3
-        await setTokenLimit(res.token, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()))
+        await setTokenLimit(res.token, parseEther(transactionLimit.value!.toString()), parseEther(dailyLimit.value!.toString()))
 
         await setNewToken(accStore.getAccountInfo?.twitterId!, tick.value)
 

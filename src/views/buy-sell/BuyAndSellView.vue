@@ -21,11 +21,10 @@ import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { useCurationStore } from "@/stores/curation";
-import { ethers } from "ethers";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
-import { ca } from "element-plus/es/locale/index.mjs";
+import { isAddress, parseEther } from "viem";
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -128,15 +127,15 @@ const updateBuyAmount = debounce(async (val: any) => {
     return
   };
   showFillInfo.value = false
-  const amount = ethers.parseEther(val.toString())
+  const amount = parseEther(val.toString())
  try {
   if (listed.value) {
     const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount * 9800n / 10000n)
     receiveAmount.value = receive
   }else {
     const {receive, supply} = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
-    if (receive > ethers.parseEther('650000000') * 9950n / 10000n - supply) {
-      updatedReveiveAmount = ethers.parseEther('650000010') - supply
+    if (receive > parseEther('650000000') * 9950n / 10000n - supply) {
+      updatedReveiveAmount = parseEther('650000010') - supply
       updatedBuyValue = await getBuyPriceAfterFee(supply, updatedReveiveAmount) * 10000n / 9900n
       willListing = true
     }else{
@@ -162,7 +161,7 @@ const updateSellAmount = debounce(async (val: any) => {
     }
     if (parseFloat(val) == 0) return;
     showFillInfo.value = false
-    const amount = ethers.parseEther(val.toString())
+    const amount = parseEther(val.toString())
     if (listed.value) {
       const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
       receiveEth.value = receive
@@ -190,8 +189,8 @@ async function checkTweet() {
       return;
     }
 
-    if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
-      const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
+    if (isAddress(accStore.getAccountInfo.ethAddr ?? '')) {
+      const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr ?? '');
       accStore.ipshare = ipshare;
     }
     if (!accStore.ipshare.ethAddr) {
@@ -247,7 +246,7 @@ async function confirm() {
       if (!payEth.value) return
 
       // check list
-      const hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), stateStore.sellsman ?? token.ipshare, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
+      const hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -264,7 +263,7 @@ async function confirm() {
         finalSellAmount = BigInt(tokenOriginalBalance.value)
       }
 
-      const hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, stateStore.sellsman ?? token.ipshare, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100))
+      const hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100))
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined
@@ -290,7 +289,7 @@ async function confirm() {
 
 async function updateUserTokenInfo () {
   try {
-    if (ethers.isAddress(accStore.ethConnectAddress)) {
+    if (isAddress(accStore.ethConnectAddress ?? '')) {
       let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
       tokenBalance.value = info.balance.toString() / 1e18;
       tokenOriginalBalance.value = info.balance;

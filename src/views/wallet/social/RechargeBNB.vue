@@ -3,7 +3,6 @@ import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wal
 import { handleError, onMounted, ref } from "vue";
 import { getSettledTokens, getTokenByTickOrCA, setNewToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
-import { ethers } from "ethers";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { GlobalModalType } from "@/types";
 import { useModalStore } from "@/stores/common";
@@ -11,6 +10,7 @@ import { useAccount } from "@/composables/useAccount";
 import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
 import { WETH } from "@/config";
 import { sleep } from "@/utils/helper";
+import { parseEther, zeroAddress } from "viem";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
@@ -64,7 +64,7 @@ async function confirm() {
         }
         
 
-        await setTokenLimit(ethers.ZeroAddress, ethers.parseEther(transactionLimit.value!.toString()), ethers.parseEther(dailyLimit.value!.toString()), ethers.parseEther(allowance.value!.toString()))
+        await setTokenLimit(zeroAddress as `0x${string}`, parseEther(transactionLimit.value!.toString()), parseEther(dailyLimit.value!.toString()), parseEther(allowance.value!.toString()))
 
         emit('added');
         socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)

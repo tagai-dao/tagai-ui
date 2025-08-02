@@ -4,8 +4,14 @@ import nacl from "tweetnacl";
 import { hexTou8array, stringToHex, u8arryToHex } from "./helper";
 import { sha256 } from "js-sha256";
 import base58 from "bs58";
-import { ethers } from "ethers";
 import steem from "steem";
+import { getReadOnlyClient } from "./wallets";
+import { ethers } from "ethers";
+import { encodeAbiParameters,
+  keccak256,
+  getCreate2Address,
+  toBytes,
+  toHex} from "viem";
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
@@ -61,15 +67,15 @@ export const getReadOnlyProvider = () => {
   return new ethers.JsonRpcProvider(ChainConfig.rpc);
 };
 
-export const getTransactionReceipt = async (hash: string) => {
-  const provider = getReadOnlyProvider();
-  const tx = await provider.getTransactionReceipt(hash);
+export const getTransactionReceipt = async (hash: `0x${string}`) => {
+  const provider = getReadOnlyClient();
+  const tx = await provider.getTransactionReceipt({hash});
   return tx;
 };
 
-export const getBalance = async (ethAddr: string) => {
-  const provider = getReadOnlyProvider();
-  const balance = await provider.getBalance(ethAddr);
+export const getBalance = async (ethAddr: `0x${string}`) => {
+  const provider = getReadOnlyClient();
+  const balance = await provider.getBalance({address: ethAddr});
   return balance
 }
 
@@ -162,16 +168,19 @@ const generateKeys = (username: string, pass: string) => {
   };
 };
 
-export const getPair = (tokenA: string) => {
-  let tokenB = WETH;
+export const getPair = (tokenA: `0x${string}`) => {
+  let tokenB = WETH as `0x${string}`;
+  if (!tokenA || !tokenB) {
+    throw new Error('Invalid token address');
+  }
   const [token0, token1] = tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA];
-  const encoded = new ethers.AbiCoder().encode(['address', 'address'], [token0, token1]);
-  const salt = ethers.keccak256(encoded);
+  const encoded = encodeAbiParameters([{ type: 'address' }, { type: 'address' }], [token0, token1]);
+  const salt = keccak256(encoded);
 
-  const pairAddress = ethers.getCreate2Address(
-    uniswapV2Factory,
+  const pairAddress = getCreate2Address({
+    from: uniswapV2Factory,
     salt,
-    uniswapV2InitCode
-  )
+    bytecode: uniswapV2InitCode
+  })
   return pairAddress;
 }

@@ -21,6 +21,7 @@
     "@element-plus/icons-vue": "^2.3.1",
     "@makerdao/multicall": "^0.12.0",
     "@metamask/sdk": "^0.31.1",
+    "@noble/hashes": "^1.8.0",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@privy-io/js-sdk-core": "^0.53.1",
     "@types/lodash.debounce": "^4.0.9",

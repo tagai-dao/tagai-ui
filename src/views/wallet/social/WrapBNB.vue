@@ -8,8 +8,8 @@ import { wrapBNB, unwrapBNB } from "@/utils/twitterTip";
 import { useSocialAccountModalStore } from '@/stores/wallet';
 import { GlobalModalType } from '@/types';
 import i18n from "@/lang";
-import { ethers } from 'ethers';
 import { useAccount } from '@/composables/useAccount';
+import { parseEther } from 'viem';
 const t = i18n.global.t;
 
 const modalStore = useModalStore();
@@ -34,7 +34,7 @@ const onConvert = async () => {
             return;
         }
     loading.value = true;
-    const amountBigInt = ethers.parseEther(bnbAmount.value.toString());
+    const amountBigInt = parseEther(bnbAmount.value.toString());
     if (isWrap.value) {
       await wrapBNB(amountBigInt);
     } else {

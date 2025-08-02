@@ -10,10 +10,8 @@ import errCode from "@/errCode";
 import { formatDate } from '@/utils/helper'
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
-import { ethers } from "ethers";
-import { getBalance } from '@/utils/web3'
 import { aggregate } from '@makerdao/multicall'
-import { useUserStore } from "@/stores/privy";
+import { isAddress, zeroAddress } from "viem";
 
 export enum AccountAuthType {
     TWITTER,
@@ -213,7 +211,7 @@ export const useAccount = () => {
                 await checkLogin()
                 break;
             case AccountAuthType.ETH: {
-                if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
+                if (isAddress(useAccountStore().getAccountInfo.ethAddr ?? '')) {
                     return true
                 }else {
                     useModalStore().setModalVisible(true, GlobalModalType.BondEth);
@@ -237,7 +235,7 @@ export const useAccount = () => {
     }
 
     const updateBalance = () => {
-        if (ethers.isAddress(useAccountStore().getAccountInfo.ethAddr)) {
+        if (isAddress(useAccountStore().getAccountInfo.ethAddr ?? '')) {
             const ethAddr = useAccountStore().getAccountInfo.ethAddr;
             let calls = [{
                 call: [
@@ -257,7 +255,7 @@ export const useAccount = () => {
                 call: [
                     'userLimits(address,address)(uint256,uint256)',
                     ethAddr,
-                    ethers.ZeroAddress
+                    zeroAddress
                 ],
                 returns: [
                     ['transactionLimit', (val: any) => val / 10 ** 18], 
