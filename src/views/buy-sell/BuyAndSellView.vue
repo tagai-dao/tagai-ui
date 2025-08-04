@@ -136,7 +136,7 @@ const updateBuyAmount = debounce(async (val: any) => {
     const {receive, supply} = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
     if (receive > parseEther('650000000') * 9950n / 10000n - supply) {
       updatedReveiveAmount = parseEther('650000010') - supply
-      updatedBuyValue = await getBuyPriceAfterFee(supply, updatedReveiveAmount) * 10000n / 9900n
+      updatedBuyValue = await getBuyPriceAfterFee(supply as bigint, updatedReveiveAmount as bigint) * 10000n / 9900n
       willListing = true
     }else{
       updatedReveiveAmount = receive

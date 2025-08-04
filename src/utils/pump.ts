@@ -511,7 +511,7 @@ export const getBuyAmountWithETHAfterFee = async (token: string | undefined, ver
 }
 
 export const getBuyPriceAfterFee = async (supply: bigint, amount: bigint) => {
-    return await readContract('Pump4', 'getBuyPriceAfterFee', [supply, amount])
+    return await readContract('Pump4', 'getBuyPriceAfterFee', [supply, amount]) as bigint
 }
 
 export const getReceivedAmountSellETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {

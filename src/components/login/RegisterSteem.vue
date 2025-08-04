@@ -115,7 +115,7 @@ async function payToken() {
             identityInfo.type = 'payToken'
             await register();
         }else {
-          const balance = await getBalance(accStore.getAccountInfo!.ethAddr!);
+          const balance = await getBalance(accStore.getAccountInfo!.ethAddr! as `0x${string}`);
           if (balance <= BigInt(CreateFee)) {
               showInsufficientBalance.value = true;
               return;
