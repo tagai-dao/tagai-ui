@@ -10,6 +10,7 @@ import _ from 'lodash'
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, type Log } from "viem";
+import { writeContract, readContract } from "./contract";
 
 const pumpContract = [
     PumpContract1,
@@ -26,18 +27,19 @@ export const checkTickUsed = async (tick: string) => {
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
-    const pump = await getContract('Pump4')
-    let tx: any = await pump.createToken(createParms.tick, {
+    let hash = await writeContract({
+        contractName: 'Pump4',
+        functionName: 'createToken',
+        args: [createParms.tick],
         value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
-
-    await tx.wait();
-    // tx: any = await getTransactionReceipt(hash);
-    const hash = tx.hash;
-    tx = await getTransactionReceipt(hash)
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }    
+    let tx = await getTransactionReceipt(hash as `0x${string}`)
     const event: any = getCreateTokenEventByHash(tx, 2);
-    if (event && event.length == 3 && event[0] == createParms.tick) {
-        return {token: event[1], createHash: tx.hash}
+    if (event?.tick == createParms.tick) {
+        return {token: event.token, createHash: tx.transactionHash}
     }
     return {createHash: hash}
 }

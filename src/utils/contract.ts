@@ -57,6 +57,9 @@ export const writeContract = async ({
     if (!client) {
         throw 'no wallet client'
     }
+    if (useAccountStore().ethWalletType !== 'privy-twitter') {
+        await setup()
+    }
     if (!address) {
         // @ts-ignore
         address = ContractAddress[contractName] as `0x${string}`
