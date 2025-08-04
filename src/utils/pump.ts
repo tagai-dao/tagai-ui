@@ -215,18 +215,20 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
 
 export const claimReward = async (token: string, version: number, orderId: BigInt, amount: BigInt, signature: string) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
-    const tc = await getContract('Pump' + version)
-    const tx = await tc.userClaim(token, orderId, amount, signature, {
+    const hash = await writeContract({
+        contractName: 'Pump' + version,
+        functionName: 'userClaim',
+        args: [token, orderId, amount, signature],
         value: ClaimFee
-    });
-    await tx.wait();
-    return tx.hash;
+    })
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }
+    return hash
 }
 
 export const calculateInitEth = async (amount: bigint) => {
-    const pump = await getContract('Pump1', undefined, true);
-    const price = await pump.getBuyPriceAfterFee(0n, amount);
-    return price;
+    return await readContract('Pump1', 'getBuyPriceAfterFee', [0n, amount]) as bigint
 }
 
 export const getUserTokenInfo = async (token: string, ethAddr: string) => {
@@ -505,27 +507,20 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
 }
 
 export const getBuyAmountWithETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
-    if (!token) return {supply: 0n, receive: 0n}
-    console.log('token', token, version)
-    const tc = await getContract('Token1', token, true);
-    const supply = await tc.bondingCurveSupply();
-    const pumpC = await getContract('Pump' + version, pumpContract[version - 1], true);
-    const receive = await pumpC.getBuyAmountByValue(supply, amount * 9800n / 10000n)
+    if (!token || !isAddress(token)) return {supply: 0n, receive: 0n}
+    const supply: any = await  readContract('Token1', 'bondingCurveSupply', [], token)
+    const receive: any = await readContract('Pump' + version, 'getBuyAmountByValue', [supply, amount * 9800n / 10000n])
     return {supply, receive}
 }
 
 export const getBuyPriceAfterFee = async (supply: bigint, amount: bigint) => {
-    const pump = await getContract('Pump4', undefined, true);
-    const price = await pump.getBuyPriceAfterFee(supply, amount);
-    return price;
+    return await readContract('Pump4', 'getBuyPriceAfterFee', [supply, amount])
 }
 
 export const getReceivedAmountSellETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
-    if (!token) return 0n
-    const tc = await getContract('Token1', token, true);
-    const pumpC = await getContract('Pump' + version, pumpContract[version - 1], true);
-    const supply = await tc.bondingCurveSupply();
-    const receive = await pumpC.getSellPriceAfterFee(supply, amount)
+    if (!token || !isAddress(token)) return 0n
+    const supply: any = await readContract('Token1', 'bondingCurveSupply', [], token)
+    const receive: any = await readContract('Pump' + version, 'getSellPriceAfterFee', [supply, amount])
     return receive
 }
 
@@ -572,8 +567,7 @@ const getCreateTokenEventByHash = (tx: { logs: Log[] }, version: number) => {
 // }
 
 export const getBuyAmountUseEth = async (token: string, ethAmount: BigInt) => {
-    let contract = await getContract('UniswapRouter', undefined, true);
-    const amount = await contract.getAmountsOut(ethAmount, [WETH, token]);
+    const amount: any = await readContract('UniswapRouter', 'getAmountsOut', [ethAmount, [WETH, token]])
     return amount[amount.length - 1];
 }
 

@@ -51,7 +51,7 @@ export const writeContract = async ({
     functionName: string, 
     args: any,
     address?: `0x${string}`,
-    value?: bigint
+    value?: bigint | string
 }) => {
     const client = getWalletClient();
     if (!client) {
@@ -73,7 +73,7 @@ export const writeContract = async ({
         functionName,
         args,
         chain: bsc,
-        value
+        value: typeof value === 'string' ? BigInt(value) : value
     });
     return await waitForTx(tx);
 }
