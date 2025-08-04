@@ -46,7 +46,7 @@ export const createCoin = async (createParms: CreateCommunity) => {
 
 export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
-    if (!isAddress(sellsman)) {
+    if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
     }
     if (listed) {
@@ -54,58 +54,77 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
 
         if (isImport) {
-            const wrapSwaper = await getContract('WrapSwaper2');
-            const tx = await wrapSwaper.buyToken(
-                zeroAddress,
-                amountOut * BigInt(10000 - slippage) / 10000n,
-                [WETH, token],
-                useAccountStore().ethConnectAddress,
-                Math.floor(Date.now() / 1000) + 300,
-                uniswapV2Router02,
-                {
-                    value: ethAmount
-                }
-            )
-            await tx.wait();
-            return tx.hash;
+            const hash = await writeContract({
+                contractName: 'WrapSwaper2',
+                functionName: 'buyToken',
+                args: [sellsman, 
+                    amountOut * BigInt(10000 - slippage) / 10000n, 
+                    [WETH, token], 
+                    useAccountStore().ethConnectAddress, 
+                    Math.floor(Date.now() / 1000) + 300, 
+                    version == 1 ? IPShareContract1 : IPShareContract2],
+                value: ethAmount
+            })
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }else {
-            const wrapSwaper = await getContract('WrapSwaper');
-            const tx = await wrapSwaper.buyToken(
-                zeroAddress,
-                amountOut * BigInt(10000 - slippage) / 10000n,
-                [WETH, token],
-                useAccountStore().ethConnectAddress,
-                Math.floor(Date.now() / 1000) + 300,
-                version == 1 ? IPShareContract1 : IPShareContract2,
-                {
-                    value: ethAmount
-                }
-            )
-            await tx.wait();
-            return tx.hash;
+            const hash = await writeContract({
+                contractName: 'WrapSwaper',
+                functionName: 'buyToken',
+                args: [sellsman, 
+                    amountOut * BigInt(10000 - slippage) / 10000n, 
+                    [WETH, token], 
+                    useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, 
+                    version == 1 ? IPShareContract1 : IPShareContract2],
+                value: ethAmount
+            })
+            if (!hash) {    
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }
     }else {
         const tc = await getContract('Token' + version, token)
         if (version == 1) {
-            const tx = await tc.buyToken(amount, sellsman, slippage, zeroAddress, {
-                value: ethAmount
+            const hash = await writeContract({
+                contractName: 'Token1',
+                functionName: 'buyToken',
+                args: [amount, sellsman, slippage, zeroAddress],
+                value: ethAmount,
+                address: token
             })
-            await tx.wait();
-            return tx.hash;
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }else if (version == 5) {
             // get trade signature
             const result: any = await getTradeSignature(useAccountStore().ethConnectAddress);
-            const tx = await tc.buyToken(amount, sellsman, slippage, result.signature, {
-                value: ethAmount
+            const hash = await writeContract({
+                contractName: 'Token5',
+                functionName: 'buyToken',
+                args: [amount, sellsman, slippage, result.signature],
+                value: ethAmount,
+                address: token
             })
-            await tx.wait();
-            return tx.hash;
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }else {
-            const tx = await tc.buyToken(amount, sellsman, slippage, {
-                value: ethAmount
+            const hash = await writeContract({
+                contractName: 'Token' + version,
+                functionName: 'buyToken',
+                args: [amount, sellsman, slippage],
+                value: ethAmount,
+                address: token
             })
-            await tx.wait();
-            return tx.hash;
+            if (!hash) {    
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }
     }
 }
