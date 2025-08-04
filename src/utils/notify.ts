@@ -5,39 +5,47 @@ import { abis } from './abis'
 import _ from 'lodash';
 import { useAccount } from "@/composables/useAccount";
 import { decodeErrorResult } from 'viem';
+import { ContractFunctionExecutionError, decodeAbiParameters } from 'viem';
+import { getWalletClient } from "./wallets";
 
 const t = i18n.global.t;
 
-export const handleErrorTip = (e: any) => {
-  if (!e) {
-    console.log("Null error");
-    return;
-  }
-  console.error(e)
-  if (typeof e === "number") {
-    return handleServerError(e);
-  }
-
-  const errorData = e.data;
-  if (errorData) {
+function parseViemRevertReason(error: any): string {
+  const hexData = error?.cause?.data;
+  let result = ''
+  if (typeof hexData === 'string' && hexData.startsWith('0x08c379a0')) {
     try {
-      const decodedError = decodeErrorResult({
-        abi: abis.errors,      // 错误 ABI 列表
-        data: errorData               // 合约抛出的错误 revert data
-      });
-    
-      notify({
-        message: decodedError.errorName, // 自定义错误名称
-        type: 'error',
-        duration: 5000
-      });
-    } catch (error) {
-      console.log('decodeError fail:', error);
+      console.log('default error')
+      // 切掉 4 字节选择器
+      const encoded = `0x${hexData.slice(10)}`;
+      // 使用 viem 解码 ABI 参数
+      const [reason] = decodeAbiParameters([{ type: 'string' }], encoded as `0x${string}`);
+      notify({ message: reason, type: "error" });
+      return reason;
+    } catch (err) {
+      console.warn('ABI decode error:', err);
+    }
+  }else {// decode custom errors
+    const errorData = error.cause?.data || error.cause?.cause?.data || extractRevertReasonFromError(error.shortMessage);
+    console.log('custom error', error.details)
+    if (errorData) {
+      try {
+        const decodedError = decodeErrorResult({
+          abi: abis.errors,      // 错误 ABI 列表
+          data: errorData              // 合约抛出的错误 revert data
+        });
+        notify({ message: decodedError.errorName, type: "error" });
+        return decodedError.errorName;
+      } catch (error) {
+        console.log('decodeError fail:', error);
+      }
     }
   }
-  
+
+  // Fallback
+  const message = error.message
   if (
-    e.message.indexOf("insufficient funds for intrinsic transaction cost") !==
+    message.indexOf("insufficient funds for intrinsic transaction cost") !==
     -1
   ) {
     notify({
@@ -46,38 +54,56 @@ export const handleErrorTip = (e: any) => {
       duration: 5000,
     });
     return t("errMessage.insufficientFee");
-  } else if (e.message.indexOf("User denied transaction signature") !== -1) {
+  } else if (message.indexOf("User denied transaction signature") !== -1) {
     notify({
       message: "User canceled the transaction",
       type: "info",
       duration: 5000,
     });
     return t("errMessage.invalidTransaction");
-  } else if (e.message.indexOf("user rejected action") !== -1) {
+  } else if (message.indexOf("user rejected action") !== -1) {
     notify({
       message: "User canceled the signature",
       type: "info",
       duration: 5000,
     });
     return t("errMessage.userCanceled");
-  } else if (e.message.indexOf("User has ipshare") !== -1) {
+  } else if (message.indexOf("User has ipshare") !== -1) {
     notify({ message: "User has created IPShare", type: "info" });
     return "User has created IPShare";
-  } else if (e.message.indexOf("IPShare already created") !== -1) {
+  } else if (message.indexOf("IPShare already created") !== -1) {
     notify({ message: "IPShare already created", type: "info" });
     return "IPShare already created";
   } else if (
-    e.message.indexOf("invalid nonce") !== -1 ||
-    e.message.indexOf("invalid signature") !== -1
+    message.indexOf("invalid nonce") !== -1 ||
+    message.indexOf("invalid signature") !== -1
   ) {
     notify({ message: "Invalid signature", type: "info" });
     return "Invalid signature";
-  } else if (e.message.indexOf("Cannot sell the last 10 share") !== -1) {
+  } else if (message.indexOf("Cannot sell the last 10 share") !== -1) {
     notify({ message: "Cannot sell the last 10 shares", type: "info" });
     return "Cannot sell the last 10 shares";
   } else {
-    notify({ message: e, type: "error" });
+    console.log(3, error.shortMessage)
+    notify({ message: error.shortMessage || error.message, type: "error" });
+    return error.shortMessage || error.message;
   }
+}
+
+export const handleErrorTip = (e: any) => {
+  if (!e) {
+    console.log("Null error");
+    return;
+  }
+  // console.error(e)
+  if (typeof e === "number") {
+    return handleServerError(e);
+  }
+
+  console.log(111)
+  const revertReason = parseViemRevertReason(e);
+  return revertReason;
+  
 };
 
 export const handleServerError = (code: number) => {
@@ -215,6 +241,24 @@ export const handleServerError = (code: number) => {
     useAccount().logout()
   }
 };
+
+/**
+ * viem return a non-standard error string, we need to extract the revert reason from it
+ * @param errorString 
+ * @returns 
+ */
+function extractRevertReasonFromError(errorString: string): string | null {
+  const errorMatch = errorString.match(/error=({.*}),\s*code=/s);
+
+  try {
+    const error = JSON.parse(errorMatch?.[1] || '{}')
+    console.log(5, error)
+    return error.error.data;
+  } catch (error) {
+    console.log(4, error)
+    return null;
+  }
+}
 
 interface NotifyOptions {
   title?: string;

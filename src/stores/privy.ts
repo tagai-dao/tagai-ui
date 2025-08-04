@@ -115,8 +115,6 @@ export const useUserStore = defineStore("user", () => {
   }
 
   async function loginWithTwitter() {
-
-    console.log(123, PrivyConfig);
     const oauth = await privy.auth.oauth.generateURL("twitter" as OAuthProviderType,
       PrivyConfig.loginRedirectUri
     );

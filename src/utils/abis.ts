@@ -3597,66 +3597,306 @@ export const abis = {
       'function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',
     ],
     "errors": [
-      "error OnlyHumanAllowed()",
-      "error IllegalRatios()",
-      "error GameIsNotStarted()",
-      "error IPShareNotExist()",
-      "error InvalidCurrency()",
-      "error DonutNotSet()",
-      "error PendingTradeNow()",
-      "error OnlyDonut()",
-      "error OnlyStaker()",
-      "error FeePercentIsTooLarge()",
-      "error TooMuchFee()",
-      "error CanntPauseNow()",
-      "error CanntUnpauseNow()",
-      "error IPShareAlreadyCreated()",
-      "error InsufficientPay()",
-      "error RefundFail()",
-      "error PayCreateFeeFail()",
-      "error IPShareNotExist()",
-      "error CostTradeFeeFail()",
-      "error CanntSellLast10Shares()",
-      "error UnableToSendFunds()",
-      "error NoFunds()",
-      "error InsufficientShares()",
-      "error InUnstakingPeriodNow()",
-      "error WrongAmountOrInsufficientStakeAmount()",
-      "error NoIPShareToRedeem()",
-      "error IPShareIsInlockingPeriodNow()",
-      "error NoProfitToClaim()",
-      "error TickHasBeenCreated()",
-      "error CantBeZeroAddress()",
-      "error CantSetSocialDistributionMoreThanTotalSupply()",
-      "error TooMuchFee()",
-      "error InsufficientCreateFee()",
-      "error PreMineTokenFail()",
-      "error RefundFail()",
-      "error TokenNotListed()",
-      "error TokenListed()",
-      "error IPShareNotCreated()",
-      "error TokenInitialized()",
-      "error ClaimOrderExist()",
-      "error InvalidSignature()",
-      "error InvalidClaimAmount()",
-      "error InvalidClaimer()",
-      "error OutOfSlippage()",
-      "error CreateDexPoolFail()",
-      "error InsufficientFund()",
-      "error RefundFail()",
-      "error CostFeeFail()",
-      "error CanntSellLockedToken()",
-      "error ExceedsPerLimit()",
-      "error ExceedsDailyLimit()",
-      "error InvalidToXId()",
-      "error AlreadyWithdraw()",
-      "error TransferFailed()",
-      "error TransferFromFailed()",
-      "error BuyTokenFailed()",
-      "error InvalidPath()",
-      "error CostFeeFailed()",
-      "error InvalidAddress()",
-      "error InsufficientFee()",
+      {
+        "type": "error",
+        "name": "OnlyHumanAllowed",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "IllegalRatios",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "GameIsNotStarted",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "IPShareNotExist",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InvalidCurrency",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "DonutNotSet",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "PendingTradeNow",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "OnlyDonut",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "OnlyStaker",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "FeePercentIsTooLarge",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TooMuchFee",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CanntPauseNow",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CanntUnpauseNow",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "IPShareAlreadyCreated",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InsufficientPay",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "RefundFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "PayCreateFeeFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "IPShareNotExist",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CostTradeFeeFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CanntSellLast10Shares",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "UnableToSendFunds",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "NoFunds",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InsufficientShares",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InUnstakingPeriodNow",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "WrongAmountOrInsufficientStakeAmount",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "NoIPShareToRedeem",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "IPShareIsInlockingPeriodNow",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "NoProfitToClaim",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TickHasBeenCreated",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CantBeZeroAddress",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CantSetSocialDistributionMoreThanTotalSupply",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TooMuchFee",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InsufficientCreateFee",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "PreMineTokenFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "RefundFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TokenNotListed",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TokenListed",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "IPShareNotCreated",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TokenInitialized",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "ClaimOrderExist",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InvalidSignature",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InvalidClaimAmount",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InvalidClaimer",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "OutOfSlippage",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CreateDexPoolFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InsufficientFund",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "RefundFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CostFeeFail",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CanntSellLockedToken",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "ExceedsPerLimit",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "ExceedsDailyLimit",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InvalidToXId",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "AlreadyWithdraw",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TransferFailed",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "TransferFromFailed",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "BuyTokenFailed",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InvalidPath",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CostFeeFailed",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InvalidAddress",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "InsufficientFee",
+        "inputs": []
+      },
     ],
      "CoinPurse": [
       {

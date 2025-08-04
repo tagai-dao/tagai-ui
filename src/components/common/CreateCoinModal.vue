@@ -187,8 +187,9 @@ const create = async () => {
     modalStore.setModalCloseEnable(true)
     modalStore.setModalVisible(false)
   } catch (e) {
-    console.error('create community fail', e)
-    handleErrorTip(e)
+    const res = handleErrorTip(e)
+    console.error('create community fail', res)
+
   } finally {
     createLoading.value = false;
   }
@@ -316,7 +317,7 @@ watch(() => createLoading.value, () => {
               class="leading-6 text-base flex-1"
               v-model="inputTag"
               @focus="onFocusTagInput"
-              @keydown="(e) => {if (e.key === 'Enter' || e.key === 'Enter' || e.keyCode===13) { onAddTags()}}"
+              @keydown="(e: any) => {if (e.key === 'Enter' || e.key === 'Enter' || e.keyCode===13) { onAddTags()}}"
               type="text"
               id="name"
               :placeholder="$t('tag')"

@@ -275,7 +275,7 @@ async function confirm() {
         handleErrorTip(errCode.BLOCK_CHAIN_ERROR)
       }
     }
-  } catch (e) {
+  } catch (e: any) {
     if (e == errCode.NOT_BOND_ETH) {
       showNotBondEth.value = true
     } else {
