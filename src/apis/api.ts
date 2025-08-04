@@ -43,7 +43,7 @@ export const checkRegister = async (twitterId: string) =>
 export const checkFarcaster = async (fid: string) =>
   get(BACKEND_API_URL + '/user/checkFarcasterUsed', { fid })
 
-export const bondEth = async (ethAddr: string, twitterId: string, signature: string, infoStr: string) =>
+export const bondEth = async (ethAddr: string, twitterId: string, signature: `0x${string}`, infoStr: string) =>
   post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
 
 /************************************ user api **********************************/

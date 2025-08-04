@@ -21,7 +21,6 @@ import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
-import { ethers } from "ethers";
 import IconLinks from "@/components/home/IconLinks.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
@@ -34,6 +33,7 @@ import { useWindowSize } from "@vant/use";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
+import { isAddress } from "viem";
 
 const tabOptions = computed(() => {
   if (comStore.currentSelectedCommunity?.isImport) {
@@ -176,9 +176,9 @@ async function checkTweet() {
       return;
     }
 
-    if (ethers.isAddress(accStore.getAccountInfo.ethAddr)) {
+    if (isAddress(accStore.getAccountInfo.ethAddr ?? '')) {
       if (!accStore.ipshare?.ethAddr) {
-        const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr);
+        const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr ?? '');
         console.log('ipshare:', ipshare)
         accStore.ipshare = ipshare;
       }
@@ -187,7 +187,7 @@ async function checkTweet() {
       return;
     }
     console.log('ipshare2:', accStore.ipshare)
-    if (!ethers.isAddress(accStore.ipshare?.ethAddr)) {
+    if (!isAddress(accStore.ipshare?.ethAddr ?? '')) {
       modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
       return;
     }

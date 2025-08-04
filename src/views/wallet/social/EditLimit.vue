@@ -6,8 +6,8 @@ import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { setTokenLimit } from "@/utils/twitterTip";
-import { ethers } from "ethers";
 import { useAccount } from "@/composables/useAccount";
+import { parseEther } from "viem";
 const socialAccountModalStore = useSocialAccountModalStore()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
@@ -25,7 +25,7 @@ async function confirm() {
         return;
       }
       loading.value = true
-      await setTokenLimit(socialAccountModalStore.editTokenInfo!.token, ethers.parseEther(transLimit.value.toString()), ethers.parseEther(dayLimit.value.toString()))
+      await setTokenLimit(socialAccountModalStore.editTokenInfo!.token as `0x${string}`, parseEther(transLimit.value.toString()), parseEther(dayLimit.value.toString()))
       emit('added')
       socialAccountModalStore.setModalVisible(false, SocialAccountModalType.EditLimit)
   } catch (error) {

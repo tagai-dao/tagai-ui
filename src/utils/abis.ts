@@ -3874,6 +3874,7 @@ export const abis = {
         "type": "function"
       },
       {
+        "inputs": [],
         "name": "totalSupply",
         "outputs": [
           {
@@ -3882,6 +3883,8 @@ export const abis = {
             "type": "uint256"
           }
         ],
+        "stateMutability": "view",
+        "type": "function"
       }
     ]
 }

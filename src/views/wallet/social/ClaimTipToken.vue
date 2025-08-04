@@ -3,7 +3,6 @@ import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wal
 import { handleError, onMounted, ref } from "vue";
 import { getPendingClaimTokens, claimTokens, getClaimTipTokenSignature } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
-import { ethers } from "ethers";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { GlobalModalType, type PendingClaimToken } from "@/types";
 import { useModalStore } from "@/stores/common";
@@ -13,6 +12,7 @@ import { getRewardsClaimd,
     getPendingClaimTokens as getPendingClaimTokensOnChain,
     claimTokens as claimTokensOnChain
 } from "@/utils/twitterTip";
+import { zeroAddress } from "viem";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const accStore = useAccountStore()
@@ -42,7 +42,7 @@ async function claim() {
 
 onMounted(async () => {
   getRewardsClaimd(accStore.getAccountInfo.twitterId).then((res:any) => {
-    socialAccountModalStore.needClaim = res == ethers.ZeroAddress;
+    socialAccountModalStore.needClaim = res == zeroAddress;
   })
   tokens.value = await getPendingClaimTokens(accStore.getAccountInfo.twitterId) as PendingClaimToken[]
 

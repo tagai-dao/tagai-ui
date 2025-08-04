@@ -1,3 +1,8 @@
+/**
+ * Social account store
+ * user can add token to their social account
+ * then the can tip or transfer tokens directly on twitter
+ */
 import { getSettledTokens } from "@/apis/api";
 import { WETH } from "@/config";
 import type { SocialAccountTokens, TwitterTipRecord, TwitterTipErrorType } from "@/types";

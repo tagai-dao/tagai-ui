@@ -9,8 +9,8 @@ import { getClaimSignature, setOrderClaimed } from '@/apis/api'
 import { claimReward } from '@/utils/pump'
 import { ref } from 'vue'
 import emitter from '@/utils/emitter';
-import { ethers } from 'ethers';
 import { ClaimFee } from '@/config';
+import { parseEther } from 'viem';
 import errCode from '@/errCode';
 import { useRouter } from 'vue-router';
 
@@ -38,7 +38,7 @@ async function claim() {
     const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
     if (res) {
       const {signature, orderId, amount} = res;
-      const hash = await claimReward(props.reward.token, props.reward.version ?? 2, BigInt(orderId), ethers.parseEther(amount.toString()), signature);
+      const hash = await claimReward(props.reward.token, props.reward.version ?? 2, BigInt(orderId), parseEther(amount.toString()), signature);
       setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, props.reward.version ?? 2).catch(console.error);
       await sleep(1)
       emitter.emit('claimedReward')

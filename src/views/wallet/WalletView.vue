@@ -1,18 +1,30 @@
 <script setup lang="ts">
 import {onMounted, ref} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
-import { useAccountStore } from "@/stores/web3";
+import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { formatAddress, formatAmount } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
 import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
+import { useUserStore } from "@/stores/privy";
 
 const accStore = useAccountStore()
+const privyStore = useUserStore()
 const tabOptions = ['holding', 'socialAccount']
 const activeTab = ref('socialAccount')
 const needClaim = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
+
+async function disconnect() {
+  if (accStore.ethWalletType === 'privy-twitter') {
+    await privyStore.logout();
+  }
+  
+  accStore.ethConnectState = EthWalletState.Disconnect;
+  accStore.ethConnectAddress = '';
+  accStore.ethWalletType = 'none';
+}
 
 onMounted(() => {
   updateBalance()
@@ -42,9 +54,13 @@ onMounted(() => {
           <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
       </div>
-      <div class="pl-12 flex justify-between items-center gap-3a mt-1">
-        <div class="flex-1 flex items-center flex-wrap gap-4">
-          <span>BNB {{ $t('balance') }}: {{ formatAmount(useAccountStore().ethBalance) }}</span>
+      <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
+        <div @click="onCopy(useAccountStore().ethConnectAddress)" 
+          class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer">
+          <span>Connected: {{ formatAddress(useAccountStore().ethConnectAddress) }}</span>
+          <button @click.stop="disconnect">
+            <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
+          </button>
         </div>
       </div>
     </div>

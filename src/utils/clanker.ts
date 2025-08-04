@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { aggregate } from '@makerdao/multicall'
 import type { ClankerToken } from '@/types';
 import { ChainConfig } from '@/config';

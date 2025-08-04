@@ -1,10 +1,10 @@
-import { getProvider, setup } from "./wallets";
+import { getReadOnlyClient, getWalletClient, setup, waitForTx } from "./wallets";
 import { abis } from './abis'
-import { ethers } from 'ethers'
-import { getReadOnlyProvider } from "./web3";
 import { PumpContract1, IPShareContract1, uniswapV2Router02, 
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, wrappedUniswapV2ForTagAI2 } from '@/config'
+import { bsc } from "viem/chains";
+import { useAccountStore } from "@/stores/web3";
 
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -22,31 +22,56 @@ const ContractAddress = {
     WETH: WETH
 }
 
-export const getContract = async (contractName: string, address?: string, readOnly = false): Promise<any> => {
-    let provider = getProvider();
-    if (!readOnly) {
-        await setup()
-    }
-    // @ts-ignore
-    const abi = abis[contractName]
-
-    if (readOnly) {
-        provider = getReadOnlyProvider()
-    } else {
-        provider = new ethers.BrowserProvider(provider)
-    }
-
-    if (!provider || !abi) {
-        throw 'no provider'
-    }
-
+export const readContract = async (contractName: string, functionName: string, args: any, address?: `0x${string}`) => {
+    const client = getReadOnlyClient();
     if (!address) {
         // @ts-ignore
-        address = ContractAddress[contractName]
+        address = ContractAddress[contractName] as `0x${string}`
     }
-    const contract = new ethers.Contract(address!, abi, provider);
-    if (!readOnly) {
-        return contract.connect(await provider.getSigner())
+    const abi = abis[contractName as keyof typeof abis]
+    const result = await client.readContract({
+        address,
+        abi,
+        functionName,
+        args
+    });
+    return result;
+}
+
+export const writeContract = async ({
+    contractName, 
+    functionName, 
+    args,
+    address,
+    value = 0n
+}: {
+    contractName: string, 
+    functionName: string, 
+    args: any,
+    address?: `0x${string}`,
+    value?: bigint | string
+}) => {
+    const client = getWalletClient();
+    if (!client) {
+        throw 'no wallet client'
     }
-    return contract
+    if (useAccountStore().ethWalletType !== 'privy-twitter') {
+        await setup()
+    }
+    if (!address) {
+        // @ts-ignore
+        address = ContractAddress[contractName] as `0x${string}`
+    }
+
+    const abi = abis[contractName as keyof typeof abis]
+    const tx = await client.writeContract({
+        account: useAccountStore().ethConnectAddress as `0x${string}`,
+        address,
+        abi,
+        functionName,
+        args,
+        chain: bsc,
+        value: typeof value === 'string' ? BigInt(value) : value
+    });
+    return await waitForTx(tx);
 }

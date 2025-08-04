@@ -13,9 +13,9 @@ import { connectUnisat, signMessage, type BtcWallet } from "@/utils/btc";
 import { getUserBitip, checkRegister, checkEthUsed } from "@/apis/api";
 import { bytesToHex, reportLog, sleep } from "@/utils/helper";
 import { box, generateSteemAuth, getBalance } from "@/utils/web3";
-import { ethers } from 'ethers';
-import type { Account } from "@/types";
 import { useModalStore } from "@/stores/common";
+import { checksumAddress } from "viem";
+import { randomBytes } from '@noble/hashes/utils'
 
 const accStore = useAccountStore();
 
@@ -115,13 +115,16 @@ async function payToken() {
             identityInfo.type = 'payToken'
             await register();
         }else {
-          const balance = await getBalance(accStore.getAccountInfo!.ethAddr!);
+          const balance = await getBalance(accStore.getAccountInfo!.ethAddr! as `0x${string}`);
           if (balance <= BigInt(CreateFee)) {
               showInsufficientBalance.value = true;
               return;
           }
           useModalStore().setModalCloseEnable(false);
           const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+          if (!hash) {
+            throw new Error('Failed to transfer ETH');
+          }
           localStorage.setItem('payTokenHash', hash)
           identityInfo.assetId = hash;
           identityInfo.chainName = ChainConfig.name;
@@ -219,7 +222,7 @@ async function signInFarcasterEth() {
     try {
         loading.value = true
 
-        identityInfo.farcasterEthAddr = ethers.getAddress(accStore.ethConnectAddress ?? '');
+        identityInfo.farcasterEthAddr = checksumAddress(accStore.ethConnectAddress as `0x${string}`);
         identityInfo.farcasterName = accStore.farcasterUser?.name;
         identityInfo.farcasterUsername = accStore.farcasterUser?.username;
         identityInfo.farcasterSignerUuid = accStore.farcasterUser?.signerUuid;
@@ -240,8 +243,11 @@ async function register() {
   try {
     useModalStore().setModalCloseEnable(false);
     const signature = await ethSignMessage(RegisterSteemMessage)
+    if (!signature) {
+      throw new Error('Failed to sign message');
+    }
     const account = accStore.getAccountInfo
-    const salt = bytesToHex(ethers.randomBytes(4));
+    const salt = bytesToHex(randomBytes(4));
     const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
     let params = box(steemAccount);
     let createForm = {
@@ -258,7 +264,7 @@ async function register() {
     await registerSteem(createForm);
     accStore.setAccount({
       ...accStore.getAccountInfo,
-      ethAddr: ethers.getAddress(account.ethAddr ?? accStore.ethConnectAddress ?? ''),
+      ethAddr: checksumAddress(account.ethAddr as `0x${string}` ?? accStore.ethConnectAddress as `0x${string}`),
       fid: accStore.farcasterUser?.fid,
       isAuthFarcaster: true,
       farcasterName: accStore.farcasterUser?.name,

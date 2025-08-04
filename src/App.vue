@@ -3,19 +3,24 @@ import Layout from "@/layout/Layout.vue";
 import {useRoute, useRouter} from "vue-router";
 import { useStateStore, useModalStore } from "./stores/common";
 import { useAccountStore } from "./stores/web3";
-import { onMounted } from "vue";
+import { onMounted, onUnmounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
 import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
+import { useUserStore } from "./stores/privy";
+import { privy } from "./utils/privy";
 
 const stateStore = useStateStore();
+const privyStore = useUserStore();
 const route = useRoute();
 const router = useRouter();
 const { setInter } = useInterval();
 const { updateVPOP, updateUnreadMessageCount } = useAccount();
+
+
 
 function updateOgUrl() {
     const currentUrl = window.location.href;
@@ -33,6 +38,27 @@ function updateOgUrl() {
 
 onMounted(async () => {
   await router.isReady();
+  
+  // 初始化privy iframe - 在应用启动时就准备好
+  try {
+    console.log('Initializing Privy iframe on app startup...');
+    await privyStore.initPrivyIframe();
+    console.log('Privy iframe initialized successfully', privyStore.iframeInitialized);
+    if (!privyStore.iframeInitialized) {
+      console.log('Waiting for Privy iframe initialization...');
+      await privyStore.waitForIframeInitialization();
+      console.log('Privy iframe initialized successfully', privyStore.iframeInitialized);
+    }
+    
+    // privy准备完成后，调用initWallet方法
+    console.log('Privy iframe ready, initializing wallet...');
+    await privyStore.initWallet();
+    console.log('Wallet initialization completed');
+  } catch (error) {
+    console.error('Failed to initialize Privy iframe or wallet:', error);
+    // 即使初始化失败，应用仍然可以继续运行
+  }
+  
   initPlugin();
   const { referee } = route.query;
   const account = useAccountStore().getAccountInfo
@@ -78,6 +104,8 @@ onMounted(async () => {
 
   updateOgUrl();
 })
+
+// 应用退出时不清理privy资源，保持iframe在整个应用生命周期中存在
 </script>
 
 <template>

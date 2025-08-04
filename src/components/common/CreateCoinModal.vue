@@ -6,9 +6,6 @@ import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } 
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
-import { box, generateSteemAuth } from "@/utils/web3";
-import { signMessage } from "@/utils/wallets";
-import { ethers } from "ethers";
 import { bytesToHex, formatPrice } from "@/utils/helper";
 import { createCoin, calculateInitEth, checkTickUsed } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
@@ -19,6 +16,7 @@ import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import { useTools } from "@/composables/useTools";
 import debounce from "lodash.debounce";
+import { parseEther } from "viem";
 
 const modalStore = useModalStore();
 
@@ -74,7 +72,7 @@ watch(() => showingInitAmount.value, debounce(async (val: number) => {
       return;
     }
     showMaxAmount.value = false
-    createForm.initAmount = ethers.parseEther(val.toString())
+    createForm.initAmount = parseEther(val.toString())
     createForm.initEth = await calculateInitEth(createForm.initAmount)
     showingInitEth.value = formatPrice((createForm.initEth as any).toString() / 1e18)
   }else {

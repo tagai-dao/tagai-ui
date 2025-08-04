@@ -1,8 +1,6 @@
-import { getContract } from "./contract";
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
 import { getTransactionReceipt } from "./web3";
-import { ethers } from 'ethers'
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
@@ -10,7 +8,8 @@ import errCode from "@/errCode";
 import _ from 'lodash'
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
-import { getDayNumber } from '@/utils/helper'
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, type Log } from "viem";
+import { writeContract, readContract } from "./contract";
 
 const pumpContract = [
     PumpContract1,
@@ -27,161 +26,206 @@ export const checkTickUsed = async (tick: string) => {
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
-    const pump = await getContract('Pump4')
-    let tx: any = await pump.createToken(createParms.tick, {
+    let hash = await writeContract({
+        contractName: 'Pump4',
+        functionName: 'createToken',
+        args: [createParms.tick],
         value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
-
-    await tx.wait();
-    // tx: any = await getTransactionReceipt(hash);
-    const hash = tx.hash;
-    tx = await getTransactionReceipt(hash)
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }    
+    let tx = await getTransactionReceipt(hash as `0x${string}`)
     const event: any = getCreateTokenEventByHash(tx, 2);
-    if (event && event.length == 3 && event[0] == createParms.tick) {
-        return {token: event[1], createHash: tx.hash}
+    if (event?.tick == createParms.tick) {
+        return {token: event.token, createHash: tx.transactionHash}
     }
     return {createHash: hash}
 }
 
-export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: ethers.AddressLike, listed: boolean, isImport: boolean, slippage = 0) => {
-    if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
-    if (!ethers.isAddress(sellsman)) {
-        sellsman = ethers.ZeroAddress;
+export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
+    if (!isAddress(token)) throw errCode.PARAMS_ERROR;
+    if (!sellsman || !isAddress(sellsman)) {
+        sellsman = zeroAddress;
     }
     if (listed) {
         // 2% transaction fee
         const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
 
         if (isImport) {
-            const wrapSwaper = await getContract('WrapSwaper2');
-            const tx = await wrapSwaper.buyToken(
-                ethers.ZeroAddress,
-                amountOut * BigInt(10000 - slippage) / 10000n,
-                [WETH, token],
-                useAccountStore().ethConnectAddress,
-                Math.floor(Date.now() / 1000) + 300,
-                uniswapV2Router02,
-                {
-                    value: ethAmount
-                }
-            )
-            await tx.wait();
-            return tx.hash;
-        }else {
-            const wrapSwaper = await getContract('WrapSwaper');
-            const tx = await wrapSwaper.buyToken(
-                ethers.ZeroAddress,
-                amountOut * BigInt(10000 - slippage) / 10000n,
-                [WETH, token],
-                useAccountStore().ethConnectAddress,
-                Math.floor(Date.now() / 1000) + 300,
-                version == 1 ? IPShareContract1 : IPShareContract2,
-                {
-                    value: ethAmount
-                }
-            )
-            await tx.wait();
-            return tx.hash;
-        }
-    }else {
-        const tc = await getContract('Token' + version, token)
-        if (version == 1) {
-            const tx = await tc.buyToken(amount, sellsman, slippage, ethers.ZeroAddress, {
+            const hash = await writeContract({
+                contractName: 'WrapSwaper2',
+                functionName: 'buyToken',
+                args: [sellsman, 
+                    amountOut * BigInt(10000 - slippage) / 10000n, 
+                    [WETH, token], 
+                    useAccountStore().ethConnectAddress, 
+                    Math.floor(Date.now() / 1000) + 300, 
+                    version == 1 ? IPShareContract1 : IPShareContract2],
                 value: ethAmount
             })
-            await tx.wait();
-            return tx.hash;
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
+        }else {
+            const hash = await writeContract({
+                contractName: 'WrapSwaper',
+                functionName: 'buyToken',
+                args: [sellsman, 
+                    amountOut * BigInt(10000 - slippage) / 10000n, 
+                    [WETH, token], 
+                    useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, 
+                    version == 1 ? IPShareContract1 : IPShareContract2],
+                value: ethAmount
+            })
+            if (!hash) {    
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
+        }
+    }else {
+        if (version == 1) {
+            const hash = await writeContract({
+                contractName: 'Token1',
+                functionName: 'buyToken',
+                args: [amount, sellsman, slippage, zeroAddress],
+                value: ethAmount,
+                address: token
+            })
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }else if (version == 5) {
             // get trade signature
             const result: any = await getTradeSignature(useAccountStore().ethConnectAddress);
-            const tx = await tc.buyToken(amount, sellsman, slippage, result.signature, {
-                value: ethAmount
+            const hash = await writeContract({
+                contractName: 'Token5',
+                functionName: 'buyToken',
+                args: [amount, sellsman, slippage, result.signature],
+                value: ethAmount,
+                address: token
             })
-            await tx.wait();
-            return tx.hash;
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }else {
-            const tx = await tc.buyToken(amount, sellsman, slippage, {
-                value: ethAmount
+            const hash = await writeContract({
+                contractName: 'Token' + version,
+                functionName: 'buyToken',
+                args: [amount, sellsman, slippage],
+                value: ethAmount,
+                address: token
             })
-            await tx.wait();
-            return tx.hash;
+            if (!hash) {    
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }
     }
 }
 
-export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: ethers.AddressLike, listed: boolean, isImport: boolean, slippage = 0) => {
-    if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
-    if (!ethers.isAddress(sellsman)) {
-        sellsman = ethers.ZeroAddress;
+export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
+    if (!isAddress(token)) throw errCode.PARAMS_ERROR;
+    if (!sellsman || !isAddress(sellsman)) {
+        sellsman = zeroAddress;
     }
-    const tc = await getContract('Token1', token)
     if (listed) {
         if (isImport) {
-            const allowance = await tc.allowance(useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2);
+            const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)
             if (allowance < amount) {
-                const res = await tc.approve(wrappedUniswapV2ForTagAI2, ethers.MaxInt256);
-                await res.wait();
+                const hash = await writeContract({
+                    contractName: 'Token1',
+                    functionName: 'approve',
+                    args: [wrappedUniswapV2ForTagAI2, maxUint256],
+                    address: token
+                })
+                if (!hash) {
+                    throw errCode.TRANSACTION_INVALID;
+                }
             }
 
             const expectedReceive = await getSellAmountUseToken(token, amount);
 
-            const wrapSwaper = await getContract('WrapSwaper2');
-
-            const tx = await wrapSwaper.sellToken(
-                amount,
-                expectedReceive * BigInt(10000 - slippage) / 10000n,
-                [token, WETH],
-                useAccountStore().ethConnectAddress,
-                Math.floor(Date.now() / 1000) + 300,
-                sellsman,
-                uniswapV2Router02
-            )
-            await tx.wait();
-            return tx.hash;
+            const hash = await writeContract({
+                contractName: 'WrapSwaper2',
+                functionName: 'sellToken',
+                args: [amount, 
+                    expectedReceive * BigInt(10000 - slippage) / 10000n, [token, WETH], 
+                    useAccountStore().ethConnectAddress, 
+                    Math.floor(Date.now() / 1000) + 300, 
+                    sellsman, 
+                    uniswapV2Router02]
+            })
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }
+        const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI], token)
 
-        const allowance = await tc.allowance(useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI);
         if (allowance < amount) {
-            const res = await tc.approve(wrappedUniswapV2ForTagAI, ethers.MaxInt256);
-            await res.wait();
+            const hash = await writeContract({
+                contractName: 'Token1',
+                functionName: 'approve',
+                args: [wrappedUniswapV2ForTagAI, maxUint256],
+                address: token
+            })
+            console.log('approve hash', hash)
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
         }
 
         const expectedReceive = await getSellAmountUseToken(token, amount);
 
-        const wrapSwaper = await getContract('WrapSwaper');
-
-        const tx = await wrapSwaper.sellToken(
-            amount,
-            expectedReceive * BigInt(10000 - slippage) / 10000n,
-            [token, WETH],
-            useAccountStore().ethConnectAddress,
-            Math.floor(Date.now() / 1000) + 300,
-            sellsman,
-            version == 1 ? IPShareContract1 : IPShareContract2
-        )
-        await tx.wait();
-        return tx.hash;
+        const hash = await writeContract({
+            contractName: 'WrapSwaper',
+            functionName: 'sellToken',
+            args: [amount, 
+                expectedReceive * BigInt(10000 - slippage) / 10000n, 
+                [token, WETH], 
+                useAccountStore().ethConnectAddress, 
+                Math.floor(Date.now() / 1000) + 300, 
+                sellsman, 
+                version == 1 ? IPShareContract1 : IPShareContract2]
+        })
+        if (!hash) {
+            throw errCode.TRANSACTION_INVALID;
+        }
+        return hash
     }else {
-        const tx = await tc.sellToken(amount, receiveEth, sellsman, slippage);
-        await tx.wait();
-        return tx.hash;
+        const hash = await writeContract({
+            contractName: 'Token1',
+            functionName: 'sellToken',
+            args: [amount, receiveEth, sellsman, slippage],
+            address: token
+        })
+        if (!hash) {
+            throw errCode.TRANSACTION_INVALID;
+        }
+        return hash
     }
 }
 
 export const claimReward = async (token: string, version: number, orderId: BigInt, amount: BigInt, signature: string) => {
-    if (!ethers.isAddress(token)) throw errCode.PARAMS_ERROR;
-    const tc = await getContract('Pump' + version)
-    const tx = await tc.userClaim(token, orderId, amount, signature, {
+    if (!isAddress(token)) throw errCode.PARAMS_ERROR;
+    const hash = await writeContract({
+        contractName: 'Pump' + version,
+        functionName: 'userClaim',
+        args: [token, orderId, amount, signature],
         value: ClaimFee
-    });
-    await tx.wait();
-    return tx.hash;
+    })
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }
+    return hash
 }
 
 export const calculateInitEth = async (amount: bigint) => {
-    const pump = await getContract('Pump1', undefined, true);
-    const price = await pump.getBuyPriceAfterFee(0n, amount);
-    return price;
+    return await readContract('Pump1', 'getBuyPriceAfterFee', [0n, amount]) as bigint
 }
 
 export const getUserTokenInfo = async (token: string, ethAddr: string) => {
@@ -287,12 +331,12 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     return tweets;
 }
 
-export const getTokenOnchainInfo = async (tokens: String[], versions: Record<string, number>) => {
+export const getTokenOnchainInfo = async (tokens: string[], versions: Record<string, number>) => {
     if (tokens.length === 0) return []
     tokens = _.union(tokens)
     let calls: any[] = []
     for (let token of tokens) {
-        if (!ethers.isAddress(token)) continue;
+        if (!isAddress(token)) continue;
         calls = calls.concat([
             {
                 target: token,
@@ -410,7 +454,7 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
         if (community.dexVersion != 2) continue;
         let token = community.token
         let pair = community.pair
-        if (!ethers.isAddress(token)) continue;
+        if (!isAddress(token)) continue;
         calls.push({
             target: token,
             call: [
@@ -460,55 +504,72 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
 }
 
 export const getBuyAmountWithETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
-    if (!token) return {supply: 0n, receive: 0n}
-    console.log('token', token, version)
-    const tc = await getContract('Token1', token, true);
-    const supply = await tc.bondingCurveSupply();
-    const pumpC = await getContract('Pump' + version, pumpContract[version - 1], true);
-    const receive = await pumpC.getBuyAmountByValue(supply, amount * 9800n / 10000n)
+    if (!token || !isAddress(token)) return {supply: 0n, receive: 0n}
+    const supply: any = await  readContract('Token1', 'bondingCurveSupply', [], token)
+    const receive: any = await readContract('Pump' + version, 'getBuyAmountByValue', [supply, amount * 9800n / 10000n])
     return {supply, receive}
 }
 
 export const getBuyPriceAfterFee = async (supply: bigint, amount: bigint) => {
-    const pump = await getContract('Pump4', undefined, true);
-    const price = await pump.getBuyPriceAfterFee(supply, amount);
-    return price;
+    return await readContract('Pump4', 'getBuyPriceAfterFee', [supply, amount]) as bigint
 }
 
 export const getReceivedAmountSellETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
-    if (!token) return 0n
-    const tc = await getContract('Token1', token, true);
-    const pumpC = await getContract('Pump' + version, pumpContract[version - 1], true);
-    const supply = await tc.bondingCurveSupply();
-    const receive = await pumpC.getSellPriceAfterFee(supply, amount)
+    if (!token || !isAddress(token)) return 0n
+    const supply: any = await readContract('Token1', 'bondingCurveSupply', [], token)
+    const receive: any = await readContract('Pump' + version, 'getSellPriceAfterFee', [supply, amount])
     return receive
 }
 
-const getCreateTokenEventByHash = (tx: any, version: number) => {
-    let contract = new ethers.Contract(pumpContract[version - 1], abis.Pump1)
-    let event;
-    tx.logs.forEach((log: any) => {
-        try {
-            const parsedLog = contract.interface.parseLog(log);
-            if (parsedLog && parsedLog.name === 'NewToken') {
-                event = parsedLog.args
+const getCreateTokenEventByHash = (tx: { logs: Log[] }, version: number) => {
+    const logs = tx.logs;
+  
+    try {
+      const events = parseEventLogs({
+        abi: abis.Pump1,
+        logs,
+        // 如果你确定只关心某个合约地址：
+        // strict: true,
+        // args: [可选],
+      });
+  
+      for (const event of events) {
+        if ('eventName' in event && event.eventName === 'NewToken') {
+            if ('args' in event) {
+                return event.args; // Viem 会自动返回 args 为 typed object
             }
-        } catch (error) {
-            console.error(error)
         }
-    });
-    return event
-}
+      }
+    } catch (err) {
+      console.error('解析事件失败:', err);
+    }
+  
+    return null;
+  };
+
+// const getCreateTokenEventByHash = (tx: any, version: number) => {
+//     let contract = new ethers.Contract(pumpContract[version - 1], abis.Pump1)
+//     let event;
+//     tx.logs.forEach((log: any) => {
+//         try {
+//             const parsedLog = contract.interface.parseLog(log);
+//             if (parsedLog && parsedLog.name === 'NewToken') {
+//                 event = parsedLog.args
+//             }
+//         } catch (error) {
+//             console.error(error)
+//         }
+//     });
+//     return event
+// }
 
 export const getBuyAmountUseEth = async (token: string, ethAmount: BigInt) => {
-    let contract = await getContract('UniswapRouter', undefined, true);
-    const amount = await contract.getAmountsOut(ethAmount, [WETH, token]);
+    const amount: any = await readContract('UniswapRouter', 'getAmountsOut', [ethAmount, [WETH, token]])
     return amount[amount.length - 1];
 }
 
 export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) => {
-    let contract = await getContract('UniswapRouter', undefined, true);
-    const amount = await contract.getAmountsOut(tokenAmount, [token, WETH]);
+    const amount: any = await readContract('UniswapRouter', 'getAmountsOut', [tokenAmount, [token, WETH]]);
     return amount[amount.length - 1] * 9800n / 10000n;
 }
 
