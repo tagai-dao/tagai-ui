@@ -131,60 +131,85 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
 
 export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
-    if (!isAddress(sellsman ?? '')) {
+    if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
     }
     const tc = await getContract('Token1', token)
     if (listed) {
         if (isImport) {
-            const allowance = await tc.allowance(useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2);
+            const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)
             if (allowance < amount) {
-                const res = await tc.approve(wrappedUniswapV2ForTagAI2, maxUint256);
-                await res.wait();
+                const hash = await writeContract({
+                    contractName: 'Token1',
+                    functionName: 'approve',
+                    args: [wrappedUniswapV2ForTagAI2, maxUint256],
+                    address: token
+                })
+                if (!hash) {
+                    throw errCode.TRANSACTION_INVALID;
+                }
             }
 
             const expectedReceive = await getSellAmountUseToken(token, amount);
 
-            const wrapSwaper = await getContract('WrapSwaper2');
-
-            const tx = await wrapSwaper.sellToken(
-                amount,
-                expectedReceive * BigInt(10000 - slippage) / 10000n,
-                [token, WETH],
-                useAccountStore().ethConnectAddress,
-                Math.floor(Date.now() / 1000) + 300,
-                sellsman,
-                uniswapV2Router02
-            )
-            await tx.wait();
-            return tx.hash;
+            const hash = await writeContract({
+                contractName: 'WrapSwaper2',
+                functionName: 'sellToken',
+                args: [amount, 
+                    expectedReceive * BigInt(10000 - slippage) / 10000n, [token, WETH], 
+                    useAccountStore().ethConnectAddress, 
+                    Math.floor(Date.now() / 1000) + 300, 
+                    sellsman, 
+                    uniswapV2Router02]
+            })
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
+            return hash
         }
+        const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI], token)
 
-        const allowance = await tc.allowance(useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI);
         if (allowance < amount) {
-            const res = await tc.approve(wrappedUniswapV2ForTagAI, maxUint256);
-            await res.wait();
+            const hash = await writeContract({
+                contractName: 'Token1',
+                functionName: 'approve',
+                args: [wrappedUniswapV2ForTagAI, maxUint256],
+                address: token
+            })
+            console.log('approve hash', hash)
+            if (!hash) {
+                throw errCode.TRANSACTION_INVALID;
+            }
         }
 
         const expectedReceive = await getSellAmountUseToken(token, amount);
 
-        const wrapSwaper = await getContract('WrapSwaper');
-
-        const tx = await wrapSwaper.sellToken(
-            amount,
-            expectedReceive * BigInt(10000 - slippage) / 10000n,
-            [token, WETH],
-            useAccountStore().ethConnectAddress,
-            Math.floor(Date.now() / 1000) + 300,
-            sellsman,
-            version == 1 ? IPShareContract1 : IPShareContract2
-        )
-        await tx.wait();
-        return tx.hash;
+        const hash = await writeContract({
+            contractName: 'WrapSwaper',
+            functionName: 'sellToken',
+            args: [amount, 
+                expectedReceive * BigInt(10000 - slippage) / 10000n, 
+                [token, WETH], 
+                useAccountStore().ethConnectAddress, 
+                Math.floor(Date.now() / 1000) + 300, 
+                sellsman, 
+                version == 1 ? IPShareContract1 : IPShareContract2]
+        })
+        if (!hash) {
+            throw errCode.TRANSACTION_INVALID;
+        }
+        return hash
     }else {
-        const tx = await tc.sellToken(amount, receiveEth, sellsman, slippage);
-        await tx.wait();
-        return tx.hash;
+        const hash = await writeContract({
+            contractName: 'Token1',
+            functionName: 'sellToken',
+            args: [amount, receiveEth, sellsman, slippage],
+            address: token
+        })
+        if (!hash) {
+            throw errCode.TRANSACTION_INVALID;
+        }
+        return hash
     }
 }
 
@@ -553,8 +578,7 @@ export const getBuyAmountUseEth = async (token: string, ethAmount: BigInt) => {
 }
 
 export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) => {
-    let contract = await getContract('UniswapRouter', undefined, true);
-    const amount = await contract.getAmountsOut(tokenAmount, [token, WETH]);
+    const amount: any = await readContract('UniswapRouter', 'getAmountsOut', [tokenAmount, [token, WETH]]);
     return amount[amount.length - 1] * 9800n / 10000n;
 }
 
