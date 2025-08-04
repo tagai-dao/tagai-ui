@@ -31,7 +31,6 @@
     "axios-retry": "^4.4.0",
     "bs58": "^6.0.0",
     "element-plus": "^2.7.5",
-    "ethers": "^6.13.1",
     "js-sha256": "^0.11.0",
     "klinecharts": "^9.8.10",
     "lodash.debounce": "^4.0.8",

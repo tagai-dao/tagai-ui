@@ -3,10 +3,7 @@ import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wal
 import { computed, ref, watch } from "vue";
 import { useAccountStore, EthWalletState } from "@/stores/web3";
 import { useModalStore } from "@/stores/common";
-import { GlobalModalType } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
-import { setTokenLimit } from "@/utils/twitterTip";
-import { ethers } from "ethers";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const accStore = useAccountStore()

@@ -1,4 +1,3 @@
-import { getContract } from "./contract";
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
 import { getTransactionReceipt } from "./web3";
@@ -86,7 +85,6 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
             return hash
         }
     }else {
-        const tc = await getContract('Token' + version, token)
         if (version == 1) {
             const hash = await writeContract({
                 contractName: 'Token1',
@@ -134,7 +132,6 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
     if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
     }
-    const tc = await getContract('Token1', token)
     if (listed) {
         if (isImport) {
             const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)

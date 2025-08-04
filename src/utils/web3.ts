@@ -6,12 +6,10 @@ import { sha256 } from "js-sha256";
 import base58 from "bs58";
 import steem from "steem";
 import { getReadOnlyClient } from "./wallets";
-import { ethers } from "ethers";
-import { encodeAbiParameters,
+import { 
+  encodeAbiParameters,
   keccak256,
-  getCreate2Address,
-  toBytes,
-  toHex} from "viem";
+  getCreate2Address } from "viem";
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
@@ -19,7 +17,6 @@ export const setupNetwork = async (ethereum: any) => {
     accStore.chainId = ChainConfig.chainId;
     return;
   }
-  console.log({ethereum})
   try {
     const chainInfo = await ethereum.request({
       method: "eth_chainId",
@@ -61,10 +58,6 @@ export const setupNetwork = async (ethereum: any) => {
       console.log("setup chain fail", error);
     }
   }
-};
-
-export const getReadOnlyProvider = () => {
-  return new ethers.JsonRpcProvider(ChainConfig.rpc);
 };
 
 export const getTransactionReceipt = async (hash: `0x${string}`) => {

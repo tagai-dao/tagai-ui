@@ -1,4 +1,3 @@
-import { getContract } from "./contract";
 import { ChainConfig } from "@/config";
 import { IPShareContract1, IPShareContract2 } from "@/config";
 import { aggregate } from '@makerdao/multicall'

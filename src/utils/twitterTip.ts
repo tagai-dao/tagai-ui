@@ -5,7 +5,6 @@ import { useAccountStore } from "@/stores/web3";
 import { readContract, writeContract } from "./contract";
 import { zeroAddress } from "viem";
 import { isAddress } from 'viem/utils'
-import { transferEthTo } from "./wallets";
 
 export const getRewardsClaimd = async (twitterId: string) => {
     return await readContract('CoinPurse', 'alreadyWithdraw', [twitterId])
