@@ -126,6 +126,8 @@ export const useUserStore = defineStore("user", () => {
     await privy.auth.logout();
     user.value = null;
     viemWalletClient.value = null;
+    iframeInitialized.value = false;
+    initPromise.value = null;
   }
 
   async function handleCallback() {
