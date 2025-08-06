@@ -33,6 +33,15 @@ async function connectMetaMask() {
              @click="modalStore.setModalVisible(false)"/>
       </div>
       <div id="wallets-container" class="flex flex-col gap-2 pt-4 pb-6">
+
+        <!-- 使用全局iframe状态来控制按钮显示 -->
+        <button v-if="privyStore.iframeInitialized" class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
+                   flex justify-center items-center gap-10px
+                   hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
+                   @click="loading=true;privyStore.loginWithTwitter()">
+                   <img class="w-30 h-6" src="https://auth.privy.io/logos/privy-logo.png" alt="">
+                  <i-ep-loading v-if="loading" class="animate-spin text-white"/>
+        </button>
         <button
             class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
                    flex justify-center items-center gap-10px
@@ -60,15 +69,6 @@ async function connectMetaMask() {
           <!-- <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
             MetaMask
           </span> -->
-        </button>
-
-        <!-- 使用全局iframe状态来控制按钮显示 -->
-        <button v-if="privyStore.iframeInitialized" class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
-                   flex justify-center items-center gap-10px
-                   hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
-                   @click="loading=true;privyStore.loginWithTwitter()">
-                   <img class="w-36 h-8" src="https://auth.privy.io/logos/privy-logo.png" alt="">
-                  <i-ep-loading v-if="loading" class="animate-spin text-white"/>
         </button>
       </div>
     </div>
