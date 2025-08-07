@@ -8,6 +8,7 @@ const router = useRouter();
 onMounted(async () => {
   try {
     // 等待全局iframe初始化完成（在App.vue中已经初始化）
+    await privyStore.initPrivyIframe();
     await privyStore.waitForIframeInitialization();
     
     // 然后处理回调
@@ -23,5 +24,11 @@ onMounted(async () => {
 });
 </script>
 <template>
-  <div>Waiting for login...</div>
+  <div class="w-full h-full flex justify-center items-center">
+    <img class="w-14 h-14 mr-3" src="~@/assets/loading.gif" alt="">
+    <div>
+      Waiting for login...
+    </div>
+  </div>
+
 </template>

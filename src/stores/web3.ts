@@ -67,7 +67,7 @@ export const useAccountStore = defineStore('account', {
         }
     },
     getters:{
-        getAccountInfo: (state) => {
+        getAccountInfo(state) {
             let acc = state.account;
             if (!acc) {
                 let accStr = localStorage.getItem('accountInfo')
@@ -76,6 +76,18 @@ export const useAccountStore = defineStore('account', {
                 }
             }
             return acc as Account
+        },
+        getWalletType(state) {
+            const account = this.getAccountInfo;
+            if (!account) {
+                return 'none';
+            }else {
+                if (account.walletType === 'privry-twitter') {
+                    return 'privy-twitter';
+                }else {
+                    return 'metamask';
+                }
+            }
         }
     }
 })

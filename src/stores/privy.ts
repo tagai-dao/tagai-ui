@@ -133,6 +133,7 @@ export const useUserStore = defineStore("user", () => {
   async function handleCallback() {
     try {
       const url = new URL(window.location.href);
+      console.log({url})
       const code = url.searchParams.get("privy_oauth_code")!;
       const state = url.searchParams.get("privy_oauth_state")!;
       const provider = url.searchParams.get("privy_oauth_provider")!;
@@ -145,6 +146,9 @@ export const useUserStore = defineStore("user", () => {
       console.log('User data:', userData);
       
       user.value = result.user as OAuthResult["user"];
+
+      // login twitter to tagai
+      
     } catch (error) {
       console.error('Error in handleCallback:', error);
       throw error;
@@ -154,7 +158,6 @@ export const useUserStore = defineStore("user", () => {
   async function initWallet() {
     try {
       console.log('Starting wallet initialization...');
-      debugPrivyConfig();
       
       // 1. 检查用户是否已认证
       const currentUser = await privy.user.get();
@@ -218,7 +221,7 @@ export const useUserStore = defineStore("user", () => {
       const accStore = useAccountStore();
       accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
       accStore.ethConnectState = EthWalletState.Connected;
-      accStore.ethWalletType = 'privy-twitter';
+      accStore.ethWalletType = 'privry-twitter';
 
       // const tx = await viemWalletClient.value.writeContract({
       //   account: useAccountStore().ethConnectAddress as `0x${string}`,

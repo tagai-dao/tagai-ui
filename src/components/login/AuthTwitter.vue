@@ -10,6 +10,7 @@ import {handleErrorTip} from "@/utils/notify";
 import {LoginStepType, useLoginStore} from "@/stores/login";
 import { useRoute } from "vue-router";
 import { onUnmounted } from "vue";
+import { useUserStore } from "@/stores/privy";
 
 const accStore = useAccountStore();
 const stateStore = useStateStore();
@@ -19,7 +20,24 @@ const modalStore = useModalStore()
 const authLike = ref(true)
 const authPost = ref(true)
 
+/**
+ * Login with privry
+ */
 async function login() {
+  try {
+    logging.value = true
+    const privryStore = useUserStore()
+    await privryStore.initPrivyIframe();
+    await privryStore.waitForIframeInitialization();
+
+    await privryStore.loginWithTwitter();
+  } catch (e) {
+    handleErrorTip(e);
+    useLoginStore().setLoginStep(LoginStepType.CreateWallet)
+  }finally {
+    logging.value = false
+  }
+  return;
   try{
     logging.value = true
     modalStore.setModalCloseEnable(false)
@@ -110,10 +128,10 @@ onUnmounted(() => {
         <img class="w-8 min-w-8 object-center object-contain" src="~@/assets/icons/icon-x.svg" alt="">
       </div>
       <div class="flex flex-col gap-2">
-        <div>{{$t('loginView.authTwitterTip')}}</div>
+        <!-- <div>{{$t('loginView.authTwitterTip')}}</div> -->
         <div class="">
-          <el-checkbox :label="$t('loginView.authLikeTip')" v-model="authLike" />
-          <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" />
+          <!-- <el-checkbox :label="$t('loginView.authLikeTip')" v-model="authLike" />
+          <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" /> -->
         </div>
         <button @click="login" :disabled="logging"
                 class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2">
@@ -124,7 +142,10 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="text-base text-center text-grey-normal">{{$t('loginView.p1')}}</div>
+      <div class="text-lg text-center text-grey-normal text-weight-bold flex justify-center items-center gap-2">
+        Protected by
+        <img class="w-22 h-5" src="https://auth.privy.io/logos/privy-logo.png" alt="">
+      </div>
     </div>
   </div>
 </template>

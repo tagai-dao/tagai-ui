@@ -106,6 +106,7 @@ export type Account = {
   farcasterName?: string | null | undefined;
   credit?: number;
   creditFactor?: string | null | undefined;
+  walletType?: string | null | undefined;
 };
 
 export type FarcasterUser = {
