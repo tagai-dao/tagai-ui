@@ -77,13 +77,15 @@ export const setTokenLimit = async (token: `0x${string}`, limitPerTx: bigint, li
         return await writeContract({
             contractName: 'CoinPurse',
             functionName: 'setLimit',
-            args: [token, limitPerTx, limitPerDay]
+            args: [token, limitPerTx, limitPerDay],
+            value
         })
     }
     return await writeContract({
         contractName: 'CoinPurse',
         functionName: 'setLimit',
-        args: [token, limitPerTx, limitPerDay]
+        args: [token, limitPerTx, limitPerDay],
+        value
     })
 }
 
