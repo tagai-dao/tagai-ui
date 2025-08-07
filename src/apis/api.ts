@@ -31,6 +31,9 @@ export const needLogin = async (twitterId: string) =>
 export const twitterLogin = async (state: string) =>
   get(BACKEND_API_URL + '/user/login', { state })
 
+export const privryLogin = async (accessToken: string, refreshToken: string) =>
+  get(BACKEND_API_URL + '/auth/privyLogin', { accessToken, refreshToken })
+
 export const twitterLogout = async (twitterId: string) =>
   get(BACKEND_API_URL + '/auth/logout', {twitterId})
 
