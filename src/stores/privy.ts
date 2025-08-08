@@ -6,9 +6,13 @@ import { privy } from "@/utils/privy";
 import { PrivyConfig } from "@/config";
 import {getUserEmbeddedEthereumWallet, getEntropyDetailsFromUser} from '@privy-io/js-sdk-core';
 import { EthWalletState, useAccountStore } from "./web3";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { createWalletClient, custom, type WalletClient } from "viem";
 import { bsc } from "viem/chains";
+import { privyLogin } from "@/apis/api";
+import type { Account } from "@/types";
+import emitter from "@/utils/emitter";
+import { notify } from "@/utils/notify";
 
 export const useUserStore = defineStore("user", () => {
   const user = ref<OAuthResult["user"] | null>(null);
@@ -20,6 +24,7 @@ export const useUserStore = defineStore("user", () => {
   const iframeRef = ref<HTMLIFrameElement | null>(null);
   const messageListener = ref<((e: any) => void) | null>(null);
   const initPromise = ref<Promise<void> | null>(null);
+  const router = useRouter();
 
   // Debug function to check Privy configuration
   function debugPrivyConfig() {
@@ -123,16 +128,20 @@ export const useUserStore = defineStore("user", () => {
   }
 
   async function logout() {
-    await privy.auth.logout();
+    try {
+      await privy.auth.logout();
+    } catch (error) {
+      
+    }
     user.value = null;
     viemWalletClient.value = null;
-    iframeInitialized.value = false;
     initPromise.value = null;
   }
 
   async function handleCallback() {
     try {
       const url = new URL(window.location.href);
+      console.log({url})
       const code = url.searchParams.get("privy_oauth_code")!;
       const state = url.searchParams.get("privy_oauth_state")!;
       const provider = url.searchParams.get("privy_oauth_provider")!;
@@ -145,16 +154,57 @@ export const useUserStore = defineStore("user", () => {
       console.log('User data:', userData);
       
       user.value = result.user as OAuthResult["user"];
+
+      // login twitter to tagai
+      const oauthTokens = result.oauth_tokens;
+      if (oauthTokens) {
+        const { access_token, access_token_expires_in_seconds, refresh_token } = oauthTokens;
+        if (!access_token || !refresh_token) {
+          // login fail
+          loginFail();
+          return;
+        }
+
+        // login to tagai
+        const userInfo = await privyLogin(access_token!, refresh_token!) as Account | null;
+        console.log('Privy login result:', userInfo);
+        if (!userInfo) {
+          // login fail
+          loginFail();
+          return;
+        }
+
+        useAccountStore().setAccount(
+          {
+            ...userInfo,
+            authLike: true,
+            authPost: true
+          } as Account)
+        emitter.emit('login', true);
+      } else {
+        // login fail
+        loginFail();
+      }
+      
     } catch (error) {
+      loginFail();
       console.error('Error in handleCallback:', error);
       throw error;
     }
   }
 
+  function loginFail() {
+    notify({
+      title: 'Login failed',
+      message: 'Please try again',
+      type: 'error'
+    });
+    router.replace(localStorage.getItem('current-route') || '/');
+  }
+
   async function initWallet() {
     try {
       console.log('Starting wallet initialization...');
-      debugPrivyConfig();
       
       // 1. 检查用户是否已认证
       const currentUser = await privy.user.get();
@@ -219,6 +269,10 @@ export const useUserStore = defineStore("user", () => {
       accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy-twitter';
+      const test = await viemWalletClient.value.signMessage({
+        message: 'test',
+        account: accStore.ethConnectAddress as `0x${string}`
+      })
 
       // const tx = await viemWalletClient.value.writeContract({
       //   account: useAccountStore().ethConnectAddress as `0x${string}`,

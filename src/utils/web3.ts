@@ -13,7 +13,7 @@ import {
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
-  if (accStore.ethWalletType === 'privy-twitter') {
+  if (accStore.getWalletType === 'privy-twitter') {
     accStore.chainId = ChainConfig.chainId;
     return;
   }

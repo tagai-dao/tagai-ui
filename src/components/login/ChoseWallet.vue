@@ -3,6 +3,7 @@ import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail, setMetaMaskSDK } from "@/utils/wallets";
 import { computed, ref, onMounted } from "vue";
 import { useUserStore } from "@/stores/privy";
+import { useAccountStore } from "@/stores/web3";
 const privyStore = useUserStore();
 const modalStore = useModalStore();
 const loading = ref(false);
@@ -32,16 +33,16 @@ async function connectMetaMask() {
         <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
              @click="modalStore.setModalVisible(false)"/>
       </div>
-      <div id="wallets-container" class="flex flex-col gap-2 pt-4 pb-6">
+      <div v-if="useAccountStore().getAccountInfo?.walletType != 1" id="wallets-container" class="flex flex-col gap-2 pt-4 pb-6">
 
         <!-- 使用全局iframe状态来控制按钮显示 -->
-        <button v-if="privyStore.iframeInitialized" class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
+        <!-- <button v-if="privyStore.iframeInitialized" class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 py-1 h-12 rounded-full
                    flex justify-center items-center gap-10px
                    hover:border-orange-normal hover:bg-gradient-primary hover:text-white"
                    @click="loading=true;privyStore.loginWithTwitter()">
                    <img class="w-30 h-6" src="https://auth.privy.io/logos/privy-logo.png" alt="">
                   <i-ep-loading v-if="loading" class="animate-spin text-white"/>
-        </button>
+        </button> -->
         <button
             class="w-full border-[1px] border-grey-light-active shadow-shadow12 px-5 h-12 rounded-full
                    flex justify-center items-center gap-10px
