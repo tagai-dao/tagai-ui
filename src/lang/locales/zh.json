@@ -68,6 +68,7 @@
     "bindAddress": "绑定以太坊钱包",
     "addressUsed": "这个地址已被其他Twitter账户使用，请在您的钱包中更换另一个地址",
     "registerRequire": "我们将帮助您创建一个Web3社交账户，并将发布权限委托给我们的账户。由于注册Web3社交账户需要费用，我们将为您承担注册费用。",
+    "registerSteemMessage": "您的推特评分大于50，您可以免费注册一个链上社交账户。只需签名如下信息，就可生成一个链上社交账户。",
     "noEns": "您的地址中没有 ENS",
     "noBitip": "还没有 BItIP 吗？点击这里进行创建。",
     "selectBitipTip": "选择 BitIP 作为身份",

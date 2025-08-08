@@ -22,7 +22,6 @@ onMounted(async () => {
     const accInfo = accStore.getAccountInfo;
     if (accInfo.walletType === 1 || !accInfo.ethAddr) {
       await privyStore.initWallet();
-      const wallet = getWalletClient();
       if (!accInfo.ethAddr) {
         // bind ethAddr for new login user
         const signature = await signMessage(BondEthMessage);
@@ -33,7 +32,8 @@ onMounted(async () => {
         accInfo.ethAddr = accStore.ethConnectAddress
         accStore.setAccount({
           ...accInfo,
-          ethAddr: accStore.ethConnectAddress
+          ethAddr: accStore.ethConnectAddress,
+          walletType: 1
         })
       }
     } 

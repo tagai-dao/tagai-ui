@@ -86,6 +86,7 @@ export type Account = {
   twitterId: string;
   twitterName: string;
   twitterUsername: string;
+  twitterReputation?: number;
   profile: string;
   followers: number;
   followings: number;

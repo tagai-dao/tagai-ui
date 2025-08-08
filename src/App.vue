@@ -36,7 +36,7 @@ function updateOgUrl() {
 
 onMounted(async () => {
   await router.isReady();
-  
+
   
   initPlugin();
   const { referee } = route.query;
@@ -46,13 +46,6 @@ onMounted(async () => {
     if (!account?.twitterId) {
       useModalStore().setModalVisible(true, GlobalModalType.Login)
     }
-  }
-  if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {
-    redirectTweet(route.params.commerceid).then((tweetId: any) => {
-      if (tweetId) {
-        router.replace('/post-detail/' + tweetId)
-      }
-    })
   }
 
   // useModalStore().setModalVisible(true, GlobalModalType.Register)
@@ -64,7 +57,7 @@ onMounted(async () => {
         ...account,
         ...acc
       })
-      if (acc.walletType === 'privy-twitter') {
+      if (acc.walletType === 1) {
         // 初始化privy iframe - 在应用启动时就准备好
         try {
           console.log('Initializing Privy iframe on app startup...');
@@ -88,6 +81,14 @@ onMounted(async () => {
         useAccountStore().ethWalletType = 'metamask';
       }
     }).catch()
+  }
+
+  if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {
+    redirectTweet(route.params.commerceid).then((tweetId: any) => {
+      if (tweetId) {
+        router.replace('/post-detail/' + tweetId)
+      }
+    })
   }
 
   getEthPrice().then((p: any) => {

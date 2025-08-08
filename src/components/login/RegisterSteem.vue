@@ -5,7 +5,7 @@ import { useAccountStore } from "@/stores/web3";
 import { EthWalletState } from "@/stores/web3";
 import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } from "@/config";
 import ErrCode from '@/errCode'
-import { checkEns, registerSteem, checkFarcaster } from "@/apis/api";
+import { checkEns, registerSteem, checkFarcaster, getUserProfile } from "@/apis/api";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
 import { transferEthTo, signMessage as ethSignMessage } from "@/utils/wallets";
@@ -16,6 +16,7 @@ import { box, generateSteemAuth, getBalance } from "@/utils/web3";
 import { useModalStore } from "@/stores/common";
 import { checksumAddress } from "viem";
 import { randomBytes } from '@noble/hashes/utils'
+import type { Account } from "@/types";
 
 const accStore = useAccountStore();
 
@@ -28,6 +29,8 @@ const showFarcasterAuthFailed = ref(false);
 const chosingBitip = ref(false);
 const bitips = ref([]);
 const btcWallet = ref<BtcWallet>();
+const initializing = ref(true);
+const acc = ref<Account | null>(null);
 
 const { accountMismatch } = useAccount();
 
@@ -49,8 +52,14 @@ const identityInfo = reactive<{
 }>({});
 
 const step = computed(() => {
+  if (initializing.value) {
+    return 5;
+  }
   if (chosingBitip.value) {
       return 3;
+  }
+  if (acc.value?.twitterReputation && acc.value.twitterReputation >= 50) {
+    return 6;
   }
   if (
     !accStore.getAccountInfo.ethAddr ||
@@ -239,6 +248,22 @@ async function signInFarcasterEth() {
     }
 }
 
+// register with twitter reputaion
+async function sign() {
+  try {
+        loading.value = true
+        identityInfo.assetId = acc.value?.twitterReputation?.toString() ?? "0";
+        identityInfo.chainName = ChainConfig.name;
+        identityInfo.type = 'reputation'
+        await register();
+    } catch (error) {
+        handleErrorTip(error)
+        loading.value = false
+    }finally{
+        useModalStore().setModalCloseEnable(true);
+    }
+}
+
 async function register() {
   try {
     useModalStore().setModalCloseEnable(false);
@@ -294,8 +319,13 @@ const openDonut = () => {
     window.open('https://bitip.social', '_blank')
 }
 
-onMounted(() => {
-  
+onMounted(async () => {
+  try {
+    acc.value = await getUserProfile(accStore.getAccountInfo.twitterId) as Account | null
+  } catch (error) {
+    acc.value = null
+  }
+  initializing.value = false
 });
 </script>
 
@@ -405,5 +435,24 @@ onMounted(() => {
             {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
           </div>
         </div>
+    </div>
+    <div v-if="step === 5" class="flex flex-col min-h-[240px] items-center justify-center gap-4">
+      <div class="text-h3 text-black text-center">
+        <img src="~@/assets/loading.gif" alt="">
+      </div>
+    </div>
+    <div v-if="step === 6" class="flex flex-col min-h-[240px] items-center justify-center gap-4">
+      <div class="text-h3 text-black text-center mt-5">
+        {{$t('loginView.registerSteemMessage')}}
+        </div>
+      <div class="w-full">
+        <textarea class="w-full h-32 p-2 my-5 text-h3 text-gray-700 border border-gray-300 rounded" v-model="RegisterSteemMessage" readonly></textarea>
+        <button class="h-12 w-full mb-5 bg-gradient-primary rounded-full flex justify-center items-center gap-2" @click="sign" :disabled="loading">
+          <span class="text-white font-semibold">
+            {{ $t("loginView.bond") }}
+          </span>
+          <i-ep-loading v-show="loading" class="animate-spin" />
+        </button>
+      </div>
     </div>
 </template>
