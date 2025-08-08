@@ -57,7 +57,7 @@ onMounted(async () => {
         ...account,
         ...acc
       })
-      if (acc.walletType === 1) {
+      if (acc?.walletType === 1) {
         // 初始化privy iframe - 在应用启动时就准备好
         try {
           console.log('Initializing Privy iframe on app startup...');
