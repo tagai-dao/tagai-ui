@@ -66,7 +66,7 @@ export const getReadOnlyClient = () => {
 export const getWalletClient = () => {
     const accStore = useAccountStore();
     const accInfo = accStore.getAccountInfo;
-    if (accInfo?.walletType === 1 || !accInfo.ethAddr) {
+    if (accInfo && (accInfo.walletType === 1 || !accInfo.ethAddr)) {
         const privyStore = useUserStore();
         if (!privyStore.viemWalletClient) {
             return null;

@@ -100,7 +100,6 @@ export const handleErrorTip = (e: any) => {
     return handleServerError(e);
   }
 
-  console.log(111)
   const revertReason = parseViemRevertReason(e);
   return revertReason;
   
