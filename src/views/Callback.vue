@@ -20,7 +20,7 @@ onMounted(async () => {
     // 然后处理回调
     await privyStore.handleCallback();
     const accInfo = accStore.getAccountInfo;
-    if (accInfo?.walletType === 1 || !accInfo.ethAddr) {
+    if (accInfo && (accInfo.walletType === 1 || !accInfo.ethAddr)) {
       await privyStore.initWallet();
       if (!accInfo.ethAddr) {
         // bind ethAddr for new login user
