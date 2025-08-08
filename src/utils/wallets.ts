@@ -43,7 +43,7 @@ export const getProviders = () => {
 export const getProvider = () => {
     const accStore = useAccountStore();
     const privyStore = useUserStore();
-    if (accStore.ethWalletType === 'privy-twitter') {
+    if (accStore.getWalletType === 'privy-twitter') {
         return privyStore.ethersProvider;
     }
     if (provider) {
@@ -65,7 +65,8 @@ export const getReadOnlyClient = () => {
 
 export const getWalletClient = () => {
     const accStore = useAccountStore();
-    if (accStore.ethWalletType === 'privy-twitter') {
+    const accInfo = accStore.getAccountInfo;
+    if (accInfo.walletType === 1 || !accInfo.ethAddr) {
         const privyStore = useUserStore();
         if (!privyStore.viemWalletClient) {
             return null;
@@ -77,6 +78,7 @@ export const getWalletClient = () => {
         // }) as WalletClient;
         // return walletClient;
     }
+    const provider = getProvider();
     if (provider) {
         const walletClient = createWalletClient({
             chain: bsc,

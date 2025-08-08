@@ -106,7 +106,7 @@ export type Account = {
   farcasterName?: string | null | undefined;
   credit?: number;
   creditFactor?: string | null | undefined;
-  walletType?: string | null | undefined;
+  walletType?: number | null | undefined; // 0: metamask, 1: privy-twitter
 };
 
 export type FarcasterUser = {

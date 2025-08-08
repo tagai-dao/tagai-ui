@@ -21,96 +21,19 @@ const authLike = ref(true)
 const authPost = ref(true)
 
 /**
- * Login with privry
+ * Login with privy
  */
 async function login() {
   try {
     logging.value = true
-    const privryStore = useUserStore()
-    await privryStore.initPrivyIframe();
-    await privryStore.waitForIframeInitialization();
+    const privyStore = useUserStore()
+    await privyStore.initPrivyIframe();
+    await privyStore.waitForIframeInitialization();
 
-    await privryStore.loginWithTwitter();
+    await privyStore.loginWithTwitter();
   } catch (e) {
     handleErrorTip(e);
     useLoginStore().setLoginStep(LoginStepType.CreateWallet)
-  }finally {
-    logging.value = false
-  }
-  return;
-  try{
-    logging.value = true
-    modalStore.setModalCloseEnable(false)
-    let isIOS = navigator.userAgent.toUpperCase().indexOf('IPHONE') >= 0
-    let isAndroid = navigator.userAgent.toUpperCase().indexOf('ANDROID') >= 0
-
-    const res = await twitterAuth(stateStore.referee, authLike.value, authPost.value) as string;
-    const params = res.split('?')[1].split('&');
-    let state: string | null = null;
-    for (let p of params) {
-      const [key, value] = p.split('=')
-      if (key === 'state') {
-        state = value;
-        break;
-      }
-    }
-    if (!state) return;
-
-    let currentRoute = route.fullPath
-    if (!currentRoute.startsWith('/login')) {
-      localStorage.setItem('current-route', route.fullPath)
-    }
-
-    if (isIOS || isAndroid) {
-      setTimeout(() => {
-        window.location.href = res
-      });
-    }else {
-      setTimeout(() => {
-        window.open(res, 'newwindow', 'height=700,width=500,top=0,left=0,toolbar=no,menubar=no,resizable=no,scrollbars=no,location=no,status=no')
-      })
-    }
-
-    await sleep(6)
-    let count = 0;
-    let userInfo: any = await twitterLogin(state);
-    accStore.clear()
-    if (userInfo.code === 1) {
-      while(count < 80 && logging.value) {
-        userInfo = await twitterLogin(state);
-        if (userInfo.code === 3) {
-          accStore.setAccount(
-            {
-              ...userInfo.account,
-              authLike: authLike.value,
-              authPost: authPost.value
-            } as Account)
-          modalStore.setModalCloseEnable(true)
-          useModalStore().setModalVisible(false);
-          emitter.emit('login', true);
-          break;
-        }
-        count++;
-        await sleep(1)
-      }
-    }else {
-      if (userInfo.code === 3) {
-        accStore.setAccount(
-          {
-            ...userInfo.account,
-            authLike: authLike.value,
-            authPost: authPost.value
-          } as Account)
-        modalStore.setModalCloseEnable(true)
-        useModalStore().setModalVisible(false);
-        emitter.emit('login', true);
-      }
-    }
-  } catch (e) {
-    handleErrorTip(e);
-    useLoginStore().setLoginStep(LoginStepType.CreateWallet)
-  } finally {
-    logging.value = false
   }
 }
 
@@ -144,7 +67,7 @@ onUnmounted(() => {
 
       <div class="text-lg text-center text-grey-normal text-weight-bold flex justify-center items-center gap-2">
         Protected by
-        <img class="w-22 h-5" src="https://auth.privy.io/logos/privy-logo.png" alt="">
+        <img class="w-22 h-5" src="~@/assets/icons/privy-logo.png" alt="">
       </div>
     </div>
   </div>

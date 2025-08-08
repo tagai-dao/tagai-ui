@@ -1,19 +1,42 @@
 <script setup lang="ts">
 import { useUserStore } from "@/stores/privy";
+import { useAccountStore } from "@/stores/web3";
 import { onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { getWalletClient, signMessage } from "@/utils/wallets";
+import { bondEth } from "@/apis/api";
+import { BondEthMessage } from "@/config";
+
 const privyStore = useUserStore();
 const router = useRouter();
+const accStore = useAccountStore();
 
 onMounted(async () => {
   try {
-    // 等待全局iframe初始化完成（在App.vue中已经初始化）
+    // 初始化iframe
     await privyStore.initPrivyIframe();
     await privyStore.waitForIframeInitialization();
     
     // 然后处理回调
     await privyStore.handleCallback();
-    await privyStore.initWallet();
+    const accInfo = accStore.getAccountInfo;
+    if (accInfo.walletType === 1 || !accInfo.ethAddr) {
+      await privyStore.initWallet();
+      const wallet = getWalletClient();
+      if (!accInfo.ethAddr) {
+        // bind ethAddr for new login user
+        const signature = await signMessage(BondEthMessage);
+        if (!signature) {
+          return;
+        }
+        await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
+        accInfo.ethAddr = accStore.ethConnectAddress
+        accStore.setAccount({
+          ...accInfo,
+          ethAddr: accStore.ethConnectAddress
+        })
+      }
+    } 
   } catch (error) {
     console.error('Error in callback processing:', error);
   }

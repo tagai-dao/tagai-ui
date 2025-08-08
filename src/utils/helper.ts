@@ -92,7 +92,7 @@ export const formatPrice = (value: number | string, abb = false) => {
     abb = true
   }
 
-  let digit = 3
+  let digit = 2
   if (Number(value) > 1e3) {
     digit = 0
   }
@@ -141,7 +141,7 @@ export const formatPrice = (value: number | string, abb = false) => {
 export const formatAmount = function (value: number | string | undefined) {
   if (!value) return "0.00";
   let unit = ''
-  let digit = 3
+  let digit = 2
   const nm = Number(value)
   if (nm < 1) {
     digit = 4

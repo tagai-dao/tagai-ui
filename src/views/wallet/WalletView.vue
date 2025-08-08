@@ -17,7 +17,7 @@ const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount(
 const { onCopy } = useTools()
 
 async function disconnect() {
-  if (accStore.ethWalletType === 'privy-twitter') {
+  if (accStore.getWalletType === 'privy-twitter') {
     await privyStore.logout();
   }
   
@@ -54,7 +54,7 @@ onMounted(() => {
           <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
       </div>
-      <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
+      <!-- <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
         <div @click="onCopy(useAccountStore().ethConnectAddress)" 
           class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer">
           <span>Connected: {{ formatAddress(useAccountStore().ethConnectAddress) }}</span>
@@ -62,7 +62,7 @@ onMounted(() => {
             <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
           </button>
         </div>
-      </div>
+      </div> -->
     </div>
     <div class="flex justify-around items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mx-3">
       <button v-for="tab of tabOptions" :key="tab"

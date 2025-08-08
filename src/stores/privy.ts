@@ -9,7 +9,7 @@ import { EthWalletState, useAccountStore } from "./web3";
 import { useRoute, useRouter } from "vue-router";
 import { createWalletClient, custom, type WalletClient } from "viem";
 import { bsc } from "viem/chains";
-import { privryLogin } from "@/apis/api";
+import { privyLogin } from "@/apis/api";
 import type { Account } from "@/types";
 import emitter from "@/utils/emitter";
 import { notify } from "@/utils/notify";
@@ -128,10 +128,13 @@ export const useUserStore = defineStore("user", () => {
   }
 
   async function logout() {
-    await privy.auth.logout();
+    try {
+      await privy.auth.logout();
+    } catch (error) {
+      
+    }
     user.value = null;
     viemWalletClient.value = null;
-    iframeInitialized.value = false;
     initPromise.value = null;
   }
 
@@ -161,9 +164,10 @@ export const useUserStore = defineStore("user", () => {
           loginFail();
           return;
         }
+
         // login to tagai
-        const userInfo = await privryLogin(access_token!, refresh_token!) as Account | null;
-        console.log('Privry login result:', userInfo);
+        const userInfo = await privyLogin(access_token!, refresh_token!) as Account | null;
+        console.log('Privy login result:', userInfo);
         if (!userInfo) {
           // login fail
           loginFail();
@@ -264,7 +268,11 @@ export const useUserStore = defineStore("user", () => {
       const accStore = useAccountStore();
       accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
       accStore.ethConnectState = EthWalletState.Connected;
-      accStore.ethWalletType = 'privry-twitter';
+      accStore.ethWalletType = 'privy-twitter';
+      const test = await viemWalletClient.value.signMessage({
+        message: 'test',
+        account: accStore.ethConnectAddress as `0x${string}`
+      })
 
       // const tx = await viemWalletClient.value.writeContract({
       //   account: useAccountStore().ethConnectAddress as `0x${string}`,

@@ -64,7 +64,7 @@ onMounted(async () => {
         ...account,
         ...acc
       })
-      if (acc.walletType === 'privry-twitter') {
+      if (acc.walletType === 'privy-twitter') {
         // 初始化privy iframe - 在应用启动时就准备好
         try {
           console.log('Initializing Privy iframe on app startup...');

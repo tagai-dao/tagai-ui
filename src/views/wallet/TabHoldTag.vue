@@ -91,6 +91,20 @@ onMounted(async () => {
           class="flex justify-center py-6 w-full">
           <img src="~@/assets/images/empty-data.svg" alt="">
         </div>
+        <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3 flex items-center gap-3 mb-2">
+          <div class="w-10 min-w-10 h-10 rounded-full bg-grey-normal-active shadow-tag-logo
+                      flex items-center justify-center relative overflow-hidden">
+            <img class="w-15" src="~@/assets/bnb-logo.svg" alt="">
+          </div>
+          <div class="flex-1">
+            <div class="flex gap-2 items-center">
+              <span class="text-grey-normal text-h3 leading-5">BNB</span>
+            </div>
+            <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary">
+              {{ formatAmount(accStore.ethBalance) }}
+            </div>
+          </div>
+        </div>
         <div v-for="(holding, i) of accStore.tokenHoldingList" :key="i"
              v-show="holding.community"
              @click="$router.push('/tag-detail/' + holding.community.tick)"
