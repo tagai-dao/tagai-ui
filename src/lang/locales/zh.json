@@ -83,7 +83,19 @@
     "authPostTip": "发帖权限：在平台发布推文或 Space 以创建策展"
   },
   "web3": {
-    "addressMismatch": "连接的地址不匹配，请在你的钱包地址中更换地址为: {address}"
+    "addressMismatch": "连接的地址不匹配，请在你的钱包地址中更换地址为: {address}",
+    "recharge": "充值",
+    "withdraw": "提现",
+    "backUp": "备份",
+    "disconnect": "断开",
+    "availableBalance": "可支配余额",
+    "network": "网络",
+    "rechargeTip": "请将BNB发送到此地址，发送其他代币或使用错误的网络可能会导致永久损失。",
+    "privyTip": "您的钱包由Privy保护。只有您可以使用您的登录凭证访问您的资金。",
+    "inputAddress": "请输入有效地址",
+    "inputAmount": "请输入数量",
+    "withdrawTip": "请仔细检查目标地址，发送到错误地址的资金将无法恢复。",
+    "wrongAddress": "地址错误"
   },
   "profileView": {
     "holdCoin": "持有代币",

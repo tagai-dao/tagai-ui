@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref} from "vue";
+import {onMounted, ref, onUnmounted} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
@@ -7,9 +7,13 @@ import { formatAddress, formatAmount } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
 import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 import { useUserStore } from "@/stores/privy";
+import { useModalStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
+import emitter from "@/utils/emitter";
 
 const accStore = useAccountStore()
 const privyStore = useUserStore()
+const modalStore = useModalStore()
 const tabOptions = ['holding', 'socialAccount']
 const activeTab = ref('socialAccount')
 const needClaim = ref(false)
@@ -26,6 +30,10 @@ async function disconnect() {
   accStore.ethWalletType = 'none';
 }
 
+async function showPrivy() {
+  // 显示PrivyModal弹窗
+  modalStore.setModalVisible(true, GlobalModalType.PrivyWallet)
+}
 onMounted(() => {
   updateBalance()
 })
@@ -49,10 +57,13 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div class="pl-12 flex justify-between items-center gap-3a mt-2">
-      <div class="flex-1 flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
-          <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
+      <div class="pl-12 flex justify-start items-center mt-2 gap-3">
+        <div class="flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
+            <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
+        <button v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected" @click="showPrivy">
+          <img class="w-20 h-4 min-w-4" src="~@/assets/icons/privy-logo.png" alt="">
+        </button>
       </div>
       <!-- <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
         <div @click="onCopy(useAccountStore().ethConnectAddress)" 

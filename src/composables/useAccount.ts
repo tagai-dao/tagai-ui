@@ -32,7 +32,7 @@ export const useAccount = () => {
 
     const profile = computed(() => {
         const account = useAccountStore().getAccountInfo
-        return account.profile?.replace('normal', '200x200')
+        return account?.profile?.replace('normal', '200x200')
     })
 
     const replaceEmptyProfile = (e: any) => {
@@ -40,7 +40,7 @@ export const useAccount = () => {
     }
 
     const gotoTwitter = () => {
-        window.open('https://x.com/' + useAccountStore().getAccountInfo.twitterUsername, '__blank')
+        window.open('https://x.com/' + useAccountStore().getAccountInfo?.twitterUsername, '__blank')
     }
 
     const refreshToken = async () => {
@@ -124,6 +124,7 @@ export const useAccount = () => {
 
     const vp = computed(() => {
         const vpInfo = useAccountStore().getAccountInfo
+        if (!vpInfo) return 0;
         if ((!vpInfo.vp && vpInfo.vp !== 0) || !vpInfo.lastUpdateVpStamp) return vpInfo.vp ?? 0;
         let vp = (vpInfo.vp! + (Date.now() - vpInfo.lastUpdateVpStamp!) * MAX_VP / (86400000 * VP_RECOVER_DAY))
         return vp > MAX_VP ? MAX_VP : vp
@@ -131,6 +132,7 @@ export const useAccount = () => {
 
     const op = computed(() => {
         const opInfo = useAccountStore().getAccountInfo
+        if (!opInfo) return 0;
         if ((!opInfo.op && opInfo.op !== 0) || !opInfo.lastUpdateOpStamp) return opInfo.op ?? 0;
         let op = (opInfo.op! + (Date.now() - opInfo.lastUpdateOpStamp!) * MAX_OP / (86400000 * OP_RECOVER_DAY))
         return op > MAX_OP ? MAX_OP : op
@@ -139,6 +141,7 @@ export const useAccount = () => {
     const updateUserVpLocal = (vpConsume: number) => {
         if (vpConsume == 0) return true;
         const account = useAccountStore().getAccountInfo;
+        if (!account) return false;
         if (vp.value >= vpConsume) {
             useAccountStore().setAccount({
                 ...account,
@@ -152,6 +155,7 @@ export const useAccount = () => {
     const updateUserOPLocal = (opConsume: number) => {
         if (opConsume == 0) return;
         const account = useAccountStore().getAccountInfo;
+        if (!account) return false;
         if (op.value >= opConsume) {
             useAccountStore().setAccount({
                 ...account,
@@ -165,6 +169,7 @@ export const useAccount = () => {
     const addBackVp = (vpConsume: number) => {
         if (vpConsume == 0) return;
         const account = useAccountStore().getAccountInfo;
+        if (!account) return;
         useAccountStore().setAccount({
             ...account,
             vp: account.vp! + vpConsume
@@ -174,6 +179,7 @@ export const useAccount = () => {
     const addBackOp = (opConsume: number) => {
         if (opConsume == 0) return;
         const account = useAccountStore().getAccountInfo;
+        if (!account) return;
         useAccountStore().setAccount({
             ...account,
             op: account.op! + opConsume
@@ -218,14 +224,14 @@ export const useAccount = () => {
                 await checkLogin()
                 break;
             case AccountAuthType.ETH: {
-                if (isAddress(useAccountStore().getAccountInfo.ethAddr ?? '')) {
+                if (isAddress(useAccountStore().getAccountInfo?.ethAddr ?? '')) {
                     return true
                 }else {
                     useModalStore().setModalVisible(true, GlobalModalType.BondEth);
                 }
             }
             case AccountAuthType.STEEM:
-                if (useAccountStore().getAccountInfo.steemId) {
+                if (useAccountStore().getAccountInfo?.steemId) {
                     return true
                 }else {
                     useModalStore().setModalVisible(true, GlobalModalType.Register);
@@ -242,8 +248,8 @@ export const useAccount = () => {
     }
 
     const updateBalance = () => {
-        if (isAddress(useAccountStore().getAccountInfo.ethAddr ?? '')) {
-            const ethAddr = useAccountStore().getAccountInfo.ethAddr;
+        if (isAddress(useAccountStore().getAccountInfo?.ethAddr ?? '')) {
+            const ethAddr = useAccountStore().getAccountInfo?.ethAddr;
             let calls = [{
                 call: [
                     'getEthBalance(address)(uint256)', 
