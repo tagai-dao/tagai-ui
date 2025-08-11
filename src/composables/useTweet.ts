@@ -56,6 +56,7 @@ export const useTweet = () => {
   const preCheckCuration = async (opType: OperateType, tweet?: Tweet, costVp: number = 0) => {
     const account = useAccountStore().getAccountInfo
     if (!account?.twitterId) {
+      useAccount().logout();
       useModalStore().setModalVisible(true, GlobalModalType.Login)
       return false;
     }

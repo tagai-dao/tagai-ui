@@ -185,7 +185,7 @@ export const useAccount = () => {
         const acc = accStore.getAccountInfo;
         if (acc && acc.accessToken && acc.twitterId) {
             try {
-                await needLogin(acc.twitterId)
+                // await needLogin(acc.twitterId)
                 return true;
             } catch (error) {
                 if (error === errCode.InvalidAccessToken) {
@@ -203,7 +203,7 @@ export const useAccount = () => {
     const checkoutAccessToken = async () => {
         const accStore = useAccountStore();
         const acc = accStore.getAccountInfo;
-        if (acc && acc.accessToken) {
+        if (acc && acc.accessToken && acc.twitterId) {
             return acc.accessToken
         }else {
             // need auth again
