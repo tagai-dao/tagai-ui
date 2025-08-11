@@ -238,14 +238,15 @@ onUnmounted(() => {
 
           <!-- 安全信息 -->
           <div class="bg-grey-fa border border-white rounded-xl p-4">
-            <div class="flex items-start gap-3">
-              <div class="w-5 h-5 bg-orange-normal rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-                </svg>
-              </div>
-              <div class="text-xs text-grey-8d leading-relaxed">
-                {{ $t('web3.privyTip') }}
+            <div class="flex items-center gap-3">
+              <div>
+                <p class="flex items-center gap-1 text-ls text-grey-8d leading-relaxed">
+                  {{ $t('web3.privyTip1') }}
+                  <img class="w-18 h-3 mt-1" src="~@/assets/icons/privy-logo.png" alt="">
+                  </p>
+                <p class="text-ls text-grey-8d leading-relaxed">
+                  {{ $t('web3.privyTip2') }}
+                </p>
               </div>
             </div>
           </div>

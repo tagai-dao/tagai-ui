@@ -60,8 +60,10 @@ onMounted(() => {
         <div class="flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
             <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
-        <button v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected" @click="showPrivy">
-          <img class="w-20 h-4 min-w-4" src="~@/assets/icons/privy-logo.png" alt="">
+        <button v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected" 
+          class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5 hover:opacity-90 transition-all duration-200"
+          @click="showPrivy">
+          {{ $t('web3.recharge') }}
         </button>
       </div>
       <!-- <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
