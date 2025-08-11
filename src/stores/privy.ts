@@ -13,6 +13,7 @@ import { privyLogin } from "@/apis/api";
 import type { Account } from "@/types";
 import emitter from "@/utils/emitter";
 import { notify } from "@/utils/notify";
+import { useAccount } from "@/composables/useAccount";
 
 export const useUserStore = defineStore("user", () => {
   const user = ref<OAuthResult["user"] | null>(null);
@@ -204,6 +205,7 @@ export const useUserStore = defineStore("user", () => {
 
   async function initWallet() {
     try {
+      useAccountStore().ethConnectState = EthWalletState.Connecting;
       console.log('Starting wallet initialization...');
       
       // 1. 检查用户是否已认证
@@ -269,10 +271,6 @@ export const useUserStore = defineStore("user", () => {
       accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy-twitter';
-      const test = await viemWalletClient.value.signMessage({
-        message: 'test',
-        account: accStore.ethConnectAddress as `0x${string}`
-      })
 
       // const tx = await viemWalletClient.value.writeContract({
       //   account: useAccountStore().ethConnectAddress as `0x${string}`,
@@ -284,6 +282,9 @@ export const useUserStore = defineStore("user", () => {
       // })
       // console.log('tx', tx);
     } catch (error) {
+      useAccountStore().ethConnectState = EthWalletState.Disconnect;
+      // logout
+      useAccount().logout();
       console.error('Error initializing wallet:', error);
       throw error;
     }

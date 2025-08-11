@@ -268,7 +268,7 @@ export const getBlockNumber = async () => {
 }
 
 export const transferEthTo = async (to: string, value: bigint) => {
-    let wallet = getWalletClient();
+    let wallet = getWalletClient(); 
     if (!wallet) {
         return null;
     }
