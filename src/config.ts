@@ -20,12 +20,10 @@ export const ChainConfig = {
 
 export const PrivyConfig = {
     appId: import.meta.env.VITE_APP_PRIVY_APP_ID,
-    appSecret: import.meta.env.VITE_APP_PRIVY_APP_SECRET,
     clientId: import.meta.env.VITE_APP_PRIVY_CLIENT_ID,
     redirectUri: import.meta.env.VITE_APP_PRIVY_REDIRECT_URI,
     logoutRedirectUri: import.meta.env.VITE_APP_PRIVY_LOGOUT_REDIRECT_URI,
     loginRedirectUri: import.meta.env.VITE_APP_PRIVY_LOGIN_REDIRECT_URI,
-    authorizationPrivateKey: import.meta.env.VITE_APP_PRIVY_AUTHORIZATION_PRIVATE_KEY,
 }
 
 export const DefaultCommunityTick = 'no-tick-of-tiptag'

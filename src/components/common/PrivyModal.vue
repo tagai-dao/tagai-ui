@@ -11,12 +11,7 @@ import { transferEthTo } from '@/utils/wallets'
 import { parseEther } from 'viem'
 import { notify } from '@/utils/notify'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
 import { privy } from '@/utils/privy'
-import { PrivyConfig } from '@/config'
-import { generateAuthorizationSignature } from "@privy-io/server-auth/wallet-api" 
-
-const authHeader = 'Basic ' + Buffer.from(`${PrivyConfig.appId}:${PrivyConfig.appSecret}`).toString('base64')
 
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
@@ -108,72 +103,7 @@ const handleWithdraw = () => {
 }
 
 const handleBackupWallet = async () => {
-  // 处理备份钱包逻辑
-  console.log('备份钱包')
-  // generate keypair
-  const keypair: any = await crypto.subtle.generateKey(
-    {
-      name: "ECDH",
-      namedCurve: "P-256"
-    },
-    true,
-    ["deriveKey", "deriveBits"]
-  )
-  console.log(1, keypair)
-  const [publicKey, privateKey] = await Promise.all([
-    crypto.subtle.exportKey("spki", keypair.publicKey),
-    crypto.subtle.exportKey("pkcs8", keypair.privateKey)
-  ])
-  console.log(2,publicKey, privateKey)
-  const [publicKeyBase64, privateKeyBase64] = [
-    Buffer.from(publicKey).toString("base64"),
-    Buffer.from(privateKey).toString("base64")
-  ]
-  const id = await getUserId();
-  if (!id) {
-    notify({
-      type: 'info',
-      message: 'Login expired'
-    })
-    setTimeout(() => {
-      useAccount().logout();
-      closeModal();
-      router.replace('/');  
-    }, 3000);
-    return;
-  }
-  console.log(3, publicKeyBase64, privateKeyBase64)
-  
-  const input: any = {
-    headers: {
-      "privy-app-id": PrivyConfig.appId,
-    },
-    method: "POST",
-    url: `https://api.privy.io/v1/wallets/${id}/export`,
-    version: 1 as const,
-    body: {
-      encryption_type: 'HPKE',
-      recipient_public_key: publicKeyBase64,
-    },
-  }
-
-  const signature = generateAuthorizationSignature({
-    input,
-    authorizationPrivateKey: PrivyConfig.authorizationPrivateKey,
-  })
-  console.log(4, signature)
-  const res = await fetch(`https://api.privy.io/v1/wallets/${id}/export`,{
-    method: input.method,
-    headers: {
-      ...input.headers,
-      "Content-Type": "application/json",
-      "privy-authorization-signature": signature as string,
-      Authorization: authHeader,
-      body: JSON.stringify(input.body),
-    }
-  })
-  
-  console.log(5, res);
+ 
 }
 
 const getUserId = async () => {
