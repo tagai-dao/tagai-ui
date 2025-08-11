@@ -3,8 +3,8 @@ import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, 
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, wrappedUniswapV2ForTagAI2 } from '@/config'
-import { bsc } from "viem/chains";
 import { useAccountStore } from "@/stores/web3";
+import { customBsc } from "./privy";
 
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -69,7 +69,7 @@ export const writeContract = async ({
         abi,
         functionName,
         args,
-        chain: bsc,
+        chain: customBsc,
         value: typeof value === 'string' ? BigInt(value) : value
     });
     return await waitForTx(tx);

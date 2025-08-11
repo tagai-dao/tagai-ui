@@ -8,7 +8,7 @@ import {getUserEmbeddedEthereumWallet, getEntropyDetailsFromUser} from '@privy-i
 import { EthWalletState, useAccountStore } from "./web3";
 import { useRoute, useRouter } from "vue-router";
 import { createWalletClient, custom, type WalletClient } from "viem";
-import { bsc } from "viem/chains";
+import { customBsc } from "@/utils/privy";
 import { privyLogin } from "@/apis/api";
 import type { Account } from "@/types";
 import emitter from "@/utils/emitter";
@@ -259,7 +259,7 @@ export const useUserStore = defineStore("user", () => {
       });
 
       viemWalletClient.value = createWalletClient({
-        chain: bsc,
+        chain: customBsc,
         transport: custom(provider)
       })
 

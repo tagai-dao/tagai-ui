@@ -7,7 +7,7 @@ import { getProvider as getBNProvider } from "@binance/w3w-ethereum-provider";
 import { ChainConfig } from "@/config"
 import { useUserStore } from '@/stores/privy';
 import { createWalletClient, createPublicClient, custom, http } from 'viem';
-import { bsc } from 'viem/chains';
+import { customBsc } from './privy';
 
 
 // this.ethWalletType = 'none' // metamask, okx, none
@@ -57,7 +57,7 @@ export const getReadOnlyClient = () => {
         return readOnlyClient;
     }
     readOnlyClient = createPublicClient({
-        chain: bsc,
+        chain: customBsc,
         transport: http()
     });
     return readOnlyClient;
@@ -82,7 +82,7 @@ export const getWalletClient = () => {
     console.log(provider)
     if (provider) {
         const walletClient = createWalletClient({
-            chain: bsc,
+            chain: customBsc,
             transport: custom(provider) // 使用插件钱包（如 MetaMask）
         }) as WalletClient;
         return walletClient;
@@ -277,7 +277,7 @@ export const transferEthTo = async (to: string, value: bigint) => {
         account: useAccountStore().ethConnectAddress as `0x${string}`,
         to: to as `0x${string}`,
         value: value,
-        chain: bsc
+        chain: customBsc
     })
     return await waitForTx(hash);
 }
