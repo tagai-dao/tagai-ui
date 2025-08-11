@@ -66,7 +66,7 @@ export const getReadOnlyClient = () => {
 export const getWalletClient = () => {
     const accStore = useAccountStore();
     const accInfo = accStore.getAccountInfo;
-    if (accInfo && (accInfo.walletType === 1 || !accInfo.ethAddr)) {
+    if (accInfo?.twitterId && (accInfo?.walletType === 1 || !accInfo?.ethAddr)) {
         const privyStore = useUserStore();
         if (!privyStore.viemWalletClient) {
             return null;
@@ -79,6 +79,7 @@ export const getWalletClient = () => {
         // return walletClient;
     }
     const provider = getProvider();
+    console.log(provider)
     if (provider) {
         const walletClient = createWalletClient({
             chain: bsc,

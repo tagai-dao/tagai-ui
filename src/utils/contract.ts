@@ -62,7 +62,6 @@ export const writeContract = async ({
         // @ts-ignore
         address = ContractAddress[contractName] as `0x${string}`
     }
-
     const abi = abis[contractName as keyof typeof abis]
     const tx = await client.writeContract({
         account: useAccountStore().ethConnectAddress as `0x${string}`,

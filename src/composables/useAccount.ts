@@ -70,6 +70,8 @@ export const useAccount = () => {
                     logout()
                 }
             })
+        }else if (account) {
+            logout();
         }
     }
 
@@ -83,6 +85,8 @@ export const useAccount = () => {
                     logout()
                 }
             })
+        } else {
+            logout();
         }
     }
 
@@ -96,6 +100,8 @@ export const useAccount = () => {
                     logout()
                 }
             })
+        } else {
+            logout();
         }
     }
 
@@ -177,7 +183,7 @@ export const useAccount = () => {
     const checkLogin = async () => {
         const accStore = useAccountStore();
         const acc = accStore.getAccountInfo;
-        if (acc && acc.accessToken) {
+        if (acc && acc.accessToken && acc.twitterId) {
             try {
                 await needLogin(acc.twitterId)
                 return true;

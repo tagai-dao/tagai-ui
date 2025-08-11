@@ -165,7 +165,6 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
             return hash
         }
         const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI], token)
-
         if (allowance < amount) {
             const hash = await writeContract({
                 contractName: 'Token1',
@@ -178,9 +177,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                 throw errCode.TRANSACTION_INVALID;
             }
         }
-
         const expectedReceive = await getSellAmountUseToken(token, amount);
-
         const hash = await writeContract({
             contractName: 'WrapSwaper',
             functionName: 'sellToken',
