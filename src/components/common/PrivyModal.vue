@@ -290,12 +290,12 @@ onUnmounted(() => {
             </button>
 
             <!-- 备份钱包按钮 -->
-            <button 
+            <!-- <button 
               @click="handleBackupWallet"
               class="w-full h-12 bg-gradient-primary rounded-full text-white font-medium hover:opacity-90 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
             >
               {{ $t('web3.backUp') }}
-            </button>
+            </button>-->
 
             <!-- 断开钱包按钮 -->
             <button 
