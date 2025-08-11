@@ -86,7 +86,7 @@
   },
   "web3": {
     "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet.",
-    "recharge": "Recharge",
+    "recharge": "Deposit",
     "withdraw": "Withdraw",
     "backUp": "Backup",
     "disconnect": "Disconnect",

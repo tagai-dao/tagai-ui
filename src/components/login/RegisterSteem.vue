@@ -58,7 +58,7 @@ const step = computed(() => {
   if (chosingBitip.value) {
       return 3;
   }
-  if (acc.value?.twitterReputation && acc.value.twitterReputation >= 50) {
+  if (acc.value?.twitterReputation && acc.value.twitterReputation >= 30) {
     return 6;
   }
   if (

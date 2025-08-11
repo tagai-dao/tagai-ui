@@ -21,6 +21,8 @@ const authHeader = 'Basic ' + Buffer.from(`${PrivyConfig.appId}:${PrivyConfig.ap
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
 
+const emit = defineEmits(['close'])
+
 // 状态管理
 const modalStore = useModalStore()
 const accStore = useAccountStore()
@@ -73,7 +75,7 @@ const isInsufficientBalance = computed(() => {
 
 // 方法
 const closeModal = () => {
-  modalStore.setModalVisible(false)
+  emit('close')
   // 重置页面状态
   currentPage.value = 'wallet'
   withdrawAddress.value = ''
@@ -216,7 +218,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/20">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
     <!-- 弹窗容器 -->
     <div class="relative w-full max-w-sm mx-4 bg-white rounded-2xl shadow-popper-tip overflow-hidden">
       <!-- 顶部关闭按钮 -->

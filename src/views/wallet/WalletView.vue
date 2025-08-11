@@ -7,15 +7,14 @@ import { formatAddress, formatAmount } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
 import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 import { useUserStore } from "@/stores/privy";
-import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import emitter from "@/utils/emitter";
 
 const accStore = useAccountStore()
 const privyStore = useUserStore()
-const modalStore = useModalStore()
 const tabOptions = ['holding', 'socialAccount']
 const activeTab = ref('socialAccount')
+const showPrivyModal = ref(false)
 const needClaim = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
@@ -32,7 +31,7 @@ async function disconnect() {
 
 async function showPrivy() {
   // 显示PrivyModal弹窗
-  modalStore.setModalVisible(true, GlobalModalType.PrivyWallet)
+  showPrivyModal.value = true
 }
 onMounted(() => {
   updateBalance()
@@ -86,6 +85,7 @@ onMounted(() => {
       <TabHoldTag v-if="activeTab==='holding'"/>
       <TabSocialAccount v-if="activeTab==='socialAccount'"/>
     </div>
+    <PrivyModal @close="showPrivyModal = false" v-if="showPrivyModal"/>
   </div>
 </template>
 
