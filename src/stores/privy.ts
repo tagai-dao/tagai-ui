@@ -272,8 +272,6 @@ export const useUserStore = defineStore("user", () => {
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy-twitter';
 
-      privy.embeddedWallet
-
       // const tx = await viemWalletClient.value.writeContract({
       //   account: useAccountStore().ethConnectAddress as `0x${string}`,
       //   address: '0x6C818c610F3D9db65f5e0c0838f3F68600b80C85' as `0x${string}`,

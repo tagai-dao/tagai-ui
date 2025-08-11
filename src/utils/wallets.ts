@@ -268,13 +268,10 @@ export const getBlockNumber = async () => {
 }
 
 export const transferEthTo = async (to: string, value: bigint) => {
-    console.log(1)
     let wallet = getWalletClient(); 
-    console.log(2, wallet)
     if (!wallet) {
         return null;
     }
-    console.log(3)
     await setup()
     const hash = await wallet.sendTransaction({
         account: useAccountStore().ethConnectAddress as `0x${string}`,
@@ -282,7 +279,6 @@ export const transferEthTo = async (to: string, value: bigint) => {
         value: value,
         chain: customBsc
     })
-    console.log(4, hash)
     return await waitForTx(hash);
 }
 
