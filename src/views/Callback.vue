@@ -26,7 +26,7 @@ onMounted(async () => {
         // bind ethAddr for new login user
         const signature = await signMessage(BondEthMessage);
         if (!signature) {
-          return;
+          throw new Error('Signature is null')
         }
         await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
         accInfo.ethAddr = accStore.ethConnectAddress

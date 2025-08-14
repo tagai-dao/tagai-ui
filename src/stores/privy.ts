@@ -22,6 +22,7 @@ export const useUserStore = defineStore("user", () => {
   const ethersProvider = ref<any>(null);
   // iframe相关状态
   const iframeInitialized = ref(false);
+  const iframeIniting = ref(false);
   const iframeRef = ref<HTMLIFrameElement | null>(null);
   const messageListener = ref<((e: any) => void) | null>(null);
   const initPromise = ref<Promise<void> | null>(null);
@@ -41,7 +42,7 @@ export const useUserStore = defineStore("user", () => {
   // 初始化 Privy iframe - 全局单例模式
   async function initPrivyIframe() {
     // 如果已经初始化过，直接返回
-    if (iframeInitialized.value) {
+    if (iframeInitialized.value || iframeIniting.value) {
       console.log('Privy iframe already initialized');
       return;
     }
@@ -61,6 +62,7 @@ export const useUserStore = defineStore("user", () => {
   // 实际的初始化逻辑
   async function _initPrivyIframe() {
     try {
+      iframeIniting.value = true;
       const url = privy.embeddedWallet.getURL();
       console.log('Privy embedded wallet URL:', url);
 
@@ -102,6 +104,8 @@ export const useUserStore = defineStore("user", () => {
       console.error('Error initializing privy embedded wallet:', error);
       initPromise.value = null;
       throw error;
+    } finally{
+      iframeIniting.value = false;
     }
   }
 
@@ -137,6 +141,7 @@ export const useUserStore = defineStore("user", () => {
     user.value = null;
     viemWalletClient.value = null;
     initPromise.value = null;
+    ethersProvider.value = null;
   }
 
   async function handleCallback() {
