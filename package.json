@@ -49,6 +49,7 @@
     "vue3-twemoji-picker-final": "^0.0.15"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250813.0",
     "@iconify-json/ep": "^1.1.15",
     "@intlify/unplugin-vue-i18n": "^4.0.0",
     "@rushstack/eslint-patch": "^1.8.0",

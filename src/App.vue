@@ -36,7 +36,6 @@ function updateOgUrl() {
 
 onMounted(async () => {
   await router.isReady();
-
   
   initPlugin();
   const { referee } = route.query;
