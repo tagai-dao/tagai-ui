@@ -169,6 +169,12 @@
     "claimToken": "Claim Tip Token",
     "claimTokenDesc": "You can claim all the following tokens in one transaction."
   },
+  "creditView": {
+    "name": "Name",
+    "ratio": "Ratio",
+    "apr": "APR",
+    "get": "Increase"
+  },
   "notificationView": {
     "ipShare": "IPShare",
     "social": "Social",

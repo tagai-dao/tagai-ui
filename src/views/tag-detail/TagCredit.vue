@@ -82,6 +82,19 @@ async function onLoad() {
   }
 }
 
+function creditName(type: number) {
+  switch (type) {
+    case 1:
+      return comStore.currentSelectedCommunity?.tick + ' ' + t('balance')
+    case 2:
+      return comStore.currentSelectedCommunity?.tick + '-BNB LP'
+    case 3:
+      return 'Net buy'
+    default:
+      return ''
+  }
+}
+
 const onUserAvatar = () => {
 
 }
@@ -117,6 +130,26 @@ onMounted(async () => {
   <!-- <div class="flex justify-end mb-2 mr-2">
     <img class="w-6 h-6 cursor-pointer" @click="showCreditChart = true" src="~@/assets/icons/icon-pie-chart.svg" alt="">
   </div> -->
+
+  <div class="bg-white rounded-2xl p-3 mb-3" v-if="comStore.currentSelectedCommunity?.tick">
+    <div class="grid grid-cols-8 gap-x-2 web:grid-cols-9 text-h5 h-10 items-center">
+      <span class="col-span-2 web:col-span-3 pl-8">{{ $t('creditView.name') }}</span>
+      <span class="col-span-2 web:col-span-2">{{ $t('creditView.ratio') }}</span>
+      <span class="col-span-2 web:col-span-2">{{ $t('creditView.apr') }}</span>
+      <span class="col-span-2 web:col-span-2 text-right">
+      </span>
+    </div>
+    <div class="grid grid-cols-8 web:grid-cols-9 gap-x-2 h-12 items-center text-h4"
+          v-for="(credit, i) of JSON.parse(comStore.currentSelectedCommunity.creditPolicy || '[]')"
+          :key="i">
+          <span class="col-span-2 web:col-span-3 pl-8">{{ creditName(credit.type) }}</span>
+          <span class="col-span-2 web:col-span-2">{{ (credit.ratio * 100).toFixed(2) }}%</span>
+          <span class="col-span-2 web:col-span-2">{{ credit.apr ?? 0 }}%</span>
+          <button class="col-span-2 web:col-span-2 text-white h-8 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2">
+            {{ $t('creditView.get') }}
+          </button>
+    </div>
+  </div>
   <div class="bg-white rounded-2xl p-3" v-if="comStore.currentSelectedCommunity?.tick">
     <div class="grid grid-cols-8 gap-x-2 web:grid-cols-9 text-h5 h-10 items-center">
       <span class="col-span-3 web:col-span-3 pl-8">{{ $t('account') }}</span>

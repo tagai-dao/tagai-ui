@@ -167,6 +167,12 @@
     "claimToken": "领取打赏",
     "claimTokenDesc": "你可以一次性领取以下所有打赏的代币。"
   },
+  "creditView": {
+    "name": "名称",
+    "ratio": "占比",
+    "apr": "年化",
+    "get": "增加"
+  },
   "notificationView": {
     "ipShare": "IPShare",
     "social": "社交",
