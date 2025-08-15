@@ -213,6 +213,7 @@ onMounted(async () => {
     }
   }
 
+  deployTweetList.value = [];
   // get deploy tweet
   if (comStore.currentSelectedCommunity?.createdByAi) {
     const deployTweet = await getCommunityDeployTweet(comStore.currentSelectedCommunity?.tick, accStore.getAccountInfo?.twitterId)
@@ -248,6 +249,7 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   console.log('unmounted')
+  deployTweetList.value = []
   DeBoxChatWidget.destroy();
 })
 
