@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {useAccountStore} from "@/stores/web3";
 import {useModalStore, useStateStore} from "@/stores/common";
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import {twitterAuth, twitterLogin} from "@/apis/api";
 import {sleep} from "@/utils/helper";
 import type {Account} from "@/types";
@@ -12,13 +12,8 @@ import { useRoute } from "vue-router";
 import { onUnmounted } from "vue";
 import { useUserStore } from "@/stores/privy";
 
-const accStore = useAccountStore();
-const stateStore = useStateStore();
 const logging = ref(false);
-const route = useRoute();
-const modalStore = useModalStore()
-const authLike = ref(true)
-const authPost = ref(true)
+const privyStore = useUserStore()
 
 /**
  * Login with privy
@@ -26,16 +21,19 @@ const authPost = ref(true)
 async function login() {
   try {
     logging.value = true
-    const privyStore = useUserStore()
-    await privyStore.initPrivyIframe();
     await privyStore.waitForIframeInitialization();
 
     await privyStore.loginWithTwitter();
   } catch (e) {
     handleErrorTip(e);
-    useLoginStore().setLoginStep(LoginStepType.CreateWallet)
   }
 }
+
+onMounted(() => {
+  privyStore.initPrivyIframe().catch(e => {
+
+  });
+})
 
 onUnmounted(() => {
   logging.value = false
