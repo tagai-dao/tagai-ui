@@ -1,14 +1,6 @@
 <script setup lang="ts">
-import {useAccountStore} from "@/stores/web3";
-import {useModalStore, useStateStore} from "@/stores/common";
 import {onMounted, ref} from "vue";
-import {twitterAuth, twitterLogin} from "@/apis/api";
-import {sleep} from "@/utils/helper";
-import type {Account} from "@/types";
-import emitter from "@/utils/emitter";
 import {handleErrorTip} from "@/utils/notify";
-import {LoginStepType, useLoginStore} from "@/stores/login";
-import { useRoute } from "vue-router";
 import { onUnmounted } from "vue";
 import { useUserStore } from "@/stores/privy";
 
