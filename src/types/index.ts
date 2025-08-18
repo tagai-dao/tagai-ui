@@ -399,3 +399,27 @@ export type IpShareUser = {
   supply: number,
   price?: number | null | undefined,
 }
+
+/**
+ * 社区活动：
+ * 1. 任何用户可以创建社区活动
+ *    在社区的活动页面创建，至少需要投入10000枚社区代币
+ *    开始时间要大于当前时间
+ *    持续时间最少6小时，最多7天
+ *    需要设置活动标签，同社区同时进行的活动不能用同一个标签
+ * 2.活动页面展示所有的活动列表
+ * 3.活动详情页面展示该活动的详细信息和所有参与活动的推文
+ *    需要高亮显示该活动的标签，方便参与用户知道带什么标签参与
+ */
+export type Activity = {
+  commuintyId: string,
+  activityId: string,
+  title: string,
+  banner: string,
+  description: string,
+  totalReward: number, // 奖励代币数量
+  startTime: number, // 时间戳
+  endTime: number,  // 时间戳
+  isSettled: number,    // 活动是否结算
+  postCount?: number | null | undefined,
+}
