@@ -417,6 +417,7 @@ export type Activity = {
   title: string,
   banner: string,
   description: string,
+  tag: string,         // 话题标签
   totalReward: number, // 奖励代币数量
   startTime: number, // 时间戳
   endTime: number,  // 时间戳
