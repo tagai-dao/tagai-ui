@@ -278,7 +278,7 @@ onMounted(async () => {
             <span v-show="holder.ethAddr == '0x3758AA66caD9F2606F1F501c9CB31b94b713A6d5'" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">NerveNetwork: Bridge</span>
             <span v-show="holder.ethAddr == PumpContract1 || holder.ethAddr == PumpContract2 || holder.ethAddr == PumpContract3 || holder.ethAddr == PumpContract4 || holder.ethAddr == PumpContract5 || holder.ethAddr == PumpContract6" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Social Distribution</span>
           </div>
-        <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ (holder.amount / 10000000).toFixed(2) }}%</span>
+        <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ ((holder.amount as number) / 10000000).toFixed(2) }}%</span>
       </div>
       </van-list>
     </van-pull-refresh>

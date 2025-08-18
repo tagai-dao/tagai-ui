@@ -85,7 +85,7 @@ export function stringLength(str: string) {
   return len;
 }
 
-export const formatPrice = (value: number | string, abb = false) => {
+export const formatPrice = (value: number | string | undefined, abb = false) => {
   if (!value) return "$0.00";
   let unit = ''
   if (Number(value) > 1e7) {
@@ -166,7 +166,7 @@ export const formatBalance = function (value: number | string | undefined) {
   return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fraction;
 }
 
-export const formatAmount = function (value: number | string | undefined) {
+export const formatAmount = function (value: number | string | undefined | bigint) {
   if (!value) return "0.00";
   let unit = ''
   let digit = 2
