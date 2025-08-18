@@ -138,6 +138,34 @@ export const formatPrice = (value: number | string, abb = false) => {
   return "$" + integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fraction + unit;
 };
 
+export const formatBalance = function (value: number | string | undefined) {
+  if (!value) return "0.00";
+  const nm = Number(value)
+  if (nm < 0.0001) {
+    return nm.toFixed(6)
+  }
+  if (nm < 0.1) {
+    return nm.toFixed(4)
+  }
+  if (nm < 10){
+    return nm.toFixed(3)
+  }
+  if (nm < 1000) {
+    return nm.toFixed(2)
+  }
+  
+  const str = nm.toFixed(2).toString();
+  let integer = str;
+  let fraction = "";
+  if (str.includes(".")) {
+    integer = str.split(".")[0];
+    if (Number(str.split(".")[1]) > 0) {
+      fraction = "." + str.split(".")[1];
+    }
+  }
+  return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fraction;
+}
+
 export const formatAmount = function (value: number | string | undefined) {
   if (!value) return "0.00";
   let unit = ''

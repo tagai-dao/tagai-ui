@@ -299,7 +299,7 @@ export type CreateCommunity = {
 export type TokenHoldingList = {
   community: Community,
   ethAddr: string,
-  amount: number,
+  amount: number | bigint,
   followers?: number | null | undefined,
   followings?: number | null | undefined,
   profile?: string | null | undefined,

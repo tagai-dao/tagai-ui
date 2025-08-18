@@ -4,16 +4,19 @@ import { getHoldingList } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
 import { useModalStore } from "@/stores/common";
-import { GlobalModalType } from "@/types";
+import { GlobalModalType, type Community } from "@/types";
 import { formatAmount } from "@/utils/helper";
 import { useRouter } from "vue-router";
 import errCode from "@/errCode";
+import TransferTokenModal from "@/components/common/TransferTokenModal.vue";
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const accStore = useAccountStore()
 const router = useRouter()
+const currentHolding = ref<any>(null)
+const showTransferModal = ref(false)
 const showingNoEth = computed(() => {
   return !accStore.getAccountInfo.ethAddr
 })
@@ -56,6 +59,18 @@ const onRefresh = async () => {
   }
 };
 
+function transferTick(holding: any) {
+  showTransferModal.value = true
+  currentHolding.value = holding
+}
+
+function close(confirmed: boolean) {
+  showTransferModal.value = false;
+  if (confirmed) {
+    onRefresh();
+  }
+}
+
 onMounted(async () => {
   onRefresh()
 })
@@ -91,20 +106,6 @@ onMounted(async () => {
           class="flex justify-center py-6 w-full">
           <img src="~@/assets/images/empty-data.svg" alt="">
         </div>
-        <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3 flex items-center gap-3 mb-2">
-          <div class="w-10 min-w-10 h-10 rounded-full bg-grey-normal-active shadow-tag-logo
-                      flex items-center justify-center relative overflow-hidden">
-            <img class="w-15" src="~@/assets/bnb-logo.svg" alt="">
-          </div>
-          <div class="flex-1">
-            <div class="flex gap-2 items-center">
-              <span class="text-grey-normal text-h3 leading-5">BNB</span>
-            </div>
-            <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary">
-              {{ formatAmount(accStore.ethBalance) }}
-            </div>
-          </div>
-        </div>
         <div v-for="(holding, i) of accStore.tokenHoldingList" :key="i"
              v-show="holding.community"
              @click="$router.push('/tag-detail/' + holding.community.tick)"
@@ -121,11 +122,27 @@ onMounted(async () => {
               {{ formatAmount((holding.amount?.toString() as any) / 1e18) }}
             </div>
           </div>
-          <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"
-                  class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}</button>
+          <div class="flex gap-2">
+            <button @click.stop="transferTick(holding)"
+                    class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}
+            </button>
+              <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"
+                    class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}
+              </button>
+          </div>
         </div>
       </van-list>
     </van-pull-refresh>
+    <el-dialog v-model="showTransferModal"
+                 :close-on-click-modal="showTransferModal"
+                 :close-on-press-escape="showTransferModal"
+                 class="max-w-[500px] rounded-[20px]"
+                 width="90%" :show-close="false" align-center destroy-on-close>
+        <TransferTokenModal 
+          :community="currentHolding.community as Community" 
+          :balance="currentHolding.amount"
+          @close="close"/>
+    </el-dialog>
   </div>
 </template>
 

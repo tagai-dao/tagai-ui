@@ -3,7 +3,7 @@ import {onMounted, ref, onUnmounted} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
-import { formatAddress, formatAmount } from "@/utils/helper";
+import { formatAddress, formatBalance } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
 import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 import { useUserStore } from "@/stores/privy";
@@ -60,8 +60,15 @@ onMounted(() => {
         <div class="flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
             <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
+      </div>
+      <div class="pl-12 flex justify-start items-center mt-2 gap-1">
+        {{ $t('balance') }}: 
+        <span class="font-bold">
+          {{ formatBalance(accStore.ethBalance) }} 
+        </span>
+        BNB
         <button v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected" 
-          class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5 hover:opacity-90 transition-all duration-200"
+          class="h-8 ml-3 bg-gradient-primary rounded-full px-3 text-white text-h5 hover:opacity-90 transition-all duration-200"
           @click="showPrivy">
           {{ $t('web3.recharge') }}
         </button>

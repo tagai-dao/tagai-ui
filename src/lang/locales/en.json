@@ -60,6 +60,7 @@
   "posts": "Posts",
   "communities": "Community",
   "showMore": "Show more",
+  "max": "Max",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
     "authTwitterTip": "Some functions of the TagAI require corresponding permissions for Twitter, and you can choose the functions that need to be authorized according to your needs",
@@ -98,7 +99,10 @@
     "inputAddress": "Please input valid address",
     "inputAmount": "Please input amount",
     "withdrawTip": "Please check the target address, funds sent to the wrong address cannot be recovered.",
-    "wrongAddress": "The address is wrong."
+    "wrongAddress": "The address is wrong.",
+    "transfer": "Transfer",
+    "transferTip1": "Please check the target address, funds sent to the wrong address cannot be recovered.",
+    "transferTip2": "After the transfer is successful, it cannot be reversed, please operate with caution."
   },
   "profileView": {
     "holdCoin": "Hold TagCoins",

@@ -9,7 +9,9 @@ import { getReadOnlyClient } from "./wallets";
 import { 
   encodeAbiParameters,
   keccak256,
-  getCreate2Address } from "viem";
+  getCreate2Address, 
+  isAddress} from "viem";
+import { readContract } from "./contract";
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
@@ -176,4 +178,17 @@ export const getPair = (tokenA: `0x${string}`) => {
     bytecode: uniswapV2InitCode
   })
   return pairAddress;
+}
+
+export const getTokenBalance = async (tokenAddr: `0x${string}`): Promise<bigint> => {
+  if (!isAddress(useAccountStore().getAccountInfo?.ethAddr as `0x${string}`)) {
+    return 0n;
+  }
+  const balance = await readContract(
+    "ERC20",
+    "balanceOf",
+    [useAccountStore().getAccountInfo.ethAddr as `0x${string}`],
+    tokenAddr
+  )
+  return balance as bigint;
 }

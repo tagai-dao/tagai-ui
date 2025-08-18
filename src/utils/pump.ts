@@ -1,6 +1,6 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
-import { getTransactionReceipt } from "./web3";
+import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee } from "@/config";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
@@ -219,6 +219,20 @@ export const claimReward = async (token: string, version: number, orderId: BigIn
         throw errCode.TRANSACTION_INVALID;
     }
     return hash
+}
+
+export const transferToken = async (token: string, to: string, amount: bigint, isMax: boolean) => {
+    if (isMax) {
+        amount = await getTokenBalance(token as `0x${string}`);
+    }
+    
+    const hash = await writeContract({
+        contractName: 'Token1',
+        functionName: 'transfer',
+        args: [to, amount],
+        address: token as `0x${string}`
+    })
+    return hash;
 }
 
 export const calculateInitEth = async (amount: bigint) => {
