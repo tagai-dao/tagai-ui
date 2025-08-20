@@ -243,9 +243,6 @@ onMounted(async () => {
             :tweet="tweet"
             @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
           >
-            <template #tweet-trade v-if="tweet.commerceId">
-              <CommerceBtn :tweet="tweet"/>
-            </template>
             <template #tweet-action-bar>
               <PostButtonGroup
                 @click.stop
