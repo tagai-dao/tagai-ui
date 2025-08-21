@@ -58,7 +58,8 @@ import { onMounted, ref } from 'vue';
 import { getCommunityTweetsWithTag } from '@/apis/api';
 import { useAccountStore } from '@/stores/web3';
 import { handleErrorTip, handleServerError } from '@/utils/notify';
-import { useCurationStore } from '@/stores/curation';
+import { useCurationStore } from '@/stores/curation'
+import { getTokenInfoOfTweets } from '@/utils/pump'
 
   const props = defineProps<{
     appData: MiniApp
@@ -79,9 +80,10 @@ import { useCurationStore } from '@/stores/curation';
         refreshing.value = true
         finished.value =false
         if (props.appData && props.appData.type === 1) {
-            const res: any = await getCommunityTweetsWithTag(props.appData.tick, props.appData.tag, 0, accStore.getAccountInfo?.twitterId)
-            console.log(432, res)
+            let res: any = await getCommunityTweetsWithTag(props.appData.tick, props.appData.tag, 0, accStore.getAccountInfo?.twitterId)
             showingTweets.value = res
+            showingTweets.value = await getTokenInfoOfTweets(showingTweets.value)
+
             if (res.length < 30) {
                 finished.value = true
             }
@@ -97,7 +99,8 @@ import { useCurationStore } from '@/stores/curation';
     try {
         if(refreshing.value || loading.value || finished.value || showingTweets.value.length === 0) return;
         loading.value = true;
-        const res: any = await getCommunityTweetsWithTag(props.appData.tick, props.appData.tag, showingTweets.value.length, accStore.getAccountInfo?.twitterId)
+        let res: any = await getCommunityTweetsWithTag(props.appData.tick, props.appData.tag, showingTweets.value.length, accStore.getAccountInfo?.twitterId)
+        res = await getTokenInfoOfTweets(res)
         showingTweets.value = showingTweets.value.concat(res)
         if (res.length < 30) {
             finished.value = true
