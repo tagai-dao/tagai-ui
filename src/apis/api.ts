@@ -264,3 +264,7 @@ export const setNewToken = async (twitterId: string, tick: string) =>
 
 export const getTokenByTickOrCA = async (tick: string) =>
   get(BACKEND_API_URL + '/twitterTip/getTokenByTickOrCA', {tick})
+
+/************************************  mini-app  **********************************/
+export const getMiniApps = async (tick: string) =>
+  get(BACKEND_API_URL + '/miniApp/getMiniApps', {tick})
