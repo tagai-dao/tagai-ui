@@ -399,3 +399,11 @@ export type IpShareUser = {
   supply: number,
   price?: number | null | undefined,
 }
+
+export type MiniApp = {
+  id: number,
+  name: string,
+  type: number,
+  tick: string,
+  tag: string
+}

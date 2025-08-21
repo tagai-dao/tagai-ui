@@ -8,10 +8,9 @@ import TagCredit from "@/views/tag-detail/TagCredit.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
-
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
 import { getCommunityDetail, getIpshareInfo, getConversationId, 
-      getCommunityDeployerIpshare, getCommunityDeployTweet, getMiniApps } from "@/apis/api";
+      getCommunityDeployerIpshare, getCommunityDeployTweet } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import {useInterval, usePageScroll, useTools} from "@/composables/useTools";
 import { handleErrorTip } from "@/utils/notify";
@@ -19,9 +18,7 @@ import { useAccountStore } from "@/stores/web3";
 import CreateBlinkModal from '@/components/common/CreateBlinkModal.vue'
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
-import None from "@/views/tag-detail/miniApps/None.vue";
-import CommonTag from "@/views/tag-detail/miniApps/CommonTag.vue";
-import Vote from "@/views/tag-detail/miniApps/Vote.vue";
+import MiniAppIndex from "@/views/tag-detail/miniApps/Index.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
@@ -45,7 +42,7 @@ const tabOptions = computed(() => {
       // {label: 'Group', key: 'group'},
       {label: 'Square', key: 'content'},
       // {label: 'Tipped', key: 'tipped'},
-      {label: 'Activity', key: 'activity'},
+      {label: 'activity', key: 'activity'},
       // {label: 'Trades', key: 'trade'},
       {label: 'Credit', key: 'credit'},
       {label: 'AI', key: 'ai'},
@@ -55,7 +52,7 @@ const tabOptions = computed(() => {
     // {label: 'Group', key: 'group'},
     {label: 'Square', key: 'content'},
     // {label: 'Tipped', key: 'tipped'},
-    {label: 'Activity', key: 'activity'},
+    {label: 'activity', key: 'activity'},
     {label: 'Trades', key: 'trade'},
     {label: 'Credit', key: 'credit'},
     {label: 'Token', key: 'token'},
@@ -100,8 +97,6 @@ const deployTweetList = ref([])
 
 const showTradeBox = ref(false)
 const {width} = useWindowSize()
-const miniAppVue = ref(None)
-
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
   if (!spaces || spaces.length == 0) return false;
@@ -230,10 +225,6 @@ onMounted(async () => {
     // @ts-ignore
     deployTweetList.value = deployTweet as Tweet[]
   }
-
-  const miniApps = await getMiniApps(comStore.currentSelectedCommunity!.tick)
-  
-  console.log('miniApps:', miniApps)
 
   updateProgress();
   setInter(updateProgress, 15000);
@@ -480,7 +471,7 @@ onBeforeRouteLeave((to, from, next) => {
             <TagCredit v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
             <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
-            <component :is="miniAppVue" v-if="activeTab==='activity'"/>
+            <MiniAppIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
