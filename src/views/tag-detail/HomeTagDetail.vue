@@ -18,6 +18,7 @@ import { useAccountStore } from "@/stores/web3";
 import CreateBlinkModal from '@/components/common/CreateBlinkModal.vue'
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
+import MiniAppIndex from "@/views/tag-detail/miniApps/Index.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
@@ -41,7 +42,7 @@ const tabOptions = computed(() => {
       // {label: 'Group', key: 'group'},
       {label: 'Square', key: 'content'},
       // {label: 'Tipped', key: 'tipped'},
-      {label: 'Proposal', key: 'proposal'},
+      {label: 'activity', key: 'activity'},
       // {label: 'Trades', key: 'trade'},
       {label: 'Credit', key: 'credit'},
       {label: 'AI', key: 'ai'},
@@ -51,7 +52,7 @@ const tabOptions = computed(() => {
     // {label: 'Group', key: 'group'},
     {label: 'Square', key: 'content'},
     // {label: 'Tipped', key: 'tipped'},
-    {label: 'Proposal', key: 'proposal'},
+    {label: 'activity', key: 'activity'},
     {label: 'Trades', key: 'trade'},
     {label: 'Credit', key: 'credit'},
     {label: 'Token', key: 'token'},
@@ -96,7 +97,6 @@ const deployTweetList = ref([])
 
 const showTradeBox = ref(false)
 const {width} = useWindowSize()
-
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
   if (!spaces || spaces.length == 0) return false;
@@ -471,6 +471,7 @@ onBeforeRouteLeave((to, from, next) => {
             <TagCredit v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
             <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
+            <MiniAppIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">

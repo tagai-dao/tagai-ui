@@ -60,6 +60,9 @@
   "posts": "Posts",
   "communities": "Community",
   "showMore": "Show more",
+  "activity": "Activity",
+  "Tweets": "Tweets",
+  "Space": "Spaces",
   "max": "Max",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
