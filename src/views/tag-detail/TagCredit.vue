@@ -90,24 +90,64 @@ onMounted(async () => {
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
   }
-  pieChartOptions.value = {
-    chart: {
-      type: 'pie',
-    },
-    labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days"],
-    series: [40, 30, 30],
-    colors,
-    responsive: [{
-      breakpoint: 480,
-      options: {
-        chart: {
-          width: 200
-        },
-        legend: {
-          position: 'bottom'
+  let creditPolicy = comStore.currentSelectedCommunity.creditPolicy
+  if (!creditPolicy) {
+    pieChartOptions.value = {
+      chart: {
+        type: 'pie',
+      },
+      labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days", "BNB Balance", "IPShare Mct"],
+      series: [40, 30, 30],
+      colors,
+      responsive: [{
+        breakpoint: 480,
+        options: {
+          chart: {
+            width: 200
+          },
+          legend: {
+            position: 'bottom'
+          }
         }
+      }]
+    }
+  } else {
+    const creditJO = JSON.parse(creditPolicy)
+    const labels = creditJO.map((item: any) => {
+      switch (item.type) {
+        case 1:
+          return comStore.currentSelectedCommunity?.tick + ' ' + t('balance')
+        case 2:
+          return comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance')
+        case 3:
+          return "Net buy in 3 days"
+        case 4:
+          return "BNB Balance"
+        case 5:
+          return "IPShare Mct"
+        default:
+          return ''
       }
-    }]
+    })
+    pieChartOptions.value = {
+      chart: {
+        type: 'pie',
+      },
+      labels,
+      series: creditJO.map((item: any) => item.ratio * 100),
+      colors,
+      responsive: [{
+        breakpoint: 480,
+        options: {
+          chart: {
+            width: 200
+          },
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }]
+    }
   }
   onRefresh()
 })
