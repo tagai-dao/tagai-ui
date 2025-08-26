@@ -20,7 +20,8 @@ let observer: any = null
 const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,},
   multiline: {type: Boolean, required: false},
-  showMarketCap: {type: Boolean, required: false, default: true}
+  showMarketCap: {type: Boolean, required: false, default: true},
+  textOnly: {type: Boolean, required: false, default: false}
 })
 
 const {formatEmojiText} = useTweet()
@@ -178,7 +179,7 @@ onUnmounted(() => {
         <div v-if="tweet.videoLink" class="pl-12">
             <video ref="video" controls loop playsinline webkit-playsinline muted :src="tweet.videoLink"></video>
         </div>
-        <div class="px-3 md:pl-12">
+        <div v-if="!textOnly" class="px-3 md:pl-12">
           <!--       foreign page -->
           <LinkPreview @click.stop="clickLinkView()" class="cursor-pointer"
                        v-if="showPageInfo && !isIgnoreAccount" :pageInfo="tweet.pageInfo ?? ''" />
