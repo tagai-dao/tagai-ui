@@ -1,6 +1,6 @@
 <template>
     <div>
-        <div class="flex justify-between mb-2">
+        <div class="flex justify-between mb-2 overflow-x-auto no-scroll-bar">
             <div class="flex items-center justify-between gap-2 ">
             <button v-for="app in miniApps" class="text-h3 text-black h-8 rounded-full px-3 text-white" 
                 :class="(selectedApp?.id === app.id) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
