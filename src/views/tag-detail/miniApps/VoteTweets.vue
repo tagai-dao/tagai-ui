@@ -105,7 +105,7 @@
   const loading = ref(false);
   const finished = ref(false)
 
-  const showingTweets = ref([])
+  const showingTweets = ref<Tweet[]>([])
 
   async function onRefresh() {
     try {
