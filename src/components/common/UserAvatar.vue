@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { useTools } from "@/composables/useTools";
-import { computed } from "vue";
-import { formatAddress, formatAmount } from "@/utils/helper";
+import { computed, onMounted, ref } from "vue";
+import { formatAddress, formatAmount, formatPrice } from "@/utils/helper";
 import { useRouter } from 'vue-router';
+import { useCommunityStore } from "@/stores/community";
+import { useStateStore } from "@/stores/common";
 
 const router = useRouter()
-
+const comStore = useCommunityStore()
+const stateStore = useStateStore()
 const props = withDefaults(defineProps<{
     twitterId?: string | null | undefined,
     profileImg: string | null | undefined,
@@ -30,11 +33,28 @@ const props = withDefaults(defineProps<{
     creditFactor: ''
 })
 
-const creditType = [
+const creditJO = ref<any[]>([{
+  type: 1,
+  value: 0
+}, {
+  type: 2,
+  value: 0
+}, {
+  type: 3,
+  value: 0
+}, {
+  type: 4,
+  value: 0
+}, {
+  type: 5,
+  value: 0
+}])
+
+const creditType = ref([
   "Balance",
   "LP",
   "Net buy"
-]
+])
 
 const profile = computed(() => {
     if (!props.profileImg) return ''
@@ -57,6 +77,29 @@ function replaceEmptyImg(e: any) {
 function gotoUser() {
     router.push('/user/' + props.username)
 }
+
+onMounted(() => {
+  console.log(33, comStore.currentSelectedCommunity)
+  if (comStore.currentSelectedCommunity && comStore.currentSelectedCommunity.creditPolicy) {
+    creditJO.value = JSON.parse(comStore.currentSelectedCommunity.creditPolicy)
+    creditType.value = creditJO.value.map((item: any) => {
+      switch (item.type) {
+        case 1:
+          return comStore.currentSelectedCommunity!.tick + " Balance"
+        case 2:
+          return comStore.currentSelectedCommunity!.tick + "-LP Balance"
+        case 3:
+          return "Net buy"
+        case 4:
+          return "BNB Balance"
+        case 5:
+          return "IPShare Mct"
+        default:
+          return ""
+      }
+    })
+  }
+})
 
 </script>
 
@@ -106,7 +149,8 @@ function gotoUser() {
         >
           <div class="flex justify-between">
             <span class="text-sm text-grey-normal">{{ creditType[index] }}</span>
-            <span class="text-sm text-black font-semibold">{{ formatAmount(factor || 0) }}</span>
+            <span v-if="creditJO[index].type === 5" class="text-sm text-black font-semibold">{{ formatPrice((factor || 0) * stateStore.ethPrice) }}</span>
+            <span v-else class="text-sm text-black font-semibold">{{ formatAmount(factor || 0) }}</span>
           </div>
         </div>
         <div v-if="props.ethAddr" class="pl-10 mt-2 text-grey-normal">
