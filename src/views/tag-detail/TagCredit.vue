@@ -19,7 +19,21 @@ const finished = ref(false);
 const showCreditChart = ref(false);
 const holdingList = ref<CommunityCredit[]>([]);
 const { onCopy } = useTools()
-const colors = ['#FE913F', '#FACA83', '#FFDDC3', '#E58339', '#CB7432']
+const colors = ['#4E79A7',
+'#F28E2B',
+'#E15759',
+'#76B7B2',
+'#59A14F',
+'#EDC948',
+'#B07AA1',  
+'#FF9DA7',
+'#9C755F',
+'#BAB0AC',
+'#1F77B4',
+'#FF7F0E',
+'#2CA02C',
+'#D62728',
+'#9467BD']
 
 const pieChartOptions = ref({
   chart: {
@@ -125,6 +139,8 @@ onMounted(async () => {
           return "BNB Balance"
         case 5:
           return "IPShare Mct"
+        case 6: 
+          return item.showingName
         default:
           return ''
       }
