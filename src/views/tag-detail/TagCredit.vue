@@ -248,12 +248,13 @@ onMounted(async () => {
     <el-dialog v-model="showCreditChart"
           class="max-w-[500px] rounded-[20px]"
           width="90%" :show-close="false" align-center destroy-on-close>
-          <div class="flex flex-col items-center py-4">
+          <div class="flex flex-col items-center py-4 w-full">
             <h3 class="text-xl font-bold mb-4">{{ t('credit') }}</h3>
             <VueApexCharts
               type="pie"
               :options="pieChartOptions"
               :series="pieChartOptions.series"
+              class="w-full"
             />
             <p class="text-gray-600 text-center mt-4 px-4">
               {{ t('community.creditDescription') }}
