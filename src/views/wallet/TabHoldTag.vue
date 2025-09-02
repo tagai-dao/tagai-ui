@@ -124,7 +124,7 @@ onMounted(async () => {
           </div>
           <div class="flex gap-2">
             <button @click.stop="transferTick(holding)"
-                    class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}
+                    class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('transfer')}}
             </button>
               <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"
                     class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}
