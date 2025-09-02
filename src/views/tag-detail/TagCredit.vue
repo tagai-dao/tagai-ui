@@ -38,6 +38,7 @@ const colors = ['#4E79A7',
 const pieChartOptions = ref({
   chart: {
     type: 'pie',
+    width: '100%'
   },
   labels: ['User 1', 'User 2', 'User 3', 'User 4', 'User 5'],
   series: [44, 55, 13, 43, 22],
@@ -46,7 +47,7 @@ const pieChartOptions = ref({
     breakpoint: 480,
     options: {
       chart: {
-        width: 200
+        width: '100%'
       },
       legend: {
         position: 'bottom'
@@ -109,6 +110,7 @@ onMounted(async () => {
     pieChartOptions.value = {
       chart: {
         type: 'pie',
+        width: '100%'
       },
       labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days", "BNB Balance", "IPShare MCap"],
       series: [40, 30, 30],
@@ -117,7 +119,7 @@ onMounted(async () => {
         breakpoint: 480,
         options: {
           chart: {
-            width: 200
+            width: '100%'
           },
           legend: {
             position: 'bottom'
@@ -148,6 +150,7 @@ onMounted(async () => {
     pieChartOptions.value = {
       chart: {
         type: 'pie',
+        width: '100%'
       },
       labels,
       series: creditJO.map((item: any) => item.ratio * 100),
@@ -156,7 +159,7 @@ onMounted(async () => {
         breakpoint: 480,
         options: {
           chart: {
-            width: 200
+            width: '100%'
           },
           legend: {
             position: 'bottom'
@@ -245,15 +248,14 @@ onMounted(async () => {
     <el-dialog v-model="showCreditChart"
           class="max-w-[500px] rounded-[20px]"
           width="90%" :show-close="false" align-center destroy-on-close>
-          <div class="flex flex-col items-center p-4">
+          <div class="flex flex-col items-center py-4">
             <h3 class="text-xl font-bold mb-4">{{ t('credit') }}</h3>
             <VueApexCharts
               type="pie"
               :options="pieChartOptions"
               :series="pieChartOptions.series"
-              class="w-full"
             />
-            <p class="text-gray-600 text-center mt-4">
+            <p class="text-gray-600 text-center mt-4 px-4">
               {{ t('community.creditDescription') }}
             </p>
           </div>
