@@ -93,7 +93,7 @@ onMounted(() => {
         case 4:
           return "BNB Balance"
         case 5:
-          return "IPShare Mct"
+          return "IPShare MCap"
         case 6:
           return item.showingName
         default:

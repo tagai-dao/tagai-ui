@@ -110,7 +110,7 @@ onMounted(async () => {
       chart: {
         type: 'pie',
       },
-      labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days", "BNB Balance", "IPShare Mct"],
+      labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days", "BNB Balance", "IPShare MCap"],
       series: [40, 30, 30],
       colors,
       responsive: [{
@@ -138,7 +138,7 @@ onMounted(async () => {
         case 4:
           return "BNB Balance"
         case 5:
-          return "IPShare Mct"
+          return "IPShare MCap"
         case 6: 
           return item.showingName
         default:
