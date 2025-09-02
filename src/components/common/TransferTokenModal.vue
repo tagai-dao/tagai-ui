@@ -61,7 +61,6 @@ const validateAmount = (amount: string) => {
   }
   
   // 检查余额是否足够
-  console.log(333, amount, accStore.ethBalance)
   if (parseEther(amount.toString()) > tokenBalance.value) {
     return t('profileView.tipError4');
   }
