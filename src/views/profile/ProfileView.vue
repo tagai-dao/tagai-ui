@@ -12,6 +12,10 @@ import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useRoute } from "vue-router";
+import {applyPureReactInVue} from "veaury";
+import LogoutOAuth from '@/react_app/Logout.jsx'
+
+const ReactLogoutOAuth = applyPureReactInVue(LogoutOAuth);
 
 const accStore = useAccountStore()
 const tabOptions = ['post', 'createCoin']
@@ -108,9 +112,12 @@ onMounted(() => {
           <span>{{ accStore.getAccountInfo.followings }} {{ $t('profileView.followings') }}</span>
           <span>{{ accStore.getAccountInfo.followers }} {{ $t('profileView.followers') }}</span>
         </div>
-        <button @click="logout();$router.replace('/')">
-          <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
-        </button>
+<!--        <button @click="logout();$router.replace('/')">-->
+<!--          <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">-->
+<!--        </button>-->
+        <div @click="logout();$router.replace('/')">
+          <ReactLogoutOAuth/>
+        </div>
       </div>
       <div v-if="accStore.getAccountInfo.farcasterName && accStore.getAccountInfo.isAuthFarcaster" class="pl-14 flex justify-start items-center gap-3a mt-2">
         <img class="w-4 h-4" src="~@/assets/icons/icon-farcaster.svg" alt="">

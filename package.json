@@ -11,10 +11,6 @@
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
-  "overrides": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
   "dependencies": {
     "@binance/w3w-ethereum-provider": "^1.1.8-alpha.0",
     "@debox-pro/chat-widget-html": "^0.0.3",
@@ -24,6 +20,7 @@
     "@noble/hashes": "^1.8.0",
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@privy-io/js-sdk-core": "^0.53.1",
+    "@privy-io/react-auth": "^2.24.0",
     "@types/lodash.debounce": "^4.0.9",
     "@vant/compat": "^1.0.1",
     "apexcharts": "^5.3.1",
@@ -36,10 +33,13 @@
     "lodash.debounce": "^4.0.8",
     "mitt": "^3.0.1",
     "pinia": "^2.1.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "steem": "^0.7.11",
     "tweetnacl": "^1.0.3",
     "tweetnacl-util": "^0.15.1",
     "vant": "^4.9.1",
+    "veaury": "^2.6.3",
     "viem": "^2.33.1",
     "vue": "^3.4.29",
     "vue-cropper": "^1.1.4",
@@ -55,6 +55,9 @@
     "@rushstack/eslint-patch": "^1.8.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^20.14.5",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.2",
     "@vitejs/plugin-vue": "^5.0.5",
     "@vitejs/plugin-vue-jsx": "^4.0.0",
     "@vue/eslint-config-typescript": "^13.0.0",

@@ -9,6 +9,14 @@ import App from './App.vue'
 import router from './router'
 import './assets/style/main.css'
 
+import { createRoot } from 'react-dom/client'
+import { setVeauryOptions } from 'veaury'
+setVeauryOptions({
+    react: {
+        createRoot
+    }
+})
+
 const app = createApp(App)
 app.config.globalProperties.$apexcharts = VueApexCharts;
 

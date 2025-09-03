@@ -3,9 +3,12 @@ import {onMounted, ref} from "vue";
 import {handleErrorTip} from "@/utils/notify";
 import { onUnmounted } from "vue";
 import { useUserStore } from "@/stores/privy";
+import {applyPureReactInVue} from "veaury";
+import LoginWithOAuth from "@/react_app/LoginWithOAuth.jsx";
 
 const logging = ref(false);
 const privyStore = useUserStore()
+const ReactLoginWithOAuth = applyPureReactInVue(LoginWithOAuth);
 
 /**
  * Login with privy
@@ -46,6 +49,7 @@ onUnmounted(() => {
           <!-- <el-checkbox :label="$t('loginView.authLikeTip')" v-model="authLike" />
           <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" /> -->
         </div>
+        <ReactLoginWithOAuth/>
         <button @click="login" :disabled="logging"
                 class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2">
           <span class="text-white text-h5">

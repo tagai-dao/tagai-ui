@@ -9,6 +9,10 @@ import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 import { useUserStore } from "@/stores/privy";
 import { GlobalModalType } from "@/types";
 import emitter from "@/utils/emitter";
+import {applyPureReactInVue} from "veaury";
+import Wallet from "@/react_app/Wallet.jsx";
+
+const ReactWallet = applyPureReactInVue(Wallet);
 
 const accStore = useAccountStore()
 const privyStore = useUserStore()
@@ -60,6 +64,7 @@ onMounted(() => {
         <div class="flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
             <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
+        <ReactWallet/>
       </div>
       <div class="pl-12 flex justify-start items-center mt-2 gap-1">
         {{ $t('balance') }}: 
