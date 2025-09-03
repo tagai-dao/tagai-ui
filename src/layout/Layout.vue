@@ -20,6 +20,7 @@ import {applyPureReactInVue} from "veaury";
 import ReactApp from "@/react_app/App.jsx";
 import {useAccountStore} from "@/stores/web3";
 import {notify} from "@/utils/notify";
+import {useUserStore} from "@/stores/privy";
 
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
@@ -39,12 +40,17 @@ const handleReactLoginError = async () => {
   });
 }
 
+const handleWalletProvider = async (provider: any) => {
+  await useUserStore().initWallet(provider)
+}
+
 const modalStore = useModalStore()
 
 const cachedComponents = ref(['HomeView'])
 onMounted( () => {
   emitter.on('authSuccess', handleReactLoginSuccess);
   emitter.on('authError', handleReactLoginError);
+  emitter.on('walletProvider', handleWalletProvider);
   emitter.on('setPageAliveState', async (params: any) => {
     if(params.isAlive) cachedComponents.value.push(params.pageName)
     else {

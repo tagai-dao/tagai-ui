@@ -14,6 +14,8 @@ import type { Account } from "@/types";
 import emitter from "@/utils/emitter";
 import { notify } from "@/utils/notify";
 import { useAccount } from "@/composables/useAccount";
+import {abis} from "@/utils/abis";
+import {bsc} from "viem/chains";
 
 export const useUserStore = defineStore("user", () => {
   const user = ref<OAuthResult["user"] | null>(null);
@@ -208,68 +210,67 @@ export const useUserStore = defineStore("user", () => {
     router.replace(localStorage.getItem('current-route') || '/');
   }
 
-  async function initWallet() {
+  async function initWallet(provider: any) {
     try {
-      useAccountStore().ethConnectState = EthWalletState.Connecting;
-      console.log('Starting wallet initialization...');
-      
-      // 1. 检查用户是否已认证
-      const currentUser = await privy.user.get();
-      console.log('Current user:', currentUser);
-      
-      // 2. 如果没有连接则退出
-      if (!currentUser || !currentUser.user.id) {
-        console.log('User not authenticated, exiting wallet initialization');
-        return;
-      }
-      
-      console.log('User authenticated, checking embedded wallet...');
-      
-      // 3. 检查embedded wallet是否可用
-      if (!privy.embeddedWallet) {
-        throw new Error('Embedded wallet not available');
-      }
-      
-      // 4. 检查iframe是否已加载
-      try {
-        const iframeUrl = privy.embeddedWallet.getURL();
-        console.log('Iframe URL available:', iframeUrl);
-      } catch (error) {
-        console.error('Iframe not ready:', error);
-        throw new Error('Privy iframe not initialized. Please ensure iframe is loaded before creating wallet.');
-      }
-      
-      // 5. 检查embedded钱包是否已创建
-      let embeddedAccount = currentUser.user.linked_accounts.find((item: any) => item.type === 'wallet' && item.connector_type === 'embedded');
-      
-      if (!embeddedAccount) {
-        // 6. 如果没有创建，则创建一个新的embedded钱包
-        console.log('No embedded wallet found, creating new one...');
-        const updatedUser = await privy.embeddedWallet.create({});
-        embeddedAccount = updatedUser.user.linked_accounts.find((item: any) => item.type === 'wallet' && item.connector_type === 'embedded');
-        console.log('Created embedded wallet:', embeddedAccount);
-        currentUser.user = updatedUser.user;
-      } else {
-        console.log('Embedded wallet already exists:', embeddedAccount);
-      }
-
-      // 7. 构建provider
-      const wallet = getUserEmbeddedEthereumWallet(currentUser.user);
-      const { entropyId, entropyIdVerifier } = getEntropyDetailsFromUser(currentUser.user) as any;
-      
-      console.log('Wallet details:', { wallet, entropyId, entropyIdVerifier });
-      
-      const provider = await privy.embeddedWallet.getEthereumProvider({  
-          wallet: wallet as any,
-          entropyId,
-          entropyIdVerifier
-      });
+      // useAccountStore().ethConnectState = EthWalletState.Connecting;
+      // console.log('Starting wallet initialization...');
+      //
+      // // 1. 检查用户是否已认证
+      // const currentUser = await privy.user.get();
+      // console.log('Current user:', currentUser);
+      //
+      // // 2. 如果没有连接则退出
+      // if (!currentUser || !currentUser.user.id) {
+      //   console.log('User not authenticated, exiting wallet initialization');
+      //   return;
+      // }
+      //
+      // console.log('User authenticated, checking embedded wallet...');
+      //
+      // // 3. 检查embedded wallet是否可用
+      // if (!privy.embeddedWallet) {
+      //   throw new Error('Embedded wallet not available');
+      // }
+      //
+      // // 4. 检查iframe是否已加载
+      // try {
+      //   const iframeUrl = privy.embeddedWallet.getURL();
+      //   console.log('Iframe URL available:', iframeUrl);
+      // } catch (error) {
+      //   console.error('Iframe not ready:', error);
+      //   throw new Error('Privy iframe not initialized. Please ensure iframe is loaded before creating wallet.');
+      // }
+      //
+      // // 5. 检查embedded钱包是否已创建
+      // let embeddedAccount = currentUser.user.linked_accounts.find((item: any) => item.type === 'wallet' && item.connector_type === 'embedded');
+      //
+      // if (!embeddedAccount) {
+      //   // 6. 如果没有创建，则创建一个新的embedded钱包
+      //   console.log('No embedded wallet found, creating new one...');
+      //   const updatedUser = await privy.embeddedWallet.create({});
+      //   embeddedAccount = updatedUser.user.linked_accounts.find((item: any) => item.type === 'wallet' && item.connector_type === 'embedded');
+      //   console.log('Created embedded wallet:', embeddedAccount);
+      //   currentUser.user = updatedUser.user;
+      // } else {
+      //   console.log('Embedded wallet already exists:', embeddedAccount);
+      // }
+      //
+      // // 7. 构建provider
+      // const wallet = getUserEmbeddedEthereumWallet(currentUser.user);
+      // const { entropyId, entropyIdVerifier } = getEntropyDetailsFromUser(currentUser.user) as any;
+      //
+      // console.log('Wallet details:', { wallet, entropyId, entropyIdVerifier });
+      //
+      // const provider = await privy.embeddedWallet.getEthereumProvider({
+      //     wallet: wallet as any,
+      //     entropyId,
+      //     entropyIdVerifier
+      // });
 
       viemWalletClient.value = createWalletClient({
         chain: customBsc,
         transport: custom(provider)
       })
-
       ethersProvider.value = provider;
 
       const accStore = useAccountStore();

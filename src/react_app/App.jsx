@@ -2,6 +2,7 @@ import React from 'react';
 import {PrivyProvider, useOAuthTokens} from '@privy-io/react-auth';
 import AuthLoading from "@/react_app/AuthLoading.jsx";
 import {PrivyConfig} from "@/config.ts";
+import {customBsc} from "@/utils/privy.ts";
 
 function ReactApp(props) {
     return (
@@ -14,7 +15,8 @@ function ReactApp(props) {
                     ethereum: {
                         createOnLogin: 'users-without-wallets'
                     }
-                }
+                },
+                supportedChains: [customBsc]
             }}
         >
             <AuthLoading/>

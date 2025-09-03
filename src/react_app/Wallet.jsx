@@ -1,20 +1,24 @@
 import React from "react";
 import {useOAuthTokens, usePrivy} from '@privy-io/react-auth';
-import {useEffect} from "react";
-import {privyLogin} from "@/apis/api.ts";
-import emitter from "@/utils/emitter.ts";
+import {useEffect, useState} from "react";
 
 export default function Wallet() {
     const {ready, authenticated, user, exportWallet} = usePrivy();
-    // Check that your user is authenticated
-    const isAuthenticated = ready && authenticated;
-    // Check that your user has an embedded wallet
-    const hasEmbeddedWallet = !!user.linkedAccounts.find(
-        (account) =>
-            account.type === 'wallet' &&
-            account.walletClientType === 'privy' &&
-            account.chainType === 'ethereum'
-    );
+    const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const [hasEmbeddedWallet, setEmbeddedWallet] = useState(false)
+
+    useEffect(() => {
+        if(ready && authenticated) {
+            setIsAuthenticated(ready && authenticated)
+            const hasEmbeddedWallet = !!user.linkedAccounts.find(
+                (account) =>
+                    account.type === 'wallet' &&
+                    account.walletClientType === 'privy' &&
+                    account.chainType === 'ethereum'
+            );
+            setEmbeddedWallet(hasEmbeddedWallet)
+        }
+    }, [ready, authenticated])
 
     return (
         <button onClick={exportWallet} disabled={!isAuthenticated || !hasEmbeddedWallet}
