@@ -185,7 +185,6 @@ async function selectBitip() {
         if (!wallet) return
         btcWallet.value = wallet
         const res: any = await getUserBitip(wallet.btcAddr)
-        console.log(233, res, wallet.btcAddr)
         if (res && res.length > 0) {
             bitips.value = res.map((b: any) => b.content)
         }

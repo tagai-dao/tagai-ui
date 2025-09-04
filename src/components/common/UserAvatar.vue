@@ -79,7 +79,6 @@ function gotoUser() {
 }
 
 onMounted(() => {
-  // console.log(33, comStore.currentSelectedCommunity)
   if (comStore.currentSelectedCommunity && comStore.currentSelectedCommunity.creditPolicy) {
     creditJO.value = JSON.parse(comStore.currentSelectedCommunity.creditPolicy)
     creditType.value = creditJO.value.map((item: any) => {
