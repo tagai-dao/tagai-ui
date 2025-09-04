@@ -1,4 +1,4 @@
-import {useLoginWithOAuth, useOAuthTokens, useWallets} from "@privy-io/react-auth";
+import {useLoginWithOAuth, useOAuthTokens, useWallets, useCreateWallet} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
 import {useEffect} from "react";
@@ -6,13 +6,26 @@ import {useEffect} from "react";
 export default function AuthLoading() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
     const {wallets, ready} = useWallets()
+    const { createWallet } = useCreateWallet({
+        onSuccess: (async ({wallet}) => {
+            const provider = await wallet.getEthereumProvider()
+            emitter.emit('walletProvider', provider)
+        }),
+        onError: (error) => {
+            console.log(error)
+        }
+    })
 
     useEffect(() => {
         async function getWalletProvider() {
             if(ready) {
-                console.log(ready, wallets)
-                const provider = await wallets[0].getEthereumProvider()
+                if (wallets.length === 0 || !wallets.find((wallet) => wallet.walletClientType === 'privy')) {
+                   await createWallet()
+                    return;
+                }
+                const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy').getEthereumProvider()
                 emitter.emit('walletProvider', provider)
+
                 console.log(provider)
             }
 

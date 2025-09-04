@@ -12,7 +12,7 @@ import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { aggregate } from '@makerdao/multicall'
 import { isAddress, zeroAddress } from "viem";
-import { useUserStore } from "@/stores/privy";
+import { usePrivyStore } from "@/stores/privy";
 
 export enum AccountAuthType {
     TWITTER,
@@ -292,10 +292,7 @@ export const useAccount = () => {
     }
 
     const logout = () => {
-        // twitterLogout(useAccountStore().getAccountInfo.twitterId).catch()
-        if (useUserStore().iframeInitialized) {
-            useUserStore().logout();
-        }
+        usePrivyStore().logout();
         useAccountStore().clear();
     }
 

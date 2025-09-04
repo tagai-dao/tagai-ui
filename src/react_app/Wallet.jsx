@@ -23,7 +23,7 @@ export default function Wallet() {
     return (
         <button onClick={exportWallet} disabled={!isAuthenticated || !hasEmbeddedWallet}
                 className='h-8 ml-3 bg-gradient-primary rounded-full px-3 text-white text-h5 hover:opacity-90 transition-all duration-200'>
-            Export my wallet
+            Export
         </button>
     );
 }

@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { useModalStore } from "@/stores/common";
 import { getProviders, setActiveProviderDetail, setMetaMaskSDK } from "@/utils/wallets";
-import { computed, ref, onMounted } from "vue";
-import { useUserStore } from "@/stores/privy";
+import { computed, ref } from "vue";
 import { useAccountStore } from "@/stores/web3";
-const privyStore = useUserStore();
 const modalStore = useModalStore();
 const loading = ref(false);
 const providers = computed(() => {

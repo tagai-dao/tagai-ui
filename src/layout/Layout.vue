@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {RouterView} from "vue-router";
+import {RouterView, useRouter} from "vue-router";
 import TopBar from "@/layout/TopBar.vue";
 import TabBar from "@/layout/TabBar.vue";
 import Sidebar from "@/layout/Sidebar.vue";
@@ -20,17 +20,45 @@ import {applyPureReactInVue} from "veaury";
 import ReactApp from "@/react_app/App.jsx";
 import {useAccountStore} from "@/stores/web3";
 import {notify} from "@/utils/notify";
-import {useUserStore} from "@/stores/privy";
+import {usePrivyStore} from "@/stores/privy";
+import { bondEth, twitterLogin } from "@/apis/api";
+import { signMessage } from "@/utils/wallets";
+import { BondEthMessage } from "@/config";
+import { isAddress } from "viem";
+import { useAccount } from "@/composables/useAccount";
+
+const router = useRouter();
+const accStore = useAccountStore();
+const { updateVPOP } = useAccount();
 
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
-const handleReactLoginSuccess = async (data: any) => {
-  useAccountStore().setAccount(
-      {
-        ...data,
-        authLike: true,
-        authPost: true
-      } as Account)
+const handleReactLoginSuccess = async (accInfo: any) => {
+  console.log('accInfo', accInfo)
+  accStore.setAccount(accInfo)
+  if (accInfo && (accInfo.walletType === 1 || !accInfo.ethAddr)) {
+    if (!accInfo.ethAddr) {
+      await bondEthAddress()
+    }
+  } 
+  updateVPOP().catch();
+  router.replace(localStorage.getItem('current-route') || '/')
+}
+
+const bondEthAddress = async () => {
+    // bind ethAddr for new login user
+    const signature = await signMessage(BondEthMessage);
+    if (!signature) {
+      throw new Error('Signature is null')
+    }
+    const accInfo = accStore.getAccountInfo;
+    await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
+    accInfo.ethAddr = accStore.ethConnectAddress
+    accStore.setAccount({
+      ...accInfo,
+      ethAddr: accStore.ethConnectAddress,
+      walletType: 1
+    })
 }
 const handleReactLoginError = async () => {
   notify({
@@ -41,7 +69,11 @@ const handleReactLoginError = async () => {
 }
 
 const handleWalletProvider = async (provider: any) => {
-  await useUserStore().initWallet(provider)
+  await usePrivyStore().initWallet(provider)
+  if (accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
+    return;
+  }
+  await bondEthAddress()
 }
 
 const modalStore = useModalStore()

@@ -5,9 +5,12 @@ export default function LogoutOAuth() {
 
     const handleLogin = async () => {
         try {
+            console.log('start log out')
             await logout()
+            console.log('log out success')
         } catch (err) {
             console.error(err);
+            console.log('log out error')
         }
     };
 
