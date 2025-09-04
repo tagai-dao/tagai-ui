@@ -6,24 +6,21 @@ import { useAccount } from "@/composables/useAccount";
 import { formatAddress, formatBalance } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
 import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
-import { useUserStore } from "@/stores/privy";
-import { GlobalModalType } from "@/types";
-import emitter from "@/utils/emitter";
+import { usePrivyStore } from "@/stores/privy";
+import {applyPureReactInVue} from "veaury";
+import Wallet from "@/react_app/Wallet.jsx";
+
+const ReactWallet = applyPureReactInVue(Wallet);
 
 const accStore = useAccountStore()
-const privyStore = useUserStore()
+const privyStore = usePrivyStore()
 const tabOptions = ['holding', 'socialAccount']
 const activeTab = ref('socialAccount')
 const showPrivyModal = ref(false)
-const needClaim = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
 
 async function disconnect() {
-  if (accStore.getWalletType === 'privy-twitter') {
-    await privyStore.logout();
-  }
-  
   accStore.ethConnectState = EthWalletState.Disconnect;
   accStore.ethConnectAddress = '';
   accStore.ethWalletType = 'none';
@@ -60,6 +57,7 @@ onMounted(() => {
         <div class="flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
             <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
+        <ReactWallet v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected" />
       </div>
       <div class="pl-12 flex justify-start items-center mt-2 gap-1">
         {{ $t('balance') }}: 

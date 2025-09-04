@@ -252,7 +252,7 @@ function extractRevertReasonFromError(errorString: string): string | null {
   try {
     const error = JSON.parse(errorMatch?.[1] || '{}')
     console.log(5, error)
-    return error.error.data;
+    return error.error?.data;
   } catch (error) {
     console.log(4, error)
     return null;

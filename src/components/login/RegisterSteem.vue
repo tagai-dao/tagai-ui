@@ -145,6 +145,7 @@ async function payToken() {
         loading.value = false
     }finally{
         useModalStore().setModalCloseEnable(true);
+        loading.value = false
     }
 }
 

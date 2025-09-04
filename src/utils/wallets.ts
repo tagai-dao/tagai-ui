@@ -5,7 +5,7 @@ import { uiLog } from '@/apis/api';
 import { MetaMaskSDK } from '@metamask/sdk';
 import { getProvider as getBNProvider } from "@binance/w3w-ethereum-provider";
 import { ChainConfig } from "@/config"
-import { useUserStore } from '@/stores/privy';
+import { usePrivyStore } from '@/stores/privy';
 import { createWalletClient, createPublicClient, custom, http } from 'viem';
 import { customBsc } from './privy';
 
@@ -42,7 +42,7 @@ export const getProviders = () => {
 
 export const getProvider = () => {
     const accStore = useAccountStore();
-    const privyStore = useUserStore();
+    const privyStore = usePrivyStore();
     if (accStore.getWalletType === 'privy-twitter') {
         return privyStore.ethersProvider;
     }
@@ -67,7 +67,7 @@ export const getWalletClient = () => {
     const accStore = useAccountStore();
     const accInfo = accStore.getAccountInfo;
     if (accInfo?.twitterId && (accInfo?.walletType === 1 || !accInfo?.ethAddr)) {
-        const privyStore = useUserStore();
+        const privyStore = usePrivyStore();
         if (!privyStore.viemWalletClient) {
             return null;
         }

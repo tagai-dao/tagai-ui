@@ -1,5 +1,4 @@
 // src/utils/privy-types.ts
-import type Privy from "@privy-io/js-sdk-core";
 
 
 /** 自定义 Privy connected wallet 类型 */
