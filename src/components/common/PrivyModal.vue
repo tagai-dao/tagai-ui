@@ -11,7 +11,6 @@ import { transferEthTo } from '@/utils/wallets'
 import { parseEther } from 'viem'
 import { notify } from '@/utils/notify'
 import { useRouter } from 'vue-router'
-import { privy } from '@/utils/privy'
 
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
@@ -100,22 +99,6 @@ const handleRecharge = () => {
 
 const handleWithdraw = () => {
   currentPage.value = 'withdraw'
-}
-
-const handleBackupWallet = async () => {
- 
-}
-
-const getUserId = async () => {
-  const user = await privy.user.get();
-  console.log(user);
-  if (user && user.user && user.user.linked_accounts.length > 0) {
-    const currentUser = user.user.linked_accounts.find((user: any) => user.address == accStore.getAccountInfo?.ethAddr);
-    if (currentUser && 'id' in currentUser) {
-      return currentUser.id;
-    }
-  }
-  return null;
 }
 
 const handleDisconnectWallet = async () => {
