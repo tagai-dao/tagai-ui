@@ -26,6 +26,7 @@ import { signMessage } from "@/utils/wallets";
 import { BondEthMessage } from "@/config";
 import { isAddress } from "viem";
 import { useAccount } from "@/composables/useAccount";
+import { sleep } from "@/utils/helper";
 
 const router = useRouter();
 const accStore = useAccountStore();
@@ -46,19 +47,24 @@ const handleReactLoginSuccess = async (accInfo: any) => {
 }
 
 const bondEthAddress = async () => {
-    // bind ethAddr for new login user
-    const signature = await signMessage(BondEthMessage);
-    if (!signature) {
-      throw new Error('Signature is null')
-    }
     const accInfo = accStore.getAccountInfo;
-    await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
     accInfo.ethAddr = accStore.ethConnectAddress
     accStore.setAccount({
       ...accInfo,
       ethAddr: accStore.ethConnectAddress,
       walletType: 1
     })
+
+    // bind ethAddr for new login user
+    let signature = await signMessage(BondEthMessage);
+    if (!signature) {
+      await sleep(5)
+      signature = await signMessage(BondEthMessage);
+      if (!signature) {
+        throw new Error('Signature is null')
+      }
+    }
+    await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
 }
 const handleReactLoginError = async () => {
   notify({
