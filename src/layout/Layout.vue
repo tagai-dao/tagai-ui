@@ -64,6 +64,7 @@ const bondEthAddress = async () => {
         throw new Error('Signature is null')
       }
     }
+    console.log('new bond address')
     await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
 }
 const handleReactLoginError = async () => {
