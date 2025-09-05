@@ -1,4 +1,5 @@
 import {usePrivy} from '@privy-io/react-auth';
+import logoutIcon from '@/assets/icons/icon-logout.svg';
 
 export default function LogoutOAuth() {
     const { logout } = usePrivy();
@@ -16,8 +17,7 @@ export default function LogoutOAuth() {
 
     return (
         <button onClick={handleLogin}>
-            <img className="w-4 h-4 min-w-4" src={require('~@/assets/icons/icon-logout.svg')} alt="Logout" />
+            <img className="w-4 h-4 min-w-4" src={logoutIcon} alt="Logout" />
         </button>
-    )
-        ;
+    );
 }
