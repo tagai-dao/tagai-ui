@@ -8,6 +8,7 @@ import { useAccountStore } from "./web3";
 import { EthWalletState } from "./web3";
 import { useAccount } from "@/composables/useAccount";
 import { sleep } from "@/utils/helper";
+import { isAddress } from "viem";
 
 export const usePrivyStore = defineStore("privy", () => {
   const viemWalletClient = ref<WalletClient | null>(null);
@@ -24,7 +25,12 @@ export const usePrivyStore = defineStore("privy", () => {
       let count = 1
       while(count < 5) {
         try {
-          if (accStore.getAccountInfo?.walletType == 1) {
+          if (accStore.getAccountInfo?.ethAddr 
+              && isAddress(accStore.getAccountInfo.ethAddr) 
+              && accStore.getAccountInfo.walletType === 0) 
+          {
+            accStore.ethWalletType = 'metamask';
+          } else {
             viemWalletClient.value = createWalletClient({
               chain: customBsc,
               transport: custom(provider)
@@ -36,8 +42,6 @@ export const usePrivyStore = defineStore("privy", () => {
             accStore.ethConnectState = EthWalletState.Connected;
             accStore.ethWalletType = 'privy-twitter';
             return;
-          } else {
-            accStore.ethWalletType = 'metamask';
           }
         } catch (error) {
           console.error('Error initializing wallet:', error);
