@@ -18,14 +18,14 @@ async function createCoin() {
 
 <template>
   <div>
-    <button class="h-12 bg-gradient-primary px-6 rounded-full hidden web:flex items-center gap-2"
+    <button class="flex gap-2 items-center cursor-pointer"
             @click="createCoin">
-      <span class="text-white font-bold">{{$t('createCoin')}}</span>
-      <img src="~@/assets/icons/icon-add.svg" alt="">
+      <img class="w-4" src="~@/assets/icons/icon-create.svg" alt="">
+      <span class="whitespace-nowrap">{{$t('createCoin')}}</span>
     </button>
-    <button class="web:hidden absolute left-1/2 -top-5 transform -translate-x-1/2" @click="createCoin">
-      <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
-    </button>
+<!--    <button class="web:hidden absolute left-1/2 -top-5 transform -translate-x-1/2" @click="createCoin">-->
+<!--      <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">-->
+<!--    </button>-->
   </div>
 </template>
 

@@ -48,17 +48,18 @@ function onClickWallet() {
               @click="ruleModalVisible = true">{{ $t('rule') }}</button>
     </div>
     <div class="flex items-center gap-3 web:gap-6">
-<!--      <router-link to="/" class="hidden web:block">-->
-<!--        <img v-if="$route.name==='home'" class="w-6 h-6"-->
-<!--             src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">-->
-<!--        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">-->
-<!--      </router-link>-->
       <img class="w-6 cursor-pointer web:hidden"
            src="~@/assets/icons/icon-search.svg" alt=""
            @click="modalVisible=true">
       <ProfileBtn class="hidden web:flex"/>
+      <router-link to="/wallet/">
+        <div class=" gap-2 items-center cursor-pointer hidden web:flex">
+          <img v-if="$route.name==='wallet'" class="w-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">
+          <img v-else class="w-6" src="~@/assets/icons/icon-wallet.svg" alt="">
+        </div>
+      </router-link>
       <el-popover popper-class="c-select-popper" ref="menuRef"
-                  trigger="click" width="120" :teleported="true" :persistent="false">
+                  trigger="click" width="160" :teleported="true" :persistent="false">
         <template #reference>
           <img class="w-5 cursor-pointer"
                src="~@/assets/icons/icon-menu.svg" alt="">
@@ -77,12 +78,13 @@ function onClickWallet() {
               </div>
               <span>{{$t('notification')}}</span>
             </div>
-            <div v-if="!!useAccountStore().getAccountInfo?.twitterId"
-                 @click="onClickWallet"
-                 class="flex gap-2 items-center cursor-pointer">
-              <img class="w-4" src="~@/assets/icons/icon-wallet.svg" alt="">
-              <span>{{$t('wallet')}}</span>
-            </div>
+            <CreateBtn />
+<!--            <div v-if="!!useAccountStore().getAccountInfo?.twitterId"-->
+<!--                 @click="onClickWallet"-->
+<!--                 class="flex gap-2 items-center cursor-pointer">-->
+<!--              <img class="w-4" src="~@/assets/icons/icon-wallet.svg" alt="">-->
+<!--              <span>{{$t('wallet')}}</span>-->
+<!--            </div>-->
             <div v-if="$i18n.locale==='zh'"
                  @click="switchLanguage('en')"
                  class="flex gap-2 items-center cursor-pointer">
@@ -122,7 +124,6 @@ function onClickWallet() {
           </div>
         </template>
       </el-popover>
-      <CreateBtn class="hidden web:block"/>
     </div>
     <el-dialog v-model="modalVisible"
                modal-class="overlay-white c-modal-fullscreen" fullscreen
