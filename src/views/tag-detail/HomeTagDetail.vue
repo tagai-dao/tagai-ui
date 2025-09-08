@@ -252,7 +252,7 @@ onUnmounted(() => {
   deployTweetList.value = []
   DeBoxChatWidget.destroy();
 })
-const topBanner = ref(null)
+const topBanner = ref<any>(null)
 const topBannerClass = ref('h-[15px] overflow-hidden')
 watch([() => topBanner.value, () => deployTweetList.value.length], () => {
   topBannerClass.value = 'h-auto'
