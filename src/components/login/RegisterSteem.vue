@@ -132,7 +132,7 @@ async function payToken() {
           useModalStore().setModalCloseEnable(false);
           const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
           if (!hash) {
-            throw new Error('Failed to transfer ETH');
+            throw new Error('Failed to transfer BNB');
           }
           localStorage.setItem('payTokenHash', hash)
           identityInfo.assetId = hash;
