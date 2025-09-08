@@ -253,11 +253,11 @@ onUnmounted(() => {
   DeBoxChatWidget.destroy();
 })
 const topBanner = ref(null)
-const topBannerClass = ref('h-[0px] overflow-hidden')
+const topBannerClass = ref('h-[15px] overflow-hidden')
 watch([() => topBanner.value, () => deployTweetList.value.length], () => {
   topBannerClass.value = 'h-auto'
   setTimeout(() => {
-    pageScrollRef.value.scrollTo({top: topBanner.value.offsetHeight})
+    pageScrollRef.value.scrollTo({top: topBanner.value.offsetHeight+15})
   })
 })
 onActivated(async () => {
@@ -277,11 +277,12 @@ onBeforeRouteLeave((to, from, next) => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto no-scroll-bar flex flex-col gap-3 px-3 relative"
+  <div class="h-full overflow-auto no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
-    <div class="grid grid-cols-1 web:hidden gap-3 pt-2" ref="topBanner" :class="topBannerClass">
+    <div class="grid grid-cols-1 web:hidden gap-3 ">
       <div v-if="deployTweetList.length>0"
-           class="col-span-1 border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide">
+           class="col-span-1 border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide"
+           ref="topBanner">
         <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">
           <template #tweet-action-bar>
             <PostButtonGroup :tweet="deployTweetList[0]"/>
