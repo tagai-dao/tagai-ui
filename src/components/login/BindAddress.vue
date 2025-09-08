@@ -46,6 +46,10 @@ async function confirm() {
     if((await checkEth(accStore.ethConnectAddress))) {
       return;
     }
+    accStore.setAccount({
+      ...accStore.getAccountInfo,
+      walletType: 1
+    })
     const signature = await signMessage(BondEthMessage);
     if (!signature) {
       return;
