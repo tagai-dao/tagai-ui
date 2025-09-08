@@ -152,9 +152,15 @@ const create = async () => {
       console.log('prevForm', prevForm)
       if(await checkTickUsed(prevForm.tick)){
       }else {
-        await createCommunity(prevForm);
+        try {
+          await createCommunity(prevForm);
+          localStorage.removeItem('createTokenForm')
+        } catch (error) {
+          if(error === 602) {
+            localStorage.removeItem('createTokenForm')
+          }
+        }
       }
-      localStorage.removeItem('createTokenForm')
     }
 
     if (!(await testTick())) {
