@@ -100,6 +100,11 @@ export const handleErrorTip = (e: any) => {
     return handleServerError(e);
   }
 
+  if (typeof e === 'string') {
+    notify({ message: e, type: "error" });
+    return e
+  }
+
   const revertReason = parseViemRevertReason(e);
   return revertReason;
   
