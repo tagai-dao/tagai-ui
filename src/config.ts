@@ -11,6 +11,7 @@ export const ChainConfig = {
     symbol: 'BNB',
     browser: 'https://bscscan.com/',
     decimals: 18,
+    swapUrl: 'https://pancakeswap.finance/v2/add/BNB/0x32ef878D527d860339818571E8DA17005110f04E?chain=bsc&persistChain=1',
     multiConfig: {
         rpcUrl: 'https://bsc-dataseed.binance.org',
         multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
