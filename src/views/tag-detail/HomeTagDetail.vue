@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed, onActivated, nextTick, onUnmounted } from "vue";
+import {onMounted, ref, computed, onActivated, nextTick, onUnmounted, watch} from "vue";
 import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType, type Tweet} from "@/types";
@@ -252,7 +252,14 @@ onUnmounted(() => {
   deployTweetList.value = []
   DeBoxChatWidget.destroy();
 })
-
+const topBanner = ref(null)
+const topBannerClass = ref('h-[0px] overflow-hidden')
+watch([() => topBanner.value, () => deployTweetList.value.length], () => {
+  topBannerClass.value = 'h-auto'
+  setTimeout(() => {
+    pageScrollRef.value.scrollTo({top: topBanner.value.offsetHeight})
+  })
+})
 onActivated(async () => {
   pageScrollRef.value.scrollTo({top: pageScrollTop.value})
   tabScrollRef.value.scrollTo({top: tabScrollTop.value})
@@ -270,9 +277,9 @@ onBeforeRouteLeave((to, from, next) => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto no-scroll-bar pt-2 pb-2 flex flex-col gap-3 px-3 relative"
+  <div class="h-full overflow-auto no-scroll-bar flex flex-col gap-3 px-3 relative"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
-    <div class="grid grid-cols-1 web:hidden gap-3">
+    <div class="grid grid-cols-1 web:hidden gap-3 pt-2" ref="topBanner" :class="topBannerClass">
       <div v-if="deployTweetList.length>0"
            class="col-span-1 border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide">
         <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">
@@ -453,7 +460,7 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
     </div>
     <BuyAndSellView v-if="showTradeBox || width>800"/>
-    <div class="h-full sticky top-[0px]">
+    <div class="min-h-full h-full sticky top-[0px]">
       <div class="h-full flex gap-2">
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
