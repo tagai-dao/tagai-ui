@@ -78,15 +78,14 @@ const setWallet = async () => {
 }
 
 const bondEthAddress = async () => {
+  try {
     const accInfo = accStore.getAccountInfo;
-    accInfo.ethAddr = accStore.ethConnectAddress
+    await privyStore.initWallet()
+
     accStore.setAccount({
       ...accInfo,
-      ethAddr: accStore.ethConnectAddress,
       walletType: 1
     })
-
-    await privyStore.initWallet()
 
     // bind ethAddr for new login user
     let signature = await signMessage(BondEthMessage);
@@ -96,6 +95,15 @@ const bondEthAddress = async () => {
     
     console.log('new bond address')
     await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
+
+    accStore.setAccount({
+      ...accInfo,
+      ethAddr: accStore.ethConnectAddress,
+      walletType: 1
+    })
+  } catch (error) {
+    handleErrorTip(error)
+  }
 }
 const handleReactLoginError = async () => {
   notify({
