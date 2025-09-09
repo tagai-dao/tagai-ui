@@ -22,7 +22,7 @@ const { vp, op } = useAccount()
 <!--    </div>-->
     <div class="w-full flex justify-between items-end px-8 py-4 relative z-10">
       <router-link to="/" class="w-16 flex flex-col items-center cursor-pointer gap-0.5 px-2">
-        <template v-if="$route.name==='home'">
+        <template v-if="$route.name==='home' || $route.name==='tag-detail'">
           <img class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
           <span class="text-gradient bg-gradient-primary text-h5">{{$t('tag')}}</span>
         </template>
