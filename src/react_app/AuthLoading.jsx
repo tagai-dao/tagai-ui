@@ -1,4 +1,4 @@
-import {useLoginWithOAuth, useOAuthTokens, useWallets, useCreateWallet} from "@privy-io/react-auth";
+import {useLoginWithOAuth, useOAuthTokens, useWallets, useCreateWallet, usePrivy} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
 import {useEffect} from "react";
@@ -22,16 +22,7 @@ export default function AuthLoading() {
     useEffect(() => {
         async function getWalletProvider() {
             if(ready) {
-                let count = 8
-                // 没有推特登录的时候不会加载privy钱包
-                while (count > 0) {
-                    const logged = accStore.getAccountInfo?.twitterId
-                    if (logged) {
-                        break;
-                    }
-                    count--;
-                    await sleep(1)
-                }
+                // 没有钱包的时候需要为用户创建新的钱包
                 if (wallets.length === 0 || !wallets.find((wallet) => wallet.walletClientType === 'privy')) {
                    await createWallet()
                     return;

@@ -19,7 +19,7 @@ import emitter from "@/utils/emitter";
 import {applyPureReactInVue} from "veaury";
 import ReactApp from "@/react_app/App.jsx";
 import {useAccountStore} from "@/stores/web3";
-import {notify} from "@/utils/notify";
+import {handleErrorTip, notify} from "@/utils/notify";
 import {usePrivyStore} from "@/stores/privy";
 import { bondEth, twitterLogin } from "@/apis/api";
 import { signMessage } from "@/utils/wallets";
@@ -31,19 +31,50 @@ import { sleep } from "@/utils/helper";
 const router = useRouter();
 const accStore = useAccountStore();
 const { updateVPOP } = useAccount();
+const privyStore = usePrivyStore();
+const newLogin = ref(false);
+const walletReady = ref(false);
 
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
 const handleReactLoginSuccess = async (accInfo: any) => {
   console.log('accInfo', accInfo)
   accStore.setAccount(accInfo)
-  if (accInfo && (accInfo.walletType === 1 || !accInfo.ethAddr)) {
-    if (!accInfo.ethAddr) {
-      await bondEthAddress()
-    }
-  } 
+  
   updateVPOP().catch();
-  router.replace(localStorage.getItem('current-route') || '/')
+  newLogin.value = true;
+  await setWallet()
+}
+
+// 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
+const setWallet = async () => {
+  if (accStore.getAccountInfo?.twitterId && privyStore.ethersProvider && !walletReady.value) {
+    try {
+      const accounts = await privyStore.ethersProvider.request({
+        method: 'eth_requestAccounts'
+      });
+      const connectedAddr = accounts[0]; 
+      // check wallet type
+      if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
+        return;
+      } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
+        await bondEthAddress()
+      } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr !== connectedAddr) {
+        // update ethAddr
+        await bondEthAddress();
+      } else {
+        await privyStore.initWallet()
+      }
+    } catch (error) {
+        handleErrorTip(error)
+        await sleep(3)
+    } finally {
+      walletReady.value = true;
+      if (newLogin.value) {
+        router.replace(localStorage.getItem('current-route') || '/')
+      }
+    }
+  }
 }
 
 const bondEthAddress = async () => {
@@ -55,20 +86,14 @@ const bondEthAddress = async () => {
       walletType: 1
     })
 
+    await privyStore.initWallet()
+
     // bind ethAddr for new login user
     let signature = await signMessage(BondEthMessage);
     if (!signature) {
-      await sleep(5)
-      for (let i = 0; i < 5; i++){
-        signature = await signMessage(BondEthMessage);
-        if (signature) {
-          break;
-        }
-      }
-      if (!signature) {
-        throw new Error('Signature is null')
-      }
+      throw new Error('Signature is null')
     }
+    
     console.log('new bond address')
     await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
 }
@@ -78,14 +103,13 @@ const handleReactLoginError = async () => {
     message: 'Please try again',
     type: 'error'
   });
+  await sleep(3)
+  router.replace(localStorage.getItem('current-route') || '/')
 }
 
 const handleWalletProvider = async (provider: any) => {
-  await usePrivyStore().initWallet(provider)
-  if (accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
-    return;
-  }
-  await bondEthAddress()
+  usePrivyStore().ethersProvider = provider
+  await setWallet()
 }
 
 const modalStore = useModalStore()
