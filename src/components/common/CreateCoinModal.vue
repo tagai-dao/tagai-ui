@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useModalStore } from "@/stores/common";
-import { reactive, ref, computed, watch } from "vue";
+import { reactive, ref, computed, watch, onMounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
 import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -151,6 +151,7 @@ const create = async () => {
       prevForm = JSON.parse(prevForm)
       console.log('prevForm', prevForm)
       if(await checkTickUsed(prevForm.tick)){
+        localStorage.removeItem('createTokenForm')
       }else {
         try {
           await createCommunity(prevForm);
@@ -203,6 +204,26 @@ const create = async () => {
 
 watch(() => createLoading.value, () => {
   modalStore.setModalCloseEnable(!createLoading.value)
+})
+
+onMounted(async () => {
+  let prevForm:any  = localStorage.getItem('createTokenForm')
+  if (prevForm){
+    prevForm = JSON.parse(prevForm)
+    console.log('prevForm', prevForm)
+    if(await checkTickUsed(prevForm.tick)){
+      localStorage.removeItem('createTokenForm')
+    }else {
+      try {
+        await createCommunity(prevForm);
+        localStorage.removeItem('createTokenForm')
+      } catch (error) {
+        if(error === 602) {
+          localStorage.removeItem('createTokenForm')
+        }
+      }
+    }
+  }
 })
 </script>
 

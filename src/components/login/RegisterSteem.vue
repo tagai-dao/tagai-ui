@@ -131,6 +131,11 @@ async function payToken() {
           }
           useModalStore().setModalCloseEnable(false);
           const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+          reportLog('register_steem_step_1', {
+            hash,
+            identityInfo: identityInfo,
+            twitterId: accStore.getAccountInfo?.twitterId
+          })
           if (!hash) {
             throw new Error('Failed to transfer BNB');
           }
@@ -266,15 +271,38 @@ async function sign() {
 
 async function register() {
   try {
+    const twitterId = accStore.getAccountInfo?.twitterId
+    reportLog('register_steem_step_2', {
+      step: 2,
+      twitterId
+    })
     useModalStore().setModalCloseEnable(false);
     const signature = await ethSignMessage(RegisterSteemMessage)
+    
+    reportLog('register_steem_step_3', {
+      step: 3,
+      signature,
+      twitterId
+    })
     if (!signature) {
       throw new Error('Failed to sign message');
     }
     const account = accStore.getAccountInfo
     const salt = bytesToHex(randomBytes(4));
     const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
+
+    reportLog('register_steem_step_4', {
+      step: 4,
+      salt,
+      twitterId
+    })
     let params = box(steemAccount);
+
+    reportLog('register_steem_step_5', {
+      step: 5,
+      twitterId,
+      ...params
+    })
     let createForm = {
       twitterId: account.twitterId,
       pwd: params.pwd,

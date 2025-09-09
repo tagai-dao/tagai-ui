@@ -59,7 +59,12 @@ const bondEthAddress = async () => {
     let signature = await signMessage(BondEthMessage);
     if (!signature) {
       await sleep(5)
-      signature = await signMessage(BondEthMessage);
+      for (let i = 0; i < 5; i++){
+        signature = await signMessage(BondEthMessage);
+        if (signature) {
+          break;
+        }
+      }
       if (!signature) {
         throw new Error('Signature is null')
       }
