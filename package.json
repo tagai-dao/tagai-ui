@@ -21,7 +21,7 @@
     "axios": "^1.7.2",
     "axios-retry": "^4.4.0",
     "bs58": "^6.0.0",
-    "element-plus": "^2.7.5",
+    "element-plus": "^2.11.0",
     "ethers": "^6.13.1",
     "js-sha256": "^0.11.0",
     "lodash.debounce": "^4.0.8",
