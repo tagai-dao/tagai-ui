@@ -48,12 +48,15 @@ const handleReactLoginSuccess = async (accInfo: any) => {
 
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
 const setWallet = async () => {
+  console.log(33, walletReady.value)
   if (accStore.getAccountInfo?.twitterId && privyStore.ethersProvider && !walletReady.value) {
     try {
+      walletReady.value = true;
       const accounts = await privyStore.ethersProvider.request({
         method: 'eth_requestAccounts'
       });
       const connectedAddr = accounts[0]; 
+      console.log('connected wallet', connectedAddr)
       // check wallet type
       if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
         return;
@@ -69,7 +72,6 @@ const setWallet = async () => {
         handleErrorTip(error)
         await sleep(3)
     } finally {
-      walletReady.value = true;
       if (newLogin.value) {
         router.replace(localStorage.getItem('current-route') || '/')
       }
