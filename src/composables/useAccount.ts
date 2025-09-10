@@ -2,9 +2,10 @@ import { computed } from "vue";
 import { useAccountStore } from "@/stores/web3";
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
 import { twitterRefreshAccessToken, getVPOP, needLogin,
-    getNewMessageCount, getMessages as gm, readAllMessage
+    getNewMessageCount, getMessages as gm, readAllMessage,
+    bondEth
  } from '@/apis/api'
-import { CoinPurse, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY, WETH } from '@/config'
+import { BondEthMessage, CoinPurse, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY, WETH } from '@/config'
 import { ChainConfig } from '@/config'
 import errCode from "@/errCode";
 import { formatDate } from '@/utils/helper'
@@ -13,6 +14,8 @@ import { GlobalModalType } from "@/types";
 import { aggregate } from '@makerdao/multicall'
 import { isAddress, zeroAddress } from "viem";
 import { usePrivyStore } from "@/stores/privy";
+import { signMessage } from "@/utils/wallets";
+import { handleErrorTip } from "@/utils/notify";
 
 export enum AccountAuthType {
     TWITTER,
@@ -34,6 +37,37 @@ export const useAccount = () => {
         const account = useAccountStore().getAccountInfo
         return account?.profile?.replace('normal', '200x200')
     })
+
+    const bondEthAddress = async () => {
+        try {
+          const accStore = useAccountStore()
+          const privyStore = usePrivyStore()
+          const accInfo = accStore.getAccountInfo;
+          await privyStore.initWallet()
+      
+          accStore.setAccount({
+            ...accInfo,
+            walletType: 1
+          })
+      
+          // bind ethAddr for new login user
+          let signature = await signMessage(BondEthMessage);
+          if (!signature) {
+            throw new Error('Signature is null')
+          }
+          
+          console.log('new bond address')
+          await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
+      
+          accStore.setAccount({
+            ...accInfo,
+            ethAddr: accStore.ethConnectAddress,
+            walletType: 1
+          })
+        } catch (error) {
+          handleErrorTip(error)
+        }
+      }
 
     const replaceEmptyProfile = (e: any) => {
         e.target.src = emptyProfile
@@ -298,6 +332,7 @@ export const useAccount = () => {
 
     return {
         accountMismatch,
+        bondEthAddress,
         replaceEmptyProfile,
         updateUnreadMessageCount,
         getMessages,

@@ -58,10 +58,10 @@ const setWallet = async () => {
       if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
         return;
       } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
-        await bondEthAddress()
+        await useAccount().bondEthAddress()
       } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr !== connectedAddr) {
         // update ethAddr
-        await bondEthAddress();
+        await useAccount().bondEthAddress();
       } else {
         await privyStore.initWallet()
       }
@@ -77,34 +77,6 @@ const setWallet = async () => {
   }
 }
 
-const bondEthAddress = async () => {
-  try {
-    const accInfo = accStore.getAccountInfo;
-    await privyStore.initWallet()
-
-    accStore.setAccount({
-      ...accInfo,
-      walletType: 1
-    })
-
-    // bind ethAddr for new login user
-    let signature = await signMessage(BondEthMessage);
-    if (!signature) {
-      throw new Error('Signature is null')
-    }
-    
-    console.log('new bond address')
-    await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
-
-    accStore.setAccount({
-      ...accInfo,
-      ethAddr: accStore.ethConnectAddress,
-      walletType: 1
-    })
-  } catch (error) {
-    handleErrorTip(error)
-  }
-}
 const handleReactLoginError = async () => {
   notify({
     title: 'Login failed',
