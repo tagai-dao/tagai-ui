@@ -241,7 +241,7 @@ export const closeProvider = () => {
     provider = undefined;
 }
 
-export const signMessage = async (message: string) => {
+export const signMessage = async (message: string): Promise<`0x${string}` | null> => {
     let wallet = getWalletClient() as WalletClient;
     if (!wallet) {
         return null;

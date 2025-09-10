@@ -9,6 +9,9 @@ import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 import { usePrivyStore } from "@/stores/privy";
 import {applyPureReactInVue} from "veaury";
 import Wallet from "@/react_app/Wallet.jsx";
+import { isAddress } from "viem";
+import { useModalStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
 
 const ReactWallet = applyPureReactInVue(Wallet);
 
@@ -31,6 +34,11 @@ async function showPrivy() {
   showPrivyModal.value = true
 }
 onMounted(() => {
+  if (!accStore.getAccountInfo?.ethAddr || !isAddress(accStore.getAccountInfo?.ethAddr)) {
+    // show bond address
+    useAccount().bondEthAddress()
+    return;
+  }
   updateBalance()
 })
 

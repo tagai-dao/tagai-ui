@@ -10,7 +10,7 @@ import { claimReward } from '@/utils/pump'
 import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ClaimFee } from '@/config';
-import { parseEther } from 'viem';
+import { isAddress, parseEther } from 'viem';
 import errCode from '@/errCode';
 import { useRouter } from 'vue-router';
 
@@ -27,6 +27,15 @@ async function claim() {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
+
+  if (accStore.getAccountInfo?.walletType === 0 && isAddress(accStore.getAccountInfo?.ethAddr ?? '')) {
+    return;
+  }
+  if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo?.ethAddr != accStore.ethConnectAddress) {
+    await useAccount().bondEthAddress()
+    return;
+  }
+  
   // check eth balance
   // @ts-ignore
   if (accStore.ethBalance < (ClaimFee / 1e18)) {
@@ -75,7 +84,7 @@ function login() {
       </div>
     </div>
     
-    <button v-if="isProfile" @click="claim" :disabled="claiming || !canClaim || accountMismatch"
+    <button v-if="isProfile" @click="claim" :disabled="claiming || !canClaim"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
       {{ canClaim ? $t('claim') : $t('pendingSettled') }}
       <i-ep-loading v-if="claiming" class="animate-spin" />

@@ -1,6 +1,6 @@
 // src/stores/user.ts
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import { customBsc } from "@/utils/privy";
 import type { WalletClient } from "viem";
 import { createWalletClient, custom } from "viem";
@@ -20,35 +20,20 @@ export const usePrivyStore = defineStore("privy", () => {
     ethersProvider.value = null;
   }
 
-  async function initWallet(provider: any) {
+  async function initWallet() {
     try {
-      let count = 1
-      while(count < 5) {
-        try {
-          if (accStore.getAccountInfo?.ethAddr 
-              && isAddress(accStore.getAccountInfo.ethAddr) 
-              && accStore.getAccountInfo.walletType === 0) 
-          {
-            accStore.ethWalletType = 'metamask';
-          } else {
-            viemWalletClient.value = createWalletClient({
-              chain: customBsc,
-              transport: custom(provider)
-            })
-            ethersProvider.value = provider;
-
-            const accStore = useAccountStore();
-            accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
-            accStore.ethConnectState = EthWalletState.Connected;
-            accStore.ethWalletType = 'privy-twitter';
-            return;
-          }
-        } catch (error) {
-          console.error('Error initializing wallet:', error);
-        }
-        count++;
-        await sleep(1)
+      if (!ethersProvider.value) {
+        throw new Error('Ethers provider is not initialized');
       }
+      viemWalletClient.value = createWalletClient({
+        chain: customBsc,
+        transport: custom(ethersProvider.value)
+      })
+
+      const accStore = useAccountStore();
+      accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
+      accStore.ethConnectState = EthWalletState.Connected;
+      accStore.ethWalletType = 'privy-twitter';
     } catch (error) {
       useAccountStore().ethConnectState = EthWalletState.Disconnect;
       // logout
@@ -58,10 +43,17 @@ export const usePrivyStore = defineStore("privy", () => {
     }
   }
 
+  type PrivyStore = {
+    viemWalletClient: Ref<WalletClient | null>;
+    ethersProvider: Ref<any>;
+    initWallet: () => Promise<void>;
+    logout: () => Promise<void>;
+  };
+
   return {
     viemWalletClient,
     ethersProvider,
     initWallet,
     logout
-  };
+  } as PrivyStore;
 });
