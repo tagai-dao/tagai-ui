@@ -87,37 +87,11 @@ function resetTips() {
     showFarcasterAuthFailed.value = false;
 }
 
-async function onSignInSuccess(success: boolean) {
-  if (!success) {
-    notify({
-      type: 'error',
-      message: 'Failed to sign in to Farcaster'
-    })
-    loading.value = false
-    return
-  }
-  // get farcaster user info
-  let userInfo = useAccountStore().farcasterUser
-  if (!userInfo?.fid) {
-    showFarcasterAuthFailed.value = true
-    return;
-  }
-
-  // check fid registered
-  const aa: any = await checkFarcaster(userInfo?.fid ?? '')
-  loading.value = false
-  showBondEthToFarcaster.value = true
-  if (aa && aa.fid && aa.fid) {
-    showFidUsed.value = true
-    return;
-  }
-}
-
 async function payToken() {
     resetTips()
     try {
         loading.value = true
-        const payTokenHash = null // localStorage.getItem('payTokenHash')
+        const payTokenHash = localStorage.getItem('payTokenHash')
         if (payTokenHash) {
             identityInfo.assetId = payTokenHash;
             identityInfo.chainName = ChainConfig.name;
@@ -131,6 +105,7 @@ async function payToken() {
           }
           useModalStore().setModalCloseEnable(false);
           const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+
           reportLog('register_steem_step_1', {
             hash,
             identityInfo: identityInfo,
@@ -139,6 +114,7 @@ async function payToken() {
           if (!hash) {
             throw new Error('Failed to transfer BNB');
           }
+
           localStorage.setItem('payTokenHash', hash)
           identityInfo.assetId = hash;
           identityInfo.chainName = ChainConfig.name;
@@ -153,6 +129,100 @@ async function payToken() {
         loading.value = false
     }
 }
+
+// register with twitter reputaion
+async function sign() {
+  try {
+        loading.value = true
+        identityInfo.assetId = acc.value?.twitterReputation?.toString() ?? "0";
+        identityInfo.chainName = ChainConfig.name;
+        identityInfo.type = 'reputation'
+        await register();
+    } catch (error) {
+        handleErrorTip(error)
+        loading.value = false
+    }finally{
+        useModalStore().setModalCloseEnable(true);
+    }
+}
+
+async function register() {
+  loading.value = true
+  const twitterId = accStore.getAccountInfo?.twitterId
+  try {
+    reportLog('register_steem_step_2', {
+      step: 2,
+      twitterId
+    })
+    useModalStore().setModalCloseEnable(false);
+    const signature = await ethSignMessage(RegisterSteemMessage)
+    
+    reportLog('register_steem_step_3', {
+      step: 3,
+      signature,
+      twitterId
+    })
+    if (!signature) {
+      throw new Error('Failed to sign message');
+    }
+    const account = accStore.getAccountInfo
+    const salt = bytesToHex(randomBytes(4));
+    const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
+
+    reportLog('register_steem_step_4', {
+      step: 4,
+      salt,
+      twitterId
+    })
+    let params = box(steemAccount);
+
+    reportLog('register_steem_step_5', {
+      step: 5,
+      twitterId,
+      ...params
+    })
+    let createForm = {
+      twitterId: account.twitterId,
+      pwd: params.pwd,
+      sendNonce: params.sendNonce,
+      sendPubKey: params.sendPubKey,
+      ethAddr: account.ethAddr ?? accStore.ethConnectAddress ?? '',
+      salt,
+      identityInfo,
+      signature
+    }
+    
+    await registerSteem(createForm);
+    accStore.setAccount({
+      ...accStore.getAccountInfo,
+      ethAddr: checksumAddress(account.ethAddr as `0x${string}` ?? accStore.ethConnectAddress as `0x${string}`),
+      fid: accStore.farcasterUser?.fid,
+      isAuthFarcaster: true,
+      farcasterName: accStore.farcasterUser?.name,
+      steemId: account.twitterUsername
+    })
+    accStore.farcasterUser = null;
+    localStorage.removeItem('payTokenHash')
+    useModalStore().setModalCloseEnable(true);
+    useModalStore().setModalVisible(false)
+  } catch (error) {
+    if(error === ErrCode.TRANSACTION_INVALID) {
+      localStorage.removeItem('payTokenHash')
+    }
+    console.error(error)
+    reportLog('register_steem_error', {
+      error,
+      identityInfo,
+      twitterId
+    })
+    handleErrorTip(error)
+  } finally{
+    loading.value = false
+  }
+    
+}
+
+
 
 async function choseEns() {
     resetTips()
@@ -175,11 +245,6 @@ async function choseEns() {
     } finally {
         loading.value = false
     }
-}
-
-async function selectFarcaster() {
-  resetTips()
-  loading.value = true
 }
 
 async function selectBitip() {
@@ -253,95 +318,6 @@ async function signInFarcasterEth() {
     }
 }
 
-// register with twitter reputaion
-async function sign() {
-  try {
-        loading.value = true
-        identityInfo.assetId = acc.value?.twitterReputation?.toString() ?? "0";
-        identityInfo.chainName = ChainConfig.name;
-        identityInfo.type = 'reputation'
-        await register();
-    } catch (error) {
-        handleErrorTip(error)
-        loading.value = false
-    }finally{
-        useModalStore().setModalCloseEnable(true);
-    }
-}
-
-async function register() {
-  try {
-    const twitterId = accStore.getAccountInfo?.twitterId
-    reportLog('register_steem_step_2', {
-      step: 2,
-      twitterId
-    })
-    useModalStore().setModalCloseEnable(false);
-    const signature = await ethSignMessage(RegisterSteemMessage)
-    
-    reportLog('register_steem_step_3', {
-      step: 3,
-      signature,
-      twitterId
-    })
-    if (!signature) {
-      throw new Error('Failed to sign message');
-    }
-    const account = accStore.getAccountInfo
-    const salt = bytesToHex(randomBytes(4));
-    const steemAccount = generateSteemAuth(signature.replace("0x", "") + salt);
-
-    reportLog('register_steem_step_4', {
-      step: 4,
-      salt,
-      twitterId
-    })
-    let params = box(steemAccount);
-
-    reportLog('register_steem_step_5', {
-      step: 5,
-      twitterId,
-      ...params
-    })
-    let createForm = {
-      twitterId: account.twitterId,
-      pwd: params.pwd,
-      sendNonce: params.sendNonce,
-      sendPubKey: params.sendPubKey,
-      ethAddr: account.ethAddr ?? accStore.ethConnectAddress ?? '',
-      salt,
-      identityInfo,
-      signature
-    }
-    
-    await registerSteem(createForm);
-    accStore.setAccount({
-      ...accStore.getAccountInfo,
-      ethAddr: checksumAddress(account.ethAddr as `0x${string}` ?? accStore.ethConnectAddress as `0x${string}`),
-      fid: accStore.farcasterUser?.fid,
-      isAuthFarcaster: true,
-      farcasterName: accStore.farcasterUser?.name,
-      steemId: account.twitterUsername
-    })
-    accStore.farcasterUser = null;
-    localStorage.removeItem('payTokenHash')
-    useModalStore().setModalCloseEnable(true);
-    useModalStore().setModalVisible(false)
-  } catch (error) {
-    if(error === ErrCode.TRANSACTION_INVALID) {
-      localStorage.removeItem('payTokenHash')
-    }
-    console.error(error)
-    reportLog('register_steem_error', {
-      error,
-      identityInfo: identityInfo
-    })
-    handleErrorTip(error)
-  } finally{
-    loading.value = false
-  }
-    
-}
 
 const openDonut = () => {
     window.open('https://bitip.social', '_blank')
@@ -350,6 +326,13 @@ const openDonut = () => {
 onMounted(async () => {
   try {
     acc.value = await getUserProfile(accStore.getAccountInfo.twitterId) as Account | null
+    const payTokenHash = localStorage.getItem('payTokenHash')
+    if (payTokenHash) {
+        identityInfo.assetId = payTokenHash;
+        identityInfo.chainName = ChainConfig.name;
+        identityInfo.type = 'payToken'
+        await register();
+    }
   } catch (error) {
     acc.value = null
   }
@@ -362,15 +345,6 @@ onMounted(async () => {
   <div v-else-if="step === 2" class="p-6">
     <div v-show="!accStore.getAccountInfo.steemId" class="text-center text-base text-black font-normal mb-8">{{ $t("loginView.registerRequire") }}</div>
     <div class="flex flex-col items-center gap-4 mt-1.5rem">
-      <!-- <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
-              @click="payToken"
-              :disabled="loading">
-        <span class="text-white font-semibold">Pay {{ parseInt(CreateFee) / 1e18 }} ETH</span>
-        <i-ep-loading v-show="loading" class="animate-spin" />
-      </button> -->
-      <!-- <div class="w-full" @click="selectFarcaster">
-        <FarcasterBtn @signInSuccess="onSignInSuccess" />
-      </div> -->
       <div class="w-full" v-if="!accStore.getAccountInfo.steemId">
         <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2"
                 :class="showNoEns?'bg-grey-light':''"
