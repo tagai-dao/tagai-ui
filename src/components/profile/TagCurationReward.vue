@@ -28,7 +28,7 @@ async function claim() {
     return;
   }
 
-  if (accountMismatch && accStore.getAccountInfo?.walletType === 0 && isAddress(accStore.getAccountInfo?.ethAddr ?? '')) {
+  if (accountMismatch.value && accStore.getAccountInfo?.walletType === 0 && isAddress(accStore.getAccountInfo?.ethAddr ?? '')) {
     return;
   }
   if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo?.ethAddr != accStore.ethConnectAddress) {
