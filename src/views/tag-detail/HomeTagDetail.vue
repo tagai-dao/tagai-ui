@@ -261,9 +261,9 @@ watch([() => topBanner.value, () => deployTweetList.value.length], () => {
   })
 })
 
-const topBannerContainerRef = ref(null)
+const topBannerContainerRef = ref<any>(null)
 watch(() => tabScrollTop.value, () => {
-  if(topBannerContainerRef.value && tabScrollTop.value>100 && pageScrollTop.value<topBannerContainerRef.value.offsetHeight+12) {
+  if(topBannerContainerRef.value?.offsetHeight && tabScrollTop.value>100 && pageScrollTop.value<topBannerContainerRef.value.offsetHeight+12) {
     pageScrollRef.value.scrollTo({top: topBannerContainerRef.value.offsetHeight+12, behavior: 'smooth'})
   }
 })
