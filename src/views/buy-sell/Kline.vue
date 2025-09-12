@@ -273,7 +273,7 @@ watch(() => width.value, () => {
         </button>
       </div>
     </div>
-    <div :id="chartId" class="k-line-chart flex flex-1"/>
+    <div :id="chartId" class="k-line-chart flex flex-1 z-0"/>
   </div>
 </template>
 

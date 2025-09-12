@@ -9,7 +9,7 @@ import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
-import { getCommunityDetail, getIpshareInfo, getConversationId, 
+import { getCommunityDetail, getIpshareInfo, getConversationId,
       getCommunityDeployerIpshare, getCommunityDeployTweet } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import {useInterval, usePageScroll, useTools} from "@/composables/useTools";
@@ -257,9 +257,17 @@ const topBannerClass = ref('h-[15px] overflow-hidden')
 watch([() => topBanner.value, () => deployTweetList.value.length], () => {
   topBannerClass.value = 'h-auto'
   setTimeout(() => {
-    pageScrollRef.value.scrollTo({top: topBanner.value.offsetHeight+15})
+    pageScrollRef.value.scrollTo({top: topBanner.value.offsetHeight+8})
   })
 })
+
+const topBannerContainerRef = ref(null)
+watch(() => tabScrollTop.value, () => {
+  if(topBannerContainerRef.value && tabScrollTop.value>100 && pageScrollTop.value<topBannerContainerRef.value.offsetHeight+12) {
+    pageScrollRef.value.scrollTo({top: topBannerContainerRef.value.offsetHeight+12, behavior: 'smooth'})
+  }
+})
+
 onActivated(async () => {
   pageScrollRef.value.scrollTo({top: pageScrollTop.value})
   tabScrollRef.value.scrollTo({top: tabScrollTop.value})
@@ -279,7 +287,7 @@ onBeforeRouteLeave((to, from, next) => {
 <template>
   <div class="h-full overflow-auto no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
-    <div class="grid grid-cols-1 web:hidden gap-3 ">
+    <div class="grid grid-cols-1 web:hidden gap-3 " ref="topBannerContainerRef">
       <div v-if="deployTweetList.length>0"
            class="col-span-1 border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide"
            ref="topBanner">
@@ -461,7 +469,7 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
     </div>
     <BuyAndSellView v-if="showTradeBox || width>800"/>
-    <div class="min-h-full h-full sticky top-[0px]">
+    <div class="min-h-full h-full sticky top-[0px]" ref="tabContainerRef">
       <div class="h-full flex gap-2">
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">

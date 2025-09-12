@@ -164,13 +164,13 @@ onUnmounted(() => {
       <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">
         <div class="pl-12">
           <div @click.stop="clickContent"
-               class="cursor-pointer text-base tracking-0.2">
-            <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all" target="_blank">{{''}}</a>
+               class="cursor-pointer text-base tracking-0.2 z-0">
+            <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all z-0" target="_blank">{{''}}</a>
             <div class="whitespace-pre-line break-words content" :class="multiline ? '' : 'multi-content-3'"
                  v-else v-html="formatEmojiText(content)"></div>
           </div>
           <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">
-            <button 
+            <button
                     :style="{backgroundColor: tagBgColors[0], color: tagTextColors[0]}"
                     @click.stop="gotoTick(tweet.tick!)"
                     class="px-2 text-base rounded-md">#{{ tweet.tick }}</button>
