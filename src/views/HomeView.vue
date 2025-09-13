@@ -32,7 +32,7 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['tweets', 'communities']
+const tabOptions = ['tweets', 'mindshare', 'communities']
 const activeTab = ref('tweets')
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
@@ -161,18 +161,6 @@ async function getNewCommunities() {
   } catch(e) {
     handleErrorTip(e)
   }
-}
-function gotoChain(chain: string){
-  if (chain === 'ENULS') {
-    window.open('https://enuls.tagai.fun', '__blank')
-  } else if (chain === 'Base') {
-    window.open('https://base.tagai.fun', '__blank')
-  } else if (chain === 'NULS') {
-    window.open('https://nuls.tagai.fun', '__blank')
-  } else if (chain === 'Solana') {
-    window.open('https://sol.tagai.fun', '__blank')
-  }
-  activeTab.value = 'BSC'
 }
 
 function gotoDetail(com: Community) {
@@ -354,6 +342,9 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
           </van-list>
         </van-pull-refresh>
       </div>
+    </template>
+    <template v-if="activeTab==='mindshare'">
+      
     </template>
   </div>
 </template>
