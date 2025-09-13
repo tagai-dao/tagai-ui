@@ -77,9 +77,9 @@ async function trade() {
                     :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
               {{ tag }}
             </button>
-            <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
+            <!-- <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
               {{community.version === 5 ? $t('createCommunity.ixo') : $t('createCommunity.aiCreate')}}
-            </button>
+            </button> -->
           </template>
         </div>
         <IconLinks class="my-1" :community="community"/>
