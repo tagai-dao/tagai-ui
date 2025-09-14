@@ -16,6 +16,7 @@ import { formatPrice } from "../utils/helper";
 import { useStateStore } from "@/stores/common";
 import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
+import MindShare from "@/views/mind-share/MindShare.vue";
 
 const listType = ref(ListType.MarketCap)
 const typePopoverVisible = ref(false)
@@ -343,9 +344,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
         </van-pull-refresh>
       </div>
     </template>
-    <template v-if="activeTab==='mindshare'">
-      
-    </template>
+    <MindShare v-if="activeTab==='mindshare'"/>
   </div>
 </template>
 

@@ -271,3 +271,6 @@ export const getMiniApps = async (tick: string) =>
 
 export const getCommunityTweetsWithTag = async (communityId: string, tag: string, pages?: number, twitterId?: string) =>
   get(BACKEND_API_URL + '/curation/tagTweets', {communityId, tag, pages})
+
+export const getMindShareList = async (pages?: number) =>
+  get(BACKEND_API_URL + '/tiptag/getMindShareList', { pages })
