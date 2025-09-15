@@ -1,29 +1,52 @@
 <script setup lang="ts">
 import {getMindShareList} from "@/apis/api";
-import {type Community, ListType} from "@/types";
+import {type MindShare, ListType} from "@/types";
 import {handleErrorTip} from "@/utils/notify";
-import {onMounted} from "vue";
+import {onMounted, ref} from "vue";
 import {mockData } from './mock-data'
-import {formatAmount, formatPrice} from "@/utils/helper";
+import {formatAmount, formatPrice, getDayNumber} from "@/utils/helper";
 import ChartItem from "@/views/mind-share/ChartItem.vue";
+import MetaMaskSDK from "@metamask/sdk";
 
-interface User {
-  date: string
-  name: string
-  address: string
-}
+const test = {"value": 8.607069969177246,
+    "delta": -0.7096586227416992,
+    "delta24h": -0.7096586227416992,
+    "delta7d": -0.7977447509765625,
+    "delta30d": -0.46353721618652344,
+    "delta90d": -3.070357322692871,
+    "chart": [
+      {
+        "date": "2025-09-01T16:29:55.841Z",
+        "value": 11.928284
+      },
+      {
+        "date": "2025-09-02T16:29:55.841Z",
+        "value": 10.697126
+      },
+      {
+        "date": "2025-09-03T16:29:55.841Z",
+        "value": 11.279785
+      }]
+  }
 
-const handleEdit = (index: number, row: User) => {
-  console.log(index, row)
-}
-const handleDelete = (index: number, row: User) => {
-  console.log(index, row)
-}
-
+const mindShareList = ref<Array<MindShare>>([])
 
 async function getNewCommunities() {
   try{
-    let res = await getMindShareList() as Array<Community>;
+    let res = await getMindShareList(1)
+      console.log(53, res)
+    mindShareList.value = res as Array<MindShare>;
+    const dayNumber = getDayNumber()
+    mindShareList.value.forEach(ms => {
+      let chart = ms.percents.map((percent, index) => {
+        return {
+          date: new Date((dayNumber + index) * 86400000),
+          value: percent
+        }
+      })
+      ms.chart = chart;
+    })
+    console.log(54, mindShareList.value)
   } catch(e) {
     handleErrorTip(e)
   }
@@ -36,7 +59,7 @@ onMounted(() => {
 
 <template>
   <div class="px-3">
-    <el-table :data="mockData" style="width: 100%" class="rounded-2xl overflow-hidden no-scroll-bar">
+    <el-table :data="mindShareList" style="width: 100%" class="rounded-2xl overflow-hidden no-scroll-bar">
       <el-table-column label="#" type="index" width="40" >
         <template #default="scope">
           <div>{{scope.$index+1}}</div>
@@ -45,10 +68,10 @@ onMounted(() => {
       <el-table-column label="Name" column-key="name" width="150">
         <template #default="scope">
           <div class="flex gap-2 items-center">
-            <img class="w-8 h-8" :src="scope.row.image" alt="">
+            <img class="w-8 h-8" :src="scope.row.profile" alt="">
             <div class="flex flex-col">
-              <span class="text-h4 font-medium">{{ scope.row.name }}</span>
-              <span class="text-sm">{{scope.row.symbol}}</span>
+              <span class="text-h4 font-medium">{{ scope.row.twitterName }}</span>
+              <span class="text-sm">@{{scope.row.twitterUsername}}</span>
             </div>
           </div>
         </template>
@@ -56,70 +79,28 @@ onMounted(() => {
       <el-table-column label="Mindshare" column-key="mindshare" width="100">
         <template #default="scope">
           <div class="flex gap-2 items-center">
-            <div class="text-sm">--</div>
+            <div class="text-sm">{{ (scope.row.mindSharePercent * 100).toFixed(2) }}%</div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="24h" column-key="mindshare" width="80">
         <template #default="scope">
           <div class="flex gap-2 items-center">
-            <div class="text-sm">{{scope.row.mindshare.delta24h.toFixed(2)}}</div>
+            <div class="text-sm">{{scope.row.delta24h?.toFixed(2)}}%</div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="7d" column-key="mindshare" width="80">
         <template #default="scope">
           <div class="flex gap-2 items-center">
-            <div class="text-sm">{{scope.row.mindshare.delta7d.toFixed(2)}}</div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="Sentiment" column-key="sentiment" width="120">
-        <template #default="scope">
-          <div class="flex gap-2 items-center">
-            <div class="text-sm">--</div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="24h" column-key="sentiment" width="100">
-        <template #default="scope">
-          <div class="flex gap-2 items-center">
-            <div class="text-sm">{{scope.row.sentiment.delta24h.toFixed(2)}}</div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="7d" column-key="sentiment" width="100">
-        <template #default="scope">
-          <div class="flex gap-2 items-center">
-            <div class="text-sm">{{scope.row.sentiment.delta7d.toFixed(2)}}</div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="Price" column-key="marketCap" width="100">
-        <template #default="scope">
-          <div class="flex gap-2 items-center">
-            <div class="text-sm">{{formatPrice(scope.row.marketCap.price)}}</div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="Market Cap" column-key="marketCap" width="180">
-        <template #default="scope">
-          <div class="flex gap-2 items-center">
-            <div class="text-sm">{{scope.row.marketCap.value.toFixed(4)}}</div>
-          </div>
-        </template>
-      </el-table-column>
-      <el-table-column label="24h" column-key="marketCap" width="100">
-        <template #default="scope">
-          <div class="flex gap-2 items-center">
-            <div class="text-sm">{{scope.row.marketCap.delta24h.toFixed(2)}}</div>
+            <div class="text-sm">{{scope.row.delta7d?.toFixed(2)}}%</div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="Last 7 days" column-key="marketCap" width="180">
         <template #default="scope">
           <div class="flex gap-2 items-center">
-            <ChartItem :data-series="scope.row.marketCap.chart" :chart-id="scope.row.name"/>
+            <ChartItem :data-series="scope.row.chart ?? test.chart" :chart-id="scope.row.twitterId"/>
           </div>
         </template>
       </el-table-column>

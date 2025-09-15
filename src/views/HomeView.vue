@@ -33,7 +33,7 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['tweets', 'mindshare', 'communities']
+const tabOptions = ['tweets', 'communities', 'mindshare']
 const activeTab = ref('tweets')
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
