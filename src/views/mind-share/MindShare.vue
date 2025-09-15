@@ -75,12 +75,12 @@ onMounted(() => {
     <div class="flex-1 overflow-auto no-scroll-bar">
       <el-table :data="mindShareList" style="width: 100%"
                 class="rounded-2xl overflow-hidden no-scroll-bar px-3 h-full">
-        <el-table-column label="#" type="index" width="50" text-center>
+        <el-table-column label="#" type="index" width="46" text-center>
           <template #default="scope">
             <div>{{scope.$index+1}}</div>
           </template>
         </el-table-column>
-        <el-table-column label="Name" column-key="name" min-width="160">
+        <el-table-column label="Name" column-key="name" min-width="150">
           <template #default="scope">
             <div class="flex gap-2 items-center">
               <div class="w-8 h-8 min-w-8 min-h-8 bg-grey-light rounded-lg overflow-hidden">
@@ -94,21 +94,21 @@ onMounted(() => {
           </template>
         </el-table-column>
 
-        <el-table-column label="AI Score" column-key="reputation" width="150">
+        <el-table-column label="AI Score" column-key="reputation" width="100">
           <template #default="scope">
             <div class="flex gap-2 items-center">
               <div class="text-sm">{{ (scope.row.twitterReputation).toFixed(2) }}</div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Mindshare" column-key="mindshare" width="150">
+        <el-table-column label="Mindshare" column-key="mindshare" width="100">
           <template #default="scope">
             <div class="flex gap-2 items-center">
               <div class="text-sm">{{ (scope.row.mindSharePercent * 100).toFixed(2) }}%</div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="24h" column-key="mindshare" width="120">
+        <el-table-column label="24h" column-key="mindshare" width="100">
           <template #default="scope">
             <div v-if="scope.row.delta24h>=0" class="flex gap-2 items-center">
               <i-ep-caret-top color="#34C759"></i-ep-caret-top>
@@ -120,7 +120,7 @@ onMounted(() => {
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="7d" column-key="mindshare" width="120">
+        <el-table-column label="7d" column-key="mindshare" width="100">
           <template #default="scope">
             <div v-if="scope.row.delta7d>=0" class="flex gap-2 items-center">
               <i-ep-caret-top color="#34C759"></i-ep-caret-top>
@@ -132,7 +132,7 @@ onMounted(() => {
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="Last 7 days" column-key="marketCap" width="180">
+        <el-table-column label="Last 7 days" column-key="marketCap" width="220">
           <template #default="scope">
             <div class="flex justify-start items-center w-full h-[50px] ">
               <ChartItem :data-series="scope.row.chart ?? test.chart"
