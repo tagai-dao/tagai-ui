@@ -35,7 +35,7 @@ const lineChartOptions = computed(() => {
       show: false,
     },
     xaxis: {
-      categories: props.dataSeries?props.dataSeries.map(item => item.date):[],
+      categories: props.dataSeries?props.dataSeries.map((item: any) => item.date):[],
       labels: {show: false},
       axisBorder: {
         show: false
@@ -65,7 +65,7 @@ const lineChartOptions = computed(() => {
 });
 const series = computed(() => {
   return [{
-    data: props.dataSeries?.map(item => item.value),
+    data: props.dataSeries?.map((item: any) => item.value),
     parsing: {
       x: 'date',
       y: 'value'
