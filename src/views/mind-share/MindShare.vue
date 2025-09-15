@@ -58,49 +58,52 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="px-3">
+  <div class="flex-1 overflow-auto no-scroll-bar px-3">
     <el-table :data="mindShareList" style="width: 100%" class="rounded-2xl overflow-hidden no-scroll-bar">
-      <el-table-column label="#" type="index" width="40" >
+      <el-table-column label="#" type="index" width="50" text-center>
         <template #default="scope">
           <div>{{scope.$index+1}}</div>
         </template>
       </el-table-column>
-      <el-table-column label="Name" column-key="name" width="150">
+      <el-table-column label="Name" column-key="name" min-width="300">
         <template #default="scope">
           <div class="flex gap-2 items-center">
-            <img class="w-8 h-8" :src="scope.row.profile" alt="">
+            <div class="w-8 h-8 min-w-8 min-h-8 bg-grey-light rounded-lg overflow-hidden">
+              <img class="w-8 h-8 " :src="scope.row.profile" alt="">
+            </div>
             <div class="flex flex-col">
-              <span class="text-h4 font-medium">{{ scope.row.twitterName }}</span>
-              <span class="text-sm">@{{scope.row.twitterUsername}}</span>
+              <span class="text-h4 font-medium whitespace-nowrap">{{ scope.row.twitterName }}</span>
+              <span class="text-sm whitespace-nowrap">@{{scope.row.twitterUsername}}</span>
             </div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="Mindshare" column-key="mindshare" width="100">
+      <el-table-column label="Mindshare" column-key="mindshare" width="120">
         <template #default="scope">
           <div class="flex gap-2 items-center">
             <div class="text-sm">{{ (scope.row.mindSharePercent * 100).toFixed(2) }}%</div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="24h" column-key="mindshare" width="80">
+      <el-table-column label="24h" column-key="mindshare" width="100">
         <template #default="scope">
           <div class="flex gap-2 items-center">
             <div class="text-sm">{{scope.row.delta24h?.toFixed(2)}}%</div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="7d" column-key="mindshare" width="80">
+      <el-table-column label="7d" column-key="mindshare" width="100">
         <template #default="scope">
           <div class="flex gap-2 items-center">
             <div class="text-sm">{{scope.row.delta7d?.toFixed(2)}}%</div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="Last 7 days" column-key="marketCap" width="180">
+      <el-table-column label="Last 7 days" column-key="marketCap" width="150">
         <template #default="scope">
-          <div class="flex gap-2 items-center">
-            <ChartItem :data-series="scope.row.chart ?? test.chart" :chart-id="scope.row.twitterId"/>
+          <div class="flex justify-start items-center w-full h-[50px] ">
+            <ChartItem :data-series="scope.row.chart ?? test.chart"
+                       :chart-id="scope.row.twitterId"/>
           </div>
         </template>
       </el-table-column>

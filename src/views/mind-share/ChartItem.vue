@@ -16,9 +16,10 @@ const props = defineProps({
 const lineChartOptions = computed(() => {
   return {
     chart: {
-      width: '100%',
-      height: 200,
-      type: 'line',
+      type: 'area',
+      sparkline: {
+        enabled: true
+      },
       toolbar: {
         show: false
       },
@@ -28,10 +29,10 @@ const lineChartOptions = computed(() => {
 
     },
     stroke: {
-      width: 1,
+      width: 2,
     },
     grid: {
-      show: false
+      show: false,
     },
     xaxis: {
       categories: props.dataSeries?props.dataSeries.map(item => item.date):[],
@@ -48,7 +49,18 @@ const lineChartOptions = computed(() => {
     },
     tooltip: {
       enabled: false
-    }
+    },
+    fill: {
+      colors: ['#34C759'],
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.5,
+        opacityTo: 0.6,
+        stops: [0, 100]
+      }
+    },
+    colors: ['#34C759'],
   }
 });
 const series = computed(() => {
@@ -63,15 +75,14 @@ const series = computed(() => {
 </script>
 
 <template>
-  <div>
-    <VueApexCharts
-        :id="props.chartId"
-        type="line"
-        :options="lineChartOptions"
-        :series="series"
-        class="w-full"
-    />
-  </div>
+  <VueApexCharts
+      :width="120"
+      :height="40"
+      type="area"
+      :id="props.chartId"
+      :options="lineChartOptions"
+      :series="series"
+  />
 </template>
 
 <style scoped>
