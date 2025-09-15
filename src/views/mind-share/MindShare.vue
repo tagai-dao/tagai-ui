@@ -67,10 +67,10 @@ onMounted(() => {
           v-model="listType"
           class="bg-white rounded-full overflow-hidden max-w-[120px] c-select h-8 flex items-center text-h3 text-black"
           popper-class="c-select-popper rounded-xl">
-        <el-option value="project" label="项目方" />
-        <el-option value="user" label="用户" />
+        <el-option value="project" :label="$t('mindShare.project')" />
+        <el-option value="user" :label="$t('mindShare.user')" />
       </el-select>
-      <div class="text-sm text-grey-light-active">数据由BUIDL社区提供</div>
+      <div class="text-sm text-grey-light-active">{{ $t('mindShare.dataProviderTip') }}</div>
     </div>
     <div class="flex-1 overflow-auto no-scroll-bar">
       <el-table :data="mindShareList" style="width: 100%"
@@ -80,7 +80,7 @@ onMounted(() => {
             <div>{{scope.$index+1}}</div>
           </template>
         </el-table-column>
-        <el-table-column label="Name" column-key="name" min-width="300">
+        <el-table-column label="Name" column-key="name" min-width="160">
           <template #default="scope">
             <div class="flex gap-2 items-center">
               <div class="w-8 h-8 min-w-8 min-h-8 bg-grey-light rounded-lg overflow-hidden">
@@ -90,6 +90,14 @@ onMounted(() => {
                 <span class="text-h4 font-medium whitespace-nowrap">{{ scope.row.twitterName }}</span>
                 <span class="text-sm whitespace-nowrap">@{{scope.row.twitterUsername}}</span>
               </div>
+            </div>
+          </template>
+        </el-table-column>
+
+        <el-table-column label="AI Score" column-key="reputation" width="150">
+          <template #default="scope">
+            <div class="flex gap-2 items-center">
+              <div class="text-sm">{{ (scope.row.twitterReputation).toFixed(2) }}</div>
             </div>
           </template>
         </el-table-column>

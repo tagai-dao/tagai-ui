@@ -109,6 +109,11 @@
     "transferTip1": "请仔细检查目标地址，发送到错误地址的资金将无法恢复。",
     "transferTip2": "转账成功后无法撤销，请谨慎操作"
   },
+  "mindShare": {
+    "dataProviderTip": "数据由BUIDL社区提供",
+    "project": "项目方",
+    "user": "用户"
+  },
   "profileView": {
     "holdCoin": "持有代币",
     "post": "推特/Space",

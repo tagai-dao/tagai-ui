@@ -111,6 +111,11 @@
     "transferTip1": "Please check the target address, funds sent to the wrong address cannot be recovered.",
     "transferTip2": "After the transfer is successful, it cannot be reversed, please operate with caution."
   },
+  "mindShare": {
+    "dataProviderTip": "Data provided by BUIDL community",
+    "project": "Project",
+    "user": "User"
+  },
   "profileView": {
     "holdCoin": "Hold TagCoins",
     "post": "Tweet/Space",
