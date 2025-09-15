@@ -65,6 +65,7 @@
   "Tweets": "推文",
   "Space": "Space",
   "max": "最大",
+  "mindshare": "MindShare",
   "Twitter": "推特",
   "Telegram": "电报",
   "loginView": {
@@ -107,6 +108,11 @@
     "transfer": "转账",
     "transferTip1": "请仔细检查目标地址，发送到错误地址的资金将无法恢复。",
     "transferTip2": "转账成功后无法撤销，请谨慎操作"
+  },
+  "mindShare": {
+    "dataProviderTip": "数据由BUIDL社区提供",
+    "project": "项目方",
+    "user": "用户"
   },
   "profileView": {
     "holdCoin": "持有代币",

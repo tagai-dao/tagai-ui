@@ -16,6 +16,7 @@ import { formatPrice } from "../utils/helper";
 import { useStateStore } from "@/stores/common";
 import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
+import MindShare from "@/views/mind-share/MindShare.vue";
 
 const listType = ref(ListType.MarketCap)
 const typePopoverVisible = ref(false)
@@ -32,7 +33,7 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['tweets', 'communities']
+const tabOptions = ['tweets', 'communities', 'mindshare']
 const activeTab = ref('tweets')
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
@@ -161,18 +162,6 @@ async function getNewCommunities() {
   } catch(e) {
     handleErrorTip(e)
   }
-}
-function gotoChain(chain: string){
-  if (chain === 'ENULS') {
-    window.open('https://enuls.tagai.fun', '__blank')
-  } else if (chain === 'Base') {
-    window.open('https://base.tagai.fun', '__blank')
-  } else if (chain === 'NULS') {
-    window.open('https://nuls.tagai.fun', '__blank')
-  } else if (chain === 'Solana') {
-    window.open('https://sol.tagai.fun', '__blank')
-  }
-  activeTab.value = 'BSC'
 }
 
 function gotoDetail(com: Community) {
@@ -355,6 +344,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
         </van-pull-refresh>
       </div>
     </template>
+    <MindShare v-if="activeTab==='mindshare'"/>
   </div>
 </template>
 

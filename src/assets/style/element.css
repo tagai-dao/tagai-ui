@@ -80,3 +80,6 @@
     background: #ffffff ;
     border: none;
 }
+.el-scrollbar__bar {
+   display: none!important;
+}

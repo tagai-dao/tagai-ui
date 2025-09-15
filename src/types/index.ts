@@ -407,3 +407,15 @@ export type MiniApp = {
   tick: string,
   tag: string
 }
+
+export type MindShare = Account & {
+  dayNumber: number,
+  mindSharePercent: number, // 最近一天的mindshare
+  percents: number[],        // 最近7天的mindshare
+  delta24h: number,
+  delta7d: number,
+  chart: Array<{
+    date: Date,
+    value: number
+  }>
+}
