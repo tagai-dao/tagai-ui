@@ -2,7 +2,7 @@
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {ref, onActivated, onMounted, watch, computed, reactive, onUnmounted} from "vue";
-import { ListType, type Community, type Space } from '@/types'
+import { ListType, type Community, type Space, MindShareType } from '@/types'
 import { getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import { useCurationStore } from '@/stores/curation'
@@ -19,6 +19,7 @@ import PostTypeOption from "@/views/home/PostTypeOption.vue";
 import MindShare from "@/views/mind-share/MindShare.vue";
 
 const listType = ref(ListType.MarketCap)
+const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
 const curationStore = useCurationStore();
@@ -300,6 +301,16 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
           <el-option :value="ListType.New" :label="$t('new')" />
         </el-select>
       </template>
+      <template v-if="activeTab==='mindshare'">
+        <el-select
+            v-model="mindShareType"
+            class="bg-white rounded-full overflow-hidden max-w-[120px] c-select h-10 flex items-center text-h3 text-black"
+            popper-class="c-select-popper rounded-xl"
+        >
+          <el-option :value="MindShareType.Project" :label="$t('mindShare.project')" />
+          <el-option :value="MindShareType.User" :label="$t('mindShare.user')" />
+        </el-select>
+      </template>
     </div>
     <HomePost v-if="activeTab==='tweets'"/>
     <template v-if="activeTab==='communities'">
@@ -344,7 +355,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
         </van-pull-refresh>
       </div>
     </template>
-    <MindShare v-if="activeTab==='mindshare'"/>
+    <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
   </div>
 </template>
 

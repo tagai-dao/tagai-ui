@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {getMindShareList} from "@/apis/api";
-import {type MindShare, ListType, type Tweet} from "@/types";
+import {type MindShare, ListType, type Tweet, MindShareType} from "@/types";
 import {handleErrorTip} from "@/utils/notify";
 import {onMounted, ref, watch } from "vue";
 import {getDayNumber} from "@/utils/helper";
@@ -11,14 +11,21 @@ const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
 
-const listType = ref('project')
+const props = defineProps<{
+  mindShareType: MindShareType
+}>()
+
+watch(() => props.mindShareType, (val) => {
+  onRefresh()
+})
+
 const mindShareList = ref<Array<MindShare>>([])
 
 const onRefresh = async () => {
   try{
     refreshing.value = true
     finished.value = false
-    const list: any = await getMindShareList(listType.value==='project'?1:0) as Array<MindShare>
+    const list: any = await getMindShareList(props.mindShareType) as Array<MindShare>
     const dayNumber = getDayNumber()
     list.forEach((ms: MindShare) => {
       let chart = ms.percents.map((percent: number, index: number) => {
@@ -45,7 +52,7 @@ const onLoad = async () => {
     if (refreshing.value || finished.value || mindShareList.value.length===0) return
     loading.value = true
     const list: any = await getMindShareList(
-        listType.value==='project'?1:0,
+        props.mindShareType,
         Math.floor((mindShareList.value.length - 1) / 30) + 1
     )
     const dayNumber = getDayNumber()
@@ -69,9 +76,6 @@ const onLoad = async () => {
   }
 }
 
-watch(listType, (val) => {
-  onRefresh()
-})
 onMounted(() => {
   onRefresh()
 })
@@ -80,13 +84,6 @@ onMounted(() => {
 <template>
   <div class="flex-1 overflow-hidden flex flex-col px-3">
     <div class="mb-3 flex items-center gap-2">
-      <el-select
-          v-model="listType"
-          class="bg-white rounded-full overflow-hidden max-w-[120px] c-select h-8 flex items-center text-h3 text-black"
-          popper-class="c-select-popper rounded-xl">
-        <el-option value="project" :label="$t('mindShare.project')" />
-        <el-option value="user" :label="$t('mindShare.user')" />
-      </el-select>
       <div class="text-sm text-grey-light-active">{{ $t('mindShare.dataProviderTip') }}</div>
     </div>
     <div class="flex-1 flex flex-col overflow-hidden bg-white rounded-2xl">

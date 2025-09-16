@@ -16,6 +16,11 @@ export enum ListType {
   New
 }
 
+export enum MindShareType {
+  User,
+  Project
+}
+
 export enum TwitterTipStatus {
   Pending,
   Success,
