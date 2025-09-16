@@ -14,6 +14,7 @@ import { getUserBitip, checkRegister, checkEthUsed } from "@/apis/api";
 import { bytesToHex, reportLog, sleep } from "@/utils/helper";
 import { box, generateSteemAuth, getBalance } from "@/utils/web3";
 import { useModalStore } from "@/stores/common";
+import { GlobalModalType } from "@/types";
 import { checksumAddress } from "viem";
 import { randomBytes } from '@noble/hashes/utils'
 import type { Account } from "@/types";
@@ -57,6 +58,9 @@ const step = computed(() => {
   }
   if (chosingBitip.value) {
       return 3;
+  }
+  if (acc.value?.inSteemWhiteList) {
+    return 7;
   }
   if (acc.value?.twitterReputation && acc.value.twitterReputation >= 30) {
     return 6;
@@ -133,10 +137,18 @@ async function payToken() {
 // register with twitter reputaion
 async function sign() {
   try {
+      if (accStore.ethConnectState !== EthWalletState.Connected) {
+        useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+        return;
+      }
         loading.value = true
         identityInfo.assetId = acc.value?.twitterReputation?.toString() ?? "0";
         identityInfo.chainName = ChainConfig.name;
-        identityInfo.type = 'reputation'
+        if (step.value === 6) {
+          identityInfo.type = 'reputation'
+        } else if (step.value === 7) {
+          identityInfo.type = 'whitelist'
+        }
         await register();
     } catch (error) {
         handleErrorTip(error)
@@ -449,12 +461,35 @@ onMounted(async () => {
         </div>
       <div class="w-full">
         <textarea class="w-full h-32 p-2 my-5 text-h3 text-gray-700 border border-gray-300 rounded" v-model="RegisterSteemMessage" readonly></textarea>
-        <button class="h-12 w-full mb-5 bg-gradient-primary rounded-full flex justify-center items-center gap-2" @click="sign" :disabled="loading">
+        <button class="h-12 w-full mb-5 bg-gradient-primary rounded-full flex justify-center items-center gap-2" @click="sign" 
+        :disabled="loading || accountMismatch">
           <span class="text-white font-semibold">
-            {{ $t("loginView.bond") }}
+            {{ (accStore.ethConnectAddress ? $t("loginView.bond") : $t('connect')) }}
           </span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
+        <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
+          {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
+        </div>
+      </div>
+    </div>
+
+    <div v-if="step === 7" class="flex flex-col min-h-[240px] items-center justify-center gap-4">
+      <div class="text-h3 text-black text-center mt-5">
+        {{$t('loginView.createSocialAccount')}}
+        </div>
+      <div class="w-full">
+        <textarea class="w-full h-32 p-2 my-5 text-h3 text-gray-700 border border-gray-300 rounded" v-model="RegisterSteemMessage" readonly></textarea>
+        <button class="h-12 w-full mb-5 bg-gradient-primary rounded-full flex justify-center items-center gap-2" @click="sign" 
+        :disabled="loading || accountMismatch">
+          <span class="text-white font-semibold">
+            {{ (accStore.ethConnectAddress ? $t("loginView.bond") : $t('connect')) }}
+          </span>
+          <i-ep-loading v-show="loading" class="animate-spin" />
+        </button>
+        <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
+          {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}
+        </div>
       </div>
     </div>
 </template>

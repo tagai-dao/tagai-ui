@@ -85,6 +85,7 @@
     "haveBitIP": "I have BitIp",
     "mint": "Mint",
     "bond": "Bond",
+    "createSocialAccount": "Create Social Account",
     "fidUsedTip": "This Farcaster account has already been used.",
     "createWalletTip": "Now you need to create a wallet for donut use",
     "authLikeTip": "Like permission: Curate other tweets/spaces",

@@ -311,35 +311,40 @@ export const getTokenInfo = async (communities: Community[]) => {
 
 export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     if (tweets.length === 0) return tweets;
-    let tokens = tweets.filter(t => !t.isImport).map(t => t.token ?? '')
-    let versions: Record<string, number> = {}
-    for (let tweet of tweets) {
-        versions[tweet.token!] = tweet.version ?? 2;
-    }
-    let result = await getTokenOnchainInfo(tokens, versions)
-    let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport))
-    
-    for( let tweet of tweets) {
-        if (!tweet.token) continue
-        const tokenInfo = result[tweet.token]
-        if (tweet.isImport) {
-            const importInfo = importResult[tweet.token]
-            tweet.listed = true;
-            tweet.bondingCurveSupply = 0;
-            tweet.totalClaimedSocialRewards = 0;
-            tweet.price = importInfo.price;
-            tweet.marketCap = importInfo.price * importInfo.totalSupply;
-            tweet.totalSupply = importInfo.totalSupply;
-        }else {
-            tweet.listed = tokenInfo.listed;
-            tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
-            tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
-            tweet.price = tokenInfo.price;
-            tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
-            tweet.pair = tokenInfo.pair;
+    try {
+        let tokens = tweets.filter(t => !t.isImport).map(t => t.token ?? '')
+        let versions: Record<string, number> = {}
+        for (let tweet of tweets) {
+            versions[tweet.token!] = tweet.version ?? 2;
         }
+        let result = await getTokenOnchainInfo(tokens, versions)
+        let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport))
+        
+        for( let tweet of tweets) {
+            if (!tweet.token) continue
+            const tokenInfo = result[tweet.token]
+            if (tweet.isImport) {
+                const importInfo = importResult[tweet.token]
+                tweet.listed = true;
+                tweet.bondingCurveSupply = 0;
+                tweet.totalClaimedSocialRewards = 0;
+                tweet.price = importInfo.price;
+                tweet.marketCap = importInfo.price * importInfo.totalSupply;
+                tweet.totalSupply = importInfo.totalSupply;
+            }else {
+                tweet.listed = tokenInfo.listed;
+                tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
+                tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
+                tweet.price = tokenInfo.price;
+                tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
+                tweet.pair = tokenInfo.pair;
+            }
+        }
+        return tweets;
+    } catch (e) {
+        console.log(321, e)
+        return tweets;
     }
-    return tweets;
 }
 
 export const getTokenOnchainInfo = async (tokens: string[], versions: Record<string, number>) => {
