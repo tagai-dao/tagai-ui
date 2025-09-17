@@ -8,6 +8,8 @@ import { ChainConfig } from "@/config"
 import { usePrivyStore } from '@/stores/privy';
 import { createWalletClient, createPublicClient, custom, http } from 'viem';
 import { customBsc } from './privy';
+import { useModalStore } from '@/stores/common';
+import { GlobalModalType } from '@/types';
 
 
 // this.ethWalletType = 'none' // metamask, okx, none

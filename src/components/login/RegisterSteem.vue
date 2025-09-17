@@ -59,10 +59,10 @@ const step = computed(() => {
   if (chosingBitip.value) {
       return 3;
   }
-  if (acc.value?.inSteemWhiteList) {
+  if (acc.value?.inSteemWhiteList && acc.value?.ethAddr) {
     return 7;
   }
-  if (acc.value?.twitterReputation && acc.value.twitterReputation >= 30) {
+  if (acc.value?.twitterReputation && acc.value.twitterReputation >= 30 && acc.value?.ethAddr) {
     return 6;
   }
   if (
