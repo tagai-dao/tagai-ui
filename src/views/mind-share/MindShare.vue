@@ -25,7 +25,6 @@ const onRefresh = async () => {
     refreshing.value = true
     finished.value = false
     const res  = await getMindShareList(props.mindShareType)
-    console.log(53, res)
     mindShareList.value = res as Array<MindShare>;
     const dayNumber = getDayNumber()
     mindShareList.value.forEach(ms => {

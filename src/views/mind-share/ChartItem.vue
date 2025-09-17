@@ -21,7 +21,7 @@ const props = defineProps({
 
 const mindShareMid = computed(() => {
   // 获取mindShare.percents的中位数
-  return props.mindShare?.percents.length > 0 ? props.mindShare?.percents.sort((a: number, b: number) => a - b)[3] : 0
+  return props.mindShare?.percents.length > 0 ? props.mindShare?.percents.sort((a: number, b: number) => a - b)[Math.floor(props.mindShare.percents.length / 2)] : 0
 })
 
 const lineChartOptions = ref({})
