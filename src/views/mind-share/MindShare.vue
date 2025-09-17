@@ -99,19 +99,19 @@ onMounted(() => {
             :finished-text="$t('noMore')"
             :offset="50"
             @load="onLoad">
-          <div class="min-w-[500px] web:min-w-[700px]">
+          <div class="min-w-[600px] web:min-w-[750px]">
             <div class="flex gap-2 items-center px-3 py-3 border-b-[0.5px] text-h5 sticky top-0 bg-white z-[99]">
-              <div class="min-w-[50px] hidden web:block">#</div>
-              <div class="min-w-[150px] flex-1">Name</div>
-              <div class="min-w-[100px]">Mindshare</div>
-              <div class="min-w-[100px]">24h</div>
-              <div class="min-w-[100px]">7d</div>
-              <div class="min-w-[100px]">Last 7 days</div>
+              <div class="min-w-[50px] web:min-w-[80px] hidden web:block">#</div>
+              <div class="min-w-[150px] max-w-[150px] web:min-w-[150px] web:max-w-full web:flex-1">Name</div>
+              <div class="min-w-[80px] max-w-[80px] web:min-w-[120px] web:max-w-[120px]">Mindshare</div>
+              <div class="min-w-[100px] max-w-[100px]">24h</div>
+              <div class="min-w-[100px] max-w-[100px]">7d</div>
+              <div class="min-w-[100px] max-w-[100px]">Last 7 days</div>
             </div>
             <div class="flex gap-2 items-center px-3 py-3 hover:bg-grey-light border-b-[0.5px]"
                  v-for="(item, index) of mindShareList" :key="item.twitterName">
-              <div class="min-w-[50px] text-sm hidden web:block">{{index+1}}</div>
-              <div class="min-w-[150px] flex-1 flex gap-2 items-center">
+              <div class="min-w-[50px] web:min-w-[80px] text-sm hidden web:block">{{index+1}}</div>
+              <div class="min-w-[150px] max-w-[150px] web:min-w-[150px] web:max-w-full web:flex-1 flex gap-2 items-center">
                 <div class="w-6 h-6 min-w-6 web:w-8 web:h-8 web:min-w-8 web:min-h-8 bg-grey-light rounded-lg overflow-hidden">
                   <img class="w-6 h-6 web:w-8 web:h-8" :src="item.profile" alt="">
                 </div>
@@ -120,10 +120,10 @@ onMounted(() => {
                   <span class="text-sm break-words">@{{item.twitterUsername}}</span>
                 </div>
               </div>
-              <div class="min-w-[100px] flex gap-2 items-center">
+              <div class="min-w-[80px] max-w-[80px] web:min-w-[120px] web:max-w-[120px] flex gap-2 items-center">
                 <div class="text-sm">{{(item.mindSharePercent * 100).toFixed(2) }}%</div>
               </div>
-              <div class="min-w-[100px]">
+              <div class="min-w-[100px] max-w-[100px]">
                 <div v-if="item.delta24h>=0" class="flex gap-2 items-center">
                   <i-ep-caret-top color="#34C759"></i-ep-caret-top>
                   <div class="text-sm text-green-34">{{item.delta24h?.toFixed(2)||0.0}}%</div>
@@ -133,7 +133,7 @@ onMounted(() => {
                   <div class="text-sm text-red-e6">{{item.delta24h?.toFixed(2)||0.0}}%</div>
                 </div>
               </div>
-              <div class="min-w-[100px]">
+              <div class="min-w-[100px] max-w-[100px]">
                 <div v-if="item.delta7d>=0" class="flex gap-2 items-center">
                   <i-ep-caret-top color="#34C759"></i-ep-caret-top>
                   <div class="text-sm text-green-34">{{item.delta7d?.toFixed(2)||0.0}}%</div>
@@ -143,7 +143,7 @@ onMounted(() => {
                   <div class="text-sm text-red-e6">{{item.delta7d?.toFixed(2)||0.0}}%</div>
                 </div>
               </div>
-              <div class="min-w-[100px]">
+              <div class="min-w-[100px] max-w-[100px]">
                 <div class="flex justify-start items-center w-full h-[50px] z-0">
                   <ChartItem :data-series="item.chart ?? []"
                              :mind-share="item"
