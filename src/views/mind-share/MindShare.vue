@@ -56,7 +56,7 @@ const onLoad = async () => {
         Math.floor((mindShareList.value.length - 1) / 30) + 1
     )
     const dayNumber = getDayNumber()
-    list.forEach(ms => {
+    list.forEach((ms: MindShare) => {
       let chart = ms.percents.map((percent, index) => {
         return {
           date: new Date((dayNumber + index) * 86400000),
@@ -104,7 +104,6 @@ onMounted(() => {
             <div class="flex gap-2 items-center px-3 py-3 border-b-[0.5px] text-h5 sticky top-0 bg-white z-[99]">
               <div class="min-w-[50px] hidden web:block">#</div>
               <div class="min-w-[150px] flex-1">Name</div>
-              <div class="min-w-[100px]">AI Score</div>
               <div class="min-w-[100px]">Mindshare</div>
               <div class="min-w-[100px]">24h</div>
               <div class="min-w-[100px]">7d</div>
@@ -121,9 +120,6 @@ onMounted(() => {
                   <span class="text-sm web:text-h4 font-medium break-words">{{ item.twitterName }}</span>
                   <span class="text-sm break-words">@{{item.twitterUsername}}</span>
                 </div>
-              </div>
-              <div class="min-w-[100px] flex gap-2 items-center">
-                <div class="text-sm">{{(item.twitterReputation).toFixed(2) }}</div>
               </div>
               <div class="min-w-[100px] flex gap-2 items-center">
                 <div class="text-sm">{{(item.mindSharePercent * 100).toFixed(2) }}%</div>
