@@ -103,7 +103,7 @@ onMounted(() => {
             <div class="flex gap-2 items-center px-3 py-3 border-b-[0.5px] text-h5 sticky top-0 bg-white z-[99]">
               <div class="min-w-[50px] web:min-w-[80px] hidden web:block">#</div>
               <div class="min-w-[150px] max-w-[150px] web:min-w-[150px] web:max-w-full web:flex-1">Name</div>
-              <div class="min-w-[80px] max-w-[80px] web:min-w-[120px] web:max-w-[120px]">Mindshare</div>
+              <div class="min-w-[100px] max-w-[80px] web:min-w-[120px] web:max-w-[120px]">Mindshare</div>
               <div class="min-w-[100px] max-w-[100px]">24h</div>
               <div class="min-w-[100px] max-w-[100px]">7d</div>
               <div class="min-w-[100px] max-w-[100px]">Last 7 days</div>
@@ -120,7 +120,7 @@ onMounted(() => {
                   <span class="text-sm break-words">@{{item.twitterUsername}}</span>
                 </div>
               </div>
-              <div class="min-w-[80px] max-w-[80px] web:min-w-[120px] web:max-w-[120px] flex gap-2 items-center">
+              <div class="min-w-[100px] max-w-[80px] web:min-w-[120px] web:max-w-[120px] flex gap-2 items-center">
                 <div class="text-sm">{{(item.mindSharePercent * 100).toFixed(2) }}%</div>
               </div>
               <div class="min-w-[100px] max-w-[100px]">
