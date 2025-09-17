@@ -10,75 +10,68 @@ const props = defineProps({
   dataSeries: {
     type: Array,
     required: false
+  },
+  mindSharePercent: {
+    type: Number,
+    required: false
   }
 })
 
 const lineChartOptions = computed(() => {
   return {
     chart: {
-      type: 'area',
-      sparkline: {
-        enabled: true
-      },
-      toolbar: {
-        show: false
-      },
-      zoom: {
-        enabled: false
-      },
-
+      type: 'line',
+      sparkline: {enabled: true},
+      toolbar: {show: false},
+      zoom: {enabled: false},
     },
-    stroke: {
-      width: 2,
-    },
-    grid: {
-      show: false,
-    },
+    grid: {show: false,},
     xaxis: {
-      categories: props.dataSeries?props.dataSeries.map((item: any) => item.date):[],
+      categories: props.dataSeries?props.dataSeries.map(item => item.date):[],
       labels: {show: false},
-      axisBorder: {
-        show: false
-      },
-      axisTicks: {
-        show: false
-      }
+      axisBorder: {show: false},
+      axisTicks: {show: false}
     },
-    yaxis: {
-      show: false
-    },
-    tooltip: {
-      enabled: false
-    },
+    yaxis: {show: false},
+    tooltip: {enabled: false},
     fill: {
-      colors: ['#34C759'],
       type: 'gradient',
+      colors: ['#34C759'],
       gradient: {
-        shadeIntensity: 1,
         opacityFrom: 0.5,
         opacityTo: 0.6,
         stops: [0, 100]
       }
     },
-    colors: ['#34C759'],
+    stroke: {
+      width: 2,
+      curve: 'smooth'
+    },
+    plotOptions: {
+      area: {
+        fillTo: 'end',
+      },
+      line: {
+        colors: {
+          threshold: props.mindSharePercent,
+          colorAboveThreshold: '#34C759',
+          colorBelowThreshold: '#E6374D',
+        },
+      },
+    }
   }
 });
 const series = computed(() => {
   return [{
-    data: props.dataSeries?.map((item: any) => item.value),
-    parsing: {
-      x: 'date',
-      y: 'value'
-    }
+    data: props.dataSeries?.map(item => item.value)
   }]
 })
 </script>
 
 <template>
   <VueApexCharts
-      :width="120"
+      :width="80"
       :height="40"
-      type="area"
       :id="props.chartId"
       :options="lineChartOptions"
       :series="series"

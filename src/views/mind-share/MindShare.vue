@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {getMindShareList} from "@/apis/api";
-import {type MindShare, ListType, type Tweet, MindShareType} from "@/types";
+import {type MindShare, ListType, MindShareType} from "@/types";
 import {handleErrorTip} from "@/utils/notify";
 import {onMounted, ref, watch } from "vue";
 import {getDayNumber} from "@/utils/helper";
@@ -24,10 +24,12 @@ const onRefresh = async () => {
   try{
     refreshing.value = true
     finished.value = false
-    const list: any = await getMindShareList(props.mindShareType) as Array<MindShare>
+    const res  = await getMindShareList(props.mindShareType)
+    console.log(53, res)
+    mindShareList.value = res as Array<MindShare>;
     const dayNumber = getDayNumber()
-    list.forEach((ms: MindShare) => {
-      let chart = ms.percents.map((percent: number, index: number) => {
+    mindShareList.value.forEach(ms => {
+      let chart = ms.percents.map((percent, index) => {
         return {
           date: new Date((dayNumber + index) * 86400000),
           value: percent
@@ -35,8 +37,7 @@ const onRefresh = async () => {
       })
       ms.chart = chart;
     })
-    mindShareList.value = list
-    if (list && list.length < 30) {
+    if (mindShareList.value && mindShareList.value.length < 30) {
       finished.value = true
     }
   } catch (e) {
@@ -55,8 +56,8 @@ const onLoad = async () => {
         Math.floor((mindShareList.value.length - 1) / 30) + 1
     )
     const dayNumber = getDayNumber()
-    list.forEach((ms: MindShare) => {
-      let chart = ms.percents.map((percent: number, index: number) => {
+    list.forEach(ms => {
+      let chart = ms.percents.map((percent, index) => {
         return {
           date: new Date((dayNumber + index) * 86400000),
           value: percent
@@ -99,19 +100,20 @@ onMounted(() => {
             :finished-text="$t('noMore')"
             :offset="50"
             @load="onLoad">
-          <div class="min-w-[740px]">
+          <div class="min-w-[700px]">
             <div class="flex gap-2 items-center px-3 py-3 border-b-[0.5px] text-h5 sticky top-0 bg-white z-[99]">
               <div class="min-w-[50px] hidden web:block">#</div>
-              <div class="min-w-[160px]">Name</div>
+              <div class="min-w-[150px] flex-1">Name</div>
+              <div class="min-w-[100px]">AI Score</div>
               <div class="min-w-[100px]">Mindshare</div>
               <div class="min-w-[100px]">24h</div>
               <div class="min-w-[100px]">7d</div>
-              <div class="min-w-[160px] items-center justify-center flex-1 text-center">Last 7 days</div>
+              <div class="min-w-[100px]">Last 7 days</div>
             </div>
             <div class="flex gap-2 items-center px-3 py-3 hover:bg-grey-light border-b-[0.5px]"
                  v-for="(item, index) of mindShareList" :key="item.twitterName">
               <div class="min-w-[50px] text-sm hidden web:block">{{index+1}}</div>
-              <div class="min-w-[160px] flex gap-2 items-center">
+              <div class="min-w-[150px] flex-1 flex gap-2 items-center">
                 <div class="w-6 h-6 min-w-6 web:w-8 web:h-8 web:min-w-8 web:min-h-8 bg-grey-light rounded-lg overflow-hidden">
                   <img class="w-6 h-6 web:w-8 web:h-8" :src="item.profile" alt="">
                 </div>
@@ -119,6 +121,9 @@ onMounted(() => {
                   <span class="text-sm web:text-h4 font-medium break-words">{{ item.twitterName }}</span>
                   <span class="text-sm break-words">@{{item.twitterUsername}}</span>
                 </div>
+              </div>
+              <div class="min-w-[100px] flex gap-2 items-center">
+                <div class="text-sm">{{(item.twitterReputation).toFixed(2) }}</div>
               </div>
               <div class="min-w-[100px] flex gap-2 items-center">
                 <div class="text-sm">{{(item.mindSharePercent * 100).toFixed(2) }}%</div>
@@ -143,9 +148,10 @@ onMounted(() => {
                   <div class="text-sm text-red-e6">{{item.delta7d?.toFixed(2)||0.0}}%</div>
                 </div>
               </div>
-              <div class="min-w-[160px] flex-1">
-                <div class="flex justify-center items-center w-full h-[50px] z-0">
+              <div class="min-w-[100px]">
+                <div class="flex justify-start items-center w-full h-[50px] z-0">
                   <ChartItem :data-series="item.chart ?? []"
+                             :mind-share-percent="item.mindSharePercent"
                              :chart-id="item.twitterId"/>
                 </div>
               </div>
