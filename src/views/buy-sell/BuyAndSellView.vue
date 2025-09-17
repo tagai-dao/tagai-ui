@@ -488,10 +488,10 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating"
+          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || accStore.ethConnectState == EthWalletState.Connecting"
         >
           <span>{{ (accStore.ethConnectAddress ? (listed ? $t('confirmListed') : $t('confirm')): $t('connect')) }}</span>
-          <i-ep-loading v-show="trading || calculating" class="animate-spin" />
+          <i-ep-loading v-show="trading || calculating || accStore.ethConnectState == EthWalletState.Connecting" class="animate-spin" />
         </button>
 
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">

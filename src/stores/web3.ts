@@ -55,7 +55,7 @@ export const useAccountStore = defineStore('account', {
             ipshare: {} as IPShare,
             pubKey: '',
             ethWalletType: '',
-            ethConnectState: EthWalletState.Disconnect,
+            ethConnectState: EthWalletState.Connecting,
             ethConnectAddress: '',
             unreadMessageCount: 0,
             socialMessages: [] as SocialMessage[],

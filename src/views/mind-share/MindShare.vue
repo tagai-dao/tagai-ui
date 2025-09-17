@@ -5,7 +5,6 @@ import {handleErrorTip} from "@/utils/notify";
 import {onMounted, ref, watch } from "vue";
 import {getDayNumber} from "@/utils/helper";
 import ChartItem from "@/views/mind-share/ChartItem.vue";
-import {TweetListType} from "@/stores/tweets";
 
 const refreshing = ref(false);
 const loading = ref(false);

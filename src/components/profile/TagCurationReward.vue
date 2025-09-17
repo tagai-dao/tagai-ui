@@ -84,10 +84,10 @@ function login() {
       </div>
     </div>
     
-    <button v-if="isProfile" @click="claim" :disabled="claiming || !canClaim"
+    <button v-if="isProfile" @click="claim" :disabled="claiming || !canClaim || accStore.ethConnectState == EthWalletState.Connecting"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">
       {{ canClaim ? $t('claim') : $t('pendingSettled') }}
-      <i-ep-loading v-if="claiming" class="animate-spin" />
+      <i-ep-loading v-if="claiming || (canClaim && accStore.ethConnectState == EthWalletState.Connecting)" class="animate-spin" />
     </button>
     <button v-else @click="login"
      class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4">

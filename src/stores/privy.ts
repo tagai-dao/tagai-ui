@@ -32,6 +32,7 @@ export const usePrivyStore = defineStore("privy", () => {
 
       const accStore = useAccountStore();
       accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
+      console.log('privy address inited', accStore.ethConnectAddress)
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy-twitter';
     } catch (error) {

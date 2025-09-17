@@ -18,7 +18,7 @@ import { onMounted, ref } from "vue";
 import emitter from "@/utils/emitter";
 import {applyPureReactInVue} from "veaury";
 import ReactApp from "@/react_app/App.jsx";
-import {useAccountStore} from "@/stores/web3";
+import {EthWalletState, useAccountStore} from "@/stores/web3";
 import {handleErrorTip, notify} from "@/utils/notify";
 import {usePrivyStore} from "@/stores/privy";
 import { bondEth, twitterLogin } from "@/apis/api";
@@ -51,6 +51,7 @@ const setWallet = async () => {
   console.log(33, walletReady.value)
   if (accStore.getAccountInfo?.twitterId && privyStore.ethersProvider && !walletReady.value) {
     try {
+      accStore.ethConnectState = EthWalletState.Connecting;
       walletReady.value = true;
       const accounts = await privyStore.ethersProvider.request({
         method: 'eth_requestAccounts'
@@ -59,6 +60,8 @@ const setWallet = async () => {
       console.log('connected wallet', connectedAddr)
       // check wallet type
       if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
+        // user connect wallet plugin by manual
+        accStore.ethConnectState = EthWalletState.Disconnect;
         return;
       } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
         await useAccount().bondEthAddress()
@@ -90,6 +93,7 @@ const handleReactLoginError = async () => {
 }
 
 const handleWalletProvider = async (provider: any) => {
+  console.log('init privy provider', provider)
   usePrivyStore().ethersProvider = provider
   await setWallet()
 }
