@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import VueApexCharts from "vue3-apexcharts";
-import {computed, ref, watch} from "vue";
+import {computed, reactive, ref, watch} from "vue";
+import { type MindShare } from "@/types";
+import { onMounted } from "vue";
 
 const props = defineProps({
   chartId: {
@@ -11,14 +13,21 @@ const props = defineProps({
     type: Array,
     required: false
   },
-  mindSharePercent: {
-    type: Number,
+  mindShare: {
+    type: Object,
     required: false
   }
 })
 
-const lineChartOptions = computed(() => {
-  return {
+const mindShareMid = computed(() => {
+  // 获取mindShare.percents的中位数
+  return props.mindShare?.percents.length > 0 ? props.mindShare?.percents.sort((a: number, b: number) => a - b)[3] : 0
+})
+
+const lineChartOptions = ref({})
+
+onMounted(() => {
+  lineChartOptions.value = {
     chart: {
       type: 'line',
       sparkline: {enabled: true},
@@ -27,7 +36,7 @@ const lineChartOptions = computed(() => {
     },
     grid: {show: false,},
     xaxis: {
-      categories: props.dataSeries?props.dataSeries.map(item => item.date):[],
+      categories: props.dataSeries?props.dataSeries.map((item: any) => item.date):[],
       labels: {show: false},
       axisBorder: {show: false},
       axisTicks: {show: false}
@@ -53,17 +62,17 @@ const lineChartOptions = computed(() => {
       },
       line: {
         colors: {
-          threshold: props.mindSharePercent,
+          threshold: mindShareMid,
           colorAboveThreshold: '#34C759',
           colorBelowThreshold: '#E6374D',
         },
       },
     }
   }
-});
+})
 const series = computed(() => {
   return [{
-    data: props.dataSeries?.map(item => item.value)
+    data: props.dataSeries?.map((item: any) => item.value)
   }]
 })
 </script>

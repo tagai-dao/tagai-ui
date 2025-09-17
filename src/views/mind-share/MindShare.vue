@@ -147,7 +147,7 @@ onMounted(() => {
               <div class="min-w-[100px]">
                 <div class="flex justify-start items-center w-full h-[50px] z-0">
                   <ChartItem :data-series="item.chart ?? []"
-                             :mind-share-percent="item.mindSharePercent"
+                             :mind-share="item"
                              :chart-id="item.twitterId"/>
                 </div>
               </div>
