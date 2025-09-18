@@ -8,6 +8,7 @@ import i18n from "@/lang";
 import App from './App.vue'
 import router from './router'
 import './assets/style/main.css'
+import { VueQrcodeReader } from 'vue-qrcode-reader';
 
 import { createRoot } from 'react-dom/client'
 import { setVeauryOptions } from 'veaury'
@@ -24,5 +25,6 @@ app.use(createPinia())
 app.use(router)
 app.use(i18n)
 app.use(VueApexCharts as any)
+app.use(VueQrcodeReader)
 
 app.mount('#app')

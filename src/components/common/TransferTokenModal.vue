@@ -10,6 +10,7 @@ import { transferToken } from "@/utils/pump";
 import { handleErrorTip } from '@/utils/notify';
 import { useAccount } from "@/composables/useAccount";
 import { useModalStore } from "@/stores/common";
+import QrcodeScan from "@/components/common/QrcodeScan.vue";
 
 const { t } = useI18n()
 
@@ -25,6 +26,8 @@ const accStore = useAccountStore()
 const tokenBalance = ref(0n);
 const isMax = ref(false);
 const { accountMismatch } = useAccount();
+
+const qrcodeDialogVisible = ref(false);
 
 const emit = defineEmits(['close']);
 
@@ -46,9 +49,9 @@ const isTransferring = ref(false);
 
 // 计算属性：验证表单是否有效
 const isFormValid = computed(() => {
-  return isAddress(transferForm.value.toAddress.trim()) && 
-         transferForm.value.amount && 
-         !formErrors.value.toAddress && 
+  return isAddress(transferForm.value.toAddress.trim()) &&
+         transferForm.value.amount &&
+         !formErrors.value.toAddress &&
          !formErrors.value.amount &&
          accountMismatch;
 });
@@ -59,12 +62,12 @@ const validateAmount = (amount: string) => {
   if (isNaN(numAmount) || numAmount <= 0) {
     return t('web3.inputAmount');
   }
-  
+
   // 检查余额是否足够
   if (parseEther(amount.toString()) > tokenBalance.value) {
     return t('profileView.tipError4');
   }
-  
+
   return '';
 };
 
@@ -98,13 +101,13 @@ const confirmTransfer = async () => {
   // 最终验证
   const addressError = isAddress(transferForm.value.toAddress as `0x${string}`) ? '' : 'Invalid address';
   const amountError = validateAmount(transferForm.value.amount);
-  
+
   if (addressError || amountError) {
     formErrors.value.toAddress = addressError;
     formErrors.value.amount = amountError;
     return;
   }
-  
+
   try {
     isTransferring.value = true;
     const hash = await transferToken(props.community.token as `0x${string}`, transferForm.value.toAddress as `0x${string}`, parseEther(transferForm.value.amount.toString()), isMax.value);
@@ -117,6 +120,11 @@ const confirmTransfer = async () => {
     isTransferring.value = false;
   }
 };
+
+const scanAddress = (address) => {
+  qrcodeDialogVisible.value = false
+  transferForm.value.toAddress = address
+}
 
 onMounted(async () => {
   tokenBalance.value = props.balance;
@@ -136,9 +144,9 @@ onMounted(async () => {
     <!-- 代币信息 -->
     <div class="bg-grey-f0/50 rounded-lg p-3 mb-2">
       <div class="flex items-center gap-3 mb-2">
-        <img 
-          v-if="community.logo" 
-          :src="community.logo" 
+        <img
+          v-if="community.logo"
+          :src="community.logo"
           class="w-8 h-8 rounded-full"
           alt="Logo"
         />
@@ -156,15 +164,20 @@ onMounted(async () => {
         <label for="toAddress" class="leading-6 text-lg font-medium text-black">
           To:
         </label>
-        <input
-          id="toAddress"
-          v-model="transferForm.toAddress"
-          @input="onAddressInput"
-          @blur="onAddressInput"
-          class="border-b-[1px] border-grey-e6 leading-6 text-base"
-          type="text"
-          :placeholder="$t('web3.inputAddress')"
-        />
+        <div class="flex items-center gap-1 border-b-[1px] border-grey-e6">
+          <input
+              id="toAddress"
+              v-model="transferForm.toAddress"
+              @input="onAddressInput"
+              @blur="onAddressInput"
+              class=" leading-6 text-base flex-1"
+              type="text"
+              :placeholder="$t('web3.inputAddress')"
+          />
+          <button @click="qrcodeDialogVisible=true">
+            <img class="w-6 h-6" src="~@/assets/icons/icon-scan.svg" alt="">
+          </button>
+        </div>
         <div v-if="formErrors.toAddress" class="text-red-e6 text-sm">
           {{ formErrors.toAddress }}
         </div>
@@ -209,7 +222,7 @@ onMounted(async () => {
 
     <!-- 操作按钮 -->
     <div class="py-2">
-      
+
       <button
         class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
         @click="confirmTransfer"
@@ -228,6 +241,12 @@ onMounted(async () => {
       <p class="mb-1">⚠️ {{ $t('web3.transferTip1') }}</p>
       <p>⚠️ {{ $t('web3.transferTip2') }}</p>
     </div>
+    <el-dialog v-model="qrcodeDialogVisible"
+               class="c-modal-fullscreen p-0"
+               fullscreen destroy-on-close>
+      <QrcodeScan @close="qrcodeDialogVisible = false"
+                  @scan-address="scanAddress" />
+    </el-dialog>
   </div>
 </template>
 
