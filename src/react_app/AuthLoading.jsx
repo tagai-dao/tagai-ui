@@ -22,11 +22,6 @@ export default function AuthLoading() {
     useEffect(() => {
         async function getWalletProvider() {
             if(ready) {
-                // 没有钱包的时候需要为用户创建新的钱包
-                if (wallets.length === 0 || !wallets.find((wallet) => wallet.walletClientType === 'privy')) {
-                   await createWallet()
-                    return;
-                }
                 const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy').getEthereumProvider()
                 emitter.emit('walletProvider', provider)
 
