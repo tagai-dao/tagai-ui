@@ -275,3 +275,6 @@ export const getCommunityTweetsWithTag = async (communityId: string, tag: string
 /************************************  mindshare  **********************************/
 export const getMindShareList = async (isProject: number, pageIndex?: number) =>
   get(BACKEND_API_URL + '/mindShare/getTopUsersWithHistory', { isProject, pageIndex })
+
+export const searchMindShareByUsername = async (username: string) =>
+  get(BACKEND_API_URL + '/mindShare/searchByUsername', { username })
