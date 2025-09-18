@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import {ref, watch} from "vue";
 import debounce from "lodash.debounce"
-import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, getUsernameTweets } from "@/apis/api";
-import { type Community, type Tweet } from "@/types";
+import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, searchMindShareByUsername } from "@/apis/api";
+import { type Community, type MindShare, type Tweet } from "@/types";
 import TagListItem from "../home/TagListItem.vue";
 import { useCommunityStore } from "@/stores/community";
 import { useRouter } from "vue-router";
@@ -20,6 +20,7 @@ const searchResult = ref<SearchResult>({
 })
 const list = ref<Community[]>([])
 const tweetsList = ref<Tweet[]>([])
+const mindShareList = ref<MindShare[]>([])
 const comStore = useCommunityStore();
 const router = useRouter();
 const spaceRegex = /https:\/\/(twitter|x)\.com\/i\/spaces\/([0-9a-z-A-Z]+)(\/\w)?/
@@ -79,7 +80,7 @@ const onInput = debounce(async () => {
       tweetsList.value = [await getTweetBySpaceId(searchResult.value.id as string) as any]
       break
     case 'user':
-      tweetsList.value = await getUsernameTweets(searchResult.value.id as string) as any
+      mindShareList.value = await searchMindShareByUsername(searchResult.value.id as string) as any
       break
     case 'community':
       list.value = await searchCommunity(searchResult.value.id as string) as any
@@ -102,6 +103,9 @@ function gotoTweet(tweet: Tweet) {
   router.push(`/post-detail/${tweet.tweetId}`)
 }
 
+function gotoProfile(username: string) {
+  router.push(`/user/${username}`)
+}
 
 </script>
 
@@ -126,7 +130,7 @@ function gotoTweet(tweet: Tweet) {
         <div v-if="searchResult.type === 'community'" class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
           <TagListItem v-for="community of list" :community :key="community.tick" @click="gotoDetail(community)"/>
         </div>
-        <div v-if="searchResult.type != 'community' && tweetsList.length > 0" class="grid h-screen overflow-auto">
+        <div v-if="(searchResult.type == 'tweet' || searchResult.type == 'space') && tweetsList.length > 0" class="grid h-screen overflow-auto">
           <div v-for="(tweet, index) of tweetsList" :key="tweet.tweetId" @click="gotoTweet(tweet)" class="mb-2">
             <SpaceItem
               v-if="tweet.spaceId"
@@ -140,6 +144,51 @@ function gotoTweet(tweet: Tweet) {
               :tweet="tweet"
             >
             </TweetItem>
+          </div>
+        </div>
+        <div v-if="searchResult.type == 'user' && mindShareList.length > 0" class="h-screen overflow-auto">
+          <div class="w-full">
+            <div class="flex gap-2 items-center px-3 py-3 border-b-[0.5px] text-h5 sticky top-0 bg-white z-[99]">
+              <div class="web:min-w-[140px] web:max-w-full web:flex-1">Name</div>
+              <div class="min-w-[80px] max-w-[80px] web:min-w-[120px] web:max-w-[120px]">Mindshare</div>
+              <div class="min-w-[80px] max-w-[100px]">24h</div>
+              <div class="min-w-[80px] max-w-[100px]">7d</div>
+            </div>
+            <div class="flex gap-2 items-center px-3 py-3 hover:bg-grey-light border-b-[0.5px]"
+                 v-for="(item, index) of mindShareList" :key="item.twitterName">
+              <button @click="gotoProfile(item.twitterUsername)" class="min-w-[140px] max-w-[120px] web:min-w-[140px] web:max-w-full web:flex-1 flex gap-2 items-center overflow-hidden">
+                <div class="w-6 h-6 min-w-6 web:w-8 web:h-8 web:min-w-8 web:min-h-8 bg-grey-light rounded-lg overflow-hidden">
+                  <img class="w-6 h-6 web:w-8 web:h-8" :src="item.profile" alt="">
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm web:text-h4 font-medium text-start break-words">{{ item.twitterName }}</span>
+                  <span class="text-sm text-start break-words">@{{item.twitterUsername}}</span>
+                </div>
+              </button>
+              <div class="min-w-[80px] max-w-[80px] web:min-w-[80px] web:max-w-[800px] flex gap-2 items-center">
+                <div class="text-sm">{{(item.mindSharePercent * 100).toFixed(2) }}%</div>
+              </div>
+              <div class="min-w-[80px] max-w-[100px]">
+                <div v-if="item.delta24h>=0" class="flex gap-2 items-center">
+                  <i-ep-caret-top color="#34C759"></i-ep-caret-top>
+                  <div class="text-sm text-green-34">{{item.delta24h?.toFixed(2)||0.0}}%</div>
+                </div>
+                <div v-else class="flex gap-2 items-center">
+                  <i-ep-caret-bottom color="#E6374D"></i-ep-caret-bottom>
+                  <div class="text-sm text-red-e6">{{item.delta24h?.toFixed(2)||0.0}}%</div>
+                </div>
+              </div>
+              <div class="min-w-[90px] max-w-[100px]">
+                <div v-if="item.delta7d>=0" class="flex gap-2 items-center">
+                  <i-ep-caret-top color="#34C759"></i-ep-caret-top>
+                  <div class="text-sm text-green-34">{{item.delta7d?.toFixed(2)||0.0}}%</div>
+                </div>
+                <div v-else class="flex gap-2 items-center">
+                  <i-ep-caret-bottom color="#E6374D"></i-ep-caret-bottom>
+                  <div class="text-sm text-red-e6">{{item.delta7d?.toFixed(2)||0.0}}%</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

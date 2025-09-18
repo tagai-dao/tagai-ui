@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, getUsernameTweets } from "@/apis/api";
-import { type Community, type Tweet } from '@/types';
+import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, searchMindShareByUsername } from "@/apis/api";
+import { type Community, type MindShare, type Tweet } from '@/types';
 import debounce from 'lodash.debounce'
 import { ref } from 'vue'
 import TagListItem from '../home/TagListItem.vue';
@@ -10,6 +10,7 @@ import { useRouter } from 'vue-router';
 const emit = defineEmits(['onClose'])
 const list = ref<Community[]>([])
 const tweetsList = ref<Tweet[]>([])
+const mindShareList = ref<MindShare[]>([])
 const comStore = useCommunityStore()
 const router = useRouter()
 const searchText = ref('')
@@ -73,7 +74,7 @@ const onInput = debounce(async () => {
       tweetsList.value = [await getTweetBySpaceId(searchResult.value.id as string) as any]
       break
     case 'user':
-      tweetsList.value = await getUsernameTweets(searchResult.value.id as string) as any
+      mindShareList.value = await searchMindShareByUsername(searchResult.value.id as string) as any
       break
     case 'community':
       list.value = await searchCommunity(searchResult.value.id as string) as any
@@ -91,6 +92,11 @@ function gotoDetail(com: Community) {
 function gotoTweet(tweet: Tweet) {
   emit('onClose')
   router.push(`/post-detail/${tweet.tweetId}`)
+}
+
+function gotoProfile(username: string) {
+  emit('onClose')
+  router.push(`/user/${username}`)
 }
 
 </script>
@@ -128,7 +134,7 @@ function gotoTweet(tweet: Tweet) {
           onChain
         </button> -->
       </div>
-      <div v-if="searchResult.type != 'community' && tweetsList.length > 0" class="gap-2 h-screen overflow-auto">
+      <div v-if="(searchResult.type == 'tweet' || searchResult.type == 'space') && tweetsList.length > 0" class="gap-2 h-screen overflow-auto">
         <div class="max-h-full">
           <div v-for="(tweet, index) of tweetsList" :key="tweet.tweetId" @click="gotoTweet(tweet)" class="mb-2">
             <SpaceItem
@@ -143,6 +149,33 @@ function gotoTweet(tweet: Tweet) {
               :tweet="tweet"
             >
             </TweetItem>
+          </div>
+        </div>
+      </div>
+      <div v-if="searchResult.type == 'user' && mindShareList.length > 0" class="gap-2 h-screen overflow-auto">
+        <div class="max-h-full">
+          <div class="w-full">
+            <div class="flex gap-2 items-center px-3 py-3 border-b-[0.5px] text-h5 sticky top-0 bg-white z-[99]">
+              <div class="min-w-[50px] web:min-w-[80px] hidden web:block">#</div>
+              <div class="w-1/2">Name</div>
+              <div class="w-1/2 text-center">Mindshare</div>
+            </div>
+            <div class="flex gap-2 items-center px-3 py-3 hover:bg-grey-light border-b-[0.5px]"
+                 v-for="(item, index) of mindShareList" :key="item.twitterName">
+              <div class="min-w-[50px] web:min-w-[80px] text-sm hidden web:block">{{index+1}}</div>
+              <button @click="gotoProfile(item.twitterUsername)" class="w-1/2 flex gap-2 items-center">
+                <div class="w-6 h-6 min-w-6 web:w-8 web:h-8 web:min-w-8 web:min-h-8 bg-grey-light rounded-lg overflow-hidden">
+                  <img class="w-6 h-6 web:w-8 web:h-8" :src="item.profile" alt="">
+                </div>
+                <div class="flex flex-col justify-start">
+                  <span class="text-sm web:text-h4 font-medium break-words text-start">{{ item.twitterName }}</span>
+                  <span class="text-sm break-words text-start">@{{item.twitterUsername}}</span>
+                </div>
+              </button>
+              <div class="w-1/2 flex gap-2 justify-center items-center text-center">
+                <div class="text-sm">{{(item.mindSharePercent * 100).toFixed(2) }}%</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
