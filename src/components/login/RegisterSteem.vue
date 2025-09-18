@@ -162,6 +162,11 @@ async function register() {
   loading.value = true
   const twitterId = accStore.getAccountInfo?.twitterId
   try {
+    let count = 0
+    while (accStore.ethConnectState == EthWalletState.Connecting && count < 5) {
+      await sleep(1)
+      count++;
+    }
     reportLog('register_steem_step_2', {
       step: 2,
       twitterId
