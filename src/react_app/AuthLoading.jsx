@@ -22,6 +22,11 @@ export default function AuthLoading() {
     useEffect(() => {
         async function getWalletProvider() {
             if(ready) {
+                console.log('wallets', wallets)
+                if (wallets.length === 0) {
+                    return;
+                }
+                console.log('wallets2', wallets)
                 const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy').getEthereumProvider()
                 emitter.emit('walletProvider', provider)
 
@@ -30,7 +35,7 @@ export default function AuthLoading() {
 
         }
         getWalletProvider()
-    }, [ready]);
+    }, [ready, wallets]);
 
     useEffect(() => {
         console.log('state', state.status)
