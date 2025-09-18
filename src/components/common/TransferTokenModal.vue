@@ -121,9 +121,11 @@ const confirmTransfer = async () => {
   }
 };
 
-const scanAddress = (address) => {
+const scanAddress = (address: string) => {
   qrcodeDialogVisible.value = false
-  transferForm.value.toAddress = address
+  if (isAddress(address)) {
+    transferForm.value.toAddress = checksumAddress(address)
+  }
 }
 
 onMounted(async () => {
