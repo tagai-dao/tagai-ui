@@ -162,11 +162,6 @@ async function register() {
   loading.value = true
   const twitterId = accStore.getAccountInfo?.twitterId
   try {
-    let count = 0
-    while (accStore.ethConnectState == EthWalletState.Connecting && count < 5) {
-      await sleep(1)
-      count++;
-    }
     reportLog('register_steem_step_2', {
       step: 2,
       twitterId
@@ -486,11 +481,11 @@ onMounted(async () => {
       <div class="w-full">
         <textarea class="w-full h-32 p-2 my-5 text-h3 text-gray-700 border border-gray-300 rounded" v-model="RegisterSteemMessage" readonly></textarea>
         <button class="h-12 w-full mb-5 bg-gradient-primary rounded-full flex justify-center items-center gap-2" @click="sign" 
-        :disabled="loading || accountMismatch">
+        :disabled="loading || accountMismatch || accStore.ethConnectState == EthWalletState.Connecting">
           <span class="text-white font-semibold">
             {{ (accStore.ethConnectAddress ? $t("loginView.bond") : $t('connect')) }}
           </span>
-          <i-ep-loading v-show="loading" class="animate-spin" />
+          <i-ep-loading v-show="loading || accStore.ethConnectState == EthWalletState.Connecting" class="animate-spin" />
         </button>
         <div v-show="accountMismatch" class="text-center text-sm text-red-e6">
           {{ $t('web3.addressMismatch', { address: accStore?.getAccountInfo?.ethAddr??'**' }) }}

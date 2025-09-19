@@ -5,10 +5,12 @@ import {handleErrorTip} from "@/utils/notify";
 import {onMounted, ref, watch } from "vue";
 import {getDayNumber} from "@/utils/helper";
 import ChartItem from "@/views/mind-share/ChartItem.vue";
+import { useRouter } from "vue-router";
 
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
+const router = useRouter()
 
 const props = defineProps<{
   mindShareType: MindShareType
@@ -19,6 +21,10 @@ watch(() => props.mindShareType, (val) => {
 })
 
 const mindShareList = ref<Array<MindShare>>([])
+
+const gotoProfile = (twitterUsername: string) => {
+  router.push(`/user/${twitterUsername}`)
+}
 
 const onRefresh = async () => {
   try{
@@ -108,7 +114,8 @@ onMounted(() => {
               <div class="min-w-[100px] max-w-[100px]">7d</div>
               <div class="min-w-[100px] max-w-[100px]">Last 7 days</div>
             </div>
-            <div class="flex gap-2 items-center px-3 py-3 hover:bg-grey-light border-b-[0.5px]"
+            <div class="flex gap-2 items-center px-3 py-3 hover:bg-grey-light border-b-[0.5px] cursor-pointer"
+                 @click="gotoProfile(item.twitterUsername)"
                  v-for="(item, index) of mindShareList" :key="item.twitterName">
               <div class="min-w-[50px] web:min-w-[80px] text-sm hidden web:block">{{index+1}}</div>
               <div class="min-w-[150px] max-w-[150px] web:min-w-[150px] web:max-w-full web:flex-1 flex gap-2 items-center">
