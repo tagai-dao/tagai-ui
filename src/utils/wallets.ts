@@ -246,11 +246,6 @@ export const closeProvider = () => {
 
 export const signMessage = async (message: string): Promise<`0x${string}` | null> => {
     let wallet = getWalletClient() as WalletClient;
-    reportLog('register_steem_step_2', {
-        step: 21,
-        twitterId: useAccountStore().getAccountInfo?.twitterId ?? '',
-        wallet
-      })
     if (!wallet) {
         return null;
     }
