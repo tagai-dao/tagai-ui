@@ -10,6 +10,7 @@ import { createWalletClient, createPublicClient, custom, http } from 'viem';
 import { customBsc } from './privy';
 import { useModalStore } from '@/stores/common';
 import { GlobalModalType } from '@/types';
+import { reportLog } from './helper';
 
 
 // this.ethWalletType = 'none' // metamask, okx, none
@@ -245,6 +246,11 @@ export const closeProvider = () => {
 
 export const signMessage = async (message: string): Promise<`0x${string}` | null> => {
     let wallet = getWalletClient() as WalletClient;
+    reportLog('register_steem_step_2', {
+        step: 21,
+        twitterId: useAccountStore().getAccountInfo?.twitterId ?? '',
+        wallet
+      })
     if (!wallet) {
         return null;
     }
