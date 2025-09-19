@@ -3,6 +3,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.fiybrD {
+  position: inherit!important;
+}
 
 html, body {
   background: white;
