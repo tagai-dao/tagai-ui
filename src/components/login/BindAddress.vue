@@ -7,6 +7,7 @@ import { signMessage } from "@/utils/wallets";
 import { handleErrorTip } from "@/utils/notify";
 import { useModalStore } from "@/stores/common";
 import { isAddress } from "viem";
+import { EthWalletState } from "@/stores/web3";
 
 const accStore = useAccountStore();
 const loading = ref(false);
@@ -85,9 +86,9 @@ async function confirm() {
     <div class="px-5">
       <button class="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-4"
         @click="confirm"
-        :disabled="loading">
+        :disabled="loading || accStore.ethConnectState == EthWalletState.Connecting">
         <span class="text-h5 text-white">{{$t('confirm')}}</span>
-        <i-ep-loading v-if="loading" class="animate-spin text-white"/>
+        <i-ep-loading v-if="loading || accStore.ethConnectState == EthWalletState.Connecting" class="animate-spin text-white"/>
       </button>
       <div v-show="ethAddrUsed" class="text-base text-center text-red-e6 mt-3">{{ $t('loginView.addressUsed') }}</div>
       <!-- <div class="text-base text-center text-red-e6 mt-3">钱包地址不匹配，请重新绑定</div> -->
