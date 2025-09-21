@@ -13,7 +13,7 @@ function ReactApp(props) {
                 // Create embedded wallets for users who don't have a wallet
                 embeddedWallets: {
                     ethereum: {
-                        createOnLogin: 'users-without-wallets'
+                        createOnLogin: 'all-users'
                     }
                 },
                 supportedChains: [customBsc]
