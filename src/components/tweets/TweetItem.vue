@@ -199,6 +199,7 @@ onUnmounted(() => {
                       :min-scale="0.2"
                       :preview-src-list="imgurls.slice(0, 4)"
                       :initial-index="index"
+                      :hide-on-click-modal="true"
                       fit="cover"/>
           </div>
           <slot name="tweet-trade"></slot>
