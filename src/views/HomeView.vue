@@ -18,7 +18,7 @@ import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
 import MindShare from "@/views/mind-share/MindShare.vue";
 
-const listType = ref(ListType.MarketCap)
+const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();

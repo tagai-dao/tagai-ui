@@ -12,7 +12,6 @@ export default function AuthLoading() {
     const { createWallet } = useCreateWallet({
         onSuccess: (async ({wallet}) => {
             const provider = await wallet.getEthereumProvider()
-            emitter.emit('walletProvider', provider)
         }),
         onError: (error) => {
             console.log(error)
@@ -52,8 +51,13 @@ export default function AuthLoading() {
                 oAuthTokens.refreshTokenExpiresInSeconds,
                 oAuthTokens.scopes
             );
+
             const userInfo = await privyLogin(oAuthTokens.accessToken, oAuthTokens.refreshToken)
             emitter.emit('authSuccess', userInfo)
+            if (wallets.length === 0) {
+                console.log('create new wallet')
+                await createWallet()
+            }
         }
     });
     return (<></>)
