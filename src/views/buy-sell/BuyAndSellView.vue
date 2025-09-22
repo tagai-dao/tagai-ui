@@ -26,6 +26,9 @@ import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
 import { isAddress, parseEther } from "viem";
 
+const props = defineProps({
+  tick: {type: String, required: false, default: null}
+})
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
@@ -306,7 +309,7 @@ onActivated(async () => {
 })
 
 onMounted(async () => {
-  const tick = route.params.id as string
+  const tick = props.tick || route.params.id as string
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick) {
     if (comStore.currentSelectedCommunity?.tick != tick) {
       comStore.currentSelectedCommunity = null;
@@ -337,14 +340,14 @@ onMounted(async () => {
     <div
       class="flex-1 overflow-auto flex gap-2"
     >
-      <div v-if="comStore.currentSelectedCommunity?.tick"
+      <div v-if="comStore.currentSelectedCommunity?.tick && !props.tick"
            class="w-full hidden web:flex min-w-[320px] flex-1 gap-3">
         <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
         <iframe v-else :src="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`" 
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>
-      <div class="bg-white py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full web:w-[340px]">
+      <div class="bg-white py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full" :class="props.tick?'':'web:w-[340px]'">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >

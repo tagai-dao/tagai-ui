@@ -9,6 +9,12 @@ import { formatAmount } from "@/utils/helper";
 import { useRouter } from "vue-router";
 import errCode from "@/errCode";
 import TransferTokenModal from "@/components/common/TransferTokenModal.vue";
+import BuyAndSellView from "@/views/buy-sell/BuyAndSellView.vue";
+
+enum ModalType {
+  transfer,
+  trade
+}
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -16,7 +22,8 @@ const finished = ref(false)
 const accStore = useAccountStore()
 const router = useRouter()
 const currentHolding = ref<any>(null)
-const showTransferModal = ref(false)
+const showModal = ref(false)
+const modalType = ref(ModalType.transfer)
 const showingNoEth = computed(() => {
   return !accStore.getAccountInfo.ethAddr
 })
@@ -60,12 +67,20 @@ const onRefresh = async () => {
 };
 
 function transferTick(holding: any) {
-  showTransferModal.value = true
+  modalType.value = ModalType.transfer
+  showModal.value = true
+  currentHolding.value = holding
+}
+
+function onTrade(holding: any) {
+  modalType.value = ModalType.trade
+  showModal.value = true
   currentHolding.value = holding
 }
 
 function close(confirmed: boolean) {
-  showTransferModal.value = false;
+  showModal.value = false;
+  modalType.value = ModalType.transfer
   if (confirmed) {
     onRefresh();
   }
@@ -126,22 +141,23 @@ onMounted(async () => {
             <button @click.stop="transferTick(holding)"
                     class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('transfer')}}
             </button>
-              <button @click.stop="$router.push('/tag-detail/' + holding.community.tick)"
+              <button @click.stop="onTrade(holding)"
                     class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}
               </button>
           </div>
         </div>
       </van-list>
     </van-pull-refresh>
-    <el-dialog v-model="showTransferModal"
-                 :close-on-click-modal="showTransferModal"
-                 :close-on-press-escape="showTransferModal"
-                 class="max-w-[500px] rounded-[20px]"
-                 width="90%" :show-close="false" align-center destroy-on-close>
-        <TransferTokenModal 
+    <el-dialog v-model="showModal"
+               :close-on-click-modal="showModal"
+               :close-on-press-escape="showModal"
+               class="max-w-[500px] rounded-[20px]"
+               width="90%" :show-close="false" align-center destroy-on-close>
+        <TransferTokenModal v-if="modalType===ModalType.transfer"
           :community="currentHolding.community as Community" 
           :balance="currentHolding.amount"
           @close="close"/>
+        <BuyAndSellView v-if="modalType===ModalType.trade" :tick="currentHolding.community?.tick"/>
     </el-dialog>
   </div>
 </template>
