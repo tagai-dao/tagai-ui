@@ -228,29 +228,29 @@ onMounted(async () => {
 
   updateProgress();
   setInter(updateProgress, 15000);
-  try {
-    let conversationId: any = comStore.currentSelectedCommunity?.deboxConversationId;
-    if (!conversationId) {
-        // get conversation id from api
-        conversationId = await getConversationId(comStore.currentSelectedCommunity?.token ?? '');
-    }
-    console.log('conversationId:', conversationId)
-    if (conversationId) {
-      DeBoxChatWidget.init({
-          projectId: '0H35zPC1NeleZd59',
-          zIndex: '9999'
-      });
-      // ttai B1R1eRl8'
-      DeBoxChatWidget.setConversation(conversationId);
-    }
-  } catch (error) {
-    console.error('add debox chat widget error:', error)
-  }
+  // try {
+  //   let conversationId: any = comStore.currentSelectedCommunity?.deboxConversationId;
+  //   if (!conversationId) {
+  //       // get conversation id from api
+  //       conversationId = await getConversationId(comStore.currentSelectedCommunity?.token ?? '');
+  //   }
+  //   console.log('conversationId:', conversationId)
+  //   if (conversationId) {
+  //     DeBoxChatWidget.init({
+  //         projectId: '0H35zPC1NeleZd59',
+  //         zIndex: '9999'
+  //     });
+  //     // ttai B1R1eRl8'
+  //     DeBoxChatWidget.setConversation(conversationId);
+  //   }
+  // } catch (error) {
+  //   console.error('add debox chat widget error:', error)
+  // }
 })
 onUnmounted(() => {
   console.log('unmounted')
   deployTweetList.value = []
-  DeBoxChatWidget.destroy();
+  // DeBoxChatWidget.destroy();
 })
 const topBanner = ref<any>(null)
 const topBannerClass = ref('h-[15px] overflow-hidden')
