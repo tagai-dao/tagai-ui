@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import {ref, onActivated, onMounted, watch, computed, reactive, onUnmounted} from "vue";
-import { ListType, type Community, type Space, MindShareType } from '@/types'
-import { getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces } from "@/apis/api";
-import { useCommunityStore } from "@/stores/community";
-import { useCurationStore } from '@/stores/curation'
-import { handleErrorTip } from '@/utils/notify'
-import { useRouter } from "vue-router";
-import { getTokenInfo } from '@/utils/pump'
+import {computed, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
+import {type Community, GlobalModalType, ListType, MindShareType, type Space} from '@/types'
+import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces} from "@/apis/api";
+import {useCommunityStore} from "@/stores/community";
+import {useCurationStore} from '@/stores/curation'
+import {handleErrorTip} from '@/utils/notify'
+import {useRouter} from "vue-router";
+import {getTokenInfo} from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
-import { formatPrice } from "../utils/helper";
-import { useStateStore } from "@/stores/common";
+import {formatPrice} from "../utils/helper";
+import {useModalStore, useStateStore} from "@/stores/common";
 import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
 import MindShare from "@/views/mind-share/MindShare.vue";
@@ -227,6 +227,12 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
   if(!scrollContainer.value) return
   newComNeedScroll.value = newComContentWidth.value>scrollContainer.value.clientWidth
 })
+
+const modalStore = useModalStore()
+const onCreate = (type: GlobalModalType) => {
+  modalStore.setModalVisible(true, type)
+}
+
 </script>
 
 <template>
@@ -356,6 +362,32 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
       </div>
     </template>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
+    <div>
+      <button v-if="activeTab==='tagCoin'"
+              class="absolute bottom-[80px] right-[10px] web:bottom-8"
+              @click="onCreate(GlobalModalType.CreateCoin)">
+        <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
+      </button>
+      <el-popover v-else popper-class="c-popper" placement="top-end" width="180" ref="tweetTypeRef" trigger="click" >
+        <template #reference>
+          <button class="absolute bottom-[80px] right-[10px] web:bottom-8">
+            <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
+          </button>
+        </template>
+        <template #default>
+          <div class="bg-white rounded-2xl px-3 py-4 shadow-popper-tip flex flex-col gap-2 items-start">
+            <button @click="onCreate(GlobalModalType.CreateTweet)"
+                    class="whitespace-nowrap flex items-center space-x-3">
+              {{$t('postView.tweetOnChain')}}
+            </button>
+            <button @click="onCreate(GlobalModalType.CreateTweetSpace)"
+                    class="whitespace-nowrap flex items-center space-x-3">
+              {{$t('postView.spaceOnChain')}}
+            </button>
+          </div>
+        </template>
+      </el-popover>
+    </div>
   </div>
 </template>
 

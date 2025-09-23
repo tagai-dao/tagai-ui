@@ -2,7 +2,7 @@
 import {useModalStore} from "@/stores/common";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
-import { computed, ref } from "vue";
+import {computed, onMounted, ref} from "vue";
 import { useCommunityStore } from "@/stores/community";
 import debounce from 'lodash.debounce'
 import { getSpaceInfoById } from '@/apis/api'
@@ -107,6 +107,31 @@ const onPostTweet = async () => {
 const checkSpace = debounce(async () => {
 
 }, 10000)
+
+const tagOptions = ref([])
+const selectedTags = ref([])
+const tagOptionsEnable = ref(false)
+const getTagOptions = async () => {
+  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT']
+}
+
+const onSelectTag = (tag) => {
+  if(selectedTags.value.indexOf(tag)>=0) {
+    selectedTags.value.splice(selectedTags.value.indexOf(tag), 1)
+  } else {
+    selectedTags.value.push(tag)
+  }
+}
+
+onMounted(() => {
+  if(useCommunityStore().currentSelectedCommunity && useCommunityStore().currentSelectedCommunity.tick) {
+    tagOptionsEnable.value = false
+  } else {
+    tagOptionsEnable.value = true
+    getTagOptions()
+  }
+})
+
 </script>
 
 <template>
@@ -148,13 +173,30 @@ const checkSpace = debounce(async () => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-normal px-2 h-5 text-sm rounded-md">{{ comStore.currentSelectedCommunity?.tick }}</button>
+            <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="!tagOptionsEnable">
+              {{ comStore.currentSelectedCommunity?.tick }}
+            </button>
+            <template v-else>
+              <button v-for="tag of selectedTags" :key="tag"
+                      class="bg-green-normal px-2 h-5 text-sm rounded-md">
+                {{tag}}
+              </button>
+            </template>
           </div>
         </div>
       </div>
       <div class="mt-4">{{ $t('postView.spaceLink') }}</div>
       <div class="bg-grey-f0/90 rounded-2xl h-12 px-3">
         <input v-model="spaceLink" @input="checkSpace" class="bg-transparent outline-none h-full w-full" type="text">
+      </div>
+      <div class="mt-4">Tags</div>
+      <div class="flex flex-wrap gap-2">
+        <button v-for="tag of tagOptions" :key="tag"
+                class="bg-green-normal px-2 h-5 text-sm rounded-md"
+                :class="selectedTags.indexOf(tag)>=0?'opacity-50':''"
+                @click="onSelectTag(tag)">
+          {{tag}}
+        </button>
       </div>
     </div>
     <div class="flex justify-center">

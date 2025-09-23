@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
-import { ref } from "vue";
+import {onMounted, ref} from "vue";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
@@ -58,6 +58,30 @@ const onPostTweet = async () => {
     tweetLoading.value = false
   }
 }
+
+const tagOptions = ref([])
+const selectedTags = ref([])
+const tagOptionsEnable = ref(false)
+const getTagOptions = async () => {
+  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT']
+}
+
+const onSelectTag = (tag) => {
+  if(selectedTags.value.indexOf(tag)>=0) {
+    selectedTags.value.splice(selectedTags.value.indexOf(tag), 1)
+  } else {
+    selectedTags.value.push(tag)
+  }
+}
+
+onMounted(() => {
+  if(useCommunityStore().currentSelectedCommunity && useCommunityStore().currentSelectedCommunity.tick) {
+    tagOptionsEnable.value = false
+  } else {
+    tagOptionsEnable.value = true
+    getTagOptions()
+  }
+})
 </script>
 
 <template>
@@ -124,10 +148,28 @@ const onPostTweet = async () => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-normal px-2 h-5 text-sm rounded-md">{{ useCommunityStore().currentSelectedCommunity?.tick }}</button>
-            <!-- <button class="bg-grey-light px-2 h-5 text-sm rounded-md">KATC</button> -->
+            <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="!tagOptionsEnable">
+              {{ useCommunityStore().currentSelectedCommunity?.tick }}
+            </button>
+            <template v-else>
+              <button v-for="tag of selectedTags" :key="tag"
+                      class="bg-green-normal px-2 h-5 text-sm rounded-md">
+                {{tag}}
+              </button>
+            </template>
           </div>
         </div>
+      </div>
+    </div>
+    <div class="px-2">
+      <div>Tags</div>
+      <div class="flex flex-wrap gap-2">
+        <button v-for="tag of tagOptions" :key="tag"
+                class="bg-green-normal px-2 h-5 text-sm rounded-md"
+                :class="selectedTags.indexOf(tag)>=0?'opacity-50':''"
+                @click="onSelectTag(tag)">
+          {{tag}}
+        </button>
       </div>
     </div>
     <div class="flex justify-center">
