@@ -48,6 +48,12 @@ const creditJO = ref<any[]>([{
 }, {
   type: 5,
   value: 0
+}, {
+  type: 6,
+  value: 0
+}, {
+  type: 7,
+  value: 0
 }])
 
 const creditType = ref([
@@ -95,6 +101,8 @@ onMounted(() => {
           return "IPShare MCap"
         case 6:
           return item.showingName
+        case 7:
+          return "Donation"
         default:
           return ""
       }

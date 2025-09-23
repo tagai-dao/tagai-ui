@@ -143,6 +143,8 @@ onMounted(async () => {
           return "IPShare MCap"
         case 6: 
           return item.showingName
+        case 7:
+          return 'Donation'
         default:
           return ''
       }
@@ -265,3 +267,5 @@ onMounted(async () => {
 </template>
 
 <style scoped></style>
+
+
