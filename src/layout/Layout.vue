@@ -135,8 +135,8 @@ onMounted( () => {
                    class="max-w-[500px] rounded-[20px]"
                    width="90%" :show-close="false" align-center destroy-on-close>
           <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
-          <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet"/>
-          <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace"/>
+          <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
+          <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace" :default-tick="false"/>
           <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
           <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
           <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />

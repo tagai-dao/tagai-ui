@@ -5,7 +5,7 @@ import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import {computed, onMounted, ref} from "vue";
 import { useCommunityStore } from "@/stores/community";
 import debounce from 'lodash.debounce'
-import { getSpaceInfoById } from '@/apis/api'
+import {getSpaceInfoById, searchTick} from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { useSpace, InvalidSpaceCurationType } from "@/composables/useSpace";
 import { handleErrorTip, notify } from "@/utils/notify";
@@ -108,30 +108,31 @@ const checkSpace = debounce(async () => {
 
 }, 10000)
 
-const tagOptions = ref([])
-const selectedTags = ref([])
-const tagOptionsEnable = ref(false)
+const props = defineProps({
+  defaultTick: {type: Boolean, default: true, required: false}
+})
+const tagOptions = ref<string[]>([])
+const selectedTags = ref<string[]>([])
+const searchTag = ref<string>('')
+
+const onSearchTag = debounce(() => {
+  getTagOptions()
+}, 1000)
+
 const getTagOptions = async () => {
-  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT']
+  const res = await searchTick(searchTag.value)
+  tagOptions.value = res.map(item => item.tick)
 }
 
-const onSelectTag = (tag) => {
+const onSelectTag = (tag: string) => {
   if(selectedTags.value.indexOf(tag)>=0) {
     selectedTags.value.splice(selectedTags.value.indexOf(tag), 1)
   } else {
     selectedTags.value.push(tag)
+    searchTag.value = ''
+    tagOptions.value = []
   }
 }
-
-onMounted(() => {
-  if(useCommunityStore().currentSelectedCommunity && useCommunityStore().currentSelectedCommunity.tick) {
-    tagOptionsEnable.value = false
-  } else {
-    tagOptionsEnable.value = true
-    getTagOptions()
-  }
-})
-
 </script>
 
 <template>
@@ -173,15 +174,9 @@ onMounted(() => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="!tagOptionsEnable">
+            <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="defaultTick">
               {{ comStore.currentSelectedCommunity?.tick }}
             </button>
-            <template v-else>
-              <button v-for="tag of selectedTags" :key="tag"
-                      class="bg-green-normal px-2 h-5 text-sm rounded-md">
-                {{tag}}
-              </button>
-            </template>
           </div>
         </div>
       </div>
@@ -189,20 +184,35 @@ onMounted(() => {
       <div class="bg-grey-f0/90 rounded-2xl h-12 px-3">
         <input v-model="spaceLink" @input="checkSpace" class="bg-transparent outline-none h-full w-full" type="text">
       </div>
-      <div class="mt-4">Tags</div>
-      <div class="flex flex-wrap gap-2">
-        <button v-for="tag of tagOptions" :key="tag"
-                class="bg-green-normal px-2 h-5 text-sm rounded-md"
-                :class="selectedTags.indexOf(tag)>=0?'opacity-50':''"
-                @click="onSelectTag(tag)">
-          {{tag}}
-        </button>
+      <div class="mt-4" v-if="!defaultTick">
+        <div>
+          <div class="flex flex-wrap gap-2">
+            <div>Tags:</div>
+            <button v-for="tag of selectedTags" :key="tag"
+                    class="bg-green-normal px-2 h-5 text-sm rounded-md"
+                    @click="onSelectTag(tag)">
+              {{tag}}
+            </button>
+          </div>
+        </div>
+        <input class="border-b-[1px] border-grey-e6 leading-6 text-base w-full"
+               v-model="searchTag"
+               @input="onSearchTag"
+               type="text"/>
+        <div class="flex flex-wrap gap-2 mt-2">
+          <button v-for="tag of tagOptions" :key="tag"
+                  class="bg-green-normal px-2 h-5 text-sm rounded-md"
+                  :class="selectedTags.indexOf(tag)>=0?'opacity-50':''"
+                  @click="onSelectTag(tag)">
+            {{tag}}
+          </button>
+        </div>
       </div>
     </div>
     <div class="flex justify-center">
       <button class="px-5 h-11 bg-gradient-primary rounded-full
                        flex justify-center items-center space-x-2 disabled:opacity-30"
-              :disabled="tweetLoading"
+              :disabled="tweetLoading || (!defaultTick && selectedTags.length === 0)"
               @click="onPostTweet">
         <span class="text-white font-bold text-lg">{{ $t('postView.goTweet') }}</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>

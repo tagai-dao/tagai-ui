@@ -61,17 +61,20 @@ const onPostTweet = async () => {
   }
 }
 
+const props = defineProps({
+  defaultTick: {type: Boolean, default: true, required: false}
+})
 const tagOptions = ref<string[]>([])
 const selectedTags = ref<string[]>([])
-const tagOptionsEnable = ref(false)
-const searchTag = ref('')
+const searchTag = ref<string>('')
 
 const onSearchTag = debounce(() => {
   getTagOptions()
 }, 1000)
 
 const getTagOptions = async () => {
-  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT']
+  const res = await searchTick(searchTag.value)
+  tagOptions.value = res.map(item => item.tick)
 }
 
 const onSelectTag = (tag: string) => {
@@ -84,10 +87,6 @@ const onSelectTag = (tag: string) => {
   }
 }
 
-
-onMounted(() => {
-  tagOptionsEnable.value = !(useCommunityStore().currentSelectedCommunity && useCommunityStore().currentSelectedCommunity.tick);
-})
 </script>
 
 <template>
@@ -154,19 +153,20 @@ onMounted(() => {
             </template>
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
-            <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="!tagOptionsEnable">
+            <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="defaultTick">
               {{ useCommunityStore().currentSelectedCommunity?.tick }}
             </button>
           </div>
         </div>
       </div>
     </div>
-    <div class="px-2">
+    <div class="px-2" v-if="!defaultTick">
       <div>
         <div class="flex flex-wrap gap-2">
           <div>Tags:</div>
           <button v-for="tag of selectedTags" :key="tag"
-                  class="bg-green-normal px-2 h-5 text-sm rounded-md">
+                  class="bg-green-normal px-2 h-5 text-sm rounded-md"
+                  @click="onSelectTag(tag)">
             {{tag}}
           </button>
         </div>
@@ -187,7 +187,7 @@ onMounted(() => {
     <div class="flex justify-center">
       <button class="px-5 h-11 bg-gradient-primary rounded-full
                        flex justify-center items-center space-x-2 disabled:opacity-30"
-              :disabled="tweetLoading"
+              :disabled="tweetLoading || (!defaultTick && selectedTags.length === 0)"
               @click="onPostTweet">
         <span class="text-white font-bold text-lg">{{$t('postView.goTweet')}}</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>

@@ -17,6 +17,7 @@ import {useModalStore, useStateStore} from "@/stores/common";
 import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
 import MindShare from "@/views/mind-share/MindShare.vue";
+import {useAccountStore} from "@/stores/web3";
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
@@ -228,8 +229,13 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
   newComNeedScroll.value = newComContentWidth.value>scrollContainer.value.clientWidth
 })
 
+const accStore = useAccountStore();
 const modalStore = useModalStore()
 const onCreate = (type: GlobalModalType) => {
+  if (!accStore.getAccountInfo?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return;
+  }
   modalStore.setModalVisible(true, type)
 }
 
