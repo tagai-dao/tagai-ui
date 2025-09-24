@@ -6,6 +6,7 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
 import emitter from "@/utils/emitter";
+import debounce from "lodash.debounce";
 
 const comStore = useCommunityStore()
 const {
@@ -62,8 +63,14 @@ const onPostTweet = async () => {
 const tagOptions = ref([])
 const selectedTags = ref([])
 const tagOptionsEnable = ref(false)
+const searchTag = ref('')
+
+const onSearchTag = debounce(() => {
+  getTagOptions()
+}, 1000)
+
 const getTagOptions = async () => {
-  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT']
+  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT', '']
 }
 
 const onSelectTag = (tag) => {
@@ -71,16 +78,14 @@ const onSelectTag = (tag) => {
     selectedTags.value.splice(selectedTags.value.indexOf(tag), 1)
   } else {
     selectedTags.value.push(tag)
+    searchTag.value = ''
+    tagOptions.value = []
   }
 }
 
+
 onMounted(() => {
-  if(useCommunityStore().currentSelectedCommunity && useCommunityStore().currentSelectedCommunity.tick) {
-    tagOptionsEnable.value = false
-  } else {
-    tagOptionsEnable.value = true
-    getTagOptions()
-  }
+  tagOptionsEnable.value = !(useCommunityStore().currentSelectedCommunity && useCommunityStore().currentSelectedCommunity.tick);
 })
 </script>
 
@@ -151,19 +156,25 @@ onMounted(() => {
             <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="!tagOptionsEnable">
               {{ useCommunityStore().currentSelectedCommunity?.tick }}
             </button>
-            <template v-else>
-              <button v-for="tag of selectedTags" :key="tag"
-                      class="bg-green-normal px-2 h-5 text-sm rounded-md">
-                {{tag}}
-              </button>
-            </template>
           </div>
         </div>
       </div>
     </div>
     <div class="px-2">
-      <div>Tags</div>
-      <div class="flex flex-wrap gap-2">
+      <div>
+        <div class="flex flex-wrap gap-2">
+          <div>Tags:</div>
+          <button v-for="tag of selectedTags" :key="tag"
+                  class="bg-green-normal px-2 h-5 text-sm rounded-md">
+            {{tag}}
+          </button>
+        </div>
+      </div>
+      <input class="border-b-[1px] border-grey-e6 leading-6 text-base w-full"
+             v-model="searchTag"
+             @input="onSearchTag"
+             type="text"/>
+      <div class="flex flex-wrap gap-2 mt-2">
         <button v-for="tag of tagOptions" :key="tag"
                 class="bg-green-normal px-2 h-5 text-sm rounded-md"
                 :class="selectedTags.indexOf(tag)>=0?'opacity-50':''"
