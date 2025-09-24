@@ -6,6 +6,7 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
 import emitter from "@/utils/emitter";
+import { searchTick } from "@/apis/api";
 
 const comStore = useCommunityStore()
 const {
@@ -59,14 +60,14 @@ const onPostTweet = async () => {
   }
 }
 
-const tagOptions = ref([])
-const selectedTags = ref([])
+const tagOptions = ref<string[]>([])
+const selectedTags = ref<string[]>([])
 const tagOptionsEnable = ref(false)
 const getTagOptions = async () => {
   tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT']
 }
 
-const onSelectTag = (tag) => {
+const onSelectTag = (tag: string) => {
   if(selectedTags.value.indexOf(tag)>=0) {
     selectedTags.value.splice(selectedTags.value.indexOf(tag), 1)
   } else {
@@ -75,12 +76,7 @@ const onSelectTag = (tag) => {
 }
 
 onMounted(() => {
-  if(useCommunityStore().currentSelectedCommunity && useCommunityStore().currentSelectedCommunity.tick) {
-    tagOptionsEnable.value = false
-  } else {
-    tagOptionsEnable.value = true
-    getTagOptions()
-  }
+  getTagOptions()
 })
 </script>
 
