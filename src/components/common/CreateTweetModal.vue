@@ -191,7 +191,7 @@ onMounted(async () => {
         <button v-for="(tag, index) of tagOptions" :key="tag"
                 class="px-2 h-5 text-sm rounded-md"
                 :style="{ backgroundColor: tagColors[index % tagColors.length] }"
-                :class="selectedTag == tag?'opacity-50':''"
+                :class="selectedTag !== tag?'opacity-50':''"
                 @click="onSelectTag(tag)">
           {{tag}}
         </button>
