@@ -9,6 +9,11 @@ declare module '@/react_app/LoginWithOAuth.jsx' {
   export default LoginWithOAuth;
 }
 
+declare module '@/react_app/LoginWithEmail.jsx' {
+  const LoginWithEmail: any;
+  export default LoginWithEmail;
+}
+
 declare module '@/react_app/Wallet.jsx' {
   const Wallet: any;
   export default Wallet;

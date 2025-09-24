@@ -10,6 +10,7 @@
   "sell": "出售",
   "tips": "打赏",
   "tip": "打赏",
+  "or": "或者",
   "createCoin": "创建代币",
   "search": "搜索",
   "marketCap": "市值",
@@ -71,6 +72,7 @@
   "Telegram": "电报",
   "loginView": {
     "loginWithTwitter": "登录推特",
+    "loginWithEmail": "使用邮箱登录",
     "authTwitterTip": "TagAI 的某些功能需要推特的相应权限，您可以根据需要选择需要授权的功能",
     "p1": "使用渐进式Web应用技术，结合了传统网站和平台特定应用的最佳功能",
     "createWallet": "创建钱包",
