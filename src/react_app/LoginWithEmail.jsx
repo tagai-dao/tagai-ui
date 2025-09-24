@@ -7,6 +7,7 @@ export default function LoginWithEmail() {
   const [code, setCode] = useState("");
   const [step, setStep] = useState("email"); // 'email' | 'code' | 'loading'
   const [isLoading, setIsLoading] = useState(false);
+  const { logout } = usePrivy();
   
   const { sendCode, loginWithCode, state } = useLoginWithEmail({
     onComplete: async (params) => {
@@ -46,9 +47,10 @@ export default function LoginWithEmail() {
   // 处理钱包状态变化
   useEffect(() => {
     if (ready && wallets.length > 0) {
-      console.log('Wallets available:', wallets);
+      console.log('Email Wallets available:', wallets);
       const privyWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
       if (privyWallet) {
+        console.log('Email privyWallet', privyWallet)
         privyWallet.getEthereumProvider().then(provider => {
           emitter.emit('walletProvider', provider);
         });
@@ -76,6 +78,7 @@ export default function LoginWithEmail() {
     
     setIsLoading(true);
     try {
+        await logout();
       await loginWithCode({ code });
     } catch (error) {
       console.error('Failed to login with code:', error);
