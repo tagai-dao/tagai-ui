@@ -154,6 +154,9 @@ export const trade = async (tick: string, twitterId: string, transHash?: string,
 export const searchCommunity = async (tick: string) =>
   get(BACKEND_API_URL + '/community/search', { tick })
 
+export const searchTick = async (tick: string) =>
+  get(BACKEND_API_URL + '/community/searchTickOnly', { tick })
+
 export const getCommunityByMarketCap = async (pages?: number) =>
   get(BACKEND_API_URL + '/community/communityByMarketCap', { pages })
 

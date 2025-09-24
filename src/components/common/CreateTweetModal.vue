@@ -7,6 +7,7 @@ import { handleErrorTip, notify } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
 import emitter from "@/utils/emitter";
 import debounce from "lodash.debounce";
+import { searchTick } from "@/apis/api";
 
 const comStore = useCommunityStore()
 const {
@@ -60,8 +61,8 @@ const onPostTweet = async () => {
   }
 }
 
-const tagOptions = ref([])
-const selectedTags = ref([])
+const tagOptions = ref<string[]>([])
+const selectedTags = ref<string[]>([])
 const tagOptionsEnable = ref(false)
 const searchTag = ref('')
 
@@ -70,10 +71,10 @@ const onSearchTag = debounce(() => {
 }, 1000)
 
 const getTagOptions = async () => {
-  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT', '']
+  tagOptions.value = ['BUIDL', 'TTAI', 'TagFi', 'NOUGHT']
 }
 
-const onSelectTag = (tag) => {
+const onSelectTag = (tag: string) => {
   if(selectedTags.value.indexOf(tag)>=0) {
     selectedTags.value.splice(selectedTags.value.indexOf(tag), 1)
   } else {
