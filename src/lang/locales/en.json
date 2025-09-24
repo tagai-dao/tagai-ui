@@ -10,6 +10,7 @@
   "sell": "Sell",
   "tips": "Tips",
   "tip": "Tip",
+  "or": "Or",
   "createCoin": "Create TagCoin",
   "search": "Search",
   "marketCap": "Mkt Cap",
@@ -71,6 +72,7 @@
   "Telegram": "Telegram",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
+    "loginWithEmail": "Login with Email",
     "authTwitterTip": "Some functions of the TagAI require corresponding permissions for Twitter, and you can choose the functions that need to be authorized according to your needs",
     "p1": "uses progressive web app technology that combines the best features of traditional websites and platform-specific apps",
     "createWallet": "Create Wallet",

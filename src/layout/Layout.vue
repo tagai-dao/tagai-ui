@@ -38,6 +38,11 @@ const walletReady = ref(false);
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
 const handleReactLoginSuccess = async (accInfo: any) => {
+  if (accInfo.type === 'email') {
+    // api 获取用户信息，如果是新用户（username为空），则创建用户，弹出login/CreateUserInfo组件
+    // 如果用户已创建，将用户信息accStore.setAccount，并调用setWallet
+    return;
+  }
   console.log('accInfo', accInfo)
   accStore.setAccount(accInfo)
   

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import {applyPureReactInVue} from "veaury";
 import LoginWithOAuth from "@/react_app/LoginWithOAuth.jsx";
+import LoginWithEmail from "@/react_app/LoginWithEmail.jsx";
 
 const ReactLoginWithOAuth = applyPureReactInVue(LoginWithOAuth);
-
+const ReactLoginWithEmail = applyPureReactInVue(LoginWithEmail);
 </script>
 
 <template>
@@ -21,6 +22,8 @@ const ReactLoginWithOAuth = applyPureReactInVue(LoginWithOAuth);
           <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" /> -->
         </div>
         <ReactLoginWithOAuth/>
+        <h class="text-center text-gray-500 my-2">{{ $t('or') }}</h>
+        <ReactLoginWithEmail/>
       </div>
 
       <div class="text-lg text-center text-grey-normal text-weight-bold flex justify-center items-center gap-2">
