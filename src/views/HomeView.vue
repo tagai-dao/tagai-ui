@@ -232,7 +232,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
 const accStore = useAccountStore();
 const modalStore = useModalStore()
 const onCreate = (type: GlobalModalType) => {
-  if (!accStore.getAccountInfo?.twitterId) {
+  if (!accStore.getAccountInfo?.twitterId && type == GlobalModalType.CreateTweet) {
     modalStore.setModalVisible(true, GlobalModalType.Login)
     return;
   }
@@ -374,25 +374,11 @@ const onCreate = (type: GlobalModalType) => {
               @click="onCreate(GlobalModalType.CreateCoin)">
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
       </button>
-      <el-popover v-else popper-class="c-popper" placement="top-end" width="180" ref="tweetTypeRef" trigger="click" >
-        <template #reference>
-          <button class="absolute bottom-[80px] right-[10px] web:bottom-8">
-            <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
-          </button>
-        </template>
-        <template #default>
-          <div class="bg-white rounded-2xl px-3 py-4 shadow-popper-tip flex flex-col gap-2 items-start">
-            <button @click="onCreate(GlobalModalType.CreateTweet)"
-                    class="whitespace-nowrap flex items-center space-x-3">
-              {{$t('postView.tweetOnChain')}}
-            </button>
-            <button @click="onCreate(GlobalModalType.CreateTweetSpace)"
-                    class="whitespace-nowrap flex items-center space-x-3">
-              {{$t('postView.spaceOnChain')}}
-            </button>
-          </div>
-        </template>
-      </el-popover>
+      <button v-else-if="activeTab==='tweets'"
+              class="absolute bottom-[80px] right-[10px] web:bottom-8"
+              @click="onCreate(GlobalModalType.CreateTweet)">
+        <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
+      </button>
     </div>
   </div>
 </template>

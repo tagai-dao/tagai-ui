@@ -8,6 +8,8 @@ import { useCommunityStore } from "@/stores/community";
 import emitter from "@/utils/emitter";
 import debounce from "lodash.debounce";
 import { searchTick } from "@/apis/api";
+import { sleep } from "@/utils/helper";
+import { useModalStore } from "@/stores/common";
 
 const comStore = useCommunityStore()
 const {
@@ -22,9 +24,17 @@ const {
   onPaste,
   selectEmoji,
   formatElToTextContent
-} = useCreateTweet(280 - (comStore.currentSelectedCommunity?.tick.length ?? 0) - 2)
+} = useCreateTweet(280 - 10)
 
 const { preCheckCuration, userTweet } = useTweet();
+const tagColors = [
+  '#B8CFE4', '#F2E9E0', '#ECF0E8', '#F2E1D0', '#DEF0EA',
+  '#ECE4E2', '#C5E4BA', '#ECC5C2', '#D6B5F9', '#C1FDF1',
+  '#E9E3E3', '#DAC5E7', '#D9D5E3', '#E9C3F6', '#D8D9F0',
+  '#D9E2E7', '#F8EFE8', '#C2B7C2', '#F3C9F8', '#E1CCE4',
+  '#FDD5F6', '#B7BFFE', '#FCE1F9', '#DAEFD2', '#D9FEBF',  
+  '#CAEDCD', '#D4DAE3', '#ECECDC', '#E0FBF8', '#CAF5EC'
+];
 
 const tweetLoading = ref(false)
 
@@ -47,11 +57,11 @@ const onPostTweet = async () => {
       emit('close')
       return;
     }
-    userTweet(content, useCommunityStore().currentSelectedCommunity!.tick!).then(res => {
+    userTweet(content, selectedTag.value).then(res => {
       emitter.emit('tweeted')
       notify({message: "Tweet success", type: 'success'})
     }).catch(handleErrorTip)
-
+    useModalStore().setModalVisible(false)
     // await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!)
     emit('close')
   } catch (e) {
@@ -65,26 +75,20 @@ const props = defineProps({
   defaultTick: {type: Boolean, default: true, required: false}
 })
 const tagOptions = ref<string[]>([])
-const selectedTags = ref<string[]>([])
+const selectedTag = ref<string>('')
 const searchTag = ref<string>('')
 
 const onSearchTag = debounce(() => {
   getTagOptions()
-}, 1000)
+}, 500)
 
 const getTagOptions = async () => {
-  const res = await searchTick(searchTag.value)
-  tagOptions.value = res.map(item => item.tick)
+  const res: any = await searchTick(searchTag.value)
+  tagOptions.value = res
 }
 
 const onSelectTag = (tag: string) => {
-  if(selectedTags.value.indexOf(tag)>=0) {
-    selectedTags.value.splice(selectedTags.value.indexOf(tag), 1)
-  } else {
-    selectedTags.value.push(tag)
-    searchTag.value = ''
-    tagOptions.value = []
-  }
+  selectedTag.value = tag
 }
 
 </script>
@@ -105,14 +109,14 @@ const onSelectTag = (tag: string) => {
       </span>
        and
       <span class="text-blue-500">
-        #{{ useCommunityStore().currentSelectedCommunity?.tick }}
+        #{{ selectedTag }}
       </span>
       at the front of your tweet content on Twitter, the tweet will be automatically posted to the community.
     </p>
     <p v-if="$i18n.locale==='zh'" class="text-sm text-gray-600">
       您可以在 Twitter 上撰写推文，并在推文内容前面加上
       <span class="text-blue-500">#tagai(or @TagAIDAO)</span> 和
-      <span class="text-blue-500">#{{ useCommunityStore().currentSelectedCommunity?.tick }}</span>，
+      <span class="text-blue-500">#{{ selectedTag }}</span>，
       该推文将自动发布到社区。
     </p>
     <p class="text-sm text-gray-600">
@@ -154,7 +158,7 @@ const onSelectTag = (tag: string) => {
           </el-popover>
           <div class="font-extralight flex flex-wrap gap-2 mt-2">
             <button class="bg-green-normal px-2 h-5 text-sm rounded-md" v-if="defaultTick">
-              {{ useCommunityStore().currentSelectedCommunity?.tick }}
+              {{ selectedTag }}
             </button>
           </div>
         </div>
@@ -163,22 +167,23 @@ const onSelectTag = (tag: string) => {
     <div class="px-2" v-if="!defaultTick">
       <div>
         <div class="flex flex-wrap gap-2">
-          <div>Tags:</div>
-          <button v-for="tag of selectedTags" :key="tag"
-                  class="bg-green-normal px-2 h-5 text-sm rounded-md"
-                  @click="onSelectTag(tag)">
-            {{tag}}
+          <div>Tag:</div>
+          <button v-show="selectedTag.length > 0"
+                  class="bg-green-normal px-2 h-5 text-sm rounded-md">
+            {{selectedTag}}
           </button>
         </div>
       </div>
-      <input class="border-b-[1px] border-grey-e6 leading-6 text-base w-full"
+      <input class="border border-grey-e6 rounded-xl my-2 px-3 py-2 leading-6 text-base w-full"
              v-model="searchTag"
              @input="onSearchTag"
+             :placeholder="$t('postView.pleaseInput')"
              type="text"/>
       <div class="flex flex-wrap gap-2 mt-2">
-        <button v-for="tag of tagOptions" :key="tag"
-                class="bg-green-normal px-2 h-5 text-sm rounded-md"
-                :class="selectedTags.indexOf(tag)>=0?'opacity-50':''"
+        <button v-for="(tag, index) of tagOptions" :key="tag"
+                class="px-2 h-5 text-sm rounded-md"
+                :style="{ backgroundColor: tagColors[index % tagColors.length] }"
+                :class="selectedTag == tag?'opacity-50':''"
                 @click="onSelectTag(tag)">
           {{tag}}
         </button>
@@ -187,7 +192,7 @@ const onSelectTag = (tag: string) => {
     <div class="flex justify-center">
       <button class="px-5 h-11 bg-gradient-primary rounded-full
                        flex justify-center items-center space-x-2 disabled:opacity-30"
-              :disabled="tweetLoading || (!defaultTick && selectedTags.length === 0)"
+              :disabled="tweetLoading || (!defaultTick && selectedTag.length === 0)"
               @click="onPostTweet">
         <span class="text-white font-bold text-lg">{{$t('postView.goTweet')}}</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>
