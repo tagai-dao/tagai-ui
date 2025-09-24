@@ -91,6 +91,14 @@ const onSelectTag = (tag: string) => {
   selectedTag.value = tag
 }
 
+onMounted(async () => {
+  const trendingTicks = comStore.trendingCommunities
+  if (trendingTicks.length > 0) {
+    tagOptions.value = trendingTicks.map((item: any) => item.name)
+  }
+  console.log({trendingTicks})
+})
+
 </script>
 
 <template>
@@ -192,7 +200,7 @@ const onSelectTag = (tag: string) => {
     <div class="flex justify-center">
       <button class="px-5 h-11 bg-gradient-primary rounded-full
                        flex justify-center items-center space-x-2 disabled:opacity-30"
-              :disabled="tweetLoading || (!defaultTick && selectedTag.length === 0)"
+              :disabled="tweetLoading || (!defaultTick && selectedTag.length === 0) || tweetLength === 0"
               @click="onPostTweet">
         <span class="text-white font-bold text-lg">{{$t('postView.goTweet')}}</span>
         <i-ep-loading v-if="tweetLoading" class="text-white animate-spin"/>
