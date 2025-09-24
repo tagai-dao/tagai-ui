@@ -120,8 +120,8 @@ const onSearchTag = debounce(() => {
 }, 1000)
 
 const getTagOptions = async () => {
-  const res = await searchTick(searchTag.value)
-  tagOptions.value = res.map(item => item.tick)
+  const res: any = await searchTick(searchTag.value)
+  tagOptions.value = res.map((item: any) => item.tick)
 }
 
 const onSelectTag = (tag: string) => {
