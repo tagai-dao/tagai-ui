@@ -15,7 +15,7 @@ import { readContract } from "./contract";
 
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
-  if (accStore.getWalletType === 'privy-twitter') {
+  if (accStore.getWalletType === 'privy') {
     accStore.chainId = ChainConfig.chainId;
     return;
   }

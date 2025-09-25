@@ -93,6 +93,7 @@ const handleReactLoginError = async () => {
     type: 'error'
   });
   await sleep(3)
+  accStore.clear();
   router.replace(localStorage.getItem('current-route') || '/')
 }
 
