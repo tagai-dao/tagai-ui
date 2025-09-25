@@ -7,7 +7,8 @@ export enum GlobalModalType {
   Register,
   BondEth,
   ChoseWallet,
-  ModifyCoin
+  ModifyCoin,
+  CreateUserInfo
 }
 
 export enum ListType {

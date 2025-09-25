@@ -92,7 +92,9 @@
     "fidUsedTip": "该 Farcaster 账户已被使用",
     "createWalletTip": "您需要创建一个钱包供 Donut 使用",
     "authLikeTip": "点赞权限：平台策展(🔥）功能",
-    "authPostTip": "发帖权限：在平台发布推文或 Space 以创建策展"
+    "authPostTip": "发帖权限：在平台发布推文或 Space 以创建策展",
+    "avatar": "头像",
+    "username": "用户名"
   },
   "web3": {
     "addressMismatch": "连接的地址不匹配，请在你的钱包地址中更换地址为: {address}",
