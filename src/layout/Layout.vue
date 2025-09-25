@@ -53,7 +53,6 @@ const handleReactLoginSuccess = async (accInfo: any) => {
 
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
 const setWallet = async () => {
-  console.log(33, walletReady.value)
   if (accStore.getAccountInfo?.twitterId && privyStore.ethersProvider) {
     try {
       accStore.ethConnectState = EthWalletState.Connecting;
