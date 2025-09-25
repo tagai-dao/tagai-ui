@@ -22,7 +22,11 @@ const ReactLoginWithEmail = applyPureReactInVue(LoginWithEmail);
           <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" /> -->
         </div>
         <ReactLoginWithOAuth/>
-        <h class="text-center text-gray-500 my-2">{{ $t('or') }}</h>
+        <div class="flex gap-3 items-center my-4 px-4">
+          <div class="flex-1 h-[0.5px] bg-grey-light-hover"></div>
+          <span class="text-center text-gray-500 ">{{ $t('or') }}</span>
+          <div class="flex-1 h-[0.5px] bg-grey-light-hover"></div>
+        </div>
         <ReactLoginWithEmail/>
       </div>
 

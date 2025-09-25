@@ -94,7 +94,9 @@
     "authLikeTip": "Like permission: Curate other tweets/spaces",
     "authPostTip": "Post permission: Create tweets/spaces on platform",
     "needPostAuth": "You need to authorize the post permission to create tweets/spaces",
-    "needLikeAuth": "You need to authorize the like permission to curate tweets/spaces"
+    "needLikeAuth": "You need to authorize the like permission to curate tweets/spaces",
+    "avatar": "Avatar",
+    "username": "Username"
   },
   "web3": {
     "addressMismatch": "The connected address is mismatch, please change to {address} in your wallet.",
