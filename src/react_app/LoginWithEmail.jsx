@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLoginWithEmail, useWallets, useCreateWallet, usePrivy } from "@privy-io/react-auth";
+import { privyEmailLogin, bondEthByPrivyAccToken } from "../apis/api.ts";
+import { useAccountStore } from "@/stores/web3";
+import { sleep } from "@/utils/helper";
+
 import emitter from "@/utils/emitter.ts";
 
 export default function LoginWithEmail() {
@@ -7,7 +11,9 @@ export default function LoginWithEmail() {
   const [code, setCode] = useState("");
   const [step, setStep] = useState("email"); // 'email' | 'code' | 'loading'
   const [isLoading, setIsLoading] = useState(false);
-  const { logout } = usePrivy();
+  const [bondingAddress, setBondingAddress] = useState(false);
+  const { logout, getAccessToken } = usePrivy();
+  const accStore = useAccountStore();
   
   const { sendCode, loginWithCode, state } = useLoginWithEmail({
     onComplete: async (params) => {
@@ -19,50 +25,74 @@ export default function LoginWithEmail() {
         loginAccount: params.loginAccount
       });
       
-      // 处理登录成功后的逻辑
-      await handleLoginSuccess(params);
+      try {
+        // 处理登录成功后的逻辑
+        await handleLoginSuccess(params);
+      } catch (error) {
+        emitter.emit('authError', error);
+      } finally {
+        try {
+          setIsLoading(false);
+        } catch (error) {
+          
+        }
+      }
     },
     onError: (error) => {
       console.error('Email login failed:', error);
       emitter.emit('authError', error);
-      setIsLoading(false);
+      try {
+        setIsLoading(false);
+      } catch (error) {
+        
+      }
     }
   });
   
   const { wallets, ready } = useWallets();
   const { createWallet } = useCreateWallet({
     onSuccess: async ({ wallet }) => {
-      console.log('Embedded wallet created successfully:', wallet);
-      const provider = await wallet.getEthereumProvider();
-      emitter.emit('walletProvider', provider)
-      setIsLoading(false);
+      try {
+        setBondingAddress(true);
+        console.log('Embedded wallet created successfully:', wallet);
+        // 绑定地址
+        const privyAccessToken = await getAccessToken();
+        await bondEthByPrivyAccToken(email, wallet.address, privyAccessToken);
+        accStore.setAccount({
+          ...accStore.getAccountInfo,
+          ethAddr: wallet.address,
+          walletType: 1,
+          accountType: 1
+        })
+        setIsLoading(false);
+      } catch (error) {
+        emitter.emit('authError', error);
+      } finally {
+        try {
+          setIsLoading(false);
+          setBondingAddress(false);
+        } catch (error) {
+          
+        }
+      }
     },
     onError: (error) => {
       console.error('Failed to create embedded wallet:', error);
       emitter.emit('authError', error);
-      setIsLoading(false);
-    }
-  });
-
-  // 处理钱包状态变化
-  useEffect(() => {
-    if (ready && wallets.length > 0) {
-      console.log('Email Wallets available:', wallets);
-      const privyWallet = wallets.find(wallet => wallet.walletClientType === 'privy');
-      if (privyWallet) {
-        console.log('Email privyWallet', privyWallet)
-        privyWallet.getEthereumProvider().then(provider => {
-          emitter.emit('walletProvider', provider);
-        });
+      try {
+        setIsLoading(false);
+      } catch (error) {
+        
       }
     }
-  }, [ready, wallets]);
+  });
 
   const handleSendCode = async () => {
     if (!email.trim()) return;
     
     setIsLoading(true);
     try {
+      await logout();
       await sendCode({ email });
       setStep("code");
     } catch (error) {
@@ -78,7 +108,6 @@ export default function LoginWithEmail() {
     
     setIsLoading(true);
     try {
-        await logout();
       await loginWithCode({ code });
     } catch (error) {
       console.error('Failed to login with code:', error);
@@ -100,10 +129,13 @@ export default function LoginWithEmail() {
       // 可以在这里添加现有用户的欢迎逻辑
     }
 
-    emitter.emit('authSuccess', {
-        email,
-        type: 'email'
-    })
+    const accessToken = await getAccessToken();
+
+    const userInfo = await privyEmailLogin(accessToken, email);
+
+    console.log(53, accessToken);
+
+    emitter.emit('authSuccess', userInfo)
 
     // 检查是否已有 embedded wallet
     const hasEmbeddedWallet = wallets.some(wallet => 

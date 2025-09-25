@@ -21,7 +21,7 @@ export const useAccountStore = defineStore('account', {
             this.socialBalance = 0
             this.ipshare = {}
             this.pubKey = ''
-            this.ethWalletType = 'none' // metamask, okx, privy-twitter, none
+            this.ethWalletType = 'none' // metamask, okx, privy, none
             this.ethConnectState = EthWalletState.Disconnect
             this.ethConnectAddress = '';
             this.unreadMessageCount = 0;
@@ -80,7 +80,7 @@ export const useAccountStore = defineStore('account', {
                 return 'none';
             }else {
                 if (account.walletType === 1) {
-                    return 'privy-twitter';
+                    return 'privy';
                 }else {
                     return 'metamask';
                 }

@@ -34,6 +34,9 @@ export const twitterLogin = async (state: string) =>
 export const privyLogin = async (accessToken: string, refreshToken: string) =>
   get(BACKEND_API_URL + '/auth/login', { accessToken, refreshToken })
 
+export const privyEmailLogin = async (accessToken: string, email: string) => 
+  get(BACKEND_API_URL + '/auth/loginEmail', {accessToken, email})
+
 export const twitterLogout = async (twitterId: string) =>
   get(BACKEND_API_URL + '/auth/logout', {twitterId})
 
@@ -48,6 +51,9 @@ export const checkFarcaster = async (fid: string) =>
 
 export const bondEth = async (ethAddr: string, twitterId: string, signature: `0x${string}`, infoStr: string) =>
   post(BACKEND_API_URL + '/user/bondEth', { ethAddr, twitterId, signature, infoStr })
+
+export const bondEthByPrivyAccToken = async (twitterId: string, ethAddr: string, privyAccessToken: string) =>
+  post(BACKEND_API_URL + '/user/bondEthByPrivyAccessToken', { twitterId, ethAddr, privyAccessToken })
 
 /************************************ user api **********************************/
 export const getUserProfile = (twitterId?: string, username?: string) =>

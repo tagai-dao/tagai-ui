@@ -13,10 +13,3 @@ export const customBsc = {
     }
   }
 }
-
-// export const privy = new Privy({
-//   appId: PrivyConfig.appId,
-//   supportedChains: [customBsc],
-//   storage: new LocalStorage(),
-//   clientId: PrivyConfig.clientId,
-// })
