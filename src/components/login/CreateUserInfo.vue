@@ -57,8 +57,9 @@
 
 <script setup lang="ts">
 import {useUploadImg} from "@/composables/useUploadImg";
-import {reactive, ref} from "vue";
+import {onMounted, reactive, ref} from "vue";
 import ImageCropper from "@/components/common/ImageCropper.vue";
+import {useAccountStore} from "@/stores/web3";
 
 const {
   uploading,
@@ -70,6 +71,7 @@ const {
   onCroppingAndUpload
 } = useUploadImg()
 const loading = ref(false)
+const accStore = useAccountStore();
 const createUserInfo = reactive({
   profile: '',
   username: ''
@@ -95,6 +97,11 @@ function getCleanLocalPart(email: string) {
   // 去掉非字母数字
   return localPart.replace(/[^A-Za-z0-9]/g, '');
 }
+
+onMounted(async () => {
+  const userInfo = accStore.getAccountInfo;
+  createUserInfo.username = getCleanLocalPart(userInfo.twitterId);
+})
 
 </script>
 
