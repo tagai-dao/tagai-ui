@@ -36,9 +36,8 @@ export const usePrivyStore = defineStore("privy", () => {
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy';
     } catch (error) {
-      useAccountStore().ethConnectState = EthWalletState.Disconnect;
       // logout
-      useAccount().logout();
+      useAccountStore().clear();
       console.error('Error initializing wallet:', error);
       throw error;
     }
