@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useLoginWithEmail, useWallets, useCreateWallet, usePrivy } from "@privy-io/react-auth";
 import emitter from "@/utils/emitter.ts";
+import debounce from "lodash.debounce";
 
 export default function LoginWithEmail() {
   const [email, setEmail] = useState("");
@@ -56,9 +57,7 @@ export default function LoginWithEmail() {
     }
   }, [ready, wallets]);
 
-  const handleSendCode = async () => {
-    if (!email.trim()) return;
-    
+  const handleSendCode = useCallback(async () => {
     setIsLoading(true);
     try {
       await sendCode({ email });
@@ -69,11 +68,9 @@ export default function LoginWithEmail() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [email])
 
-  const handleLoginWithCode = async () => {
-    if (!code.trim()) return;
-    
+  const handleLoginWithCode = useCallback(async () => {
     setIsLoading(true);
     try {
       await loginWithCode({ code });
@@ -82,11 +79,11 @@ export default function LoginWithEmail() {
       emitter.emit('authError', error);
       setIsLoading(false);
     }
-  };
+  }, [code])
 
-  const handleLoginSuccess = async (loginParams) => {
+  const handleLoginSuccess = useCallback(async (loginParams) => {
     const { user, isNewUser, wasAlreadyAuthenticated, loginMethod, loginAccount } = loginParams;
-    
+
     // 根据用户状态执行不同的逻辑
     if (isNewUser) {
       console.log('欢迎新用户！', user);
@@ -98,47 +95,54 @@ export default function LoginWithEmail() {
     }
 
     emitter.emit('authSuccess', {
-        email,
-        type: 'email'
+      email,
+      type: 'email'
     })
 
     // 检查是否已有 embedded wallet
-    const hasEmbeddedWallet = wallets.some(wallet => 
-      wallet.walletClientType === 'privy' && 
+    const hasEmbeddedWallet = wallets.some(wallet =>
+      wallet.walletClientType === 'privy' &&
       wallet.chainType === 'ethereum'
     );
 
     if (hasEmbeddedWallet) {
-        const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.chainType === 'ethereum').getEthereumProvider()
-        emitter.emit('walletProvider', provider)
-        setIsLoading(false);
+      const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.chainType === 'ethereum').getEthereumProvider()
+      emitter.emit('walletProvider', provider)
+      setIsLoading(false);
     } else {
       // 如果没有钱包，创建一个新的
       console.log('Creating new embedded wallet for email user');
       await createWallet();
     }
-  };
+  }, [wallets])
 
   const handleBackToEmail = () => {
     setStep("email");
     setCode("");
   };
 
+  const debounceEmailInput = useMemo(() => debounce((value) => {
+    const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    if(regex.test(value)) setEmail(value)
+    else setEmail('')
+  }, 1000), []);
+
+  const debounceCodeInput = useMemo(() => debounce((value) => {
+    const regex = /^\d{6}$/
+    if(regex.test(value)) setCode(value)
+    else setCode('')
+  }, 1000), [])
+
   return (
     <div className="w-full space-y-4">
       {/* 邮箱输入步骤 */}
       {step === "email" && (
         <div className="space-y-4">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">Login with Email</h3>
-          </div>
-          
           <div className="space-y-3">
             <input
               type="email"
               placeholder="Input Email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => debounceEmailInput(e.target.value)}
               className="w-full h-12 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               disabled={isLoading}
             />
@@ -170,18 +174,16 @@ export default function LoginWithEmail() {
       {step === "code" && (
         <div className="space-y-4">
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Input Code</h3>
             <p className="text-sm text-gray-600 mb-2">
-              Code has been sent to <span className="font-medium text-blue-600">{email}</span>
+              Code has been sent to <span className="font-medium text-orange-normal">{email}</span>
             </p>
           </div>
-          
+
           <div className="space-y-3">
             <input
               type="text"
               placeholder="Input 6-digit code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => debounceCodeInput(e.target.value)}
               className="w-full h-12 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-center text-lg tracking-widest"
               disabled={isLoading}
               maxLength={6}

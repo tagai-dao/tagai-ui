@@ -2,10 +2,9 @@
 import {RouterView, useRouter} from "vue-router";
 import TopBar from "@/layout/TopBar.vue";
 import TabBar from "@/layout/TabBar.vue";
-import Sidebar from "@/layout/Sidebar.vue";
 import CreateCoinModal from "@/components/common/CreateCoinModal.vue";
 import {useModalStore} from "@/stores/common";
-import {type Account, GlobalModalType} from "@/types";
+import {GlobalModalType} from "@/types";
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import AuthTwitter from "@/components/login/AuthTwitter.vue";
@@ -14,19 +13,18 @@ import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
 import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
-import { onMounted, ref } from "vue";
+import {onMounted, ref} from "vue";
 import emitter from "@/utils/emitter";
 import {applyPureReactInVue} from "veaury";
 import ReactApp from "@/react_app/App.jsx";
 import {EthWalletState, useAccountStore} from "@/stores/web3";
 import {handleErrorTip, notify} from "@/utils/notify";
 import {usePrivyStore} from "@/stores/privy";
-import { bondEth, twitterLogin } from "@/apis/api";
-import { signMessage } from "@/utils/wallets";
-import { BondEthMessage } from "@/config";
-import { isAddress } from "viem";
-import { useAccount } from "@/composables/useAccount";
-import { sleep } from "@/utils/helper";
+import {isAddress} from "viem";
+import {useAccount} from "@/composables/useAccount";
+import {sleep} from "@/utils/helper";
+import CreateUserInfo from "@/components/login/CreateUserInfo.vue";
+import {getUserProfile} from "@/apis/api";
 
 const router = useRouter();
 const accStore = useAccountStore();
@@ -34,6 +32,7 @@ const { updateVPOP } = useAccount();
 const privyStore = usePrivyStore();
 const newLogin = ref(false);
 const walletReady = ref(false);
+const modalStore = useModalStore()
 
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
@@ -41,6 +40,7 @@ const handleReactLoginSuccess = async (accInfo: any) => {
   if (accInfo.type === 'email') {
     // api 获取用户信息，如果是新用户（username为空），则创建用户，弹出login/CreateUserInfo组件
     // 如果用户已创建，将用户信息accStore.setAccount，并调用setWallet
+    modalStore.setModalVisible(true, GlobalModalType.CreateUserInfo)
     return;
   }
   console.log('accInfo', accInfo)
@@ -103,8 +103,6 @@ const handleWalletProvider = async (provider: any) => {
   await setWallet()
 }
 
-const modalStore = useModalStore()
-
 const cachedComponents = ref(['HomeView'])
 onMounted( () => {
   emitter.on('authSuccess', handleReactLoginSuccess);
@@ -148,6 +146,7 @@ onMounted( () => {
           <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
           <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
           <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
+          <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
         </el-dialog>
       </main>
     </main>
