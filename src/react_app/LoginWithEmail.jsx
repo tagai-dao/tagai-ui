@@ -30,6 +30,7 @@ export default function LoginWithEmail() {
         // 处理登录成功后的逻辑
         await handleLoginSuccess(params);
       } catch (error) {
+        console.error('handle login success fail', error)
         emitter.emit('authError', error);
       } finally {
         try {
@@ -67,6 +68,7 @@ export default function LoginWithEmail() {
         })
         setIsLoading(false);
       } catch (error) {
+        console.error('Failed to bond email embedded wallet:', error);
         emitter.emit('authError', error);
       } finally {
         try {
@@ -78,7 +80,12 @@ export default function LoginWithEmail() {
       }
     },
     onError: (error) => {
-      console.error('Failed to create embedded wallet:', error);
+      console.error('Failed to create email embedded wallet:', error);
+      if (error == 'embedded_wallet_already_exists') {
+        console.log('Fiailed to create email embed wallet')
+        return;
+      }
+      console.log(111)
       emitter.emit('authError', error);
       try {
         setIsLoading(false);
@@ -128,7 +135,7 @@ export default function LoginWithEmail() {
 
     const accessToken = await getAccessToken();
 
-    const userInfo = await privyEmailLogin(accessToken, email);
+    let userInfo = await privyEmailLogin(accessToken, email);
 
     console.log(53, accessToken);
 
@@ -137,19 +144,19 @@ export default function LoginWithEmail() {
     // 检查是否已有 embedded wallet
     const hasEmbeddedWallet = wallets.some(wallet =>
       wallet.walletClientType === 'privy' &&
-      wallet.chainType === 'ethereum'
+      wallet.type === 'ethereum'
     );
 
     if (hasEmbeddedWallet) {
-      const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.chainType === 'ethereum').getEthereumProvider()
+      const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum').getEthereumProvider()
       emitter.emit('walletProvider', provider)
       setIsLoading(false);
     } else {
       // 如果没有钱包，创建一个新的
       console.log('Creating new embedded wallet for email user');
-      await createWallet();
+      createWallet().catch();
     }
-  }, [wallets])
+  }, [wallets, email])
 
   const handleBackToEmail = () => {
     setStep("email");
@@ -258,11 +265,11 @@ export default function LoginWithEmail() {
       )}
 
       {/* 状态显示 */}
-      {state.status === "error" && (
+      {/* {state.status === "error" && (
         <div className="text-center text-red-500 text-sm">
           Login failed, please try again
         </div>
-      )}
+      )} */}
     </div>
   );
 }

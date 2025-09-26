@@ -1,15 +1,15 @@
 <template>
   <div class="flex flex-col gap-y-2 py-3">
-    <div class="text-h3 text-center mb-5 text-black">请完善用户信息</div>
-    <div class="flex items-center gap-4">
-      <label for="profile" class="text-h4 text-black">{{ $t('loginView.avatar') }}:</label>
-      <div class="flex items-center gap-2">
+    <div class="text-h3 text-center mb-5 text-black">Account Settings</div>
+    <div class="flex items-center justify-center gap-4">
+      <!-- <label for="profile" class="text-h4 text-black">{{ $t('loginView.avatar') }}:</label> -->
+      <div class="flex justify-center items-center gap-2">
         <img v-if="createUserInfo.profile" :src="createUserInfo.profile"
-             class="w-11 h-11 min-w-11 min-h-11 rounded-md" alt=""/>
-        <div v-else class="w-11 h-11 min-w-11 min-h-11 bg-grey-f0 rounded-full flex items-center justify-center">
+             class="w-20 h-20 min-w-20 min-h-20 rounded-md" alt=""/>
+        <div v-else class="w-20 h-20 min-w-20 min-h-20 bg-grey-f0 rounded-full flex items-center justify-center">
           <img class="w-3 h-3" src="~@/assets/icons/icon-img.svg" alt="" />
         </div>
-        <el-upload class="avatar-uploader w-7 h-6 min-w-7 min-h-7 bg-grey-f0 rounded-full flex items-center justify-center"
+        <el-upload class="avatar-uploader w-10 h-10 min-w-10 min-h-10 bg-grey-f0 rounded-full flex items-center justify-center"
                    action="#"
                    :http-request="(options: any)=> openImageCropper(options)"
                    :on-success="uploadSuccess"
@@ -28,9 +28,9 @@
         </div>
       </div>
     </div>
-    <div class="flex flex-col gap-1">
-      <label for="name" class="text-h4 text-black">{{$t('loginView.username')}}:</label>
-      <input class="border-b-[1px] border-grey-e6 leading-6 text-base"
+    <div class="flex flex-col gap-1 justify-center items-center mt-5">
+      <!-- <label for="name" class="text-h4 text-black">{{$t('loginView.username')}}:</label> -->
+      <input class="border-[1px] border-grey-e6 leading-6 text-base text-center w-1/2 rounded-full px-3 py-2"
              v-model="createUserInfo.username"
              type="text"
              id="name"/>
@@ -60,6 +60,9 @@ import {useUploadImg} from "@/composables/useUploadImg";
 import {onMounted, reactive, ref} from "vue";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import {useAccountStore} from "@/stores/web3";
+import { updateEmailProfile } from '@/apis/api'
+import { useModalStore } from "@/stores/common";
+import { handleErrorTip } from "@/utils/notify";
 
 const {
   uploading,
@@ -87,7 +90,21 @@ const beforeUpload = (file: any) => {
 }
 
 const onConfirm = async () => {
-
+  try {
+    loading.value = true;
+    await updateEmailProfile(accStore.getAccountInfo.twitterId, createUserInfo.username, createUserInfo.profile);
+    accStore.setAccount({
+      ...accStore.getAccountInfo,
+      twitterUsername: createUserInfo.username,
+      twitterName: createUserInfo.username,
+      profile: createUserInfo.profile
+    });
+    useModalStore().setModalVisible(false);
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    loading.value = false;
+  }
 }
 
 function getCleanLocalPart(email: string) {

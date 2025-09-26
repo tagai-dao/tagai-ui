@@ -37,18 +37,21 @@ const modalStore = useModalStore()
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
 const handleReactLoginSuccess = async (accInfo: any) => {
-  if (accInfo.type === 'email') {
+  console.log('accInfo', accInfo)
+  accStore.setAccount(accInfo)
+  
+  updateVPOP().catch();
+
+  newLogin.value = true;
+  await setWallet()
+
+  if (accInfo.accountType === 1 && accInfo.isNew === 1) {
     // api 获取用户信息，如果是新用户（username为空），则创建用户，弹出login/CreateUserInfo组件
     // 如果用户已创建，将用户信息accStore.setAccount，并调用setWallet
     modalStore.setModalVisible(true, GlobalModalType.CreateUserInfo)
     return;
   }
-  console.log('accInfo', accInfo)
-  accStore.setAccount(accInfo)
   
-  updateVPOP().catch();
-  newLogin.value = true;
-  await setWallet()
 }
 
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
@@ -57,11 +60,13 @@ const setWallet = async () => {
     try {
       accStore.ethConnectState = EthWalletState.Connecting;
       walletReady.value = true;
+      console.log(333, privyStore.ethersProvider)
       const accounts = await privyStore.ethersProvider.request({
         method: 'eth_requestAccounts'
       });
       const connectedAddr = accounts[0]; 
       console.log('connected wallet', connectedAddr)
+      console.log('accStore.getAccountInfo', accStore.getAccountInfo)
       // check wallet type
       if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
         // user connect wallet plugin by manual
@@ -75,7 +80,9 @@ const setWallet = async () => {
       } else {
         await privyStore.initWallet()
       }
+      modalStore.setModalVisible(false);
     } catch (error) {
+        console.error('Failed to set wallet:', error)
         handleErrorTip(error)
         await sleep(3)
     } finally {
@@ -92,7 +99,8 @@ const handleReactLoginError = async () => {
     message: 'Please try again',
     type: 'error'
   });
-  await sleep(3)
+  console.error('Failed to login tip')
+  await sleep(1)
   accStore.clear();
   router.replace(localStorage.getItem('current-route') || '/')
 }

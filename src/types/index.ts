@@ -116,6 +116,7 @@ export type Account = {
   creditFactor?: string | null | undefined;
   walletType?: number | null | undefined; // 0: metamask, 1: privy
   accountType?: number | null | undefined; // 0: twitter, 1: email
+  isNew?: number | null | undefined; // 0: old, 1: new register
 };
 
 export type FarcasterUser = {
