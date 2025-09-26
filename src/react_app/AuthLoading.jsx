@@ -16,6 +16,11 @@ export default function AuthLoading() {
         onSuccess: (async ({wallet}) => {
             // const provider = await wallet.getEthereumProvider()
             try {
+                // 判断twitterId是不是纯数字字符串
+                if (!/^\d+$/.test(accStore.getAccountInfo?.twitterId)) {
+                    console.log('Not twitter account, ignore')
+                    return;
+                }
                 // 绑定地址
                 setBondingAddress(true);
                 const privyAccessToken = await getAccessToken();
@@ -27,12 +32,19 @@ export default function AuthLoading() {
                     accountType: 0
                 })
             } catch (error) {
+                console.error('Failed to bond twitter embedded wallet:', error);
                 emitter.emit('authError', error);
             }finally {
                 setBondingAddress(false);
             }
         }),
         onError: (error) => {
+            console.error('Failed to create twitter embedded wallet:', error);
+            if (error == 'embedded_wallet_already_exists') {
+                console.log('Faild to crate twitter wallet')
+                return;
+            }
+            console.log(222)
             emitter.emit('authError', error);
         }
     })
@@ -48,7 +60,12 @@ export default function AuthLoading() {
                 while(bondingAddress) {
                     await sleep(0.5)
                 }
-                const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy').getEthereumProvider()
+                const wallet = wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
+
+                if (!wallet) {
+                    return;
+                }
+                const provider = await wallet.getEthereumProvider()
                 emitter.emit('walletProvider', provider)
 
                 console.log(provider)
@@ -70,11 +87,11 @@ export default function AuthLoading() {
                 oAuthTokens,
                 user
             );
-
-            const userInfo = await privyLogin(oAuthTokens.accessToken, oAuthTokens.refreshToken)
+            const privyAccessToken = await getAccessToken()
+            const userInfo = await privyLogin(privyAccessToken, oAuthTokens.accessToken, oAuthTokens.refreshToken)
             emitter.emit('authSuccess', userInfo)
             if (wallets.length === 0) {
-                console.log('create new wallet')
+                console.log('create new twitter wallet')
                 await createWallet()
             }
         }

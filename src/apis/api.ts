@@ -31,8 +31,8 @@ export const needLogin = async (twitterId: string) =>
 export const twitterLogin = async (state: string) =>
   get(BACKEND_API_URL + '/user/login', { state })
 
-export const privyLogin = async (accessToken: string, refreshToken: string) =>
-  get(BACKEND_API_URL + '/auth/login', { accessToken, refreshToken })
+export const privyLogin = async (privyAccessToken: string, accessToken: string, refreshToken: string) =>
+  get(BACKEND_API_URL + '/auth/login', { privyAccessToken, accessToken, refreshToken })
 
 export const privyEmailLogin = async (accessToken: string, email: string) => 
   get(BACKEND_API_URL + '/auth/loginEmail', {accessToken, email})
@@ -58,6 +58,9 @@ export const bondEthByPrivyAccToken = async (twitterId: string, ethAddr: string,
 /************************************ user api **********************************/
 export const getUserProfile = (twitterId?: string, username?: string) =>
   get(BACKEND_API_URL + '/user/getUserProfile', {twitterId, username})
+
+export const updateEmailProfile = (twitterId: string, username: string, profile: string) =>
+  post(BACKEND_API_URL + '/user/updateEmailProfile', { twitterId, username, profile })
 
 export const checkEthUsed = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/checkEthUsed', { ethAddr })
