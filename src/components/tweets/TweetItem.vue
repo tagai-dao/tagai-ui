@@ -93,7 +93,7 @@ onUnmounted(() => {
       <div class="flex gap-2 items-stretch">
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
                     :followers="tweet.followers" :followings="tweet.followings"
-                    :eth-addr="tweet.ethAddr" :twitter-id="tweet.twitterId"
+                    :eth-addr="tweet.ethAddr" :twitter-id="tweet.twitterId" :account-type="tweet.accountType"
                     :steem-id="tweet.steemId" :teleported="true" :credit="tweet.credit">
           <template #avatar-img>
             <img v-if="profileImg"
@@ -109,8 +109,8 @@ onUnmounted(() => {
           <div class="w-full flex items-center flex-wrap gap-x-2">
             <a class="font-bold text-lg"
                @click.stop="onUserAvatar()">{{ tweet.twitterName }}</a>
-            <span class="mx-4px"> · </span>
-            <button @click="gotoTweet($event)">
+            <span class="mx-4px" v-if="tweet.accountType !== 1"> · </span>
+            <button @click="gotoTweet($event)" v-if="tweet.accountType !== 1">
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
 

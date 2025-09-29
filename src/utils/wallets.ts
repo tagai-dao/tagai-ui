@@ -46,7 +46,7 @@ export const getProviders = () => {
 export const getProvider = () => {
     const accStore = useAccountStore();
     const privyStore = usePrivyStore();
-    if (accStore.getWalletType === 'privy-twitter') {
+    if (accStore.getWalletType === 'privy') {
         return privyStore.ethersProvider;
     }
     if (provider) {

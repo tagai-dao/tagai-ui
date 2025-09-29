@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SocialAccountModalType, useSocialAccountModalStore } from "@/stores/wallet";
-import { handleError, ref } from "vue";
-import { getSettledTokens, getTokenByTickOrCA, setNewToken } from "@/apis/api";
+import { handleError, onMounted, ref } from "vue";
+import { getSettledTokens, getTokenByTickOrCA, searchTick, setNewToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { GlobalModalType } from "@/types";
@@ -9,6 +9,8 @@ import { useModalStore } from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
 import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
 import { parseEther } from "viem";
+import { useCommunityStore } from "@/stores/community";
+import debounce from "lodash.debounce";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
@@ -24,6 +26,17 @@ const accStore = useAccountStore()
 const modalStore = useModalStore()
 const loading = ref(false)
 const { accountMismatch } = useAccount()
+const comStore = useCommunityStore()
+const tagOptions = ref<string[]>([])
+
+const tagColors = [
+  '#B8CFE4', '#F2E9E0', '#ECF0E8', '#F2E1D0', '#DEF0EA',
+  '#ECE4E2', '#C5E4BA', '#ECC5C2', '#D6B5F9', '#C1FDF1',
+  '#E9E3E3', '#DAC5E7', '#D9D5E3', '#E9C3F6', '#D8D9F0',
+  '#D9E2E7', '#F8EFE8', '#C2B7C2', '#F3C9F8', '#E1CCE4',
+  '#FDD5F6', '#B7BFFE', '#FCE1F9', '#DAEFD2', '#D9FEBF',  
+  '#CAEDCD', '#D4DAE3', '#ECECDC', '#E0FBF8', '#CAF5EC'
+];
 
 const emit = defineEmits(['added'])
 
@@ -92,6 +105,26 @@ async function confirm() {
     }
 }
 
+const onSearchTag = debounce(() => {
+  if (tick.value.length === 0) {
+    tagOptions.value = comStore.trendingCommunities.map((item: any) => item.name).slice(0, 10)
+  } else {
+    getTagOptions()
+  }
+}, 500)
+
+const getTagOptions = async () => {
+  const res: any = await searchTick(tick.value)
+  tagOptions.value = res
+}
+
+onMounted(async () => {
+  const trendingTicks = comStore.trendingCommunities
+  if (trendingTicks.length > 0) {
+    tagOptions.value = trendingTicks.map((item: any) => item.name).slice(0,10)
+  }
+})
+
 </script>
 
 <template>
@@ -117,8 +150,17 @@ async function confirm() {
             </el-popover>
         </label>
         <input class="border-[1px] mb-5 border-grey-c9 rounded-xl px-4 h-12 web:h-11 gap-4 text-black flex items-center"
-               v-model="tick" type="text" :placeholder="$t('profileView.inputTickPlaceholder')"/>
+               v-model="tick" @input="onSearchTag" type="text" :placeholder="$t('profileView.inputTickPlaceholder')"/>
         <span class="text-red-500 text-sm" v-if="showTickerError">{{$t('profileView.tickerError')}}</span>
+        <div class="flex flex-wrap gap-2 mb-2">
+        <button v-for="(tag, index) of tagOptions" :key="tag"
+                class="px-2 h-5 text-sm rounded-md"
+                :style="{ backgroundColor: tagColors[index % tagColors.length] }"
+                :class="tick !== tag?'opacity-50':''"
+                @click="tick = tag">
+          {{tag}}
+        </button>
+      </div>
       </div>
       <div class="flex flex-col gap-1">
         <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputAllowance')}}:

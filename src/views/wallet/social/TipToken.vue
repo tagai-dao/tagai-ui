@@ -4,6 +4,7 @@ import { computed, ref, watch } from "vue";
 import { useAccountStore, EthWalletState } from "@/stores/web3";
 import { useModalStore } from "@/stores/common";
 import { handleErrorTip } from "@/utils/notify";
+import { tipToUser } from "@/apis/api";
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const accStore = useAccountStore()
@@ -30,7 +31,12 @@ async function confirm() {
       if (!checkTipError()) {
         return;
       }
-      window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`@TagAIDAO tip ${amount.value} $${socialAccountModalStore.editTokenInfo?.tick} to @${to.value}`)}`, '_blank')
+      if (accStore.getAccountInfo?.accountType === 0) {
+        window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(`@TagAIDAO tip ${amount.value} $${socialAccountModalStore.editTokenInfo?.tick} to @${to.value}`)}`, '_blank')
+      } else {
+        // 直接打赏
+        await tipToUser(accStore.getAccountInfo.twitterId, to.value!, socialAccountModalStore.editTokenInfo!.tick, amount.value ?? 0)
+      }
       socialAccountModalStore.setModalVisible(false, SocialAccountModalType.TipToken)
   } catch (error) {
     handleErrorTip(error)
@@ -42,7 +48,7 @@ async function confirm() {
 function checkTipError() {
     resetTipError()
     const token = socialAccountModalStore.editTokenInfo;
-    if (!token) {
+    if (!token || !token.tick) {
         isValid.value = false 
         return;
     }

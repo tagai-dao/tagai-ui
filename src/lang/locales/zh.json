@@ -10,6 +10,7 @@
   "sell": "出售",
   "tips": "打赏",
   "tip": "打赏",
+  "or": "或者",
   "createCoin": "创建代币",
   "search": "搜索",
   "marketCap": "市值",
@@ -71,6 +72,7 @@
   "Telegram": "电报",
   "loginView": {
     "loginWithTwitter": "登录推特",
+    "loginWithEmail": "使用邮箱登录",
     "authTwitterTip": "TagAI 的某些功能需要推特的相应权限，您可以根据需要选择需要授权的功能",
     "p1": "使用渐进式Web应用技术，结合了传统网站和平台特定应用的最佳功能",
     "createWallet": "创建钱包",
@@ -90,7 +92,9 @@
     "fidUsedTip": "该 Farcaster 账户已被使用",
     "createWalletTip": "您需要创建一个钱包供 Donut 使用",
     "authLikeTip": "点赞权限：平台策展(🔥）功能",
-    "authPostTip": "发帖权限：在平台发布推文或 Space 以创建策展"
+    "authPostTip": "发帖权限：在平台发布推文或 Space 以创建策展",
+    "avatar": "头像",
+    "username": "用户名"
   },
   "web3": {
     "addressMismatch": "连接的地址不匹配，请在你的钱包地址中更换地址为: {address}",
@@ -141,6 +145,7 @@
     "tipDes2": "向您的社交账号充值BNB，并设置交易限额",
     "tipDes5": "添加社交代币，设置授权额度和限额",
     "tipDes6": "在推特上打赏: ",
+    "tipDes7": "点击'打赏'按钮向任何 Twitter 账号打赏 TagAI 代币。",
     "inputTick": "Tick",
     "addTokenBnb": "输入的BNB数量意味着您将把BNB转移到社交账户，打赏/兑换操作将直接在您的社交账户中消耗BNB。如果您不想充值，只需输入0。",
     "inputTickPlaceholder": "输入Ticker或CA",

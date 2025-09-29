@@ -10,6 +10,7 @@ import debounce from "lodash.debounce";
 import { searchTick } from "@/apis/api";
 import { sleep } from "@/utils/helper";
 import { useModalStore } from "@/stores/common";
+import { useAccountStore } from "@/stores/web3";
 
 const comStore = useCommunityStore()
 const {
@@ -79,6 +80,11 @@ const selectedTag = ref<string>('')
 const searchTag = ref<string>('')
 
 const onSearchTag = debounce(() => {
+  if (selectedTag.value.length === 0) {
+    tagOptions.value = comStore.trendingCommunities.map((item: any) => item.name)
+  } else {
+    getTagOptions()
+  }
   getTagOptions()
 }, 500)
 
@@ -109,30 +115,30 @@ onMounted(async () => {
     <div class="text-xl font-medium text-black text-center">
       {{ $t('postView.tweetOnChain') }}
     </div>
-    <div class="flex flex-col gap-y-2 px-4">
-    <p class="text-sm text-gray-600">
-      {{$t('postView.tweetOnChainTip1')}}
+    <div class="flex flex-col gap-y-2 px-4" v-if="useAccountStore().getAccountInfo?.accountType !== 1">
+      <p class="text-sm text-gray-600">
+        {{$t('postView.tweetOnChainTip1')}}
+        </p>
+      <p v-if="$i18n.locale==='en'" class="text-sm text-gray-600">
+        You can write a tweet with
+        <span class="text-blue-500">
+          #tagai(or @TagAIDAO)
+        </span>
+        and
+        <span class="text-blue-500">
+          #{{ selectedTag }}
+        </span>
+        at the front of your tweet content on Twitter, the tweet will be automatically posted to the community.
       </p>
-    <p v-if="$i18n.locale==='en'" class="text-sm text-gray-600">
-      You can write a tweet with
-      <span class="text-blue-500">
-        #tagai(or @TagAIDAO)
-      </span>
-       and
-      <span class="text-blue-500">
-        #{{ selectedTag }}
-      </span>
-      at the front of your tweet content on Twitter, the tweet will be automatically posted to the community.
-    </p>
-    <p v-if="$i18n.locale==='zh'" class="text-sm text-gray-600">
-      您可以在 Twitter 上撰写推文，并在推文内容前面加上
-      <span class="text-blue-500">#tagai(or @TagAIDAO)</span> 和
-      <span class="text-blue-500">#{{ selectedTag }}</span>，
-      该推文将自动发布到社区。
-    </p>
-    <p class="text-sm text-gray-600">
-      {{$t('postView.tweetOnChainTip2')}}
-    </p>
+      <p v-if="$i18n.locale==='zh'" class="text-sm text-gray-600">
+        您可以在 Twitter 上撰写推文，并在推文内容前面加上
+        <span class="text-blue-500">#tagai(or @TagAIDAO)</span> 和
+        <span class="text-blue-500">#{{ selectedTag }}</span>，
+        该推文将自动发布到社区。
+      </p>
+      <p class="text-sm text-gray-600">
+        {{$t('postView.tweetOnChainTip2')}}
+      </p>
     </div>
     <div>
       <div class="flex justify-between items-center px-2">

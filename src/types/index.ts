@@ -7,7 +7,8 @@ export enum GlobalModalType {
   Register,
   BondEth,
   ChoseWallet,
-  ModifyCoin
+  ModifyCoin,
+  CreateUserInfo
 }
 
 export enum ListType {
@@ -113,7 +114,9 @@ export type Account = {
   farcasterName?: string | null | undefined;
   credit?: number;
   creditFactor?: string | null | undefined;
-  walletType?: number | null | undefined; // 0: metamask, 1: privy-twitter
+  walletType?: number | null | undefined; // 0: metamask, 1: privy
+  accountType?: number | null | undefined; // 0: twitter, 1: email
+  isNew?: number | null | undefined; // 0: old, 1: new register
 };
 
 export type FarcasterUser = {

@@ -34,11 +34,10 @@ export const usePrivyStore = defineStore("privy", () => {
       accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
       console.log('privy address inited', accStore.ethConnectAddress)
       accStore.ethConnectState = EthWalletState.Connected;
-      accStore.ethWalletType = 'privy-twitter';
+      accStore.ethWalletType = 'privy';
     } catch (error) {
-      useAccountStore().ethConnectState = EthWalletState.Disconnect;
       // logout
-      useAccount().logout();
+      useAccountStore().clear();
       console.error('Error initializing wallet:', error);
       throw error;
     }
