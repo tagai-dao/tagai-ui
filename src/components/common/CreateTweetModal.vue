@@ -92,6 +92,9 @@ const onSelectTag = (tag: string) => {
 }
 
 onMounted(async () => {
+  if (props.defaultTick) {
+    selectedTag.value = comStore.currentSelectedCommunity!.tick
+  }
   const trendingTicks = comStore.trendingCommunities
   if (trendingTicks.length > 0) {
     tagOptions.value = trendingTicks.map((item: any) => item.name)
