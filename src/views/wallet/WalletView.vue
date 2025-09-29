@@ -54,8 +54,8 @@ onMounted(() => {
           <div class="text-h3">{{ accStore.getAccountInfo.twitterName }}</div>
           <div class="flex items-center gap-1 leading-5">
             <span class="text-grey-8d">@{{ accStore.getAccountInfo.twitterUsername }}</span>
-            <span class="mx-4px"> · </span>
-            <button @click="gotoTwitter" >
+            <span v-if="accStore.getAccountInfo.accountType === 0" class="mx-4px"> · </span>
+            <button v-if="accStore.getAccountInfo.accountType === 0" @click="gotoTwitter" >
               <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
           </div>

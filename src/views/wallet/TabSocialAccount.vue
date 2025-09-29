@@ -60,7 +60,8 @@ onMounted(() => {
                   <ul class="list-decimal pl-5">
                     <li>{{ $t('profileView.tipDes2') }}</li>
                     <li>{{ $t('profileView.tipDes5') }}</li>
-                    <li>{{ $t('profileView.tipDes6') + ' @TagAIDAO tip [amount] $[ticker] to @[user]' }}</li>
+                    <li v-if="accStore.getAccountInfo?.accountType === 0">{{ $t('profileView.tipDes6') + ' @TagAIDAO tip [amount] $[ticker] to @[user]' }}</li>
+                    <li v-else>{{ $t("profileView.tipDes7") }}</li>
                   </ul>
                 </div>
               </template>

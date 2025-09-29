@@ -46,6 +46,10 @@ async function updateIPShare() {
   }
 }
 
+function editProfile() {
+  useModalStore().setModalVisible(true, GlobalModalType.CreateUserInfo)
+}
+
 onMounted(() => {
   updateIPShare()
   setInter(updateIPShare, 100000)
@@ -64,8 +68,11 @@ onMounted(() => {
           <div class="flex items-center gap-1 leading-5">
             <span class="text-grey-8d">@{{ accStore.getAccountInfo.twitterUsername }}</span>
             <span class="mx-4px"> · </span>
-            <button @click="gotoTwitter" >
+            <button v-if="accStore.getAccountInfo.accountType == 0" @click="gotoTwitter" >
               <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
+            </button>
+            <button v-else @click="editProfile">
+              <img src="~@/assets/icons/icon-edit.svg" class="w-6 h-6" alt="">
             </button>
           </div>
         </div>

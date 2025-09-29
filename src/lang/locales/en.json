@@ -147,6 +147,7 @@
     "tipDes2": "Deposit BNB to your social account and set the transaction limit",
     "tipDes5": "Add social token, set authorization allowance and transaction limit",
     "tipDes6": "Tip on Twitter with: ",
+    "tipDes7": "Click 'Tip' button to tip TagAI token to any Twitter account.",
     "inputTick": "Tick",
     "addTokenBnb": "The input amount mean you will transfer the BNB to social account, the tip/swap operation will cost your BNB directly in your social account. If you do not want to deposit, just input 0.",
     "inputTickPlaceholder": "Input ticker or CA",

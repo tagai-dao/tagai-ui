@@ -21,7 +21,8 @@ const props = withDefaults(defineProps<{
     followers: number | null | undefined,
     followings: number | null | undefined,
     credit: number | null | undefined,
-    creditFactor?: string | null | undefined
+    creditFactor?: string | null | undefined,
+    accountType?: number | null | undefined
 }>(), {
     profileImg: '',
     name: '',
@@ -30,7 +31,8 @@ const props = withDefaults(defineProps<{
     ethAddr: '',
     teleported: false,
     credit: 0,
-    creditFactor: ''
+    creditFactor: '',
+    accountType: 0
 })
 
 const creditJO = ref<any[]>([{
@@ -132,7 +134,7 @@ onMounted(() => {
             <div class="flex items-end whitespace-nowrap items-center gap-2">
               <span class="font-semibold text-black text-lg">{{(props.name??'').substring(0, 10)}}</span>
               <span class="text-sm italic leading-[16px]">@{{props.username??''.substring(0, 10)}}</span>
-              <button class="mb-6px" @click="gotoTwitter()">
+              <button v-if="props.accountType !== 1" class="mb-6px" @click="gotoTwitter()">
                 <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
               </button>
             </div>

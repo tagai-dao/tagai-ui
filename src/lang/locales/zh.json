@@ -145,6 +145,7 @@
     "tipDes2": "向您的社交账号充值BNB，并设置交易限额",
     "tipDes5": "添加社交代币，设置授权额度和限额",
     "tipDes6": "在推特上打赏: ",
+    "tipDes7": "点击'打赏'按钮向任何 Twitter 账号打赏 TagAI 代币。",
     "inputTick": "Tick",
     "addTokenBnb": "输入的BNB数量意味着您将把BNB转移到社交账户，打赏/兑换操作将直接在您的社交账户中消耗BNB。如果您不想充值，只需输入0。",
     "inputTickPlaceholder": "输入Ticker或CA",
