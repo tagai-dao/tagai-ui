@@ -80,6 +80,11 @@ const selectedTag = ref<string>('')
 const searchTag = ref<string>('')
 
 const onSearchTag = debounce(() => {
+  if (selectedTag.value.length === 0) {
+    tagOptions.value = comStore.trendingCommunities.map((item: any) => item.name)
+  } else {
+    getTagOptions()
+  }
   getTagOptions()
 }, 500)
 
