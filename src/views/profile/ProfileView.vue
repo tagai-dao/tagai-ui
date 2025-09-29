@@ -7,19 +7,21 @@ import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP } from "@/config";
 import { getIpshareInfo } from '@/apis/api'
-import { useInterval } from "@/composables/useTools";
+import { useInterval, useTools } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useRoute } from "vue-router";
 import {applyPureReactInVue} from "veaury";
 import LogoutOAuth from '@/react_app/Logout.jsx'
+import { formatAddress } from "@/utils/helper";
 
 const ReactLogoutOAuth = applyPureReactInVue(LogoutOAuth);
 
 const accStore = useAccountStore()
 const tabOptions = ['post', 'createCoin']
 const activeTab = ref('post')
+const { onCopy } = useTools()
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
 const { setInter } = useInterval()
 
@@ -66,7 +68,7 @@ onMounted(() => {
         <div class="h-full flex-1">
           <div class="text-h3">{{ accStore.getAccountInfo.twitterName }}</div>
           <div class="flex items-center gap-1 leading-5">
-            <span class="text-grey-8d">@{{ accStore.getAccountInfo.twitterUsername }}</span>
+            <span @click="onCopy(accStore.getAccountInfo.twitterUsername)" class="text-grey-8d">{{ accStore.getAccountInfo.accountType === 1 ? formatAddress(accStore.getAccountInfo.twitterUsername, 6, 3) : '@' + accStore.getAccountInfo.twitterUsername }}</span>
             <span class="mx-4px"> · </span>
             <button v-if="accStore.getAccountInfo.accountType == 0" @click="gotoTwitter" >
               <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">

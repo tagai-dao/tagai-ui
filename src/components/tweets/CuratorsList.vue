@@ -106,7 +106,7 @@ onMounted(async () => {
             />
           </template>
             </UserAvatar>
-              <span class="text-grey-8d font-normal">@{{ curate.twitterUsername }}</span>
+              <span class="text-grey-8d font-normal">@{{ curate.twitterName }}</span>
             </div>
             <!-- <span class="text-grey-normal text-h5">Username</span> -->
           </div>
