@@ -100,7 +100,7 @@ const onRemoveTags = (tag: string) => {
 
 const uploadSuccess = (res: any, file: any) => {
   createForm.logoUrl = res.url;
-  console.log('url', res.url)
+  console.log('url1', res.url)
   uploading.value = false;
 };
 

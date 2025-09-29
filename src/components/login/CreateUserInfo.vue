@@ -5,7 +5,7 @@
       <!-- <label for="profile" class="text-h4 text-black">{{ $t('loginView.avatar') }}:</label> -->
       <div class="flex justify-center items-center gap-2">
         <img v-if="createUserInfo.profile" :src="createUserInfo.profile"
-             class="w-20 h-20 min-w-20 min-h-20 rounded-md" alt=""/>
+             class="w-20 h-20 min-w-20 min-h-20 rounded-full" alt=""/>
         <div v-else class="w-20 h-20 min-w-20 min-h-20 bg-grey-f0 rounded-full flex items-center justify-center">
           <img class="w-3 h-3" src="~@/assets/icons/icon-img.svg" alt="" />
         </div>
@@ -57,7 +57,7 @@
 
 <script setup lang="ts">
 import {useUploadImg} from "@/composables/useUploadImg";
-import {onMounted, reactive, ref} from "vue";
+import {onMounted, reactive, ref, watch} from "vue";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import {useAccountStore} from "@/stores/web3";
 import { updateEmailProfile } from '@/apis/api'
@@ -71,7 +71,8 @@ const {
   cropperImgSrc,
   showPicSizeLimit,
   openImageCropper,
-  onCroppingAndUpload
+  onCroppingAndUpload,
+  completedImgUrl
 } = useUploadImg()
 const loading = ref(false)
 const accStore = useAccountStore();
@@ -80,7 +81,12 @@ const createUserInfo = reactive({
   username: ''
 })
 
+watch(() => completedImgUrl.value, (value) => {
+  createUserInfo.profile = completedImgUrl.value
+})
+
 const uploadSuccess = (res: any, file: any) => {
+  console.log(111, res.url)
   createUserInfo.profile = res.url;
   uploading.value = false;
 }
@@ -95,7 +101,6 @@ const onConfirm = async () => {
     await updateEmailProfile(accStore.getAccountInfo.twitterId, createUserInfo.username, createUserInfo.profile);
     accStore.setAccount({
       ...accStore.getAccountInfo,
-      twitterUsername: createUserInfo.username,
       twitterName: createUserInfo.username,
       profile: createUserInfo.profile
     });
@@ -118,7 +123,7 @@ function getCleanLocalPart(email: string) {
 onMounted(async () => {
   const userInfo = accStore.getAccountInfo;
   createUserInfo.profile = userInfo.profile;
-  createUserInfo.username = userInfo.twitterUsername ?? getCleanLocalPart(userInfo.twitterId);
+  createUserInfo.username = userInfo.twitterName ?? getCleanLocalPart(userInfo.twitterId);
 })
 
 </script>
