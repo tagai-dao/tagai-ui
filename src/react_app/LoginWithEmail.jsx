@@ -98,7 +98,11 @@ export default function LoginWithEmail() {
   const handleSendCode = useCallback(async () => {
     setIsLoading(true);
     try {
-      await logout();
+      try {
+        await logout();
+      } catch (error) {
+        console.error('Failed to logout:', error);
+      }
       await sendCode({ email });
       setStep("code");
     } catch (error) {
