@@ -3,7 +3,7 @@ import { ref, onMounted, computed, reactive, ErrorCodes } from "vue";
 import BondEthModal from "@/components/login/BondEthModal.vue";
 import { useAccountStore } from "@/stores/web3";
 import { EthWalletState } from "@/stores/web3";
-import { CreateFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } from "@/config";
+import { RegisterSteemFee, ChainConfig, FeeAddress, RegisterSteemMessage, SendPubKey } from "@/config";
 import ErrCode from '@/errCode'
 import { checkEns, registerSteem, checkFarcaster, getUserProfile } from "@/apis/api";
 import { handleErrorTip, notify } from "@/utils/notify";
@@ -103,12 +103,12 @@ async function payToken() {
             await register();
         }else {
           const balance = await getBalance(accStore.getAccountInfo!.ethAddr! as `0x${string}`);
-          if (balance <= BigInt(CreateFee)) {
+          if (balance <= BigInt(RegisterSteemFee)) {
               showInsufficientBalance.value = true;
               return;
           }
           useModalStore().setModalCloseEnable(false);
-          const hash = await transferEthTo(FeeAddress, BigInt(CreateFee))
+          const hash = await transferEthTo(FeeAddress, BigInt(RegisterSteemFee))
 
           reportLog('register_steem_step_1', {
             hash,
@@ -362,7 +362,7 @@ onMounted(async () => {
                 :class="showNoEns?'bg-grey-light':''"
                 @click="payToken"
                 :disabled="loading || accountMismatch">
-          <span class="text-white font-semibold">{{ $t('pay') }} {{ parseInt(CreateFee) / 1e18 }} BNB</span>
+          <span class="text-white font-semibold">{{ $t('pay') }} {{ parseInt(RegisterSteemFee) / 1e18 }} BNB</span>
           <i-ep-loading v-show="loading" class="animate-spin" />
         </button>
         <div v-show="showInsufficientBalance" class="text-center text-sm text-red-e6">

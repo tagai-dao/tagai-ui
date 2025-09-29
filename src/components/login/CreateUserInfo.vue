@@ -117,7 +117,8 @@ function getCleanLocalPart(email: string) {
 
 onMounted(async () => {
   const userInfo = accStore.getAccountInfo;
-  createUserInfo.username = getCleanLocalPart(userInfo.twitterId);
+  createUserInfo.profile = userInfo.profile;
+  createUserInfo.username = userInfo.twitterUsername ?? getCleanLocalPart(userInfo.twitterId);
 })
 
 </script>
