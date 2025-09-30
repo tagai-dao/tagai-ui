@@ -6,7 +6,7 @@ import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useRoute } from "vue-router";
-import { getCommunityDetail, trade, getIpshareInfo, newCommerce } from '@/apis/api'
+import { getCommunityDetail, trade, newCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
@@ -25,6 +25,7 @@ import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
 import { isAddress, parseEther } from "viem";
+import { getIPShareSupply } from "@/utils/ipshare";
 
 const props = defineProps({
   tick: {type: String, required: false, default: null}
@@ -193,10 +194,16 @@ async function checkTweet() {
     }
 
     if (isAddress(accStore.getAccountInfo.ethAddr ?? '')) {
-      const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr ?? '');
-      accStore.ipshare = ipshare;
+      const supply: any = await getIPShareSupply(accStore.getAccountInfo.ethAddr ?? '');
+      if (supply >= 10) {
+        accStore.ipshare = {
+          ethAddr: accStore.getAccountInfo.ethAddr ?? '',
+          shareSupply: supply,
+          created: true
+        };
+      }
     }
-    if (!accStore.ipshare.ethAddr) {
+    if (!accStore.ipshare?.ethAddr) {
       modalStore.setModalVisible(true, GlobalModalType.CreateIPShare)
       isPostTweet.value = false
     }

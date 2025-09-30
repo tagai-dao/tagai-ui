@@ -6,10 +6,12 @@ import { useAccountStore } from "./stores/web3";
 import { onMounted, onUnmounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
-import { getEthPrice, getIpshareInfo, getUserProfile, redirectTweet } from "@/apis/api"
+import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
+import { getIPShareSupply } from "@/utils/ipshare";
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
+import { isAddress } from "viem";
 
 const stateStore = useStateStore();
 const route = useRoute();
@@ -30,6 +32,19 @@ function updateOgUrl() {
       document.head.appendChild(metaTag);
     }
   }
+
+async function updateIPShare() {
+  if (isAddress(useAccountStore().getAccountInfo.ethAddr ?? '')) {
+    const supply = await getIPShareSupply(useAccountStore().getAccountInfo.ethAddr ?? '');
+    if (supply >= 10) {
+      useAccountStore().ipshare = {
+        ethAddr: useAccountStore().getAccountInfo.ethAddr ?? '',
+        shareSupply: supply,
+        created: true
+      }
+    }
+  }
+}
 
 onMounted(async () => {
   await router.isReady();
@@ -54,12 +69,7 @@ onMounted(async () => {
         ...acc
       })
     }).catch()
-    // get ipshare info
-
-    getIpshareInfo(account?.ethAddr ?? '').then((ipshare: any) => {
-        useAccountStore().ipshare = ipshare;
-    })
-
+    updateIPShare().catch();
   }
 
   if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {
@@ -84,6 +94,7 @@ onMounted(async () => {
   }, 30000)
   emitter.on('login', updateVPOP);
   emitter.on('login', updateUnreadMessageCount);
+  emitter.on('login', updateIPShare);
 
   updateOgUrl();
 })

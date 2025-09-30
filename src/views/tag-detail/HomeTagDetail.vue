@@ -9,7 +9,7 @@ import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
-import { getCommunityDetail, getIpshareInfo, getConversationId,
+import { getCommunityDetail, getConversationId,
       getCommunityDeployerIpshare, getCommunityDeployTweet } from "@/apis/api";
 import { getTokenInfo } from '@/utils/pump'
 import {useInterval, usePageScroll, useTools} from "@/composables/useTools";
@@ -35,6 +35,7 @@ import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import { isAddress } from "viem";
+import { getIPShareSupply } from "@/utils/ipshare";
 
 const tabOptions = computed(() => {
   if (comStore.currentSelectedCommunity?.isImport) {
@@ -178,9 +179,15 @@ async function checkTweet() {
 
     if (isAddress(accStore.getAccountInfo.ethAddr ?? '')) {
       if (!accStore.ipshare?.ethAddr) {
-        const ipshare: any = await getIpshareInfo(accStore.getAccountInfo.ethAddr ?? '');
-        console.log('ipshare:', ipshare)
-        accStore.ipshare = ipshare;
+        const supply: any = await getIPShareSupply(accStore.getAccountInfo.ethAddr ?? '');
+        if (supply >= 10) {
+          accStore.ipshare = {
+            ethAddr: accStore.getAccountInfo.ethAddr ?? '',
+            shareSupply: supply,
+            created: true
+          };
+        }
+        console.log('ipshare:', accStore.ipshare)
       }
     }else {
       modalStore.setModalVisible(true, GlobalModalType.BondEth)

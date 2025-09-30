@@ -6,7 +6,7 @@ import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP } from "@/config";
-import { getIpshareInfo } from '@/apis/api'
+import { getIPShareSupply } from "@/utils/ipshare";
 import { useInterval, useTools } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore } from "@/stores/common";
@@ -40,8 +40,14 @@ async function updateIPShare() {
   try {
     if (acc.ethAddr) {
       updateBalance();
-      const ipshare: any = await getIpshareInfo(acc.ethAddr);
-      useAccountStore().ipshare = ipshare;
+      const supply: any = await getIPShareSupply(acc.ethAddr);
+      if (supply >= 10) {
+        useAccountStore().ipshare = {
+          ethAddr: acc.ethAddr,
+          shareSupply: supply,
+          created: true
+        };
+      }
     }
   } catch (error) {
 

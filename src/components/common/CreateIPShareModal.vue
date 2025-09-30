@@ -6,7 +6,6 @@ import BondEthModal from '../login/BondEthModal.vue';
 import {useModalStore} from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
 import { create } from "@/utils/ipshare";
-import { getIpshareInfo } from '@/apis/api';
 import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
 
@@ -25,8 +24,11 @@ async function createIPShare() {
       handleErrorTip(errCode.PARAMS_ERROR)
       return;
     }
-    const ipshare: any = await getIpshareInfo(acc.ethAddr!);
-    useAccountStore().ipshare = ipshare;
+    useAccountStore().ipshare = {
+      ethAddr: acc.ethAddr!,
+      shareSupply: 10,
+      created: true
+    };
     modalStore.setModalVisible(false)
   } catch (e) {
     handleErrorTip(e)

@@ -33,16 +33,36 @@ export const create = async (ethAddr: string) => {
     return hash;
 }
 
-export const getIPShareInfo = async (ethAddr: string) => {
+// ethAddr?: string;
+// shareSupply?: bigint | string | number;
+// created?: boolean,
+// price?: number;
+// formatPrice?: string;
+// holdersCount?: number;
+// holdingsCount?: number;
+// stakedCount?: number,
+// feeAmount?: number | bigint | string,
+// totalCaptured?: string | bigint | number,
+// totalStaked?: string | bigint | number,
+// createTime?: number;
+// holders?: Array<IPShareHolder>;
+export const getIPShareSupply = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) {
         return {}
     }
+
     let calls = [{
-        target: IPShareContract1,
+        target: IPShareContract2,
         call: [
-            ''
+            'ipshareSupply(address)(uint256)',
+            ethAddr
+        ],
+        returns: [
+            ['supply', (val: any) => val / 1e18]
         ]
     }]
+    const res = await aggregate(calls, ChainConfig.multiConfig);
+    return res.results.transformed.supply;
 }
 
 export const ipshareCreated = async (ethAddr: string) => {

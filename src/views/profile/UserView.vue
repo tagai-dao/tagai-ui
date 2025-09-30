@@ -6,7 +6,6 @@ import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP } from "@/config";
-import { getIpshareInfo } from '@/apis/api'
 import { useInterval } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore } from "@/stores/common";

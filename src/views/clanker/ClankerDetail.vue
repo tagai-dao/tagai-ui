@@ -3,7 +3,7 @@ import { onMounted, ref, computed, onActivated } from "vue";
 import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useRoute, useRouter } from "vue-router";
-import { getClankerTickTweets, getCommunityDetail, getIpshareInfo } from "@/apis/api";
+import { getClankerTickTweets } from "@/apis/api";
 import { getTokensInfo } from "@/utils/clanker";
 import { useInterval, usePageScroll, useTools } from "@/composables/useTools";
 import { handleErrorTip } from "@/utils/notify";
