@@ -184,32 +184,35 @@ export default function LoginWithEmail() {
       {/* 邮箱输入步骤 */}
       {step === "email" && (
         <div className="space-y-4">
-          <div className="space-y-3">
+          <div className="w-full h-12 px-4 pr-20 border border-gray-300 rounded-full flex items-center justify-between">
             <input
               type="email"
               placeholder="Input Email address"
               onChange={(e) => debounceEmailInput(e.target.value)}
-              className="w-full h-12 px-4 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="flex-1"
               disabled={isLoading}
             />
             
             <button
               onClick={handleSendCode}
               disabled={!email.trim() || isLoading}
-              className="h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all duration-200"
+              className={`px-3 rounded-full text-xm font-medium transition-all duration-200 flex items-center justify-center ${
+                email.trim() && !isLoading
+                  ? 'text-orange-normal hover:text-orange-normal-hover hover:bg-orange-light cursor-pointer'
+                  : 'text-gray-400 cursor-not-allowed'
+              }`}
             >
-              <span className="text-white text-h5">
-                {isLoading ? "Sending..." : "Send Code"}
-              </span>
-              {isLoading && (
+              {isLoading ? (
                 <div className="animate-spin">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-white">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-3 h-3">
                     <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="31.416" strokeDashoffset="31.416">
                       <animate attributeName="stroke-dasharray" dur="2s" values="0 31.416;15.708 15.708;0 31.416" repeatCount="indefinite"/>
                       <animate attributeName="stroke-dashoffset" dur="2s" values="0;-15.708;-31.416" repeatCount="indefinite"/>
                     </circle>
                   </svg>
                 </div>
+              ) : (
+                "Get code"
               )}
             </button>
           </div>

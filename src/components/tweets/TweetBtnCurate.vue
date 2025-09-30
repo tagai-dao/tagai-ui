@@ -8,12 +8,14 @@ import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { useAccountStore } from "@/stores/web3";
 import { useCommunityStore } from "@/stores/community";
+import { create } from "@/utils/ipshare";
 
 const props = defineProps<{
     tweet: Tweet;
   }>()
 const emits = defineEmits(['newLike'])
 const stateStore = useStateStore()
+const isCreatingIPShare = ref(false);
 const isCurating = ref(false);
 const curateVisible = ref(false);
 
@@ -22,7 +24,19 @@ const { op, vp } = useAccount();
 const curateAmount = ref(3);
 
 async function createIPShare() {
-
+  try {
+    isCreatingIPShare.value = true
+    await create(useAccountStore().getAccountInfo.ethAddr!);
+    useAccountStore().ipshare = {
+      ethAddr: useAccountStore().getAccountInfo.ethAddr!,
+      shareSupply: 10,
+      created: true
+    };
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    isCreatingIPShare.value = false
+  }
 }
 
 async function preCurate() {
@@ -111,12 +125,14 @@ async function confirmCurate() {
             {{ $t('ipshare.createIPShareTip') }}
           </p>
 
-          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="createIPShare">
+          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" :disabled="isCreatingIPShare" @click="createIPShare">
             {{$t('ipshare.createIpShare')}}
+            <i-ep-loading v-if="isCreatingIPShare" class="animate-spin w-6 h-6"/>
           </button>
 
-          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
-            {{ $t('ipshare.curateDerictly') }}        
+          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" :disabled="isCreatingIPShare" @click="confirmCurate">
+            {{ $t('ipshare.curateDerictly') }}  
+            <i-ep-loading v-if="isCreatingIPShare" class="animate-spin w-6 h-6"/>
           </button>
 
         </div>
