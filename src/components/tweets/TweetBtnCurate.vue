@@ -6,6 +6,7 @@ import { type Tweet } from "@/types";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
+import { useAccountStore } from "@/stores/web3";
 import { useCommunityStore } from "@/stores/community";
 
 const props = defineProps<{
@@ -19,6 +20,10 @@ const curateVisible = ref(false);
 const { preCheckCuration, userCurate } = useTweet()
 const { op, vp } = useAccount();
 const curateAmount = ref(3);
+
+async function createIPShare() {
+
+}
 
 async function preCurate() {
   if (useCommunityStore().currentSelectedCommunity?.distributionEnded) {
@@ -101,7 +106,21 @@ async function confirmCurate() {
         </div><div class="text-sm w-full text-gray-500 mb-4">{{ $t('remain') }}
           <span class="text-green-500"> VP: {{ Math.floor(vp) }}</span>
         </div>
-        <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
+        <div class="flex flex-col gap-4 w-full" v-if="!useAccountStore().ipshare.ethAddr">
+          <p>
+            {{ $t('ipshare.createIPShareTip') }}
+          </p>
+
+          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="createIPShare">
+            {{$t('ipshare.createIpShare')}}
+          </button>
+
+          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
+            {{ $t('ipshare.curateDerictly') }}        
+          </button>
+
+        </div>
+        <button v-else class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
           {{$t('confirm')}}
         </button>
       </div>

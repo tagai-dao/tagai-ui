@@ -174,6 +174,7 @@ onMounted(async () => {
   }
   onRefresh();
   emitter.on('tweeted', onRefresh);
+  emitter.on('login', onRefresh);
 });
 </script>
 

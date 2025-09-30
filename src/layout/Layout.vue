@@ -39,8 +39,8 @@ const WrappedReactComponent = applyPureReactInVue(ReactApp);
 const handleReactLoginSuccess = async (accInfo: any) => {
   console.log('accInfo', accInfo)
   accStore.setAccount(accInfo)
-  
-  updateVPOP().catch();
+  console.log('login')
+  emitter.emit('login', true);
 
   newLogin.value = true;
   await setWallet()

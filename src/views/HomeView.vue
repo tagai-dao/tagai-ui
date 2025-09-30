@@ -49,6 +49,7 @@ watch(activeTab, (val) => {
 
 async function refresh() {
   try{
+    console.log('refresh')
     if (listType.value == ListType.MarketCap) {
       finished[ListType.MarketCap] = false
       let communities = await getCommunityByMarketCap() as Array<Community>;

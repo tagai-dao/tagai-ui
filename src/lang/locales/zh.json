@@ -313,7 +313,9 @@
   },
   "ipshare": {
     "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",
-    "createIpShare": "创建 IPShare"
+    "createIpShare": "创建 IPShare",
+    "createIPShareTip": "您可以先创建IPShare",
+    "curateDerictly": "或者直接策展"
   },
   "errMessage": {
     "idUsed": "身份已经被使用",

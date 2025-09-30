@@ -6,7 +6,7 @@ import { useAccountStore } from "./stores/web3";
 import { onMounted, onUnmounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
-import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
+import { getEthPrice, getIpshareInfo, getUserProfile, redirectTweet } from "@/apis/api"
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
@@ -54,6 +54,12 @@ onMounted(async () => {
         ...acc
       })
     }).catch()
+    // get ipshare info
+
+    getIpshareInfo(account?.ethAddr ?? '').then((ipshare: any) => {
+        useAccountStore().ipshare = ipshare;
+    })
+
   }
 
   if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {

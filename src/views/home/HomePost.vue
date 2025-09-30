@@ -14,6 +14,7 @@ import { useCurationStore } from "@/stores/curation";
 import UserList from "@/views/home/UserList.vue";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import {usePageScroll} from "@/composables/useTools";
+import emitter from "@/utils/emitter";
 
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
@@ -89,6 +90,7 @@ async function onLoad() {
 
 onMounted(async () => {
   await onRefresh();
+  emitter.on('login', onRefresh);
 });
 
 watch([() => tweetsStore.homeTweetType], async () => {
