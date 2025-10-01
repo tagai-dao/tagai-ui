@@ -155,7 +155,7 @@ onMounted(async () => {
         width: '100%'
       },
       labels,
-      series: creditJO.map((item: any) => item.ratio * 100),
+      series: creditJO.map((item: any) => (item.ratio * 100).toFixed(2)),
       colors,
       responsive: [{
         breakpoint: 480,

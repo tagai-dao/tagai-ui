@@ -317,7 +317,7 @@
     "desc": "Create IPShare, become a personal IP, receive support, and earn IPShare transaction fees.",
     "createIpShare": "Create IPShare",
     "createIPShareTip": "You can create IPShare first",
-    "curateDerictly": "Or curate directly"
+    "curateDerictly": "Curate directly"
   },
   "errMessage": {
     "idUsed": "Identify has been used",
