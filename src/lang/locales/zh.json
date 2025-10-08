@@ -205,7 +205,7 @@
     "createCommunity": "创建代币",
     "initAmountTip": "请输入第一次购买数量",
     "initEth": "支付 {amount} BNB",
-    "invalidTickTip": "请输入1-16个字符(a-z&A-Z)，区分大小写",
+    "invalidTickTip": "请输入1-16个字符(可以是数字/大小写字母/中文汉字， 但不能是纯数字)",
     "tagForbidden": "不能创建这个标贴",
     "descTooLong": "描述信息在1024个字符内",
     "maxAmountTip" : "请输入小于650000000",

@@ -207,7 +207,7 @@
     "createCommunity": "Create TagCoin",
     "initAmountTip": "Input how many TagCoin you wanna buy first.",
     "initEth": "Pay {amount} BNB",
-    "invalidTickTip": "Please input 1-16 characters(a-z&A-Z)",
+    "invalidTickTip": "Please input 1-16 characters(a-z&A-Z&0-9)",
     "tagForbidden": "Can't create this tag",
     "descTooLong": "The description must within 1024 characters.",
     "maxAmountTip" : "Please input less than 700000000",

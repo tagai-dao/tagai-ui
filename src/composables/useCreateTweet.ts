@@ -16,9 +16,9 @@ export const useCreateTweet = (maxLength: number = 240) => {
   const contentRange = ref<Range | null>(null);
   const emojiPopover = ref();
   const tweetLength = ref<number>(0)
-  const regex_tip = /@TagAIDAO[ | ]tip \$([a-zA-Z]+)/i
+  const regex_tip = /@TagAIDAO[ | ]tip \$([A-Za-z0-9\u4e00-\u9fa5]+)/i
   const regex_deploy_cmd = /@TagAIDAO #deploy/i
-  const regex_twitter_tip = /@TagAIDAO[ | ]tip[ | ](\d+(\.\d+)?)[ | ]\$([a-zA-Z]+)[ | ]to[ | ]@([a-zA-Z0-9\_]+)/i
+  const regex_twitter_tip = /@TagAIDAO[ | ]tip[ | ](\d+(\.\d+)?)[ | ]\$([A-Za-z0-9\u4e00-\u9fa5]+)[ | ]to[ | ]@([a-zA-Z0-9\_]+)/i
 
   function checkSpecialCommand(text: string) {
       const isTip = regex_tip.test(text)
