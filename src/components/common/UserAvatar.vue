@@ -88,7 +88,11 @@ function gotoUser() {
 
 onMounted(() => {
   if (comStore.currentSelectedCommunity && comStore.currentSelectedCommunity.creditPolicy) {
+    if (typeof comStore.currentSelectedCommunity.creditPolicy === 'string') {
     creditJO.value = JSON.parse(comStore.currentSelectedCommunity.creditPolicy)
+    } else {
+      creditJO.value = comStore.currentSelectedCommunity.creditPolicy
+    }
     creditType.value = creditJO.value.map((item: any) => {
       switch (item.type) {
         case 1:
@@ -157,7 +161,7 @@ onMounted(() => {
           </div>
         </div>
         <div v-if="props.creditFactor" class="pl-10 my-3 w-full"
-            v-for="(factor, index) in JSON.parse(props.creditFactor)"
+            v-for="(factor, index) in typeof props.creditFactor === 'string' ? JSON.parse(props.creditFactor) : props.creditFactor"
             :key="index"
         >
           <div class="flex justify-between">

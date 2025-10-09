@@ -128,7 +128,12 @@ onMounted(async () => {
       }]
     }
   } else {
-    const creditJO = JSON.parse(creditPolicy)
+    let creditJO = []
+    if (typeof creditPolicy === 'string') {
+      creditJO = JSON.parse(creditPolicy)
+    } else {
+      creditJO = creditPolicy
+    }
     const labels = creditJO.map((item: any) => {
       switch (item.type) {
         case 1:
