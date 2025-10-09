@@ -90,9 +90,19 @@ export default function AuthLoading() {
             const privyAccessToken = await getAccessToken()
             const userInfo = await privyLogin(privyAccessToken, oAuthTokens.accessToken, oAuthTokens.refreshToken)
             emitter.emit('authSuccess', userInfo)
-            if (wallets.length === 0) {
+
+
+            const wallet = wallets?.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
+
+            if (!wallet && 
+                (
+                !userInfo.ethAddr
+                || userInfo.walletType === 1
+                )) {
                 console.log('create new twitter wallet')
                 await createWallet()
+            }else {
+                console.log('no need to create new twitter wallet')
             }
         }
     });
