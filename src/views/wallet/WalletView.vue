@@ -3,7 +3,7 @@ import {onMounted, ref, onUnmounted} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
-import { formatAddress, formatBalance } from "@/utils/helper";
+import { formatAddress, formatBalance, formatPrice } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
 import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
 import { usePrivyStore } from "@/stores/privy";
@@ -78,6 +78,10 @@ onMounted(() => {
           @click="showPrivy">
           {{ $t('web3.recharge') }}
         </button>
+      </div>
+      <div class="text-xl bg-gradient-primary rounded-full px-3 py-2
+       mt-1 flex justify-center items-center text-white mx-12">
+        {{ formatPrice(accStore.holdingValue) }}
       </div>
       <!-- <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
         <div @click="onCopy(useAccountStore().ethConnectAddress)" 

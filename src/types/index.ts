@@ -316,6 +316,7 @@ export type TokenHoldingList = {
   twitterName?: string | null | undefined,
   twitterUsername?: string | null | undefined,
   steemId?: string | null | undefined,
+  price?: number | null | undefined,
 }
 
 export type CommunityCredit = {

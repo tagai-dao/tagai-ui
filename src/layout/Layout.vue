@@ -60,7 +60,6 @@ const setWallet = async () => {
     try {
       accStore.ethConnectState = EthWalletState.Connecting;
       walletReady.value = true;
-      console.log(333, privyStore.ethersProvider)
       const accounts = await privyStore.ethersProvider.request({
         method: 'eth_requestAccounts'
       });

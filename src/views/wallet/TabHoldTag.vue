@@ -3,13 +3,15 @@ import {computed, onMounted, ref} from "vue";
 import { getHoldingList } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
-import { useModalStore } from "@/stores/common";
+import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType, type Community } from "@/types";
-import { formatAmount } from "@/utils/helper";
+import { formatAmount, formatPrice } from "@/utils/helper";
+import { getTokenOnchainInfo } from "@/utils/pump";
 import { useRouter } from "vue-router";
 import errCode from "@/errCode";
 import TransferTokenModal from "@/components/common/TransferTokenModal.vue";
 import BuyAndSellView from "@/views/buy-sell/BuyAndSellView.vue";
+import { useAccount } from "@/composables/useAccount";
 
 enum ModalType {
   transfer,
@@ -24,9 +26,11 @@ const router = useRouter()
 const currentHolding = ref<any>(null)
 const showModal = ref(false)
 const modalType = ref(ModalType.transfer)
+const { ethPrice } = useStateStore()
 const showingNoEth = computed(() => {
   return !accStore.getAccountInfo.ethAddr
 })
+const { updateHoldingValue } = useAccount()
 
 const scroller = document.querySelector('#profile-tab-scroller')
 const onLoad = async () => {
@@ -34,9 +38,15 @@ const onLoad = async () => {
   try{
     loading.value = true
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
-    accStore.tokenHoldingList = accStore.tokenHoldingList.concat(list.filter((item: any) => item.amount / 1e18 > 0))
+    const priceList = await getTokenOnchainInfo(list.map((item: any) => item.token), generateTokenVersions(list))
+      accStore.tokenHoldingList = accStore.tokenHoldingList.concat(list.map((item: any) => ({
+        ...item,
+        price: priceList[item.token]?.price
+      })))
+      updateHoldingValue(accStore.tokenHoldingList);
     if (list.length == 0) finished.value = true;
   } catch (e) {
+    console.log('onLoad error', e)
     handleErrorTip(e)
   } finally {
     loading.value = false
@@ -49,8 +59,15 @@ const onRefresh = async () => {
     refreshing.value = true
     finished.value = false;
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!)
+    console.log(33, list)
     if (list && list.length > 0) {
-      accStore.tokenHoldingList = list.filter((item: any) => item.amount / 1e18 > 0)
+      const priceList = await getTokenOnchainInfo(list.map((item: any) => item.token), generateTokenVersions(list))
+      console.log(345, priceList)
+      accStore.tokenHoldingList = list.map((item: any) => ({
+        ...item,
+        price: priceList[item.token]?.price
+      }))
+      updateHoldingValue(accStore.tokenHoldingList);
     }
     if (list.length === 0) {
       finished.value = true
@@ -65,6 +82,15 @@ const onRefresh = async () => {
     refreshing.value = false
   }
 };
+
+const generateTokenVersions = (list: any) => {
+  if (!list || list.length === 0) return {};
+  let versions: any = {};
+  for(let item of list) {
+    versions[item.token] = item.community?.version ?? 4;
+  }
+  return versions;
+}
 
 function transferTick(holding: any) {
   modalType.value = ModalType.transfer
@@ -133,17 +159,25 @@ onMounted(async () => {
             <div class="flex gap-2 items-center">
               <span class="text-grey-normal text-h3 leading-5">{{ holding.community?.tick }}</span>
             </div>
-            <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary">
+            <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary opacity-70">
               {{ formatAmount((holding.amount?.toString() as any) / 1e18) }}
             </div>
           </div>
-          <div class="flex gap-2">
-            <button @click.stop="transferTick(holding)"
-                    class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('transfer')}}
-            </button>
-              <button @click.stop="onTrade(holding)"
-                    class="h-8 bg-gradient-primary rounded-full px-3 text-white text-h5">{{$t('trade')}}
-              </button>
+          <div class="flex flex-col justify-center items-end">
+            <div class="text-grey-normal text-h3">
+              {{ formatPrice((holding.price ?? 0) * (holding.amount?.toString() as any) * ethPrice / 1e18) }}
+            </div>
+            <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary opacity-70">
+              {{ formatPrice((holding.price ?? 0) * ethPrice) }}
+            </div>
+          </div>
+          <div class="gap-2 h-full flex flex-col justify-between">
+            <img src="~@/assets/icons/btn-transfer.svg" @click.stop="transferTick(holding)"
+                    class="h-5 text-white text-h5">
+          </img>
+              <img src="~@/assets/icons/btn-swap.svg" @click.stop="onTrade(holding)"
+                    class="h-5 text-white text-h5">
+              </img>
           </div>
         </div>
       </van-list>

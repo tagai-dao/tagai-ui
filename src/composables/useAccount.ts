@@ -9,13 +9,14 @@ import { BondEthMessage, CoinPurse, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_D
 import { ChainConfig } from '@/config'
 import errCode from "@/errCode";
 import { formatDate } from '@/utils/helper'
-import { useModalStore } from "@/stores/common";
+import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { aggregate } from '@makerdao/multicall'
 import { isAddress, zeroAddress } from "viem";
 import { usePrivyStore } from "@/stores/privy";
 import { signMessage } from "@/utils/wallets";
 import { handleErrorTip } from "@/utils/notify";
+import { getTokenOnchainInfo } from "@/utils/pump";
 
 export enum AccountAuthType {
     TWITTER,
@@ -37,6 +38,8 @@ export const useAccount = () => {
         const account = useAccountStore().getAccountInfo
         return account?.profile?.replace('normal', '200x200')
     })
+
+    const { ethPrice } = useStateStore()
 
     const bondEthAddress = async () => {
         try {
@@ -325,6 +328,15 @@ export const useAccount = () => {
         }
     }
 
+    const updateHoldingValue = async (list: any) => {
+        const accStore = useAccountStore();
+        if (accStore.tokenHoldingList.length === 0) return 0;
+        const tokenValue = accStore.tokenHoldingList.reduce((acc, item) => acc + (item.price ?? 0) * (item.amount?.toString() as any) * ethPrice / 1e18, 0)
+        const bnbValue = ethPrice * accStore.ethBalance;
+        accStore.holdingValue = tokenValue + bnbValue;
+        return tokenValue + bnbValue;
+    }
+
     const logout = () => {
         usePrivyStore().logout();
         useAccountStore().clear();
@@ -350,6 +362,7 @@ export const useAccount = () => {
         addBackVp,
         checkLogin,
         updateBalance,
+        updateHoldingValue,
         logout
     }
 }

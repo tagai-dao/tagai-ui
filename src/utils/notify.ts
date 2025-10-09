@@ -27,7 +27,7 @@ function parseViemRevertReason(error: any): string {
     }
   }else {// decode custom errors
     const errorData = error.cause?.data || error.cause?.cause?.data || extractRevertReasonFromError(error.shortMessage);
-    console.log('custom error', error.details)
+    console.log('custom error', error.details, errorData)
     if (errorData) {
       try {
         const decodedError = decodeErrorResult({
@@ -252,6 +252,7 @@ export const handleServerError = (code: number) => {
  * @returns 
  */
 function extractRevertReasonFromError(errorString: string): string | null {
+  if (!errorString) return null;
   const errorMatch = errorString.match(/error=({.*}),\s*code=/s);
 
   try {
