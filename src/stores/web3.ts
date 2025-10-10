@@ -12,6 +12,11 @@ export enum EthWalletState {
 export const useAccountStore = defineStore('account', {
     actions: {
         clear() {
+            if (this.getAccountInfo?.twitterId) {
+                this.ethWalletType = 'none' // metamask, okx, privy, none
+                this.ethConnectState = EthWalletState.Disconnect
+                this.ethConnectAddress = '';
+            }
             this.setAccount(null);
             this.tokenHoldingList = [];// ref<TokenHoldingList[]>([])
             this.tweetsList = [];
@@ -22,9 +27,6 @@ export const useAccountStore = defineStore('account', {
             this.holdingValue = 0;
             this.ipshare = {}
             this.pubKey = ''
-            this.ethWalletType = 'none' // metamask, okx, privy, none
-            this.ethConnectState = EthWalletState.Disconnect
-            this.ethConnectAddress = '';
             this.unreadMessageCount = 0;
             this.socialMessages = []
             this.farcasterUser = null
