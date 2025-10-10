@@ -184,7 +184,7 @@ export default function LoginWithEmail() {
       {/* 邮箱输入步骤 */}
       {step === "email" && (
         <div className="space-y-4">
-          <div className="w-full h-12 px-4 pr-20 border border-gray-300 rounded-full flex items-center justify-between">
+          <div className="w-full h-12 px-4 border border-gray-300 rounded-full flex items-center justify-between">
             <input
               type="email"
               placeholder="Input Email address"
@@ -196,7 +196,7 @@ export default function LoginWithEmail() {
             <button
               onClick={handleSendCode}
               disabled={!email.trim() || isLoading}
-              className={`px-3 rounded-full text-xm font-medium transition-all duration-200 flex items-center justify-center ${
+              className={` rounded-full text-xm font-medium transition-all duration-200 flex items-center justify-center ${
                 email.trim() && !isLoading
                   ? 'text-orange-normal hover:text-orange-normal-hover hover:bg-orange-light cursor-pointer'
                   : 'text-gray-400 cursor-not-allowed'

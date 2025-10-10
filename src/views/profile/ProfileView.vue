@@ -69,18 +69,27 @@ onMounted(() => {
   <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
     <div class="bg-white py-3 px-3 rounded-2xl mx-3">
       <div class="flex gap-2 items-center">
-        <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-             :src="profile" @error="replaceEmptyProfile" alt="">
+        <div class="relative w-14 h-14 min-w-14">
+          <img class="w-14 h-14 min-w-14 rounded-full cursor-pointer bg-color2A"
+              :src="profile" @error="replaceEmptyProfile" alt="">
+          <button class="rounded-full w-10 h-10 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" 
+            v-if="accStore.getAccountInfo.accountType !== 0" 
+            @click="editProfile">
+            <div class="rounded-full bg-black-19 opacity-40 w-10 h-10 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            </div>
+            <img src="~@/assets/icons/btn-edit.svg" class="w-6 h-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" alt="">
+          </button>
+        </div>
         <div class="h-full flex-1">
-          <div class="text-h3">{{ accStore.getAccountInfo.twitterName }}</div>
+          <div class="text-h3 flex items-center gap-2">
+            {{ accStore.getAccountInfo.twitterName }}
+          </div>
           <div class="flex items-center gap-1 leading-5">
-            <span @click="onCopy(accStore.getAccountInfo.twitterUsername)" class="text-grey-8d">{{ accStore.getAccountInfo.accountType === 1 ? formatAddress(accStore.getAccountInfo.twitterUsername, 6, 3) : '@' + accStore.getAccountInfo.twitterUsername }}</span>
-            <span class="mx-4px"> · </span>
-            <button v-if="accStore.getAccountInfo.accountType == 0" @click="gotoTwitter" >
+            <span @click="onCopy(accStore.getAccountInfo.twitterUsername)" class="text-grey-8d overflow-hidden text-ellipsis whitespace-nowrap">{{ accStore.getAccountInfo.accountType === 1 ? formatAddress(accStore.getAccountInfo.twitterUsername, 6, 3) : '@' + accStore.getAccountInfo.twitterUsername }}</span>
+
+            <button v-if="accStore.getAccountInfo.accountType == 0" @click="gotoTwitter" class="flex items-center gap-1">
+              <span class="mx-4px"> · </span>
               <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
-            </button>
-            <button v-else @click="editProfile">
-              <img src="~@/assets/icons/icon-edit.svg" class="w-6 h-6" alt="">
             </button>
           </div>
         </div>
