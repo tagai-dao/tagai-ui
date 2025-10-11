@@ -1,4 +1,4 @@
-import {useLoginWithOAuth, useOAuthTokens, useWallets, useCreateWallet, usePrivy} from "@privy-io/react-auth";
+import {useLoginWithOAuth, useOAuthTokens, useWallets, useCreateWallet, usePrivy, useMfaEnrollment} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
 import {useEffect, useState} from "react";
@@ -9,9 +9,10 @@ import { useAccountStore } from "@/stores/web3";
 export default function AuthLoading() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
     const {wallets, ready} = useWallets()
-    const { getAccessToken } = usePrivy();
+    const { getAccessToken, user } = usePrivy();
     const accStore = useAccountStore();
     const [ bondingAddress, setBondingAddress ] = useState(false);
+    const { showMfaEnrollmentModal } = useMfaEnrollment();
     const { createWallet } = useCreateWallet({
         onSuccess: (async ({wallet}) => {
             // const provider = await wallet.getEthereumProvider()
@@ -48,6 +49,14 @@ export default function AuthLoading() {
             emitter.emit('authError', error);
         }
     })
+
+    useEffect(() => {
+        if (user && user.mfaMethods.length === 0) {
+            console.log('no mfa')
+            showMfaEnrollmentModal()
+        }
+        console.log('user', user)
+    }, [user])
 
     useEffect(() => {
         async function getWalletProvider() {
@@ -90,7 +99,6 @@ export default function AuthLoading() {
             const privyAccessToken = await getAccessToken()
             const userInfo = await privyLogin(privyAccessToken, oAuthTokens.accessToken, oAuthTokens.refreshToken)
             emitter.emit('authSuccess', userInfo)
-
 
             const wallet = wallets?.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
 
