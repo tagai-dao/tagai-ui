@@ -2,7 +2,7 @@
 import Layout from "@/layout/Layout.vue";
 import {useRoute, useRouter} from "vue-router";
 import { useStateStore, useModalStore } from "./stores/common";
-import { useAccountStore } from "./stores/web3";
+import { EthWalletState, useAccountStore } from "./stores/web3";
 import { onMounted, onUnmounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
@@ -70,6 +70,8 @@ onMounted(async () => {
       })
     }).catch()
     updateIPShare().catch();
+  } else {
+    useAccountStore().ethConnectState = EthWalletState.Disconnect;
   }
 
   if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {
