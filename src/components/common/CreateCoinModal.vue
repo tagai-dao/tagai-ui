@@ -180,7 +180,7 @@ const create = async () => {
     }
     // create token
     const {createHash, token} = await createCoin(createForm);
-    createForm.createHash = createHash;
+    createForm.createHash = createHash as string;
     createForm.token = token;
     // upload community info
     delete createForm.initAmount

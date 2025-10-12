@@ -3,6 +3,7 @@ import {PrivyProvider, useOAuthTokens} from '@privy-io/react-auth';
 import AuthLoading from "@/react_app/AuthLoading.jsx";
 import {PrivyConfig} from "@/config.ts";
 import {customBsc} from "@/utils/privy.ts";
+import PrivyMFAValidator from "@/react_app/PrivyMFAValidator.jsx";
 
 function ReactApp(props) {
     return (
@@ -21,6 +22,7 @@ function ReactApp(props) {
         >
             <AuthLoading/>
             {props.children}
+            <PrivyMFAValidator/>
         </PrivyProvider>
     )
 }
