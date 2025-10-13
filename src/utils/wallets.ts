@@ -270,6 +270,15 @@ export const getBlockNumber = async () => {
     return blockNumber;
 }
 
+export const getBlock = async (blockNumber: bigint) => {
+    let wallet = getReadOnlyClient();
+    const block = await wallet.getBlock({
+        blockNumber
+    });
+    console.log({block})
+    return block;
+}
+
 export const transferEthTo = async (to: string, value: bigint) => {
     let wallet = getWalletClient(); 
     if (!wallet) {

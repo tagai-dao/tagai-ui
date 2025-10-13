@@ -309,7 +309,12 @@
     "contract": "合约",
     "deployer": "部署者",
     "bridge": "跨链桥",
-    "curveProgress": "销售曲线进度"
+    "curveProgress": "销售曲线进度",
+    "rewardPerDay": "每日奖励",
+    "ongoing": "进行中",
+    "startDate": "开始时间",
+    "endDate": "结束时间",
+    "rewardDistributionSchedule": "社交分发策略"
   },
   "ipshare": {
     "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",

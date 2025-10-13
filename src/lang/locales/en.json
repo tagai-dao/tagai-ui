@@ -311,7 +311,12 @@
     "contract": "Contract",
     "deployer": "Deployer",
     "bridge": "NerveNetwork: Bridge",
-    "curveProgress": "Bonding Curve progress"
+    "curveProgress": "Bonding Curve progress",
+    "rewardPerDay": "Reward per day",
+    "ongoing": "Ongoing",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "rewardDistributionSchedule": "Reward Distribution"
   },
   "ipshare": {
     "desc": "Create IPShare, become a personal IP, receive support, and earn IPShare transaction fees.",
