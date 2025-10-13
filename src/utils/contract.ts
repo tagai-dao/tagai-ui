@@ -51,13 +51,13 @@ export const writeContract = async ({
     args: any,
     address?: `0x${string}`,
     value?: bigint | string
-}) => {
+}): Promise<string> => {
     const accStore = useAccountStore();
     
     if (accStore.getWalletType === 'privy') {
         const lastValidateTime = localStorage.getItem('lastValidateTime');
         if (lastValidateTime && Date.now() - parseInt(lastValidateTime) < 1800000) {
-            return executeContract({
+            return await executeContract({
                 contractName,
                 functionName,
                 args,
@@ -132,7 +132,7 @@ export const executeContract = async ({
     args: any,
     address?: `0x${string}`,
     value?: bigint | string
-}) => {
+}): Promise<string> => {
     const client = getWalletClient();
     if (!client) {
         throw 'no wallet client'
@@ -154,5 +154,9 @@ export const executeContract = async ({
         chain: customBsc,
         value: typeof value === 'string' ? BigInt(value) : value
     });
-    return await waitForTx(tx);
+    const hash = await waitForTx(tx);
+    if (!hash) {
+        throw 'transaction failed'
+    }
+    return hash;
 }
