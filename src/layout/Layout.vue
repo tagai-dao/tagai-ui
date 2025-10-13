@@ -44,7 +44,7 @@ const handleReactLoginSuccess = async (accInfo: any) => {
 
   newLogin.value = true;
   await setWallet()
-
+  console.log('login account info', accInfo);
   if (accInfo.accountType === 1 && accInfo.isNew === 1) {
     // api 获取用户信息，如果是新用户（username为空），则创建用户，弹出login/CreateUserInfo组件
     // 如果用户已创建，将用户信息accStore.setAccount，并调用setWallet
@@ -70,7 +70,6 @@ const setWallet = async () => {
       if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
         // user connect wallet plugin by manual
         accStore.ethConnectState = EthWalletState.Disconnect;
-        return;
       } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
         await useAccount().bondEthAddress()
       } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr !== connectedAddr) {
@@ -79,7 +78,10 @@ const setWallet = async () => {
       } else {
         await privyStore.initWallet()
       }
-      modalStore.setModalVisible(false);
+
+      if (modalStore.modalType !== GlobalModalType.CreateUserInfo) {
+        modalStore.setModalVisible(false);
+      }
     } catch (error) {
         console.error('Failed to set wallet:', error)
         handleErrorTip(error)

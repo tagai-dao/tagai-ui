@@ -99,6 +99,7 @@ export default function LoginWithEmail() {
     setIsLoading(true);
     try {
       try {
+        window.localStorage.setItem('lastLoginTime', '0');
         await logout();
       } catch (error) {
         console.error('Failed to logout:', error);

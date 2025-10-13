@@ -11,6 +11,7 @@ export default function LoginWithOAuth() {
     const handleLogin = async () => {
         try {
             setIsLoading(true);
+            window.localStorage.setItem('lastLoginTime', '0');
             await logout();
             await initOAuth({ provider: 'twitter' });
         } catch (err) {

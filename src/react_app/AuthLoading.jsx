@@ -51,11 +51,23 @@ export default function AuthLoading() {
     })
 
     useEffect(() => {
-        if (user && user.mfaMethods.length === 0) {
-            console.log('no mfa')
-            showMfaEnrollmentModal()
+        async function checkMfa() {
+            if (user && user.mfaMethods.length === 0) {
+                console.log('no mfa')
+                let count = 0;
+                while(count < 10 && !accStore.twitterId) {
+                    await sleep(0.5)
+                    count++
+                }
+                if (accStore.getWalletType == 'privy') {
+                    showMfaEnrollmentModal().then(() => {
+                        window.localStorage.setItem('lastLoginTime', Date.now().toString());
+                    })
+                }
+            }
+            console.log('user', user)
         }
-        console.log('user', user)
+        checkMfa()
     }, [user])
 
     useEffect(() => {
