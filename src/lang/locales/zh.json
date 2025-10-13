@@ -203,6 +203,7 @@
   },
   "createCommunity": {
     "createCommunity": "创建代币",
+    "importToken": "导入代币",
     "initAmountTip": "请输入第一次购买数量",
     "initEth": "支付 {amount} BNB",
     "invalidTickTip": "请输入1-16个字符(可以是数字/大小写字母/中文汉字， 但不能是纯数字)",
@@ -213,8 +214,9 @@
     "pay": "支付",
     "youReceive": "你将得到",
     "modifyCoin": "修改代币信息",
-    "directly": "直接",
+    "directly": "部署",
     "byAI": "通过AI",
+    "tokenCA": "代币合约",
     "tagTick": "标签(Tick)",
     "description": "描述",
     "logo": "Logo",

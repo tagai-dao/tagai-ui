@@ -205,6 +205,7 @@
   },
   "createCommunity": {
     "createCommunity": "Create TagCoin",
+    "importToken": "Import Token",
     "initAmountTip": "Input how many TagCoin you wanna buy first.",
     "initEth": "Pay {amount} BNB",
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z&0-9)",
@@ -215,8 +216,9 @@
     "pay": "Pay",
     "youReceive": "You receive",
     "modifyCoin": "Modify TagCoin info",
-    "directly": "Directly",
+    "directly": "Deploy new",
     "byAI": "By AI",
+    "tokenCA": "Token Contract",
     "tagTick": "Tag(Tick)",
     "description": "Description",
     "logo": "Logo",

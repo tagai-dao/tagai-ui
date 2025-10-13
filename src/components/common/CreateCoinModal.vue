@@ -31,6 +31,20 @@ const createForm = reactive<CreateCommunity>({
   telegram: "",
   docs: "",
 });
+
+const importForm = reactive<CreateCommunity>({
+  token: "",
+  desc: "",
+  logoUrl: "",
+  tick: "",
+  tags: [],
+  ethAddr: "",
+  twitter: "",
+  telegram: "",
+  docs: "",
+});
+
+const importStep = ref<'tokenCA' | 'tokenPair' | 'price' | 'info'>('tokenCA');
 const createLoading = ref(false);
 const showInvalidName = ref(false);
 const showTickUsed = ref(false);
@@ -58,6 +72,16 @@ const { onCopy } = useTools()
 
 watch(() => completedImgUrl.value, (value) => {
   createForm.logoUrl = completedImgUrl.value
+})
+
+watch(() => importForm.token, (val) => {
+  if (val) {
+    // get token info
+
+    // get token pair info
+
+    // get price
+  }
 })
 
 const showingInitAmount = ref<number|undefined>()
@@ -241,7 +265,7 @@ onMounted(async () => {
     </div>
 
     <!-- 选项卡 -->
-    <div class="flex border-b border-grey-e6 mb-4" v-if="false">
+    <div class="flex border-b border-grey-e6 mb-4">
       <div
         class="px-4 py-2 cursor-pointer text-lg text-bold"
         :class="{'border-b-2 border-orange-light-active': activeTab === 'token'}"
@@ -249,6 +273,14 @@ onMounted(async () => {
       >
         {{$t('createCommunity.directly')}}
       </div>
+      <div
+        class="px-4 py-2 cursor-pointer text-lg bold"
+        :class="{'border-b-2 border-orange-light-active': activeTab === 'import'}"
+        @click="activeTab = 'import'"
+      >
+        {{$t('createCommunity.importToken')}}
+      </div>
+
       <div
         class="px-4 py-2 cursor-pointer text-lg bold"
         :class="{'border-b-2 border-orange-light-active': activeTab === 'tweet'}"
@@ -448,8 +480,21 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- 发推内容 -->
-    <div v-else class="flex flex-col gap-4">
+    <div v-else-if="activeTab=='import'" class="flex flex-col gap-4">
+
+      <div class="flex flex-col gap-1">
+        <label for="tokenCA" class="leading-6 text-lg">{{$t('createCommunity.tokenCA')}}:</label>
+        <input
+          class="border-b-[1px] border-grey-e6 leading-6 text-base"
+          v-model="createForm.token"
+          type="text"
+          id="tokenCA"
+        />
+      </div>
+    </div>
+
+    <!-- 发推AI 部署 -->
+    <div v-else-if="activeTab=='tweet'" class="flex flex-col gap-4">
       <div class="text-center text-grey-normal">
         <div class="flex flex-col text-left gap-1">
           <p class="text-grey-normal text-lg font-medium mb-2">
