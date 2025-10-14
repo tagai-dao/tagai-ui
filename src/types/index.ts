@@ -303,6 +303,8 @@ export type CreateCommunity = {
   ethAddr?: string,
   initAmount?: bigint // this is token amount
   initEth?: bigint // this is eth amount
+  distributionPeriod?: '1week' | '1month' | '1year', // 分发策略时间周期
+  distributionAmount?: number // 分发策略代币数量
 }
 
 export type TokenHoldingList = {

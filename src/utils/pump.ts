@@ -481,6 +481,15 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
             ]
         })
         calls.push({
+            target: token,
+            call: [
+                'symbol()(string)'
+            ],
+            returns: [
+                [token + '-symbol']
+            ]
+        })
+        calls.push({
             target: pair,
             call: [
                 'getReserves()(uint256, uint256)'
@@ -511,9 +520,11 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
         if (infos[token + '-token0'].toLowerCase() === token.toLowerCase()) {
             result[token].price = infos[token + '-2'] / infos[token + '-1']
             result[token].totalSupply = infos[token + '-totalSupply']
+            result[token].symbol = infos[token + '-symbol']
         }else {
             result[token].price = infos[token + '-1'] / infos[token + '-2']
             result[token].totalSupply = infos[token + '-totalSupply']
+            result[token].symbol = infos[token + '-symbol']
         }
     }
     return result;
@@ -605,4 +616,9 @@ export const getAIBalance = async (tokens: string[]) => {
     }
     const res = await aggregate(calls, ChainConfig.multiConfig)
     return res.results.transformed
+}
+
+export const getTokenPair = async (token: string) => {
+    const pair: any = await readContract('UniswapFactory', 'getPair', [token, WETH])
+    return pair
 }

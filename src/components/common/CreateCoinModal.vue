@@ -7,7 +7,7 @@ import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitEth, checkTickUsed } from "@/utils/pump";
+import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { createCommunity } from '@/apis/api'
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
@@ -16,7 +16,7 @@ import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import { useTools } from "@/composables/useTools";
 import debounce from "lodash.debounce";
-import { parseEther } from "viem";
+import { parseEther, isAddress, checksumAddress } from "viem";
 
 const modalStore = useModalStore();
 
@@ -44,8 +44,24 @@ const importForm = reactive<CreateCommunity>({
   docs: "",
 });
 
-const importStep = ref<'tokenCA' | 'tokenPair' | 'price' | 'info'>('tokenCA');
+const importStep = ref(1);
+const importErrTip = ref('');
 const createLoading = ref(false);
+
+// 分发策略相关
+type DistributionPeriod = '1week' | '1month' | '1year';
+const distributionStrategies = ref<Array<{
+  period: DistributionPeriod,
+  label: string,
+  minAmount: number
+}>>([
+  { period: '1week', label: 'createCommunity.week1Distribution', minAmount: 10000 },
+  { period: '1month', label: 'createCommunity.month1Distribution', minAmount: 50000 },
+  { period: '1year', label: 'createCommunity.year1Distribution', minAmount: 200000 },
+]);
+const selectedPeriod = ref<DistributionPeriod | null>(null);
+const customAmount = ref<number | undefined>(undefined);
+const amountError = ref(false);
 const showInvalidName = ref(false);
 const showTickUsed = ref(false);
 const showMaxAmount = ref(false);
@@ -72,16 +88,6 @@ const { onCopy } = useTools()
 
 watch(() => completedImgUrl.value, (value) => {
   createForm.logoUrl = completedImgUrl.value
-})
-
-watch(() => importForm.token, (val) => {
-  if (val) {
-    // get token info
-
-    // get token pair info
-
-    // get price
-  }
 })
 
 const showingInitAmount = ref<number|undefined>()
@@ -160,6 +166,98 @@ const testTick = async () => {
   }
   showInvalidName.value = true
   return false
+}
+
+// 选择分发策略
+const selectPeriod = (period: DistributionPeriod) => {
+  selectedPeriod.value = period;
+  const strategy = distributionStrategies.value.find(s => s.period === period);
+  // 默认设置为最低数量
+  customAmount.value = strategy?.minAmount;
+  amountError.value = false;
+  // 同步到 importForm
+  importForm.distributionPeriod = period;
+  importForm.distributionAmount = customAmount.value;
+};
+
+// 验证自定义数量
+const validateAmount = (period: DistributionPeriod) => {
+  const strategy = distributionStrategies.value.find(s => s.period === period);
+  if (!strategy) return;
+  
+  if (!customAmount.value || customAmount.value < strategy.minAmount) {
+    amountError.value = true;
+  } else {
+    amountError.value = false;
+    // 同步到 importForm
+    importForm.distributionAmount = customAmount.value;
+  }
+};
+
+const importTokenStepClick = async () => {
+  try {
+    createLoading.value = true
+    importErrTip.value = ''
+    if (importStep.value === 1) {
+      console.log('token', importForm.token)
+      if (!isAddress(importForm.token)) {
+        importErrTip.value = 'Invalid token contract address'
+        return
+      }
+      importForm.token = checksumAddress(importForm.token)
+      // get token pair
+      const pair = await getTokenPair(importForm.token)
+      if (!isAddress(pair)) {
+        importErrTip.value = 'Invalid token pair address'
+        return
+      }
+      // check pair price from pancake v2
+      let tokenInfo = await getImportTokenOnchainInfo([{token: importForm.token, pair, dexVersion: 2}])
+      if (!tokenInfo[importForm.token] || isNaN(tokenInfo[importForm.token].price)) {
+        importErrTip.value = 'Token not in Pancake V2 Pool'
+        return
+      }
+
+      tokenInfo = tokenInfo[importForm.token]
+
+      // check tick used
+      if (await checkTickUsed(tokenInfo.symbol)) {
+        importErrTip.value = `Tick<${tokenInfo.symbol}> has been used by other TagAI token`
+        return
+      }
+      importForm.tick = tokenInfo.symbol
+
+      const totalSupply = tokenInfo.totalSupply
+
+      distributionStrategies.value = [
+        { period: '1week', label: 'createCommunity.week1Distribution', minAmount: totalSupply * 0.002 },
+        { period: '1month', label: 'createCommunity.month1Distribution', minAmount: totalSupply * 0.005 },
+        { period: '1year', label: 'createCommunity.year1Distribution', minAmount: totalSupply * 0.01 },
+      ]
+      
+      importStep.value = 2
+      console.log('tokenInfo', tokenInfo)
+      
+    } else if (importStep.value === 2) {
+      // 验证是否选择了策略
+      if (!selectedPeriod.value) {
+        importErrTip.value = 'Please select a distribution strategy'
+        return
+      }
+      // 验证金额
+      const strategy = distributionStrategies.value.find(s => s.period === selectedPeriod.value);
+      if (!customAmount.value || customAmount.value < (strategy?.minAmount || 0)) {
+        amountError.value = true
+        return
+      }
+      // TODO: 进入下一步或完成创建
+      importStep.value = 3
+    }
+  } catch (error) {
+    console.error(error)
+  } finally{
+    createLoading.value = false
+  }
 }
 
 const create = async () => {
@@ -482,14 +580,99 @@ onMounted(async () => {
 
     <div v-else-if="activeTab=='import'" class="flex flex-col gap-4">
 
-      <div class="flex flex-col gap-1">
-        <label for="tokenCA" class="leading-6 text-lg">{{$t('createCommunity.tokenCA')}}:</label>
+      <div class="flex flex-col gap-1" v-show="importStep==1">
+        <label for="tokenCA" class="leading-8 text-lg">{{$t('createCommunity.tokenCA')}}:</label>
+        <p class="text-grey-normal text-ml">
+          {{ $t('createCommunity.tokenCATip') }}
+        </p>
         <input
-          class="border-b-[1px] border-grey-e6 leading-6 text-base"
-          v-model="createForm.token"
+          class="border-b-[1px] border-grey-e6 leading-6 text-base h-10"
+          v-model="importForm.token"
           type="text"
           id="tokenCA"
         />
+        <p v-show="importErrTip.length > 0" class="text-red-e6 text-sm">
+          {{ importErrTip }}
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-4" v-show="importStep==2">
+        <div class="flex flex-col gap-1">
+          <label class="leading-8 text-lg font-medium text-black">{{$t('createCommunity.distribution')}}:</label>
+          <p class="text-grey-normal text-base">
+            {{ $t('createCommunity.distributionTip') }}
+          </p>
+        </div>
+        
+        <!-- 分发策略卡片 -->
+        <div class="flex flex-col gap-4">
+          <div 
+            v-for="strategy in distributionStrategies" 
+            :key="strategy.period"
+            @click="selectPeriod(strategy.period)"
+            class="border-2 rounded-lg p-4 cursor-pointer transition-all duration-300"
+            :class="{
+              'border-grey-e6': selectedPeriod !== strategy.period && !amountError,
+              'border-orange-light-active': selectedPeriod === strategy.period && !amountError,
+              'border-red-e6': selectedPeriod === strategy.period && amountError,
+              'bg-white': true
+            }"
+          >
+            <!-- 卡片标题和最低数量 -->
+            <div class="flex justify-between items-center">
+              <span 
+                class="font-medium transition-all duration-300"
+                :class="{
+                  'text-lg text-black': selectedPeriod !== strategy.period,
+                  'text-2xl text-orange-normal': selectedPeriod === strategy.period
+                }"
+              >
+                {{ $t(strategy.label) }}
+              </span>
+              <div class="flex items-center gap-1">
+                <span class="text-sm text-grey-normal">{{ $t('createCommunity.minTokenAmount') }}:</span>
+                <span class="text-base font-medium text-black">{{ strategy.minAmount.toLocaleString() }}</span>
+              </div>
+            </div>
+            
+            <!-- 自定义数量输入框 - 只在选中时显示，带动画 -->
+            <div 
+              class="overflow-hidden transition-all duration-300"
+              :style="{
+                maxHeight: selectedPeriod === strategy.period ? '100px' : '0px',
+                opacity: selectedPeriod === strategy.period ? '1' : '0'
+              }"
+            >
+              <div class="mt-4 flex flex-col gap-2">
+                <label class="text-base font-medium text-black">{{ $t('createCommunity.customAmount') }}:</label>
+                <input
+                  v-model.number="customAmount"
+                  @input="validateAmount(strategy.period)"
+                  type="number"
+                  class="border-b-[1px] border-grey-e6 leading-6 text-base py-2"
+                  :placeholder="$t('createCommunity.pleaseInputAmount')"
+                  @click.stop
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 错误提示 -->
+        <p v-show="amountError && selectedPeriod" class="text-red-e6 text-sm -mt-2">
+          {{ $t('createCommunity.amountLessThanMin') }}
+        </p>
+      </div>
+
+      <div class="py-2">
+        <button
+          class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
+          @click="importTokenStepClick"
+          :disabled="createLoading"
+        >
+          <span>{{ $t('createCommunity.next') }}</span>
+          <i-ep-loading v-if="createLoading" class="animate-spin" />
+        </button>
       </div>
     </div>
 

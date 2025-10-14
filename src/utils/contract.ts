@@ -1,6 +1,6 @@
 import { getReadOnlyClient, getWalletClient, setup, waitForTx } from "./wallets";
 import { abis } from './abis'
-import { PumpContract1, IPShareContract1, uniswapV2Router02, 
+import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, wrappedUniswapV2ForTagAI2 } from '@/config'
 import { useAccountStore } from "@/stores/web3";
@@ -17,6 +17,7 @@ const ContractAddress = {
     IPShare1: IPShareContract1,
     IPShare2: IPShareContract2,
     UniswapRouter: uniswapV2Router02,
+    UniswapFactory: uniswapV2Factory,
     WrapSwaper: wrappedUniswapV2ForTagAI,
     WrapSwaper2: wrappedUniswapV2ForTagAI2,
     CoinPurse: CoinPurse,
