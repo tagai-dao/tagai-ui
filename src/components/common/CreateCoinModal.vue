@@ -2,21 +2,22 @@
 import { useModalStore } from "@/stores/common";
 import { reactive, ref, computed, watch, onMounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
-import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
+import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, PumpContract6 } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo } from "@/utils/pump";
+import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo, transferToken } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
-import { createCommunity } from '@/apis/api'
+import { createCommunity, importCommunity } from '@/apis/api'
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import emitter from '@/utils/emitter'
 import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import { useTools } from "@/composables/useTools";
 import debounce from "lodash.debounce";
-import { parseEther, isAddress, checksumAddress, custom } from "viem";
+import { parseEther, isAddress, checksumAddress, custom, parseUnits } from "viem";
+import { signMessage } from "@/utils/wallets";
 
 const modalStore = useModalStore();
 
@@ -47,6 +48,7 @@ const importForm = reactive<CreateCommunity>({
 const importStep = ref(1);
 const importErrTip = ref('');
 const createLoading = ref(false);
+const invalidTick = ['tiptag', 'tagai', 'deploy', 'no-tick-of-tiptag', 'no-tick-of-tagai', 'weth', 'wbnb', 'bnb', 'usdt', 'usdc', 'eth', 'btc', 'sol', 'iso', 'ixo']
 
 // 分发策略相关
 type DistributionPeriod = '1week' | '1month' | '1year';
@@ -67,6 +69,7 @@ const showTickUsed = ref(false);
 const showMaxAmount = ref(false);
 const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
+const importing = ref(false);
 const activeTab = ref('token');
 
 const accStore = useAccountStore();
@@ -154,7 +157,6 @@ const testTick = async () => {
   showInvalidName.value = false;
   showTickUsed.value = false;
   showTagForbidden.value = false;
-  const invalidTick = ['tiptag', 'tagai', 'deploy', 'no-tick-of-tiptag', 'no-tick-of-tagai', 'weth', 'wbnb', 'bnb', 'usdt', 'usdc', 'eth', 'btc', 'sol', 'iso', 'ixo']
   if (invalidTick.includes(createForm.tick.toLowerCase())) {
     showTagForbidden.value = true;
     return false;
@@ -229,9 +231,13 @@ const importTokenStepClick = async () => {
         importErrTip.value = `Tick<${tokenInfo.symbol}> has been used by other TagAI token`
         return
       }
+      if (invalidTick.includes(tokenInfo.symbol.toLowerCase())) {
+        importErrTip.value = 'Cannt set this symbol as a community tag.'
+        return false;
+      }
       importForm.tick = tokenInfo.symbol
-
       const totalSupply = tokenInfo.totalSupply
+      importForm.decimals = tokenInfo.decimals
 
       distributionStrategies.value = [
         { period: '1week', label: 'createCommunity.week1Distribution', minAmount: totalSupply * 0.002 },
@@ -258,9 +264,45 @@ const importTokenStepClick = async () => {
       importStep.value = 3
     } else if (importStep.value === 3) {
       console.log('importForm', importForm)
+      // check input info
+      if (!importForm.logoUrl || importForm.logoUrl.length === 0) {
+        // notify({message: 'Need upload an image for your tag'})
+        // return;
+      }
+
+      if (importForm.desc.length > 1024){
+        notify({message: 'The description must within 1024 characters.'})
+        return;
+      }
+
+      // transfer token to social contract
+      useModalStore().setModalCloseEnable(false);
+      const txHash = 'test hash' // await transferToken(importForm.token, PumpContract6, parseUnits(customAmount.value!.toString(), importForm.decimals ?? 18), false);
+      importForm.transferHash = txHash
+      // cache info to local storage
+      localStorage.setItem('importTokenForm', JSON.stringify(importForm))
+
+      importStep.value = 4
+    } else if (importStep.value === 4) {
+      const infoStr = JSON.stringify({
+        "contract": importForm.token,
+        "distribution-period": importForm.distributionPeriod,
+        "total-distributed": importForm.distributionAmount,
+        "transfer-hash": importForm.transferHash,
+        "creator": accStore.ethConnectAddress
+      }, null, 4)
+      const signature = await signMessage(infoStr)
+      if (!signature) {
+        notify({message: 'Failed to sign message, please try again.'})
+        return
+      }
+      console.log({signature})
+      await importCommunity(importForm, accStore.ethConnectAddress, signature, infoStr)
+      importStep.value = 5;
     }
   } catch (error) {
     console.error(error)
+    handleErrorTip(error)
   } finally{
     createLoading.value = false
   }
@@ -670,7 +712,7 @@ onMounted(async () => {
             <!-- 每日分发数量显示 -->
             <div 
               v-if="selectedPeriod === strategy.period && customAmount"
-              class="mt-3 pt-3 border-t border-grey-e6"
+              class="mt-3 pt-3 border-grey-e6"
             >
               <!-- 一周和一月的简单显示 -->
               <div v-if="strategy.period === '1week' || strategy.period === '1month'" class="flex items-center gap-2">
@@ -687,23 +729,23 @@ onMounted(async () => {
                 <div class="space-y-2 bg-grey-f0 rounded-lg p-3">
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-grey-normal">{{ $t('createCommunity.month1') }}:</span>
-                    <span class="font-medium text-orange-normal">{{ (customAmount / 69 * 32 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
+                    <span class="font-medium text-orange-normal">{{ Math.ceil(customAmount / 69 * 32 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
                   </div>
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-grey-normal">{{ $t('createCommunity.month2to3') }}:</span>
-                    <span class="font-medium text-orange-normal"> {{ (customAmount / 69 * 8 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
+                    <span class="font-medium text-orange-normal"> {{ Math.ceil(customAmount / 69 * 8 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
                   </div>
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-grey-normal">{{ $t('createCommunity.month3to6') }}:</span>
-                    <span class="font-medium text-orange-normal">{{ (customAmount / 69 * 4 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
+                    <span class="font-medium text-orange-normal">{{ Math.ceil(customAmount / 69 * 4 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
                   </div>
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-grey-normal">{{ $t('createCommunity.month6to9') }}:</span>
-                    <span class="font-medium text-orange-normal">{{ (customAmount / 69 * 2 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
+                    <span class="font-medium text-orange-normal">{{ Math.ceil(customAmount / 69 * 2 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
                   </div>
                   <div class="flex justify-between items-center text-sm">
                     <span class="text-grey-normal">{{ $t('createCommunity.month9to12') }}:</span>
-                    <span class="font-medium text-orange-normal">{{ (customAmount / 69 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
+                    <span class="font-medium text-orange-normal">{{ Math.ceil(customAmount / 69 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}</span>
                   </div>
                 </div>
               </div>
@@ -736,18 +778,18 @@ onMounted(async () => {
           </div>
         </div>
         <!-- logo -->
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-4 my-4">
           <label for="logo" class="leading-6 text-lg font-medium text-black">{{ $t('createCommunity.logo') }}:</label>
           <div class="flex items-center gap-2">
             <img
               v-if="importForm.logoUrl"
               :src="importForm.logoUrl"
-              class="w-11 h-11 min-w-11 min-h-11 rounded-md"
+              class="w-12 h-12 min-w-12 min-h-12 rounded-md"
               alt=""
             />
             <div
               v-else
-              class="w-11 h-11 min-w-11 min-h-11 bg-grey-f0 rounded-full flex items-center justify-center"
+              class="w-12 h-12 min-w-12 min-h-12 bg-grey-f0 rounded-full flex items-center justify-center"
             >
               <img class="w-3 h-3" src="~@/assets/icons/icon-img.svg" alt="" />
             </div>
@@ -835,14 +877,196 @@ onMounted(async () => {
               :placeholder="$t('createCommunity.docsUrl')"
           />
         </div>
-       
-        
+       <p class="pt-3 text-red-e6 text-ml italic">
+        {{$t('createCommunity.importTip', {amount: customAmount?.toLocaleString(), tick: importForm.tick})}}
+       </p>
+      </div>
+
+      <!-- 确认信息页面 -->
+      <div class="flex flex-col gap-4" v-show="importStep==4">
+        <!-- 标题提示 -->
+        <div class="flex flex-col gap-2 pb-2 border-b border-grey-e6">
+          <h3 class="text-2xl font-bold text-black">{{ $t('createCommunity.signInfo') }}</h3>
+          <p class="text-grey-normal text-base">{{ $t('createCommunity.signInfoTip') }}</p>
+        </div>
+
+        <!-- 基本信息卡片 -->
+        <div class="bg-grey-f0 rounded-lg p-4 flex flex-col gap-4">
+          <h4 class="text-lg font-semibold text-black border-b border-grey-e6 pb-2">{{ $t('createCommunity.basicInfo') }}</h4>
+          
+          <!-- Logo 和 Tick -->
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 flex-1">
+              <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.logo') }}:</span>
+              <img
+                v-if="importForm.logoUrl"
+                :src="importForm.logoUrl"
+                class="w-16 h-16 rounded-lg shadow-sm"
+                alt="Logo"
+              />
+            </div>
+            <div class="flex items-center gap-3 flex-1">
+              <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.tagTick') }}:</span>
+              <span class="text-xl font-bold text-orange-normal">{{ importForm.tick }}</span>
+            </div>
+          </div>
+
+          <!-- 合约地址 -->
+          <div class="flex items-start gap-3">
+            <span class="text-base text-grey-normal min-w-[80px] pt-1">{{ $t('createCommunity.contractAddress') }}:</span>
+            <div class="flex-1 bg-white rounded px-3 py-2 font-mono text-sm break-all">
+              {{ importForm.token }}
+            </div>
+          </div>
+
+          <!-- 描述 -->
+          <div class="flex flex-col gap-2">
+            <span class="text-base text-grey-normal">{{ $t('createCommunity.description') }}:</span>
+            <div class="bg-white rounded px-3 py-2 text-sm text-black whitespace-pre-wrap">
+              {{ importForm.desc || $t('none') }}
+            </div>
+          </div>
+
+          <!-- 分类标签 -->
+          <div class="flex flex-col gap-2" v-if="importForm.tags && importForm.tags.length > 0">
+            <span class="text-base text-grey-normal">{{ $t('createCommunity.categoryTag') }}:</span>
+            <div class="flex flex-wrap gap-2">
+              <span 
+                v-for="(tag, index) of importForm.tags" 
+                :key="tag"
+                :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                class="px-3 py-1 rounded-md text-sm"
+              >
+                #{{ tag }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 分发策略卡片 -->
+        <div class="bg-grey-f0 rounded-lg p-4 flex flex-col gap-4">
+          <h4 class="text-lg font-semibold text-black border-b border-grey-e6 pb-2">{{ $t('createCommunity.distribution') }}</h4>
+          
+          <!-- 策略周期 -->
+          <div class="flex items-center gap-3">
+            <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.distribution') }}:</span>
+            <span class="text-lg font-medium text-orange-normal">
+              {{ $t(distributionStrategies.find(s => s.period === selectedPeriod)?.label || '') }}
+            </span>
+          </div>
+
+          <!-- 分发数量 -->
+          <div class="flex items-center gap-3">
+            <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.totalDistributed') }}:</span>
+            <span class="text-lg font-medium text-black">{{ customAmount?.toLocaleString() }} {{ importForm.tick }}</span>
+          </div>
+
+          <!-- 详细分发计划 -->
+          <div class="bg-white rounded-lg p-3 flex flex-col gap-2">
+            <div class="text-sm font-medium text-black mb-1">{{ $t('createCommunity.distributionSchedule') }}:</div>
+            
+            <!-- 一周的详细 -->
+            <div v-if="selectedPeriod === '1week'" class="flex justify-between items-center text-sm">
+              <span class="text-grey-normal">{{ $t('createCommunity.dailyDistribution') }}:</span>
+              <span class="font-medium text-orange-normal">
+                {{ Math.floor(customAmount! / 7).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}
+              </span>
+            </div>
+
+            <!-- 一月的详细 -->
+            <div v-if="selectedPeriod === '1month'" class="flex justify-between items-center text-sm">
+              <span class="text-grey-normal">{{ $t('createCommunity.dailyDistribution') }}:</span>
+              <span class="font-medium text-orange-normal">
+                {{ Math.floor(customAmount! / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}
+              </span>
+            </div>
+
+            <!-- 一年的详细 -->
+            <div v-if="selectedPeriod === '1year'" class="space-y-2">
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-grey-normal">{{ $t('createCommunity.month1') }}:</span>
+                <span class="font-medium text-orange-normal">
+                  {{ Math.ceil(customAmount! / 69 * 32 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}
+                </span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-grey-normal">{{ $t('createCommunity.month2to3') }}:</span>
+                <span class="font-medium text-orange-normal">
+                  {{ Math.ceil(customAmount! / 69 * 8 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}
+                </span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-grey-normal">{{ $t('createCommunity.month3to6') }}:</span>
+                <span class="font-medium text-orange-normal">
+                  {{ Math.ceil(customAmount! / 69 * 4 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}
+                </span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-grey-normal">{{ $t('createCommunity.month6to9') }}:</span>
+                <span class="font-medium text-orange-normal">
+                  {{ Math.ceil(customAmount! / 69 * 2 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}
+                </span>
+              </div>
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-grey-normal">{{ $t('createCommunity.month9to12') }}:</span>
+                <span class="font-medium text-orange-normal">
+                  {{ Math.ceil(customAmount! / 69 / 30).toLocaleString() }} {{ $t('createCommunity.tokensPerDay') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 社交链接卡片 -->
+        <div class="bg-grey-f0 rounded-lg p-4 flex flex-col gap-4" v-if="importForm.twitter || importForm.telegram || importForm.docs">
+          <h4 class="text-lg font-semibold text-black border-b border-grey-e6 pb-2">{{ $t('createCommunity.socialLinks') }}</h4>
+          
+          <!-- Twitter -->
+          <div class="flex items-center gap-3" v-if="importForm.twitter">
+            <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.twitter') }}:</span>
+            <a :href="importForm.twitter" target="_blank" class="text-blue-500 hover:underline text-sm break-all">
+              {{ importForm.twitter }}
+            </a>
+          </div>
+
+          <!-- Telegram -->
+          <div class="flex items-center gap-3" v-if="importForm.telegram">
+            <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.telegram') }}:</span>
+            <a :href="importForm.telegram" target="_blank" class="text-blue-500 hover:underline text-sm break-all">
+              {{ importForm.telegram }}
+            </a>
+          </div>
+
+          <!-- Docs -->
+          <div class="flex items-center gap-3" v-if="importForm.docs">
+            <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.docs') }}:</span>
+            <a :href="importForm.docs" target="_blank" class="text-blue-500 hover:underline text-sm break-all">
+              {{ importForm.docs }}
+            </a>
+          </div>
+        </div>
+
+        <!-- 转账哈希卡片 -->
+        <div class="bg-orange-50 border-2 border-orange-light-active rounded-lg p-4 flex flex-col gap-3">
+          <h4 class="text-lg font-semibold text-black border-b border-orange-light-active pb-2">{{ $t('createCommunity.transferHash') }}</h4>
+          <div class="flex items-center gap-2">
+            <div class="flex-1 bg-white rounded px-3 py-2 font-mono text-sm break-all">
+              {{ importForm.transferHash }}
+            </div>
+            <button 
+              @click="onCopy(importForm.transferHash!)"
+              class="min-w-[60px] h-9 bg-gradient-primary text-white rounded-md px-3 hover:opacity-90 transition-opacity"
+            >
+              {{ $t('copy') }}
+            </button>
+          </div>
+        </div>
       </div>
 
       <div class="py-2 flex gap-2 justify-between mx-3">
-        <button v-if="importStep > 1"
+        <button v-if="importStep > 1 && importStep != 4"
           class="h-12 flex-1 border border-gray-300 bg-gray-50 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
-          @click="importStep -= 1"
+          @click="importErrTip = '';importStep -= 1"
           :disabled="createLoading"
         >
           <span>{{ $t('createCommunity.lastStep') }}</span>
@@ -852,8 +1076,8 @@ onMounted(async () => {
           @click="importTokenStepClick"
           :disabled="createLoading"
         >
-          <span>{{ importStep === 3 ? $t('createCommunity.importBtnTitle') : $t('createCommunity.next') }}</span>
-          <i-ep-loading v-if="createLoading" class="animate-spin" />
+          <span>{{ importStep === 3 ? $t('createCommunity.transfer') : importStep === 4 ? $t('createCommunity.import') : $t('createCommunity.next') }}</span>
+          <i-ep-loading v-if="createLoading || importing" class="animate-spin" />
         </button>
       </div>
     </div>

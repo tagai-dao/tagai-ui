@@ -289,6 +289,7 @@ export type CreateCommunity = {
   logoUrl: string,
   tick: string,
   token: string,
+  decimals?: number,
   createHash?: string,
   twitterId?: string,
   twitter?: string,
@@ -304,7 +305,8 @@ export type CreateCommunity = {
   initAmount?: bigint // this is token amount
   initEth?: bigint // this is eth amount
   distributionPeriod?: '1week' | '1month' | '1year', // 分发策略时间周期
-  distributionAmount?: number // 分发策略代币数量
+  distributionAmount?: number, // 分发策略代币数量
+  transferHash?: string,
 }
 
 export type TokenHoldingList = {
