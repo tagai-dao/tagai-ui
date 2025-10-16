@@ -276,6 +276,12 @@
     "signInfoTip": "Please sign the import info to import your token.",
     "transferHash": "Transfer Hash",
     "processing": "Processing",
+    "importSuccess": "Import Successful!",
+    "importSuccessTip": "Congratulations! Your token has been successfully imported to TipTag platform",
+    "importSuccessSubTip": "Your token has been successfully imported to TipTag platform and is ready to use!",
+    "tokenImported": "Token Imported",
+    "readyToUse": "View your Tag",
+    "complete": "Complete",
     "basicInfo": "Basic Information",
     "socialLinks": "Social Links",
     "contractAddress": "Contract Address"

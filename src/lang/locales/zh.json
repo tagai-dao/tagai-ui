@@ -276,6 +276,12 @@
     "signInfoTip": "请签名填写的信息以导入您的代币。",
     "transferHash": "转账哈希",
     "processing": "处理中",
+    "importSuccess": "导入成功！",
+    "importSuccessTip": "恭喜！您的代币已成功导入到TipTag平台",
+    "importSuccessSubTip": "您的代币已成功导入到TipTag平台，现在可以开始使用啦！",
+    "tokenImported": "代币已导入",
+    "readyToUse": "查看您的标签",
+    "complete": "完成",
     "basicInfo": "基本信息",
     "socialLinks": "社交链接",
     "contractAddress": "合约地址"

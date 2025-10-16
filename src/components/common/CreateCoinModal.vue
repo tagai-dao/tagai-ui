@@ -6,10 +6,11 @@ import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, P
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
+import ERR_CODE from "@/errCode";
 import { bytesToHex, formatPrice } from "@/utils/helper";
 import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo, transferToken } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
-import { createCommunity, importCommunity } from '@/apis/api'
+import { createCommunity, importCommunity, checkImportTokenDeployed } from '@/apis/api'
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import emitter from '@/utils/emitter'
 import {useUploadImg} from "@/composables/useUploadImg";
@@ -33,7 +34,7 @@ const createForm = reactive<CreateCommunity>({
   docs: "",
 });
 
-const importForm = reactive<CreateCommunity>({
+let importForm = reactive<CreateCommunity>({
   token: "",
   desc: "",
   logoUrl: "",
@@ -42,6 +43,7 @@ const importForm = reactive<CreateCommunity>({
   ethAddr: "",
   twitter: "",
   telegram: "",
+  pair: "",
   docs: "",
 });
 
@@ -174,6 +176,45 @@ const testTick = async () => {
   return false
 }
 
+let importInterval: any = null;
+
+const checkImportment = () => {
+  if (!importInterval) {
+    importInterval = setInterval(async () => {
+      if (importForm.transferHash && importForm.signature && importForm.infoStr) {
+        try {
+          importing.value = true;
+          importStep.value = 5;
+          const deployed: any = await checkImportTokenDeployed(importForm.transferHash)
+          if (deployed && deployed.status === 3) {
+            importing.value = false;
+            window.clearInterval(importInterval);
+            importInterval = null;
+          } else if (deployed && deployed.status === 4) {
+            notify({message: deployed.deployError})
+            importing.value = false;
+            window.clearInterval(importInterval);
+            importInterval = null;
+          }
+        } catch (error) {
+          if (error === ERR_CODE.PARAMS_ERROR) {
+            try {
+              await importCommunity(importForm, accStore.ethConnectAddress, importForm.signature, importForm.infoStr)
+              return;
+            } catch (e) {
+              error = e
+            }
+          }
+          window.clearInterval(importInterval);
+          useModalStore().setModalCloseEnable(true);
+          handleErrorTip(error)
+          importInterval = null;
+        }
+      }
+    }, 1500)
+  }
+}
+
 // 选择分发策略
 const selectPeriod = (period: DistributionPeriod) => {
   selectedPeriod.value = period;
@@ -217,6 +258,7 @@ const importTokenStepClick = async () => {
         importErrTip.value = 'Invalid token pair address'
         return
       }
+      importForm.pair = pair
       // check pair price from pancake v2
       let tokenInfo = await getImportTokenOnchainInfo([{token: importForm.token, pair, dexVersion: 2}])
       if (!tokenInfo[importForm.token] || isNaN(tokenInfo[importForm.token].price)) {
@@ -296,9 +338,17 @@ const importTokenStepClick = async () => {
         notify({message: 'Failed to sign message, please try again.'})
         return
       }
+      importForm.signature = signature
+      importForm.infoStr = infoStr
+      localStorage.setItem('importTokenForm', JSON.stringify(importForm))
       console.log({signature})
       await importCommunity(importForm, accStore.ethConnectAddress, signature, infoStr)
+      checkImportment();
       importStep.value = 5;
+    } else if (importStep.value === 5) {
+      localStorage.removeItem('importTokenForm')
+      useModalStore().setModalCloseEnable(true);
+      useModalStore().setModalVisible(false);
     }
   } catch (error) {
     console.error(error)
@@ -377,6 +427,24 @@ watch(() => createLoading.value, () => {
 })
 
 onMounted(async () => {
+  let importInfo: any = localStorage.getItem('importTokenForm')
+  if (importInfo) {
+    const info = JSON.parse(importInfo)
+    if (info.signature) {
+      activeTab.value = 'import';
+      importForm = info;
+      importStep.value = 4;
+      useModalStore().setModalCloseEnable(false);
+      checkImportment()
+    }else if (info.transferHash) {
+      activeTab.value = 'import';
+      importForm = info;
+      importStep.value = 3;
+      useModalStore().setModalCloseEnable(false);
+    }else {
+      localStorage.removeItem('importTokenForm')
+    }
+  }
   let prevForm:any  = localStorage.getItem('createTokenForm')
   if (prevForm){
     prevForm = JSON.parse(prevForm)
@@ -1063,8 +1131,48 @@ onMounted(async () => {
         </div>
       </div>
 
+      <div v-show="importStep==5" class="text-center">
+        <!-- 庆祝动画容器 -->
+        <div class="relative mb-6">
+          <!-- 装饰性星星 -->
+          <div class="absolute -top-2 -left-2 text-yellow-400 animate-pulse">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+            </svg>
+          </div>
+          <div class="absolute -top-1 -right-2 text-yellow-400 animate-pulse animation-delay-500">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 成功标题 -->
+        <h3 class="text-2xl font-bold text-orange-normal mb-3">
+          🎉 {{ $t('createCommunity.importSuccess') }} 🎉
+        </h3>
+        
+        <!-- 成功描述 -->
+        <div class="bg-gradient-to-r from-orange-light to-orange-light-hover rounded-2xl p-6 mb-6 border border-orange-light-active">
+          <p class="text-orange-normal text-lg font-medium mb-2">
+            ✨ {{ $t('createCommunity.importSuccessTip') }} ✨
+          </p>
+          <p class="text-orange-normal text-sm mb-3">
+            {{ $t('createCommunity.importSuccessSubTip', '您的代币已成功导入到TipTag平台，现在可以开始使用啦！') }}
+          </p>
+          <!-- 跳转链接 -->
+          <a 
+            :href="`/tag-detail/${importForm.tick}`" 
+            class="inline-flex items-center gap-2 text-orange-normal hover:text-orange-normal-hover font-medium text-sm transition-colors duration-200"
+          >
+            <span>🚀 {{ $t('createCommunity.readyToUse') }}</span>
+            <i-ep-arrow-right class="w-4 h-4" />
+          </a>
+        </div>
+      </div>
+
       <div class="py-2 flex gap-2 justify-between mx-3">
-        <button v-if="importStep > 1 && importStep != 4"
+        <button v-if="importStep > 1 && importStep != 4 && importStep != 5"
           class="h-12 flex-1 border border-gray-300 bg-gray-50 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
           @click="importErrTip = '';importStep -= 1"
           :disabled="createLoading"
@@ -1072,11 +1180,12 @@ onMounted(async () => {
           <span>{{ $t('createCommunity.lastStep') }}</span>
         </button>
         <button
-          class="h-12 flex-1 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
+          class="h-12 flex-1 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30 hover:shadow-lg transition-all duration-200"
           @click="importTokenStepClick"
           :disabled="createLoading"
         >
-          <span>{{ importStep === 3 ? $t('createCommunity.transfer') : importStep === 4 ? $t('createCommunity.import') : $t('createCommunity.next') }}</span>
+          <span v-if="importStep === 5">🎉 {{ $t('createCommunity.complete', '完成') }}</span>
+          <span v-else>{{ importStep === 3 ? $t('createCommunity.transfer') : importStep === 4 ? $t('createCommunity.import') : $t('createCommunity.next') }}</span>
           <i-ep-loading v-if="createLoading || importing" class="animate-spin" />
         </button>
       </div>
@@ -1119,4 +1228,68 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* 自定义动画 */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.8s ease-out;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+  animation-fill-mode: both;
+}
+
+.animation-delay-500 {
+  animation-delay: 0.5s;
+  animation-fill-mode: both;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+  animation-fill-mode: both;
+}
+
+/* 成功页面的特殊效果 */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-bounce {
+  animation: bounce 2s infinite;
+}
+
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* 按钮悬停效果增强 */
+button:hover {
+  transform: translateY(-1px);
+}
+</style>
