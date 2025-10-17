@@ -258,7 +258,6 @@ onMounted(async () => {
           <div class="flex flex-col items-center py-4 w-full">
             <h3 class="text-xl font-bold mb-4">{{ t('credit') }}</h3>
             <VueApexCharts
-              type="pie"
               :options="pieChartOptions"
               :series="pieChartOptions.series"
               class="w-full"
