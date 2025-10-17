@@ -37,7 +37,7 @@ const colors = ['#4E79A7',
 
 const pieChartOptions = ref({
   chart: {
-    type: 'pie',
+    type: 'pie' as const,
     width: '100%'
   },
   labels: ['User 1', 'User 2', 'User 3', 'User 4', 'User 5'],
@@ -50,7 +50,7 @@ const pieChartOptions = ref({
         width: '100%'
       },
       legend: {
-        position: 'bottom'
+        position: 'bottom' as const
       }
     }
   }]
@@ -109,7 +109,7 @@ onMounted(async () => {
   if (!creditPolicy) {
     pieChartOptions.value = {
       chart: {
-        type: 'pie',
+        type: 'pie' as const,
         width: '100%'
       },
       labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days", "BNB Balance", "IPShare MCap"],
@@ -122,7 +122,7 @@ onMounted(async () => {
             width: '100%'
           },
           legend: {
-            position: 'bottom'
+            position: 'bottom' as const
           }
         }
       }]
@@ -156,7 +156,7 @@ onMounted(async () => {
     })
     pieChartOptions.value = {
       chart: {
-        type: 'pie',
+        type: 'pie' as const,
         width: '100%'
       },
       labels,
@@ -169,7 +169,7 @@ onMounted(async () => {
             width: '100%'
           },
           legend: {
-            position: 'bottom'
+            position: 'bottom' as const
           }
         }
       }]

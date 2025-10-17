@@ -79,6 +79,7 @@ const series = computed(() => {
 
 <template>
   <VueApexCharts
+      type="line"
       :width="80"
       :height="40"
       :id="props.chartId"
