@@ -350,10 +350,15 @@ const importTokenStepClick = async () => {
       importForm.infoStr = infoStr
       localStorage.setItem('importTokenForm', JSON.stringify(importForm))
       console.log({signature})
-      await importCommunity(importForm, accStore.ethConnectAddress, signature, infoStr)
-      importing.value = true;
-      checkImportment();
-      importStep.value = 5;
+      try {
+        await importCommunity(importForm, accStore.ethConnectAddress, signature, infoStr)
+        importing.value = true;
+        checkImportment();
+        importStep.value = 5;
+      } catch (error) {
+        useModalStore().setModalCloseEnable(true);
+        handleErrorTip(error)
+      }
     } else if (importStep.value === 5) {
       clear()
       useModalStore().setModalCloseEnable(true);
