@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useCommunityStore } from "@/stores/community";
-import {onMounted, ref} from "vue";
-import { formatAddress, formatAmount, formatPrice, sleep } from "@/utils/helper";
+import {computed, onMounted, ref} from "vue";
+import { formatAddress, formatAmount, formatPrice, sleep, formatDate } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
 import { getHolderList } from "@/apis/api";
@@ -9,11 +9,14 @@ import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, ListSupply } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
+import { getBlockNumber } from "@/utils/wallets";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract5, PumpContract6 } from "@/config";
 
 const comStore = useCommunityStore()
 
 const holdingList = ref<TokenHoldingList[]>([])
+const showDistributionModal = ref(false)
+const communityDistribution = ref();
 
 const chartOptions = ref({
   chart: {
@@ -77,6 +80,36 @@ const progressData = ref([
   {amount: 20, stopHeight: 100, background: '#9B83FA'},
 ])
 
+// reward per day
+// -1 means no distribution of this community(not list)
+// 0 means no reward of current day
+const rewardPerDay = computed(() => {
+  if (!comStore?.currentSelectedCommunity?.distribution) {
+    return -1;
+  }
+  try {
+    const distribution = JSON.parse(comStore.currentSelectedCommunity.distribution);
+    communityDistribution.value = distribution;
+    const currentTime = Math.ceil(Date.now() / 1000);
+    if (currentTime === 0) {
+      return 0;
+    }
+    if (distribution.length === 0) {
+      return -1;
+    }
+    let currentRewardPerSecond = 0;
+    for(let dis of distribution){
+      if (dis.start <= currentTime&& dis.end >= currentTime) {
+        currentRewardPerSecond = dis.amount;
+        break;
+      }
+    }
+    console.log({currentRewardPerSecond})
+    return Math.ceil(currentRewardPerSecond * 86400)
+  } catch (error) {
+    return -1;
+  }
+})
 
 const refreshing = ref(false);
 const loading = ref(false);
@@ -142,10 +175,17 @@ function replaceEmptyImg(e: any) {
     e.target.src = emptyAvatar;
 }
 
+// 判断是否为当前进行中的周期
+function isCurrentPeriod(start: number, end: number) {
+  const currentTime = Math.ceil(Date.now() / 1000);
+  return start <= currentTime && end >= currentTime;
+}
+
 onMounted(async () => {
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
   }
+  
   onRefresh()
 })
 </script>
@@ -195,6 +235,14 @@ onMounted(async () => {
         <span class="text-h4 text-grey-93">{{$t('postView.cap')}}</span>
         <span class="text-h5 text-black-19">{{ formatPrice(Math.round((comStore.currentSelectedCommunity.marketCap ?? 0) * useStateStore().ethPrice)) }}</span>
       </div>
+      <div v-show="rewardPerDay>-1" class="flex justify-between items-center h-6">
+        <span class="text-h4 text-grey-93">{{$t('postView.rewardPerDay')}}</span>
+        <span class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
+               @click="showDistributionModal = true">
+          {{ formatAmount(rewardPerDay) }}
+        </span>
+      </div>
+
     </div>
     <!-- <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
       <div class="text-h2 mb-2">Tweet Pool</div>
@@ -285,6 +333,101 @@ onMounted(async () => {
     </van-pull-refresh>
 
     </div>
+    <el-dialog v-model="showDistributionModal"
+               modal-class="overlay-white"
+               class="max-w-[500px] rounded-[20px]"
+               width="90%" :show-close="false" align-center destroy-on-close>
+      <!-- 标题区域 -->
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-grey-e7">
+        <h3 class="text-h2 font-semibold text-black-19">{{ $t('postView.rewardDistributionSchedule') }}</h3>
+        <button @click="showDistributionModal = false" 
+                class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-grey-e7 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- 可滚动内容区域 -->
+      <div class="overflow-y-auto pr-2 custom-scrollbar" style="max-height: 60vh;">
+        <div v-if="communityDistribution && communityDistribution.length > 0" class="relative pl-4">
+          <!-- 时间轴线 -->
+          <div class="absolute left-[7px] top-3 bottom-3 w-[2px] bg-gradient-to-b from-orange-normal via-purple-500 to-blue-active"></div>
+          
+          <!-- 时间线记录 -->
+          <div v-for="(item, index) in communityDistribution" :key="index"
+               class="relative mb-6 last:mb-0">
+            <!-- 时间轴连接点 -->
+            <div class="absolute left-[-16px] top-2 w-4 h-4 rounded-full border-3 bg-white z-10"
+                 :class="isCurrentPeriod(item.start, item.end) ? 'border-orange-normal shadow-lg shadow-orange-normal/50' : 'border-grey-c9'">
+              <!-- 当前进行中的周期，添加脉冲动画 -->
+              <div v-if="isCurrentPeriod(item.start, item.end)" 
+                   class="absolute inset-0 rounded-full bg-orange-normal animate-ping opacity-75"></div>
+            </div>
+
+            <!-- 记录卡片 -->
+            <div class="ml-6 p-4 rounded-xl bg-white border transition-all duration-300"
+                 :class="isCurrentPeriod(item.start, item.end) 
+                   ? 'border-orange-normal bg-orange-50 shadow-md' 
+                   : 'border-grey-e7 hover:shadow-sm'">
+              
+              <!-- 当前标签 -->
+              <div v-if="isCurrentPeriod(item.start, item.end)" 
+                   class="inline-flex items-center gap-1 px-2 py-0.5 mb-2 text-xs font-medium text-white bg-orange-normal rounded-full">
+                <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                {{ $t('postView.ongoing') }}
+              </div>
+
+              <!-- 奖励金额 -->
+              <div class="mb-3">
+                <div class="text-xs text-grey-93 mb-1">{{ $t('postView.rewardPerDay') }}</div>
+                <div class="text-xl font-bold"
+                     :class="isCurrentPeriod(item.start, item.end) ? 'text-orange-normal' : 'text-black-19'">
+                  {{ formatAmount(item.amount * 86400) }}
+                  <span class="text-sm font-normal text-grey-93 ml-1">{{ comStore.currentSelectedCommunity?.tick }}</span>
+                </div>
+              </div>
+
+              <!-- 时间范围 -->
+              <div class="flex items-center gap-3 text-h5">
+                <div class="flex items-center gap-1.5 flex-1">
+                  <svg class="w-4 h-4 text-grey-93" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-grey-93">{{ $t('postView.startDate') }}</span>
+                    <span class="text-h5 text-black-19">{{ formatDate(item.start * 1000) }}</span>
+                  </div>
+                </div>
+                
+                <div class="flex items-center text-grey-c9">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                </div>
+
+                <div class="flex items-center gap-1.5 flex-1">
+                  <svg class="w-4 h-4 text-grey-93" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-grey-93">{{ $t('postView.endDate') }}</span>
+                    <span class="text-h5 text-black-19">{{ formatDate(item.end * 1000) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-else class="py-12 text-center">
+          <div class="text-grey-93 text-h4">{{ $t('postView.noDistributionData') }}</div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 

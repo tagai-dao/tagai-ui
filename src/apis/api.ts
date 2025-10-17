@@ -151,6 +151,12 @@ export const getTrendingTweets = async (twitterId: string | null | undefined, pa
 export const createCommunity = async (params: CreateCommunity) => 
   post(BACKEND_API_URL + '/community/createCommunity', params)
 
+export const importCommunity = async (importInfo: CreateCommunity, ethAddr: string, signature: string, infoStr: string) =>
+  post(BACKEND_API_URL + '/community/importCommunity', {importInfo, ethAddr, signature, infoStr})
+
+export const checkImportTokenDeployed = async (transferHash: string) =>
+  get(BACKEND_API_URL + '/community/checkImportTokenDeployed', {transferHash})
+
 export const updateCommunityInfo = async (community: Community, twitterId: string) =>
   post(BACKEND_API_URL + '/community/updateInfo', {...community, twitterId})
 
