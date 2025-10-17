@@ -1,9 +1,10 @@
 import type { Space } from '@/types';
-import { dayjs } from 'element-plus';
+// import { dayjs } from 'element-plus';
 import utc from 'dayjs/plugin/utc';
+import dayjs from 'dayjs';
 import { BACKEND_API_URL } from '@/config';
 import { reportLog as reportLogApi } from '@/apis/api';
-dayjs.extend(utc)
+(dayjs as any).extend(utc)
 
 export const sleep = async (time: number) => {
   time = time * 1000

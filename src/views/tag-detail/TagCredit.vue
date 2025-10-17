@@ -11,6 +11,9 @@ import VueApexCharts from 'vue3-apexcharts';
 import i18n from '@/lang';
 import type { ApexOptions } from 'apexcharts';
 
+// 类型断言来解决 vue3-apexcharts 的类型问题
+const ApexCharts = VueApexCharts as any;
+
 const t = i18n.global.t;
 
 const comStore = useCommunityStore()
@@ -258,7 +261,8 @@ onMounted(async () => {
           width="90%" :show-close="false" align-center destroy-on-close>
           <div class="flex flex-col items-center py-4 w-full">
             <h3 class="text-xl font-bold mb-4">{{ t('credit') }}</h3>
-            <VueApexCharts
+            <component
+              :is="ApexCharts"
               :options="pieChartOptions"
               :series="pieChartOptions.series"
               class="w-full"

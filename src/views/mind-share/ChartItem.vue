@@ -5,6 +5,9 @@ import { type MindShare } from "@/types";
 import { onMounted } from "vue";
 import type { ApexOptions } from "apexcharts";
 
+// 类型断言来解决 vue3-apexcharts 的类型问题
+const ApexCharts = VueApexCharts as any;
+
 const props = defineProps({
   chartId: {
     type: String,
@@ -79,7 +82,8 @@ const series = computed(() => {
 </script>
 
 <template>
-  <VueApexCharts
+  <component
+      :is="ApexCharts"
       :width="80"
       :height="40"
       :id="props.chartId"

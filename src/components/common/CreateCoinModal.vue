@@ -1042,7 +1042,7 @@ onUnmounted(() => {
           <div class="flex items-center gap-3">
             <span class="text-base text-grey-normal min-w-[80px]">{{ $t('createCommunity.distribution') }}:</span>
             <span class="text-lg font-medium text-orange-normal">
-              {{ $t(distributionStrategies.find(s => s.period === selectedPeriod)?.label || '') }}
+              {{ $t(distributionStrategies.find((s: any) => s.period === selectedPeriod)?.label || '') }}
             </span>
           </div>
 
