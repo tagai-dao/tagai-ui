@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useModalStore } from "@/stores/common";
-import { reactive, ref, computed, watch, onMounted } from "vue";
+import { reactive, ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
 import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, PumpContract6 } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -185,18 +185,21 @@ const checkImportment = () => {
         try {
           importing.value = true;
           importStep.value = 5;
+          useModalStore().setModalCloseEnable(true);
+          console.log(1, importForm.transferHash)
           const deployed: any = await checkImportTokenDeployed(importForm.transferHash)
+          console.log(2, deployed)
           if (deployed && deployed.status === 3) {
             importing.value = false;
             window.clearInterval(importInterval);
             importInterval = null;
           } else if (deployed && deployed.status === 4) {
             notify({message: deployed.deployError})
-            importing.value = false;
             window.clearInterval(importInterval);
             importInterval = null;
           }
         } catch (error) {
+          console.log(235, error)
           if (error === ERR_CODE.PARAMS_ERROR) {
             try {
               await importCommunity(importForm, accStore.ethConnectAddress, importForm.signature, importForm.infoStr)
@@ -206,7 +209,6 @@ const checkImportment = () => {
             }
           }
           window.clearInterval(importInterval);
-          useModalStore().setModalCloseEnable(true);
           handleErrorTip(error)
           importInterval = null;
         }
@@ -261,12 +263,17 @@ const importTokenStepClick = async () => {
       importForm.pair = pair
       // check pair price from pancake v2
       let tokenInfo = await getImportTokenOnchainInfo([{token: importForm.token, pair, dexVersion: 2}])
-      if (!tokenInfo[importForm.token] || isNaN(tokenInfo[importForm.token].price)) {
-        importErrTip.value = 'Token not in Pancake V2 Pool'
+
+      tokenInfo = tokenInfo[importForm.token]
+      if (!tokenInfo || isNaN(tokenInfo.price) || tokenInfo.price * tokenInfo.totalSupply < 1) {
+        importErrTip.value = 'Token not in Pancake V2 Pool Or marketcap less than 1 BNB'
         return
       }
 
-      tokenInfo = tokenInfo[importForm.token]
+      if (tokenInfo.decimals != 18) {
+        importErrTip.value = `Decimals: ${tokenInfo.decimals} is not supported now`
+        return;
+      }
 
       // check tick used
       if (await checkTickUsed(tokenInfo.symbol)) {
@@ -302,14 +309,13 @@ const importTokenStepClick = async () => {
         amountError.value = true
         return
       }
-      // TODO: 进入下一步或完成创建
       importStep.value = 3
     } else if (importStep.value === 3) {
       console.log('importForm', importForm)
       // check input info
       if (!importForm.logoUrl || importForm.logoUrl.length === 0) {
-        // notify({message: 'Need upload an image for your tag'})
-        // return;
+        notify({message: 'Need upload an image for your tag'})
+        return;
       }
 
       if (importForm.desc.length > 1024){
@@ -319,8 +325,10 @@ const importTokenStepClick = async () => {
 
       // transfer token to social contract
       useModalStore().setModalCloseEnable(false);
-      const txHash = 'test hash' // await transferToken(importForm.token, PumpContract6, parseUnits(customAmount.value!.toString(), importForm.decimals ?? 18), false);
+      const txHash = await transferToken(importForm.token, PumpContract6, parseUnits(customAmount.value!.toString(), importForm.decimals ?? 18), false);
       importForm.transferHash = txHash
+      importForm.ethAddr = accStore.ethConnectAddress;
+      useModalStore().setModalCloseEnable(true);
       // cache info to local storage
       localStorage.setItem('importTokenForm', JSON.stringify(importForm))
 
@@ -343,10 +351,11 @@ const importTokenStepClick = async () => {
       localStorage.setItem('importTokenForm', JSON.stringify(importForm))
       console.log({signature})
       await importCommunity(importForm, accStore.ethConnectAddress, signature, infoStr)
+      importing.value = true;
       checkImportment();
       importStep.value = 5;
     } else if (importStep.value === 5) {
-      localStorage.removeItem('importTokenForm')
+      clear()
       useModalStore().setModalCloseEnable(true);
       useModalStore().setModalVisible(false);
     }
@@ -356,6 +365,10 @@ const importTokenStepClick = async () => {
   } finally{
     createLoading.value = false
   }
+}
+
+const clear = () => {
+  localStorage.removeItem('importTokenForm')
 }
 
 const create = async () => {
@@ -463,6 +476,12 @@ onMounted(async () => {
     }
   }
 })
+
+onUnmounted(() => {
+  window.clearInterval(importInterval);
+  importInterval = null;
+})
+
 </script>
 
 <template>
@@ -696,7 +715,6 @@ onMounted(async () => {
 
     <!-- 导入代币 -->
     <div v-else-if="activeTab=='import'" class="flex flex-col gap-4">
-
       <div class="flex flex-col gap-1" v-show="importStep==1">
         <label for="tokenCA" class="leading-8 text-lg">{{$t('createCommunity.tokenCA')}}:</label>
         <p class="text-grey-normal text-ml">
@@ -1149,19 +1167,20 @@ onMounted(async () => {
 
         <!-- 成功标题 -->
         <h3 class="text-2xl font-bold text-orange-normal mb-3">
-          🎉 {{ $t('createCommunity.importSuccess') }} 🎉
+          🎉 {{ importing ? $t('createCommunity.importing') : $t('createCommunity.importSuccess') }} 🎉
         </h3>
         
         <!-- 成功描述 -->
-        <div class="bg-gradient-to-r from-orange-light to-orange-light-hover rounded-2xl p-6 mb-6 border border-orange-light-active">
-          <p class="text-orange-normal text-lg font-medium mb-2">
+        <div 
+        @click="clear()" class="bg-gradient-to-r from-orange-light to-orange-light-hover rounded-2xl p-6 mb-6 border border-orange-light-active">
+          <p v-show="!importing" class="text-orange-normal text-lg font-medium mb-2">
             ✨ {{ $t('createCommunity.importSuccessTip') }} ✨
           </p>
           <p class="text-orange-normal text-sm mb-3">
-            {{ $t('createCommunity.importSuccessSubTip', '您的代币已成功导入到TipTag平台，现在可以开始使用啦！') }}
+            {{ importing ? $t('createCommunity.importingTip') : $t('createCommunity.importSuccessSubTip', '您的代币已成功导入到TipTag平台，现在可以开始使用啦！') }}
           </p>
           <!-- 跳转链接 -->
-          <a 
+          <a v-show="!importing"
             :href="`/tag-detail/${importForm.tick}`" 
             class="inline-flex items-center gap-2 text-orange-normal hover:text-orange-normal-hover font-medium text-sm transition-colors duration-200"
           >
@@ -1182,9 +1201,9 @@ onMounted(async () => {
         <button
           class="h-12 flex-1 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30 hover:shadow-lg transition-all duration-200"
           @click="importTokenStepClick"
-          :disabled="createLoading"
+          :disabled="createLoading || importing"
         >
-          <span v-if="importStep === 5">🎉 {{ $t('createCommunity.complete', '完成') }}</span>
+          <span v-if="importStep === 5">🎉 {{ importing ? $t('createCommunity.importing') : $t('createCommunity.complete') }}</span>
           <span v-else>{{ importStep === 3 ? $t('createCommunity.transfer') : importStep === 4 ? $t('createCommunity.import') : $t('createCommunity.next') }}</span>
           <i-ep-loading v-if="createLoading || importing" class="animate-spin" />
         </button>
