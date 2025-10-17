@@ -3,6 +3,7 @@ import VueApexCharts from "vue3-apexcharts";
 import {computed, reactive, ref, watch} from "vue";
 import { type MindShare } from "@/types";
 import { onMounted } from "vue";
+import type { ApexOptions } from "apexcharts";
 
 const props = defineProps({
   chartId: {
@@ -24,7 +25,7 @@ const mindShareMid = computed(() => {
   return props.mindShare?.percents.length > 0 ? props.mindShare?.percents.sort((a: number, b: number) => a - b)[Math.floor(props.mindShare.percents.length / 2)] : 0
 })
 
-const lineChartOptions = ref({})
+const lineChartOptions = ref<ApexOptions>({})
 
 onMounted(() => {
   lineChartOptions.value = {
@@ -62,7 +63,7 @@ onMounted(() => {
       },
       line: {
         colors: {
-          threshold: mindShareMid,
+          threshold: mindShareMid.value,
           colorAboveThreshold: '#34C759',
           colorBelowThreshold: '#E6374D',
         },

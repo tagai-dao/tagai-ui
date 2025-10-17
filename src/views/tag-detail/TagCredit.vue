@@ -9,6 +9,7 @@ import { onMounted, ref } from 'vue';
 import { useAccount } from '@/composables/useAccount';
 import VueApexCharts from 'vue3-apexcharts';
 import i18n from '@/lang';
+import type { ApexOptions } from 'apexcharts';
 
 const t = i18n.global.t;
 
@@ -35,13 +36,13 @@ const colors = ['#4E79A7',
 '#D62728',
 '#9467BD']
 
-const pieChartOptions = ref({
+const pieChartOptions = ref<ApexOptions>({
   chart: {
     type: 'pie' as const,
     width: '100%'
   },
   labels: ['User 1', 'User 2', 'User 3', 'User 4', 'User 5'],
-  series: [44, 55, 13, 43, 22],
+  series: [44, 55, 13, 43, 22] as number[],
   colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
   responsive: [{
     breakpoint: 480,
@@ -113,8 +114,8 @@ onMounted(async () => {
         width: '100%'
       },
       labels: [comStore.currentSelectedCommunity?.tick + ' ' + t('balance'), comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'), "Net buy in 3 days", "BNB Balance", "IPShare MCap"],
-      series: [40, 30, 30],
-      colors,
+      series: [40, 30, 30] as number[],
+      colors: colors as string[],
       responsive: [{
         breakpoint: 480,
         options: {
@@ -161,7 +162,7 @@ onMounted(async () => {
       },
       labels,
       series: creditJO.map((item: any) => Number((item.ratio * 100).toFixed(2))),
-      colors,
+      colors: colors as string[],
       responsive: [{
         breakpoint: 480,
         options: {
