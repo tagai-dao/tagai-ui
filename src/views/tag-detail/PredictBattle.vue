@@ -207,7 +207,7 @@ const formatSupporters = (count: number) => {
         <!-- 对战双方 -->
         <div class="flex items-stretch gap-2 sm:gap-6 relative overflow-hidden">
           <!-- 左侧玩家卡片 -->
-          <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
+          <div class="flex-1 overflow-hidden battle-player-card">
             <div
                 class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
               :class="{
@@ -229,7 +229,7 @@ const formatSupporters = (count: number) => {
                       :credit="0"
                       :steem-id="null"
                       :eth-addr="null"
-                      :teleported="false"
+                      :teleported="true"
                     >
                       <template #avatar-img>
                         <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-red-normal shadow-md">
@@ -311,7 +311,7 @@ const formatSupporters = (count: number) => {
           </div>
 
           <!-- 右侧玩家卡片 -->
-          <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
+          <div class="flex-1 overflow-hidden battle-player-card">
             <div
                 class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
               :class="{
@@ -342,7 +342,7 @@ const formatSupporters = (count: number) => {
                       :credit="0"
                       :steem-id="null"
                       :eth-addr="null"
-                      :teleported="false"
+                      :teleported="true"
                     >
                       <template #avatar-img>
                         <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-blue-32 shadow-md">
@@ -443,11 +443,6 @@ const formatSupporters = (count: number) => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-}
-
-.player-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* 支持按钮样式 */
