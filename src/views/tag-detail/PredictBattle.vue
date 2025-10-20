@@ -209,7 +209,7 @@ const formatSupporters = (count: number) => {
           <!-- 左侧玩家卡片 -->
           <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
             <div
-                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[200px] flex flex-col"
+                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[160px] flex flex-col"
               :class="{
                 'bg-gradient-to-br from-red-light to-red-light-hover border-red-normal/20': battle.status !== 'ended',
                 'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': battle.status === 'ended'
@@ -310,7 +310,7 @@ const formatSupporters = (count: number) => {
           <!-- 右侧玩家卡片 -->
           <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
             <div
-              class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[200px] flex flex-col"
+              class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[160px] flex flex-col"
               :class="{
                 'bg-gradient-to-br from-blue-light to-blue-light-hover border-blue-32/20': battle.status !== 'ended',
                 'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': battle.status === 'ended'
