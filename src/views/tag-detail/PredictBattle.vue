@@ -170,19 +170,19 @@ const formatSupporters = (count: number) => {
 </script>
 
 <template>
-  <div class="predict-battle-container">
+  <div class="predict-battle-container rounded-t-2xl overflow-hidden">
     <!-- 页面标题 -->
-    <div class="px-4 py-3 bg-white">
+    <div class="px-4 py-3 bg-white mb-2 sm:mb-4">
       <h2 class="text-h3 text-black font-bold">预测对战</h2>
       <p class="text-sm text-grey-normal mt-1">支持你认同的观点，参与社区讨论</p>
     </div>
 
     <!-- 对战列表 -->
-    <div class="px-4 pb-4 space-y-4">
-      <div 
-        v-for="battle in battles" 
+    <div class="px-2 sm:px-4 pb-4 space-y-4">
+      <div
+        v-for="battle in battles"
         :key="battle.id"
-        class="battle-card bg-white rounded-2xl p-4 shadow-sm border border-grey-light"
+        class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border border-grey-light"
       >
         <!-- 卡片头部 -->
         <div class="flex justify-between items-start mb-4">
@@ -191,7 +191,7 @@ const formatSupporters = (count: number) => {
           </h3>
           <!-- 倒计时/状态 -->
           <div class="flex flex-col items-end">
-            <div 
+            <div
               class="px-2 py-1 rounded-full text-xs font-medium"
               :class="{
                 'bg-green-light text-green-dark': battle.status === 'ongoing',
@@ -205,20 +205,20 @@ const formatSupporters = (count: number) => {
         </div>
 
         <!-- 对战双方 -->
-        <div class="flex items-center gap-1 sm:gap-2">
+        <div class="flex items-center gap-2 sm:gap-6 relative overflow-hidden">
           <!-- 左侧玩家卡片 -->
-          <div class="flex-1 battle-player-card left-card">
-            <div 
-              class="player-card rounded-xl sm:rounded-2xl px-1 py-2 sm:px-1 sm:py-2 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[200px] flex flex-col"
+          <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
+            <div
+                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[200px] flex flex-col"
               :class="{
                 'bg-gradient-to-br from-red-light to-red-light-hover border-red-normal/20': battle.status !== 'ended',
                 'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': battle.status === 'ended'
               }"
             >
               <!-- 主要内容区域 -->
-              <div class="flex gap-1 sm:gap-2">
+              <div class="flex-1 flex flex-col sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-col items-center justify-center gap-2 w-1/3">
+                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3">
                   <div class="relative">
                     <UserAvatar
                       :profile-img="battle.leftPlayer.avatar"
@@ -233,9 +233,9 @@ const formatSupporters = (count: number) => {
                     >
                       <template #avatar-img>
                         <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-red-normal shadow-md">
-                          <img 
-                            v-if="battle.leftPlayer.avatar" 
-                            :src="battle.leftPlayer.avatar" 
+                          <img
+                            v-if="battle.leftPlayer.avatar"
+                            :src="battle.leftPlayer.avatar"
                             :alt="battle.leftPlayer.name"
                             class="w-full h-full object-cover"
                           >
@@ -245,59 +245,71 @@ const formatSupporters = (count: number) => {
                         </div>
                       </template>
                     </UserAvatar>
-                    
+
                     <!-- Winner 标识 -->
-                    <div 
+                    <div
                       v-if="battle.status === 'ended' && getWinner(battle) === 'left'"
                       class="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-green-34 rounded-full border-2 border-white flex items-center justify-center shadow-lg"
                     >
                       <img src="~@/assets/icons/icon-pk.png" alt="Winner" class="w-2 h-2 sm:w-3 sm:h-3" />
                     </div>
                   </div>
-                  
+
                   <!-- 用户名 -->
                   <div class="text-center flex flex-col items-center justify-center">
-                    <p class="text-xm font-bold text-red-normal leading-tight break-words w-3/5">
+                    <p class="text-sm font-bold text-red-normal leading-tight break-words">
                       {{ battle.leftPlayer.name }}
                     </p>
-                    <p class="text-xs text-red-normal/70">
+                    <p class="text-sm text-red-normal/70">
                       {{ formatSupporters(battle.leftPlayer.supporters) }} 支持
                     </p>
                   </div>
-                  
+
                   <!-- 支持按钮 -->
-                  <button 
+                  <button
                     v-if="battle.status !== 'ended'"
                     @click="supportPlayer(battle.id, battle.leftPlayer.id)"
-                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all duration-200"
-                    
+                    class="hidden sm:w-8 sm:h-8 rounded-full sm:flex items-center justify-center transition-all duration-200"
+
                   >
                     <i class="w-full h-full" :class="battle.leftPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
                   </button>
                 </div>
-                
+
                 <!-- 右侧：预测文字 -->
-                <div class="w-2/3 min-w-0">
-                  <div class="p-1 text-sm sm:text-base text-grey-normal leading-relaxed h-full">
+                <div class="flex-1">
+                  <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
                     <div class="line-clamp-5">
                       {{ battle.leftPlayer.prediction }}
                     </div>
                   </div>
                 </div>
               </div>
+              <div class="flex justify-center sm:hidden">
+                <!-- 支持按钮 -->
+                <button
+                    v-if="battle.status !== 'ended'"
+                    @click="supportPlayer(battle.id, battle.leftPlayer.id)"
+                    class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
+
+                >
+                  <i class="w-full h-full" :class="battle.leftPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
+                </button>
+              </div>
             </div>
           </div>
 
           <!-- VS 标识 -->
-          <div class="vs-container flex flex-col items-center justify-center w-6 flex-shrink-0">
+          <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center
+                      w-6 min-w-6 sm:w-10 sm:min-w-10  flex-shrink-0 z-99">
             <div class="vs-indicator relative">
                 <img src="~@/assets/icons/icon-pk.png" alt="">
           </div>
-          </div>    
+          </div>
 
           <!-- 右侧玩家卡片 -->
-          <div class="flex-1 battle-player-card right-card">
-            <div 
+          <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
+            <div
               class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[200px] flex flex-col"
               :class="{
                 'bg-gradient-to-br from-blue-light to-blue-light-hover border-blue-32/20': battle.status !== 'ended',
@@ -305,18 +317,18 @@ const formatSupporters = (count: number) => {
               }"
             >
               <!-- 主要内容区域 -->
-              <div class="flex gap-2 sm:gap-3">
+              <div class="flex-1 flex flex-col-reverse sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：预测文字 -->
-                <div class="w-2/3 min-w-0">
-                  <div class="bg-white/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-xs sm:text-sm text-grey-normal leading-relaxed h-full">
+                <div class="flex-1">
+                  <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
                     <div class="line-clamp-5">
                       {{ battle.rightPlayer.prediction }}
                     </div>
                   </div>
                 </div>
-                
+
                 <!-- 右侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-col items-center gap-2 w-1/3">
+                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3">
                   <div class="relative">
                     <UserAvatar
                       :profile-img="battle.rightPlayer.avatar"
@@ -330,10 +342,10 @@ const formatSupporters = (count: number) => {
                       :teleported="false"
                     >
                       <template #avatar-img>
-                        <div class="w-12 h-12 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 sm:border-3 border-blue-32 shadow-md">
-                          <img 
-                            v-if="battle.rightPlayer.avatar" 
-                            :src="battle.rightPlayer.avatar" 
+                        <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-blue-32 shadow-md">
+                          <img
+                            v-if="battle.rightPlayer.avatar"
+                            :src="battle.rightPlayer.avatar"
                             :alt="battle.rightPlayer.name"
                             class="w-full h-full object-cover"
                           >
@@ -343,36 +355,36 @@ const formatSupporters = (count: number) => {
                         </div>
                       </template>
                     </UserAvatar>
-                    
+
                     <!-- Winner 标识 -->
-                    <div 
+                    <div
                       v-if="battle.status === 'ended' && getWinner(battle) === 'right'"
                       class="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-green-34 rounded-full border-2 border-white flex items-center justify-center shadow-lg"
                     >
                       <img src="~@/assets/icons/icon-pk.png" alt="Winner" class="w-2 h-2 sm:w-3 sm:h-3" />
                     </div>
-                    
+
                     <!-- 在线状态指示器 -->
                     <div v-else class="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-34 rounded-full border-2 border-white flex items-center justify-center">
                       <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
                     </div>
                   </div>
-                  
+
                   <!-- 用户名 -->
-                  <div class="text-center">
-                    <h4 class="text-xs font-bold text-blue-32 leading-tight break-words max-w-[60px] sm:max-w-[80px]">
+                  <div class="text-center flex flex-col items-center justify-center">
+                    <p class="text-sm font-bold text-blue-32 leading-tight break-words">
                       {{ battle.rightPlayer.name }}
-                    </h4>
+                    </p>
                     <p class="text-xs text-blue-32/70">
                       {{ formatSupporters(battle.rightPlayer.supporters) }} 支持
                     </p>
                   </div>
-                  
+
                   <!-- 支持按钮 -->
-                  <button 
+                  <button
                     v-if="battle.status !== 'ended'"
                     @click="supportPlayer(battle.id, battle.rightPlayer.id)"
-                    class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
+                    class="hidden sm:w-8 sm:h-8 rounded-full sm:flex items-center justify-center transition-all duration-200"
                     :class="{
                       'bg-blue-32 text-white shadow-lg': battle.rightPlayer.isSupported,
                       'bg-white text-blue-32 border border-blue-32 hover:bg-blue-32 hover:text-white': !battle.rightPlayer.isSupported
@@ -381,6 +393,20 @@ const formatSupporters = (count: number) => {
                     <i class="w-3 h-3 sm:w-4 sm:h-4" :class="battle.rightPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
                   </button>
                 </div>
+              </div>
+              <div class="flex justify-center sm:hidden">
+                <!-- 支持按钮 -->
+                <button
+                    v-if="battle.status !== 'ended'"
+                    @click="supportPlayer(battle.id, battle.rightPlayer.id)"
+                    class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
+                    :class="{
+                      'bg-blue-32 text-white shadow-lg': battle.rightPlayer.isSupported,
+                      'bg-white text-blue-32 border border-blue-32 hover:bg-blue-32 hover:text-white': !battle.rightPlayer.isSupported
+                    }"
+                >
+                  <i class="w-3 h-3 sm:w-4 sm:h-4" :class="battle.rightPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
+                </button>
               </div>
             </div>
           </div>
