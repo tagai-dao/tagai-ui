@@ -374,7 +374,7 @@ const formatSupporters = (count: number) => {
                   </div>
 
                   <!-- 用户名 -->
-                  <p class="text-sm font-bold text-blue-32 leading-tight break-words">
+                  <p class="text-sm font-bold text-blue-32 leading-tight w-full break-words">
                     {{ battle.rightPlayer.name }}
                   </p>
                 </div>
