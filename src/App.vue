@@ -70,6 +70,10 @@ onMounted(async () => {
       })
     }).catch()
     updateIPShare().catch();
+    if (account.walletType === 0 && account.ethAddr && isAddress(account.ethAddr)) {
+        // user connect wallet plugin by manual
+        useAccountStore().ethConnectState = EthWalletState.Disconnect;
+      }
   } else {
     useAccountStore().ethConnectState = EthWalletState.Disconnect;
   }
