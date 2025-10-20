@@ -205,11 +205,11 @@ const formatSupporters = (count: number) => {
         </div>
 
         <!-- 对战双方 -->
-        <div class="flex items-center gap-2 sm:gap-6 relative overflow-hidden">
+        <div class="flex items-stretch gap-2 sm:gap-6 relative overflow-hidden">
           <!-- 左侧玩家卡片 -->
           <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
             <div
-                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[160px] flex flex-col"
+                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
               :class="{
                 'bg-gradient-to-br from-red-light to-red-light-hover border-red-normal/20': battle.status !== 'ended',
                 'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': battle.status === 'ended'
@@ -256,45 +256,48 @@ const formatSupporters = (count: number) => {
                   </div>
 
                   <!-- 用户名 -->
-                  <div class="text-center flex flex-col items-center justify-center">
-                    <p class="text-sm font-bold text-red-normal leading-tight break-words">
-                      {{ battle.leftPlayer.name }}
-                    </p>
-                    <p class="text-sm text-red-normal/70">
-                      {{ formatSupporters(battle.leftPlayer.supporters) }} 支持
-                    </p>
-                  </div>
-
-                  <!-- 支持按钮 -->
-                  <button
-                    v-if="battle.status !== 'ended'"
-                    @click="supportPlayer(battle.id, battle.leftPlayer.id)"
-                    class="hidden sm:w-8 sm:h-8 rounded-full sm:flex items-center justify-center transition-all duration-200"
-
-                  >
-                    <i class="w-full h-full" :class="battle.leftPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
-                  </button>
+                  <p class="text-sm font-bold text-red-normal leading-tight break-words">
+                    {{ battle.leftPlayer.name }}
+                  </p>
                 </div>
 
                 <!-- 右侧：预测文字 -->
                 <div class="flex-1">
                   <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
-                    <div class="line-clamp-5">
+                    <div class="line-clamp-5 min-h-[84px]">
                       {{ battle.leftPlayer.prediction }}
                     </div>
                   </div>
                 </div>
               </div>
-              <div class="flex justify-center sm:hidden">
-                <!-- 支持按钮 -->
-                <button
-                    v-if="battle.status !== 'ended'"
-                    @click="supportPlayer(battle.id, battle.leftPlayer.id)"
-                    class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
+              <div class="flex items-stretch gap-3">
+                <div class="flex-1 flex flex-col items-center">
+                  <button
+                      v-if="battle.status !== 'ended'"
+                      @click="supportPlayer(battle.id, battle.leftPlayer.id)"
+                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
 
-                >
-                  <i class="w-full h-full" :class="battle.leftPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
-                </button>
+                  >
+                    <i class="w-4 h-4 sm:w-6 sm:h-6 " :class="battle.leftPlayer.isSupported ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
+                  </button>
+                  <div class="text-xs sm:text-sm text-red-normal/70">
+                    {{ formatSupporters(battle.leftPlayer.supporters) }} 评论
+                  </div>
+                </div>
+                <!-- 支持按钮 -->
+                <div class="flex-1 flex flex-col items-center">
+                  <button
+                      v-if="battle.status !== 'ended'"
+                      @click="supportPlayer(battle.id, battle.leftPlayer.id)"
+                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
+
+                  >
+                    <i class="w-full h-full" :class="battle.leftPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
+                  </button>
+                  <div class="text-xs sm:text-sm text-red-normal/70">
+                    {{ formatSupporters(battle.leftPlayer.supporters) }} 支持
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -310,7 +313,7 @@ const formatSupporters = (count: number) => {
           <!-- 右侧玩家卡片 -->
           <div class="flex-1 overflow-hidden battle-player-card -z-[1]">
             <div
-              class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 shadow-lg relative h-full min-h-[180px] sm:min-h-[160px] flex flex-col"
+                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
               :class="{
                 'bg-gradient-to-br from-blue-light to-blue-light-hover border-blue-32/20': battle.status !== 'ended',
                 'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': battle.status === 'ended'
@@ -321,7 +324,7 @@ const formatSupporters = (count: number) => {
                 <!-- 左侧：预测文字 -->
                 <div class="flex-1">
                   <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
-                    <div class="line-clamp-5">
+                    <div class="line-clamp-5 min-h-[84px]">
                       {{ battle.rightPlayer.prediction }}
                     </div>
                   </div>
@@ -371,42 +374,45 @@ const formatSupporters = (count: number) => {
                   </div>
 
                   <!-- 用户名 -->
-                  <div class="text-center flex flex-col items-center justify-center">
-                    <p class="text-sm font-bold text-blue-32 leading-tight break-words">
-                      {{ battle.rightPlayer.name }}
-                    </p>
-                    <p class="text-xs text-blue-32/70">
-                      {{ formatSupporters(battle.rightPlayer.supporters) }} 支持
-                    </p>
-                  </div>
-
-                  <!-- 支持按钮 -->
+                  <p class="text-sm font-bold text-blue-32 leading-tight break-words">
+                    {{ battle.rightPlayer.name }}
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-stretch gap-3">
+                <!-- 评论按钮 -->
+                <div class="flex-1 flex flex-col items-center">
                   <button
-                    v-if="battle.status !== 'ended'"
-                    @click="supportPlayer(battle.id, battle.rightPlayer.id)"
-                    class="hidden sm:w-8 sm:h-8 rounded-full sm:flex items-center justify-center transition-all duration-200"
-                    :class="{
+                      v-if="battle.status !== 'ended'"
+                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
+                      :class="{
+                      'bg-blue-32 text-white shadow-lg': battle.rightPlayer.isSupported,
+                      'bg-white text-blue-32 border border-blue-32 hover:bg-blue-32 hover:text-white': !battle.rightPlayer.isSupported
+                    }"
+                  >
+                    <i class="w-2.5 h-2.5 sm:w-3 sm:h-3" :class="battle.leftPlayer.isSupported ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
+                  </button>
+                  <div class="text-xs sm:text-sm text-blue-32/70">
+                    {{ formatSupporters(battle.leftPlayer.supporters) }} 评论
+                  </div>
+                </div>
+                <!-- 支持按钮 -->
+                <div class="flex-1 flex flex-col items-center">
+                  <button
+                      v-if="battle.status !== 'ended'"
+                      @click="supportPlayer(battle.id, battle.rightPlayer.id)"
+                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
+                      :class="{
                       'bg-blue-32 text-white shadow-lg': battle.rightPlayer.isSupported,
                       'bg-white text-blue-32 border border-blue-32 hover:bg-blue-32 hover:text-white': !battle.rightPlayer.isSupported
                     }"
                   >
                     <i class="w-3 h-3 sm:w-4 sm:h-4" :class="battle.rightPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
                   </button>
+                  <div class="text-xs sm:text-sm text-blue-32/70">
+                    {{ formatSupporters(battle.rightPlayer.supporters) }} 支持
+                  </div>
                 </div>
-              </div>
-              <div class="flex justify-center sm:hidden">
-                <!-- 支持按钮 -->
-                <button
-                    v-if="battle.status !== 'ended'"
-                    @click="supportPlayer(battle.id, battle.rightPlayer.id)"
-                    class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
-                    :class="{
-                      'bg-blue-32 text-white shadow-lg': battle.rightPlayer.isSupported,
-                      'bg-white text-blue-32 border border-blue-32 hover:bg-blue-32 hover:text-white': !battle.rightPlayer.isSupported
-                    }"
-                >
-                  <i class="w-3 h-3 sm:w-4 sm:h-4" :class="battle.rightPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
-                </button>
               </div>
             </div>
           </div>
@@ -437,22 +443,6 @@ const formatSupporters = (count: number) => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-}
-
-.player-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
-  transform: translateX(-100%);
-  transition: transform 0.6s;
-}
-
-.player-card:hover::before {
-  transform: translateX(100%);
 }
 
 .player-card:hover {
