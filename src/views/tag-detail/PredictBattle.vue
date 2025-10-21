@@ -7,10 +7,14 @@ import { formatAmount, parseTimestamp } from '@/utils/helper'
 import { useCommunityStore } from '@/stores/community'
 import { handleErrorTip } from '@/utils/notify'
 import { useAccountStore } from '@/stores/web3'
+import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
+import TweetBtnReply from '@/components/tweets/TweetBtnReply.vue'
+import { useRouter } from 'vue-router'
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
 const battles = ref<BattleData[]>([])
+const router = useRouter()
 let tweets = reactive<{ [key: string]: Tweet }>({})
 
 const refreshing = ref(false)
@@ -79,6 +83,10 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
     return null
 }
 
+const openTweet = (tweetId: string) => {
+  router.push(`/post-detail/${tweetId}`)
+}
+
 onMounted(async () => {
   await onRefresh()
 })
@@ -109,11 +117,11 @@ onMounted(async () => {
       <div v-else
         v-for="battle in battles"
         :key="battle.predictAID + battle.predictBID"
-        class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border border-grey-light"
+        class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border mb-3 border-grey-light"
       >
         <!-- 卡片头部 -->
         <div class="flex justify-between items-start mb-4">
-          <h3 class="text-base font-semibold text-black flex-1 pr-2">
+          <h3 class="text-xl font-semibold text-black flex-1 pr-2">
             {{ battle.title }}
           </h3>
           <!-- 倒计时/状态 -->
@@ -185,10 +193,13 @@ onMounted(async () => {
                   <p class="text-sm font-bold text-red-normal leading-tight w-full break-words">
                     {{ tweets[battle.predictAID]?.twitterUsername }}
                   </p>
+                  <!-- <p class="text-sm text-red-normal leading-tight w-full break-words text-center">
+                    {{ formatAmount(tweets[battle.predictAID]?.credit ?? 0) }}
+                  </p> -->
                 </div>
 
                 <!-- 左侧：预测文字 -->
-                <div class="flex-1 overflow-hidden">
+                <div class="flex-1 overflow-hidden" @click="openTweet(battle.predictAID)">
                   <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
                     <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictAID]?.content ?? ''">
                       {{ tweets[battle.predictAID]?.content ?? '' }}
@@ -198,31 +209,33 @@ onMounted(async () => {
               </div>
               <div class="flex items-stretch gap-3">
                 <div class="flex-1 flex flex-col gap-1 items-center">
-                  <button
+                  <!-- <button
                       v-if="!battle.winner"
                       @click="getWinner(battle)"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
 
                   >
                     <i class="w-4 h-4 sm:w-6 sm:h-6 " :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
-                  </button>
-                  <div class="text-xs sm:text-sm text-red-normal/70 text-center flex flex-col items-center">
+                  </button> -->
+                  <TweetBtnReply :tweet="tweets[battle.predictAID]" :hide-number="true" />
+                  <div class="text-xs sm:text-sm text-red-600 text-center flex flex-col items-center">
                     <span>{{ tweets[battle.predictAID]?.replyCount ?? 0 }}</span>
                     <span class="text-xs">{{ $t('postView.comments') }}</span>
                   </div>
                 </div>
                 <!-- 支持按钮 -->
                 <div class="flex-1 flex flex-col gap-1 items-center">
-                  <button
+                  <!-- <button
                       v-if="!battle.winner"
                       @click="null"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
 
                   >
                     <i class="w-full h-full" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
-                  </button>
-                  <div class="text-xs sm:text-sm text-red-normal/70 text-center flex flex-col items-center">
-                   <span> {{ formatAmount(tweets[battle.predictAID]?.amount ?? 0) }}</span>
+                  </button> -->
+                  <TweetBtnCurate :tweet="tweets[battle.predictAID]" :hide-number="true" />
+                  <div class="text-xs sm:text-sm text-red-600 text-center flex flex-col items-center">
+                   <span> {{ (Math.ceil(tweets[battle.predictAID]?.amount ?? 0)).toLocaleString() }}</span>
                     <span class="text-xs">{{ $t('curation.supports') }}</span>
                   </div>
                 </div>
@@ -250,7 +263,7 @@ onMounted(async () => {
               <!-- 主要内容区域 -->
               <div class="flex-1 flex flex-col-reverse sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：预测文字 -->
-                <div class="flex-1 overflow-hidden">
+                <div class="flex-1 overflow-hidden" @click="openTweet(battle.predictBID)">
                   <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
                     <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictBID]?.content ?? ''">
                       {{ tweets[battle.predictBID]?.content ?? '' }}
@@ -300,12 +313,15 @@ onMounted(async () => {
                   <p class="text-sm font-bold text-blue-600 leading-tight w-full break-words">
                     {{ tweets[battle.predictBID]?.twitterUsername }}
                   </p>
+                  <!-- <p class="text-sm text-blue-600 leading-tight w-full break-words text-left">
+                    {{ formatAmount(Math.ceil(tweets[battle.predictBID]?.credit ?? 0)) }}
+                  </p> -->
                 </div>
               </div>
               <div class="flex items-stretch gap-3">
                 <!-- 评论按钮 -->
                 <div class="flex-1 flex flex-col gap-1 items-center">
-                  <button
+                  <!-- <button
                       v-if="!battle.winner"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
                       :class="{
@@ -314,14 +330,15 @@ onMounted(async () => {
                     }"
                   >
                     <i class="w-2.5 h-2.5 sm:w-3 sm:h-3" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
-                  </button>
-                  <div class="text-xs sm:text-sm text-blue-600/70 text-center flex flex-col items-center">
+                  </button> -->
+                  <TweetBtnReply :tweet="tweets[battle.predictBID]" :hide-number="true" />
+                  <div class="text-xs sm:text-sm text-blue-600 text-center flex flex-col items-center">
                     <span>{{ tweets[battle.predictAID]?.replyCount ?? 0 }}</span> <span class="text-xs">{{ $t('postView.comments') }}</span>
                   </div>
                 </div>
                 <!-- 支持按钮 -->
                 <div class="flex-1 flex flex-col gap-1 items-center">
-                  <button
+                  <!-- <button
                       v-if="!battle.winner"
                       @click="null"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
@@ -331,9 +348,10 @@ onMounted(async () => {
                     }"
                   >
                     <i class="w-3 h-3 sm:w-4 sm:h-4" :class="tweets[battle.predictBID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
-                  </button>
-                  <div class="text-xs sm:text-sm text-blue-600/70 text-center flex flex-col items-center">
-                    <span>{{ formatAmount(tweets[battle.predictBID]?.amount ?? 0) }}</span> <span class="text-xs">{{ $t('curation.supports') }}</span>
+                  </button> -->
+                  <TweetBtnCurate :tweet="tweets[battle.predictBID]" :hide-number="true" />
+                  <div class="text-xs sm:text-sm text-blue-600 text-center flex flex-col items-center">
+                    <span>{{ (Math.ceil(tweets[battle.predictBID]?.amount ?? 0)).toLocaleString() }}</span> <span class="text-xs">{{ $t('curation.supports') }}</span>
                   </div>
                 </div>
               </div>
@@ -530,7 +548,7 @@ onMounted(async () => {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .battle-card {
-    margin: 0 -8px;
+    margin: 0 -8px 0.75rem -8px; /* 保持底部边距 mb-3 (0.75rem) */
     border-radius: 1rem;
   }
   
@@ -561,7 +579,7 @@ onMounted(async () => {
 
 @media (max-width: 640px) {
   .battle-card {
-    margin: 0 -4px;
+    margin: 0 -4px 0.75rem -4px; /* 保持底部边距 mb-3 (0.75rem) */
     border-radius: 0.75rem;
   }
   
