@@ -140,7 +140,7 @@ onMounted(async () => {
               <!-- 主要内容区域 -->
               <div class="flex-1 flex flex-col sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3">
+                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3 max-w-1/3">
                   <div class="relative">
                     <UserAvatar
                       :profile-img="tweets[battle.predictAID]?.profile"
@@ -184,9 +184,9 @@ onMounted(async () => {
                 </div>
 
                 <!-- 左侧：预测文字 -->
-                <div class="flex-1">
-                  <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
-                    <div class="line-clamp-5 min-h-[84px]">
+                <div class="flex-1 overflow-hidden">
+                  <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
+                    <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictAID]?.content ?? ''">
                       {{ tweets[battle.predictAID]?.content ?? '' }}
                     </div>
                   </div>
@@ -244,16 +244,16 @@ onMounted(async () => {
               <!-- 主要内容区域 -->
               <div class="flex-1 flex flex-col-reverse sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：预测文字 -->
-                <div class="flex-1">
-                  <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
-                    <div class="line-clamp-5 min-h-[84px]">
+                <div class="flex-1 overflow-hidden">
+                  <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
+                    <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictBID]?.content ?? ''">
                       {{ tweets[battle.predictBID]?.content ?? '' }}
                     </div>
                   </div>
                 </div>
 
                 <!-- 右侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3">
+                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3 max-w-1/3">
                   <div class="relative">
                     <UserAvatar
                       :profile-img="tweets[battle.predictBID]?.profile"
