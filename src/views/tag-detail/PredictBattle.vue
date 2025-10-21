@@ -144,7 +144,7 @@ onMounted(async () => {
               <!-- 主要内容区域 -->
               <div class="flex-1 flex flex-col sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3 max-w-1/3">
+                <div class="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-1/3 sm:min-w-1/3 sm:max-w-1/3">
                   <div class="relative">
                     <UserAvatar
                       :profile-img="tweets[battle.predictAID]?.profile"
@@ -197,7 +197,7 @@ onMounted(async () => {
                 </div>
               </div>
               <div class="flex items-stretch gap-3">
-                <div class="flex-1 flex flex-col items-center">
+                <div class="flex-1 flex flex-col gap-1 items-center">
                   <button
                       v-if="!battle.winner"
                       @click="getWinner(battle)"
@@ -206,12 +206,13 @@ onMounted(async () => {
                   >
                     <i class="w-4 h-4 sm:w-6 sm:h-6 " :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
                   </button>
-                  <div class="text-xs sm:text-sm text-red-normal/70">
-                    {{ tweets[battle.predictAID]?.replyCount ?? 0 }} {{ $t('postView.comments') }}
+                  <div class="text-xs sm:text-sm text-red-normal/70 text-center flex flex-col items-center">
+                    <span>{{ tweets[battle.predictAID]?.replyCount ?? 0 }}</span>
+                    <span class="text-xs">{{ $t('postView.comments') }}</span>
                   </div>
                 </div>
                 <!-- 支持按钮 -->
-                <div class="flex-1 flex flex-col items-center">
+                <div class="flex-1 flex flex-col gap-1 items-center">
                   <button
                       v-if="!battle.winner"
                       @click="null"
@@ -220,8 +221,9 @@ onMounted(async () => {
                   >
                     <i class="w-full h-full" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
                   </button>
-                  <div class="text-xs sm:text-sm text-red-normal/70">
-                    {{ formatAmount(tweets[battle.predictAID]?.amount ?? 0) }} {{ $t('curation.supports') }}
+                  <div class="text-xs sm:text-sm text-red-normal/70 text-center flex flex-col items-center">
+                   <span> {{ formatAmount(tweets[battle.predictAID]?.amount ?? 0) }}</span>
+                    <span class="text-xs">{{ $t('curation.supports') }}</span>
                   </div>
                 </div>
               </div>
@@ -257,7 +259,7 @@ onMounted(async () => {
                 </div>
 
                 <!-- 右侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3 max-w-1/3">
+                <div class="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-1/3 sm:min-w-1/3 sm:max-w-1/3">
                   <div class="relative">
                     <UserAvatar
                       :profile-img="tweets[battle.predictBID]?.profile"
@@ -302,7 +304,7 @@ onMounted(async () => {
               </div>
               <div class="flex items-stretch gap-3">
                 <!-- 评论按钮 -->
-                <div class="flex-1 flex flex-col items-center">
+                <div class="flex-1 flex flex-col gap-1 items-center">
                   <button
                       v-if="!battle.winner"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
@@ -313,12 +315,12 @@ onMounted(async () => {
                   >
                     <i class="w-2.5 h-2.5 sm:w-3 sm:h-3" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
                   </button>
-                  <div class="text-xs sm:text-sm text-blue-600/70">
-                    {{ tweets[battle.predictAID]?.replyCount ?? 0 }} {{ $t('postView.comments') }}
+                  <div class="text-xs sm:text-sm text-blue-600/70 text-center flex flex-col items-center">
+                    <span>{{ tweets[battle.predictAID]?.replyCount ?? 0 }}</span> <span class="text-xs">{{ $t('postView.comments') }}</span>
                   </div>
                 </div>
                 <!-- 支持按钮 -->
-                <div class="flex-1 flex flex-col items-center">
+                <div class="flex-1 flex flex-col gap-1 items-center">
                   <button
                       v-if="!battle.winner"
                       @click="null"
@@ -330,8 +332,8 @@ onMounted(async () => {
                   >
                     <i class="w-3 h-3 sm:w-4 sm:h-4" :class="tweets[battle.predictBID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
                   </button>
-                  <div class="text-xs sm:text-sm text-blue-600/70">
-                    {{ formatAmount(tweets[battle.predictBID]?.amount ?? 0) }} {{ $t('curation.supports') }}
+                  <div class="text-xs sm:text-sm text-blue-600/70 text-center flex flex-col items-center">
+                    <span>{{ formatAmount(tweets[battle.predictBID]?.amount ?? 0) }}</span> <span class="text-xs">{{ $t('curation.supports') }}</span>
                   </div>
                 </div>
               </div>
