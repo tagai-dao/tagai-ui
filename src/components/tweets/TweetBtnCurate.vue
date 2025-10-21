@@ -12,6 +12,7 @@ import { create } from "@/utils/ipshare";
 
 const props = defineProps<{
     tweet: Tweet;
+    hideNumber?: boolean;
   }>()
 const emits = defineEmits(['newLike'])
 const stateStore = useStateStore()
@@ -92,6 +93,7 @@ async function confirmCurate() {
     <i v-else class="w-6 h-6 min-w-6"
        :class="tweet.curated ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
     <span class="text-sm font-bold"
+      v-if="!hideNumber"
       :class="tweet.liked ? 'text-red-e6' : 'text-grey-bd'">
     {{ tweet.likeCount ?? 0 }}</span>
   </button>

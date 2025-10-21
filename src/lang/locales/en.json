@@ -64,6 +64,7 @@
   "communities": "Community",
   "showMore": "Show more",
   "activity": "#Tag",
+  "Predict": "Predict",
   "Tweets": "Tweets",
   "Space": "Spaces",
   "max": "Max",
@@ -71,6 +72,7 @@
   "transfer": "Transfer",
   "Twitter": "Twitter",
   "Telegram": "Telegram",
+  "ended": "Ended",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
     "loginWithEmail": "Login with Email",
@@ -313,7 +315,8 @@
     "opDesc": "All tweet operation(like/retweet/quote/reply will cost you op(operation power) because of all the operation will sync to the blockchain. Each account has 2000 OP value. OP value will recover linearly, 2000 OP every 3 days.",
     "curationTip": "Curate a tweet or a space can gain curate rewards. Write a tweet or join a space as host/co-host/speaker can gain creator rewards. When the rewards are settled, you can claim all this tagcoin rewards.",
     "curate": "Curate",
-    "curation": "Curation"
+    "curation": "Curation",
+    "supports": "Supports"
   },
   "postView": {
     "createNewCuration": "Create",

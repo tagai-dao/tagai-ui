@@ -65,12 +65,14 @@
   "showMore": "查看更多",
   "transfer": "转账",
   "activity": "#Tag",
+  "Predict": "预测",
   "Tweets": "推文",
   "Space": "Space",
   "max": "最大",
   "mindshare": "MindShare",
   "Twitter": "推特",
   "Telegram": "电报",
+  "ended": "已结束",
   "loginView": {
     "loginWithTwitter": "登录推特",
     "loginWithEmail": "使用邮箱登录",
@@ -313,7 +315,8 @@
     "opDesc": "所有推文操作（点赞/转发/引用/回复）将消耗您的OP（操作权限），因为所有操作都会同步到区块链。每个账号初始拥有2000 OP值。OP值会随着时间线性恢复, 每3天恢复2000 OP值。",
     "curationTip": "策展一条推文或Space可以获得策展奖励。写一条推文或作为Space的主持人/演讲者可以获得创作者奖励。当策展内容结算后，您可以领取所有这些代币奖励。",
     "curate": "策展",
-    "curation": "策展"
+    "curation": "策展",
+    "supports": "支持"
   },
   "postView": {
     "createNewCuration": "创建",
