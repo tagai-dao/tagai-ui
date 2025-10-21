@@ -23,12 +23,12 @@ const onRefresh = async () => {
         refreshing.value = true
         const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId)
         if (data.battle && data.battle.length > 0) {
+            tweets = Object.assign({}, data.tweets)
             battles.value = (data.battle as BattleData[]).map(battle => ({
                 ...battle,
                 winner: getWinner(battle)
             }))
-            tweets = Object.assign(tweets, data.tweets)
-            console.log(tweets, data)
+            console.log(44, tweets, data, battles.value)
         }else {
             battles.value = []
         }
@@ -49,8 +49,11 @@ const onLoad = async () => {
         loading.value = true
         const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, Math.floor((battles.value.length - 1) / 16) + 1) as BattleData[]
         if (data.battle && data.battle.length > 0) {
-            battles.value = battles.value.concat(data.battle as BattleData[])
-            tweets = Object.assign(tweets, data.tweets)
+          tweets = Object.assign(tweets, data.tweets)
+          battles.value = battles.value.concat((data.battle as BattleData[]).map(battle => ({
+              ...battle,
+              winner: getWinner(battle)
+          })))
         }
         if (!data.battle || data.battle.length < 16) {
             finished.value = true
@@ -67,6 +70,7 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
     const tweetA = tweets[battle.predictAID]
     const tweetB = tweets[battle.predictBID]
     if (tweetA && tweetB) {
+      console.log(33, tweetA.isSettled, tweetB.isSettled)
         if (tweetA.isSettled && tweetB.isSettled) {
             return (tweetA.amount ?? 0) > (tweetB.amount ?? 0) ? 'left' : 'right'
         }
@@ -117,8 +121,8 @@ onMounted(async () => {
             <div
               class="px-2 py-1 rounded-full text-xs font-medium"
               :class="{
-                'bg-green-light text-green-dark': !!battle.winner,
-                'bg-grey-light text-grey-normal': !battle.winner,
+                'bg-green-light text-green-dark': !battle.winner,
+                'bg-grey-light text-grey-normal': !!battle.winner,
               }"
             >
               {{ battle.winner ? $t('ended') : parseTimestamp((Math.max(tweets[battle.predictAID]?.dayNumber, tweets[battle.predictBID]?.dayNumber) + 3) * 86400000) }}
@@ -170,7 +174,7 @@ onMounted(async () => {
 
                     <!-- Winner 标识 -->
                     <div
-                      v-if="!battle.winner && battle.winner === 'left'"
+                      v-if="battle.winner && battle.winner === 'left'"
                       class="absolute -top-2 -left-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
                     >
                       <img src="~@/assets/icons/icon-winner.svg" alt="Winner" class="w-5 h-5 sm:w-6 sm:h-6 -rotate-45" />
@@ -283,7 +287,7 @@ onMounted(async () => {
 
                     <!-- Winner 标识 -->
                     <div
-                      v-if="!battle.winner && battle.winner === 'right'"
+                      v-if="battle.winner && battle.winner == 'right'"
                       class="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
                     >
                       <img src="~@/assets/icons/icon-winner.svg" alt="Winner" class="w-5 h-5 sm:w-6 sm:h-6 rotate-45" />
