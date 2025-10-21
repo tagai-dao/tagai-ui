@@ -436,3 +436,10 @@ export type MindShare = Account & {
     value: number
   }>
 }
+
+export type BattleData = {
+  title: string,
+  predictAID: string,
+  predictBID: string,
+  winner: 'left' | 'right' | null
+}

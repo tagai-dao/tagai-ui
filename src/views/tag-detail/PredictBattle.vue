@@ -1,187 +1,110 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import dayjs from 'dayjs'
-import relativeTime from 'dayjs/plugin/relativeTime'
+import { ref, computed, reactive, onMounted } from 'vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import { getPredictBattleData, tweet } from '@/apis/api'
+import type { BattleData, Tweet } from '@/types'
+import { formatAmount, parseTimestamp } from '@/utils/helper'
+import { useCommunityStore } from '@/stores/community'
+import { handleErrorTip } from '@/utils/notify'
+import { useAccountStore } from '@/stores/web3'
 
-dayjs.extend(relativeTime)
+const comStore = useCommunityStore()
+const accStore = useAccountStore()
+const battles = ref<BattleData[]>([])
+let tweets = reactive<{ [key: string]: Tweet }>({})
 
-// 对战数据类型定义
-interface BattleData {
-  id: string
-  title: string
-  leftPlayer: {
-    id: string
-    name: string
-    username: string
-    avatar: string
-    supporters: number
-    isSupported?: boolean
-    prediction?: string
-  }
-  rightPlayer: {
-    id: string
-    name: string
-    username: string
-    avatar: string
-    supporters: number
-    isSupported?: boolean
-    prediction?: string
-  }
-  endTime: number
-  status: 'ongoing' | 'ended' | 'upcoming'
+const refreshing = ref(false)
+const loading = ref(false)
+const finished = ref(false)
+
+const onRefresh = async () => {
+    try {
+        if (refreshing.value) return
+        refreshing.value = true
+        const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId)
+        if (data.battle && data.battle.length > 0) {
+            battles.value = (data.battle as BattleData[]).map(battle => ({
+                ...battle,
+                winner: getWinner(battle)
+            }))
+            tweets = Object.assign(tweets, data.tweets)
+            console.log(tweets, data)
+        }else {
+            battles.value = []
+        }
+
+        if (!data.battle || data.battle.length < 16) {
+            finished.value = true
+        }
+    } catch (error) {
+        handleErrorTip(error)
+    } finally {
+        refreshing.value = false
+    }
 }
 
-// 模拟数据
-const battles = ref<BattleData[]>([
-  {
-    id: '1',
-    title: '2024年加密货币市场预测',
-    leftPlayer: {
-      id: '1',
-      name: 'CryptoExpert',
-      username: 'crypto_expert',
-      avatar: '',
-      supporters: 1247,
-      prediction: '比特币将在2024年突破10万美元，加密货币市场将迎来新的牛市周期。机构投资者的大规模入场将推动价格持续上涨。'
-    },
-    rightPlayer: {
-      id: '2', 
-      name: 'MarketAnalyst',
-      username: 'market_analyst',
-      avatar: '',
-      supporters: 892,
-      prediction: '加密货币市场将面临监管压力，价格可能回调至较低水平。传统金融市场的波动将影响数字资产的表现。'
-    },
-    endTime: Date.now() + 2 * 60 * 60 * 1000, // 2小时后结束
-    status: 'ongoing'
-  },
-  {
-    id: '2',
-    title: 'AI vs 传统编程的未来',
-    leftPlayer: {
-      id: '3',
-      name: 'AIPioneer',
-      username: 'ai_pioneer',
-      avatar: '',
-      supporters: 2156,
-      prediction: 'AI编程工具将彻底改变软件开发行业，传统编程技能将变得不再重要。AI将能够独立完成大部分编程任务。'
-    },
-    rightPlayer: {
-      id: '4',
-      name: 'ClassicDev',
-      username: 'classic_dev',
-      avatar: '',
-      supporters: 1834,
-      prediction: '传统编程技能仍然不可或缺，AI只是辅助工具。程序员的逻辑思维和问题解决能力是AI无法替代的。'
-    },
-    endTime: Date.now() + 5 * 24 * 60 * 60 * 1000, // 5天后结束
-    status: 'ongoing'
-  },
-  {
-    id: '3',
-    title: 'Web3 vs Web2 用户体验',
-    leftPlayer: {
-      id: '5',
-      name: 'Web3Builder',
-      username: 'web3_builder',
-      avatar: '',
-      supporters: 987,
-      prediction: 'Web3的用户体验将超越Web2，去中心化应用将成为主流。用户将更愿意使用拥有数据主权的应用。'
-    },
-    rightPlayer: {
-      id: '6',
-      name: 'Web2Designer',
-      username: 'web2_designer',
-      avatar: '',
-      supporters: 1456,
-      prediction: 'Web2的用户体验仍然更优秀，中心化服务能提供更好的性能和便利性。Web3的复杂性阻碍了大规模采用。'
-    },
-    endTime: Date.now() - 24 * 60 * 60 * 1000, // 已结束
-    status: 'ended'
-  }
-])
-
-// 格式化倒计时
-const formatCountdown = (endTime: number) => {
-  const now = Date.now()
-  const diff = endTime - now
-  
-  if (diff <= 0) {
-    return '已结束'
-  }
-  
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  
-  if (days > 0) {
-    return `${days}天${hours}小时`
-  } else if (hours > 0) {
-    return `${hours}小时${minutes}分钟`
-  } else {
-    return `${minutes}分钟`
-  }
-}
-
-// 支持功能
-const supportPlayer = (battleId: string, playerId: string) => {
-  const battle = battles.value.find(b => b.id === battleId)
-  if (!battle || battle.status === 'ended') return // 已结束的对战不能支持
-  
-  // 取消之前的支持
-  if (battle.leftPlayer.isSupported) {
-    battle.leftPlayer.isSupported = false
-    battle.leftPlayer.supporters -= 1
-  }
-  if (battle.rightPlayer.isSupported) {
-    battle.rightPlayer.isSupported = false
-    battle.rightPlayer.supporters -= 1
-  }
-  
-  // 设置新的支持
-  if (playerId === battle.leftPlayer.id) {
-    battle.leftPlayer.isSupported = true
-    battle.leftPlayer.supporters += 1
-  } else if (playerId === battle.rightPlayer.id) {
-    battle.rightPlayer.isSupported = true
-    battle.rightPlayer.supporters += 1
-  }
+const onLoad = async () => {
+    try {
+        if (loading.value || finished.value || battles.value.length === 0) return
+        loading.value = true
+        const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, Math.floor((battles.value.length - 1) / 16) + 1) as BattleData[]
+        if (data.battle && data.battle.length > 0) {
+            battles.value = battles.value.concat(data.battle as BattleData[])
+            tweets = Object.assign(tweets, data.tweets)
+        }
+        if (!data.battle || data.battle.length < 16) {
+            finished.value = true
+        }
+    } catch (error) {
+        handleErrorTip(error)
+    } finally {
+        loading.value = false
+    }
 }
 
 // 判断胜利者
-const getWinner = (battle: BattleData) => {
-  if (battle.status !== 'ended') return null
-  if (battle.leftPlayer.supporters > battle.rightPlayer.supporters) {
-    return 'left'
-  } else if (battle.rightPlayer.supporters > battle.leftPlayer.supporters) {
-    return 'right'
-  }
-  return 'tie' // 平局
+const getWinner = (battle: BattleData): 'left' | 'right' | null => {
+    const tweetA = tweets[battle.predictAID]
+    const tweetB = tweets[battle.predictBID]
+    if (tweetA && tweetB) {
+        if (tweetA.isSettled && tweetB.isSettled) {
+            return (tweetA.amount ?? 0) > (tweetB.amount ?? 0) ? 'left' : 'right'
+        }
+        return null
+    }
+    return null
 }
 
-// 格式化支持者数量
-const formatSupporters = (count: number) => {
-  if (count >= 1000) {
-    return `${(count / 1000).toFixed(1)}K`
-  }
-  return count.toString()
-}
+onMounted(async () => {
+  await onRefresh()
+})
+
 </script>
 
 <template>
   <div class="predict-battle-container rounded-t-2xl overflow-hidden">
-    <!-- 页面标题 -->
-    <div class="px-4 py-3 bg-white mb-2 sm:mb-4">
-      <h2 class="text-h3 text-black font-bold">预测对战</h2>
-      <p class="text-sm text-grey-normal mt-1">支持你认同的观点，参与社区讨论</p>
-    </div>
+    <van-pull-refresh class="h-full min-h-full"
+      v-model="refreshing"
+      @refresh="onRefresh"
+      :loading-text="$t('loading')"
+      :lpulling-text="$t('pullToRefreshData')"
+      :loosing-text="$t('releaseToRefresh')"
+    >
+      <van-list
+        :loading="loading"
+        :finished="finished"
+        :immediate-check="false"
+        :finished-text="$t('noMore')"
+        :offset="50"
+        @load="onLoad"
+      >
 
-    <!-- 对战列表 -->
-    <div class="px-2 sm:px-4 pb-4 space-y-4">
-      <div
+      <div v-if="battles.length === 0" class="w-full flex my-8 justify-center items-center">
+              <img src="~@/assets/images/empty-data.svg" alt="">
+            </div>
+      <div v-else
         v-for="battle in battles"
-        :key="battle.id"
+        :key="battle.predictAID + battle.predictBID"
         class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border border-grey-light"
       >
         <!-- 卡片头部 -->
@@ -194,12 +117,11 @@ const formatSupporters = (count: number) => {
             <div
               class="px-2 py-1 rounded-full text-xs font-medium"
               :class="{
-                'bg-green-light text-green-dark': battle.status === 'ongoing',
-                'bg-grey-light text-grey-normal': battle.status === 'ended',
-                'bg-orange-light text-orange-normal': battle.status === 'upcoming'
+                'bg-green-light text-green-dark': !!battle.winner,
+                'bg-grey-light text-grey-normal': !battle.winner,
               }"
             >
-              {{ battle.status === 'ended' ? '已结束' : formatCountdown(battle.endTime) }}
+              {{ battle.winner ? $t('ended') : parseTimestamp((Math.max(tweets[battle.predictAID]?.dayNumber, tweets[battle.predictBID]?.dayNumber) + 3) * 86400000) }}
             </div>
           </div>
         </div>
@@ -211,8 +133,8 @@ const formatSupporters = (count: number) => {
             <div
                 class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
               :class="{
-                'bg-gradient-to-br from-red-light to-red-light-hover border-red-normal/20': battle.status !== 'ended',
-                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': battle.status === 'ended'
+                'bg-gradient-to-br from-red-light to-red-light-hover border-red-normal/20': !battle.winner,
+                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!battle.winner
               }"
             >
               <!-- 主要内容区域 -->
@@ -221,22 +143,22 @@ const formatSupporters = (count: number) => {
                 <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3">
                   <div class="relative">
                     <UserAvatar
-                      :profile-img="battle.leftPlayer.avatar"
-                      :name="battle.leftPlayer.name"
-                      :username="battle.leftPlayer.username"
-                      :followers="0"
-                      :followings="0"
-                      :credit="0"
-                      :steem-id="null"
-                      :eth-addr="null"
+                      :profile-img="tweets[battle.predictAID]?.profile"
+                      :name="tweets[battle.predictAID]?.twitterName"
+                      :username="tweets[battle.predictAID]?.twitterUsername"
+                      :followers="tweets[battle.predictAID]?.followers"
+                      :followings="tweets[battle.predictAID]?.followings"
+                      :credit="tweets[battle.predictAID]?.credit"
+                      :steem-id="tweets[battle.predictAID]?.steemId"
+                      :eth-addr="tweets[battle.predictAID]?.ethAddr"
                       :teleported="true"
                     >
                       <template #avatar-img>
                         <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-red-normal shadow-md">
                           <img
-                            v-if="battle.leftPlayer.avatar"
-                            :src="battle.leftPlayer.avatar"
-                            :alt="battle.leftPlayer.name"
+                            v-if="tweets[battle.predictAID]?.profile"
+                            :src="tweets[battle.predictAID]?.profile"
+                            :alt="tweets[battle.predictAID]?.twitterName"
                             class="w-full h-full object-cover"
                           >
                           <div v-else class="w-full h-full bg-red-normal flex items-center justify-center">
@@ -248,24 +170,24 @@ const formatSupporters = (count: number) => {
 
                     <!-- Winner 标识 -->
                     <div
-                      v-if="battle.status === 'ended' && getWinner(battle) === 'left'"
-                      class="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-green-34 rounded-full border-2 border-white flex items-center justify-center shadow-lg"
+                      v-if="!battle.winner && battle.winner === 'left'"
+                      class="absolute -top-2 -left-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
                     >
-                      <img src="~@/assets/icons/icon-pk.png" alt="Winner" class="w-2 h-2 sm:w-3 sm:h-3" />
+                      <img src="~@/assets/icons/icon-winner.svg" alt="Winner" class="w-5 h-5 sm:w-6 sm:h-6 -rotate-45" />
                     </div>
                   </div>
 
                   <!-- 用户名 -->
                   <p class="text-sm font-bold text-red-normal leading-tight w-full break-words">
-                    {{ battle.leftPlayer.name }}
+                    {{ tweets[battle.predictAID]?.twitterUsername }}
                   </p>
                 </div>
 
-                <!-- 右侧：预测文字 -->
+                <!-- 左侧：预测文字 -->
                 <div class="flex-1">
                   <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
                     <div class="line-clamp-5 min-h-[84px]">
-                      {{ battle.leftPlayer.prediction }}
+                      {{ tweets[battle.predictAID]?.content ?? '' }}
                     </div>
                   </div>
                 </div>
@@ -273,29 +195,29 @@ const formatSupporters = (count: number) => {
               <div class="flex items-stretch gap-3">
                 <div class="flex-1 flex flex-col items-center">
                   <button
-                      v-if="battle.status !== 'ended'"
-                      @click="supportPlayer(battle.id, battle.leftPlayer.id)"
+                      v-if="!battle.winner"
+                      @click="getWinner(battle)"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
 
                   >
-                    <i class="w-4 h-4 sm:w-6 sm:h-6 " :class="battle.leftPlayer.isSupported ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
+                    <i class="w-4 h-4 sm:w-6 sm:h-6 " :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
                   </button>
                   <div class="text-xs sm:text-sm text-red-normal/70">
-                    {{ formatSupporters(battle.leftPlayer.supporters) }} 评论
+                    {{ tweets[battle.predictAID]?.replyCount ?? 0 }} {{ $t('postView.comments') }}
                   </div>
                 </div>
                 <!-- 支持按钮 -->
                 <div class="flex-1 flex flex-col items-center">
                   <button
-                      v-if="battle.status !== 'ended'"
-                      @click="supportPlayer(battle.id, battle.leftPlayer.id)"
+                      v-if="!battle.winner"
+                      @click="null"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
 
                   >
-                    <i class="w-full h-full" :class="battle.leftPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
+                    <i class="w-full h-full" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
                   </button>
                   <div class="text-xs sm:text-sm text-red-normal/70">
-                    {{ formatSupporters(battle.leftPlayer.supporters) }} 支持
+                    {{ formatAmount(tweets[battle.predictAID]?.amount ?? 0) }} {{ $t('curation.supports') }}
                   </div>
                 </div>
               </div>
@@ -304,7 +226,7 @@ const formatSupporters = (count: number) => {
 
           <!-- VS 标识 -->
           <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center
-                      w-6 min-w-6 sm:w-10 sm:min-w-10  flex-shrink-0 z-99">
+                      w-6 min-w-6 sm:w-10 sm:min-w-10  flex-shrink-0 z-50">
             <div class="vs-indicator relative">
                 <img src="~@/assets/icons/icon-pk.png" alt="">
           </div>
@@ -315,8 +237,8 @@ const formatSupporters = (count: number) => {
             <div
                 class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
               :class="{
-                'bg-gradient-to-br from-blue-light to-blue-light-hover border-blue-32/20': battle.status !== 'ended',
-                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': battle.status === 'ended'
+                'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200/30': !battle.winner,
+                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!battle.winner
               }"
             >
               <!-- 主要内容区域 -->
@@ -325,7 +247,7 @@ const formatSupporters = (count: number) => {
                 <div class="flex-1">
                   <div class="text-sm sm:text-base text-grey-normal leading-relaxed h-full">
                     <div class="line-clamp-5 min-h-[84px]">
-                      {{ battle.rightPlayer.prediction }}
+                      {{ tweets[battle.predictBID]?.content ?? '' }}
                     </div>
                   </div>
                 </div>
@@ -334,25 +256,25 @@ const formatSupporters = (count: number) => {
                 <div class="flex flex-row sm:flex-col items-center gap-2 w-1/3 min-w-1/3">
                   <div class="relative">
                     <UserAvatar
-                      :profile-img="battle.rightPlayer.avatar"
-                      :name="battle.rightPlayer.name"
-                      :username="battle.rightPlayer.username"
-                      :followers="0"
-                      :followings="0"
-                      :credit="0"
-                      :steem-id="null"
-                      :eth-addr="null"
+                      :profile-img="tweets[battle.predictBID]?.profile"
+                      :name="tweets[battle.predictBID]?.twitterName"
+                      :username="tweets[battle.predictBID]?.twitterUsername"
+                      :followers="tweets[battle.predictBID]?.followers"
+                      :followings="tweets[battle.predictBID]?.followings"
+                      :credit="tweets[battle.predictBID]?.credit ?? 0"
+                      :steem-id="tweets[battle.predictBID]?.steemId"
+                      :eth-addr="tweets[battle.predictBID]?.ethAddr"
                       :teleported="true"
                     >
                       <template #avatar-img>
-                        <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-blue-32 shadow-md">
+                        <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-blue-600 shadow-md">
                           <img
-                            v-if="battle.rightPlayer.avatar"
-                            :src="battle.rightPlayer.avatar"
-                            :alt="battle.rightPlayer.name"
+                            v-if="tweets[battle.predictBID]?.profile"
+                            :src="tweets[battle.predictBID]?.profile"
+                            :alt="tweets[battle.predictBID]?.twitterName"
                             class="w-full h-full object-cover"
                           >
-                          <div v-else class="w-full h-full bg-blue-32 flex items-center justify-center">
+                          <div v-else class="w-full h-full bg-blue-600 flex items-center justify-center">
                             <i-ep-avatar class="text-white text-lg sm:text-2xl" />
                           </div>
                         </div>
@@ -361,21 +283,16 @@ const formatSupporters = (count: number) => {
 
                     <!-- Winner 标识 -->
                     <div
-                      v-if="battle.status === 'ended' && getWinner(battle) === 'right'"
-                      class="absolute -top-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-green-34 rounded-full border-2 border-white flex items-center justify-center shadow-lg"
+                      v-if="!battle.winner && battle.winner === 'right'"
+                      class="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
                     >
-                      <img src="~@/assets/icons/icon-pk.png" alt="Winner" class="w-2 h-2 sm:w-3 sm:h-3" />
-                    </div>
-
-                    <!-- 在线状态指示器 -->
-                    <div v-else class="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-34 rounded-full border-2 border-white flex items-center justify-center">
-                      <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full"></div>
+                      <img src="~@/assets/icons/icon-winner.svg" alt="Winner" class="w-5 h-5 sm:w-6 sm:h-6 rotate-45" />
                     </div>
                   </div>
 
                   <!-- 用户名 -->
-                  <p class="text-sm font-bold text-blue-32 leading-tight w-full break-words">
-                    {{ battle.rightPlayer.name }}
+                  <p class="text-sm font-bold text-blue-600 leading-tight w-full break-words">
+                    {{ tweets[battle.predictBID]?.twitterUsername }}
                   </p>
                 </div>
               </div>
@@ -383,34 +300,34 @@ const formatSupporters = (count: number) => {
                 <!-- 评论按钮 -->
                 <div class="flex-1 flex flex-col items-center">
                   <button
-                      v-if="battle.status !== 'ended'"
+                      v-if="!battle.winner"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
                       :class="{
-                      'bg-blue-32 text-white shadow-lg': battle.rightPlayer.isSupported,
-                      'bg-white text-blue-32 border border-blue-32 hover:bg-blue-32 hover:text-white': !battle.rightPlayer.isSupported
+                      'bg-blue-600 text-white shadow-lg': tweets[battle.predictBID]?.liked,
+                      'bg-white text-blue-600 border border-blue-600 hover:bg-blue-600 hover:text-white': !tweets[battle.predictBID]?.liked
                     }"
                   >
-                    <i class="w-2.5 h-2.5 sm:w-3 sm:h-3" :class="battle.leftPlayer.isSupported ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
+                    <i class="w-2.5 h-2.5 sm:w-3 sm:h-3" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
                   </button>
-                  <div class="text-xs sm:text-sm text-blue-32/70">
-                    {{ formatSupporters(battle.leftPlayer.supporters) }} 评论
+                  <div class="text-xs sm:text-sm text-blue-600/70">
+                    {{ tweets[battle.predictAID]?.replyCount ?? 0 }} {{ $t('postView.comments') }}
                   </div>
                 </div>
                 <!-- 支持按钮 -->
                 <div class="flex-1 flex flex-col items-center">
                   <button
-                      v-if="battle.status !== 'ended'"
-                      @click="supportPlayer(battle.id, battle.rightPlayer.id)"
+                      v-if="!battle.winner"
+                      @click="null"
                       class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
                       :class="{
-                      'bg-blue-32 text-white shadow-lg': battle.rightPlayer.isSupported,
-                      'bg-white text-blue-32 border border-blue-32 hover:bg-blue-32 hover:text-white': !battle.rightPlayer.isSupported
+                      'bg-blue-600 text-white shadow-lg': tweets[battle.predictBID]?.liked,
+                      'bg-white text-blue-600 border border-blue-600 hover:bg-blue-600 hover:text-white': !tweets[battle.predictBID]?.liked
                     }"
                   >
-                    <i class="w-3 h-3 sm:w-4 sm:h-4" :class="battle.rightPlayer.isSupported ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
+                    <i class="w-3 h-3 sm:w-4 sm:h-4" :class="tweets[battle.predictBID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
                   </button>
-                  <div class="text-xs sm:text-sm text-blue-32/70">
-                    {{ formatSupporters(battle.rightPlayer.supporters) }} 支持
+                  <div class="text-xs sm:text-sm text-blue-600/70">
+                    {{ formatAmount(tweets[battle.predictBID]?.amount ?? 0) }} {{ $t('curation.supports') }}
                   </div>
                 </div>
               </div>
@@ -418,7 +335,8 @@ const formatSupporters = (count: number) => {
           </div>
         </div>
       </div>
-    </div>
+      </van-list>
+    </van-pull-refresh>
   </div>
 </template>
 

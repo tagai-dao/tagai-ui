@@ -299,3 +299,8 @@ export const getMindShareList = async (isProject: number, pageIndex?: number) =>
 
 export const searchMindShareByUsername = async (username: string) =>
   get(BACKEND_API_URL + '/mindShare/searchByUsername', { username })
+
+
+/************************************  predict  **********************************/
+export const getPredictBattleData = async (tick: string, twitterId?: string, pageIndex?: number) =>
+  get(BACKEND_API_URL + '/predict/getPredictBattleData', { tick, pageIndex })
