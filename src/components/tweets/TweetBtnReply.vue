@@ -27,10 +27,10 @@ const {formatEmojiText, preCheckCuration, userReply} = useTweet()
 
 const preReply = async () => {
   try{
-    isRepling.value = true
-    if (!(await preCheckCuration(OperateType.REPLY, props.tweet))) {
-      return;
-    }
+    // isRepling.value = true
+    // if (!(await preCheckCuration(OperateType.REPLY, props.tweet))) {
+    //   return;
+    // }
     replyVisible.value = true
   } catch (e) {
     handleErrorTip(e)
@@ -83,7 +83,7 @@ async function reply() {
   <!--    reply-->
   <el-dialog v-model="replyVisible"
              modal-class="overlay-white"
-             class="max-w-[500px] rounded-[20px]"
+             class="max-w-[500px] rounded-[20px]" append-to-body
              width="90%" :show-close="false" align-center destroy-on-close>
     <div class="flex-1 overflow-hidden py-5 max-h-[80vh]">
       <div class="flex justify-start items-stretch gap-2">
