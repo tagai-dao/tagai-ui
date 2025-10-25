@@ -151,6 +151,9 @@ export const handleServerError = (code: number) => {
     case errCode.SPACE_NOT_FOUND:
       notify({ message: t("errMessage.spaceNotFound"), type: "info" });
       break;
+    case errCode.CANNOT_BE_REPLY:
+      notify({ message: t("errMessage.cannotBeReply"), type: "info" });
+      break;
     case errCode.IS_LIKED:
       notify({ message: t("errMessage.isLiked"), type: "info" });
       break;

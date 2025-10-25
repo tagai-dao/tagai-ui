@@ -12,6 +12,7 @@
   "tip": "打赏",
   "or": "或者",
   "createCoin": "创建代币",
+  "createPredictBattle": "创建预测",
   "search": "搜索",
   "marketCap": "市值",
   "trending": "热门",
@@ -417,6 +418,27 @@
     "cantRetweetSelf": "不能转发自己的推文",
     "likeFrequent": "点赞太频繁，请15分钟后再操作",
     "retweetFrequent": "转发太频繁，请15分钟后再操作",
-    "userScoreTooLow": "您的推特评分分太低"
+    "userScoreTooLow": "您的推特评分分太低",
+    "cannotBeReply": "不能用一个回复推文创建预测"
+  },
+  "createPredict": {
+    "title": "创建预测对战",
+    "subtitle": "创建两个预测之间的对战，让社区投票决定胜负",
+    "battleTitle": "对战标题",
+    "titlePlaceholder": "请输入对战标题，例如：比特币价格预测",
+    "predict1": "预测A（推特链接）",
+    "predict2": "预测B（推特链接）",
+    "twitterUrlPlaceholder": "https://twitter.com/username/status/1234567890",
+    "create": "创建对战",
+    "titleRequired": "请输入对战标题",
+    "titleTooShort": "标题至少需要3个字符",
+    "titleTooLong": "标题不能超过100个字符",
+    "predict1Required": "请输入预测A的推特链接",
+    "predict2Required": "请输入预测B的推特链接",
+    "invalidTwitterUrl": "请输入有效的推特链接",
+    "predictsCannotBeSame": "两个预测不能是同一个推特链接",
+    "predictsFromDifferentCommunities": "这个推文不在 {community} 社区",
+    "predictsExpired": "两个预测快要或者已经结束了",
+    "characters": "字符"
   }
 }

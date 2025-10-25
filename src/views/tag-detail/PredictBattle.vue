@@ -2,7 +2,7 @@
 import { ref, computed, reactive, onMounted } from 'vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import { getPredictBattleData, tweet } from '@/apis/api'
-import type { BattleData, Tweet } from '@/types'
+import { GlobalModalType, type BattleData, type Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper'
 import { useCommunityStore } from '@/stores/community'
 import { handleErrorTip } from '@/utils/notify'
@@ -10,6 +10,7 @@ import { useAccountStore } from '@/stores/web3'
 import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
 import TweetBtnReply from '@/components/tweets/TweetBtnReply.vue'
 import { useRouter } from 'vue-router'
+import { useModalStore } from '@/stores/common'
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -20,6 +21,7 @@ let tweets = reactive<{ [key: string]: Tweet }>({})
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
+const showCreateTweetModal = ref(false)
 
 const onRefresh = async () => {
     try {
@@ -87,6 +89,10 @@ const openTweet = (tweetId: string) => {
   router.push(`/post-detail/${tweetId}`)
 }
 
+const createPredictBattle = () => {
+  useModalStore().setModalVisible(true, GlobalModalType.CreatePredict)
+}
+
 onMounted(async () => {
   await onRefresh()
 })
@@ -95,6 +101,13 @@ onMounted(async () => {
 
 <template>
   <div class="predict-battle-container rounded-t-2xl overflow-hidden">
+    <div class="flex justify-end items-center p-2">
+      <button class="flex gap-2 items-center cursor-pointer px-4 py-0 rounded-full bg-gradient-primary text-white"
+              @click="createPredictBattle">
+        <span class="text-2xl">+</span>
+        <span class="whitespace-nowrap">{{$t('createPredictBattle')}}</span>
+      </button>
+    </div>
     <van-pull-refresh class="h-full min-h-full"
       v-model="refreshing"
       @refresh="onRefresh"

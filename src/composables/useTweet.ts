@@ -19,7 +19,8 @@ export enum OperateType {
   QUOTE,
   REPLY,
   CURATE,
-  TIP_CURATE
+  TIP_CURATE,
+  CREATE_PREDICT
 }
 
 const TweetRex = /https:\/\/(twitter|x)\.com\/[0-9a-zA-Z]+\/status\/([0-9]+)(\/\w)?/
@@ -83,6 +84,7 @@ export const useTweet = () => {
         return false;
       }
     }
+    console.log(44, opType, tweet)
     switch (opType) {
       case OperateType.TWEET:
         if (op.value < OP_CONSUME.POST) {
@@ -143,7 +145,10 @@ export const useTweet = () => {
         }
         break;
       case OperateType.CURATE:
-        if (tweet && tweet.curated) {
+        if (tweet && tweet.curated && tweet.liked) {
+          return false
+        }
+        if (tweet && tweet.isSettled) {
           return false
         }
         if (op.value < costVp) {
@@ -175,6 +180,11 @@ export const useTweet = () => {
             useModalStore().setModalVisible(true, GlobalModalType.Register)
             return false;
           }
+      case OperateType.CREATE_PREDICT:
+        if (op.value < costVp) {
+          throw errCode.INSUFFICIENT_OP;
+        }
+        break;
     }
     return true;
   };

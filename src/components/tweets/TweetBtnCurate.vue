@@ -94,7 +94,7 @@ async function confirmCurate() {
        :class="tweet.curated ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
     <span class="text-sm font-bold"
       v-if="!hideNumber"
-      :class="tweet.liked ? 'text-red-e6' : 'text-grey-bd'">
+      :class="tweet.curated ? 'text-red-e6' : 'text-grey-bd'">
     {{ tweet.likeCount ?? 0 }}</span>
   </button>
   <el-dialog v-model="curateVisible"

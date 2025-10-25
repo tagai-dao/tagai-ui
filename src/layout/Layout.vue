@@ -12,6 +12,7 @@ import BondEthModal from "@/components/login/BondEthModal.vue";
 import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
 import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
+import CreatePredictModal from "@/components/common/CreatePredictModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
 import {onMounted, ref} from "vue";
 import emitter from "@/utils/emitter";
@@ -154,6 +155,7 @@ onMounted( () => {
           <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
           <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
           <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
+          <CreatePredictModal v-if="modalStore.modalType === GlobalModalType.CreatePredict" />
           <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
           <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
         </el-dialog>

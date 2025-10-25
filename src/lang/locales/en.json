@@ -12,6 +12,7 @@
   "tip": "Tip",
   "or": "Or",
   "createCoin": "Create TagCoin",
+  "createPredictBattle": "Create Predict",
   "search": "Search",
   "marketCap": "Mkt Cap",
   "trending": "Trending",
@@ -417,6 +418,27 @@
     "cantRetweetSelf": "Can't retweet your self tweet",
     "likeFrequent": "Like so frequently, please operate 15 minutes later",
     "retweetFrequent": "Retweet so frequently, please operate 15 minutes later",
-    "userScoreTooLow": "Your score is too low"
+    "userScoreTooLow": "Your score is too low",
+    "cannotBeReply": "You cannot create a predict battle with a reply tweet"
+  },
+  "createPredict": {
+    "title": "Create Predict Battle",
+    "subtitle": "Create a battle between two predictions and let the community vote for the winner",
+    "battleTitle": "Battle Title",
+    "titlePlaceholder": "Enter battle title, e.g., Bitcoin Price Prediction",
+    "predict1": "Prediction A (Twitter Link)",
+    "predict2": "Prediction B (Twitter Link)",
+    "twitterUrlPlaceholder": "https://twitter.com/username/status/1234567890",
+    "create": "Create Battle",
+    "titleRequired": "Please enter battle title",
+    "titleTooShort": "Title must be at least 3 characters",
+    "titleTooLong": "Title cannot exceed 100 characters",
+    "predict1Required": "Please enter prediction A Twitter link",
+    "predict2Required": "Please enter prediction B Twitter link",
+    "invalidTwitterUrl": "Please enter a valid Twitter link",
+    "predictsCannotBeSame": "Two predictions cannot be the same Twitter link",
+    "predictsFromDifferentCommunities": "The tweet is not in {community} commuinty.",
+    "predictsExpired": "Two predictions are about to or have expired",
+    "characters": "characters"
   }
 }

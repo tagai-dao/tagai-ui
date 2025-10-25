@@ -20,6 +20,8 @@ export default {
   NOT_COMMUNITY_OWNER: 310,
   INSUFFICIENT_VP: 308,
   IS_RETWEETED: 309,
+  LOWER_TWITTER_REPUTATION: 310,
+  CANNOT_BE_REPLY: 311,
 
   InvalidAccessToken: 401,
   TokenExpired: 401,
