@@ -3,7 +3,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import { getPredictBattleData, tweet } from '@/apis/api'
 import { GlobalModalType, type BattleData, type Tweet } from '@/types'
-import { formatAmount, parseTimestamp } from '@/utils/helper'
+import { formatAmount, parseTimestamp, getDayNumber } from '@/utils/helper'
 import { useCommunityStore } from '@/stores/community'
 import { handleErrorTip } from '@/utils/notify'
 import { useAccountStore } from '@/stores/web3'
@@ -146,7 +146,7 @@ onMounted(async () => {
                 'bg-grey-light text-grey-normal': !!battle.winner,
               }"
             >
-              {{ battle.winner ? $t('ended') : parseTimestamp((Math.max(tweets[battle.predictAID]?.dayNumber, tweets[battle.predictBID]?.dayNumber) + 3) * 86400000) }}
+              {{ battle.winner ? $t('ended') : parseTimestamp((Math.max(tweets[battle.predictAID]?.dayNumber, tweets[battle.predictBID]?.dayNumber, getDayNumber()) + 3) * 86400000) }}
             </div>
           </div>
         </div>
