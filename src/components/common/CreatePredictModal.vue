@@ -5,9 +5,10 @@ import { useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import { handleErrorTip } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
-import { getTweetCurations, createPredict as createPredictApi } from '@/apis/api'
+import { getTweetCurations, createPredict as createPredictApi, checkPrediction } from '@/apis/api'
 import { OperateType, useTweet } from '@/composables/useTweet'
 import { useCommunityStore } from '@/stores/community'
+import emitter from '@/utils/emitter'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
@@ -154,10 +155,16 @@ const createPredict = async () => {
     if(!await preCheckCuration(OperateType.CREATE_PREDICT)) {
         return;
     }
+    const currentPrediction: any = await checkPrediction(formData.tweetAId, formData.tweetBId)
+    if (currentPrediction && currentPrediction.id > 0) {
+      console.log('already exists')
+      modalStore.setModalVisible(false);
+      return;
+    }
     console.log('创建预测:', formData)
-    const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
-
-    console.log(55, res)
+    // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
+    modalStore.setModalVisible(false);
+    emitter.emit('createPredictSuccess')
   } catch (error) {
     console.log(66, error)
     handleErrorTip(error)

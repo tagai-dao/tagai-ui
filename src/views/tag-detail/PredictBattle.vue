@@ -11,6 +11,7 @@ import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
 import TweetBtnReply from '@/components/tweets/TweetBtnReply.vue'
 import { useRouter } from 'vue-router'
 import { useModalStore } from '@/stores/common'
+import emitter from '@/utils/emitter'
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -95,6 +96,7 @@ const createPredictBattle = () => {
 
 onMounted(async () => {
   await onRefresh()
+  emitter.on('createPredictSuccess', onRefresh);
 })
 
 </script>
