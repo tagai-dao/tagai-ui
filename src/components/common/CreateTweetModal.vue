@@ -103,7 +103,7 @@ onMounted(async () => {
   }
   const trendingTicks = comStore.trendingCommunities
   if (trendingTicks.length > 0) {
-    tagOptions.value = trendingTicks.map((item: any) => item.name)
+    tagOptions.value = trendingTicks.map((item: any) => item.name).slice(0, 10)
   }
   console.log({trendingTicks})
 })
