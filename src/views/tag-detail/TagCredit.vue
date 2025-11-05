@@ -139,11 +139,14 @@ onMounted(async () => {
       creditJO = creditPolicy
     }
     const labels = creditJO.map((item: any) => {
+      if (item.showingName) {
+        return item.showingName
+      }
       switch (item.type) {
         case 1:
           return comStore.currentSelectedCommunity?.tick + ' ' + t('balance')
         case 2:
-          return comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance')
+          return (comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'))
         case 3:
           return "Net buy in 3 days"
         case 4:
