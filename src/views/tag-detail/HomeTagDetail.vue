@@ -477,7 +477,7 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
     </div>
-    <BuyAndSellView v-if="showTradeBox || width>800"/>
+    <BuyAndSellView v-if="(showTradeBox || width>800)"/>
     <div class="min-h-full h-full sticky top-[0px]" ref="tabContainerRef">
       <div class="h-full flex gap-2">
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">

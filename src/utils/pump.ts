@@ -1,14 +1,16 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee, USD_CONTRACTS } from "@/config";
 import { abis } from './abis'
+import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
 import errCode from "@/errCode";
 import _ from 'lodash'
+import { useStateStore } from "@/stores/common";
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
-import { isAddress, zeroAddress, maxUint256, parseEventLogs, type Log } from "viem";
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log } from "viem";
 import { writeContract, readContract } from "./contract";
 
 const pumpContract = [
@@ -280,6 +282,12 @@ export const getTokenInfo = async (communities: Community[]) => {
     }
     let result = await getTokenOnchainInfo(tokens, versions)
 
+    const stateStore = useStateStore();
+    if (stateStore.ethPrice == 0) {
+        const price: any = await getEthPrice()
+        stateStore.ethPrice = parseFloat(price)
+    }
+
     let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport))
 
     for (let community of communities) {
@@ -297,8 +305,8 @@ export const getTokenInfo = async (communities: Community[]) => {
             community.listed = true;
             community.bondingCurveSupply = 0;
             community.totalClaimedSocialRewards = 0;
-            community.price = importInfo.price;
-            community.marketCap = importInfo.price * importInfo.totalSupply;
+            community.price = importInfo.byUSD ? importInfo.price / stateStore.ethPrice : importInfo.price;
+            community.marketCap = (community.price ?? 0) * importInfo.totalSupply;
             community.totalSupply = importInfo.totalSupply;
         }
         // const distribution = JSON.parse(community.distribution);
@@ -319,6 +327,12 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         }
         let result = await getTokenOnchainInfo(tokens, versions)
         let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport))
+
+        const stateStore = useStateStore();
+        if (stateStore.ethPrice == 0) {
+            const price: any = await getEthPrice()
+            stateStore.ethPrice = parseFloat(price)
+        }
         
         for( let tweet of tweets) {
             if (!tweet.token) continue
@@ -328,14 +342,14 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                 tweet.listed = true;
                 tweet.bondingCurveSupply = 0;
                 tweet.totalClaimedSocialRewards = 0;
-                tweet.price = importInfo.price;
+                tweet.price = importInfo.byUSD ? importInfo.price / stateStore.ethPrice : importInfo.price;
                 tweet.marketCap = importInfo.price * importInfo.totalSupply;
                 tweet.totalSupply = importInfo.totalSupply;
             }else {
                 tweet.listed = tokenInfo.listed;
                 tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
                 tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
-                tweet.price = tokenInfo.price;
+                tweet.price = tokenInfo.byUSD ? tokenInfo.price / stateStore.ethPrice : tokenInfo.price;
                 tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
                 tweet.pair = tokenInfo.pair;
             }
@@ -441,6 +455,15 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                     [token + '-token0']
                 ]
             })
+            calls.push({
+                target: info.pair,
+                call: [
+                    'token1()(address)',
+                ],
+                returns: [
+                    [token + '-token1']
+                ]
+            })
         }
     }
     if (calls.length > 0) {
@@ -517,6 +540,15 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
                 [token + '-token0']
             ]
         })
+        calls.push({
+            target: pair,
+            call: [
+                'token1()(address)',
+            ],
+            returns: [
+                [token + '-token1']
+            ]
+        })
     }
     const res = await aggregate(calls, ChainConfig.multiConfig)
     let infos = res.results.transformed
@@ -531,11 +563,17 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
             result[token].totalSupply = infos[token + '-totalSupply']
             result[token].symbol = infos[token + '-symbol']
             result[token].decimals = infos[token + '-decimals']
+            if (USD_CONTRACTS[checksumAddress(infos[token + '-token1']) as `0x${string}`]) {
+                result[token].byUSD = true;
+            }
         }else {
             result[token].price = infos[token + '-1'] / infos[token + '-2']
             result[token].totalSupply = infos[token + '-totalSupply']
             result[token].symbol = infos[token + '-symbol']
             result[token].decimals = infos[token + '-decimals']
+            if (USD_CONTRACTS[checksumAddress(infos[token + '-token0']) as `0x${string}`]) {
+                result[token].byUSD = true;
+            }
         }
     }
     return result;

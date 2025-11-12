@@ -89,6 +89,10 @@ export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea2
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10';
 export const wrappedUniswapV2ForTagAI2 = '0x72D353c0469C10F6B769F13b67EEdB2E1F26FB01';
 
+export const USD_CONTRACTS: Record<`0x${string}`, string> = {
+    '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1'
+}
+
 export const Multicall3 = '0xcA11bde05977b3631167028862bE2a173976CA11'
 export const CoinPurse = '0x6C818c610F3D9db65f5e0c0838f3F68600b80C85'
 export const AIDeployer = '0xf0a27ec9bb8AC28007cB474fC1ea0A9396fe6991'
