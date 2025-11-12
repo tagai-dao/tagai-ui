@@ -213,7 +213,7 @@ export const claimReward = async (token: string, version: number, orderId: BigIn
         contractName: 'Pump' + version,
         functionName: 'userClaim',
         args: [token, orderId, amount, signature],
-        value: ClaimFee
+        value: version === 1 ? '1000000000000000' : ClaimFee
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
