@@ -282,12 +282,6 @@ export const getTokenInfo = async (communities: Community[]) => {
     }
     let result = await getTokenOnchainInfo(tokens, versions)
 
-    const stateStore = useStateStore();
-    if (stateStore.ethPrice == 0) {
-        const price: any = await getEthPrice()
-        stateStore.ethPrice = parseFloat(price)
-    }
-
     let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport))
 
     for (let community of communities) {
@@ -305,7 +299,7 @@ export const getTokenInfo = async (communities: Community[]) => {
             community.listed = true;
             community.bondingCurveSupply = 0;
             community.totalClaimedSocialRewards = 0;
-            community.price = importInfo.byUSD ? importInfo.price / stateStore.ethPrice : importInfo.price;
+            community.price = importInfo.price;
             community.marketCap = (community.price ?? 0) * importInfo.totalSupply;
             community.totalSupply = importInfo.totalSupply;
         }
@@ -553,6 +547,11 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
     const res = await aggregate(calls, ChainConfig.multiConfig)
     let infos = res.results.transformed
     let result: any = {};
+    const stateStore = useStateStore();
+    if (stateStore.ethPrice == 0) {
+        const price: any = await getEthPrice()
+        stateStore.ethPrice = parseFloat(price)
+    }
     for (let community of communities) {
         const token = community.token
         if (!result[token]) {
@@ -564,7 +563,7 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
             result[token].symbol = infos[token + '-symbol']
             result[token].decimals = infos[token + '-decimals']
             if (USD_CONTRACTS[checksumAddress(infos[token + '-token1']) as `0x${string}`]) {
-                result[token].byUSD = true;
+                result[token].price = result[token].price / stateStore.ethPrice;
             }
         }else {
             result[token].price = infos[token + '-1'] / infos[token + '-2']
@@ -572,7 +571,7 @@ export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[])
             result[token].symbol = infos[token + '-symbol']
             result[token].decimals = infos[token + '-decimals']
             if (USD_CONTRACTS[checksumAddress(infos[token + '-token0']) as `0x${string}`]) {
-                result[token].byUSD = true;
+                result[token].price = result[token].price / stateStore.ethPrice;
             }
         }
     }
