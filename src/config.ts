@@ -47,7 +47,7 @@ export const MainToken = {
 export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";
 export const CreateFee = "10000000000000000";
 export const RegisterSteemFee = '1000000000000000';
-export const ClaimFee =  "1000000000000000";
+export const ClaimFee =  "500000000000000";
 
 export const TotalSupply = 1000000000;
 export const SocialSupply = 150000000;
