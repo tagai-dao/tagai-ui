@@ -123,14 +123,14 @@ async function confirmCurate() {
           <span class="text-green-500"> VP: {{ Math.floor(vp) }}</span>
         </div>
         <div class="flex flex-col gap-4 w-full" v-if="!useAccountStore().ipshare.ethAddr">
-          <p>
+          <!-- <p>
             {{ $t('ipshare.createIPShareTip') }}
           </p>
 
           <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" :disabled="isCreatingIPShare" @click="createIPShare">
             {{$t('ipshare.createIpShare')}}
             <i-ep-loading v-if="isCreatingIPShare" class="animate-spin w-6 h-6"/>
-          </button>
+          </button> -->
 
           <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" :disabled="isCreatingIPShare" @click="confirmCurate">
             {{ $t('ipshare.curateDerictly') }}  
