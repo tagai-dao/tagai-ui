@@ -47,6 +47,7 @@ const tabOptions = computed(() => {
       {label: 'activity', key: 'activity'},
       // {label: 'Trades', key: 'trade'},
       {label: 'Credit', key: 'credit'},
+      {label: 'Token', key: 'token'},
       {label: 'AI', key: 'ai'},
     ]
   }

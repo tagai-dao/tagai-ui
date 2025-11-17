@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import {computed, onMounted, ref} from "vue";
-import { getHoldingList } from '@/apis/api'
+import { getHoldingList, getImportedCommunityInfo } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
 import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType, type Community } from "@/types";
 import { formatAmount, formatPrice } from "@/utils/helper";
-import { getTokenOnchainInfo } from "@/utils/pump";
+import { getImportTokenOnchainInfo, getTokenOnchainInfo } from "@/utils/pump";
 import { useRouter } from "vue-router";
 import errCode from "@/errCode";
 import TransferTokenModal from "@/components/common/TransferTokenModal.vue";
 import BuyAndSellView from "@/views/buy-sell/BuyAndSellView.vue";
 import { useAccount } from "@/composables/useAccount";
+import { getTokenBalances } from "@/utils/web3";
 
 enum ModalType {
   transfer,
@@ -30,20 +31,22 @@ const { ethPrice } = useStateStore()
 const showingNoEth = computed(() => {
   return !accStore.getAccountInfo.ethAddr
 })
+let currentLenth = 0
 const { updateHoldingValue } = useAccount()
 
 const scroller = document.querySelector('#profile-tab-scroller')
 const onLoad = async () => {
-  if(finished.value || refreshing.value || accStore.tokenHoldingList.length == 0 || showingNoEth.value) return
+  if(finished.value || refreshing.value || currentLenth == 0 || showingNoEth.value) return
   try{
     loading.value = true
-    let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!, Math.floor((accStore.tokenHoldingList.length - 1) / 30) + 1)
+    let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!, Math.floor((currentLenth - 1) / 30) + 1)
     const priceList = await getTokenOnchainInfo(list.map((item: any) => item.token), generateTokenVersions(list))
       accStore.tokenHoldingList = accStore.tokenHoldingList.concat(list.map((item: any) => ({
         ...item,
         price: priceList[item.token]?.price
-      })))
+      }))).sort((a: any, b: any) => (b.amount?.toString() as any) * b.price - (a.amount?.toString() as any) * a.price)
       updateHoldingValue(accStore.tokenHoldingList);
+      currentLenth += list.length;
     if (list.length == 0) finished.value = true;
   } catch (e) {
     console.log('onLoad error', e)
@@ -58,21 +61,39 @@ const onRefresh = async () => {
   try{
     refreshing.value = true
     finished.value = false;
+    // 获取外部导入代币的余额
+    let importedCommunities: any = await getImportedCommunityInfo();
+    let importedBalanceList: any = await getTokenBalances(importedCommunities.map((item: any) => item.token));
+    let importedPriceList: any =(importedCommunities && importedCommunities.length > 0) ? (await getImportTokenOnchainInfo(importedCommunities)) : []
+
+    importedCommunities = importedCommunities.map((item: any) => ({
+      community: item,
+      account: accStore.getAccountInfo.ethAddr,
+      amount: importedBalanceList[item.token],
+      token: item.token,
+      tick: item.tick
+    }))
+
+
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!)
-    console.log(33, list)
     if (list && list.length > 0) {
       const priceList = await getTokenOnchainInfo(list.map((item: any) => item.token), generateTokenVersions(list))
-      console.log(345, priceList)
       accStore.tokenHoldingList = list.map((item: any) => ({
         ...item,
         price: priceList[item.token]?.price
-      }))
+      })).concat(importedCommunities.map((item: any) => ({
+        ...item,
+        price: importedPriceList[item.token]?.price
+      }))).sort((a: any, b: any) => (b.amount?.toString() as any) * b.price - (a.amount?.toString() as any) * a.price)
+    
       updateHoldingValue(accStore.tokenHoldingList);
     }
     if (list.length === 0) {
       finished.value = true
     }
+    currentLenth = list.length;
   } catch(e) {
+    console.error(6234, e)
     handleErrorTip(e)
     if (e === errCode.InvalidAccessToken) {
       accStore.clear();

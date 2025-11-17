@@ -6,9 +6,11 @@ import { sha256 } from "js-sha256";
 import base58 from "bs58";
 import steem from "steem";
 import { getReadOnlyClient } from "./wallets";
+import { aggregate } from "@makerdao/multicall";
 import { 
   encodeAbiParameters,
   keccak256,
+  checksumAddress,
   getCreate2Address, 
   isAddress} from "viem";
 import { readContract } from "./contract";
@@ -191,4 +193,25 @@ export const getTokenBalance = async (tokenAddr: `0x${string}`): Promise<bigint>
     tokenAddr
   )
   return balance as bigint;
+}
+
+export const getTokenBalances = async (tokenAddrs: `0x${string}`[]) => {
+  tokenAddrs = tokenAddrs.filter(addr => isAddress(addr));
+  if (tokenAddrs.length === 0) return {};
+
+  let calls: any[] = [];
+  for (let token of tokenAddrs) {
+    calls.push({
+      target: token,
+      call: [
+        'balanceOf(address)(uint256)',
+        useAccountStore().getAccountInfo.ethAddr as `0x${string}`
+      ],
+      returns: [
+        [checksumAddress(token), (val: any) => val.toString()]
+      ]
+    })  
+  }
+  const res = await aggregate(calls, ChainConfig.multiConfig);
+  return res.results.transformed;
 }
