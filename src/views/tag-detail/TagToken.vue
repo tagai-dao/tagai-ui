@@ -4,7 +4,7 @@ import {computed, onMounted, ref} from "vue";
 import { formatAddress, formatAmount, formatPrice, sleep, formatDate } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
-import { getHolderList } from "@/apis/api";
+import { getHolderList, getHolderListOfImportToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, ListSupply } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
@@ -120,7 +120,12 @@ async function onRefresh() {
   refreshing.value = true;
   finished.value = false;
   try{
-    let list: any = await getHolderList(comStore.currentSelectedCommunity!.token)
+    let list: any;
+    if (comStore.currentSelectedCommunity?.isImport) {
+      list = await getHolderListOfImportToken(comStore.currentSelectedCommunity!.token)
+    } else {
+      list = await getHolderList(comStore.currentSelectedCommunity!.token)
+    }
     if (list && list.length > 0) {
       list = list.map((h: any) => {
         return {
@@ -146,7 +151,12 @@ async function onLoad() {
   if (refreshing.value || finished.value || holdingList.value.length == 0) return;
   loading.value = true;
   try{
-    let list: any = await getHolderList(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
+    let list: any;
+    if (comStore.currentSelectedCommunity?.isImport) {
+      list = await getHolderListOfImportToken(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
+    } else {
+      list = await getHolderList(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
+    }
     if (list && list.length > 0) {
       list = list.map((h: any) => {
         return {
@@ -219,15 +229,15 @@ onMounted(async () => {
         <span class="text-h4 text-grey-93">{{$t('postView.totalSupply')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(TotalSupply) }}</span>
       </div>
-      <div class="flex justify-between items-center h-6">
+      <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.socialSupply')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(SocialSupply) }}</span>
       </div>
-      <div class="flex justify-between items-center h-6">
+      <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.bindCurveSold')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(comStore.currentSelectedCommunity.bondingCurveSupply) }}</span>
       </div>
-      <div class="flex justify-between items-center h-6">
+      <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.dexLiquidity')}}</span>
         <span class="text-h5 text-black-19">{{ formatAmount(ListSupply) }}</span>
       </div>

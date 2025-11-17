@@ -193,6 +193,12 @@ export const getCreatedList = async (twitterId: string, ethAddr: string) =>
 export const getHolderList = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/holderList', { token, pages })
 
+export const getHolderListOfImportToken = async (token: string, pages?: number) =>
+  get(BACKEND_API_URL + '/community/holderListOfImported', { token, pages })
+
+export const getImportedCommunityInfo = async () =>
+  get(BACKEND_API_URL + '/community/getImportedCommunityInfo')
+
 export const getTokenTradeList = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/tradeList', { token, pages })
 
