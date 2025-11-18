@@ -195,10 +195,10 @@ onMounted(async () => {
           <div class="gap-2 h-full flex flex-col justify-between">
             <img src="~@/assets/icons/btn-transfer.svg" @click.stop="transferTick(holding)"
                     class="h-5 text-white text-h5">
-          </img>
-              <img src="~@/assets/icons/btn-swap.svg" @click.stop="onTrade(holding)"
-                    class="h-5 text-white text-h5">
-              </img>
+            </img>
+            <img v-if="!holding.community?.isImport" src="~@/assets/icons/btn-swap.svg" @click.stop="onTrade(holding)"
+                  class="h-5 text-white text-h5">
+            </img>
           </div>
         </div>
       </van-list>
