@@ -227,7 +227,7 @@ onMounted(async () => {
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.totalSupply')}}</span>
-        <span class="text-h5 text-black-19">{{ formatAmount(TotalSupply) }}</span>
+        <span class="text-h5 text-black-19">{{ formatAmount(comStore.currentSelectedCommunity.totalSupply) }}</span>
       </div>
       <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.socialSupply')}}</span>
