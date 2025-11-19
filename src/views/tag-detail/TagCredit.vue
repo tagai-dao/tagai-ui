@@ -5,7 +5,7 @@ import { useCommunityStore } from '@/stores/community';
 import { type CommunityCredit } from '@/types';
 import { formatAddress, formatAmount, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
-import { onMounted, ref } from 'vue';
+import {onBeforeUnmount, onMounted, ref} from 'vue';
 import { useAccount } from '@/composables/useAccount';
 import VueApexCharts from 'vue3-apexcharts';
 import i18n from '@/lang';
@@ -105,7 +105,15 @@ const onUserAvatar = () => {
 
 }
 
+const onLegendTest = (event) => {
+  const type = event.target.getAttribute('rel')
+  if (event.target.childNodes.length>1 && event.target.childNodes[1].id===`legendId${type}`) {
+    console.log('======test=======')
+  }
+}
+
 onMounted(async () => {
+  document.addEventListener('click', onLegendTest)
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
   }
@@ -144,7 +152,7 @@ onMounted(async () => {
       }
       switch (item.type) {
         case 1:
-          return comStore.currentSelectedCommunity?.tick + ' ' + t('balance')
+          return `${comStore.currentSelectedCommunity?.tick + ' ' + t('balance')} <button class="bg-gradient-primary px-1 rounded-sm text-white" id="legendId${item.type}">test</button>`
         case 2:
           return (comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'))
         case 3:
@@ -183,6 +191,10 @@ onMounted(async () => {
     }
   }
   onRefresh()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', onLegendTest)
 })
 </script>
 
