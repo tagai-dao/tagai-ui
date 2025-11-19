@@ -56,6 +56,15 @@ const creditJO = ref<any[]>([{
 }, {
   type: 7,
   value: 0
+}, {
+  type: 8,
+  value: 0
+}, {
+  type:9,
+  value: 0
+}, {
+  type: 10,
+  value: 0
 }])
 
 const creditType = ref([
