@@ -81,10 +81,8 @@ async function onRefresh() {
 }
 
 async function onLoad() {
-  console.log('onLoad')
   if (refreshing.value || finished.value || holdingList.value.length == 0) return;
   loading.value = true;
-  console.log('onLoad 2')
   try{
     let list: any = await getCommunityCredits(comStore.currentSelectedCommunity!.tick, Math.floor((holdingList.value.length - 1) / 30) + 1);
 
@@ -105,10 +103,12 @@ const onUserAvatar = () => {
 
 }
 
-const onLegendTest = (event) => {
+const onLegendTest = (event: any) => {
   const type = event.target.getAttribute('rel')
-  if (event.target.childNodes.length>1 && event.target.childNodes[1].id===`legendId${type}`) {
+  console.log('click')
+  if (event.target.childNodes.length>1 && event.target.childNodes[1].id===`legendId5`) {
     console.log('======test=======')
+    window.open('https://donut.blog')
   }
 }
 
@@ -152,7 +152,7 @@ onMounted(async () => {
       }
       switch (item.type) {
         case 1:
-          return `${comStore.currentSelectedCommunity?.tick + ' ' + t('balance')} <button class="bg-gradient-primary px-1 rounded-sm text-white" id="legendId${item.type}">test</button>`
+          return `${comStore.currentSelectedCommunity?.tick + ' ' + t('balance')}`
         case 2:
           return (comStore.currentSelectedCommunity?.tick + '-LP ' + t('balance'))
         case 3:
@@ -160,7 +160,7 @@ onMounted(async () => {
         case 4:
           return "BNB Balance"
         case 5:
-          return "IPShare MCap"
+          return `IPShare MCap  <button class="bg-gradient-primary px-1 rounded-sm text-white" @click="onLegendTest" id="legendId${item.type}">Get</button>`
         case 6: 
           return item.showingName
         case 7:
