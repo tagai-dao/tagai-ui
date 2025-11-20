@@ -4171,5 +4171,35 @@ export const abis = {
         "stateMutability": "view",
         "type": "function"
       }
+    ],
+    "PopUp": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "orderId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "name": "userClaim",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      }
     ]
 }

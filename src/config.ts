@@ -82,6 +82,8 @@ export const PumpContract4 = "0x0476571a77Cc8Fc28796935Cf173c265F2021448"; // fi
 export const PumpContract5 = "0x2cAbfDE43f93422fFb070f0Fa03d2951dbBC7749"; // ixo: user who has less reputation can't buy
 export const PumpContract6 = "0x201308B193bC0Aa81Ac540A7D3B3ADb530a39861"; // for import tokens
 
+export const PopUp = "0xA3951BcEc6018CAAE34dCEA722858a7dc3177Ed2";
+
 export const WETH = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 export const uniswapV2Factory = '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73';
 export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
