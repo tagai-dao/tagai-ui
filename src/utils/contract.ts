@@ -40,88 +40,88 @@ export const readContract = async (contractName: string, functionName: string, a
     return result;
 }
 
-export const writeContract = async ({
-    contractName, 
-    functionName, 
-    args,
-    address,
-    value = 0n
-}: {
-    contractName: string, 
-    functionName: string, 
-    args: any,
-    address?: `0x${string}`,
-    value?: bigint | string
-}): Promise<string> => {
-    const accStore = useAccountStore();
+// export const writeContractC = async ({
+//     contractName, 
+//     functionName, 
+//     args,
+//     address,
+//     value = 0n
+// }: {
+//     contractName: string, 
+//     functionName: string, 
+//     args: any,
+//     address?: `0x${string}`,
+//     value?: bigint | string
+// }): Promise<string> => {
+//     const accStore = useAccountStore();
     
-    if (accStore.getWalletType === 'privy') {
-        const lastValidateTime = localStorage.getItem('lastValidateTime');
-        if (lastValidateTime && Date.now() - parseInt(lastValidateTime) < 1800000) {
-            return await executeContract({
-                contractName,
-                functionName,
-                args,
-                address,
-                value
-            })
-        }
-        return new Promise((resolve, reject) => {
-            // 监听结果
-            const handleSuccess = async () => {
-                emitter.off('MFAValidated', handleSuccess);
-                emitter.off('MFAValidationFailed', handleError);
+//     if (accStore.getWalletType === 'privy') {
+//         const lastValidateTime = localStorage.getItem('lastValidateTime');
+//         if (lastValidateTime && Date.now() - parseInt(lastValidateTime) < 1800000) {
+//             return await executeContract({
+//                 contractName,
+//                 functionName,
+//                 args,
+//                 address,
+//                 value
+//             })
+//         }
+//         return new Promise((resolve, reject) => {
+//             // 监听结果
+//             const handleSuccess = async () => {
+//                 emitter.off('MFAValidated', handleSuccess);
+//                 emitter.off('MFAValidationFailed', handleError);
 
-                localStorage.setItem('lastValidateTime', Date.now().toString());
+//                 localStorage.setItem('lastValidateTime', Date.now().toString());
 
-                console.log('success:', contractName, functionName, args, address, value);
-                try {
-                    const result = await executeContract({
-                        contractName,
-                        functionName,
-                        args,
-                        address,
-                        value
-                    })
-                    resolve(result);
+//                 console.log('success:', contractName, functionName, args, address, value);
+//                 try {
+//                     const result = await executeContract({
+//                         contractName,
+//                         functionName,
+//                         args,
+//                         address,
+//                         value
+//                     })
+//                     resolve(result);
 
-                } catch (error) {
-                    reject(error);
-                }
-            };
+//                 } catch (error) {
+//                     reject(error);
+//                 }
+//             };
             
-            const handleError = (error: any) => {
-                emitter.off('MFAValidated', handleSuccess);
-                emitter.off('MFAValidationFailed', handleError);
-                reject(error);
-            };
+//             const handleError = (error: any) => {
+//                 emitter.off('MFAValidated', handleSuccess);
+//                 emitter.off('MFAValidationFailed', handleError);
+//                 reject(error);
+//             };
             
-            emitter.on('MFAValidated', handleSuccess);
-            emitter.on('MFAValidationFailed', handleError);
+//             emitter.on('MFAValidated', handleSuccess);
+//             emitter.on('MFAValidationFailed', handleError);
             
-            // 发送交易请求到 React 端
-            emitter.emit('MFAValidationRequired');
+//             // 发送交易请求到 React 端
+//             emitter.emit('MFAValidationRequired');
             
-            // 30秒超时
-            setTimeout(() => {
-                emitter.off('MFAValidated', handleSuccess);
-                emitter.off('MFAValidationFailed', handleError);
-                reject(new Error('Transaction timeout'));
-            }, 30000);
-        });
-    }
+//             // 30秒超时
+//             setTimeout(() => {
+//                 emitter.off('MFAValidated', handleSuccess);
+//                 emitter.off('MFAValidationFailed', handleError);
+//                 reject(new Error('Transaction timeout'));
+//             }, 30000);
+//         });
+//     }
 
-    return await executeContract({
-        contractName,
-        functionName,
-        args,
-        address,
-        value
-    });
-}
+//     return await executeContract({
+//         contractName,
+//         functionName,
+//         args,
+//         address,
+//         value
+//     });
+// }
 
 
-export const executeContract = async ({
+export const writeContract = async ({
     contractName, 
     functionName, 
     args,
