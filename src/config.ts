@@ -1,3 +1,4 @@
+import { parseUnits } from "viem";
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
 export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
@@ -90,6 +91,13 @@ export const uniswapV2Router02 = '0x10ED43C718714eb63d5aA57B78B54704E256024E';
 export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea21593d5834f5d250ece66'
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10';
 export const wrappedUniswapV2ForTagAI2 = '0x72D353c0469C10F6B769F13b67EEdB2E1F26FB01';
+
+export const ConditionalToken = '0xAD1a38cEc043e70E83a3eC30443dB285ED10D774';
+export const WhiteList = '0xb3A547F535bDc1b20Eb6fd97b9524F893A75708C';
+export const LMSRMarketMakerFactory = '0x61c6f7b2bab2EEdb596622181FbA06c47398596f';
+export const USD1 = '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
+export const Oracle = '0x78c2af38330c5b41ae7946a313e43cdceeaf8611'
+export const LMSRTradeFee = parseUnits("0.01", 18)
 
 export const USD_CONTRACTS: Record<`0x${string}`, string> = {
     '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1'
