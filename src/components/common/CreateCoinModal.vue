@@ -1232,8 +1232,8 @@ onUnmounted(() => {
             • {{$t('createCommunity.deployTip3')}}
           </p>
           <div class="text-blue-500 flex text-center justify-center text-lg my-8 items-center">
-            @TipTagAi #deploy
-            <button class="ml-2" @click="onCopy(`@TipTagAi #deploy`)">
+            @launchonbnb #deploy
+            <button class="ml-2" @click="onCopy(`@launchonbnb #deploy`)">
                 <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
               </button>
           </div>
