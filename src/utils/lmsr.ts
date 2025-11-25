@@ -34,6 +34,47 @@ export async function createMarket(question: string, funding: bigint) {
         args: [ConditionalToken, USDT, Oracle, questionId, 2, LMSRTradeFee, whitelist, funding]
     });
 
+    // 预创建预测市场
+
     
-    return hash;
+    let tx = await getTransactionReceipt(hash as `0x${string}`)
+    //   event LMSRMarketMakerCreation(address indexed creator, LMSRMarketMaker lmsrMarketMaker, ConditionalTokens pmSystem, IERC20 collateralToken, bytes32[] conditionIds, uint64 fee, uint funding);
+    const event: any = getCreateLMSRMarketMakerEventByHash(tx);
+    if (event && event.creator === useAccountStore().ethConnectAddress
+        && event.pmSystem == ConditionalToken
+        && event.collateralToken === USDT
+        && event.conditionIds.length === 2
+        && event.fee === LMSRTradeFee) {
+        // 创建成功，返回txhash，event.lmsrMarketMaker
+        return {hash, lmsrMarketMaker: event.lmsrMarketMaker};
+    }else {
+        // 非法交易
+        throw 'Invalid transaction'
+    }
 }
+
+const getCreateLMSRMarketMakerEventByHash = (tx: { logs: Log[] }) => {
+    const logs = tx.logs;
+  
+    try {
+      const events = parseEventLogs({
+        abi: abis.LMSRMarketMakerFactory,
+        logs,
+        // 如果你确定只关心某个合约地址：
+        // strict: true,
+        // args: [可选],
+      });
+
+      for (const event of events) {
+        if ('eventName' in event && event.eventName === 'LMSRMarketMakerCreation') {
+            if ('args' in event) {
+                return event.args; // Viem 会自动返回 args 为 typed object
+            }
+        }
+      }
+    } catch (err) {
+      console.error('解析事件失败:', err);
+    }
+  
+    return null;
+  };

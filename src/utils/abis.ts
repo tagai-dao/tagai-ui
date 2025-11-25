@@ -4202,7 +4202,7 @@ export const abis = {
         "type": "function"
       }
     ],
-    "LMSRMarketMakderFactory": [
+    "LMSRMarketMakerFactory": [
       {
         "constant": false,
         "inputs": [
