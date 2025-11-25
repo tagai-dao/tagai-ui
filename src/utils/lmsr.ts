@@ -43,8 +43,13 @@ export async function createMarket(question: string, tokenAddress: `0x${string}`
     if (event && event.creator === useAccountStore().ethConnectAddress
         && event.pmSystem == ConditionalToken
         && event.collateralToken === tokenAddress
-        && event.conditionIds.length === 2
+        && event.conditionIds.length === 1
         && event.fee === LMSRTradeFee) {
+        // 读取链上的conditionid是否和事件中的一致
+        const conditionId = await readContract('ConditionalToken', 'getConditionId', [Oracle, questionId, 2])
+        if (conditionId !== event.conditionIds[0]) {
+            throw 'Invalid transaction'
+        }
         // 创建成功，返回txhash，event.lmsrMarketMaker
         return {hash, lmsrMarketMaker: event.lmsrMarketMaker};
     }else {

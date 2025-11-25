@@ -3,7 +3,7 @@ import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, 
-    wrappedUniswapV2ForTagAI2, LMSRMarketMakerFactory } from '@/config'
+    wrappedUniswapV2ForTagAI2, LMSRMarketMakerFactory, ConditionalToken } from '@/config'
 import { useAccountStore } from "@/stores/web3";
 import { customBsc } from "./privy";
 import emitter from "./emitter";
@@ -24,6 +24,7 @@ const ContractAddress = {
     CoinPurse: CoinPurse,
     WETH: WETH,
     LMSRMarketMakerFactory: LMSRMarketMakerFactory,
+    ConditionalToken,
 }
 
 export const readContract = async (contractName: string, functionName: string, args: any, address?: `0x${string}`) => {
