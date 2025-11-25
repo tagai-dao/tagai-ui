@@ -13,14 +13,14 @@ import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes } from "viem";
 import { writeContract, readContract } from "./contract";
 
-export async function createMarket(question: string, funding: bigint) {
-    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, LMSRMarketMakerFactory], USDT)
+export async function createMarket(question: string, tokenAddress: `0x${string}`, funding: bigint) {
+    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, LMSRMarketMakerFactory], tokenAddress)
     if (funding > allowance) {
         await writeContract({
             contractName: 'Token1',
             functionName: 'approve',
             args: [LMSRMarketMakerFactory, funding],
-            address: USDT
+            address: tokenAddress
         })
     }
     // 生成questingId
@@ -31,18 +31,18 @@ export async function createMarket(question: string, funding: bigint) {
     const hash = await writeContract({
         contractName: 'LMSRMarketMakderFactory',
         functionName: 'prepareAndCreateLMSRMarketMaker',
-        args: [ConditionalToken, USDT, Oracle, questionId, 2, LMSRTradeFee, whitelist, funding]
+        args: [ConditionalToken, tokenAddress, Oracle, questionId, 2, LMSRTradeFee, whitelist, funding]
     });
 
     // 预创建预测市场
 
-    
+
     let tx = await getTransactionReceipt(hash as `0x${string}`)
     //   event LMSRMarketMakerCreation(address indexed creator, LMSRMarketMaker lmsrMarketMaker, ConditionalTokens pmSystem, IERC20 collateralToken, bytes32[] conditionIds, uint64 fee, uint funding);
     const event: any = getCreateLMSRMarketMakerEventByHash(tx);
     if (event && event.creator === useAccountStore().ethConnectAddress
         && event.pmSystem == ConditionalToken
-        && event.collateralToken === USDT
+        && event.collateralToken === tokenAddress
         && event.conditionIds.length === 2
         && event.fee === LMSRTradeFee) {
         // 创建成功，返回txhash，event.lmsrMarketMaker

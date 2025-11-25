@@ -22,6 +22,7 @@ export default {
   IS_RETWEETED: 309,
   LOWER_TWITTER_REPUTATION: 310,
   CANNOT_BE_REPLY: 311,
+  TWEET_IS_IN_A_DIFFIRENT_COMMUNITY: 312,
 
   InvalidAccessToken: 401,
   TokenExpired: 401,

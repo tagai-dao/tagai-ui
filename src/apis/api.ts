@@ -319,3 +319,6 @@ export const checkPrediction = async ( tweetAId: string, tweetBId: string) =>
 
 export const createPredict = async (twitterId: string, tick: string, title: string, tweetAId: string, tweetBId: string) =>
   post(BACKEND_API_URL + '/predict/createPredictBattle', { twitterId, tick, title, tweetAId, tweetBId })
+
+export const preCreateLMSRMarket = async (twitterId: string, tick: string, title: string, tweetAId: string, tweetBId: string) =>
+  post(BACKEND_API_URL + '/predict/preCreateLMSRMarket', { twitterId, tick, title, tweetAId, tweetBId })
