@@ -1,6 +1,6 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, LMSRTradeFee, Ether, USD_CONTRACTS, 
-    USD1, LMSRMarketMakerFactory, ConditionalToken, Oracle } from "@/config";
+    USD1, LMSRMarketMakerFactory, ConditionalToken, Oracle, USDT } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
@@ -14,13 +14,13 @@ import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, ty
 import { writeContract, readContract } from "./contract";
 
 export async function createMarket(question: string, funding: bigint) {
-    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, LMSRMarketMakerFactory], USD1)
+    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, LMSRMarketMakerFactory], USDT)
     if (funding > allowance) {
         await writeContract({
             contractName: 'Token1',
             functionName: 'approve',
             args: [LMSRMarketMakerFactory, funding],
-            address: USD1
+            address: USDT
         })
     }
     // 生成questingId
@@ -31,7 +31,7 @@ export async function createMarket(question: string, funding: bigint) {
     const hash = await writeContract({
         contractName: 'LMSRMarketMakderFactory',
         functionName: 'prepareAndCreateLMSRMarketMaker',
-        args: [ConditionalToken, USD1, Oracle, questionId, 2, LMSRTradeFee, whitelist, funding]
+        args: [ConditionalToken, USDT, Oracle, questionId, 2, LMSRTradeFee, whitelist, funding]
     });
 
     
