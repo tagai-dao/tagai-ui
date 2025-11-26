@@ -7,10 +7,13 @@ export const useModalStore = defineStore(
   const modalVisible = ref(false)
   const modalType = ref(GlobalModalType.CreateCoin)
   const modalCloseEnable = ref(true)
-  const setModalVisible = (visible: boolean, type: GlobalModalType = GlobalModalType.CreateCoin) => {
+  const modalParams = ref<any>(null)
+
+  const setModalVisible = (visible: boolean, type: GlobalModalType = GlobalModalType.CreateCoin, params: any = null) => {
     if(!modalCloseEnable.value) return
     modalVisible.value = visible
     modalType.value = type
+    modalParams.value = params
   }
 
   const setModalCloseEnable = (value: boolean) => {
@@ -20,6 +23,7 @@ export const useModalStore = defineStore(
   return {
     modalType,
     modalVisible,
+    modalParams,
     setModalVisible,
     modalCloseEnable,
     setModalCloseEnable

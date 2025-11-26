@@ -383,6 +383,7 @@
     "paramsError": "无效的参数。",
     "curationNotExsist": "策展不存在",
     "insufficientFee": "手续费用不足",
+    "insufficientBalance": "余额不足",
     "insufficientContent": "请填写内容",
     "insufficientOp": "（OP）不足。",
     "insufficientVp": "（VP）不足。",
@@ -419,7 +420,12 @@
     "likeFrequent": "点赞太频繁，请15分钟后再操作",
     "retweetFrequent": "转发太频繁，请15分钟后再操作",
     "userScoreTooLow": "您的推特评分分太低",
-    "cannotBeReply": "不能用一个回复推文创建预测"
+    "cannotBeReply": "不能用一个回复推文创建预测",
+    "tweetAIsIllegalForLmsr": "推文A在另一个社区或已结算或是Space策展",
+    "tweetBIsIllegalForLmsr": "推文B在另一个社区或已结算或是Space策展",
+    "tweetsAreInADifferentDay": "两个推文在不同的结算日",
+    "marketIsCreated": "该市场已创建",
+    "marketCreatorNotMatch": "市场创建者不匹配当前用户"
   },
   "createPredict": {
     "title": "创建预测对战",
@@ -438,7 +444,11 @@
     "invalidTwitterUrl": "请输入有效的推特链接",
     "predictsCannotBeSame": "两个预测不能是同一个推特链接",
     "predictsFromDifferentCommunities": "这个推文不在 {community} 社区",
-    "predictsExpired": "两个预测快要或者已经结束了",
-    "characters": "字符"
+    "predictsExpired": "两个预测推文即将过期或已过期",
+    "characters": "字符",
+    "initAmount": "初始注入资金",
+    "initAmountTip": "创建LMSR预测市场需要注入一定数量的代币作为初始流动性",
+    "amountPlaceholder": "输入金额",
+    "amountRequired": "请输入金额"
   }
 }

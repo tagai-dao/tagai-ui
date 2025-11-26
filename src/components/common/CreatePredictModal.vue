@@ -1,34 +1,40 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
-import { handleErrorTip } from '@/utils/notify'
+import { handleErrorTip, notify } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
-import { getTweetCurations, createPredict as createPredictApi, checkPrediction } from '@/apis/api'
+import { getTweetCurations, createPredict as createPredictApi, checkPrediction, preCreateLMSRMarket } from '@/apis/api'
 import { OperateType, useTweet } from '@/composables/useTweet'
 import { useCommunityStore } from '@/stores/community'
 import emitter from '@/utils/emitter'
+import { getTokenBalance } from '@/utils/web3'
+import { formatAmount } from '@/utils/helper'
+import { parseUnits } from 'viem'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
+const userBalance = ref(0)
 // 表单数据
 const formData = reactive({
   title: '',
   predict1: '',
   predict2: '',
   tweetAId: '',
-  tweetBId: ''
+  tweetBId: '',
+  initAmount: ''
 })
 
 // 错误信息
 const errors = reactive({
   title: '',
   predict1: '',
-  predict2: ''
+  predict2: '',
+  initAmount: ''
 })
 
 // 加载状态
@@ -81,6 +87,15 @@ const validateForm = async (): Promise<boolean> => {
     isValid = false
   } else if (!predictB) {
     errors.predict2 = t('createPredict.invalidTwitterUrl')
+    isValid = false
+  }
+
+  // 验证初始资金
+  if (!formData.initAmount) {
+    errors.initAmount = t('createPredict.amountRequired')
+    isValid = false
+  } else if (isNaN(Number(formData.initAmount)) || Number(formData.initAmount) <= 0) {
+    errors.initAmount = t('createPredict.invalidAmount')
     isValid = false
   }
 
@@ -147,14 +162,29 @@ const createPredict = async () => {
     return
   }
   
-  
-  
   createLoading.value = true
+  const accInfo = accStore.getAccountInfo
   
   try {
-    if(!await preCheckCuration(OperateType.CREATE_PREDICT)) {
-        return;
+
+    // 检查用户余额是否足够
+    const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
+    if (b < parseUnits(formData.initAmount, 18)) {
+      notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
+      return;
     }
+
+    // 预创建市场记录，并生成questionid
+    const preMarketData: any = await preCreateLMSRMarket(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId);
+    const { questionId, needOP } = preMarketData;
+
+    if (!(await preCheckCuration(OperateType.CREATE_PREDICT, undefined, needOP))) {
+      notify({ message: t('errMessage.insufficientOp'), type: 'info' })
+      return;
+    }
+
+    // 开始创建市场
+
     const currentPrediction: any = await checkPrediction(formData.tweetAId, formData.tweetBId)
     if (currentPrediction && currentPrediction.id > 0) {
       console.log('already exists')
@@ -180,10 +210,17 @@ const closeModal = () => {
   formData.title = ''
   formData.predict1 = ''
   formData.predict2 = ''
+  formData.initAmount = ''
   errors.title = ''
   errors.predict1 = ''
   errors.predict2 = ''
+  errors.initAmount = ''
 }
+
+onMounted(async () => {
+  // @ts-ignore
+  userBalance.value = Number((await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)).toString() / 1e18)
+})
 </script>
 
 <template>
@@ -260,6 +297,47 @@ const closeModal = () => {
         />
         <div v-if="errors.predict2" class="text-red-500 text-sm mt-1">
           {{ errors.predict2 }}
+        </div>
+      </div>
+
+      <!-- 注入资金 -->
+      <div>
+        <label class="flex items-center gap-1 text-sm font-medium text-black mb-2">
+          {{ $t('createPredict.initAmount') }}
+          <span class="text-red-500">*</span>
+          <el-tooltip
+            class="box-item"
+            effect="dark"
+            :content="$t('createPredict.initAmountTip')"
+            placement="top"
+          >
+            <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+              ?
+            </button>
+          </el-tooltip>
+        </label>
+        <div class="relative">
+          <input
+            v-model="formData.initAmount"
+            type="number"
+            step="0.0001"
+            min="0"
+            :placeholder="$t('createPredict.amountPlaceholder')"
+            class="w-full px-4 py-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-20"
+            :class="{
+              'border-red-500': errors.initAmount,
+              'border-grey-light': !errors.initAmount
+            }"
+          />
+          <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-grey-normal text-sm font-medium">{{ comStore.currentSelectedCommunity?.tick }}</span>
+        </div>
+        <div class="flex justify-between items-start mt-1">
+          <div class="text-red-500 text-sm">
+            {{ errors.initAmount }}
+          </div>
+          <div class="text-grey-normal text-xs text-right ml-auto">
+            {{ $t('balance') }}: {{ formatAmount(userBalance)}} {{ comStore.currentSelectedCommunity?.tick }}
+          </div>
         </div>
       </div>
     </div>

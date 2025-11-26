@@ -86,8 +86,25 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
     return null
 }
 
+const getBattleStats = (battle: BattleData) => {
+  const amountA = tweets[battle.predictAID]?.amount || 0
+  const amountB = tweets[battle.predictBID]?.amount || 0
+  const total = amountA + amountB
+  
+  if (total === 0) return { percentA: 50, percentB: 50 }
+  
+  const percentA = Math.round((amountA / total) * 100)
+  const percentB = 100 - percentA
+  
+  return { percentA, percentB }
+}
+
 const openTweet = (tweetId: string) => {
   router.push(`/post-detail/${tweetId}`)
+}
+
+const openTradeModal = (battle: BattleData) => {
+  useModalStore().setModalVisible(true, GlobalModalType.PredictTrade, { battle, tweets })
 }
 
 const createPredictBattle = () => {
@@ -154,15 +171,66 @@ onMounted(async () => {
         </div>
 
         <!-- 对战双方 -->
-        <div class="flex items-stretch gap-2 sm:gap-6 relative overflow-hidden">
+        <div class="flex items-stretch gap-3 sm:gap-8 relative overflow-hidden rounded-xl sm:rounded-2xl border-2 pb-24 sm:pb-32"
+          :class="{
+            'bg-gray-50 border-gray-200': !battle.winner,
+            'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!battle.winner
+          }"
+        >
+          <!-- Trade 按钮 (absolute定位到底部中间) -->
+          <div class="absolute bottom-4 sm:bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
+            <button 
+              class="pointer-events-auto w-1/2 h-9 sm:h-10 bg-gradient-primary text-white text-xs sm:text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
+              @click="openTradeModal(battle)"
+            >
+              Trade
+            </button>
+          </div>
+
+          <!-- 统一的进度条 (absolute定位到底部) -->
+          <div class="absolute bottom-16 sm:bottom-20 left-4 right-4 flex flex-col gap-2 z-10">
+            <!-- 进度条行 -->
+            <div class="flex items-center gap-3">
+              <!-- 左侧比例 -->
+              <span class="text-xs font-bold text-red-normal min-w-[2.5rem] text-right">{{ getBattleStats(battle).percentA }}%</span>
+              
+              <!-- 进度条主体 -->
+              <div class="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden flex relative">
+                 <!-- 左侧红色条 -->
+                <div 
+                  class="h-full bg-red-normal transition-all duration-500 flex items-center justify-end pr-2" 
+                  :style="{ width: getBattleStats(battle).percentA + '%' }"
+                >
+                </div>
+                <!-- 右侧蓝色条 -->
+                <div 
+                  class="h-full bg-blue-600 transition-all duration-500 flex items-center justify-start pl-2" 
+                  :style="{ width: getBattleStats(battle).percentB + '%' }"
+                >
+                </div>
+              </div>
+              
+              <!-- 右侧比例 -->
+              <span class="text-xs font-bold text-blue-600 min-w-[2.5rem]">{{ getBattleStats(battle).percentB }}%</span>
+            </div>
+
+            <!-- VOL 行 -->
+            <div class="flex justify-between text-[10px] sm:text-xs font-medium text-gray-500 px-[3.25rem]">
+              <div class="flex items-center gap-1">
+                <span>VOL:</span>
+                <span>{{ formatAmount(tweets[battle.predictAID]?.amount ?? 0) }}</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <span>VOL:</span>
+                <span>{{ formatAmount(tweets[battle.predictBID]?.amount ?? 0) }}</span>
+              </div>
+            </div>
+          </div>
+
           <!-- 左侧玩家卡片 -->
           <div class="flex-1 overflow-hidden battle-player-card">
             <div
-                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
-              :class="{
-                'bg-gradient-to-br from-red-light to-red-light-hover border-red-normal/20': !battle.winner,
-                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!battle.winner
-              }"
+                class="player-card p-2 sm:p-4 relative flex flex-col gap-1 sm:gap-3"
             >
               <!-- 主要内容区域 -->
               <div class="flex-1 flex flex-col sm:flex-row gap-1 sm:gap-2">
@@ -205,7 +273,7 @@ onMounted(async () => {
                   </div>
 
                   <!-- 用户名 -->
-                  <p class="text-sm font-bold text-red-normal leading-tight w-full break-words">
+                  <p class="text-sm font-bold text-red-normal leading-tight w-full break-words text-center">
                     {{ tweets[battle.predictAID]?.twitterUsername }}
                   </p>
                   <!-- <p class="text-sm text-red-normal leading-tight w-full break-words text-center">
@@ -269,17 +337,13 @@ onMounted(async () => {
           <!-- 右侧玩家卡片 -->
           <div class="flex-1 overflow-hidden battle-player-card">
             <div
-                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
-              :class="{
-                'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200/30': !battle.winner,
-                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!battle.winner
-              }"
+                class="player-card p-2 sm:p-4 relative flex flex-col gap-1 sm:gap-3"
             >
               <!-- 主要内容区域 -->
               <div class="flex-1 flex flex-col-reverse sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：预测文字 -->
                 <div class="flex-1 overflow-hidden" @click="openTweet(battle.predictBID)">
-                  <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
+                  <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full text-right">
                     <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictBID]?.content ?? ''">
                       {{ tweets[battle.predictBID]?.content ?? '' }}
                     </div>
@@ -325,7 +389,7 @@ onMounted(async () => {
                   </div>
 
                   <!-- 用户名 -->
-                  <p class="text-sm font-bold text-blue-600 leading-tight w-full break-words">
+                  <p class="text-sm font-bold text-blue-600 leading-tight w-full break-words text-center">
                     {{ tweets[battle.predictBID]?.twitterUsername }}
                   </p>
                   <!-- <p class="text-sm text-blue-600 leading-tight w-full break-words text-left">

@@ -383,6 +383,7 @@
     "paramsError": "Invalid params",
     "curationNotExsist": "Curation is not exists",
     "insufficientFee": "Insufficient Fee",
+    "insufficientBalance": "Insufficient balance",
     "insufficientContent": "Please write something",
     "insufficientOp": "Insufficient of OP",
     "insufficientVp": "Insufficient of VP",
@@ -419,7 +420,12 @@
     "likeFrequent": "Like so frequently, please operate 15 minutes later",
     "retweetFrequent": "Retweet so frequently, please operate 15 minutes later",
     "userScoreTooLow": "Your score is too low",
-    "cannotBeReply": "You cannot create a predict battle with a reply tweet"
+    "cannotBeReply": "You cannot create a predict battle with a reply tweet",
+    "tweetAIsIllegalForLmsr": "Tweet A is in another community or has been settled or is a space curation.",
+    "tweetBIsIllegalForLmsr": "Tweet B is in another community or has been settled or is a space curation.",
+    "tweetsAreInADifferentDay": "Tweets are in a different settlement day",
+    "marketIsCreated": "Market has been created",
+    "marketCreatorNotMatch": "The creator of the market does not match the current user"
   },
   "createPredict": {
     "title": "Create Predict Battle",
@@ -439,6 +445,10 @@
     "predictsCannotBeSame": "Two predictions cannot be the same Twitter link",
     "predictsFromDifferentCommunities": "The tweet is not in {community} commuinty.",
     "predictsExpired": "Two predictions are about to or have expired",
-    "characters": "characters"
+    "characters": "characters",
+    "initAmount": "Initial Amount",
+    "initAmountTip": "Create a LMSR predict market needs to inject some amount of token into the market as the initial liquidity",
+    "amountPlaceholder": "Enter amount",
+    "amountRequired": "Please enter amount"
   }
 }
