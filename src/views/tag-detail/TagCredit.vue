@@ -165,6 +165,8 @@ onMounted(async () => {
           return item.showingName
         case 7:
           return 'Donation'
+        case 8:
+          return 'Twitter Reputation'
         default:
           return ''
       }
