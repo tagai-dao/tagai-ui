@@ -13,7 +13,7 @@ import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes } from "viem";
 import { writeContract, readContract } from "./contract";
 
-export async function createMarket(question: string, tokenAddress: `0x${string}`, funding: bigint) {
+export async function createMarket(questionId: string, tokenAddress: `0x${string}`, funding: bigint) {
     const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, LMSRMarketMakerFactory], tokenAddress)
     if (funding > allowance) {
         await writeContract({
@@ -23,8 +23,7 @@ export async function createMarket(question: string, tokenAddress: `0x${string}`
             address: tokenAddress
         })
     }
-    // 生成questingId
-    const questionId = keccak256(toBytes(question));
+    
     // 生成whitelist
     const whitelist = zeroAddress;
     // 生成lmsrMarketMaker

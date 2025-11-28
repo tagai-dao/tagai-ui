@@ -5,13 +5,15 @@ import { useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import { handleErrorTip, notify } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
-import { getTweetCurations, createPredict as createPredictApi, checkPrediction, preCreateLMSRMarket } from '@/apis/api'
+import { getTweetCurations, createLMSRMarket as createLMSRMarketApi, checkPrediction, preCreateLMSRMarket } from '@/apis/api'
 import { OperateType, useTweet } from '@/composables/useTweet'
 import { useCommunityStore } from '@/stores/community'
+import { useAccount } from '@/composables/useAccount'
 import emitter from '@/utils/emitter'
 import { getTokenBalance } from '@/utils/web3'
 import { formatAmount } from '@/utils/helper'
 import { parseUnits } from 'viem'
+import { createMarket } from '@/utils/lmsr'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
@@ -19,6 +21,7 @@ const accStore = useAccountStore()
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
 const userBalance = ref(0)
+const { accountMismatch } = useAccount()
 // 表单数据
 const formData = reactive({
   title: '',
@@ -184,13 +187,9 @@ const createPredict = async () => {
     }
 
     // 开始创建市场
-
-    const currentPrediction: any = await checkPrediction(formData.tweetAId, formData.tweetBId)
-    if (currentPrediction && currentPrediction.id > 0) {
-      console.log('already exists')
-      modalStore.setModalVisible(false);
-      return;
-    }
+    const { hash, lmsrMarketMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(formData.initAmount, 18))
+    
+    await createLMSRMarketApi(accInfo.twitterId, questionId, hash);
     console.log('创建预测:', formData)
     // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
     modalStore.setModalVisible(false);
@@ -346,12 +345,15 @@ onMounted(async () => {
     <div class="flex gap-3 mt-8">
       <button
         @click="createPredict"
-        :disabled="createLoading"
+        :disabled="createLoading || accountMismatch"
         class="flex-1 h-12 bg-gradient-primary text-white font-bold rounded-full text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <i-ep-loading v-if="createLoading" class="animate-spin" />
         <span>{{ $t('createPredict.create') }}</span>
       </button>
+      <span v-if="accountMismatch" class="text-red-e6 text-sm text-center">
+        {{ $t('web3.addressMismatch', {address: useAccountStore().getAccountInfo.ethAddr}) }}
+      </span>
     </div>
   </div>
 </template>
