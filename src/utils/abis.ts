@@ -4202,46 +4202,7 @@ export const abis = {
         "type": "function"
       }
     ],
-    "LMSRMarketMakerFactory": [
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "pmSystem",
-            "type": "address"
-          },
-          {
-            "name": "collateralToken",
-            "type": "address"
-          },
-          {
-            "name": "conditionIds",
-            "type": "bytes32[]"
-          },
-          {
-            "name": "fee",
-            "type": "uint64"
-          },
-          {
-            "name": "whitelist",
-            "type": "address"
-          },
-          {
-            "name": "funding",
-            "type": "uint256"
-          }
-        ],
-        "name": "createLMSRMarketMaker",
-        "outputs": [
-          {
-            "name": "lmsrMarketMaker",
-            "type": "address"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
+    "FPMMDeterministicFactory": [
       {
         "anonymous": false,
         "inputs": [
@@ -4252,12 +4213,12 @@ export const abis = {
           },
           {
             "indexed": false,
-            "name": "lmsrMarketMaker",
+            "name": "fixedProductMarketMaker",
             "type": "address"
           },
           {
             "indexed": false,
-            "name": "pmSystem",
+            "name": "conditionalTokens",
             "type": "address"
           },
           {
@@ -4273,30 +4234,27 @@ export const abis = {
           {
             "indexed": false,
             "name": "fee",
-            "type": "uint64"
+            "type": "uint256"
           },
           {
             "indexed": false,
-            "name": "funding",
+            "name": "maxFee",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "name": "endTime",
             "type": "uint256"
           }
         ],
-        "name": "LMSRMarketMakerCreation",
+        "name": "FixedProductMarketMakerCreation",
         "type": "event"
       },
       {
         "constant": false,
         "inputs": [
           {
-            "name": "pmSystem",
-            "type": "address"
-          },
-          {
             "name": "collateralToken",
-            "type": "address"
-          },
-          {
-            "name": "oracle",
             "type": "address"
           },
           {
@@ -4304,26 +4262,22 @@ export const abis = {
             "type": "bytes32"
           },
           {
-            "name": "outcomeSlotCount",
-            "type": "uint256"
+            "name": "distributionHint",
+            "type": "uint256[]"
           },
           {
-            "name": "fee",
-            "type": "uint64"
+            "name": "feeCheckPath",
+            "type": "address[]"
           },
           {
-            "name": "whitelist",
-            "type": "address"
-          },
-          {
-            "name": "funding",
-            "type": "uint256"
+            "name": "uintParams",
+            "type": "uint256[]"
           }
         ],
-        "name": "prepareAndCreateLMSRMarketMaker",
+        "name": "create2FixedProductMarketMakerWithCondition",
         "outputs": [
           {
-            "name": "lmsrMarketMaker",
+            "name": "",
             "type": "address"
           }
         ],
@@ -4332,34 +4286,134 @@ export const abis = {
         "type": "function"
       }
     ],
-    "LMSRMarketMaker": [
+    "FixedProductMarketMaker": [
       {
         "constant": false,
         "inputs": [
           {
-            "name": "outcomeTokenAmounts",
-            "type": "int256[]"
+            "name": "account",
+            "type": "address"
+          }
+        ],
+        "name": "withdrawFees",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getBNBFee",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "investmentAmount",
+            "type": "uint256"
           },
           {
-            "name": "collateralLimit",
-            "type": "int256"
+            "name": "outcomeIndex",
+            "type": "uint256"
+          },
+          {
+            "name": "minOutcomeTokensToBuy",
+            "type": "uint256"
           }
         ],
-        "name": "trade",
+        "name": "buy",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "returnAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcomeIndex",
+            "type": "uint256"
+          }
+        ],
+        "name": "calcSellAmount",
         "outputs": [
           {
-            "name": "netCost",
-            "type": "int256"
+            "name": "outcomeTokenSellAmount",
+            "type": "uint256"
           }
         ],
         "payable": false,
-        "stateMutability": "nonpayable",
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getFee",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
         "type": "function"
       },
       {
         "constant": false,
-        "inputs": [],
-        "name": "close",
+        "inputs": [
+          {
+            "name": "returnAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcomeIndex",
+            "type": "uint256"
+          },
+          {
+            "name": "maxOutcomeTokensToSell",
+            "type": "uint256"
+          }
+        ],
+        "name": "sell",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "addedFunds",
+            "type": "uint256"
+          },
+          {
+            "name": "distributionHint",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "addFunding",
         "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",
@@ -4367,55 +4421,13 @@ export const abis = {
       },
       {
         "constant": false,
-        "inputs": [],
-        "name": "withdrawFees",
-        "outputs": [
+        "inputs": [
           {
-            "name": "fees",
+            "name": "sharesToBurn",
             "type": "uint256"
           }
         ],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "outcomeTokenAmounts",
-            "type": "int256[]"
-          }
-        ],
-        "name": "calcNetCost",
-        "outputs": [
-          {
-            "name": "netCost",
-            "type": "int256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [],
-        "name": "pause",
-        "outputs": [],
-        "payable": false,
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "constant": false,
-        "inputs": [
-          {
-            "name": "fundingChange",
-            "type": "int256"
-          }
-        ],
-        "name": "changeFunding",
+        "name": "removeFunding",
         "outputs": [],
         "payable": false,
         "stateMutability": "nonpayable",
@@ -4423,88 +4435,17 @@ export const abis = {
       },
       {
         "constant": true,
-        "inputs": [],
-        "name": "whitelist",
-        "outputs": [
-          {
-            "name": "",
-            "type": "address"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
         "inputs": [
           {
-            "name": "outcomeTokenCost",
+            "name": "investmentAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcomeIndex",
             "type": "uint256"
           }
         ],
-        "name": "calcMarketFee",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "collateralToken",
-        "outputs": [
-          {
-            "name": "",
-            "type": "address"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "outcomeTokenIndex",
-            "type": "uint8"
-          }
-        ],
-        "name": "calcMarginalPrice",
-        "outputs": [
-          {
-            "name": "price",
-            "type": "uint256"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "stage",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint8"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "funding",
+        "name": "calcBuyAmount",
         "outputs": [
           {
             "name": "",
@@ -4515,38 +4456,5 @@ export const abis = {
         "stateMutability": "view",
         "type": "function"
       },
-      {
-        "constant": true,
-        "inputs": [
-          {
-            "name": "",
-            "type": "uint256"
-          }
-        ],
-        "name": "conditionIds",
-        "outputs": [
-          {
-            "name": "",
-            "type": "bytes32"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "constant": true,
-        "inputs": [],
-        "name": "fee",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint64"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-      }
     ]
 }

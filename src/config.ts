@@ -94,11 +94,12 @@ export const wrappedUniswapV2ForTagAI2 = '0x72D353c0469C10F6B769F13b67EEdB2E1F26
 
 export const ConditionalToken = '0xAD1a38cEc043e70E83a3eC30443dB285ED10D774';
 export const WhiteList = '0xb3A547F535bDc1b20Eb6fd97b9524F893A75708C';
-export const LMSRMarketMakerFactory = '0x8f74826e4EB063449904Ef7027863aD4D2cF46d1';
 export const USD1 = '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
 export const USDT ='0x55d398326f99059fF775485246999027B3197955'
-export const Oracle = '0x78c2af38330c5b41ae7946a313e43cdceeaf8611'
-export const LMSRTradeFee = parseUnits("0.01", 18)
+export const Oracle = '0x6CCA0a99B608D53c77D12e3e0227fE76F3bc12b4'
+export const PredictionMinFee = parseUnits("1", 16);
+export const PredictionMaxFee = parseUnits("10", 16);
+export const FPMMDeterministicFactory = '0x71D4Bce40aAc2C1BF31716ad1c380e57151d4EE0';
 
 export const USD_CONTRACTS: Record<`0x${string}`, string> = {
     '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1',

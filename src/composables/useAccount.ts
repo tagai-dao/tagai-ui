@@ -28,6 +28,7 @@ export enum AccountAuthType {
 export const useAccount = () => {
     const accountMismatch = computed(() => {
         const accStore = useAccountStore()
+        console.log(55, accStore.getAccountInfo.ethAddr, accStore.ethConnectAddress)
         if (!accStore.ethConnectAddress) {
             return false
         }

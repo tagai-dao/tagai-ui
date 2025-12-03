@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAccountStore } from '@/stores/web3'
+import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import { handleErrorTip, notify } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
-import { getTweetCurations, createLMSRMarket as createLMSRMarketApi, checkPrediction, preCreateLMSRMarket } from '@/apis/api'
+import { getTweetCurations, createFPMMMarket as createFPMMMarketApi, checkPrediction, preCreateFPMMMarket } from '@/apis/api'
 import { OperateType, useTweet } from '@/composables/useTweet'
 import { useCommunityStore } from '@/stores/community'
 import { useAccount } from '@/composables/useAccount'
@@ -13,7 +13,7 @@ import emitter from '@/utils/emitter'
 import { getTokenBalance } from '@/utils/web3'
 import { formatAmount } from '@/utils/helper'
 import { parseUnits } from 'viem'
-import { createMarket } from '@/utils/lmsr'
+import { createMarket } from '@/utils/fpmm'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
@@ -53,7 +53,6 @@ const validateTwitterUrl = (url: string): RegExpMatchArray | null => {
 
 // 验证表单
 const validateForm = async (): Promise<boolean> => {
-  let isValid = true
   
   // 重置错误信息
   errors.title = ''
@@ -63,13 +62,13 @@ const validateForm = async (): Promise<boolean> => {
   // 验证标题
   if (!formData.title.trim()) {
     errors.title = t('createPredict.titleRequired')
-    isValid = false
+    return false
   } else if (formData.title.trim().length < 3) {
     errors.title = t('createPredict.titleTooShort')
-    isValid = false
+    return false
   } else if (formData.title.trim().length > 100) {
     errors.title = t('createPredict.titleTooLong')
-    isValid = false
+    return false
   }
   
   // 验证预测1
@@ -78,28 +77,28 @@ const validateForm = async (): Promise<boolean> => {
   console.log(33, predictA, predictB)
   if (!formData.predict1.trim()) {
     errors.predict1 = t('createPredict.predict1Required')
-    isValid = false
+    return false
   } else if (!predictA) {
     errors.predict1 = t('createPredict.invalidTwitterUrl')
-    isValid = false
+    return false
   }
   
   // 验证预测2
   if (!formData.predict2.trim()) {
     errors.predict2 = t('createPredict.predict2Required')
-    isValid = false
+    return false
   } else if (!predictB) {
     errors.predict2 = t('createPredict.invalidTwitterUrl')
-    isValid = false
+    return false
   }
 
   // 验证初始资金
   if (!formData.initAmount) {
     errors.initAmount = t('createPredict.amountRequired')
-    isValid = false
+    return false
   } else if (isNaN(Number(formData.initAmount)) || Number(formData.initAmount) <= 0) {
     errors.initAmount = t('createPredict.invalidAmount')
-    isValid = false
+    return false
   }
 
   // check tweetId
@@ -107,17 +106,15 @@ const validateForm = async (): Promise<boolean> => {
   const tweetIdB = predictB?.[3]
   if (!tweetIdA) {
     errors.predict1 = t('createPredict.invalidTwitterUrl')
-    isValid = false
-    return isValid
+    return false
   }
   if (!tweetIdB) {
     errors.predict2 = t('createPredict.invalidTwitterUrl')
-    isValid = false
-    return isValid
+    return false
   }
   if (tweetIdA === tweetIdB) {
     errors.predict2 = t('createPredict.predictsCannotBeSame')
-    isValid = false
+    return false
   }
 
   formData.tweetAId = tweetIdA
@@ -125,43 +122,42 @@ const validateForm = async (): Promise<boolean> => {
 
   // check curation
   const currentCurations: any = await getTweetCurations(tweetIdA, tweetIdB)
-  console.log(44, currentCurations)
   const tweetA = currentCurations.find((item: any) => item.tweetId === tweetIdA)
   const tweetB = currentCurations.find((item: any) => item.tweetId === tweetIdB)
   const currentTime = Date.now()
   if (tweetA) {
     if (tweetA.tick !== comStore.currentSelectedCommunity?.tick) {
       errors.predict1 = t('createPredict.predictsFromDifferentCommunities', { community: comStore.currentSelectedCommunity?.tick })
-      isValid = false
-      return isValid    
+      return false 
     }
     if ((tweetA.dayNumber + 3) * 86400000  - 8 * 3600000 < currentTime) {
       errors.predict1 = t('createPredict.predictsExpired')
-      isValid = false
-      return isValid
+      return false
     }
   }
   
   if (tweetB) {
     if (tweetB.tick !== comStore.currentSelectedCommunity?.tick) {
       errors.predict2 = t('createPredict.predictsFromDifferentCommunities', { community: comStore.currentSelectedCommunity?.tick })
-      isValid = false
-      return isValid
+      return false
     }
     if ((tweetB.dayNumber + 3) * 86400000  - 8 * 3600000 < currentTime) {
       errors.predict2 = t('createPredict.predictsExpired')
-      isValid = false
-      return isValid
+      return false
     }
     formData.tweetBId = tweetB.tweetId
   }
   
-  return isValid
+  return true
 }
 
 // 创建预测
 const createPredict = async () => {
-  if (!validateForm()) {
+  if (accStore.ethConnectState !== EthWalletState.Connected) {
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
+  if (!(await validateForm())) {
     return
   }
   
@@ -172,25 +168,33 @@ const createPredict = async () => {
 
     // 检查用户余额是否足够
     const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
-    if (b < parseUnits(formData.initAmount, 18)) {
+    console.log({"balance": b}, formData)
+    if (b < parseUnits(formData.initAmount.toString(), 18)) {
       notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
       return;
     }
+    console.log(7745)
 
     // 预创建市场记录，并生成questionid
-    const preMarketData: any = await preCreateLMSRMarket(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId);
-    const { questionId, needOP } = preMarketData;
+    const preMarketData: any = await preCreateFPMMMarket(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId);
+    console.log(633, preMarketData)
+    let { questionId, needOP, feePath, dayNumber } = preMarketData;
+
+    if (feePath && typeof(feePath) === 'string') {
+      feePath = JSON.parse(feePath)
+    }
 
     if (!(await preCheckCuration(OperateType.CREATE_PREDICT, undefined, needOP))) {
       notify({ message: t('errMessage.insufficientOp'), type: 'info' })
       return;
     }
 
+    console.log(9)
     // 开始创建市场
-    const { hash, lmsrMarketMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(formData.initAmount, 18))
+    const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], dayNumber, parseUnits(formData.initAmount.toString(), 18))
     
-    await createLMSRMarketApi(accInfo.twitterId, questionId, hash);
-    console.log('创建预测:', formData)
+    await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
+    console.log('创建预测:', formData, fpmmMaker, hash)
     // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
     modalStore.setModalVisible(false);
     emitter.emit('createPredictSuccess')
@@ -342,14 +346,14 @@ onMounted(async () => {
     </div>
 
     <!-- 按钮区域 -->
-    <div class="flex gap-3 mt-8">
+    <div class="gap-3 mt-8">
       <button
         @click="createPredict"
         :disabled="createLoading || accountMismatch"
-        class="flex-1 h-12 bg-gradient-primary text-white font-bold rounded-full text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full h-12 bg-gradient-primary text-white font-bold rounded-full text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <i-ep-loading v-if="createLoading" class="animate-spin" />
-        <span>{{ $t('createPredict.create') }}</span>
+        <span>{{ accStore.ethConnectAddress ? $t('createPredict.create') : $t('connect') }}</span>
       </button>
       <span v-if="accountMismatch" class="text-red-e6 text-sm text-center">
         {{ $t('web3.addressMismatch', {address: useAccountStore().getAccountInfo.ethAddr}) }}

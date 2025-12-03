@@ -3,10 +3,9 @@ import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, 
-    wrappedUniswapV2ForTagAI2, LMSRMarketMakerFactory, ConditionalToken } from '@/config'
+    wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalToken } from '@/config'
 import { useAccountStore } from "@/stores/web3";
 import { customBsc } from "./privy";
-import emitter from "./emitter";
 
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -23,7 +22,7 @@ const ContractAddress = {
     WrapSwaper2: wrappedUniswapV2ForTagAI2,
     CoinPurse: CoinPurse,
     WETH: WETH,
-    LMSRMarketMakerFactory: LMSRMarketMakerFactory,
+    FPMMDeterministicFactory: FPMMDeterministicFactory,
     ConditionalToken,
 }
 
