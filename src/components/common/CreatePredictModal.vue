@@ -165,7 +165,6 @@ const createPredict = async () => {
   const accInfo = accStore.getAccountInfo
   
   try {
-
     // 检查用户余额是否足够
     const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
     console.log({"balance": b}, formData)
@@ -189,10 +188,9 @@ const createPredict = async () => {
       return;
     }
 
-    console.log(9)
     // 开始创建市场
-    const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], dayNumber, parseUnits(formData.initAmount.toString(), 18))
-    
+    const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], (dayNumber + 3) * 86400, parseUnits(formData.initAmount.toString(), 18))
+    console.log({hash, fpmmMaker})
     await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
     console.log('创建预测:', formData, fpmmMaker, hash)
     // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)

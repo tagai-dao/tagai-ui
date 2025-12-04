@@ -4456,5 +4456,133 @@ export const abis = {
         "stateMutability": "view",
         "type": "function"
       },
+    ],
+    "ConditionalTokens": [
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "name": "parentCollectionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "conditionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "indexSets",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "redeemPositions",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "name": "collectionId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "getPositionId",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "owners",
+            "type": "address[]"
+          },
+          {
+            "name": "ids",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "balanceOfBatch",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256[]"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "name": "questionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "outcomeSlotCount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getConditionId",
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "parentCollectionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "conditionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "indexSet",
+            "type": "uint256"
+          }
+        ],
+        "name": "getCollectionId",
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
     ]
 }

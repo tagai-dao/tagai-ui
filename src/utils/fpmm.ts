@@ -1,6 +1,6 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
-    USD1, ConditionalToken, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee } from "@/config";
+    USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
@@ -49,7 +49,7 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
     const event: any = getCreateFPMMMarketMakerEventByHash(tx);
     if (event && event.creator === useAccountStore().ethConnectAddress) {
         // 读取链上的conditionid是否和事件中的一致
-        const conditionId = await readContract('ConditionalToken', 'getConditionId', [Oracle, questionId, 2])
+        const conditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, 2])
         if (conditionId !== event.conditionIds[0]) {
             throw 'Invalid transaction'
         }

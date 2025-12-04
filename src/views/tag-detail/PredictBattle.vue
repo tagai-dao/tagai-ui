@@ -6,7 +6,7 @@ import { GlobalModalType, type BattleData, type Tweet } from '@/types'
 import { formatAmount, parseTimestamp, getDayNumber } from '@/utils/helper'
 import { useCommunityStore } from '@/stores/community'
 import { handleErrorTip } from '@/utils/notify'
-import { useAccountStore } from '@/stores/web3'
+import { EthWalletState, useAccountStore } from '@/stores/web3'
 import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
 import TweetBtnReply from '@/components/tweets/TweetBtnReply.vue'
 import { useRouter } from 'vue-router'
@@ -108,6 +108,10 @@ const openTradeModal = (battle: BattleData) => {
 }
 
 const createPredictBattle = () => {
+  if (accStore.ethConnectState !== EthWalletState.Connected) {
+    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
   useModalStore().setModalVisible(true, GlobalModalType.CreatePredict)
 }
 
