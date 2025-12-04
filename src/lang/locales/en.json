@@ -148,7 +148,7 @@
     "recharge": "Deposit",
     "withdraw": "Withdraw",
     "tipDes1": "You can tip any TagAI token to any Twitter account, just need a few steps:",
-    "tipDes2": "Deposit BNB to your social account and set the transaction limit",
+    "tipDes2": "Deposit BNB to your social account and set the transaction limit.(Every social tip will cost you 0.0005 BNB as transaction fee)",
     "tipDes5": "Add social token, set authorization allowance and transaction limit",
     "tipDes6": "Tip on Twitter with: ",
     "tipDes7": "Click 'Tip' button to tip TagAI token to any Twitter account.",
