@@ -47,7 +47,7 @@ const tabOptions = computed(() => {
       // {label: 'Tipped', key: 'tipped'},
       {label: 'activity', key: 'activity'},
       // {label: 'Trades', key: 'trade'},
-      {label: 'Credit', key: 'credit'},
+      // {label: 'Credit', key: 'credit'},
       {label: 'Token', key: 'token'},
       {label: 'AI', key: 'ai'},
     ]
@@ -55,7 +55,7 @@ const tabOptions = computed(() => {
   return [
     // {label: 'Group', key: 'group'},
     {label: 'Square', key: 'content'},
-    {label: 'Predict', key: 'predict'},
+    // {label: 'Predict', key: 'predict'},
     // {label: 'Tipped', key: 'tipped'},
     {label: 'activity', key: 'activity'},
     {label: 'Trades', key: 'trade'},
