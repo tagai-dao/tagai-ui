@@ -314,12 +314,6 @@ export const getPredictBattleData = async (tick: string, twitterId?: string, pag
 export const getTweetCurations = async (tweetAId: string, tweetBId: string) =>
   get(BACKEND_API_URL + '/predict/getTweetCurations', { tweetAId, tweetBId })
 
-export const checkPrediction = async ( tweetAId: string, tweetBId: string) => 
-  get(BACKEND_API_URL + '/predict/checkPrediction', { tweetAId, tweetBId })
-
-export const createPredict = async (twitterId: string, tick: string, title: string, tweetAId: string, tweetBId: string) =>
-  post(BACKEND_API_URL + '/predict/createPredictBattle', { twitterId, tick, title, tweetAId, tweetBId })
-
 export const preCreateFPMMMarket = async (twitterId: string, tick: string, title: string, tweetIdA: string, tweetIdB: string) =>
   post(BACKEND_API_URL + '/predict/preCreateFPMMMarket', { twitterId, tick, title, tweetIdA, tweetIdB })
 
