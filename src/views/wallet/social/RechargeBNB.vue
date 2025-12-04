@@ -15,11 +15,11 @@ import { parseEther, zeroAddress } from "viem";
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
 const showTickerError = ref(false)
-const allowance = ref<number | null>(null)
+const allowance = ref<number | null>(0.1)
 const showInputAllowance = ref(false)
-const transactionLimit = ref<number | null>(null)
+const transactionLimit = ref<number | null>(0.01)
 const showInputTransactionLimit = ref(false)
-const dailyLimit = ref<number | null>(null)
+const dailyLimit = ref<number | null>(0.1)
 const showInputDailyLimit = ref(false)
 const state = ref(0)
 const accStore = useAccountStore()
@@ -78,8 +78,8 @@ async function confirm() {
 onMounted(async () => {
     let count = 0
     while(count++ < 10) {
-        transactionLimit.value = accStore.transactionLimit
-        dailyLimit.value = accStore.dailyLimit
+        transactionLimit.value = transactionLimit.value ?? accStore.transactionLimit
+        dailyLimit.value = dailyLimit.value ?? accStore.dailyLimit
         await sleep(0.2)
         if (accStore.transactionLimit > 0) {
             break
