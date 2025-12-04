@@ -29,6 +29,7 @@ const onRefresh = async () => {
         if (refreshing.value) return
         refreshing.value = true
         const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId)
+
         if (data.battle && data.battle.length > 0) {
             tweets = Object.assign({}, data.tweets)
             battles.value = (data.battle as BattleData[]).map(battle => ({

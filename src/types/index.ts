@@ -443,5 +443,7 @@ export type BattleData = {
   title: string,
   predictAID: string,
   predictBID: string,
-  winner: 'left' | 'right' | null
+  winner: 'left' | 'right' | null,
+  questionId: string,
+  status: number
 }
