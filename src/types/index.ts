@@ -277,6 +277,7 @@ export type Community = OnchainTokenInfo & {
   distribution: string;
   creditPolicy?: string;
   deboxConversationId?: string;
+  feePath?: string | object | null | undefined,
 };
 
 export type ClankerToken = OnchainTokenInfo & {
@@ -440,10 +441,17 @@ export type MindShare = Account & {
 }
 
 export type BattleData = {
+  marketMaker: string,
+  reserveA: number | undefined | null,
+  reserveB: number | undefined | null,
   title: string,
   predictAID: string,
   predictBID: string,
   winner: 'left' | 'right' | null,
   questionId: string,
-  status: number
+  status: number,
+  positionAID: string,
+  positionBID: string,
+  conditionID: string,
+  fee: number | undefined | null
 }

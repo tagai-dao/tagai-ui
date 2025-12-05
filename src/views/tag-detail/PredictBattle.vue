@@ -12,6 +12,7 @@ import TweetBtnReply from '@/components/tweets/TweetBtnReply.vue'
 import { useRouter } from 'vue-router'
 import { useModalStore } from '@/stores/common'
 import emitter from '@/utils/emitter'
+import { getMarketInfos } from '@/utils/fpmm'
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
@@ -31,10 +32,15 @@ const onRefresh = async () => {
         const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId)
 
         if (data.battle && data.battle.length > 0) {
+          const marketInfos = await getMarketInfos(data.battle as BattleData[])
+          console.log(344, marketInfos)
             tweets = Object.assign({}, data.tweets)
             battles.value = (data.battle as BattleData[]).map(battle => ({
                 ...battle,
-                winner: getWinner(battle)
+                winner: getWinner(battle),
+                reserveA: marketInfos[battle.marketMaker + '-priceA'],
+                reserveB: marketInfos[battle.marketMaker + '-priceB'],
+                fee: marketInfos[battle.marketMaker + '-fee']
             }))
             console.log(44, tweets, data, battles.value)
         }else {
@@ -57,10 +63,14 @@ const onLoad = async () => {
         loading.value = true
         const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, Math.floor((battles.value.length - 1) / 16) + 1) as BattleData[]
         if (data.battle && data.battle.length > 0) {
+          const marketInfos = await getMarketInfos(data.battle as BattleData[])
           tweets = Object.assign(tweets, data.tweets)
           battles.value = battles.value.concat((data.battle as BattleData[]).map(battle => ({
               ...battle,
-              winner: getWinner(battle)
+              winner: getWinner(battle),
+              reserveA: marketInfos[battle.marketMaker + '-priceA'],
+              reserveB: marketInfos[battle.marketMaker + '-priceB'],
+              fee: marketInfos[battle.marketMaker + '-fee']
           })))
         }
         if (!data.battle || data.battle.length < 16) {
@@ -88,8 +98,8 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
 }
 
 const getBattleStats = (battle: BattleData) => {
-  const amountA = tweets[battle.predictAID]?.amount || 0
-  const amountB = tweets[battle.predictBID]?.amount || 0
+  const amountA = battle.reserveB || 0
+  const amountB = battle.reserveA || 0
   const total = amountA + amountB
   
   if (total === 0) return { percentA: 50, percentB: 50 }
@@ -183,17 +193,20 @@ onMounted(async () => {
           }"
         >
           <!-- Trade 按钮 (absolute定位到底部中间) -->
-          <div class="absolute bottom-4 sm:bottom-6 left-0 right-0 flex justify-center z-20 pointer-events-none">
+          <div class="absolute bottom-4 sm:bottom-6 left-0 right-0 flex flex-col items-center justify-center z-20 pointer-events-none">
             <button 
               class="pointer-events-auto w-1/2 h-9 sm:h-10 bg-gradient-primary text-white text-xs sm:text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
               @click="openTradeModal(battle)"
             >
               Trade
             </button>
+            <!-- <p class="text-xs text-grey-normal mt-1 text-center">
+              {{ 'Current fee: ' + (battle.fee ? battle.fee * 100 : 0).toFixed(2) + '%' }}
+            </p> -->
           </div>
 
           <!-- 统一的进度条 (absolute定位到底部) -->
-          <div class="absolute bottom-16 sm:bottom-20 left-4 right-4 flex flex-col gap-2 z-10">
+          <div class="absolute bottom-20 sm:bottom-24 left-4 right-4 flex flex-col gap-2 z-10">
             <!-- 进度条行 -->
             <div class="flex items-center gap-3">
               <!-- 左侧比例 -->
@@ -220,7 +233,7 @@ onMounted(async () => {
             </div>
 
             <!-- VOL 行 -->
-            <div class="flex justify-between text-[10px] sm:text-xs font-medium text-gray-500 px-[3.25rem]">
+            <!-- <div class="flex justify-between text-[10px] sm:text-xs font-medium text-gray-500 px-[3.25rem]">
               <div class="flex items-center gap-1">
                 <span>VOL:</span>
                 <span>{{ formatAmount(tweets[battle.predictAID]?.amount ?? 0) }}</span>
@@ -229,7 +242,7 @@ onMounted(async () => {
                 <span>VOL:</span>
                 <span>{{ formatAmount(tweets[battle.predictBID]?.amount ?? 0) }}</span>
               </div>
-            </div>
+            </div> -->
           </div>
 
           <!-- 左侧玩家卡片 -->

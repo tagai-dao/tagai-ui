@@ -451,5 +451,29 @@
     "initAmountTip": "Create a FPMM predict market needs to inject some amount of token into the market as the initial liquidity",
     "amountPlaceholder": "Enter amount",
     "amountRequired": "Please enter amount"
+  },
+  "predictTrade": {
+    "shareAmount": "Shares to Trade",
+    "shareUnit": "Share",
+    "sharePlaceholder": "Enter Amount",
+    "buyYes": "Buy Red",
+    "buyYesDesc": "Bet on Red event happening",
+    "payCost": "Cost",
+    "priceImpact": "Price Impact",
+    "sellYes": "Sell Red",
+    "sellYesDesc": "Sell your Red shares",
+    "gainProfit": "Return",
+    "buyNo": "Buy Blue",
+    "buyNoDesc": "Bet on Blue event happening",
+    "sellNo": "Sell Blue",
+    "sellNoDesc": "Sell your Blue shares",
+    "currentAddress": "Address",
+    "fee": "Fee",
+    "available": "Available Balance",
+    "yesShare": "Red Shares",
+    "noShare": "Blue Shares",
+    "marketState": "Market State",
+    "yesTotal": "Total Red",
+    "noTotal": "Total Blue"
   }
 }

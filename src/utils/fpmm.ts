@@ -1,4 +1,4 @@
-import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
+import type { BattleData, Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
     USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
@@ -59,6 +59,93 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
         // 非法交易
         throw 'Invalid transaction'
     }
+}
+
+export const getMarketInfos = async (markets: BattleData[]) => {
+    if (markets.length === 0) {
+        return []
+    }
+    // 获取价格
+    let calls = [];
+    for (let market of markets) {
+        calls.push({
+            target: ConditionalTokens,
+            call: [
+                'balanceOf(address,uint256)(uint256)',
+                market.marketMaker,
+                market.positionAID
+            ],
+            returns: [
+                [market.marketMaker + '-priceA', (val: any) => val / 1e18]
+            ]
+        })
+        calls.push({
+            target: ConditionalTokens,
+            call: [
+                'balanceOf(address,uint256)(uint256)',
+                market.marketMaker,
+                market.positionBID
+            ],
+            returns: [
+                [market.marketMaker + '-priceB', (val: any) => val / 1e18]
+            ]
+        })
+        calls.push({
+            target: market.marketMaker,
+            call: [
+                'getFee()(uint256)'
+            ],
+            returns: [
+                [market.marketMaker + '-fee', (val: any) => val / 1e18]
+            ]
+        })
+    }
+    
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed;
+}
+
+export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData) {
+    let calls = [
+        {
+            target: tokenAddr,
+            call: [
+                'balanceOf(address)(uint256)',
+                accAddr
+            ],
+            returns: [
+                ['balance', (val: any) => val / 1e18]
+            ]
+        },
+        {
+            target: ConditionalTokens,
+            call: [
+                'balanceOf(address,uint256)(uint256)',
+                accAddr,
+                battle.positionAID  
+            ],
+            returns: [
+                ['balanceA', (val: any) => val / 1e18]
+            ]
+        },
+        {
+            target: ConditionalTokens,
+            call: [
+                'balanceOf(address,uint256)(uint256)',
+                accAddr,
+                battle.positionBID
+            ],
+            returns: [
+                ['balanceB', (val: any) => val / 1e18]
+            ]
+        }
+    ]
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed;
+}
+
+export async function getTradeData(battle: BattleData, shares: number) {
+    
 }
 
 const getCreateFPMMMarketMakerEventByHash = (tx: { logs: Log[] }) => {
