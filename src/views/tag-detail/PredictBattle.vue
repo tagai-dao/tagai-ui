@@ -115,14 +115,23 @@ const openTweet = (tweetId: string) => {
 }
 
 const openTradeModal = (battle: BattleData) => {
-  useModalStore().setModalVisible(true, GlobalModalType.PredictTrade, { battle, tweets })
-}
-
-const createPredictBattle = () => {
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
+  useModalStore().setModalVisible(true, GlobalModalType.PredictTrade, { battle, tweets })
+}
+
+const createPredictBattle = () => {
+  if (!accStore.getAccountInfo?.twitterId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Login)
+    return;
+  }
+  if (accStore.ethConnectState !== EthWalletState.Connected) {
+    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
+
   useModalStore().setModalVisible(true, GlobalModalType.CreatePredict)
 }
 

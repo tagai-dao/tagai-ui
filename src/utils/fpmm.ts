@@ -144,9 +144,28 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
     return res.results.transformed;
 }
 
-export async function getTradeData(battle: BattleData, shares: number) {
+export async function getBuyData(battle: BattleData, shares: number, outcome: 'red' | 'blue') {
     const sharesBi = parseUnits(shares.toString(), 18)
+    if (sharesBi === 0n) return 0;
+    console.log('sharesBi', sharesBi)
+    let calls = [{
+        target: battle.marketMaker,
+        call: [
+            'calcBuyAmount(uint256,uint256)(uint256)',
+            sharesBi.toString(),
+            outcome === 'red' ? 0 : 1
+        ],
+        returns: [
+            ['amount', (val: any) => val.toString() / 1e18]
+        ]
+    }]
+    const res: any = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed.amount;
+}
 
+export async function getSellData(battle: BattleData, shares: number, outcome: 'red' | 'blue') {
+    const sharesBi = parseUnits(shares.toString(), 18)
+    if (sharesBi === 0n) return 0;
     let calls = [{
         
     }]
