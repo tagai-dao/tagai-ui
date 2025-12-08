@@ -7,7 +7,7 @@ import { useAccount } from '@/composables/useAccount'
 import { useAccountStore } from '@/stores/web3'
 import { useCommunityStore } from '@/stores/community'
 import { isAddress } from 'viem'
-import { getUserTokenBalances } from '@/utils/fpmm'
+import { getUserTokenBalances, calculateMaxSellAmount } from '@/utils/fpmm'
 import type { BattleData } from '@/types'
 import debounce from 'lodash.debounce'
 
@@ -16,6 +16,13 @@ const battle = computed(() => modalStore.modalParams?.battle)
 const tweets = computed(() => modalStore.modalParams?.tweets || {})
 const accStore = useAccountStore()
 const comStore = useCommunityStore()
+
+enum TradeType {
+  BUY_RED,
+  BUY_BLUE,
+  SELL_RED,
+  SELL_BLUE
+}
 
 const { onCopy } = useTools()
 const shares = ref(10)
@@ -45,8 +52,8 @@ const percentB = computed(() => {
 })
 
 // Mock cost calculation
-const buyYesCost = computed(() => (shares.value * (percentA.value / 100)).toFixed(2))
-const buyNoCost = computed(() => (shares.value * (percentB.value / 100)).toFixed(2))
+const buyYesReceive = computed(() => (shares.value * (percentA.value / 100)).toFixed(2))
+const buyNoReceive = computed(() => (shares.value * (percentB.value / 100)).toFixed(2))
 
 // Mock sell return calculation
 const sellYesReturn = computed(() => (shares.value * (percentA.value / 100) * 0.95).toFixed(2))
@@ -69,6 +76,29 @@ watch(shares, debounce(async () => {
 
 function copyMarketAddress(address: `0x${string}`) {
   onCopy(address)
+}
+
+async function getMaxInfo(type: TradeType) {
+  switch (type) {
+    case TradeType.BUY_RED:
+      shares.value = tokenBalance.value
+      break
+    case TradeType.BUY_BLUE:
+      shares.value = tokenBalance.value
+      break
+    case TradeType.SELL_BLUE:
+      const d1 = await calculateMaxSellAmount(battle.value as BattleData, 1)
+      console.log(52, d1)
+      break
+    case TradeType.SELL_RED:
+      const d2 = await calculateMaxSellAmount(battle.value as BattleData, 0)
+      console.log(53, d2)
+      break
+  }
+}
+
+async function trade(type: TradeType) {
+  console.log('trade')
 }
 
 onMounted(async () => {
@@ -99,15 +129,15 @@ onMounted(async () => {
             <div class="flex gap-2">
                 <button 
                   class="px-3 py-3 bg-gray-200 border border-gray-200 rounded-lg text-gray-700 font-mono text-sm hover:bg-gray-300 active:bg-gray-400 transition-colors"
-                  @click="shares = (Number(shares) || 0) + 1"
+                  @click="shares = (Number(shares) || 0) + 1000"
                 >
-                  +1
+                  +1000
                 </button>
                 <button 
                   class="px-3 py-3 bg-gray-200 border border-gray-200 rounded-lg text-gray-700 font-mono text-sm hover:bg-gray-300 active:bg-gray-400 transition-colors"
-                  @click="shares = (Number(shares) || 0) + 10"
+                  @click="shares = (Number(shares) || 0) + 10000"
                 >
-                  +10
+                  +10000
                 </button>
             </div>
             <div class="flex-1 relative">
@@ -118,7 +148,7 @@ onMounted(async () => {
                 class="w-full bg-gray-50 text-gray-900 rounded-lg border border-gray-200 p-3 pr-12 font-mono text-lg focus:outline-none focus:border-blue-500 transition-colors"
                 :placeholder="$t('predictTrade.sharePlaceholder')"
               >
-              <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{{ $t('predictTrade.shareUnit') }}</span>
+              <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">{{ comStore.currentSelectedCommunity?.tick }}</span>
             </div>
           </div>
         </div>
@@ -126,14 +156,20 @@ onMounted(async () => {
         <div class="grid grid-cols-2 gap-3 sm:gap-4">
           <!-- Buy YES Column -->
           <div class="flex flex-col gap-3">
-            <div class="border border-blue-500/30 bg-blue-50/50 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition-colors group relative overflow-hidden">
-              <div class="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
+            <div class="border border-red-500/30 bg-red-50/50 rounded-xl p-4 cursor-pointer hover:border-red-500 transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm active:scale-[0.99] group relative overflow-hidden"
+            @click="trade(TradeType.BUY_RED)">
+              <div class="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
               <div class="relative z-10">
-                <div class="text-blue-600 font-bold text-lg mb-1">{{ $t('predictTrade.buyYes') }}</div>
+                <div class="text-red-600 font-bold text-lg mb-1">{{ $t('predictTrade.buyYes') }}
+                  <button class="text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-2 py-1 ml-2 transition-colors" 
+                    @click.stop="getMaxInfo(TradeType.BUY_RED)">
+                    Max
+                  </button>
+                </div>
                 <div class="text-xs text-gray-500 mb-4">{{ $t('predictTrade.buyYesDesc') }}</div>
                 <div class="flex justify-between text-sm mb-1">
-                  <span class="text-gray-500">{{ $t('predictTrade.payCost') }}:</span>
-                  <span class="font-bold font-mono text-gray-800">{{ buyYesCost }}</span>
+                  <span class="text-gray-500">{{ $t('predictTrade.receive') }}:</span>
+                  <span class="font-bold font-mono text-gray-800">{{ buyYesReceive }}</span>
                 </div>
                 <div class="flex justify-between text-xs">
                   <span class="text-gray-500">{{ $t('predictTrade.priceImpact') }}:</span>
@@ -141,14 +177,20 @@ onMounted(async () => {
                 </div>
               </div>
             </div>
-            <button class="w-full rounded-xl border border-blue-500/30 bg-blue-50/50 p-4 cursor-pointer hover:border-blue-500 transition-colors group relative overflow-hidden text-left">
-              <div class="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
+            <button class="w-full rounded-xl border border-red-500/30 bg-red-50/50 p-4 cursor-pointer hover:border-red-500 transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm active:scale-[0.99] group relative overflow-hidden text-left"
+            @click="trade(TradeType.SELL_RED)">
+              <div class="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
                <div class="relative z-10 flex flex-col gap-1">
-                 <div class="text-blue-600 font-bold text-lg mb-1">{{ $t('predictTrade.sellYes') }}</div>
+                 <div class="text-red-600 font-bold text-lg mb-1">{{ $t('predictTrade.sellYes') }}
+                  <button class="text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-2 py-1 ml-2 transition-colors" 
+                    @click.stop="getMaxInfo(TradeType.SELL_RED)">
+                    Max
+                  </button>
+                </div>
                  <div class="text-xs text-gray-500 mb-4">{{ $t('predictTrade.sellYesDesc') }}</div>
                  <div class="flex justify-between text-sm mb-1 w-full">
-                  <span class="text-gray-500">{{ $t('predictTrade.gainProfit') }}:</span>
-                  <span class="font-bold font-mono text-gray-800">{{ sellYesReturn }}</span>
+                  <span class="text-gray-500">{{ $t('predictTrade.receive') }}:</span>
+                  <span class="font-bold font-mono text-gray-800">{{ sellYesReturn }} {{ comStore.currentSelectedCommunity?.tick }}</span>
                  </div>
                  <div class="flex justify-between text-xs w-full">
                   <span class="text-gray-500">{{ $t('predictTrade.priceImpact') }}:</span>
@@ -160,29 +202,41 @@ onMounted(async () => {
 
           <!-- Buy NO Column -->
           <div class="flex flex-col gap-3">
-            <div class="border border-red-500/30 bg-red-50/50 rounded-xl p-4 cursor-pointer hover:border-red-500 transition-colors group relative overflow-hidden">
-              <div class="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
+            <div class="border border-blue-500/30 bg-blue-50/50 rounded-xl p-4 cursor-pointer hover:border-blue-500 transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm active:scale-[0.99] group relative overflow-hidden"
+            @click="trade(TradeType.BUY_BLUE)">
+              <div class="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
               <div class="relative z-10">
-                <div class="text-red-600 font-bold text-lg mb-1">{{ $t('predictTrade.buyNo') }}</div>
+                <div class="text-blue-600 font-bold text-lg mb-1">{{ $t('predictTrade.buyNo') }}
+                  <button class="text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-2 py-1 ml-2 transition-colors" 
+                    @click.stop="getMaxInfo(TradeType.BUY_BLUE)">
+                    Max
+                  </button>
+                </div>
                 <div class="text-xs text-gray-500 mb-4">{{ $t('predictTrade.buyNoDesc') }}</div>
                 <div class="flex justify-between text-sm mb-1">
-                  <span class="text-gray-500">{{ $t('predictTrade.payCost') }}:</span>
-                  <span class="font-bold font-mono text-gray-800">{{ buyNoCost }}</span>
+                  <span class="text-gray-500">{{ $t('predictTrade.receive') }}:</span>
+                  <span class="font-bold font-mono text-gray-800">{{ buyNoReceive }}</span>
                 </div>
                 <div class="flex justify-between text-xs">
                   <span class="text-gray-500">{{ $t('predictTrade.priceImpact') }}:</span>
-                  <span class="text-red-600 font-mono">{{ percentB }}% → {{ (percentB - 0.5).toFixed(1) }}%</span>
+                  <span class="text-blue-600 font-mono">{{ percentB }}% → {{ (percentB - 0.5).toFixed(1) }}%</span>
                 </div>
               </div>
             </div>
-            <button class="w-full rounded-xl border border-red-500/30 bg-red-50/50 p-4 cursor-pointer hover:border-red-500 transition-colors group relative overflow-hidden text-left">
-              <div class="absolute inset-0 bg-red-500/5 group-hover:bg-red-500/10 transition-colors"></div>
+            <button class="w-full rounded-xl border border-blue-500/30 bg-blue-50/50 p-4 cursor-pointer hover:border-blue-500 transition-all duration-200 shadow-md hover:shadow-lg active:shadow-sm active:scale-[0.99] group relative overflow-hidden text-left"
+            @click="trade(TradeType.SELL_BLUE)">
+              <div class="absolute inset-0 bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors"></div>
                <div class="relative z-10 flex flex-col gap-1">
-                 <div class="text-red-600 font-bold text-lg mb-1">{{ $t('predictTrade.sellNo') }}</div>
+                 <div class="text-blue-600 font-bold text-lg mb-1">{{ $t('predictTrade.sellNo') }}
+                  <button class="text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-2 py-1 ml-2 transition-colors" 
+                    @click.stop="getMaxInfo(TradeType.SELL_BLUE)">
+                    Max
+                  </button>
+                </div>
                  <div class="text-xs text-gray-500 mb-4">{{ $t('predictTrade.sellNoDesc') }}</div>
                  <div class="flex justify-between text-sm mb-1 w-full">
-                  <span class="text-gray-500">{{ $t('predictTrade.gainProfit') }}:</span>
-                  <span class="font-bold font-mono text-gray-800">{{ sellNoReturn }}</span>
+                  <span class="text-gray-500">{{ $t('predictTrade.receive') }}:</span>
+                  <span class="font-bold font-mono text-gray-800">{{ sellNoReturn }} {{ comStore.currentSelectedCommunity?.tick }}</span>
                  </div>
                  <div class="flex justify-between text-xs w-full">
                   <span class="text-gray-500">{{ $t('predictTrade.priceImpact') }}:</span>
@@ -212,11 +266,11 @@ onMounted(async () => {
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 flex justify-between">
                 <div>
                     <div class="text-xs text-gray-500 mb-1">{{ $t('predictTrade.yesShare') }}</div>
-                    <div class="text-lg font-bold font-mono text-blue-600">{{ formatAmount(blueBalance) }}</div>
+                    <div class="text-lg font-bold font-mono text-red-600">{{ formatAmount(redBalance) }}</div>
                 </div>
                  <div>
                     <div class="text-xs text-gray-500 mb-1">{{ $t('predictTrade.noShare') }}</div>
-                    <div class="text-lg font-bold font-mono text-red-600">{{ formatAmount(redBalance) }}</div>
+                    <div class="text-lg font-bold font-mono text-blue-600">{{ formatAmount(blueBalance) }}</div>
                 </div>
             </div>
         </div>

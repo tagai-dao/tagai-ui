@@ -10,7 +10,7 @@ import _ from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
-import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes } from "viem";
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits } from "viem";
 import { writeContract, readContract } from "./contract";
 
 export async function createMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], dayNumber: number, funding: bigint) {
@@ -145,7 +145,71 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
 }
 
 export async function getTradeData(battle: BattleData, shares: number) {
-    
+    const sharesBi = parseUnits(shares.toString(), 18)
+
+    let calls = [{
+        
+    }]
+
+}
+
+export async function calculateMaxSellAmount(battle: BattleData, index: number) {
+    // 获取用户和池子余额
+    let calls = [
+        {
+            target: ConditionalTokens,
+            call: [
+                "balanceOf(address,uint256)(uint256)",
+                useAccountStore().ethConnectAddress,
+                index == 0 ? battle.positionAID : battle.positionBID
+            ],
+            returns: [
+                ['balance', (val: any) => val / 1e18]
+            ]
+        },
+        {
+            target: ConditionalTokens,
+            call: [
+                "balanceOf(address,uint256)(uint256)",
+                battle.marketMaker,
+                battle.positionAID
+            ],
+            returns: [
+                ['poolBalanceA', (val: any) => val / 1e18]
+            ]
+        },
+        {
+            target: ConditionalTokens,
+            call: [
+                "balanceOf(address,uint256)(uint256)",
+                battle.marketMaker,
+                battle.positionBID
+            ],
+            returns: [
+                ['poolBalanceB', (val: any) => val]
+            ]
+        }
+    ]
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const S = res.results.transformed['balance'];
+    const poolBalanceA = res.results.transformed['poolBalanceA'];
+    const poolBalanceB = res.results.transformed['poolBalanceB'];
+
+    if (S === 0) return 0n;
+
+    const P_sell = index === 0 ?  poolBalanceA : poolBalanceB;
+    const P_other = index === 0 ? poolBalanceB : poolBalanceA;
+
+
+    // 计算能卖出的最大值
+
+    const b = -(S + P_sell + P_other);
+    const c = S * P_other;
+    const delta = Math.sqrt(b * b - 4 * c);
+    const x = (-b - delta) / 2;
+
+    const stateReturnAmount = x * 0.99999;
+    return parseUnits(stateReturnAmount.toFixed(18), 18);
 }
 
 const getCreateFPMMMarketMakerEventByHash = (tx: { logs: Log[] }) => {
