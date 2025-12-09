@@ -433,8 +433,8 @@
     "subtitle": "Create a battle between two predictions and let the community vote for the winner",
     "battleTitle": "Battle Title",
     "titlePlaceholder": "Enter battle title, e.g., Bitcoin Price Prediction",
-    "predict1": "Prediction A (Twitter Link)",
-    "predict2": "Prediction B (Twitter Link)",
+    "predict1": "Red perspective(Twitter Link)",
+    "predict2": "Blue perspective(Twitter Link)",
     "twitterUrlPlaceholder": "https://twitter.com/username/status/1234567890",
     "create": "Create Battle",
     "titleRequired": "Please enter battle title",
@@ -450,7 +450,8 @@
     "initAmount": "Initial Amount",
     "initAmountTip": "Create a FPMM predict market needs to inject some amount of token into the market as the initial liquidity",
     "amountPlaceholder": "Enter amount",
-    "amountRequired": "Please enter amount"
+    "amountRequired": "Please enter amount",
+    "creatingTip": "Please do not close this windown before the creation is complete"
   },
   "predictTrade": {
     "shareAmount": "Shares to Trade",

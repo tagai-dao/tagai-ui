@@ -145,7 +145,8 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
 }
 
 export async function getBuyData(battle: BattleData, shares: number, outcome: 'red' | 'blue') {
-    const sharesBi = parseUnits(shares.toString(), 18)
+    if (!shares) return 0;
+    const sharesBi = parseUnits(shares.toFixed(18), 18)
     if (sharesBi === 0n) return 0;
     console.log('sharesBi', sharesBi)
     let calls = [{
@@ -158,17 +159,117 @@ export async function getBuyData(battle: BattleData, shares: number, outcome: 'r
         returns: [
             ['amount', (val: any) => val.toString() / 1e18]
         ]
+    }, {
+        target: battle.marketMaker,
+        call: [
+            "getBNBFee(uint256)(uint256)",
+            sharesBi.toString()
+        ],
+        returns: [
+            ['fee', (val: any) => val.toString() / 1e18]
+        ]
     }]
     const res: any = await aggregate(calls, ChainConfig.multiConfig)
-    return res.results.transformed.amount;
+    return res.results.transformed;
 }
 
-export async function getSellData(battle: BattleData, shares: number, outcome: 'red' | 'blue') {
-    const sharesBi = parseUnits(shares.toString(), 18)
+export async function getSellData(battle: BattleData, reserveA: number, reserveB: number, shares: number, outcome: 'red' | 'blue') {
+    if (!shares) return {receive: 0, fee: 0};
+    if (parseFloat(shares.toFixed(18)) === 0) return {receive: 0, fee: 0};
+
+    const S = shares;
+    const poolBalanceA = reserveA;
+    const poolBalanceB = reserveB;
+
+    if (S === 0) return 0n;
+
+    const P_sell = outcome === 'red' ?  poolBalanceA : poolBalanceB;
+    const P_other = outcome === 'red' ? poolBalanceB : poolBalanceA;
+
+    // 计算卖出能得到的抵押代币数量
+
+    const b = -(S + P_sell + P_other);
+    const c = S * P_other;
+    const delta = Math.sqrt(b * b - 4 * c);
+    const x = (-b - delta) / 2;
+
+    const stateReturnAmount = x * (1 - (battle.fee ?? 0)) * 0.99999;
+    
+    const sharesBi = parseUnits(stateReturnAmount.toFixed(18), 18)
     if (sharesBi === 0n) return 0;
     let calls = [{
-        
+        target: battle.marketMaker,
+        call: [
+            "getBNBFee(uint256)(uint256)",
+            sharesBi.toString()
+        ],
+        returns: [
+            ['fee', (val: any) => val.toString() / 1e18]
+        ]
     }]
+    const res: any = await aggregate(calls, ChainConfig.multiConfig)
+    const fee = res.results.transformed.fee;
+
+    return {receive: stateReturnAmount, fee};
+}
+
+export async function buyToken(battle: BattleData, collateralToken: string, shares: number, minOutcomeTokensToBuy: number, outcome: 'red' | 'blue', bnbFee: number) {
+    if (!isAddress(battle.marketMaker)) return;
+    const sharesBi = parseUnits(shares.toFixed(18), 18)
+    if (sharesBi === 0n) return;
+    const minOutcomeTokensToBuyBi = parseUnits(minOutcomeTokensToBuy.toFixed(18), 18)
+    if (minOutcomeTokensToBuyBi === 0n) return;
+
+    // approve token
+    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, battle.marketMaker], collateralToken as `0x${string}`)
+    if (allowance < sharesBi) {
+        await writeContract({
+            contractName: 'Token1',
+            functionName: 'approve',
+            args: [battle.marketMaker, sharesBi],
+            address: collateralToken as `0x${string}`
+        })
+    }
+    
+    const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
+
+    return await writeContract({
+        contractName: 'FixedProductMarketMaker',
+        functionName: 'buy',
+        args: [sharesBi, outcome === 'red' ? 0 : 1, minOutcomeTokensToBuyBi],
+        value: bnbFeeBi,
+        address: battle.marketMaker
+    })
+
+}
+
+export async function sellToken(battle: BattleData, shares: number, maxOutcomeTokensToSell: number, outcome: 'red' | 'blue', bnbFee: number) {
+    if (!isAddress(battle.marketMaker)) return;
+    const shareBi = parseUnits(shares.toFixed(18), 18)
+    if (shareBi === 0n) return;
+    const maxOutcomeTokensToSellBi = parseUnits(maxOutcomeTokensToSell.toFixed(18), 18)
+    if (maxOutcomeTokensToSellBi === 0n) return;
+
+    const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
+
+    // approve token
+    const approved: any = await readContract('ConditionalTokens', 'isApprovedForAll', [useAccountStore().ethConnectAddress, battle.marketMaker], ConditionalTokens);
+    if (!approved) {
+        await writeContract({
+            contractName: 'ConditionalTokens',
+            functionName: 'setApprovalForAll',
+            args: [battle.marketMaker, true],
+            address: ConditionalTokens
+        })
+    }
+
+    return await writeContract({
+        contractName: 'FixedProductMarketMaker',
+        functionName: 'sell',
+        args: [shareBi, outcome === 'red' ? 0 : 1, maxOutcomeTokensToSellBi],
+        value: bnbFeeBi,
+        address: battle.marketMaker
+    })
 
 }
 

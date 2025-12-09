@@ -74,7 +74,6 @@ const validateForm = async (): Promise<boolean> => {
   // 验证预测1
   let predictA = validateTwitterUrl(formData.predict1)
   let predictB = validateTwitterUrl(formData.predict2)
-  console.log(33, predictA, predictB)
   if (!formData.predict1.trim()) {
     errors.predict1 = t('createPredict.predict1Required')
     return false
@@ -167,12 +166,12 @@ const createPredict = async () => {
   try {
     // 检查用户余额是否足够
     const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
-    console.log({"balance": b}, formData)
     if (b < parseUnits(formData.initAmount.toString(), 18)) {
       notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
       return;
     }
-    console.log(7745)
+
+    useModalStore().setModalCloseEnable(false);
 
     // 预创建市场记录，并生成questionid
     const preMarketData: any = await preCreateFPMMMarket(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId);
@@ -200,6 +199,7 @@ const createPredict = async () => {
     console.log(66, error)
     handleErrorTip(error)
   } finally {
+    useModalStore().setModalCloseEnable(true);
     createLoading.value = false
   }
 }
@@ -355,6 +355,9 @@ onMounted(async () => {
       </button>
       <span v-if="accountMismatch" class="text-red-e6 text-sm text-center">
         {{ $t('web3.addressMismatch', {address: useAccountStore().getAccountInfo.ethAddr}) }}
+      </span>
+      <span v-if="createLoading" class="text-red-e6 text-sm text-center">
+        {{ $t('createPredict.creatingTip') }}
       </span>
     </div>
   </div>

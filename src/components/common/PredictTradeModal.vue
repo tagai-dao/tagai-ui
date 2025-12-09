@@ -7,9 +7,11 @@ import { useAccount } from '@/composables/useAccount'
 import { useAccountStore } from '@/stores/web3'
 import { useCommunityStore } from '@/stores/community'
 import { isAddress } from 'viem'
-import { getUserTokenBalances, calculateMaxSellAmount, getBuyData, getSellData, getMarketInfos } from '@/utils/fpmm'
+import { getUserTokenBalances, calculateMaxSellAmount, 
+  buyToken, sellToken,getBuyData, getSellData, getMarketInfos } from '@/utils/fpmm'
 import type { BattleData } from '@/types'
 import debounce from 'lodash.debounce'
+import { handleErrorTip } from '@/utils/notify'
 
 const modalStore = useModalStore()
 const battle = computed(() => modalStore.modalParams?.battle)
@@ -18,6 +20,7 @@ const accStore = useAccountStore()
 const comStore = useCommunityStore()
 const reserveA = ref(0)
 const reserveB = ref(0)
+const bnbFee = ref(0);
 
 enum TradeType {
   BUY_RED,
@@ -34,6 +37,9 @@ const redBalance = ref(0);
 const willReceiveAmount = ref(0);
 const priceImpact = ref('')
 
+const calculationg = ref(false)
+const trading = ref(false)
+
 // UI State
 const activeTab = ref<'buy' | 'sell'>('buy')
 const selectedOutcome = ref<'red' | 'blue'>('red')
@@ -42,12 +48,12 @@ const totalPool = computed(() => reserveA.value + reserveB.value)
 
 const percentA = computed(() => {
   if (totalPool.value === 0) return 50
-  return Math.round((reserveA.value / totalPool.value) * 1000) / 10
+  return Math.round((reserveB.value / totalPool.value) * 1000) / 10
 })
 
 const percentB = computed(() => {
   if (totalPool.value === 0) return 50
-  return Math.round((reserveB.value / totalPool.value) * 1000) / 10
+  return Math.round((reserveA.value / totalPool.value) * 1000) / 10
 })
 
 const currentTradeType = computed(() => {
@@ -60,22 +66,36 @@ const currentTradeType = computed(() => {
 
 // 创建 debounced 计算函数，500ms 延迟
 const debouncedCalculate = debounce(async () => {
-  if (activeTab.value === 'buy') {
-    const receive = await getBuyData(battle.value as BattleData, shares.value, selectedOutcome.value)
-    willReceiveAmount.value = receive
-    if (selectedOutcome.value === 'red') {
-      const newPercentA = (reserveB.value + shares.value) / (totalPool.value + shares.value * 2 - willReceiveAmount.value)
-      priceImpact.value = `${(percentA.value / 100).toFixed(2)} -> ${newPercentA.toFixed(2)}`
+  try {
+    calculationg.value = true
+    if (activeTab.value === 'buy') {
+      const { amount, fee } = await getBuyData(battle.value as BattleData, shares.value, selectedOutcome.value)
+      
+      bnbFee.value = fee;
+      willReceiveAmount.value = amount
+      if (selectedOutcome.value === 'red') {
+        const newPercentA = (reserveB.value + shares.value) / (totalPool.value + shares.value * 2 - willReceiveAmount.value)
+        priceImpact.value = `${(percentA.value / 100).toFixed(2)} -> ${newPercentA.toFixed(2)}`
+      } else {
+        const newPercentB = (reserveA.value + shares.value) / (totalPool.value + shares.value * 2 - willReceiveAmount.value)
+        priceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
+      }
     } else {
-      const newPercentB = (reserveA.value + shares.value) / (totalPool.value + shares.value * 2 - willReceiveAmount.value)
-      priceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
+      const sellData: any = await getSellData(battle.value as BattleData, reserveA.value, reserveB.value, shares.value, selectedOutcome.value)
+      bnbFee.value = sellData.fee;
+      willReceiveAmount.value = sellData.receive;
+      if (selectedOutcome.value === 'red') {
+        const newPercentA = (reserveB.value - sellData.receive) / (totalPool.value - sellData.receive * 2 + shares.value)
+        priceImpact.value = `${(percentA.value / 100).toFixed(2)} -> ${newPercentA.toFixed(2)}`
+      } else {
+        const newPercentB = (reserveA.value - sellData.receive) / (totalPool.value - sellData.receive * 2 + shares.value)
+        priceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
+      }
     }
-  } else {
-    if (selectedOutcome.value === 'red') {
-
-    } else {
-
-    }
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    calculationg.value = false
   }
 }, 500)
 
@@ -117,6 +137,22 @@ async function trade() {
   const type = currentTradeType.value
   console.log('trade', type, shares.value)
   // Implement trade call here
+  try {
+    trading.value = true
+    if (activeTab.value === 'buy') {
+      const hash = await buyToken(battle.value as BattleData, comStore.currentSelectedCommunity!.token as `0x${string}`, shares.value, willReceiveAmount.value * 0.95, selectedOutcome.value, bnbFee.value)
+      console.log('buy hash', hash)
+      updateReserves()
+    } else {
+      const hash = await sellToken(battle.value as BattleData, willReceiveAmount.value, shares.value * 1.05, selectedOutcome.value, bnbFee.value)
+      console.log('sell hash', hash)
+      updateReserves()
+    }
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    trading.value = false
+  }
 }
 
 function adjustShares(delta: number) {
@@ -126,6 +162,7 @@ function adjustShares(delta: number) {
 
 const updateReserves = debounce(async () => {
   getMarketInfos([battle.value as BattleData]).then((infos: any) => {
+    shares.value = 0;
     reserveA.value = infos[battle.value?.marketMaker + '-priceA']
     reserveB.value = infos[battle.value?.marketMaker + '-priceB']
   })
@@ -137,7 +174,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-white text-black p-4 sm:p-6 rounded-2xl w-full mx-auto font-sans">
+  <div class="bg-white text-black w-full p-4 sm:p-6 rounded-2xl mx-auto font-sans">
     <!-- Header -->
     <div class="mb-6">
       <h2 class="text-xl sm:text-2xl font-bold mb-2 leading-tight">{{ battle?.title || 'Prediction' }}</h2>
@@ -177,7 +214,7 @@ onMounted(async () => {
           @click="selectedOutcome = 'red';debouncedCalculate()"
         >
           <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} {{ comStore.currentSelectedCommunity?.tick }}</span>
-          <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyRed') : $t('predictTrade.sellRed') }}</span>
+          <!-- <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyRed') : $t('predictTrade.sellRed') }}</span> -->
         </button>
         
         <button 
@@ -186,7 +223,7 @@ onMounted(async () => {
           @click="selectedOutcome = 'blue';debouncedCalculate()"
         >
           <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} {{ comStore.currentSelectedCommunity?.tick }}</span>
-           <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyBlue') : $t('predictTrade.sellBlue') }}</span>
+           <!-- <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyBlue') : $t('predictTrade.sellBlue') }}</span> -->
         </button>
       </div>
 
@@ -255,23 +292,25 @@ onMounted(async () => {
          </div>
           <div class="flex justify-between items-center text-xs">
             <span class="text-gray-500">{{ $t('predictTrade.fee') }}</span>
-            <span class="font-mono text-gray-600">{{ (battle.fee ? battle.fee * 100 : 0).toFixed(2) }}% + 0.3%</span>
+            <span class="font-mono text-gray-600">{{ (battle.fee ? battle.fee * 100 : 0).toFixed(2) }}% + {{ bnbFee ? formatAmount(bnbFee) : 0 }} BNB</span>
          </div>
       </div>
 
       <!-- Trade Button -->
       <button 
-        class="w-full py-4 rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
+        class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
         @click="trade"
+        :disabled="calculationg || trading || !shares"
       >
         {{ activeTab === 'buy' ? $t("buy") : $t("sell") }} {{ selectedOutcome === 'red' ? $t("predictTrade.red") : $t("predictTrade.blue") }}
+        <i-ep-loading v-if="calculationg || trading" class="animate-spin" />
       </button>
 
       <!-- Market State (Mini) -->
       <div class="bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
          <div class="flex justify-between text-xs font-bold text-gray-500 mb-2">
-            <span>Yes {{ percentA }}%</span>
-            <span>No {{ percentB }}%</span>
+            <span>{{ $t('predictTrade.red') }} {{ percentA }}%</span>
+            <span>{{ $t('predictTrade.blue') }} {{ percentB }}%</span>
          </div>
          <div class="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden flex">
              <div class="bg-red-500 transition-all duration-500" :style="{ width: percentA + '%' }"></div>

@@ -28,7 +28,6 @@ export enum AccountAuthType {
 export const useAccount = () => {
     const accountMismatch = computed(() => {
         const accStore = useAccountStore()
-        console.log(55, accStore.getAccountInfo.ethAddr, accStore.ethConnectAddress)
         if (!accStore.ethConnectAddress) {
             return false
         }
@@ -152,7 +151,6 @@ export const useAccount = () => {
                     lastReadMessageTime: formatDate()
                 })
             }).catch((e: any) => {
-                console.log(444, e)
                 if (e === errCode.InvalidAccessToken) {
                     logout()
                 }

@@ -99,7 +99,7 @@ export const USDT ='0x55d398326f99059fF775485246999027B3197955'
 export const Oracle = '0x6CCA0a99B608D53c77D12e3e0227fE76F3bc12b4'
 export const PredictionMinFee = parseUnits("1", 16);
 export const PredictionMaxFee = parseUnits("10", 16);
-export const FPMMDeterministicFactory = '0x71D4Bce40aAc2C1BF31716ad1c380e57151d4EE0';
+export const FPMMDeterministicFactory = '0xDDF74905AD9ff90977154DF960E21517f7e11ACA';
 
 export const USD_CONTRACTS: Record<`0x${string}`, string> = {
     '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1',

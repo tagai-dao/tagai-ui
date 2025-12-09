@@ -137,6 +137,7 @@ export const writeContract = async ({
     value?: bigint | string
 }): Promise<string> => {
     const client = getWalletClient();
+    const publicClient = getReadOnlyClient();
     if (!client) {
         throw 'no wallet client'
     }
@@ -148,7 +149,8 @@ export const writeContract = async ({
         address = ContractAddress[contractName] as `0x${string}`
     }
     const abi = abis[contractName as keyof typeof abis]
-    const tx = await client.writeContract({
+    
+    const { request } = await publicClient.simulateContract({
         account: useAccountStore().ethConnectAddress as `0x${string}`,
         address,
         abi,
@@ -157,7 +159,11 @@ export const writeContract = async ({
         chain: customBsc,
         value: typeof value === 'string' ? BigInt(value) : value
     });
+
+    const tx = await client.writeContract(request);
+    console.log('tx', tx)
     const hash = await waitForTx(tx);
+    console.log('hash1', hash)
     if (!hash) {
         throw 'transaction failed'
     }
