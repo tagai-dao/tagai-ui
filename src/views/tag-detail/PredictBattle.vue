@@ -198,7 +198,7 @@ onMounted(async () => {
                 'bg-grey-light text-grey-normal': !!battle.winner,
               }"
             >
-              {{ battle.winner ? $t('ended') : parseTimestamp((Math.max(tweets[battle.predictAID]?.dayNumber, tweets[battle.predictBID]?.dayNumber, getDayNumber()) + 3) * 86400000) }}
+              {{ battle.winner ? $t('ended') : parseTimestamp((Math.max(tweets[battle.predictAID]?.dayNumber, tweets[battle.predictBID]?.dayNumber) + 3) * 86400000) }}
             </div>
           </div>
         </div>
@@ -216,7 +216,7 @@ onMounted(async () => {
               class="pointer-events-auto w-1/2 h-9 sm:h-10 bg-gradient-primary text-white text-xs sm:text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
               @click="openTradeModal(battle)"
             >
-              Trade
+              {{ $t('trade') }}
             </button>
             <div @click="openLiquidityModal(battle)">
               <img class="ml-3 w-6 h-6 sm:w-8 sm:h-8 cursor-pointer pointer-events-auto hover:scale-[1.1] active:scale-[0.9] transition-all duration-200" 

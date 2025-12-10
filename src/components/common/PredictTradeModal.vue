@@ -182,6 +182,10 @@ onMounted(async () => {
         <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono">Market Address: 
           <span class="text-blue-600 underline cursor-pointer" @click="copyMarketAddress(battle?.marketMaker as `0x${string}`)">{{ formatAddress(battle?.marketMaker) }}</span></span>
       </div>
+      <div class="mt-1 flex items-center gap-3 text-sm text-gray-600">
+        <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono">{{ $t('predictTrade.currentAddress') }}: 
+          <span class="text-blue-600 underline cursor-pointer" @click="copyMarketAddress(accStore.ethConnectAddress as `0x${string}`)">{{ formatAddress(accStore.ethConnectAddress) }}</span></span>
+      </div>
     </div>
 
     <!-- Tabs -->
