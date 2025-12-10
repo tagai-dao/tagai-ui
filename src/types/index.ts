@@ -10,7 +10,8 @@ export enum GlobalModalType {
   ChoseWallet,
   ModifyCoin,
   CreateUserInfo,
-  PredictTrade
+  PredictTrade,
+  PredictLiquidity
 }
 
 export enum ListType {

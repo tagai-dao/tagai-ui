@@ -213,7 +213,7 @@ onMounted(async () => {
           :class="selectedOutcome === 'red' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-red-200'"
           @click="selectedOutcome = 'red';debouncedCalculate()"
         >
-          <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} {{ comStore.currentSelectedCommunity?.tick }}</span>
+          <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
           <!-- <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyRed') : $t('predictTrade.sellRed') }}</span> -->
         </button>
         
@@ -222,7 +222,7 @@ onMounted(async () => {
           :class="selectedOutcome === 'blue' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-blue-200'"
           @click="selectedOutcome = 'blue';debouncedCalculate()"
         >
-          <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} {{ comStore.currentSelectedCommunity?.tick }}</span>
+          <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
            <!-- <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyBlue') : $t('predictTrade.sellBlue') }}</span> -->
         </button>
       </div>

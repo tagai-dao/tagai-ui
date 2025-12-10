@@ -479,5 +479,19 @@
     "marketState": "市场状态可视化 (Market State)",
     "redTotal": "红方总份额",
     "blueTotal": "蓝方总份额"
+  },
+  "predictLiquidity": {
+    "management": "流动性管理",
+    "addLiquidity": "添加流动性",
+    "removeLiquidity": "移除流动性",
+    "liquidity": "流动性"
+  },
+  "predictRedeem": {
+    "redeem": "赎回",
+    "redeemRewards": "赎回奖励",
+    "eventResolved": "结果已揭晓！",
+    "winner": "赢家: {winner}",
+    "predictionInProgress": "预测进行中",
+    "rewardTip": "您可以在预测对决揭晓后赎回您的获胜奖励。"
   }
 }

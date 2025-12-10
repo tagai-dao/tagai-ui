@@ -15,6 +15,7 @@ import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
 import CreatePredictModal from "@/components/common/CreatePredictModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
 import PredictTradeModal from "@/components/common/PredictTradeModal.vue";
+import PredictLiquidityModal from "@/components/common/PredictLiquidityModal.vue";
 import {onMounted, ref} from "vue";
 import emitter from "@/utils/emitter";
 import {applyPureReactInVue} from "veaury";
@@ -66,8 +67,6 @@ const setWallet = async () => {
         method: 'eth_requestAccounts'
       });
       const connectedAddr = accounts[0]; 
-      console.log('connected wallet', connectedAddr)
-      console.log('accStore.getAccountInfo', accStore.getAccountInfo)
       // check wallet type
       if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
         // user connect wallet plugin by manual
@@ -160,6 +159,7 @@ onMounted( () => {
           <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
           <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
           <PredictTradeModal v-if="modalStore.modalType === GlobalModalType.PredictTrade"/>
+          <PredictLiquidityModal v-if="modalStore.modalType === GlobalModalType.PredictLiquidity"/>
         </el-dialog>
       </main>
     </main>

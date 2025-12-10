@@ -135,6 +135,15 @@ const createPredictBattle = () => {
   useModalStore().setModalVisible(true, GlobalModalType.CreatePredict)
 }
 
+const openLiquidityModal = (battle: BattleData) => {
+  console.log(5)
+  if (accStore.ethConnectState !== EthWalletState.Connected) {
+    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
+  useModalStore().setModalVisible(true, GlobalModalType.PredictLiquidity, { battle, tweets })
+}
+
 onMounted(async () => {
   await onRefresh()
   emitter.on('createPredictSuccess', onRefresh);
@@ -202,13 +211,18 @@ onMounted(async () => {
           }"
         >
           <!-- Trade 按钮 (absolute定位到底部中间) -->
-          <div class="absolute bottom-4 sm:bottom-6 left-0 right-0 flex flex-col items-center justify-center z-20 pointer-events-none">
+          <div class="absolute bottom-4 sm:bottom-6 left-0 right-0 flex items-center justify-center z-20">
             <button 
               class="pointer-events-auto w-1/2 h-9 sm:h-10 bg-gradient-primary text-white text-xs sm:text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
               @click="openTradeModal(battle)"
             >
               Trade
             </button>
+            <div @click="openLiquidityModal(battle)">
+              <img class="ml-3 w-6 h-6 sm:w-8 sm:h-8 cursor-pointer pointer-events-auto hover:scale-[1.1] active:scale-[0.9] transition-all duration-200" 
+                    src="~@/assets/icons/icon-liquidity.svg" alt="">
+            </div>
+            
             <!-- <p class="text-xs text-grey-normal mt-1 text-center">
               {{ 'Current fee: ' + (battle.fee ? battle.fee * 100 : 0).toFixed(2) + '%' }}
             </p> -->

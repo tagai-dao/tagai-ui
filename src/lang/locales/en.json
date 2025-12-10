@@ -471,7 +471,7 @@
     "buyBlueDesc": "Bet on Blue event happening",
     "sellBlue": "Sell Blue",
     "sellBlueDesc": "Sell your Blue shares",
-    "currentAddress": "Address",
+    "currentAddress": "Connected address",
     "fee": "Fee",
     "available": "Available Balance",
     "redShare": "Red Shares",
@@ -479,5 +479,19 @@
     "marketState": "Market State",
     "redTotal": "Total Red",
     "blueTotal": "Total Blue"
+  },
+  "predictLiquidity": {
+    "management": "Liquidity Management",
+    "addLiquidity": "Add Liquidity",
+    "removeLiquidity": "Remove Liquidity",
+    "liquidity": "Liquidity"
+  },
+  "predictRedeem": {
+    "redeem": "Redeem",
+    "redeemRewards": "Redeem Rewards",
+    "eventResolved": "Event Resolved!",
+    "winner": "Winner: {winner}",
+    "predictionInProgress": "Prediction in Progress",
+    "rewardTip": "You can redeem your winning positions after the event is resolved."
   }
 }

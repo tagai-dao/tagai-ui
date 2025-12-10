@@ -99,6 +99,15 @@ export const getMarketInfos = async (markets: BattleData[]) => {
                 [market.marketMaker + '-fee', (val: any) => val / 1e18]
             ]
         })
+        calls.push({
+            target: market.marketMaker,
+            call: [
+                'totalSupply()(uint256)'
+            ],
+            returns: [
+                [market.marketMaker + '-totalSupply', (val: any) => val / 1e18]
+            ]
+        })
     }
     
     const res = await aggregate(calls, ChainConfig.multiConfig)
@@ -106,6 +115,7 @@ export const getMarketInfos = async (markets: BattleData[]) => {
 }
 
 export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData) {
+    if (!isAddress(tokenAddr) || !isAddress(battle.marketMaker)) return {balance: 0, balanceA: 0, balanceB: 0, lpBalance: 0, feesWithdrawable: 0};
     let calls = [
         {
             target: tokenAddr,
@@ -115,6 +125,16 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
             ],
             returns: [
                 ['balance', (val: any) => val / 1e18]
+            ]
+        },
+        {
+            target: battle.marketMaker,
+            call: [
+                'balanceOf(address)(uint256)',
+                accAddr
+            ],
+            returns: [
+                ['lpBalance', (val: any) => val / 1e18]
             ]
         },
         {
@@ -137,6 +157,16 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
             ],
             returns: [
                 ['balanceB', (val: any) => val / 1e18]
+            ]
+        },
+        {
+            target: battle.marketMaker,
+            call: [
+                'feesWithdrawableBy(address)(uint256)',
+                accAddr
+            ],
+            returns: [
+                ['feesWithdrawable', (val: any) => val / 1e18]
             ]
         }
     ]
@@ -330,6 +360,63 @@ export async function calculateMaxSellAmount(battle: BattleData, index: number) 
 
     const stateReturnAmount = x * 0.99999;
     return parseUnits(stateReturnAmount.toFixed(18), 18);
+}
+
+export async function addLiquidity(battle: BattleData, amount: number, collateralToken: string) {
+    if (!isAddress(battle.marketMaker)) return;
+    const amountBi = parseUnits(amount.toFixed(18), 18)
+    if (amountBi === 0n) return;
+
+    // approve token
+    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, battle.marketMaker], collateralToken as `0x${string}`)
+    if (allowance < amountBi) {
+        await writeContract({
+            contractName: 'Token1',
+            functionName: 'approve',
+            args: [battle.marketMaker, amountBi],
+            address: collateralToken as `0x${string}`
+        })
+    }
+
+    return await writeContract({
+        contractName: 'FixedProductMarketMaker',
+        functionName: 'addFunding',
+        args: [amountBi, []],
+        address: battle.marketMaker
+    })
+}
+
+export async function removeLiquidity(battle: BattleData, shares: number) {
+    if (!isAddress(battle.marketMaker)) return;
+    const sharesBi = parseUnits(shares.toFixed(18), 18)
+    if (sharesBi === 0n) return;
+
+    return await writeContract({
+        contractName: 'FixedProductMarketMaker',
+        functionName: 'removeFunding',
+        args: [sharesBi],
+        address: battle.marketMaker
+    })
+}
+
+export async function redeemPositions(battle: BattleData, collateralToken: string) {
+     if (!isAddress(ConditionalTokens)) return;
+     // indexSets: [1, 2] for binary
+     const indexSets = [1, 2];
+     const parentCollectionId = '0x0000000000000000000000000000000000000000000000000000000000000000';
+     
+     return await writeContract({
+        contractName: 'ConditionalTokens',
+        functionName: 'redeemPositions',
+        args: [collateralToken, parentCollectionId, battle.conditionID, indexSets],
+        address: ConditionalTokens
+    })
+}
+
+export async function getUserLpBalance(battle: BattleData, accAddr: `0x${string}`) {
+    if (!isAddress(battle.marketMaker)) return 0;
+    const res: any = await readContract('FixedProductMarketMaker', 'balanceOf', [accAddr], battle.marketMaker)
+    return Number(res) / 1e18
 }
 
 const getCreateFPMMMarketMakerEventByHash = (tx: { logs: Log[] }) => {
