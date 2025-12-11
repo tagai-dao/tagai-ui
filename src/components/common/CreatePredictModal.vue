@@ -29,7 +29,8 @@ const formData = reactive({
   predict2: '',
   tweetAId: '',
   tweetBId: '',
-  initAmount: ''
+  initAmount: '',
+  distributionHint: 50
 })
 
 // 错误信息
@@ -188,7 +189,7 @@ const createPredict = async () => {
     }
 
     // 开始创建市场
-    const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], (dayNumber + 3) * 86400, parseUnits(formData.initAmount.toString(), 18))
+    const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], formData.distributionHint, (dayNumber + 3) * 86400, parseUnits(formData.initAmount.toString(), 18))
     console.log({hash, fpmmMaker})
     await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
     console.log('创建预测:', formData, fpmmMaker, hash)
@@ -301,6 +302,42 @@ onMounted(async () => {
         </div>
       </div>
 
+      <!-- Initial Ratio Slider -->
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <label class="flex items-center gap-1 text-sm font-medium text-black">
+            {{ $t('createPredict.initialRatio') }}
+            <span class="text-red-500">*</span>
+            <el-tooltip
+              class="box-item"
+              effect="dark"
+              :content="$t('createPredict.initialRatioTip')"
+              placement="top"
+            >
+              <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+                ?
+              </button>
+            </el-tooltip>
+          </label>
+          <span class="text-sm font-medium">
+            <span class="text-red-500">{{ formData.distributionHint }}%</span> / <span class="text-blue-500">{{ 100 - formData.distributionHint }}%</span>
+          </span>
+        </div>
+        
+        <div class="relative h-6 flex items-center">
+          <input 
+            type="range" 
+            v-model.number="formData.distributionHint" 
+            min="1" 
+            max="99"
+            class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-thumb"
+            :style="{
+              background: `linear-gradient(to right, #ef4444 ${formData.distributionHint}%, #3b82f6 ${formData.distributionHint}%)`
+            }"
+          />
+        </div>
+      </div>
+
       <!-- 注入资金 -->
       <div>
         <label class="flex items-center gap-1 text-sm font-medium text-black mb-2">
@@ -376,5 +413,28 @@ input:focus {
 /* 错误状态样式 */
 input.border-red-500:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Slider Thumb Customization */
+.slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

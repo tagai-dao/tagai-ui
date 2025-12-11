@@ -451,6 +451,8 @@
     "initAmountTip": "创建FPMM预测市场需要注入一定数量的代币作为初始流动性",
     "amountPlaceholder": "输入金额",
     "amountRequired": "请输入金额",
+    "initialRatio": "初始比例",
+    "initialRatioTip": "设置初始的预测概率，比如，你认为红方胜出的概率是70%，那么你可以拖动滑条使红方部分占70%",
     "creatingTip": "请不要关闭此窗口，直到创建完成"
   },
   "predictTrade": {

@@ -13,7 +13,7 @@ import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits } from "viem";
 import { writeContract, readContract } from "./contract";
 
-export async function createMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], dayNumber: number, funding: bigint) {
+export async function createMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, dayNumber: number, funding: bigint) {
     const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, FPMMDeterministicFactory], tokenAddress)
     if (funding > allowance) {
         await writeContract({
@@ -25,12 +25,13 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
     }
 
     const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
-    
+    distributionHint = Math.ceil(distributionHint)
+    console.log(53, distributionHint)
     // 生成lmsrMarketMaker
     const hash = await writeContract({
         contractName: 'FPMMDeterministicFactory',
         functionName: 'create2FixedProductMarketMakerWithCondition',
-        args: [tokenAddress, questionId, [], feePath, [nonce, 2, PredictionMinFee, PredictionMaxFee, dayNumber, funding]]
+        args: [tokenAddress, questionId, [100 - distributionHint, distributionHint], feePath, [nonce, 2, PredictionMinFee, PredictionMaxFee, dayNumber, funding]]
     });
 
     // 预创建预测市场

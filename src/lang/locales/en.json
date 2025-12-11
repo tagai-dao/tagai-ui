@@ -451,7 +451,9 @@
     "initAmountTip": "Create a FPMM predict market needs to inject some amount of token into the market as the initial liquidity",
     "amountPlaceholder": "Enter amount",
     "amountRequired": "Please enter amount",
-    "creatingTip": "Please do not close this windown before the creation is complete"
+    "initialRatio": "Initial Ratio",
+    "initialRatioTip": "Set initial prediction probability. For example, if you think the Red side has a 70% chance of winning, you can drag the slider so the Red part takes up 70%.",
+    "creatingTip": "Please do not close this window before the creation is complete"
   },
   "predictTrade": {
     "shareAmount": "Shares to Trade",

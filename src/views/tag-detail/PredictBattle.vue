@@ -453,7 +453,8 @@ onMounted(async () => {
                   </button> -->
                   <TweetBtnReply :tweet="tweets[battle.predictBID]" :hide-number="true" />
                   <div class="text-xs sm:text-sm text-blue-600 text-center flex flex-col items-center">
-                    <span>{{ tweets[battle.predictBID]?.replyCount ?? 0 }}</span> <span class="text-xs">{{ $t('postView.comments') }}</span>
+                    <span>{{ tweets[battle.predictBID]?.replyCount ?? 0 }}</span>
+                    <span class="text-xs">{{ $t('postView.comments') }}</span>
                   </div>
                 </div>
                 <!-- 支持按钮 -->
@@ -471,7 +472,8 @@ onMounted(async () => {
                   </button> -->
                   <TweetBtnCurate :tweet="tweets[battle.predictBID]" :hide-number="true" />
                   <div class="text-xs sm:text-sm text-blue-600 text-center flex flex-col items-center">
-                    <span>{{ (Math.ceil(tweets[battle.predictBID]?.amount ?? 0)).toLocaleString() }}</span> <span class="text-xs">{{ $t('curation.supports') }}</span>
+                    <span>{{ (Math.ceil(tweets[battle.predictBID]?.amount ?? 0)).toLocaleString() }}</span>
+                    <span class="text-xs">{{ $t('curation.supports') }}</span>
                   </div>
                 </div>
               </div>
