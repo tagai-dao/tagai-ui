@@ -215,6 +215,7 @@ onMounted(async () => {
             <button 
               class="pointer-events-auto w-1/2 h-9 sm:h-10 bg-gradient-primary text-white text-xs sm:text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
               @click="openTradeModal(battle)"
+              :disabled="battle.status !== 1"
             >
               {{ $t('trade') }}
             </button>

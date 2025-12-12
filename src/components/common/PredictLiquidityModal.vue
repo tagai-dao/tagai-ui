@@ -189,7 +189,7 @@ onMounted(() => {
          <button 
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white shadow-lg transition-all transform active:scale-[0.99]"
             @click="handleAction"
-            :disabled="loading || !amount"
+            :disabled="loading || !amount || battle.status !== 1"
         >
             {{ liquidityType === 'add' ? $t('predictLiquidity.addLiquidity') : $t('predictLiquidity.removeLiquidity') }}
             <i-ep-loading v-if="loading" class="animate-spin ml-2" />
