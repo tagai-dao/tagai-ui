@@ -1,34 +1,44 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useAccountStore } from '@/stores/web3'
+import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
-import { handleErrorTip } from '@/utils/notify'
+import { handleErrorTip, notify } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
-import { getTweetCurations, createPredict as createPredictApi, checkPrediction } from '@/apis/api'
+import { getTweetCurations, createFPMMMarket as createFPMMMarketApi, preCreateFPMMMarket } from '@/apis/api'
 import { OperateType, useTweet } from '@/composables/useTweet'
 import { useCommunityStore } from '@/stores/community'
+import { useAccount } from '@/composables/useAccount'
 import emitter from '@/utils/emitter'
+import { getTokenBalance } from '@/utils/web3'
+import { formatAmount } from '@/utils/helper'
+import { parseUnits } from 'viem'
+import { createMarket } from '@/utils/fpmm'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
+const userBalance = ref(0)
+const { accountMismatch } = useAccount()
 // 表单数据
 const formData = reactive({
   title: '',
   predict1: '',
   predict2: '',
   tweetAId: '',
-  tweetBId: ''
+  tweetBId: '',
+  initAmount: '',
+  distributionHint: 50
 })
 
 // 错误信息
 const errors = reactive({
   title: '',
   predict1: '',
-  predict2: ''
+  predict2: '',
+  initAmount: ''
 })
 
 // 加载状态
@@ -44,7 +54,6 @@ const validateTwitterUrl = (url: string): RegExpMatchArray | null => {
 
 // 验证表单
 const validateForm = async (): Promise<boolean> => {
-  let isValid = true
   
   // 重置错误信息
   errors.title = ''
@@ -54,34 +63,42 @@ const validateForm = async (): Promise<boolean> => {
   // 验证标题
   if (!formData.title.trim()) {
     errors.title = t('createPredict.titleRequired')
-    isValid = false
+    return false
   } else if (formData.title.trim().length < 3) {
     errors.title = t('createPredict.titleTooShort')
-    isValid = false
+    return false
   } else if (formData.title.trim().length > 100) {
     errors.title = t('createPredict.titleTooLong')
-    isValid = false
+    return false
   }
   
   // 验证预测1
   let predictA = validateTwitterUrl(formData.predict1)
   let predictB = validateTwitterUrl(formData.predict2)
-  console.log(33, predictA, predictB)
   if (!formData.predict1.trim()) {
     errors.predict1 = t('createPredict.predict1Required')
-    isValid = false
+    return false
   } else if (!predictA) {
     errors.predict1 = t('createPredict.invalidTwitterUrl')
-    isValid = false
+    return false
   }
   
   // 验证预测2
   if (!formData.predict2.trim()) {
     errors.predict2 = t('createPredict.predict2Required')
-    isValid = false
+    return false
   } else if (!predictB) {
     errors.predict2 = t('createPredict.invalidTwitterUrl')
-    isValid = false
+    return false
+  }
+
+  // 验证初始资金
+  if (!formData.initAmount) {
+    errors.initAmount = t('createPredict.amountRequired')
+    return false
+  } else if (isNaN(Number(formData.initAmount)) || Number(formData.initAmount) <= 0) {
+    errors.initAmount = t('createPredict.invalidAmount')
+    return false
   }
 
   // check tweetId
@@ -89,17 +106,15 @@ const validateForm = async (): Promise<boolean> => {
   const tweetIdB = predictB?.[3]
   if (!tweetIdA) {
     errors.predict1 = t('createPredict.invalidTwitterUrl')
-    isValid = false
-    return isValid
+    return false
   }
   if (!tweetIdB) {
     errors.predict2 = t('createPredict.invalidTwitterUrl')
-    isValid = false
-    return isValid
+    return false
   }
   if (tweetIdA === tweetIdB) {
     errors.predict2 = t('createPredict.predictsCannotBeSame')
-    isValid = false
+    return false
   }
 
   formData.tweetAId = tweetIdA
@@ -107,61 +122,77 @@ const validateForm = async (): Promise<boolean> => {
 
   // check curation
   const currentCurations: any = await getTweetCurations(tweetIdA, tweetIdB)
-  console.log(44, currentCurations)
   const tweetA = currentCurations.find((item: any) => item.tweetId === tweetIdA)
   const tweetB = currentCurations.find((item: any) => item.tweetId === tweetIdB)
   const currentTime = Date.now()
   if (tweetA) {
     if (tweetA.tick !== comStore.currentSelectedCommunity?.tick) {
       errors.predict1 = t('createPredict.predictsFromDifferentCommunities', { community: comStore.currentSelectedCommunity?.tick })
-      isValid = false
-      return isValid    
+      return false 
     }
     if ((tweetA.dayNumber + 3) * 86400000  - 8 * 3600000 < currentTime) {
       errors.predict1 = t('createPredict.predictsExpired')
-      isValid = false
-      return isValid
+      return false
     }
   }
   
   if (tweetB) {
     if (tweetB.tick !== comStore.currentSelectedCommunity?.tick) {
       errors.predict2 = t('createPredict.predictsFromDifferentCommunities', { community: comStore.currentSelectedCommunity?.tick })
-      isValid = false
-      return isValid
+      return false
     }
     if ((tweetB.dayNumber + 3) * 86400000  - 8 * 3600000 < currentTime) {
       errors.predict2 = t('createPredict.predictsExpired')
-      isValid = false
-      return isValid
+      return false
     }
     formData.tweetBId = tweetB.tweetId
   }
   
-  return isValid
+  return true
 }
 
 // 创建预测
 const createPredict = async () => {
-  if (!validateForm()) {
+  if (accStore.ethConnectState !== EthWalletState.Connected) {
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
+  if (!(await validateForm())) {
     return
   }
   
-  
-  
   createLoading.value = true
+  const accInfo = accStore.getAccountInfo
   
   try {
-    if(!await preCheckCuration(OperateType.CREATE_PREDICT)) {
-        return;
-    }
-    const currentPrediction: any = await checkPrediction(formData.tweetAId, formData.tweetBId)
-    if (currentPrediction && currentPrediction.id > 0) {
-      console.log('already exists')
-      modalStore.setModalVisible(false);
+    // 检查用户余额是否足够
+    const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
+    if (b < parseUnits(formData.initAmount.toString(), 18)) {
+      notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
       return;
     }
-    console.log('创建预测:', formData)
+
+    useModalStore().setModalCloseEnable(false);
+
+    // 预创建市场记录，并生成questionid
+    const preMarketData: any = await preCreateFPMMMarket(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId);
+    console.log(633, preMarketData)
+    let { questionId, needOP, feePath, dayNumber } = preMarketData;
+
+    if (feePath && typeof(feePath) === 'string') {
+      feePath = JSON.parse(feePath)
+    }
+
+    if (!(await preCheckCuration(OperateType.CREATE_PREDICT, undefined, needOP))) {
+      notify({ message: t('errMessage.insufficientOp'), type: 'info' })
+      return;
+    }
+
+    // 开始创建市场
+    const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], formData.distributionHint, (dayNumber + 3) * 86400, parseUnits(formData.initAmount.toString(), 18))
+    console.log({hash, fpmmMaker})
+    await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
+    console.log('创建预测:', formData, fpmmMaker, hash)
     // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
     modalStore.setModalVisible(false);
     emitter.emit('createPredictSuccess')
@@ -169,6 +200,7 @@ const createPredict = async () => {
     console.log(66, error)
     handleErrorTip(error)
   } finally {
+    useModalStore().setModalCloseEnable(true);
     createLoading.value = false
   }
 }
@@ -180,10 +212,17 @@ const closeModal = () => {
   formData.title = ''
   formData.predict1 = ''
   formData.predict2 = ''
+  formData.initAmount = ''
   errors.title = ''
   errors.predict1 = ''
   errors.predict2 = ''
+  errors.initAmount = ''
 }
+
+onMounted(async () => {
+  // @ts-ignore
+  userBalance.value = Number((await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)).toString() / 1e18)
+})
 </script>
 
 <template>
@@ -262,18 +301,101 @@ const closeModal = () => {
           {{ errors.predict2 }}
         </div>
       </div>
+
+      <!-- Initial Ratio Slider -->
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <label class="flex items-center gap-1 text-sm font-medium text-black">
+            {{ $t('createPredict.initialRatio') }}
+            <span class="text-red-500">*</span>
+            <el-tooltip
+              class="box-item"
+              effect="dark"
+              :content="$t('createPredict.initialRatioTip')"
+              placement="top"
+            >
+              <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+                ?
+              </button>
+            </el-tooltip>
+          </label>
+          <span class="text-sm font-medium">
+            <span class="text-red-500">{{ formData.distributionHint }}%</span> / <span class="text-blue-500">{{ 100 - formData.distributionHint }}%</span>
+          </span>
+        </div>
+        
+        <div class="relative h-6 flex items-center">
+          <input 
+            type="range" 
+            v-model.number="formData.distributionHint" 
+            min="1" 
+            max="99"
+            class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-thumb"
+            :style="{
+              background: `linear-gradient(to right, #ef4444 ${formData.distributionHint}%, #3b82f6 ${formData.distributionHint}%)`
+            }"
+          />
+        </div>
+      </div>
+
+      <!-- 注入资金 -->
+      <div>
+        <label class="flex items-center gap-1 text-sm font-medium text-black mb-2">
+          {{ $t('createPredict.initAmount') }}
+          <span class="text-red-500">*</span>
+          <el-tooltip
+            class="box-item"
+            effect="dark"
+            :content="$t('createPredict.initAmountTip')"
+            placement="top"
+          >
+            <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+              ?
+            </button>
+          </el-tooltip>
+        </label>
+        <div class="relative">
+          <input
+            v-model="formData.initAmount"
+            type="number"
+            step="0.0001"
+            min="0"
+            :placeholder="$t('createPredict.amountPlaceholder')"
+            class="w-full px-4 py-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-20"
+            :class="{
+              'border-red-500': errors.initAmount,
+              'border-grey-light': !errors.initAmount
+            }"
+          />
+          <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-grey-normal text-sm font-medium">{{ comStore.currentSelectedCommunity?.tick }}</span>
+        </div>
+        <div class="flex justify-between items-start mt-1">
+          <div class="text-red-500 text-sm">
+            {{ errors.initAmount }}
+          </div>
+          <div class="text-grey-normal text-xs text-right ml-auto">
+            {{ $t('balance') }}: {{ formatAmount(userBalance)}} {{ comStore.currentSelectedCommunity?.tick }}
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 按钮区域 -->
-    <div class="flex gap-3 mt-8">
+    <div class="gap-3 mt-8">
       <button
         @click="createPredict"
-        :disabled="createLoading"
-        class="flex-1 h-12 bg-gradient-primary text-white font-bold rounded-full text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        :disabled="createLoading || accountMismatch"
+        class="w-full h-12 bg-gradient-primary text-white font-bold rounded-full text-base flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <i-ep-loading v-if="createLoading" class="animate-spin" />
-        <span>{{ $t('createPredict.create') }}</span>
+        <span>{{ accStore.ethConnectAddress ? $t('createPredict.create') : $t('connect') }}</span>
       </button>
+      <span v-if="accountMismatch" class="text-red-e6 text-sm text-center">
+        {{ $t('web3.addressMismatch', {address: useAccountStore().getAccountInfo.ethAddr}) }}
+      </span>
+      <span v-if="createLoading" class="text-red-e6 text-sm text-center">
+        {{ $t('createPredict.creatingTip') }}
+      </span>
     </div>
   </div>
 </template>
@@ -291,5 +413,28 @@ input:focus {
 /* 错误状态样式 */
 input.border-red-500:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Slider Thumb Customization */
+.slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e5e7eb;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 </style>

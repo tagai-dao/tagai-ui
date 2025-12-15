@@ -241,6 +241,23 @@ export const handleServerError = (code: number) => {
     case errCode.USER_SCORE_TOO_LOW:
       notify({ message: t('errMessage.userScoreTooLow'), type: 'error'});
       break;
+    case errCode.TWEETA_IS_ILLEGAL_FOR_PREDICT: 
+      notify({ message: t('errMessage.tweetAIsIllegalForFPMM'), type: 'error'});
+      break;
+    case errCode.TWEETB_IS_ILLEGAL_FOR_PREDICT:
+      notify({ message: t('errMessage.tweetBIsIllegalForFPMM'), type: 'error'});
+      break;
+    case errCode.TWEETS_ARE_IN_A_DIFFIRENT_DAY:
+      notify({ message: t('errMessage.tweetsAreInADifferentDay'), type: 'error'});
+      break;
+    case errCode.MARKET_IS_CREATED:
+      notify({ message: t('errMessage.marketIsCreated'), type: 'error'});
+      break;
+    case errCode.MARKET_CREATOR_NOT_MATCH:
+      notify({ message: t('errMessage.marketCreatorNotMatch'), type: 'error'});
+    case errCode.TOKEN_NOT_LISTED:
+      notify({ message: t('errMessage.tokenNotListed'), type: 'error'});
+      break;
     default:
       break;
   }

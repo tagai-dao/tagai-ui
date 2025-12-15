@@ -73,7 +73,7 @@ async function reply() {
           @click.stop="preReply"
           :disabled="isRepling">
     <i-ep-loading v-if="isRepling" class="animate-spin w-5 h-5"/>
-    <i v-else class="w-5 h-5 min-w-5" :class="tweet.replied ? 'btn-icon-reply-active' : 'btn-icon-reply'"></i>
+    <i v-else class="w-6 h-6 min-w-6" :class="tweet.replied ? 'btn-icon-reply-active' : 'btn-icon-reply'"></i>
     <span class="text-sm font-bold"
           v-if="!hideNumber"
           :class="tweet.replied ? 'text-blue-32' : 'text-grey-bd'">

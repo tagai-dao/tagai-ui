@@ -4201,5 +4201,429 @@ export const abis = {
         "stateMutability": "payable",
         "type": "function"
       }
+    ],
+    "FPMMDeterministicFactory": [
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "fixedProductMarketMaker",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "conditionalTokens",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "conditionIds",
+            "type": "bytes32[]"
+          },
+          {
+            "indexed": false,
+            "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "name": "maxFee",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "name": "endTime",
+            "type": "uint256"
+          }
+        ],
+        "name": "FixedProductMarketMakerCreation",
+        "type": "event"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "name": "questionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "distributionHint",
+            "type": "uint256[]"
+          },
+          {
+            "name": "feeCheckPath",
+            "type": "address[]"
+          },
+          {
+            "name": "uintParams",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "create2FixedProductMarketMakerWithCondition",
+        "outputs": [
+          {
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "FixedProductMarketMaker": [
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "account",
+            "type": "address"
+          }
+        ],
+        "name": "withdrawFees",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getBNBFee",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "investmentAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcomeIndex",
+            "type": "uint256"
+          },
+          {
+            "name": "minOutcomeTokensToBuy",
+            "type": "uint256"
+          }
+        ],
+        "name": "buy",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "returnAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcomeIndex",
+            "type": "uint256"
+          }
+        ],
+        "name": "calcSellAmount",
+        "outputs": [
+          {
+            "name": "outcomeTokenSellAmount",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [],
+        "name": "getFee",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "returnAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcomeIndex",
+            "type": "uint256"
+          },
+          {
+            "name": "maxOutcomeTokensToSell",
+            "type": "uint256"
+          }
+        ],
+        "name": "sell",
+        "outputs": [],
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "addedFunds",
+            "type": "uint256"
+          },
+          {
+            "name": "distributionHint",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "addFunding",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "sharesToBurn",
+            "type": "uint256"
+          }
+        ],
+        "name": "removeFunding",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "investmentAmount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcomeIndex",
+            "type": "uint256"
+          }
+        ],
+        "name": "calcBuyAmount",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+    ],
+    "ConditionalTokens": [
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "name": "parentCollectionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "conditionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "indexSets",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "redeemPositions",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "name": "collectionId",
+            "type": "bytes32"
+          }
+        ],
+        "name": "getPositionId",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "owners",
+            "type": "address[]"
+          },
+          {
+            "name": "ids",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "balanceOfBatch",
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256[]"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "name": "questionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "outcomeSlotCount",
+            "type": "uint256"
+          }
+        ],
+        "name": "getConditionId",
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "pure",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "parentCollectionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "conditionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "indexSet",
+            "type": "uint256"
+          }
+        ],
+        "name": "getCollectionId",
+        "outputs": [
+          {
+            "name": "",
+            "type": "bytes32"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [
+          {
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "name": "operator",
+            "type": "address"
+          }
+        ],
+        "name": "isApprovedForAll",
+        "outputs": [
+          {
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "operator",
+            "type": "address"
+          },
+          {
+            "name": "approved",
+            "type": "bool"
+          }
+        ],
+        "name": "setApprovalForAll",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
     ]
 }

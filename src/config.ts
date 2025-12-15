@@ -1,7 +1,8 @@
+import { parseUnits } from "viem";
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
-// export const BACKEND_API_URL = "http://localhost:3000";
+// export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
+export const BACKEND_API_URL = "http://localhost:3000";
 
 // base main net
 export const ChainConfig = {
@@ -91,8 +92,18 @@ export const uniswapV2InitCode = '0xd0d4c4cd0848c93cb4fd1f498d7013ee6bfb25783ea2
 export const wrappedUniswapV2ForTagAI = '0x4cA57c64DFe1cF1be977093C75f9d9cdd1DD2E10';
 export const wrappedUniswapV2ForTagAI2 = '0x72D353c0469C10F6B769F13b67EEdB2E1F26FB01';
 
+export const ConditionalTokens = '0xAD1a38cEc043e70E83a3eC30443dB285ED10D774';
+export const WhiteList = '0xb3A547F535bDc1b20Eb6fd97b9524F893A75708C';
+export const USD1 = '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
+export const USDT ='0x55d398326f99059fF775485246999027B3197955'
+export const Oracle = '0x6CCA0a99B608D53c77D12e3e0227fE76F3bc12b4'
+export const PredictionMinFee = parseUnits("1", 16);
+export const PredictionMaxFee = parseUnits("10", 16);
+export const FPMMDeterministicFactory = '0xDDF74905AD9ff90977154DF960E21517f7e11ACA';
+
 export const USD_CONTRACTS: Record<`0x${string}`, string> = {
-    '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1'
+    '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1',
+    '0x55d398326f99059fF775485246999027B3197955': 'USDT'
 }
 
 export const Multicall3 = '0xcA11bde05977b3631167028862bE2a173976CA11'

@@ -2,10 +2,10 @@ import { getReadOnlyClient, getWalletClient, setup, waitForTx } from "./wallets"
 import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
-    wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, wrappedUniswapV2ForTagAI2 } from '@/config'
+    wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, 
+    wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens } from '@/config'
 import { useAccountStore } from "@/stores/web3";
 import { customBsc } from "./privy";
-import emitter from "./emitter";
 
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -21,7 +21,9 @@ const ContractAddress = {
     WrapSwaper: wrappedUniswapV2ForTagAI,
     WrapSwaper2: wrappedUniswapV2ForTagAI2,
     CoinPurse: CoinPurse,
-    WETH: WETH
+    WETH: WETH,
+    FPMMDeterministicFactory: FPMMDeterministicFactory,
+    ConditionalTokens,
 }
 
 export const readContract = async (contractName: string, functionName: string, args: any, address?: `0x${string}`) => {
@@ -135,6 +137,7 @@ export const writeContract = async ({
     value?: bigint | string
 }): Promise<string> => {
     const client = getWalletClient();
+    const publicClient = getReadOnlyClient();
     if (!client) {
         throw 'no wallet client'
     }
@@ -146,7 +149,8 @@ export const writeContract = async ({
         address = ContractAddress[contractName] as `0x${string}`
     }
     const abi = abis[contractName as keyof typeof abis]
-    const tx = await client.writeContract({
+    
+    const { request } = await publicClient.simulateContract({
         account: useAccountStore().ethConnectAddress as `0x${string}`,
         address,
         abi,
@@ -155,7 +159,11 @@ export const writeContract = async ({
         chain: customBsc,
         value: typeof value === 'string' ? BigInt(value) : value
     });
+
+    const tx = await client.writeContract(request);
+    console.log('tx', tx)
     const hash = await waitForTx(tx);
+    console.log('hash1', hash)
     if (!hash) {
         throw 'transaction failed'
     }

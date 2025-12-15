@@ -1,41 +1,40 @@
 <script setup lang="ts">
-import { ref, computed, reactive, onMounted } from 'vue'
-import UserAvatar from '@/components/common/UserAvatar.vue'
+import { ref, reactive, onMounted } from 'vue'
 import { getPredictBattleData, tweet } from '@/apis/api'
 import { GlobalModalType, type BattleData, type Tweet } from '@/types'
-import { formatAmount, parseTimestamp, getDayNumber } from '@/utils/helper'
 import { useCommunityStore } from '@/stores/community'
 import { handleErrorTip } from '@/utils/notify'
-import { useAccountStore } from '@/stores/web3'
-import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
-import TweetBtnReply from '@/components/tweets/TweetBtnReply.vue'
-import { useRouter } from 'vue-router'
+import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import emitter from '@/utils/emitter'
+import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
+import { getMarketInfos } from '@/utils/fpmm'
 
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
 const battles = ref<BattleData[]>([])
-const router = useRouter()
 let tweets = reactive<{ [key: string]: Tweet }>({})
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const showCreateTweetModal = ref(false)
 
 const onRefresh = async () => {
     try {
         if (refreshing.value) return
         refreshing.value = true
         const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId)
+
         if (data.battle && data.battle.length > 0) {
+          const marketInfos = await getMarketInfos(data.battle as BattleData[])
             tweets = Object.assign({}, data.tweets)
             battles.value = (data.battle as BattleData[]).map(battle => ({
                 ...battle,
-                winner: getWinner(battle)
+                winner: getWinner(battle),
+                reserveA: marketInfos[battle.marketMaker + '-priceA'],
+                reserveB: marketInfos[battle.marketMaker + '-priceB'],
+                fee: marketInfos[battle.marketMaker + '-fee']
             }))
-            console.log(44, tweets, data, battles.value)
         }else {
             battles.value = []
         }
@@ -56,10 +55,14 @@ const onLoad = async () => {
         loading.value = true
         const data: any = await getPredictBattleData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, Math.floor((battles.value.length - 1) / 16) + 1) as BattleData[]
         if (data.battle && data.battle.length > 0) {
+          const marketInfos = await getMarketInfos(data.battle as BattleData[])
           tweets = Object.assign(tweets, data.tweets)
           battles.value = battles.value.concat((data.battle as BattleData[]).map(battle => ({
               ...battle,
-              winner: getWinner(battle)
+              winner: getWinner(battle),
+              reserveA: marketInfos[battle.marketMaker + '-priceA'],
+              reserveB: marketInfos[battle.marketMaker + '-priceB'],
+              fee: marketInfos[battle.marketMaker + '-fee']
           })))
         }
         if (!data.battle || data.battle.length < 16) {
@@ -77,7 +80,6 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
     const tweetA = tweets[battle.predictAID]
     const tweetB = tweets[battle.predictBID]
     if (tweetA && tweetB) {
-      console.log(33, tweetA.isSettled, tweetB.isSettled)
         if (tweetA.isSettled && tweetB.isSettled) {
             return (tweetA.amount ?? 0) > (tweetB.amount ?? 0) ? 'left' : 'right'
         }
@@ -86,11 +88,16 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
     return null
 }
 
-const openTweet = (tweetId: string) => {
-  router.push(`/post-detail/${tweetId}`)
-}
-
 const createPredictBattle = () => {
+  if (!accStore.getAccountInfo?.twitterId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Login)
+    return;
+  }
+  if (accStore.ethConnectState !== EthWalletState.Connected) {
+    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    return;
+  }
+
   useModalStore().setModalVisible(true, GlobalModalType.CreatePredict)
 }
 
@@ -129,251 +136,7 @@ onMounted(async () => {
       <div v-if="battles.length === 0" class="w-full flex my-8 justify-center items-center">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
-      <div v-else
-        v-for="battle in battles"
-        :key="battle.predictAID + battle.predictBID"
-        class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border mb-3 border-grey-light"
-      >
-        <!-- 卡片头部 -->
-        <div class="flex justify-between items-start mb-4">
-          <h3 class="text-xl font-semibold text-black flex-1 pr-2">
-            {{ battle.title }}
-          </h3>
-          <!-- 倒计时/状态 -->
-          <div class="flex flex-col items-end">
-            <div
-              class="px-2 py-1 rounded-full text-xs font-medium"
-              :class="{
-                'bg-green-light text-green-dark': !battle.winner,
-                'bg-grey-light text-grey-normal': !!battle.winner,
-              }"
-            >
-              {{ battle.winner ? $t('ended') : parseTimestamp((Math.max(tweets[battle.predictAID]?.dayNumber, tweets[battle.predictBID]?.dayNumber, getDayNumber()) + 3) * 86400000) }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 对战双方 -->
-        <div class="flex items-stretch gap-2 sm:gap-6 relative overflow-hidden">
-          <!-- 左侧玩家卡片 -->
-          <div class="flex-1 overflow-hidden battle-player-card">
-            <div
-                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
-              :class="{
-                'bg-gradient-to-br from-red-light to-red-light-hover border-red-normal/20': !battle.winner,
-                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!battle.winner
-              }"
-            >
-              <!-- 主要内容区域 -->
-              <div class="flex-1 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                <!-- 左侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-1/3 sm:min-w-1/3 sm:max-w-1/3">
-                  <div class="relative">
-                    <UserAvatar
-                      :profile-img="tweets[battle.predictAID]?.profile"
-                      :name="tweets[battle.predictAID]?.twitterName"
-                      :username="tweets[battle.predictAID]?.twitterUsername"
-                      :followers="tweets[battle.predictAID]?.followers"
-                      :followings="tweets[battle.predictAID]?.followings"
-                      :credit="tweets[battle.predictAID]?.credit"
-                      :steem-id="tweets[battle.predictAID]?.steemId"
-                      :eth-addr="tweets[battle.predictAID]?.ethAddr"
-                      :teleported="true"
-                    >
-                      <template #avatar-img>
-                        <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-red-normal shadow-md">
-                          <img
-                            v-if="tweets[battle.predictAID]?.profile"
-                            :src="tweets[battle.predictAID]?.profile"
-                            :alt="tweets[battle.predictAID]?.twitterName"
-                            class="w-full h-full object-cover"
-                          >
-                          <div v-else class="w-full h-full bg-red-normal flex items-center justify-center">
-                            <i-ep-avatar class="text-white text-sm sm:text-2xl" />
-                          </div>
-                        </div>
-                      </template>
-                    </UserAvatar>
-
-                    <!-- Winner 标识 -->
-                    <div
-                      v-if="battle.winner && battle.winner === 'left'"
-                      class="absolute -top-2 -left-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
-                    >
-                      <img src="~@/assets/icons/icon-winner.svg" alt="Winner" class="w-5 h-5 sm:w-6 sm:h-6 -rotate-45" />
-                    </div>
-                  </div>
-
-                  <!-- 用户名 -->
-                  <p class="text-sm font-bold text-red-normal leading-tight w-full break-words">
-                    {{ tweets[battle.predictAID]?.twitterUsername }}
-                  </p>
-                  <!-- <p class="text-sm text-red-normal leading-tight w-full break-words text-center">
-                    {{ formatAmount(tweets[battle.predictAID]?.credit ?? 0) }}
-                  </p> -->
-                </div>
-
-                <!-- 左侧：预测文字 -->
-                <div class="flex-1 overflow-hidden" @click="openTweet(battle.predictAID)">
-                  <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
-                    <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictAID]?.content ?? ''">
-                      {{ tweets[battle.predictAID]?.content ?? '' }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-stretch gap-3">
-                <div class="flex-1 flex flex-col gap-1 items-center">
-                  <!-- <button
-                      v-if="!battle.winner"
-                      @click="getWinner(battle)"
-                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
-
-                  >
-                    <i class="w-4 h-4 sm:w-6 sm:h-6 " :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
-                  </button> -->
-                  <TweetBtnReply :tweet="tweets[battle.predictAID]" :hide-number="true" />
-                  <div class="text-xs sm:text-sm text-red-600 text-center flex flex-col items-center">
-                    <span>{{ tweets[battle.predictAID]?.replyCount ?? 0 }}</span>
-                    <span class="text-xs">{{ $t('postView.comments') }}</span>
-                  </div>
-                </div>
-                <!-- 支持按钮 -->
-                <div class="flex-1 flex flex-col gap-1 items-center">
-                  <!-- <button
-                      v-if="!battle.winner"
-                      @click="null"
-                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
-
-                  >
-                    <i class="w-full h-full" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
-                  </button> -->
-                  <TweetBtnCurate :tweet="tweets[battle.predictAID]" :hide-number="true" />
-                  <div class="text-xs sm:text-sm text-red-600 text-center flex flex-col items-center">
-                   <span> {{ (Math.ceil(tweets[battle.predictAID]?.amount ?? 0)).toLocaleString() }}</span>
-                    <span class="text-xs">{{ $t('curation.supports') }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- VS 标识 -->
-          <div class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center justify-center
-                      w-6 min-w-6 sm:w-10 sm:min-w-10  flex-shrink-0 z-50">
-            <div class="vs-indicator relative">
-                <img src="~@/assets/icons/icon-pk.png" alt="">
-          </div>
-          </div>
-
-          <!-- 右侧玩家卡片 -->
-          <div class="flex-1 overflow-hidden battle-player-card">
-            <div
-                class="player-card rounded-xl sm:rounded-2xl p-2 sm:p-4 border-2 relative flex flex-col gap-1 sm:gap-3"
-              :class="{
-                'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200/30': !battle.winner,
-                'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!battle.winner
-              }"
-            >
-              <!-- 主要内容区域 -->
-              <div class="flex-1 flex flex-col-reverse sm:flex-row gap-1 sm:gap-2">
-                <!-- 左侧：预测文字 -->
-                <div class="flex-1 overflow-hidden" @click="openTweet(battle.predictBID)">
-                  <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
-                    <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictBID]?.content ?? ''">
-                      {{ tweets[battle.predictBID]?.content ?? '' }}
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 右侧：头像、用户名和支持按钮 -->
-                <div class="flex flex-row sm:flex-col items-center gap-2 w-full sm:w-1/3 sm:min-w-1/3 sm:max-w-1/3">
-                  <div class="relative">
-                    <UserAvatar
-                      :profile-img="tweets[battle.predictBID]?.profile"
-                      :name="tweets[battle.predictBID]?.twitterName"
-                      :username="tweets[battle.predictBID]?.twitterUsername"
-                      :followers="tweets[battle.predictBID]?.followers"
-                      :followings="tweets[battle.predictBID]?.followings"
-                      :credit="tweets[battle.predictBID]?.credit ?? 0"
-                      :steem-id="tweets[battle.predictBID]?.steemId"
-                      :eth-addr="tweets[battle.predictBID]?.ethAddr"
-                      :teleported="true"
-                    >
-                      <template #avatar-img>
-                        <div class="w-8 h-8 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 sm:border-3 border-blue-600 shadow-md">
-                          <img
-                            v-if="tweets[battle.predictBID]?.profile"
-                            :src="tweets[battle.predictBID]?.profile"
-                            :alt="tweets[battle.predictBID]?.twitterName"
-                            class="w-full h-full object-cover"
-                          >
-                          <div v-else class="w-full h-full bg-blue-600 flex items-center justify-center">
-                            <i-ep-avatar class="text-white text-lg sm:text-2xl" />
-                          </div>
-                        </div>
-                      </template>
-                    </UserAvatar>
-
-                    <!-- Winner 标识 -->
-                    <div
-                      v-if="battle.winner && battle.winner == 'right'"
-                      class="absolute -top-2 -right-2 w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shadow-lg"
-                    >
-                      <img src="~@/assets/icons/icon-winner.svg" alt="Winner" class="w-5 h-5 sm:w-6 sm:h-6 rotate-45" />
-                    </div>
-                  </div>
-
-                  <!-- 用户名 -->
-                  <p class="text-sm font-bold text-blue-600 leading-tight w-full break-words">
-                    {{ tweets[battle.predictBID]?.twitterUsername }}
-                  </p>
-                  <!-- <p class="text-sm text-blue-600 leading-tight w-full break-words text-left">
-                    {{ formatAmount(Math.ceil(tweets[battle.predictBID]?.credit ?? 0)) }}
-                  </p> -->
-                </div>
-              </div>
-              <div class="flex items-stretch gap-3">
-                <!-- 评论按钮 -->
-                <div class="flex-1 flex flex-col gap-1 items-center">
-                  <!-- <button
-                      v-if="!battle.winner"
-                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
-                      :class="{
-                      'bg-blue-600 text-white shadow-lg': tweets[battle.predictBID]?.liked,
-                      'bg-white text-blue-600 border border-blue-600 hover:bg-blue-600 hover:text-white': !tweets[battle.predictBID]?.liked
-                    }"
-                  >
-                    <i class="w-2.5 h-2.5 sm:w-3 sm:h-3" :class="tweets[battle.predictAID]?.liked ? 'btn-icon-reply-active-red' : 'btn-icon-reply'"></i>
-                  </button> -->
-                  <TweetBtnReply :tweet="tweets[battle.predictBID]" :hide-number="true" />
-                  <div class="text-xs sm:text-sm text-blue-600 text-center flex flex-col items-center">
-                    <span>{{ tweets[battle.predictBID]?.replyCount ?? 0 }}</span> <span class="text-xs">{{ $t('postView.comments') }}</span>
-                  </div>
-                </div>
-                <!-- 支持按钮 -->
-                <div class="flex-1 flex flex-col gap-1 items-center">
-                  <!-- <button
-                      v-if="!battle.winner"
-                      @click="null"
-                      class="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all duration-200"
-                      :class="{
-                      'bg-blue-600 text-white shadow-lg': tweets[battle.predictBID]?.liked,
-                      'bg-white text-blue-600 border border-blue-600 hover:bg-blue-600 hover:text-white': !tweets[battle.predictBID]?.liked
-                    }"
-                  >
-                    <i class="w-3 h-3 sm:w-4 sm:h-4" :class="tweets[battle.predictBID]?.liked ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
-                  </button> -->
-                  <TweetBtnCurate :tweet="tweets[battle.predictBID]" :hide-number="true" />
-                  <div class="text-xs sm:text-sm text-blue-600 text-center flex flex-col items-center">
-                    <span>{{ (Math.ceil(tweets[battle.predictBID]?.amount ?? 0)).toLocaleString() }}</span> <span class="text-xs">{{ $t('curation.supports') }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <PredictBattleCard v-else :battle="battle" :tweets="tweets" v-for="battle in battles" :key="battle.predictAID + battle.predictBID" />
       </van-list>
     </van-pull-refresh>
   </div>
