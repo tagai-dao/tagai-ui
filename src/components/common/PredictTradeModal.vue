@@ -5,8 +5,8 @@ import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { useAccount } from '@/composables/useAccount'
 import { useAccountStore } from '@/stores/web3'
-import { useCommunityStore } from '@/stores/community'
 import { isAddress } from 'viem'
+import { newParticipation } from '@/apis/api'
 import { getUserTokenBalances, calculateMaxSellAmount, 
   buyToken, sellToken,getBuyData, getSellData, getMarketInfos } from '@/utils/fpmm'
 import type { BattleData } from '@/types'
@@ -17,7 +17,6 @@ const modalStore = useModalStore()
 const battle = computed(() => modalStore.modalParams?.battle)
 const tweets = computed(() => modalStore.modalParams?.tweets || {})
 const accStore = useAccountStore()
-const comStore = useCommunityStore()
 const reserveA = ref(0)
 const reserveB = ref(0)
 const bnbFee = ref(0);
@@ -105,7 +104,7 @@ watch(() => shares.value, () => {
 
 watch(() => accStore.ethConnectAddress, (newVal) => {
   if (isAddress(newVal)) {
-    getUserTokenBalances(comStore.currentSelectedCommunity!.token as `0x${string}`, newVal, battle.value as BattleData).then((bs: any) => {
+    getUserTokenBalances(battle.value.token as `0x${string}`, newVal, battle.value as BattleData).then((bs: any) => {
       tokenBalance.value = bs.balance;
       blueBalance.value = bs.balanceB;
       redBalance.value = bs.balanceA;
@@ -140,7 +139,7 @@ async function trade() {
   try {
     trading.value = true
     if (activeTab.value === 'buy') {
-      const hash = await buyToken(battle.value as BattleData, comStore.currentSelectedCommunity!.token as `0x${string}`, shares.value, willReceiveAmount.value * 0.95, selectedOutcome.value, bnbFee.value)
+      const hash = await buyToken(battle.value as BattleData, battle.value.token as `0x${string}`, shares.value, willReceiveAmount.value * 0.95, selectedOutcome.value, bnbFee.value)
       console.log('buy hash', hash)
       updateReserves()
     } else {
@@ -148,6 +147,7 @@ async function trade() {
       console.log('sell hash', hash)
       updateReserves()
     }
+    await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, battle.value?.marketMaker as `0x${string}`)
   } catch (error) {
     handleErrorTip(error)
   } finally {
@@ -217,7 +217,7 @@ onMounted(async () => {
           :class="selectedOutcome === 'red' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-red-200'"
           @click="selectedOutcome = 'red';debouncedCalculate()"
         >
-          <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
+          <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} ${{ battle.tick }}</span>
           <!-- <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyRed') : $t('predictTrade.sellRed') }}</span> -->
         </button>
         
@@ -226,7 +226,7 @@ onMounted(async () => {
           :class="selectedOutcome === 'blue' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-blue-200'"
           @click="selectedOutcome = 'blue';debouncedCalculate()"
         >
-          <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
+          <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} ${{ battle.tick }}</span>
            <!-- <span class="text-xs mt-1 z-10">{{ activeTab === 'buy' ? $t('predictTrade.buyBlue') : $t('predictTrade.sellBlue') }}</span> -->
         </button>
       </div>
@@ -249,7 +249,7 @@ onMounted(async () => {
           <label class="text-sm font-bold text-gray-700"></label>
           <div class="text-xs text-gray-500">
             {{ $t('balance') }}: 
-            <span v-if="activeTab === 'buy'" class="font-mono font-bold text-gray-800">{{ formatAmount(tokenBalance) }} {{ comStore.currentSelectedCommunity?.tick }}</span>
+            <span v-if="activeTab === 'buy'" class="font-mono font-bold text-gray-800">{{ formatAmount(tokenBalance) }} {{ battle.tick }}</span>
             <span v-else-if="selectedOutcome === 'red'" class="font-mono font-bold text-gray-800">{{ formatAmount(redBalance) }} Red</span>
             <span v-else class="font-mono font-bold text-gray-800">{{ formatAmount(blueBalance) }} Blue</span>
           </div>
@@ -263,7 +263,7 @@ onMounted(async () => {
             class="w-full bg-gray-50 text-right text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
           >
           <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-             <span class="text-gray-400 text-sm">{{activeTab === 'buy' ? comStore.currentSelectedCommunity?.tick : $t('predictTrade.shareUnit')}}</span>
+             <span class="text-gray-400 text-sm">{{activeTab === 'buy' ? battle.tick : $t('predictTrade.shareUnit')}}</span>
              <button 
               class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
               @click="getMaxInfo"
@@ -288,7 +288,7 @@ onMounted(async () => {
          <div class="flex justify-between items-center">
             <span class="text-gray-600 text-sm">{{ $t('predictTrade.payReceive') }}</span>
             <span v-if="activeTab === 'buy'" class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(willReceiveAmount) }} {{ selectedOutcome === 'red' ? $t('predictTrade.redShare') : $t('predictTrade.blueShare') }}</span>
-            <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(willReceiveAmount) }} {{ comStore.currentSelectedCommunity?.tick }}</span>
+            <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(willReceiveAmount) }} {{ battle.tick }}</span>
          </div>
          <div class="flex justify-between items-center text-xs">
             <span class="text-gray-500">Price Impact</span>

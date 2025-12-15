@@ -4,7 +4,7 @@ import { useModalStore } from '@/stores/common'
 import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { useAccountStore } from '@/stores/web3'
-import { useCommunityStore } from '@/stores/community'
+import { newParticipation } from '@/apis/api'
 import { isAddress } from 'viem'
 import { getUserTokenBalances, addLiquidity, removeLiquidity, redeemPositions, getUserLpBalance, getMarketInfos } from '@/utils/fpmm'
 import type { BattleData } from '@/types'
@@ -14,7 +14,6 @@ import { handleErrorTip } from '@/utils/notify'
 const modalStore = useModalStore()
 const battle = computed(() => modalStore.modalParams?.battle)
 const accStore = useAccountStore()
-const comStore = useCommunityStore()
 const { onCopy } = useTools()
 
 // State
@@ -41,7 +40,7 @@ const isResolved = computed(() => battle.value?.status === 2)
 const updateBalances = async () => {
     if (battle.value && accStore.ethConnectAddress) {
         // Get Collateral, Red, Blue balances
-        const bs: any = await getUserTokenBalances(comStore.currentSelectedCommunity!.token as `0x${string}`, accStore.ethConnectAddress as `0x${string}`, battle.value as BattleData)
+        const bs: any = await getUserTokenBalances(battle.value.token as `0x${string}`, accStore.ethConnectAddress as `0x${string}`, battle.value as BattleData)
         collateralBalance.value = bs.balance
         redBalance.value = bs.balanceA
         blueBalance.value = bs.balanceB
@@ -79,13 +78,14 @@ const handleAction = async () => {
     try {
         if (activeTab.value === 'liquidity') {
             if (liquidityType.value === 'add') {
-                await addLiquidity(battle.value as BattleData, amount.value!, comStore.currentSelectedCommunity!.token as string)
+                await addLiquidity(battle.value as BattleData, amount.value!, battle.value.token as `0x${string}`)
             } else {
                 await removeLiquidity(battle.value as BattleData, amount.value!)
             }
         } else {
-             await redeemPositions(battle.value as BattleData, comStore.currentSelectedCommunity!.token as string)
+             await redeemPositions(battle.value as BattleData, battle.value.token as `0x${string}`)
         }
+        await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, battle.value?.marketMaker as `0x${string}`)
         await updateBalances()
         amount.value = undefined
     } catch (e) {
@@ -100,7 +100,6 @@ function copyMarketAddress(address: `0x${string}`) {
 }
 
 onMounted(() => {
-    updateBalances()
 })
 
 </script>
@@ -169,7 +168,7 @@ onMounted(() => {
             <div class="flex justify-between items-center mb-2">
                 <label class="text-sm font-bold text-gray-700">{{ liquidityType === 'add' ? 'Amount to Add' : 'Amount to Remove' }}</label>
                 <div class="text-xs text-gray-500">
-                    {{ $t('balance') }}: <span class="font-mono font-bold text-gray-800">{{ formatAmount(liquidityType === 'add' ? collateralBalance : lpBalance) }} {{ liquidityType === 'add' ? comStore.currentSelectedCommunity?.tick : 'LP' }}</span>
+                    {{ $t('balance') }}: <span class="font-mono font-bold text-gray-800">{{ formatAmount(liquidityType === 'add' ? collateralBalance : lpBalance) }} {{ liquidityType === 'add' ? battle.tick : 'LP' }}</span>
                 </div>
             </div>
              <div class="relative mb-3">
@@ -180,7 +179,7 @@ onMounted(() => {
                     class="w-full bg-gray-50 text-right text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
                 >
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                    <span class="text-gray-400 text-sm">{{ liquidityType === 'add' ? comStore.currentSelectedCommunity?.tick : 'LP' }}</span>
+                    <span class="text-gray-400 text-sm">{{ liquidityType === 'add' ? battle.tick : 'LP' }}</span>
                     <button class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" @click="setMax">Max</button>
                 </div>
             </div>
@@ -189,7 +188,7 @@ onMounted(() => {
          <button 
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white shadow-lg transition-all transform active:scale-[0.99]"
             @click="handleAction"
-            :disabled="loading || !amount || battle.status !== 1"
+            :disabled="loading || !amount || (battle.status !== 1 && liquidityType === 'add')"
         >
             {{ liquidityType === 'add' ? $t('predictLiquidity.addLiquidity') : $t('predictLiquidity.removeLiquidity') }}
             <i-ep-loading v-if="loading" class="animate-spin ml-2" />

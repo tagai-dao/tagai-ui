@@ -443,6 +443,8 @@ export type MindShare = Account & {
 
 export type BattleData = {
   marketMaker: string,
+  tick: string,
+  token: string,
   reserveA: number | undefined | null,
   reserveB: number | undefined | null,
   title: string,

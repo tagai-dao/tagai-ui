@@ -319,3 +319,6 @@ export const preCreateFPMMMarket = async (twitterId: string, tick: string, title
 
 export const createFPMMMarket = async (twitterId: string, questionId: string, txHash: string) =>
   post(BACKEND_API_URL + '/predict/createFPMMMarket', { twitterId, questionId, txHash })
+
+export const newParticipation = async (twitterId: string, ethAddr: string, fpmm: string) =>
+  post(BACKEND_API_URL + '/predict/newParticipation', { twitterId, ethAddr, fpmm })

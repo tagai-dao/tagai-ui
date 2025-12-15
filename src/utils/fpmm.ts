@@ -110,13 +110,12 @@ export const getMarketInfos = async (markets: BattleData[]) => {
             ]
         })
     }
-    
     const res = await aggregate(calls, ChainConfig.multiConfig)
     return res.results.transformed;
 }
 
 export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData) {
-    if (!isAddress(tokenAddr) || !isAddress(battle.marketMaker)) return {balance: 0, balanceA: 0, balanceB: 0, lpBalance: 0, feesWithdrawable: 0};
+    if (!isAddress(tokenAddr) || !isAddress(battle.marketMaker)) return {balance: 0, balanceA: 0, balanceB: 0, lpBalance: 0};
     let calls = [
         {
             target: tokenAddr,
@@ -158,16 +157,6 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
             ],
             returns: [
                 ['balanceB', (val: any) => val / 1e18]
-            ]
-        },
-        {
-            target: battle.marketMaker,
-            call: [
-                'feesWithdrawableBy(address)(uint256)',
-                accAddr
-            ],
-            returns: [
-                ['feesWithdrawable', (val: any) => val / 1e18]
             ]
         }
     ]
