@@ -9,7 +9,8 @@ import { useRouter } from 'vue-router';
 
 const props = defineProps<{
     battle: BattleData,
-    tweets: { [key: string]: Tweet }
+    tweets: { [key: string]: Tweet },
+    showCommunity?: boolean
 }>()
 const router = useRouter();
 const accStore = useAccountStore();
@@ -47,6 +48,10 @@ const openLiquidityModal = () => {
   useModalStore().setModalVisible(true, GlobalModalType.PredictLiquidity, { battle: props.battle, tweets: props.tweets as { [key: string]: Tweet } })
 }
 
+const openCommunity = (tick: string) => {
+  router.push(`/tag-detail/${tick}`)
+}
+
 </script>
 
 <template>
@@ -56,6 +61,9 @@ const openLiquidityModal = () => {
         <div class="flex justify-between items-start mb-4">
           <h3 class="text-xl font-semibold text-black flex-1 pr-2">
             {{ battle.title }}
+            <span v-if="showCommunity" class="cursor-pointer" @click="openCommunity(battle.tick)">
+              (@<span class="text-blue-600 underline">{{ battle.tick }}</span>)
+            </span>
           </h3>
           <!-- 倒计时/状态 -->
           <div class="flex flex-col items-end">
