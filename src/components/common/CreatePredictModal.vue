@@ -194,6 +194,7 @@ const createPredict = async () => {
     await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
     console.log('创建预测:', formData, fpmmMaker, hash)
     // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
+    useModalStore().setModalCloseEnable(true);
     modalStore.setModalVisible(false);
     emitter.emit('createPredictSuccess')
   } catch (error) {
