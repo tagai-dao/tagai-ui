@@ -147,7 +147,9 @@ async function trade() {
       console.log('sell hash', hash)
       updateReserves()
     }
-    await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, battle.value?.marketMaker as `0x${string}`)
+    if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
+      await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, battle.value?.marketMaker as `0x${string}`)
+    }
   } catch (error) {
     handleErrorTip(error)
   } finally {
@@ -174,10 +176,16 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="bg-white text-black w-full p-4 sm:p-6 rounded-2xl mx-auto font-sans">
+  <div class="bg-white text-black w-full p-4 sm:p-6 rounded-2xl mx-auto font-sans relative">
+    <img
+      class="absolute top-4 right-4 sm:top-6 sm:right-6 cursor-pointer w-6 h-6 hover:opacity-70 transition-opacity z-10"
+      @click="modalStore.setModalVisible(false)"
+      src="~@/assets/icons/icon-modal-close.svg"
+      alt="Close"
+    />
     <!-- Header -->
     <div class="mb-6">
-      <h2 class="text-xl sm:text-2xl font-bold mb-2 leading-tight">{{ battle?.title || 'Prediction' }}</h2>
+      <h2 class="text-xl sm:text-2xl font-bold mb-2 leading-tight pr-8">{{ battle?.title || 'Prediction' }}</h2>
       <div class="flex items-center gap-3 text-sm text-gray-600">
         <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-mono">Market Address: 
           <span class="text-blue-600 underline cursor-pointer" @click="copyMarketAddress(battle?.marketMaker as `0x${string}`)">{{ formatAddress(battle?.marketMaker) }}</span></span>
