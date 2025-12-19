@@ -286,6 +286,7 @@ async function confirm() {
       }
     }
   } catch (e: any) {
+    console.log(444, e)
     if (e == errCode.NOT_BOND_ETH) {
       showNotBondEth.value = true
     } else {

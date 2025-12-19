@@ -63,7 +63,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
                     [WETH, token], 
                     useAccountStore().ethConnectAddress, 
                     Math.floor(Date.now() / 1000) + 300, 
-                    version == 1 ? IPShareContract1 : IPShareContract2],
+                    uniswapV2Router02],
                 value: ethAmount
             })
             if (!hash) {
