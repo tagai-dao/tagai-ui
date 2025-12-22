@@ -458,3 +458,8 @@ export type BattleData = {
   conditionID: string,
   fee: number | undefined | null
 }
+
+export type MarketData = {
+  battle: BattleData,
+  tweets: { [key: string]: Tweet }
+}

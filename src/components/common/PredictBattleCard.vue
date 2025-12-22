@@ -28,8 +28,8 @@ const getBattleStats = (battle: BattleData) => {
   return { percentA, percentB }
 }
 
-const openTweet = (tweetId: string) => {
-  router.push(`/post-detail/${tweetId}`)
+const openTweet = () => {
+  router.push(`/predict-detail/${props.battle.marketMaker}`)
 }
 
 const openTradeModal = () => {
@@ -55,7 +55,7 @@ const openCommunity = (tick: string) => {
 </script>
 
 <template>
-    <div class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border mb-3 border-grey-light"
+    <div @click="openTweet()" class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border mb-3 border-grey-light"
       >
         <!-- 卡片头部 -->
         <div class="flex justify-between items-start mb-4">
@@ -90,12 +90,12 @@ const openCommunity = (tick: string) => {
           <div class="absolute bottom-4 sm:bottom-6 left-0 right-0 flex items-center justify-center z-20">
             <button 
               class="pointer-events-auto w-1/2 h-9 sm:h-10 bg-gradient-primary text-white text-xs sm:text-sm font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
-              @click="openTradeModal()"
+              @click.stop="openTradeModal()"
               :disabled="battle.status !== 1"
             >
               {{ $t('trade') }}
             </button>
-            <div @click="openLiquidityModal()">
+            <div @click.stop="openLiquidityModal()">
               <img class="ml-3 w-6 h-6 sm:w-8 sm:h-8 cursor-pointer pointer-events-auto hover:scale-[1.1] active:scale-[0.9] transition-all duration-200" 
                     src="~@/assets/icons/icon-liquidity.svg" alt="">
             </div>
@@ -200,7 +200,7 @@ const openCommunity = (tick: string) => {
                 </div>
 
                 <!-- 左侧：预测文字 -->
-                <div class="flex-1 overflow-hidden" @click="openTweet(battle.predictAID)">
+                <div class="flex-1 overflow-hidden">
                   <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full">
                     <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictAID]?.content ?? ''">
                       {{ tweets[battle.predictAID]?.content ?? '' }}
@@ -260,7 +260,7 @@ const openCommunity = (tick: string) => {
               <!-- 主要内容区域 -->
               <div class="flex-1 flex flex-col-reverse sm:flex-row gap-1 sm:gap-2">
                 <!-- 左侧：预测文字 -->
-                <div class="flex-1 overflow-hidden" @click="openTweet(battle.predictBID)">
+                <div class="flex-1 overflow-hidden">
                   <div class="w-full text-sm sm:text-base text-grey-normal leading-relaxed h-full text-right">
                     <div class="line-clamp-5 min-h-[84px]" :title="tweets[battle.predictBID]?.content ?? ''">
                       {{ tweets[battle.predictBID]?.content ?? '' }}

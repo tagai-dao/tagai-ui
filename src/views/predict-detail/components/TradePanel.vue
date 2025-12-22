@@ -2,16 +2,17 @@
 import { computed, onMounted, watch, ref } from 'vue'
 import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
-import { useAccountStore } from '@/stores/web3'
+import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { newParticipation } from '@/apis/api'
 import { isAddress } from 'viem'
 import { getUserTokenBalances, buyToken, sellToken, getBuyData, getSellData, getMarketInfos, addLiquidity, removeLiquidity, redeemPositions } from '@/utils/fpmm'
-import type { BattleData } from '@/types'
+import { GlobalModalType, type MarketData } from '@/types'
 import debounce from 'lodash.debounce'
 import { handleErrorTip } from '@/utils/notify'
+import { useModalStore } from '@/stores/common'
 
 const props = defineProps<{
-    battle: BattleData
+    market: MarketData
 }>()
 
 const accStore = useAccountStore()
@@ -74,7 +75,7 @@ const debouncedTradeCalculate = debounce(async () => {
     }
     tradeCalculating.value = true
     if (tradeActiveTab.value === 'buy') {
-      const { amount, fee } = await getBuyData(props.battle, tradeShares.value, tradeSelectedOutcome.value)
+      const { amount, fee } = await getBuyData(props.market.battle, tradeShares.value, tradeSelectedOutcome.value)
       
       bnbFee.value = fee;
       tradeWillReceiveAmount.value = amount
@@ -86,7 +87,7 @@ const debouncedTradeCalculate = debounce(async () => {
         tradePriceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
       }
     } else {
-      const sellData: any = await getSellData(props.battle, reserveA.value, reserveB.value, tradeShares.value, tradeSelectedOutcome.value)
+      const sellData: any = await getSellData(props.market.battle, reserveA.value, reserveB.value, tradeShares.value, tradeSelectedOutcome.value)
       bnbFee.value = sellData.fee;
       tradeWillReceiveAmount.value = sellData.receive;
       if (tradeSelectedOutcome.value === 'red') {
@@ -123,16 +124,20 @@ async function getTradeMaxInfo() {
 
 async function executeTrade() {
   try {
+    if (accStore.ethConnectState !== EthWalletState.Connected) {
+      useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+      return;
+    }
     tradeLoading.value = true
     if (tradeActiveTab.value === 'buy') {
-      await buyToken(props.battle, props.battle.token as `0x${string}`, tradeShares.value, tradeWillReceiveAmount.value * 0.95, tradeSelectedOutcome.value, bnbFee.value)
+      await buyToken(props.market.battle, props.market.battle.token as `0x${string}`, tradeShares.value, tradeWillReceiveAmount.value * 0.95, tradeSelectedOutcome.value, bnbFee.value)
       updateReserves()
     } else {
-      await sellToken(props.battle, tradeWillReceiveAmount.value, tradeShares.value * 1.05, tradeSelectedOutcome.value, bnbFee.value)
+      await sellToken(props.market.battle, tradeWillReceiveAmount.value, tradeShares.value * 1.05, tradeSelectedOutcome.value, bnbFee.value)
       updateReserves()
     }
     if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
-      await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.battle.marketMaker as `0x${string}`)
+      await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.battle.marketMaker as `0x${string}`)
     }
     // Refresh
     tradeShares.value = ''
@@ -159,7 +164,7 @@ const lpSupply = ref(0)
 const liquidityAmount = ref<number>()
 const liquidityLoading = ref(false)
 
-const isResolved = computed(() => props.battle.status === 2)
+const isResolved = computed(() => props.market.battle.status === 2)
 
 const setLiquidityMax = () => {
     if (liquidityType.value === 'add') {
@@ -170,6 +175,11 @@ const setLiquidityMax = () => {
 }
 
 const handleLiquidityAction = async () => {
+    if (accStore.ethConnectState !== EthWalletState.Connected) {
+      useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+      return;
+    }
+
     if (!liquidityAmount.value && mainTab.value === 'liquidity' && !liquidityLoading.value) return
     if (mainTab.value === 'redeem' && liquidityLoading.value) return
     
@@ -177,15 +187,15 @@ const handleLiquidityAction = async () => {
     try {
         if (mainTab.value === 'liquidity') {
             if (liquidityType.value === 'add') {
-                await addLiquidity(props.battle, liquidityAmount.value!, props.battle.token as `0x${string}`)
+                await addLiquidity(props.market.battle, liquidityAmount.value!, props.market.battle.token as `0x${string}`)
             } else {
-                await removeLiquidity(props.battle, liquidityAmount.value!)
+                await removeLiquidity(props.market.battle, liquidityAmount.value!)
             }
         } else {
-             await redeemPositions(props.battle, props.battle.token as `0x${string}`)
+             await redeemPositions(props.market.battle, props.market.battle.token as `0x${string}`)
         }
         if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
-            await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.battle.marketMaker as `0x${string}`)
+            await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.battle.marketMaker as `0x${string}`)
         }
         await updateBalances()
         updateReserves()
@@ -202,8 +212,8 @@ const handleLiquidityAction = async () => {
 // ==========================================
 
 const updateBalances = async () => {
-    if (props.battle && accStore.ethConnectAddress && isAddress(accStore.ethConnectAddress)) {
-        const bs: any = await getUserTokenBalances(props.battle.token as `0x${string}`, accStore.ethConnectAddress as `0x${string}`, props.battle)
+    if (props.market.battle && accStore.ethConnectAddress && isAddress(accStore.ethConnectAddress)) {
+        const bs: any = await getUserTokenBalances(props.market.battle.token as `0x${string}`, accStore.ethConnectAddress as `0x${string}`, props.market.battle)
         // Common
         tradeTokenBalance.value = bs.balance
         tradeBlueBalance.value = bs.balanceB
@@ -213,10 +223,10 @@ const updateBalances = async () => {
 }
 
 const updateReserves = debounce(async () => {
-  getMarketInfos([props.battle]).then((infos: any) => {
-    reserveA.value = infos[props.battle.marketMaker + '-priceA']
-    reserveB.value = infos[props.battle.marketMaker + '-priceB']
-    lpSupply.value = infos[props.battle.marketMaker + '-totalSupply'] || 0
+  getMarketInfos([props.market.battle]).then((infos: any) => {
+    reserveA.value = infos[props.market.battle.marketMaker + '-priceA']
+    reserveB.value = infos[props.market.battle.marketMaker + '-priceB']
+    lpSupply.value = infos[props.market.battle.marketMaker + '-totalSupply'] || 0
   })
 }, 500)
 
@@ -290,7 +300,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 :class="tradeSelectedOutcome === 'red' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-red-200'"
                 @click="tradeSelectedOutcome = 'red';debouncedTradeCalculate()"
             >
-                <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} ${{ battle.tick }}</span>
+                <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} ${{ props.market.battle.tick }}</span>
             </button>
             
             <button 
@@ -298,7 +308,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 :class="tradeSelectedOutcome === 'blue' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-blue-200'"
                 @click="tradeSelectedOutcome = 'blue';debouncedTradeCalculate()"
             >
-                <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} ${{ battle.tick }}</span>
+                <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} ${{ props.market.battle.tick }}</span>
             </button>
         </div>
 
@@ -308,7 +318,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 <label class="text-sm font-bold text-gray-700"></label>
                 <div class="text-xs text-gray-500">
                 {{ $t('balance') }}: 
-                <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-gray-800">{{ formatAmount(tradeTokenBalance) }} {{ battle.tick }}</span>
+                <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-gray-800">{{ formatAmount(tradeTokenBalance) }} {{ props.market.battle.tick }}</span>
                 <span v-else-if="tradeSelectedOutcome === 'red'" class="font-mono font-bold text-gray-800">{{ formatAmount(tradeRedBalance) }} Red</span>
                 <span v-else class="font-mono font-bold text-gray-800">{{ formatAmount(tradeBlueBalance) }} Blue</span>
                 </div>
@@ -322,7 +332,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 class="w-full bg-gray-50 text-right text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
                 >
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                    <span class="text-gray-400 text-sm">{{tradeActiveTab === 'buy' ? battle.tick : $t('predictTrade.shareUnit')}}</span>
+                    <span class="text-gray-400 text-sm">{{tradeActiveTab === 'buy' ? props.market.battle.tick : $t('predictTrade.shareUnit')}}</span>
                     <button 
                     class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
                     @click="getTradeMaxInfo"
@@ -346,7 +356,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 <div class="flex justify-between items-center">
                     <span class="text-gray-600 text-sm">{{ $t('predictTrade.payReceive') }}</span>
                     <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ tradeSelectedOutcome === 'red' ? $t('predictTrade.redShare') : $t('predictTrade.blueShare') }}</span>
-                    <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ battle.tick }}</span>
+                    <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ props.market.battle.tick }}</span>
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-gray-500">Price Impact</span>
@@ -354,7 +364,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-gray-500">{{ $t('predictTrade.fee') }}</span>
-                    <span class="font-mono text-gray-600">{{ (battle.fee ? battle.fee * 100 : 0).toFixed(2) }}% + {{ bnbFee ? formatAmount(bnbFee) : 0 }} BNB</span>
+                    <span class="font-mono text-gray-600">{{ (props.market.battle.fee ? props.market.battle.fee * 100 : 0).toFixed(2) }}% + {{ bnbFee ? formatAmount(bnbFee) : 0 }} BNB</span>
                 </div>
             </div>
         </div>
@@ -398,7 +408,7 @@ function copyMarketAddress(address: `0x${string}`) {
             <div class="flex justify-between items-center mb-2">
                 <label class="text-sm font-bold text-gray-700">{{ liquidityType === 'add' ? 'Amount to Add' : 'Amount to Remove' }}</label>
                 <div class="text-xs text-gray-500">
-                    {{ $t('balance') }}: <span class="font-mono font-bold text-gray-800">{{ formatAmount(liquidityType === 'add' ? tradeTokenBalance : lpBalance) }} {{ liquidityType === 'add' ? battle.tick : 'LP' }}</span>
+                    {{ $t('balance') }}: <span class="font-mono font-bold text-gray-800">{{ formatAmount(liquidityType === 'add' ? tradeTokenBalance : lpBalance) }} {{ liquidityType === 'add' ? props.market.battle.tick : 'LP' }}</span>
                 </div>
             </div>
              <div class="relative mb-3">
@@ -409,7 +419,7 @@ function copyMarketAddress(address: `0x${string}`) {
                     class="w-full bg-gray-50 text-right text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
                 >
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-                    <span class="text-gray-400 text-sm">{{ liquidityType === 'add' ? battle.tick : 'LP' }}</span>
+                    <span class="text-gray-400 text-sm">{{ liquidityType === 'add' ? props.market.battle.tick : 'LP' }}</span>
                     <button class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" @click="setLiquidityMax">Max</button>
                 </div>
             </div>
@@ -418,7 +428,7 @@ function copyMarketAddress(address: `0x${string}`) {
          <button 
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white shadow-lg transition-all transform active:scale-[0.99]"
             @click="handleLiquidityAction"
-            :disabled="liquidityLoading || !liquidityAmount || (battle.status !== 1 && liquidityType === 'add')"
+            :disabled="liquidityLoading || !liquidityAmount || (props.market.battle.status !== 1 && liquidityType === 'add')"
         >
             {{ liquidityType === 'add' ? $t('predictLiquidity.addLiquidity') : $t('predictLiquidity.removeLiquidity') }}
             <i-ep-loading v-if="liquidityLoading" class="animate-spin ml-2" />
@@ -447,7 +457,7 @@ function copyMarketAddress(address: `0x${string}`) {
         <div v-else class="text-center space-y-4 flex-1 flex flex-col justify-center">
              <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200">
                  <p class="font-bold text-lg">{{ $t('predictRedeem.eventResolved') }}</p>
-                 <p>{{ $t('predictRedeem.winner', { winner: battle?.winner === 'left' ? $t('predictTrade.red') : $t('predictTrade.blue') }) }}</p>
+                 <p>{{ $t('predictRedeem.winner', { winner: props.market.battle?.winner === 'left' ? $t('predictTrade.red') : $t('predictTrade.blue') }) }}</p>
              </div>
              
              <button 
