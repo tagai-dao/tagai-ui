@@ -5,19 +5,25 @@ import TransactionList from './components/TransactionList.vue'
 import HolderList from './components/HolderList.vue'
 import TradePanel from './components/TradePanel.vue'
 import { mockBattleData } from './mockData'
+import type { MarketData } from '@/types'
 
 const activeTab = ref(0)
 const tabs = ['Transactions', 'Holders']
+
+const props = defineProps<{
+  market: MarketData
+}>()
+
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <!-- Header Section -->
-    <PredictHeader :battle="mockBattleData" />
+    <PredictHeader :market="market" />
 
     <!-- Mobile Trade Panel (Insert here, hidden on desktop) -->
     <div class="block lg:hidden">
-       <TradePanel :battle="mockBattleData" />
+       <TradePanel :market="market" />
     </div>
 
     <!-- Data Tabs Section -->
