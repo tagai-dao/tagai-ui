@@ -46,7 +46,7 @@ const props = defineProps<{
        <div class="bg-gray-50/50">
            <KeepAlive>
                <TradeList v-if="activeTab === 0" :market="market" />
-               <HolderList v-else />
+               <HolderList v-else :market="market" />
            </KeepAlive>
        </div>
     </div>

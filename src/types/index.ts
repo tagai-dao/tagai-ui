@@ -480,3 +480,14 @@ export type FPMMTrade = {
   followers: number,
   followings: number
 }
+
+export type FPMMUserHolding = {
+  ethAddr: string,
+  balance: number,
+  twitterId: string,
+  twitterName: string,
+  twitterUsername: string,
+  profile: string,
+  followers: number,
+  followings: number
+}

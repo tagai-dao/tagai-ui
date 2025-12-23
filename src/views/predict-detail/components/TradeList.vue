@@ -37,6 +37,7 @@ const onLoad = async () => {
 
 const onRefresh = async () => {
   try {
+    finished.value = false
     refreshing.value = true
     const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.battle.marketMaker)) as unknown as FPMMTrade[]
     console.log(55, trades)
