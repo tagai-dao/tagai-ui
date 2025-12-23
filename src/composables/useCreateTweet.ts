@@ -112,6 +112,7 @@ export const useCreateTweet = (maxLength: number = 240) => {
     let text
     let clp = e.clipboardData
     if (clp === undefined || clp === null) {
+      // @ts-ignore
       text = '' || window.clipboardData?.getData('text')
       if (text !== "") {
         text = formatEmojiText(text)
