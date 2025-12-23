@@ -326,8 +326,8 @@ export const createFPMMMarket = async (twitterId: string, questionId: string, tx
 export const getUserJoinedMarkets = async (twitterId: string, ethAddr: string, pageIndex: number) =>
   post(BACKEND_API_URL + '/predict/getUserJoinedMarkets', { twitterId, ethAddr, pageIndex })
 
-export const newParticipation = async (twitterId: string, ethAddr: string, fpmm: string) =>
-  post(BACKEND_API_URL + '/predict/newParticipation', { twitterId, ethAddr, fpmm })
+export const newParticipation = async (twitterId: string, ethAddr: string, marketAddr: string) =>
+  post(BACKEND_API_URL + '/predict/newParticipation', { twitterId, ethAddr, marketAddr })
 
 export const getFPMMTradeList = async (marketAddr: string, pageIndex: number) =>
   get(BACKEND_API_URL + '/predict/getFPMMTradeList', { marketAddr, pageIndex })
