@@ -110,7 +110,6 @@ export const getMarketInfos = async (markets: BattleData[]) => {
             ]
         })
     }
-    console.log(56, calls)
     const res = await aggregate(calls, ChainConfig.multiConfig)
     return res.results.transformed;
 }

@@ -65,6 +65,9 @@ const openTweet = (tweet: Tweet) => {
     <div class="flex flex-col sm:flex-row gap-4 relative">
       <!-- Left (Red) -->
       <div @click="openTweet(market.tweets[market.battle.predictAID])" class="flex-1 bg-red-50 rounded-xl p-4 border border-red-100 relative overflow-hidden group hover:border-red-300 transition-all">
+        <div v-if="market.battle.winner === 'left'" class="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-sm z-20">
+          Winner
+        </div>
         <div class="flex items-center gap-3 mb-3">
           <img :src="(market.tweets[market.battle.predictAID] as Tweet).profile" class="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm">
           <div>
@@ -104,6 +107,9 @@ const openTweet = (tweet: Tweet) => {
 
       <!-- Right (Blue) -->
       <div @click="openTweet(market.tweets[market.battle.predictBID])" class="flex-1 bg-blue-50 rounded-xl p-4 border border-blue-100 relative overflow-hidden group hover:border-blue-300 transition-all">
+        <div v-if="market.battle.winner === 'right'" class="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-orange-400 text-white text-xs font-bold px-3 py-1 rounded-bl-xl shadow-sm z-20">
+          Winner
+        </div>
         <div class="flex items-center gap-3 mb-3">
           <img :src="market.tweets[market.battle.predictBID]?.profile" class="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm">
           <div>

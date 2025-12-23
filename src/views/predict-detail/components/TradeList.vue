@@ -1,54 +1,51 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { mockTransactions } from '../mockData'
-import { formatAddress, formatTime } from '@/utils/helper'
+import { ref, onMounted, onActivated } from 'vue'
+import { formatAddress, formatAmount, formatDate, formatPrice } from '@/utils/helper'
+import { getFPMMTradeList } from '@/apis/api'
+import type { FPMMTrade, MarketData } from '@/types'
+import { handleErrorTip } from '@/utils/notify'
+import { useI18n } from 'vue-i18n'
+import { ChainConfig } from '@/config'
 
-// Types
-interface Transaction {
-  trader: string
-  fpmm: string
-  outcomeIndex: number
-  amount: number
-  isBuy: number
-  transTime: number
-  transHash: string
-  twitterId: string
-  twitterName: string
-  twitterUsername: string
-  profile: string
-  followers: number
-  followings: number
-}
+const { t } = useI18n()
 
-const list = ref<Transaction[]>([])
+const props = defineProps<{
+  market: MarketData
+}>()
+
+const list = ref<FPMMTrade[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const refreshing = ref(false)
 
-const onLoad = () => {
-  // Simulate async fetch
-  setTimeout(() => {
-    if (refreshing.value) {
-      list.value = []
-      refreshing.value = false
-    }
-
-    // Append mock data
-    const newData = [...mockTransactions, ...mockTransactions, ...mockTransactions, ...mockTransactions] // Clone multiple times to ensure scroll
-    list.value.push(...newData)
-    loading.value = false
-
-    // Limit for demo
-    if (list.value.length >= 40) {
+const onLoad = async () => {
+  try {
+    if (refreshing.value || loading.value || finished.value || list.value.length == 0) {
+      return;
+    }   
+    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.battle.marketMaker, Math.floor((list.value.length - 1) / 30) + 1)) as unknown as FPMMTrade[]
+    list.value = list.value.concat(trades)
+    if (trades.length < 30) {
       finished.value = true
     }
-  }, 1000)
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    loading.value = false
+  }
 }
 
-const onRefresh = () => {
-  finished.value = false
-  loading.value = true
-  onLoad()
+const onRefresh = async () => {
+  try {
+    refreshing.value = true
+    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.battle.marketMaker)) as unknown as FPMMTrade[]
+    console.log(55, trades)
+    list.value = trades
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    refreshing.value = false
+  }
 }
 
 // Helpers
@@ -62,12 +59,20 @@ const formatTimestamp = (ts: number) => {
     return '1d ago'
 }
 
-const getOutcomeColor = (index: number) => index === 0 ? 'text-green-500' : 'text-red-500' // Yes=Green, No=Red
-const getOutcomeName = (index: number) => index === 0 ? 'Yes' : 'No'
+const outcomeColors = ['text-red-500', 'text-blue-500'] as const
+const tradeTypeColors = ['text-green-500', 'text-red-500'] as const
+
+const getOutcomeColor = (index: number): string => outcomeColors[index] ?? 'text-gray-400'
+const getOutcomeName = (index: number): string => index === 0 ? t('red') : t('blue')
+const getTradeTypeColor = (isBuy: boolean): string => isBuy ? tradeTypeColors[0] : tradeTypeColors[1]
 
 // Mock price logic (since mock data lacks price)
-const getPrice = (item: Transaction) => (Math.random() * 0.99 + 0.01).toFixed(3) // Random price between 0.01 and 1.00
-const getValue = (item: Transaction) => Math.floor(item.amount * 0.5) // Assume avg price 0.5
+const getPrice = (item: FPMMTrade): string => formatPrice(item.amount / item.outcomeTokensAmount)
+const getValue = (item: FPMMTrade): number => Math.floor(item.amount * 0.5)
+
+onActivated(() => {
+  onRefresh()
+})
 </script>
 
 <template>
@@ -95,23 +100,23 @@ const getValue = (item: Transaction) => Math.floor(item.amount * 0.5) // Assume 
             
             <!-- Main Content -->
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1">
-                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterName }}</span>
-                <span class="text-gray-500">{{ item.isBuy ? 'bought' : 'sold' }}</span>
+                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
+                <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ item.isBuy ? $t('bought') : $t('sold') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getOutcomeColor(item.outcomeIndex)">
-                    {{ Math.floor(item.amount).toLocaleString() }} {{ getOutcomeName(item.outcomeIndex) }}
+                    {{ Math.floor(item.outcomeTokensAmount).toLocaleString() }} {{ getOutcomeName(item.outcomeIndex) }}
                 </span>
                 <span class="text-gray-500 whitespace-nowrap">
-                    at {{ getPrice(item) }}¢
+                    at {{ getPrice(item) }}
                 </span>
                 <span class="text-gray-400 whitespace-nowrap">
-                    (${{ getValue(item) }})
+                    ({{ formatAmount(Math.floor(item.amount)) }} {{ market.battle.tick }})
                 </span>
             </div>
 
             <!-- Right Side: Time & Link -->
             <div class="flex items-center gap-2 text-gray-400 text-xs whitespace-nowrap flex-shrink-0">
                 <span>{{ formatTimestamp(item.transTime) }}</span>
-                <a :href="'https://etherscan.io/tx/' + item.transHash" target="_blank" class="hover:text-blue-500">
+                <a :href="ChainConfig.browser + 'tx/' + item.transHash" target="_blank" class="hover:text-blue-500">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-3 h-3">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                     </svg>
