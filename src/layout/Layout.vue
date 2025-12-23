@@ -131,7 +131,7 @@ onMounted( () => {
 <template>
   <WrappedReactComponent>
     <main class="w-full h-full ">
-      <main class="w-full h-full flex flex-col max-w-[1000px] mx-auto relative">
+      <main class="w-full h-full flex flex-col max-w-[1200px] mx-auto relative">
         <TopBar v-show="$route.meta.topBar"/>
         <div class="flex-1 overflow-hidden">
           <router-view v-slot="{ Component }">
