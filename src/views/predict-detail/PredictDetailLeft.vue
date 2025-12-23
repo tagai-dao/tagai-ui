@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import PredictHeader from './components/PredictHeader.vue'
-import TransactionList from './components/TransactionList.vue'
+import TradeList from './components/TradeList.vue'
 import HolderList from './components/HolderList.vue'
 import TradePanel from './components/TradePanel.vue'
 import { mockBattleData } from './mockData'
@@ -45,7 +45,7 @@ const props = defineProps<{
        <!-- Tab Content -->
        <div class="bg-gray-50/50">
            <KeepAlive>
-               <TransactionList v-if="activeTab === 0" />
+               <TradeList v-if="activeTab === 0" :market="market" />
                <HolderList v-else />
            </KeepAlive>
        </div>

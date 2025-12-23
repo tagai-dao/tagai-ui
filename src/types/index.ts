@@ -463,3 +463,20 @@ export type MarketData = {
   battle: BattleData,
   tweets: { [key: string]: Tweet }
 }
+
+export type FPMMTrade = {
+  ethAddr: string,
+  fpmm: string,
+  outcomeIndex: number,
+  amount: number,
+  outcomeTokensAmount: number,
+  isBuy: boolean,
+  transTime: number,
+  transHash: string,
+  twitterId: string,
+  twitterName: string,
+  twitterUsername: string,
+  profile: string,
+  followers: number,
+  followings: number
+}

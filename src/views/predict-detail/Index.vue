@@ -17,11 +17,8 @@ onMounted(async () => {
   // 从url中获取market id
   const marketId = router.currentRoute.value.params.id as string
   try {
-    console.log(55, marketId, accStore.getAccountInfo?.twitterId)
     market.value = await getMarket(marketId, accStore.getAccountInfo?.twitterId) as unknown as MarketData
-    console.log(34, market.value)
     const marketInfos = await getMarketInfos([market.value.battle] as BattleData[])
-    console.log(6, marketInfos)
     market.value = {
         battle: {
             ...market.value.battle,
