@@ -329,16 +329,15 @@ function copyMarketAddress(address: `0x${string}`) {
                 type="number" 
                 v-model="tradeShares" 
                 min="1"
-                class="w-full bg-gray-50 text-right text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
+                class="w-full bg-gray-50 text-center text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
                 >
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
                     <span class="text-gray-400 text-sm">{{tradeActiveTab === 'buy' ? props.market.battle.tick : $t('predictTrade.shareUnit')}}</span>
                     <button 
-                    class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
-                    @click="getTradeMaxInfo"
-                >
-                    {{ $t('max') }}
-                </button>
+                        class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
+                        @click="getTradeMaxInfo">
+                        {{ $t('max') }}
+                    </button>
                 </div>
             </div>
 
@@ -416,7 +415,7 @@ function copyMarketAddress(address: `0x${string}`) {
                     type="number" 
                     v-model="liquidityAmount" 
                     min="0"
-                    class="w-full bg-gray-50 text-right text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
+                    class="w-full bg-gray-50 text-center text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
                 >
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
                     <span class="text-gray-400 text-sm">{{ liquidityType === 'add' ? props.market.battle.tick : 'LP' }}</span>

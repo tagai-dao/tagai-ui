@@ -176,8 +176,8 @@ onMounted(() => {
             :key="index"
         >
           <div class="flex justify-between">
-            <span class="text-sm text-grey-normal">{{ creditType[index] }}</span>
-            <span v-if="creditJO[index].type === 5" class="text-sm text-black font-semibold">{{ formatPrice((factor || 0) * stateStore.ethPrice) }}</span>
+            <span class="text-sm text-grey-normal">{{ creditType[index as number] }}</span>
+            <span v-if="creditJO[index as number].type === 5" class="text-sm text-black font-semibold">{{ formatPrice((factor || 0) * stateStore.ethPrice) }}</span>
             <span v-else class="text-sm text-black font-semibold">{{ formatAmount(factor || 0) }}</span>
           </div>
         </div>
