@@ -70,12 +70,12 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
        <div class="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
           
           <!-- Left Column: Info & Lists -->
-          <div class="w-full lg:w-[65%] xl:w-[70%] flex justify-center items-center">
+          <div class="w-full lg:w-[65%] xl:w-[70%]">
              <PredictDetailLeft :market="market" v-if="market"/>
           </div>
 
           <!-- Right Column: Trade Panel (Desktop Only) -->
-          <div class="hidden lg:block w-full lg:w-[35%] xl:w-[30%] lg:sticky flex justify-center items-center lg:top-6">
+          <div class="hidden lg:block w-full lg:w-[35%] xl:w-[30%] lg:sticky lg:top-6">
              <PredictDetailRight :market="market" v-if="market"/>
           </div>
        </div>
