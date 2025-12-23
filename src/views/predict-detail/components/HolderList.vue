@@ -118,18 +118,12 @@ onActivated(() => {
                       <div v-for="(holder, idx) in redList" :key="holder.ethAddr + 'red'" 
                       v-show="holder.ethAddr != market.battle.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100">
-                              <UserAvatar 
-                                :profile-img="holder.profile"
-                                :name="holder.twitterName"
-                                :username="holder.twitterUsername"
-                                :followers="holder.followers"
-                                :followings="holder.followings"
-                                :eth-addr="holder.ethAddr"
-                                :steem-id="''"
-                                :teleported="true"
-                                :credit="0"
-                                class="w-8 h-8 min-w-8 min-h-8 rounded-full bg-gray-200 object-cover"
-                              />
+                           <div class="relative">
+                              <img :src="holder.profile" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
+                              <!-- <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center rounded-full font-bold border border-white">
+                                  {{ idx + 1 }}
+                              </div> -->
+                          </div>
                           <div class="flex-1 min-w-0">
                             <div v-if="holder.ethAddr == market.battle.marketMaker" class="font-bold text-sm text-red-600 truncate">{{ 'Market' }}</div>
                             <div v-else-if="holder.twitterId" class="font-bold text-sm text-gray-900 truncate">{{ holder.twitterName || holder.twitterUsername || 'Unknown' }}</div>
