@@ -16,6 +16,7 @@ import TipTokenRecord from "@/views/wallet/TipTokenRecord.vue";
 import UserView from '@/views/profile/UserView.vue'
 import PredictBattle from '@/views/tag-detail/PredictBattle.vue'
 import PredictDetail from '@/views/predict-detail/Index.vue'
+import MindShareIndex from '@/views/mind-share/Index.vue'
 
 const router = createRouter({
   // @ts-ignore
@@ -106,6 +107,11 @@ const router = createRouter({
       path: '/predict-detail/:id',
       name: 'predict-detail',
       component: PredictDetail
+    },
+    {
+      path: '/mindshare',
+      name: 'mindshare',
+      component: MindShareIndex
     }
   ]
 })

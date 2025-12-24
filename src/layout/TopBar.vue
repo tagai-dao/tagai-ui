@@ -79,6 +79,10 @@ function onClickWallet() {
               <span>{{$t('notification')}}</span>
             </div>
             <CreateBtn />
+            <router-link to="/mindshare/" class="flex gap-2 items-center cursor-pointer">
+              <img class="w-4" src="~@/assets/icons/icon-mindshare.svg" alt="">
+              <span>{{$t('mindshare')}}</span>
+            </router-link>
 <!--            <div v-if="!!useAccountStore().getAccountInfo?.twitterId"-->
 <!--                 @click="onClickWallet"-->
 <!--                 class="flex gap-2 items-center cursor-pointer">-->
