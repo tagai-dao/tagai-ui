@@ -25,6 +25,12 @@ export enum MindShareType {
   Project
 }
 
+export enum PredictSortType {
+  All = 0,
+  Online = 1,
+  Ended = 2
+}
+
 export enum TwitterTipStatus {
   Pending,
   Success,

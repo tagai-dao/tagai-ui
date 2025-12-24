@@ -17,6 +17,7 @@
   "marketCap": "市值",
   "trending": "热门",
   "new": "最新",
+  "prediction": "预测",
   "tag": "Tag",
   "tagCoin": "标签币",
   "profile": "我的",
@@ -74,6 +75,8 @@
   "Twitter": "推特",
   "Telegram": "电报",
   "ended": "已结束",
+  "all": "全部",
+  "online": "在线",
   "loginView": {
     "loginWithTwitter": "登录推特",
     "loginWithEmail": "使用邮箱登录",

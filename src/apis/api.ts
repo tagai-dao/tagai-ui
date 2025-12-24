@@ -311,6 +311,9 @@ export const searchMindShareByUsername = async (username: string) =>
 export const getPredictBattleData = async (tick: string, twitterId?: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/getPredictBattleData', { tick, twitterId, pageIndex })
 
+export const getAggPredictBattleData = async (type: number, pageIndex?: number)=>
+  get(BACKEND_API_URL + '/predict/getAggPredictBattleData', { type, pageIndex })
+
 export const getTweetCurations = async (tweetAId: string, tweetBId: string) =>
   get(BACKEND_API_URL + '/predict/getTweetCurations', { tweetAId, tweetBId })
 

@@ -61,7 +61,7 @@ const openCommunity = (tick: string) => {
         <div class="flex justify-between items-start mb-4">
           <h3 class="text-xl font-semibold text-black flex-1 pr-2">
             {{ battle.title }}
-            <span v-if="showCommunity" class="cursor-pointer" @click="openCommunity(battle.tick)">
+            <span v-if="showCommunity" class="cursor-pointer" @click.stop="openCommunity(battle.tick)">
               (@<span class="text-blue-600 underline">{{ battle.tick }}</span>)
             </span>
           </h3>

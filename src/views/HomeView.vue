@@ -2,7 +2,7 @@
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
-import {type Community, GlobalModalType, ListType, MindShareType, type Space} from '@/types'
+import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, type Space} from '@/types'
 import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces} from "@/apis/api";
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
@@ -18,9 +18,11 @@ import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
 import MindShare from "@/views/mind-share/MindShare.vue";
 import {useAccountStore} from "@/stores/web3";
+import Predict from "@/views/predict/Index.vue";
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
+const predictSortType = ref<PredictSortType>(PredictSortType.All) // 0: all, 1: online, 2: ended
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
 const curationStore = useCurationStore();
@@ -35,7 +37,7 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['tweets', 'tagCoin']
+const tabOptions = ['tweets', 'prediction', 'tagCoin']
 const activeTab = ref('tweets')
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
@@ -324,6 +326,18 @@ const onCreate = (type: GlobalModalType) => {
           <el-option :value="MindShareType.User" :label="$t('mindShare.user')" />
         </el-select>
       </template>
+
+      <template v-if="activeTab==='prediction'">
+        <el-select
+            v-model="predictSortType"
+            class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-10 flex items-center text-h4 text-black"
+            popper-class="c-select-popper rounded-xl"
+        >
+          <el-option :value="PredictSortType.All" :label="$t('all')" />
+          <el-option :value="PredictSortType.Online" :label="$t('online')" />
+          <el-option :value="PredictSortType.Ended" :label="$t('ended')" />
+        </el-select>
+      </template>
     </div>
     <HomePost v-if="activeTab==='tweets'"/>
     <template v-if="activeTab==='tagCoin'">
@@ -368,6 +382,7 @@ const onCreate = (type: GlobalModalType) => {
         </van-pull-refresh>
       </div>
     </template>
+    <Predict :type="predictSortType" v-if="activeTab==='prediction'"/>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
     <div>
       <button v-if="activeTab==='tagCoin'"

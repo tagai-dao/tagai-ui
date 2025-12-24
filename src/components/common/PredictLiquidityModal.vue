@@ -186,7 +186,7 @@ onMounted(() => {
                     type="number" 
                     v-model="amount" 
                     min="0"
-                    class="w-full bg-gray-50 text-right text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
+                    class="w-full bg-gray-50 text-center text-gray-900 rounded-lg border border-gray-200 p-3 pr-24 font-mono text-xl focus:outline-none focus:border-blue-500 transition-colors"
                 >
                 <div class="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
                     <span class="text-gray-400 text-sm">{{ liquidityType === 'add' ? battle.tick : 'LP' }}</span>

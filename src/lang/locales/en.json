@@ -17,6 +17,7 @@
   "marketCap": "Mkt Cap",
   "trending": "Trending",
   "new": "New",
+  "prediction": "Prediction",
   "tag": "Tag",
   "tagCoin": "Tag Coin",
   "profile": "Profile",
@@ -74,6 +75,8 @@
   "Twitter": "Twitter",
   "Telegram": "Telegram",
   "ended": "Ended",
+  "all": "All",
+  "online": "Online",
   "loginView": {
     "loginWithTwitter": "Login with Twitter",
     "loginWithEmail": "Login with Email",
