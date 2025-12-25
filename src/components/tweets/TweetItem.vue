@@ -126,7 +126,7 @@ onUnmounted(() => {
           <template #reference>
             <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold"
                     :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
-              {{ formatPrice((tweet.price ?? 0) * useStateStore().ethPrice * (tweet.amount ?? 0)) }}
+              {{ formatAmount(tweet.amount) }}({{ formatPrice((tweet.price ?? 0) * useStateStore().ethPrice * (tweet.amount ?? 0)) }})
             </button>
           </template>
           <template #default>

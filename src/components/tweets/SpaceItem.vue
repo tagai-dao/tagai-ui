@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {computed, onMounted, type PropType, ref} from 'vue'
-import { formatPrice, parseTimestamp } from '@/utils/helper';
+import { formatAmount, formatPrice, parseTimestamp } from '@/utils/helper';
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import {useTweet} from "@/composables/useTweet";
 import TweetSpaceCard from "@/components/tweets/TweetSpaceCard.vue";
@@ -106,11 +106,11 @@ const onUserAvatar = () => {
               class="h-6 rounded-full px-3 text-white text-sm font-semibold"
               :class="tweet.isSettled ? 'bg-grey-light-active' : 'bg-gradient-primary'"
             >
-              {{
+              {{ formatAmount(tweet.amount) }}({{
                 formatPrice(
                   (tweet.price ?? 0) * useStateStore().ethPrice * (tweet.amount ?? 0)
                 )
-              }}
+              }})
             </button>
           </template>
           <template #default>
