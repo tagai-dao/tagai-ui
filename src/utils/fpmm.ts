@@ -124,7 +124,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
                 accAddr
             ],
             returns: [
-                ['balance', (val: any) => val / 1e18]
+                ['balance', (val: any) => val]
             ]
         },
         {
@@ -134,7 +134,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
                 accAddr
             ],
             returns: [
-                ['lpBalance', (val: any) => val / 1e18]
+                ['lpBalance', (val: any) => val]
             ]
         },
         {
@@ -145,7 +145,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
                 battle.positionAID  
             ],
             returns: [
-                ['balanceA', (val: any) => val / 1e18]
+                ['balanceA', (val: any) => val]
             ]
         },
         {
@@ -156,12 +156,18 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
                 battle.positionBID
             ],
             returns: [
-                ['balanceB', (val: any) => val / 1e18]
+                ['balanceB', (val: any) => val]
             ]
         }
     ]
     const res = await aggregate(calls, ChainConfig.multiConfig)
-    return res.results.transformed;
+    const transformed = res.results.transformed;
+    let result: any = {};
+    for (let [key, value] of Object.entries(transformed)) {
+        result[key] = Number(value) / 1e18;
+        result[key + 'Bi'] = value;
+    }
+    return result;
 }
 
 export async function getBuyData(battle: BattleData, shares: number, outcome: 'red' | 'blue') {
@@ -233,10 +239,8 @@ export async function getSellData(battle: BattleData, reserveA: number, reserveB
     return {receive: stateReturnAmount, fee};
 }
 
-export async function buyToken(battle: BattleData, collateralToken: string, shares: number, minOutcomeTokensToBuy: number, outcome: 'red' | 'blue', bnbFee: number) {
+export async function buyToken(battle: BattleData, collateralToken: string, sharesBi: BigInt, minOutcomeTokensToBuy: number, outcome: 'red' | 'blue', bnbFee: number) {
     if (!isAddress(battle.marketMaker)) return;
-    const sharesBi = parseUnits(shares.toFixed(18), 18)
-    if (sharesBi === 0n) return;
     const minOutcomeTokensToBuyBi = parseUnits(minOutcomeTokensToBuy.toFixed(18), 18)
     if (minOutcomeTokensToBuyBi === 0n) return;
 
@@ -263,12 +267,10 @@ export async function buyToken(battle: BattleData, collateralToken: string, shar
 
 }
 
-export async function sellToken(battle: BattleData, shares: number, maxOutcomeTokensToSell: number, outcome: 'red' | 'blue', bnbFee: number) {
+export async function sellToken(battle: BattleData, sharesBi: BigInt, maxOutcomeTokensToSell: BigInt, outcome: 'red' | 'blue', bnbFee: number) {
     if (!isAddress(battle.marketMaker)) return;
-    const shareBi = parseUnits(shares.toFixed(18), 18)
-    if (shareBi === 0n) return;
-    const maxOutcomeTokensToSellBi = parseUnits(maxOutcomeTokensToSell.toFixed(18), 18)
-    if (maxOutcomeTokensToSellBi === 0n) return;
+    if (sharesBi === 0n) return;
+    
 
     const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
 
@@ -286,7 +288,7 @@ export async function sellToken(battle: BattleData, shares: number, maxOutcomeTo
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'sell',
-        args: [shareBi, outcome === 'red' ? 0 : 1, maxOutcomeTokensToSellBi],
+        args: [sharesBi, outcome === 'red' ? 0 : 1, maxOutcomeTokensToSell],
         value: bnbFeeBi,
         address: battle.marketMaker
     })
@@ -376,9 +378,8 @@ export async function addLiquidity(battle: BattleData, amount: number, collatera
     })
 }
 
-export async function removeLiquidity(battle: BattleData, shares: number) {
+export async function removeLiquidity(battle: BattleData, sharesBi: BigInt) {
     if (!isAddress(battle.marketMaker)) return;
-    const sharesBi = parseUnits(shares.toFixed(18), 18)
     if (sharesBi === 0n) return;
 
     return await writeContract({

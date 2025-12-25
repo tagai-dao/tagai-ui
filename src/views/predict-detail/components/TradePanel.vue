@@ -4,7 +4,7 @@ import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { newParticipation } from '@/apis/api'
-import { isAddress } from 'viem'
+import { isAddress, parseUnits } from 'viem'
 import { getUserTokenBalances, buyToken, sellToken, getBuyData, getSellData, getMarketInfos, addLiquidity, removeLiquidity, redeemPositions } from '@/utils/fpmm'
 import { GlobalModalType, type MarketData } from '@/types'
 import debounce from 'lodash.debounce'
@@ -33,8 +33,11 @@ enum TradeType {
 
 const tradeShares = ref()
 const tradeTokenBalance = ref(0);
+const tradeTokenBalanceBi = ref(0n);
 const tradeBlueBalance = ref(0);
+const tradeBlueBalanceBi = ref(0n);
 const tradeRedBalance = ref(0);
+const tradeRedBalanceBi = ref(0n);
 const tradeWillReceiveAmount = ref(0);
 const tradePriceImpact = ref('')
 const tradeCalculating = ref(false)
@@ -42,6 +45,7 @@ const tradeLoading = ref(false)
 const reserveA = ref(0)
 const reserveB = ref(0)
 const bnbFee = ref(0);
+const isMax = ref(false);
 
 const tradeActiveTab = ref<'buy' | 'sell'>('buy')
 const tradeSelectedOutcome = ref<'red' | 'blue'>('red')
@@ -68,6 +72,7 @@ const currentTradeType = computed(() => {
 
 const debouncedTradeCalculate = debounce(async () => {
   try {
+    isMax.value = false
     if (!tradeShares.value) {
         tradeWillReceiveAmount.value = 0
         tradePriceImpact.value = ''
@@ -87,7 +92,10 @@ const debouncedTradeCalculate = debounce(async () => {
         tradePriceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
       }
     } else {
-      const sellData: any = await getSellData(props.market.battle, reserveA.value, reserveB.value, tradeShares.value, tradeSelectedOutcome.value)
+      if (tradeShares.value <= 0.1) {
+        tradeShares.value += 0.1;
+      }
+      const sellData: any = await getSellData(props.market.battle, reserveA.value, reserveB.value, tradeShares.value - 0.1, tradeSelectedOutcome.value)
       bnbFee.value = sellData.fee;
       tradeWillReceiveAmount.value = sellData.receive;
       if (tradeSelectedOutcome.value === 'red') {
@@ -106,6 +114,7 @@ const debouncedTradeCalculate = debounce(async () => {
 }, 500)
 
 async function getTradeMaxInfo() {
+  isMax.value = true
   const type = currentTradeType.value
   switch (type) {
     case TradeType.BUY_RED:
@@ -130,10 +139,21 @@ async function executeTrade() {
     }
     tradeLoading.value = true
     if (tradeActiveTab.value === 'buy') {
-      await buyToken(props.market.battle, props.market.battle.token as `0x${string}`, tradeShares.value, tradeWillReceiveAmount.value * 0.95, tradeSelectedOutcome.value, bnbFee.value)
+      let shareAmount = parseUnits(tradeShares.value.toFixed(18), 18)
+      if (isMax.value) {
+        shareAmount = tradeTokenBalanceBi.value;
+      }
+      await buyToken(props.market.battle, props.market.battle.token as `0x${string}`, shareAmount, tradeWillReceiveAmount.value * 0.95, tradeSelectedOutcome.value, bnbFee.value)
       updateReserves()
     } else {
-      await sellToken(props.market.battle, tradeWillReceiveAmount.value, tradeShares.value * 1.05, tradeSelectedOutcome.value, bnbFee.value)
+      console.log(6333,88)
+      let shareAmount = parseUnits(tradeShares.value.toFixed(18), 18) * 105n / 100n;
+      if (tradeSelectedOutcome.value === 'red' && shareAmount > tradeRedBalanceBi.value) {
+        shareAmount = tradeRedBalanceBi.value;
+      } else if (tradeSelectedOutcome.value === 'blue' && shareAmount > tradeBlueBalanceBi.value) {
+        shareAmount = tradeBlueBalanceBi.value;
+      }
+      await sellToken(props.market.battle, parseUnits(tradeWillReceiveAmount.value.toFixed(18), 18), shareAmount, tradeSelectedOutcome.value, bnbFee.value)
       updateReserves()
     }
     if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
@@ -160,6 +180,7 @@ function adjustShares(delta: number) {
 // ==========================================
 const liquidityType = ref<'add' | 'remove'>('add')
 const lpBalance = ref(0)
+const lpBalanceBi = ref(0n);
 const lpSupply = ref(0)
 const liquidityAmount = ref<number>()
 const liquidityLoading = ref(false)
@@ -172,6 +193,11 @@ const setLiquidityMax = () => {
     } else {
          liquidityAmount.value = lpBalance.value
     }
+}
+
+const connect = async () => {
+  useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+      return;
 }
 
 const handleLiquidityAction = async () => {
@@ -189,7 +215,11 @@ const handleLiquidityAction = async () => {
             if (liquidityType.value === 'add') {
                 await addLiquidity(props.market.battle, liquidityAmount.value!, props.market.battle.token as `0x${string}`)
             } else {
-                await removeLiquidity(props.market.battle, liquidityAmount.value!)
+              let amount = parseUnits(liquidityAmount.value!.toFixed(18), 18)
+              if (amount > lpBalanceBi.value) {
+                amount = lpBalanceBi.value;
+              }
+              await removeLiquidity(props.market.battle, amount)
             }
         } else {
              await redeemPositions(props.market.battle, props.market.battle.token as `0x${string}`)
@@ -219,6 +249,10 @@ const updateBalances = async () => {
         tradeBlueBalance.value = bs.balanceB
         tradeRedBalance.value = bs.balanceA
         lpBalance.value = bs.lpBalance
+        tradeTokenBalanceBi.value = bs.balanceBi;
+        tradeBlueBalanceBi.value = bs.balanceBBi;
+        tradeRedBalanceBi.value = bs.balanceABi;
+        lpBalanceBi.value = bs.lpBalanceBi;
     }
 }
 
@@ -367,8 +401,13 @@ function copyMarketAddress(address: `0x${string}`) {
                 </div>
             </div>
         </div>
-
-        <button 
+        <button v-if="accStore.ethConnectState !== EthWalletState.Connected"
+            class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
+            @click="connect"
+        >
+        {{ $t('connect') }}
+        </button>
+        <button v-else
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
             @click="executeTrade"
             :disabled="tradeCalculating || tradeLoading || !tradeShares"
@@ -424,7 +463,13 @@ function copyMarketAddress(address: `0x${string}`) {
             </div>
          </div>
 
-         <button 
+         <button v-if="accStore.ethConnectState !== EthWalletState.Connected"
+            class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
+            @click="connect"
+        >
+        {{ $t('connect') }}
+        </button>
+        <button v-else
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white shadow-lg transition-all transform active:scale-[0.99]"
             @click="handleLiquidityAction"
             :disabled="liquidityLoading || !liquidityAmount || (props.market.battle.status !== 1 && liquidityType === 'add')"
@@ -459,7 +504,13 @@ function copyMarketAddress(address: `0x${string}`) {
                  <p>{{ $t('predictRedeem.winner', { winner: props.market.battle?.winner === 'left' ? $t('predictTrade.red') : $t('predictTrade.blue') }) }}</p>
              </div>
              
-             <button 
+             <button v-if="accStore.ethConnectState !== EthWalletState.Connected"
+                  class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
+                  @click="connect"
+              >
+              {{ $t('connect') }}
+              </button>
+             <button v-else
                 class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
                 @click="handleLiquidityAction"
                 :disabled="liquidityLoading"

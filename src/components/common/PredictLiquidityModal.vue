@@ -5,7 +5,7 @@ import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { useAccountStore } from '@/stores/web3'
 import { newParticipation } from '@/apis/api'
-import { isAddress } from 'viem'
+import { isAddress, parseUnits } from 'viem'
 import { getUserTokenBalances, addLiquidity, removeLiquidity, redeemPositions, getUserLpBalance, getMarketInfos } from '@/utils/fpmm'
 import type { BattleData } from '@/types'
 import debounce from 'lodash.debounce'
@@ -21,12 +21,16 @@ const activeTab = ref<'liquidity' | 'redeem'>('liquidity')
 const liquidityType = ref<'add' | 'remove'>('add')
 
 const lpBalance = ref(0)
+const lpBalanceBi = ref(0n);
 const lpSupply = ref(0)
 const reserveA = ref(0)
 const reserveB = ref(0)
 const collateralBalance = ref(0)
+const collateralBalanceBi = ref(0n);
 const blueBalance = ref(0)
+const blueBalanceBi = ref(0n);
 const redBalance = ref(0)
+const redBalanceBi = ref(0n);
 
 const amount = ref<number>()
 const loading = ref(false)
@@ -45,6 +49,10 @@ const updateBalances = async () => {
         redBalance.value = bs.balanceA
         blueBalance.value = bs.balanceB
         lpBalance.value = bs.lpBalance
+        collateralBalanceBi.value = bs.balanceBi;
+        blueBalanceBi.value = bs.balanceBBi;
+        redBalanceBi.value = bs.balanceABi;
+        lpBalanceBi.value = bs.lpBalanceBi;
         // Get Market Info (Reserves + Total Supply)
         const infos: any = await getMarketInfos([battle.value as BattleData])
         reserveA.value = infos[battle.value?.marketMaker + '-priceA']
@@ -80,7 +88,11 @@ const handleAction = async () => {
             if (liquidityType.value === 'add') {
                 await addLiquidity(battle.value as BattleData, amount.value!, battle.value.token as `0x${string}`)
             } else {
-                await removeLiquidity(battle.value as BattleData, amount.value!)
+                let shareAmount = parseUnits(amount.value!.toFixed(18), 18)
+                if (shareAmount > lpBalanceBi.value) {
+                    shareAmount = lpBalanceBi.value;
+                }
+                await removeLiquidity(battle.value as BattleData, shareAmount)
             }
         } else {
              await redeemPositions(battle.value as BattleData, battle.value.token as `0x${string}`)

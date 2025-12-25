@@ -5,7 +5,7 @@ import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { useAccount } from '@/composables/useAccount'
 import { useAccountStore } from '@/stores/web3'
-import { isAddress } from 'viem'
+import { isAddress, parseUnits } from 'viem'
 import { newParticipation } from '@/apis/api'
 import { getUserTokenBalances, calculateMaxSellAmount, 
   buyToken, sellToken,getBuyData, getSellData, getMarketInfos } from '@/utils/fpmm'
@@ -20,6 +20,7 @@ const accStore = useAccountStore()
 const reserveA = ref(0)
 const reserveB = ref(0)
 const bnbFee = ref(0);
+const isMax = ref(false);
 
 enum TradeType {
   BUY_RED,
@@ -33,6 +34,9 @@ const shares = ref()
 const tokenBalance = ref(0);
 const blueBalance = ref(0);
 const redBalance = ref(0);
+const tokenBalanceBi = ref(0n);
+const blueBalanceBi = ref(0n);
+const redBalanceBi = ref(0n);
 const willReceiveAmount = ref(0);
 const priceImpact = ref('')
 
@@ -66,7 +70,11 @@ const currentTradeType = computed(() => {
 // 创建 debounced 计算函数，500ms 延迟
 const debouncedCalculate = debounce(async () => {
   try {
+    isMax.value = false
     calculationg.value = true
+    if (!shares.value) {
+      return;
+    }
     if (activeTab.value === 'buy') {
       const { amount, fee } = await getBuyData(battle.value as BattleData, shares.value, selectedOutcome.value)
       
@@ -80,8 +88,11 @@ const debouncedCalculate = debounce(async () => {
         priceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
       }
     } else {
-      const sellData: any = await getSellData(battle.value as BattleData, reserveA.value, reserveB.value, shares.value, selectedOutcome.value)
+      const sellData: any = await getSellData(battle.value as BattleData, reserveA.value, reserveB.value, shares.value - 0.1, selectedOutcome.value)
       bnbFee.value = sellData.fee;
+      if (shares.value <= 0.1) {
+        shares.value += 0.1;
+      }
       willReceiveAmount.value = sellData.receive;
       if (selectedOutcome.value === 'red') {
         const newPercentA = (reserveB.value - sellData.receive) / (totalPool.value - sellData.receive * 2 + shares.value)
@@ -103,11 +114,15 @@ watch(() => shares.value, () => {
 })
 
 watch(() => accStore.ethConnectAddress, (newVal) => {
+  isMax.value = false
   if (isAddress(newVal)) {
     getUserTokenBalances(battle.value.token as `0x${string}`, newVal, battle.value as BattleData).then((bs: any) => {
       tokenBalance.value = bs.balance;
       blueBalance.value = bs.balanceB;
       redBalance.value = bs.balanceA;
+      tokenBalanceBi.value = bs.balanceBi;
+      blueBalanceBi.value = bs.balanceBBi;
+      redBalanceBi.value = bs.balanceABi;
     })
   }
 }, { immediate: true })
@@ -117,6 +132,7 @@ function copyMarketAddress(address: `0x${string}`) {
 }
 
 async function getMaxInfo() {
+  isMax.value = true
   const type = currentTradeType.value
   switch (type) {
     case TradeType.BUY_RED:
@@ -139,11 +155,17 @@ async function trade() {
   try {
     trading.value = true
     if (activeTab.value === 'buy') {
-      const hash = await buyToken(battle.value as BattleData, battle.value.token as `0x${string}`, shares.value, willReceiveAmount.value * 0.95, selectedOutcome.value, bnbFee.value)
+      const hash = await buyToken(battle.value as BattleData, battle.value.token as `0x${string}`, isMax ? tokenBalanceBi.value  : parseUnits(shares.value.toFixed(18), 18), willReceiveAmount.value * 0.95, selectedOutcome.value, bnbFee.value)
       console.log('buy hash', hash)
       updateReserves()
     } else {
-      const hash = await sellToken(battle.value as BattleData, willReceiveAmount.value, shares.value * 1.05, selectedOutcome.value, bnbFee.value)
+      let shareAmount = parseUnits(shares.value.toFixed(18), 18) * 105n / 100n;
+      if (selectedOutcome.value === 'red' && shareAmount > redBalanceBi.value) {
+        shareAmount = redBalanceBi.value;
+      } else if (selectedOutcome.value === 'blue' && shareAmount > blueBalanceBi.value) {
+        shareAmount = blueBalanceBi.value;
+      }
+      const hash = await sellToken(battle.value as BattleData, parseUnits(willReceiveAmount.value.toFixed(18), 18), shareAmount, selectedOutcome.value, bnbFee.value)
       console.log('sell hash', hash)
       updateReserves()
     }
