@@ -378,14 +378,15 @@ export async function addLiquidity(battle: BattleData, amount: number, collatera
     })
 }
 
-export async function removeLiquidity(battle: BattleData, sharesBi: BigInt) {
-    if (!isAddress(battle.marketMaker)) return;
-    if (sharesBi === 0n) return;
-
+export async function removeLiquidity(battle: BattleData, sharesBi: bigint) {
+    if (!isAddress(battle.marketMaker)) return
+    // 留一些流动性在里面，可以维持当前的价格
+    const newSharesBi = BigInt(sharesBi) - BigInt(10000000000)
+    if (newSharesBi <= 0n) return 
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'removeFunding',
-        args: [sharesBi],
+        args: [newSharesBi],
         address: battle.marketMaker
     })
 }
