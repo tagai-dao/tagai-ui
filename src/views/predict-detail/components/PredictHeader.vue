@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, nextTick, computed } from 'vue'
 import { formatAddress, parseTimestamp } from '@/utils/helper'
 import TweetBtnReply from '@/components/tweets/TweetBtnReply.vue'
 import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
@@ -12,22 +13,21 @@ const props = defineProps<{
 
 const { copy, copied } = useClipboard()
 const router = useRouter()
-const getBattleStats = (battle: BattleData) => {
-  const amountA = battle.reserveB || 0
-  const amountB = battle.reserveA || 0
-  const total = amountA + amountB
-  
-  if (total === 0) return { percentA: 50, percentB: 50 }
-  
-  const percentA = Math.round((amountA / total) * 100)
-  const percentB = 100 - percentA
-  
-  return { percentA, percentB }
-}
 
 const openTweet = (tweet: Tweet) => {
   router.push(`/post-detail/${tweet.tweetId as string}`)
 }
+
+const aAmount = computed(() => {
+  return props.market.tweets[props.market.battle.predictAID]?.amount ?? 0
+})
+const bAmount = computed(() => {
+  return props.market.tweets[props.market.battle.predictBID]?.amount ?? 0
+})
+
+const totalCuration = computed(() => {
+  return aAmount.value + bAmount.value
+})
 
 </script>
 
@@ -80,19 +80,25 @@ const openTweet = (tweet: Tweet) => {
         </p>
         <div class="flex justify-between items-end border-t border-red-100 pt-3">
             <div class="flex items-stretch gap-3 w-full">
-                <div class="flex-1 flex flex-col gap-1 items-center">
+                <!-- <div class="flex-1 flex flex-col gap-1 items-center">
                     <TweetBtnReply :tweet="market.tweets[market.battle.predictAID]" :hide-number="true" />
                     <div class="text-xs text-red-600 text-center flex flex-col items-center">
                         <span>{{ market.tweets[market.battle.predictAID]?.replyCount ?? 0 }}</span>
                         <span class="text-[10px] opacity-70">Comments</span>
                     </div>
-                </div>
-                <div class="flex-1 flex flex-col gap-1 items-center">
-                    <TweetBtnCurate :tweet="market.tweets[market.battle.predictAID]" :hide-number="true" />
-                    <div class="text-xs text-red-600 text-center flex flex-col items-center">
-                        <span>{{ market.tweets[market.battle.predictAID]?.amount?.toFixed(0).toLocaleString() ?? 0 }}</span>
-                        <span class="text-[10px] opacity-70">Supports</span>
-                    </div>
+                </div> -->
+                <div class="flex-1 flex justify-center gap-1 items-center">
+                    <TweetBtnCurate ref="curateBtnARef" 
+                    :tweet="market.tweets[market.battle.predictAID]" 
+                    :hide-number="true" 
+                    :btnclass="`text-lg text-red-600 text-center flex justify-center items-center cursor-pointer hover:opacity-80 transition-opacity`"
+                    :numberclass="`text-lg text-red-600 text-center flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity`"
+                    class="scale-150">
+                        <template #number>
+                            <span>{{ aAmount.toFixed(0).toLocaleString() }}</span>
+                            ({{ (aAmount / totalCuration * 100).toFixed(0) }}%)
+                        </template>
+                    </TweetBtnCurate>
                 </div>
             </div>
         </div>
@@ -122,19 +128,25 @@ const openTweet = (tweet: Tweet) => {
         </p>
         <div class="flex justify-between items-end border-t border-blue-100 pt-3">
             <div class="flex items-stretch gap-3 w-full">
-                <div class="flex-1 flex flex-col gap-1 items-center">
+                <!-- <div class="flex-1 flex flex-col gap-1 items-center">
                     <TweetBtnReply :tweet="market.tweets[market.battle.predictBID]" :hide-number="true" />
                     <div class="text-xs text-blue-600 text-center flex flex-col items-center">
                         <span>{{ market.tweets[market.battle.predictBID]?.replyCount ?? 0 }}</span>
                         <span class="text-[10px] opacity-70">Comments</span>
                     </div>
-                </div>
-                <div class="flex-1 flex flex-col gap-1 items-center">
-                      <TweetBtnCurate :tweet="market.tweets[market.battle.predictBID]" :hide-number="true" />
-                    <div class="text-xs text-blue-600 text-center flex flex-col items-center">
-                        <span>{{ (market.tweets[market.battle.predictBID]?.amount?.toFixed(0) ?? 0).toLocaleString() ?? 0 }}</span>
-                        <span class="text-[10px] opacity-70">Supports</span>
-                    </div>
+                </div> -->
+                <div class="flex-1 flex justify-center gap-1 items-center">
+                      <TweetBtnCurate ref="curateBtnBRef" 
+                      :tweet="market.tweets[market.battle.predictBID]" 
+                      :hide-number="true" 
+                      :btnclass="`text-lg text-blue-600 text-center flex justify-center items-center cursor-pointer hover:opacity-80 transition-opacity`"
+                      :numberclass="`text-lg text-blue-600 text-center flex flex-col items-center cursor-pointer hover:opacity-80 transition-opacity`"
+                      class="scale-150">
+                      <template #number>
+                            <span>{{ bAmount.toFixed(0).toLocaleString() }}</span>
+                            ({{ (bAmount / totalCuration * 100).toFixed(0) }}%)
+                        </template>
+                    </TweetBtnCurate>
                 </div>
             </div>
         </div>
@@ -142,7 +154,7 @@ const openTweet = (tweet: Tweet) => {
     </div>
 
     <!-- Progress Bar -->
-    <div class="mt-6">
+    <!-- <div class="mt-6">
        <div class="flex justify-between text-xs font-bold text-gray-500 mb-2">
           <span class="text-red-500">{{ getBattleStats(market.battle).percentA.toFixed(1) }}%</span>
           <span class="text-blue-500">{{ getBattleStats(market.battle).percentB.toFixed(1) }}%</span>
@@ -151,7 +163,7 @@ const openTweet = (tweet: Tweet) => {
           <div class="bg-red-500 transition-all duration-500" :style="{ width: getBattleStats(market.battle).percentA + '%' }"></div>
           <div class="bg-blue-500 transition-all duration-500" :style="{ width: getBattleStats(market.battle).percentB + '%' }"></div>
        </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

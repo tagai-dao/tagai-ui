@@ -5,13 +5,13 @@ import TradeList from './components/TradeList.vue'
 import HolderList from './components/HolderList.vue'
 import TradePanel from './components/TradePanel.vue'
 import { mockBattleData } from './mockData'
-import type { MarketData } from '@/types'
+import type { MarketData, Tweet } from '@/types'
 
 const activeTab = ref(0)
 const tabs = ['Transactions', 'Holders']
 
 const props = defineProps<{
-  market: MarketData
+   market: MarketData
 }>()
 
 </script>

@@ -410,7 +410,7 @@ function copyMarketAddress(address: `0x${string}`) {
         <button v-else
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
             @click="executeTrade"
-            :disabled="tradeCalculating || tradeLoading || !tradeShares"
+            :disabled="tradeCalculating || tradeLoading || !tradeShares || props.market.battle.status !== 1 || (props.market.tweets[props.market.battle.predictAID]?.dayNumber + 3) * 86400000 < Date.now()"
         >
             {{ tradeActiveTab === 'buy' ? $t("buy") : $t("sell") }} {{ tradeSelectedOutcome === 'red' ? $t("predictTrade.red") : $t("predictTrade.blue") }}
             <i-ep-loading v-if="tradeCalculating || tradeLoading" class="animate-spin ml-2" />

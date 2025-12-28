@@ -13,6 +13,8 @@ import { create } from "@/utils/ipshare";
 const props = defineProps<{
     tweet: Tweet;
     hideNumber?: boolean;
+    btnclass?: string;
+    numberclass?: string;
   }>()
 const emits = defineEmits(['newLike'])
 const stateStore = useStateStore()
@@ -41,10 +43,10 @@ async function createIPShare() {
 }
 
 async function preCurate() {
-  if (useCommunityStore().currentSelectedCommunity?.distributionEnded) {
-      handleErrorTip(errCode.DISTRIBUTION_ENDED)
-      return;
-    }
+  // if (useCommunityStore().currentSelectedCommunity?.distributionEnded) {
+  //     handleErrorTip(errCode.DISTRIBUTION_ENDED)
+  //     return;
+  //   }
   if (!(await preCheckCuration(OperateType.CURATE, props.tweet))) {
     return;
   }
@@ -87,6 +89,7 @@ async function confirmCurate() {
 
 <template>
   <button class="flex justify-center items-center gap-2"
+          :class="btnclass"
           :disabled="isCurating"
           @click.stop="preCurate">
     <i-ep-loading v-if="isCurating" class="animate-spin w-6 h-6"/>
@@ -94,8 +97,9 @@ async function confirmCurate() {
        :class="tweet.curated ? 'btn-icon-curate-active' : 'btn-icon-curate'"></i>
     <span class="text-sm font-bold"
       v-if="!hideNumber"
-      :class="tweet.curated ? 'text-red-e6' : 'text-grey-bd'">
+      :class="numberclass + ' ' + (tweet.curated ? 'text-red-e6' : 'text-grey-bd')">
     {{ tweet.likeCount ?? 0 }}</span>
+    <slot name="number"></slot>
   </button>
   <el-dialog v-model="curateVisible"
            modal-class="overlay-white"
