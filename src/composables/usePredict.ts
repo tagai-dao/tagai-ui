@@ -21,12 +21,36 @@ export const usePredict = (battle: BattleData) => {
     const totalPool = computed(() => (battle.reserveA ?? 0) + (battle.reserveB ?? 0))
 
     const percentA = computed(() => {
-        if (totalPool.value === 0) return 50
+        if (battle.solvedBalances) {
+            if (typeof battle.solvedBalances === 'string') {
+                try {
+                    battle.solvedBalances = JSON.parse(battle.solvedBalances) as Array<number>
+                } catch (error) {
+                    
+                }
+            }
+            if (battle.solvedBalances.length > 0) {
+                return battle.solvedBalances[1] / (battle.solvedBalances[0] + battle.solvedBalances[1])
+            }
+        }
+        if (totalPool.value === 0) return 0.5
         return (reserveB.value ?? 0) / totalPool.value
     })
     
     const percentB = computed(() => {
-        if (totalPool.value === 0) return 50
+        if (battle.solvedBalances) {
+            if (typeof battle.solvedBalances === 'string') {
+                try {
+                    battle.solvedBalances = JSON.parse(battle.solvedBalances) as Array<number>
+                } catch (error) {
+                    
+                }
+            }
+            if (battle.solvedBalances.length > 0) {
+                return battle.solvedBalances[0] / (battle.solvedBalances[0] + battle.solvedBalances[1])
+            }
+        }
+        if (totalPool.value === 0) return 0.5
         return (reserveA.value ?? 0) / totalPool.value
     })
 

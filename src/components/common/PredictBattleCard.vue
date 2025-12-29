@@ -231,7 +231,7 @@ const confirmBuy = () => {
               :hide-number="true" 
               :btnclass="`flex flex-col text-red-600 items-center justify-center gap-1 flex-shrink-0 self-stretch square-button border-2 border-red-normal rounded-lg px-2 py-3 w-16 sm:w-20 cursor-pointer hover:opacity-90 transition-opacity`">
                 <template #number class="flex flex-col gap-1 items-center justify-center">
-                  {{ (aAmount / totalCuration * 100).toFixed(2) }}%
+                  {{ totalCuration ? (aAmount / totalCuration * 100).toFixed(2) : '50' }}%
                   <span>({{ aAmount.toFixed(0).toLocaleString() }})</span>
                 </template>
               </TweetBtnCurate>
@@ -297,7 +297,7 @@ const confirmBuy = () => {
             :hide-number="true" 
             :btnclass="`flex flex-col items-center text-blue-600 justify-center gap-1 flex-shrink-0 self-stretch square-button border-2 border-blue-600 rounded-lg px-2 py-3 w-16 sm:w-20 cursor-pointer hover:opacity-90 transition-opacity`">
               <template #number>
-                {{ (bAmount / totalCuration * 100).toFixed(2) }}%
+                {{ totalCuration ? (bAmount / totalCuration * 100).toFixed(2) : '50' }}%
                 <span>({{ bAmount.toFixed(0).toLocaleString() }})</span>
               </template>
             </TweetBtnCurate>

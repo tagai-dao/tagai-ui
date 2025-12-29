@@ -96,7 +96,7 @@ const totalCuration = computed(() => {
                     class="scale-150">
                         <template #number>
                             <span>{{ aAmount.toFixed(0).toLocaleString() }}</span>
-                            ({{ (aAmount / totalCuration * 100).toFixed(0) }}%)
+                            ({{ totalCuration ? (aAmount / totalCuration * 100).toFixed(0) : '50' }}%)
                         </template>
                     </TweetBtnCurate>
                 </div>
@@ -144,7 +144,7 @@ const totalCuration = computed(() => {
                       class="scale-150">
                       <template #number>
                             <span>{{ bAmount.toFixed(0).toLocaleString() }}</span>
-                            ({{ (bAmount / totalCuration * 100).toFixed(0) }}%)
+                            ({{ totalCuration ? (bAmount / totalCuration * 100).toFixed(0) : '50' }}%)
                         </template>
                     </TweetBtnCurate>
                 </div>

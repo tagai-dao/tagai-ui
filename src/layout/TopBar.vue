@@ -103,7 +103,7 @@ function onClickWallet() {
             </div>
             <a class="flex gap-2 items-center cursor-pointer"
                @click="menuRef.hide()"
-               href="https://tagai.gitbook.io/tagai" target="_blank">
+               href="https://coincidence-labs.gitbook.io/tagai/" target="_blank">
               <img class="w-4" src="~@/assets/icons/icon-docs.svg" alt="">
               <span>{{$t('docs')}}</span>
             </a>

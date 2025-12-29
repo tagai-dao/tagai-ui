@@ -453,6 +453,7 @@ export type BattleData = {
   token: string,
   reserveA: number | undefined | null,
   reserveB: number | undefined | null,
+  solvedBalances: Array<number> | undefined | null,
   title: string,
   predictAID: string,
   predictBID: string,
