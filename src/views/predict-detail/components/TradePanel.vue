@@ -190,7 +190,20 @@ const lpSupply = ref(0)
 const liquidityAmount = ref<number>()
 const liquidityLoading = ref(false)
 
-const isResolved = computed(() => props.market.battle.status === 2)
+const isResolved = computed(() => props.market.battle.status === 2 || props.market.tweets[props.market.battle.predictAID]?.dayNumber + 3 * 86400000 < Date.now())
+
+const showLiquidityDot = computed(() => {
+  return accStore.ethConnectState === EthWalletState.Connected && 
+         isResolved.value && 
+         lpBalance.value > 1
+})
+
+const showRedeemDot = computed(() => {
+  return accStore.ethConnectState === EthWalletState.Connected && 
+         accStore.getAccountInfo?.ethAddr && 
+         isResolved.value && 
+         (tradeRedBalance.value > 0 || tradeBlueBalance.value > 0)
+})
 
 const setLiquidityMax = () => {
     if (liquidityType.value === 'add') {
@@ -213,7 +226,6 @@ const handleLiquidityAction = async () => {
 
     if (!liquidityAmount.value && mainTab.value === 'liquidity' && !liquidityLoading.value) return
     if (mainTab.value === 'redeem' && liquidityLoading.value) return
-    
     liquidityLoading.value = true
     try {
         if (mainTab.value === 'liquidity') {
@@ -232,8 +244,8 @@ const handleLiquidityAction = async () => {
         if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
             await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.battle.marketMaker as `0x${string}`)
         }
-        await updateBalances()
-        updateReserves()
+        updateBalances().catch()
+        updateReserves().catch()
         liquidityAmount.value = undefined
     } catch (e) {
         handleErrorTip(e)
@@ -303,10 +315,12 @@ function copyMarketAddress(address: `0x${string}`) {
         v-for="tab in ['trade', 'liquidity', 'redeem']" 
         :key="tab"
         @click="mainTab = tab as any"
-        class="flex-1 py-2 rounded-lg text-sm font-bold transition-all capitalize"
+        class="flex-1 py-2 rounded-lg text-sm font-bold transition-all capitalize relative"
         :class="mainTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
         >
         {{ $t(tab === 'trade' ? 'trade' : (tab === 'liquidity' ? 'predictLiquidity.liquidity' : 'predictRedeem.redeem')) }}
+        <div v-if="tab === 'liquidity' && showLiquidityDot" class="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+        <div v-if="tab === 'redeem' && showRedeemDot" class="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
         </button>
     </div>
 
@@ -429,9 +443,12 @@ function copyMarketAddress(address: `0x${string}`) {
              <button class="flex-1 py-2 rounded-md text-sm font-bold transition-all"
                 :class="liquidityType === 'add' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                 @click="liquidityType = 'add';liquidityAmount=0">{{ $t('predictLiquidity.addLiquidity') }}</button>
-             <button class="flex-1 py-2 rounded-md text-sm font-bold transition-all"
+             <button class="flex-1 py-2 rounded-md text-sm font-bold transition-all relative"
                 :class="liquidityType === 'remove' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'"
-                @click="liquidityType = 'remove';liquidityAmount=0">{{ $t('predictLiquidity.removeLiquidity') }}</button>
+                @click="liquidityType = 'remove';liquidityAmount=0">
+                {{ $t('predictLiquidity.removeLiquidity') }}
+                <div v-if="showLiquidityDot" class="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full"></div>
+            </button>
          </div>
 
          <!-- Info Card -->

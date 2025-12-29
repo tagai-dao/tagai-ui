@@ -19,6 +19,7 @@ export const usePredict = (battle: BattleData) => {
     const reserveB = computed(() => battle.reserveB)
 
     const totalPool = computed(() => (battle.reserveA ?? 0) + (battle.reserveB ?? 0))
+    const isSettled = computed(() => battle.status === 2)
 
     const percentA = computed(() => {
         if (battle.solvedBalances) {
