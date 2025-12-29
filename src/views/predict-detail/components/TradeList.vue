@@ -64,7 +64,7 @@ const outcomeColors = ['text-red-500', 'text-blue-500'] as const
 const tradeTypeColors = ['text-green-500', 'text-red-500'] as const
 
 const getOutcomeColor = (index: number): string => outcomeColors[index] ?? 'text-gray-400'
-const getOutcomeName = (index: number): string => index === 0 ? t('red') : t('blue')
+const getOutcomeName = (index: number): string => index === 0 ? t('predictTrade.red') : t('predictTrade.blue')
 const getTradeTypeColor = (isBuy: boolean): string => isBuy ? tradeTypeColors[0] : tradeTypeColors[1]
 
 // Mock price logic (since mock data lacks price)
@@ -102,7 +102,7 @@ onActivated(() => {
             <!-- Main Content -->
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1">
                 <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
-                <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ item.isBuy ? $t('bought') : $t('sold') }}</span>
+                <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ item.isBuy ? $t('predictTrade.bought') : $t('predictTrade.sold') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getOutcomeColor(item.outcomeIndex)">
                     {{ Math.floor(item.outcomeTokensAmount).toLocaleString() }} {{ getOutcomeName(item.outcomeIndex) }}
                 </span>
@@ -110,7 +110,7 @@ onActivated(() => {
                     at {{ getPrice(item) }}
                 </span>
                 <span class="text-gray-400 whitespace-nowrap">
-                    ({{ formatAmount(Math.floor(item.amount)) }} {{ market.battle.tick }})
+                    ({{ formatAmount(item.amount) }} {{ market.battle.tick }})
                 </span>
             </div>
 

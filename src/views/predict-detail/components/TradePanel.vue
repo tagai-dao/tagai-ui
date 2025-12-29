@@ -10,6 +10,7 @@ import { GlobalModalType, type MarketData } from '@/types'
 import debounce from 'lodash.debounce'
 import { handleErrorTip } from '@/utils/notify'
 import { useModalStore } from '@/stores/common'
+import { usePredict } from '@/composables/usePredict'
 
 const props = defineProps<{
     market: MarketData
@@ -17,7 +18,7 @@ const props = defineProps<{
 
 const accStore = useAccountStore()
 const { onCopy } = useTools()
-
+const { percentA: showingPercentA, percentB: showingPercentB } = usePredict(props.market.battle)
 // Global Tab State
 const mainTab = ref<'trade' | 'liquidity' | 'redeem'>('trade')
 
@@ -52,6 +53,7 @@ const tradeSelectedOutcome = ref<'red' | 'blue'>('red')
 
 const totalPool = computed(() => reserveA.value + reserveB.value)
 
+
 const percentA = computed(() => {
   if (totalPool.value === 0) return 50
   return Math.round((reserveB.value / totalPool.value) * 1000) / 10
@@ -78,6 +80,9 @@ const debouncedTradeCalculate = debounce(async () => {
         tradePriceImpact.value = ''
         return
     }
+
+    // 计算前需要先刷新价格
+    await updateReserves()
     tradeCalculating.value = true
     if (tradeActiveTab.value === 'buy') {
       const { amount, fee } = await getBuyData(props.market.battle, tradeShares.value, tradeSelectedOutcome.value)
@@ -144,7 +149,7 @@ async function executeTrade() {
         shareAmount = tradeTokenBalanceBi.value;
       }
       await buyToken(props.market.battle, props.market.battle.token as `0x${string}`, shareAmount, tradeWillReceiveAmount.value * 0.95, tradeSelectedOutcome.value, bnbFee.value)
-      updateReserves()
+      updateReserves().catch()
     } else {
       console.log(6333,88)
       let shareAmount = parseUnits(tradeShares.value.toFixed(18), 18) * 105n / 100n;
@@ -154,7 +159,7 @@ async function executeTrade() {
         shareAmount = tradeBlueBalanceBi.value;
       }
       await sellToken(props.market.battle, parseUnits(tradeWillReceiveAmount.value.toFixed(18), 18), shareAmount, tradeSelectedOutcome.value, bnbFee.value)
-      updateReserves()
+      updateReserves().catch()
     }
     if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
       await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.battle.marketMaker as `0x${string}`)
@@ -334,7 +339,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 :class="tradeSelectedOutcome === 'red' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-red-200'"
                 @click="tradeSelectedOutcome = 'red';debouncedTradeCalculate()"
             >
-                <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (percentA / 100).toFixed(2) }} ${{ props.market.battle.tick }}</span>
+                <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (showingPercentA).toFixed(2) }} ${{ props.market.battle.tick }}</span>
             </button>
             
             <button 
@@ -342,7 +347,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 :class="tradeSelectedOutcome === 'blue' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-blue-200'"
                 @click="tradeSelectedOutcome = 'blue';debouncedTradeCalculate()"
             >
-                <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ (percentB / 100).toFixed(2) }} ${{ props.market.battle.tick }}</span>
+                <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ showingPercentB.toFixed(2) }} ${{ props.market.battle.tick }}</span>
             </button>
         </div>
 
@@ -410,7 +415,7 @@ function copyMarketAddress(address: `0x${string}`) {
         <button v-else
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
             @click="executeTrade"
-            :disabled="tradeCalculating || tradeLoading || !tradeShares"
+            :disabled="tradeCalculating || tradeLoading || !tradeShares || props.market.battle.status !== 1 || (props.market.tweets[props.market.battle.predictAID]?.dayNumber + 3) * 86400000 < Date.now()"
         >
             {{ tradeActiveTab === 'buy' ? $t("buy") : $t("sell") }} {{ tradeSelectedOutcome === 'red' ? $t("predictTrade.red") : $t("predictTrade.blue") }}
             <i-ep-loading v-if="tradeCalculating || tradeLoading" class="animate-spin ml-2" />
