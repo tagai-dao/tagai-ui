@@ -65,11 +65,23 @@ const tradeTypeColors = ['text-green-500', 'text-red-500'] as const
 
 const getOutcomeColor = (index: number): string => outcomeColors[index] ?? 'text-gray-400'
 const getOutcomeName = (index: number): string => index === 0 ? t('predictTrade.red') : t('predictTrade.blue')
-const getTradeTypeColor = (isBuy: boolean): string => isBuy ? tradeTypeColors[0] : tradeTypeColors[1]
+const getTradeTypeColor = (isBuy: number): string => isBuy === 1 ? tradeTypeColors[0] : tradeTypeColors[1]
 
 // Mock price logic (since mock data lacks price)
 const getPrice = (item: FPMMTrade): string => formatPrice(item.amount / item.outcomeTokensAmount)
 const getValue = (item: FPMMTrade): number => Math.floor(item.amount * 0.5)
+const lpAmounts = (item: FPMMTrade): Array<number> => {
+  if (item.opType === 1) return [] as Array<number>;
+  if (typeof item.amounts === 'string') {
+    item.amounts = JSON.parse(item.amounts) as Array<number>
+  }
+  return item.amounts as Array<number>
+}
+
+const getAddShares = (item: FPMMTrade): number => Math.max(lpAmounts(item)[0], lpAmounts(item)[1])
+const getAddSharedEarned = (item: FPMMTrade): number => Math.abs(lpAmounts(item)[0] - lpAmounts(item)[1]) - 0.00001
+const getAddSharedEarnedIndex = (item: FPMMTrade): number => lpAmounts(item)[0] > lpAmounts(item)[1] ? 0 : 1
+const getRemoveLpReceived = (item: FPMMTrade): number => item.collateralRemoved
 
 onActivated(() => {
   onRefresh()
@@ -100,7 +112,7 @@ onActivated(() => {
             <img :src="item.profile" class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0">
             
             <!-- Main Content -->
-            <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1">
+            <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 1">
                 <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
                 <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ item.isBuy ? $t('predictTrade.bought') : $t('predictTrade.sold') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getOutcomeColor(item.outcomeIndex)">
@@ -111,6 +123,47 @@ onActivated(() => {
                 </span>
                 <span class="text-gray-400 whitespace-nowrap">
                     ({{ formatAmount(item.amount) }} {{ market.battle.tick }})
+                </span>
+            </div>
+
+            <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 2 && item.isBuy == 1">
+                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
+                <span class="text-green-500">{{ $t('predictLiquidity.add') }}</span>
+                <span class="font-bold whitespace-nowrap" :class="getTradeTypeColor(item.isBuy)">
+                    {{ formatAmount(getAddShares(item)) }} {{ market.battle.tick }}
+                </span> 
+                <span>
+                  {{ $t('predictLiquidity.get') }}
+                </span>
+                <span class="font-bold whitespace-nowrap" v-show="getAddSharedEarned(item) > 0" :class="getAddSharedEarnedIndex(item) == 0 ? 'text-red-500' : 'text-blue-500'">
+                  {{ formatAmount(getAddSharedEarned(item)) }} 
+                  {{ getAddSharedEarnedIndex(item) === 0 ? $t('predictTrade.red') : $t('predictTrade.blue') }}
+                </span>
+                <span v-show="getAddSharedEarned(item) > 0">
+                  {{ $t('and') }}
+                </span>
+                <span>
+                  {{ formatAmount(item.amount) }} LP
+                </span>
+            </div>
+
+            <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 2 && item.isBuy == 2">
+                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
+                <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ $t('predictLiquidity.remove') }}</span>
+                <span class="font-bold whitespace-nowrap" :class="getTradeTypeColor(item.isBuy)">
+                    {{ formatAmount(item.amount) }} LP
+                </span>
+                <span>
+                  {{ $t('predictLiquidity.get') }}
+                </span>
+                <span class="font-bold whitespace-nowrap text-red-500">
+                  {{ formatAmount(lpAmounts(item)[0]) }} {{ $t('predictTrade.red') }}
+                </span>
+                <span>
+                  {{ $t('and') }}
+                </span>
+                <span class="font-bold whitespace-nowrap text-blue-500">
+                  {{ formatAmount(lpAmounts(item)[1]) }} {{ $t('predictTrade.blue') }}
                 </span>
             </div>
 

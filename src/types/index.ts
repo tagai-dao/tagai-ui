@@ -471,13 +471,20 @@ export type MarketData = {
   tweets: { [key: string]: Tweet }
 }
 
-export type FPMMTrade = {
+export type FPMMLPTRADE = {
+  ethAddr: string,
+  fpmm: string,
+  amounts: Array<number> | string,
+  collateralRemoved: number
+}
+
+export type FPMMTrade = FPMMLPTRADE & {
   ethAddr: string,
   fpmm: string,
   outcomeIndex: number,
   amount: number,
   outcomeTokensAmount: number,
-  isBuy: boolean,
+  isBuy: number,
   transTime: number,
   transHash: string,
   twitterId: string,
@@ -485,7 +492,8 @@ export type FPMMTrade = {
   twitterUsername: string,
   profile: string,
   followers: number,
-  followings: number
+  followings: number,
+  opType: number,  // 1: 交易记录， 2: 流动性记录
 }
 
 export type FPMMUserHolding = {

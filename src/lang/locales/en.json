@@ -496,7 +496,10 @@
     "management": "Liquidity Management",
     "addLiquidity": "Add Liquidity",
     "removeLiquidity": "Remove Liquidity",
-    "liquidity": "Liquidity"
+    "liquidity": "Liquidity",
+    "add": "Add",
+    "remove": "Remove",
+    "get": "to get"
   },
   "predictRedeem": {
     "redeem": "Redeem",

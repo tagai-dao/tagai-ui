@@ -496,7 +496,10 @@
     "management": "流动性管理",
     "addLiquidity": "添加流动性",
     "removeLiquidity": "移除流动性",
-    "liquidity": "流动性"
+    "liquidity": "流动性",
+    "add": "添加",
+    "remove": "移除",
+    "get": "获得"
   },
   "predictRedeem": {
     "redeem": "赎回",
