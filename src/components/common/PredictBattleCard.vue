@@ -144,7 +144,7 @@ const confirmBuy = () => {
       >
         <!-- 卡片头部 -->
         <div class="flex justify-between items-start mb-4">
-          <h3 class="text-xl font-semibold text-black flex-1 pr-2">
+          <h3 class="text-xl font-semibold text-black flex-1 pr-2 md:h-[3.5rem] md:line-clamp-2">
             {{ battle.title }}
             <span v-if="showCommunity" class="cursor-pointer" @click.stop="openCommunity(battle.tick)">
               (@<span class="text-blue-600 underline">{{ battle.tick }}</span>)

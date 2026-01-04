@@ -130,7 +130,9 @@ onMounted(async () => {
         <div v-if="battles[props.type]?.length === 0" class="w-full flex my-8 justify-center items-center">
                 <img src="~@/assets/images/empty-data.svg" alt="">
                 </div>
-        <PredictBattleCard v-else showCommunity :battle="battle" :tweets="tweets" v-for="battle in battles[props.type]" :key="battle.predictAID + battle.predictBID" />
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <PredictBattleCard class="!mb-0" showCommunity :battle="battle" :tweets="tweets" v-for="battle in battles[props.type]" :key="battle.predictAID + battle.predictBID" />
+        </div>
         </van-list>
         </van-pull-refresh>
   </div>
