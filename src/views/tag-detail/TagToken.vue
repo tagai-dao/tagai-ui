@@ -89,7 +89,7 @@ const rewardPerDay = computed(() => {
   }
   try {
     const distribution = JSON.parse(comStore.currentSelectedCommunity.distribution);
-    communityDistribution.value = distribution;
+    communityDistribution.value = distribution.reverse();
     const currentTime = Math.ceil(Date.now() / 1000);
     if (currentTime === 0) {
       return 0;
@@ -393,7 +393,7 @@ onMounted(async () => {
                 <div class="text-xs text-grey-93 mb-1">{{ $t('postView.rewardPerDay') }}</div>
                 <div class="text-xl font-bold"
                      :class="isCurrentPeriod(item.start, item.end) ? 'text-orange-normal' : 'text-black-19'">
-                  {{ formatAmount(item.amount * 86400) }}
+                  {{ (Math.ceil(item.amount * 86400)).toLocaleString() }}
                   <span class="text-sm font-normal text-grey-93 ml-1">{{ comStore.currentSelectedCommunity?.tick }}</span>
                 </div>
               </div>
