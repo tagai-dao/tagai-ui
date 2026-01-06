@@ -174,10 +174,29 @@ const chartOptions = computed<ApexOptions>(() => {
     chart: {
       type: "area",
       height: 350,
-      zoom: { enabled: false },
-      toolbar: { show: false },
-      animations: { enabled: false }, // Disable for performance with many points
+      zoom: { enabled: true },
+      toolbar: { show: true },
+      animations: { enabled: true }, // Disable for performance with many points
       fontFamily: 'inherit'
+    },
+    annotations: {
+      yaxis: [
+        {
+          y: 0.5,
+          borderColor: '#9ca3af',
+          strokeDashArray: 4,
+          opacity: 0.5,
+          label: {
+            text: '50%',
+            style: {
+              color: '#fff',
+              background: '#9ca3af',
+            },
+            position: 'left',
+            offsetX: 50,
+          },
+        }
+      ]
     },
     colors: ["#EF5350"], // Red color
     fill: {
@@ -217,8 +236,8 @@ const chartOptions = computed<ApexOptions>(() => {
         },
         style: { colors: '#9ca3af' }
       },
-      min: 0,
-      max: 1, // Probability usually 0-1
+      // min: 0,
+      // max: 1, // Probability usually 0-1
       tickAmount: 4
     },
     grid: {
