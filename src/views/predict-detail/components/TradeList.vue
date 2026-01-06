@@ -56,7 +56,8 @@ const formatTimestamp = (ts: number) => {
     if (diff < 60) return 'Just now'
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-    return '1d ago'
+    if (diff < 86400 * 30) return `${Math.floor(diff / 86400)}d ago`
+    return new Date(ts * 1000).toLocaleString()
 }
 
 const outcomeColors = ['text-red-500', 'text-blue-500'] as const
