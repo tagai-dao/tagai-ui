@@ -190,7 +190,7 @@ const lpSupply = ref(0)
 const liquidityAmount = ref<number>()
 const liquidityLoading = ref(false)
 
-const isResolved = computed(() => props.market.battle.status === 2 || props.market.tweets[props.market.battle.predictAID]?.dayNumber + 3 * 86400000 < Date.now())
+const isResolved = computed(() => props.market.battle.status === 2 || props.market.tweets[props.market.battle.predictAID]?.dayNumber + 3 * 86400000 > Date.now())
 
 const showLiquidityDot = computed(() => {
   return accStore.ethConnectState === EthWalletState.Connected && 
@@ -199,6 +199,7 @@ const showLiquidityDot = computed(() => {
 })
 
 const showRedeemDot = computed(() => {
+  console.log(555, isResolved.value)
   return accStore.ethConnectState === EthWalletState.Connected && 
          accStore.getAccountInfo?.ethAddr && 
          isResolved.value && 
