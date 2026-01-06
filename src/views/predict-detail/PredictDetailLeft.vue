@@ -5,7 +5,6 @@ import PredictChart from './components/PredictChart.vue'
 import TradeList from './components/TradeList.vue'
 import HolderList from './components/HolderList.vue'
 import TradePanel from './components/TradePanel.vue'
-import { mockBattleData } from './mockData'
 import type { MarketData, Tweet } from '@/types'
 
 const activeTab = ref(0)

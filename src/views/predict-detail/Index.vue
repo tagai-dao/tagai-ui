@@ -17,17 +17,17 @@ onMounted(async () => {
   // 从url中获取market id
   const marketId = router.currentRoute.value.params.id as string
   try {
-    market.value = await getMarket(marketId, accStore.getAccountInfo?.twitterId) as unknown as MarketData
-    const marketInfos = await getMarketInfos([market.value.battle] as BattleData[])
+    const res: any = await getMarket(marketId, accStore.getAccountInfo?.twitterId) as unknown as MarketData
+    const marketInfos = await getMarketInfos([res.battle] as BattleData[])
     market.value = {
         battle: {
-            ...market.value.battle,
-            winner: getWinner(market.value.battle),
-            reserveA: marketInfos[market.value.battle.marketMaker + '-priceA'],
-            reserveB: marketInfos[market.value.battle.marketMaker + '-priceB'],
-            fee: marketInfos[market.value.battle.marketMaker + '-fee']
+            ...res.battle,
+            winner: getWinner(res.battle),
+            reserveA: marketInfos[res.battle.marketMaker + '-priceA'],
+            reserveB: marketInfos[res.battle.marketMaker + '-priceB'],
+            fee: marketInfos[res.battle.marketMaker + '-fee']
         },
-        tweets: market.value.tweets
+        tweets: res.tweets
     } 
   } catch (error) {
     console.log(1, error)
