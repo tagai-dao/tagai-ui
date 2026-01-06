@@ -113,7 +113,7 @@ onActivated(() => {
             
             <!-- Main Content -->
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 1">
-                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
+                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterName ? `@${item.twitterName}` : formatAddress(item.ethAddr) }}</span>
                 <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ item.isBuy ? $t('predictTrade.bought') : $t('predictTrade.sold') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getOutcomeColor(item.outcomeIndex)">
                     {{ Math.floor(item.outcomeTokensAmount).toLocaleString() }} {{ getOutcomeName(item.outcomeIndex) }}
@@ -127,7 +127,7 @@ onActivated(() => {
             </div>
 
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 2 && item.isBuy == 1">
-                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
+                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterName ? `@${item.twitterName}` : formatAddress(item.ethAddr) }}</span>
                 <span class="text-green-500">{{ $t('predictLiquidity.add') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getTradeTypeColor(item.isBuy)">
                     {{ formatAmount(getAddShares(item)) }} {{ market.battle.tick }}
@@ -148,7 +148,7 @@ onActivated(() => {
             </div>
 
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 2 && item.isBuy == 2">
-                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterUsername ? `@${item.twitterUsername}` : formatAddress(item.ethAddr) }}</span>
+                <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterName ? `@${item.twitterName}` : formatAddress(item.ethAddr) }}</span>
                 <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ $t('predictLiquidity.remove') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getTradeTypeColor(item.isBuy)">
                     {{ formatAmount(item.amount) }} LP
