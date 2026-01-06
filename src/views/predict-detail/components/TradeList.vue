@@ -80,7 +80,7 @@ const lpAmounts = (item: FPMMTrade): Array<number> => {
 
 const getAddShares = (item: FPMMTrade): number => Math.max(lpAmounts(item)[0], lpAmounts(item)[1])
 const getAddSharedEarned = (item: FPMMTrade): number => Math.abs(lpAmounts(item)[0] - lpAmounts(item)[1]) - 0.00001
-const getAddSharedEarnedIndex = (item: FPMMTrade): number => lpAmounts(item)[0] > lpAmounts(item)[1] ? 0 : 1
+const getAddSharedEarnedIndex = (item: FPMMTrade): number => lpAmounts(item)[0] > lpAmounts(item)[1] ? 1 : 0
 const getRemoveLpReceived = (item: FPMMTrade): number => item.collateralRemoved
 
 onActivated(() => {
@@ -139,7 +139,7 @@ onActivated(() => {
                   {{ formatAmount(getAddSharedEarned(item)) }} 
                   {{ getAddSharedEarnedIndex(item) === 0 ? $t('predictTrade.red') : $t('predictTrade.blue') }}
                 </span>
-                <span v-show="getAddSharedEarned(item) > 0">
+                <span v-show="getAddSharedEarned(item) > 1">
                   {{ $t('predictLiquidity.and') }}
                 </span>
                 <span>
