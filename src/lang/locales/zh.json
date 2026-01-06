@@ -499,7 +499,8 @@
     "liquidity": "流动性",
     "add": "添加",
     "remove": "移除",
-    "get": "获得"
+    "get": "获得",
+    "and": "和"
   },
   "predictRedeem": {
     "redeem": "赎回",

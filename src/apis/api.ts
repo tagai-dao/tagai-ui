@@ -335,5 +335,8 @@ export const newParticipation = async (twitterId: string, ethAddr: string, marke
 export const getFPMMTradeList = async (marketAddr: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/getFPMMTrades', { marketAddr, pageIndex })
 
+export const getFPMMKlineData = async (fpmm: string, timestamp: number | undefined, isNew: boolean) =>
+  get(BACKEND_API_URL + '/predict/getFPMMTradeData', { fpmm, timestamp, isNew })
+
 export const getFPMMUserHoldings = async (marketAddr: string, positionAID: string, positionBID: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/userHoldings', { marketAddr, positionAID, positionBID, pageIndex })

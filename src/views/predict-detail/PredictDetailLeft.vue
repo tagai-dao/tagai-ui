@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import PredictHeader from './components/PredictHeader.vue'
+import PredictChart from './components/PredictChart.vue'
 import TradeList from './components/TradeList.vue'
 import HolderList from './components/HolderList.vue'
 import TradePanel from './components/TradePanel.vue'
@@ -20,6 +21,9 @@ const props = defineProps<{
   <div class="flex flex-col gap-4">
     <!-- Header Section -->
     <PredictHeader :market="market" />
+
+    <!-- Chart -->
+    <PredictChart v-if="market.battle.marketMaker" :marketAddr="market.battle.marketMaker" chartId="predict-chart" />
 
     <!-- Mobile Trade Panel (Insert here, hidden on desktop) -->
     <div class="block lg:hidden">

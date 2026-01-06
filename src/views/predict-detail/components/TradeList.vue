@@ -40,7 +40,6 @@ const onRefresh = async () => {
     finished.value = false
     refreshing.value = true
     const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.battle.marketMaker)) as unknown as FPMMTrade[]
-    console.log(55, trades)
     list.value = trades
   } catch (error) {
     handleErrorTip(error)
@@ -140,7 +139,7 @@ onActivated(() => {
                   {{ getAddSharedEarnedIndex(item) === 0 ? $t('predictTrade.red') : $t('predictTrade.blue') }}
                 </span>
                 <span v-show="getAddSharedEarned(item) > 0">
-                  {{ $t('and') }}
+                  {{ $t('predictLiquidity.and') }}
                 </span>
                 <span>
                   {{ formatAmount(item.amount) }} LP
@@ -160,7 +159,7 @@ onActivated(() => {
                   {{ formatAmount(lpAmounts(item)[0]) }} {{ $t('predictTrade.red') }}
                 </span>
                 <span>
-                  {{ $t('and') }}
+                  {{ $t('predictLiquidity.and') }}
                 </span>
                 <span class="font-bold whitespace-nowrap text-blue-500">
                   {{ formatAmount(lpAmounts(item)[1]) }} {{ $t('predictTrade.blue') }}

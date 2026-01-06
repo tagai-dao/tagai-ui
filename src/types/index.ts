@@ -506,3 +506,13 @@ export type FPMMUserHolding = {
   followers: number,
   followings: number
 }
+
+export type KlineData = {
+  fpmm: string,
+  timestamp: number,
+  high: number,
+  low: number,
+  open: number,
+  close: number,
+  volume?: number
+}

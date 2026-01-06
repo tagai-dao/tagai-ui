@@ -499,7 +499,8 @@
     "liquidity": "Liquidity",
     "add": "Add",
     "remove": "Remove",
-    "get": "to get"
+    "get": "to get",
+    "and": "and"
   },
   "predictRedeem": {
     "redeem": "Redeem",
