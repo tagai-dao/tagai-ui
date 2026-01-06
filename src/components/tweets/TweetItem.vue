@@ -11,6 +11,7 @@ import type {Tweet} from "@/types";
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import { useStateStore } from '@/stores/common';
 import { useRouter } from 'vue-router';
+import { BACKEND_API_URL } from '@/config';
 
 const router = useRouter();
 
@@ -60,6 +61,24 @@ const onUserAvatar = () => {
 const gotoTick = (tag: string) => {
   router.push(`/tag-detail/${tag}`)
 }
+
+// 获取代理视频URL（通过后端Node.js服务代理绕过CORS）
+const getProxiedVideoUrl = (videoUrl: string): string => {
+  // 如果URL是Twitter视频，使用后端代理
+  if (videoUrl && videoUrl.includes('video.twimg.com')) {
+    // 使用后端API代理视频
+    return `${BACKEND_API_URL}/tiptag/video-proxy-cached?url=${encodeURIComponent(videoUrl)}`
+  }
+  return videoUrl
+}
+
+// 计算代理后的视频URL
+const proxiedVideoUrl = computed(() => {
+  if (props.tweet.videoLink) {
+    return getProxiedVideoUrl(props.tweet.videoLink)
+  }
+  return ''
+})
 
 onMounted(() => {
   if (props.tweet.videoLink){
@@ -177,7 +196,19 @@ onUnmounted(() => {
           </div>
         </div>
         <div v-if="tweet.videoLink" class="pl-12">
-            <video ref="video" controls loop playsinline webkit-playsinline muted :src="tweet.videoLink"></video>
+            <video 
+              ref="video" 
+              controls 
+              loop 
+              playsinline 
+              webkit-playsinline
+              :muted="true"
+              :src="proxiedVideoUrl || tweet.videoLink"
+              class="w-full max-w-full rounded-lg"
+            >
+              <source :src="proxiedVideoUrl || tweet.videoLink" type="video/mp4">
+              您的浏览器不支持视频播放。
+            </video>
         </div>
         <div v-if="!textOnly" class="px-3 md:pl-12">
           <!--       foreign page -->
