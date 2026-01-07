@@ -7,8 +7,10 @@ import { GlobalModalType } from '@/types'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
 import { usePredict } from '@/composables/usePredict';
-import { getBuyData } from '@/utils/fpmm';
+import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
+import { parseUnits } from 'viem';
+import { handleErrorTip } from '@/utils/notify';
 
 const props = defineProps<{
     battle: BattleData,
@@ -24,6 +26,8 @@ const selectedColor = ref<'red' | 'blue' | null>(null);
 const buyAmount = ref('');
 const willReceiveAmount = ref(0);
 const calculatingAmount = ref(false);
+const bnbFee = ref(0);
+const trading = ref(false);
 
 const aAmount = computed(() => {
   return props.tweets[props.battle.predictAID]?.amount ?? 0
@@ -103,9 +107,15 @@ const calculateReceiveAmount = debounce(async () => {
   }
   try {
     calculatingAmount.value = true;
+    // 更新数据
+    const marketInfos = await getMarketInfos([props.battle])
+    props.battle.reserveA = marketInfos[props.battle.marketMaker + '-priceA']
+    props.battle.reserveB = marketInfos[props.battle.marketMaker + '-priceB']
+    props.battle.fee = marketInfos[props.battle.marketMaker + '-fee']
     const result = await getBuyData(props.battle, parseFloat(buyAmount.value), selectedColor.value);
     if (result && typeof result === 'object' && 'amount' in result) {
       willReceiveAmount.value = result.amount || 0;
+      bnbFee.value = result.fee;
     } else {
       willReceiveAmount.value = 0;
     }
@@ -125,16 +135,25 @@ watch([buyAmount, selectedColor], () => {
 });
 
 // 确认购买（功能待实现）
-const confirmBuy = () => {
-  // TODO: 实现购买功能
+const confirmBuy = async () => {
+  if (trading.value) return;
+  trading.value = true;
   console.log(`购买 ${selectedColor.value}，数量: ${buyAmount.value}`);
   try {
-    
+    const hash = await buyToken(props.battle as BattleData, props.battle.token as `0x${string}`, parseUnits(parseFloat(buyAmount.value).toFixed(18), 18), willReceiveAmount.value * 0.95, selectedColor.value!, bnbFee.value)
+    console.log('buy hash', hash)
+    getMarketInfos([props.battle]).then((infos: any) => {
+      props.battle.reserveA = infos[props.battle.marketMaker + '-priceA']
+      props.battle.reserveB = infos[props.battle.marketMaker + '-priceB']
+      props.battle.fee = infos[props.battle.marketMaker + '-fee']
+    })
   } catch (error) {
-    
+    handleErrorTip(error)
+  } finally {
+    trading.value = false;
+    // 购买成功后关闭输入框
+    closeBuyInput();
   }
-  // 购买成功后关闭输入框
-  closeBuyInput();
 }
 
 </script>
@@ -144,7 +163,7 @@ const confirmBuy = () => {
       >
         <!-- 卡片头部 -->
         <div class="flex justify-between items-start mb-4">
-          <h3 class="text-xl font-semibold text-black flex-1 pr-2 md:h-[3.5rem] md:line-clamp-2">
+          <h3 class="text-lm font-semibold text-black flex-1 pr-2 md:h-[3rem] md:line-clamp-2">
             {{ battle.title }}
             <span v-if="showCommunity" class="cursor-pointer" @click.stop="openCommunity(battle.tick)">
               (@<span class="text-blue-600 underline">{{ battle.tick }}</span>)
@@ -340,10 +359,11 @@ const confirmBuy = () => {
                   @click="confirmBuy()"
                   class="h-14 sm:h-16 px-4 sm:px-6 text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center text-white"
                   :class="selectedColor === 'red' ? 'bg-red-normal' : 'bg-blue-600'"
-                  :disabled="!buyAmount || parseFloat(buyAmount) <= 0 || calculatingAmount"
+                  :disabled="!buyAmount || parseFloat(buyAmount) <= 0 || calculatingAmount || trading"
                 >
                   <span>{{ $t('buy') || '购买' }}</span>
-                  <span v-if="willReceiveAmount > 0" class="text-xs opacity-90 mt-0.5">
+                  <i-ep-loading v-if="trading" class="animate-spin" />
+                  <span v-if="willReceiveAmount > 0 && !trading" class="text-xs opacity-90 mt-0.5">
                    {{ $t('predictTrade.getResult', {
                       amount: formatAmount(willReceiveAmount), 
                       result: selectedColor === 'red' ? $t('predictTrade.red') : $t('predictTrade.blue')

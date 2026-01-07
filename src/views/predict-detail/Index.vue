@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import PredictDetailLeft from './PredictDetailLeft.vue'
 import PredictDetailRight from './PredictDetailRight.vue'
 import { useRouter } from 'vue-router'

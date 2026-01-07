@@ -286,7 +286,7 @@ onUnmounted(() => {
     <div class="flex justify-between items-start mb-6">
         <div>
             <div class="flex items-baseline gap-2">
-                <h1 class="text-3xl text-bold">
+                <h1 class="text-2xl text-bold">
                     Predict probability(Red)
                 </h1>
                 <span class="text-xl font-bold text-red-600">

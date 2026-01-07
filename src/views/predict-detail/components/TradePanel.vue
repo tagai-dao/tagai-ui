@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch, ref } from 'vue'
+import { computed, onMounted, watch, ref, onUnmounted } from 'vue'
 import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
@@ -81,9 +81,21 @@ const debouncedTradeCalculate = debounce(async () => {
         return
     }
 
-    // 计算前需要先刷新价格
-    await updateReserves()
     tradeCalculating.value = true
+    // 计算前需要先刷新价格
+    const marketInfos = await getMarketInfos([props.market.battle])
+    reserveA.value = marketInfos[props.market.battle.marketMaker + '-priceA']
+    reserveB.value = marketInfos[props.market.battle.marketMaker + '-priceB']
+    lpSupply.value = marketInfos[props.market.battle.marketMaker + '-totalSupply'] || 0
+    props.market.battle.reserveA = reserveA.value
+    props.market.battle.reserveB = reserveB.value
+    props.market.battle.fee = marketInfos[props.market.battle.marketMaker + '-fee']
+
+    // getMarketInfos([props.market.battle]).then((infos: any) => {
+    //   reserveA.value = infos[props.market.battle.marketMaker + '-priceA']
+    //   reserveB.value = infos[props.market.battle.marketMaker + '-priceB']
+    //   lpSupply.value = infos[props.market.battle.marketMaker + '-totalSupply'] || 0
+    // })
     if (tradeActiveTab.value === 'buy') {
       const { amount, fee } = await getBuyData(props.market.battle, tradeShares.value, tradeSelectedOutcome.value)
       
@@ -279,6 +291,9 @@ const updateReserves = debounce(async () => {
     reserveA.value = infos[props.market.battle.marketMaker + '-priceA']
     reserveB.value = infos[props.market.battle.marketMaker + '-priceB']
     lpSupply.value = infos[props.market.battle.marketMaker + '-totalSupply'] || 0
+    props.market.battle.reserveA = reserveA.value
+    props.market.battle.reserveB = reserveB.value
+    props.market.battle.fee = infos[props.market.battle.marketMaker + '-fee']
   })
 }, 500)
 
@@ -290,9 +305,17 @@ watch(() => accStore.ethConnectAddress, (newVal) => {
   updateBalances()
 }, { immediate: true })
 
+let interval: any;
 onMounted(async () => {
+  interval = setInterval(() => {
+    updateReserves()
+  }, 3000)
   updateReserves()
   updateBalances()
+})
+
+onUnmounted(() => {
+  clearInterval(interval)
 })
 
 function copyMarketAddress(address: `0x${string}`) {

@@ -75,6 +75,13 @@ const debouncedCalculate = debounce(async () => {
     if (!shares.value) {
       return;
     }
+    // 计算前先更新数据
+    const marketInfos = await getMarketInfos([battle.value as BattleData])
+    reserveA.value = marketInfos[battle.value?.marketMaker + '-priceA']
+    reserveB.value = marketInfos[battle.value?.marketMaker + '-priceB']
+    battle.value.reserveA = reserveA.value
+    battle.value.reserveB = reserveB.value
+    battle.value.fee = marketInfos[battle.value?.marketMaker + '-fee']
     if (activeTab.value === 'buy') {
       const { amount, fee } = await getBuyData(battle.value as BattleData, shares.value, selectedOutcome.value)
       

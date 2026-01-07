@@ -35,7 +35,7 @@ const totalCuration = computed(() => {
   <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm mb-4">
     <!-- Title & Status -->
     <div class="flex justify-between items-start mb-6">
-      <h1 class="text-xl sm:text-2xl font-bold leading-tight pr-4 flex-1">
+      <h1 class="text-lm sm:text-xl font-bold leading-tight pr-4 flex-1">
         {{ market.battle.title }}
       </h1>
       <div class="flex flex-col items-end gap-2">

@@ -463,7 +463,7 @@ export type BattleData = {
   positionAID: string,
   positionBID: string,
   conditionID: string,
-  fee: number | undefined | null
+  fee: number | undefined | null,  // 当前费率
 }
 
 export type MarketData = {
