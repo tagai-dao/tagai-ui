@@ -163,7 +163,7 @@ const confirmBuy = async () => {
       >
         <!-- 卡片头部 -->
         <div class="flex justify-between items-start mb-4">
-          <h3 class="text-lm font-semibold text-black flex-1 pr-2 md:h-[3rem] md:line-clamp-2">
+          <h3 class="text-base sm:text-lg font-semibold text-black flex-1 pr-2 md:h-[3rem] md:line-clamp-2">
             {{ battle.title }}
             <span v-if="showCommunity" class="cursor-pointer" @click.stop="openCommunity(battle.tick)">
               (@<span class="text-blue-600 underline">{{ battle.tick }}</span>)
@@ -248,9 +248,9 @@ const confirmBuy = async () => {
               <TweetBtnCurate ref="curateBtnARef" 
               :tweet="tweets[battle.predictAID]" 
               :hide-number="true" 
-              :btnclass="`flex flex-col text-red-600 text-sm items-center justify-center flex-shrink-0 self-stretch square-button border-2 border-red-normal rounded-lg px-1 py-2 w-16 sm:w-20 cursor-pointer hover:opacity-90 transition-opacity`">
+              :btnclass="`flex flex-col text-red-600 text-xs sm:text-sm items-center justify-center flex-shrink-0 self-stretch square-button border-2 border-red-normal rounded-lg px-1 py-2 w-16 sm:w-20 cursor-pointer hover:opacity-90 transition-opacity`">
                 <template #number class="flex flex-col gap-0 items-center justify-center">
-                  <span class="text-lg">
+                  <span class="text-sm sm:text-lg">
                     {{ totalCuration ? (aAmount / totalCuration * 100).toFixed(2) : '50' }}%
                   </span>
                   <span class="-mt-1">({{ aAmount.toFixed(0).toLocaleString() }})</span>
@@ -316,9 +316,9 @@ const confirmBuy = async () => {
             <TweetBtnCurate ref="curateBtnBRef" 
             :tweet="tweets[battle.predictBID]" 
             :hide-number="true" 
-            :btnclass="`flex flex-col text-blue-600 text-sm items-center justify-center flex-shrink-0 self-stretch square-button border-2 border-blue-600 rounded-lg px-1 py-2 w-16 sm:w-20 cursor-pointer hover:opacity-90 transition-opacity`">
+            :btnclass="`flex flex-col text-blue-600 text-xs sm:text-sm items-center justify-center flex-shrink-0 self-stretch square-button border-2 border-blue-600 rounded-lg px-1 py-2 w-16 sm:w-20 cursor-pointer hover:opacity-90 transition-opacity`">
               <template #number>
-                <span class="text-lg">
+                <span class="text-sm sm:text-lg">
                   {{ totalCuration ? (bAmount / totalCuration * 100).toFixed(2) : '50' }}%
                 </span>
                 <span class="-mt-1">({{ bAmount.toFixed(0).toLocaleString() }})</span>
