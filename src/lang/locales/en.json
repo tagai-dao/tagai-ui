@@ -312,7 +312,9 @@
     "spaceNotYours": "This space is not created by yourself",
     "spaceHasStarted": "This space has been started",
     "spaceHasEnded": "This space has been ended or cancelled",
-    "creditDescription": "The credit of a community is defined by the community itself, it can be composed of multiple factors."
+    "creditDescription": "The credit of a community is defined by the community itself, it can be composed of multiple factors.",
+    "communityCredit": "Community Credit",
+    "predictionCredit": "Prediction Credit"
   },
   "curation": {
     "tweetWithTickTip": "Write something about {tick}, you can earn {tick} if someone like your tweet.",
