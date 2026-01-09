@@ -65,6 +65,7 @@ async function onLoad() {
         const data: any = await getAggPredictBattleData(props.type, Math.floor((battles.value[props.type]?.length - 1) / 16) + 1)
         if (data.battle && data.battle.length > 0) {
             const marketInfos = await getMarketInfos(data.battle as BattleData[])
+            tweets = Object.assign(tweets, data.tweets)
             battles.value[props.type] = battles.value[props.type].concat((data.battle as BattleData[]).map(battle => ({
                 ...battle,
                 winner: getWinner(battle),

@@ -22,7 +22,7 @@ onMounted(async () => {
     market.value = {
         battle: {
             ...res.battle,
-            winner: getWinner(res.battle),
+            winner: getWinner(res),
             reserveA: marketInfos[res.battle.marketMaker + '-priceA'],
             reserveB: marketInfos[res.battle.marketMaker + '-priceB'],
             fee: marketInfos[res.battle.marketMaker + '-fee']
@@ -36,9 +36,10 @@ onMounted(async () => {
 })
 
 // 判断胜利者
-const getWinner = (battle: BattleData): 'left' | 'right' | null => {
-    const tweetA = market.value?.tweets[battle.predictAID]
-    const tweetB = market.value?.tweets[battle.predictBID]
+const getWinner = (market: MarketData): 'left' | 'right' | null => {
+
+    const tweetA = market.tweets[market.battle.predictAID]
+    const tweetB = market.tweets[market.battle.predictBID]
     if (tweetA && tweetB) {
         if (tweetA.isSettled && tweetB.isSettled) {
             return (tweetA.amount ?? 0) > (tweetB.amount ?? 0) ? 'left' : 'right'
