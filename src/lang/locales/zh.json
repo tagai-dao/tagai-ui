@@ -312,7 +312,9 @@
     "spaceNotYours": "这个Space不是由您创建的",
     "spaceHasStarted": "这场直播Space已经开始",
     "spaceHasEnded": "这场Space已经结束或被取消",
-    "creditDescription": "社区的信用值由社区自定义设定，可由多个因子组成。"
+    "creditDescription": "社区的信用值由社区自定义设定，可由多个因子组成。",
+    "communityCredit": "社区信用",
+    "predictionCredit": "预测信用"
   },
   "curation": {
     "tweetWithTickTip": "写一些关于带有标签 {tick} 的内容，如果有人喜欢您的推文，您可以赚取 {tick} 代币。",

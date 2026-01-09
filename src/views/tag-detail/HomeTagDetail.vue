@@ -5,7 +5,8 @@ import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType, type Tweet} from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import PredictBattle from "@/views/tag-detail/PredictBattle.vue";
-import TagCredit from "@/views/tag-detail/TagCredit.vue";
+import TagCredit from "@/views/tag-detail/.vue";
+import CreditIndex from "@/views/tag-detail/Credit/Index.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
@@ -496,7 +497,7 @@ onBeforeRouteLeave((to, from, next) => {
             <TagTippedContent v-if="activeTab==='tipped'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
-            <TagCredit v-if="activeTab==='credit'"/>
+            <CreditIndex v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
             <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
             <MiniAppIndex  v-if="activeTab==='activity'"/>
@@ -520,7 +521,7 @@ onBeforeRouteLeave((to, from, next) => {
                 <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
                 <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
                 <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg]">
+                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
                   {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
                 </div>
               </div>
