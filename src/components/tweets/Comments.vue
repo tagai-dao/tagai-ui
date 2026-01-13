@@ -100,7 +100,7 @@ onMounted(async () => {
               {{ parseTimestamp(reply.operateTime) }}
             </button>
           </div>
-          <div class="pl-12 mt-2">
+          <div @click.stop="gotoReply(reply)" class="pl-12 mt-2">
             {{ reply.content }}
           </div>
         </div>

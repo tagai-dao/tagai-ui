@@ -6,9 +6,10 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import Comments from "@/components/tweets/Comments.vue";
 import {onMounted, ref} from "vue";
 import CuratorsList from "@/components/tweets/CuratorsList.vue";
-import { useCurationStore } from "@/stores/curation";
+import { useCurationStore } from "@/stores/curation"
+import { useCommunityStore } from "@/stores/community"
 import { useRoute, useRouter } from "vue-router";
-import { getTweetById } from "@/apis/api";
+import { getCommunityDetail, getTweetById } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import { getTokenInfoOfTweets } from "@/utils/pump";
@@ -19,6 +20,7 @@ const route = useRoute()
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
+const comStore = useCommunityStore()
 
 onMounted(async () => {
   const tweetId = route.params.id;
@@ -30,7 +32,11 @@ onMounted(async () => {
     curationStore.currentSelectedTweet = null
   }
   curationStore.currentSelectedTweet = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId) as any
-  if (!curationStore.currentSelectedTweet) return
+  if (!curationStore.currentSelectedTweet?.tick) return
+
+  if (!comStore.currentSelectedCommunity) {
+    comStore.currentSelectedCommunity = await getCommunityDetail(curationStore.currentSelectedTweet.tick) as any
+  }
 
   if (curationStore.currentSelectedTweet.spaceId) {
     router.replace('/space-detail/' + tweetId)
