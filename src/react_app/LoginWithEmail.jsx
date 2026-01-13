@@ -142,8 +142,6 @@ export default function LoginWithEmail() {
 
     let userInfo = await privyEmailLogin(accessToken, email);
 
-    console.log(53, accessToken);
-
     emitter.emit('authSuccess', userInfo)
 
     // 检查是否已有 embedded wallet

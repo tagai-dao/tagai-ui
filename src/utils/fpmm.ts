@@ -26,7 +26,6 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
 
     const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
     distributionHint = Math.ceil(distributionHint)
-    console.log(53, distributionHint)
     // 生成lmsrMarketMaker
     const hash = await writeContract({
         contractName: 'FPMMDeterministicFactory',
