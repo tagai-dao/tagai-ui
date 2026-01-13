@@ -15,6 +15,7 @@ const finished = ref(false)
 const refreshing = ref(false)
 const redList = ref<FPMMUserHolding[]>([])
 const blueList = ref<FPMMUserHolding[]>([])
+const activeTab = ref<'red' | 'blue'>('red')
 
 const onLoad = async () => {
   try {
@@ -100,7 +101,26 @@ onActivated(() => {
 
 <template>
   <div class="bg-white rounded-2xl flex flex-col shadow-sm h-full">
-      <div class="p-4 border-b border-gray-100 font-bold text-gray-800">Top Holders</div>
+      <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex items-center justify-between">
+        <span class="hidden md:block">Top Holders</span>
+        <!-- Mobile Tab Switcher -->
+        <div class="flex md:hidden bg-gray-100 rounded-lg p-1 w-full text-sm font-medium">
+          <button 
+            class="flex-1 py-1.5 rounded-md transition-all duration-200"
+            :class="activeTab === 'red' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            @click="activeTab = 'red'"
+          >
+            Red Holders
+          </button>
+          <button 
+            class="flex-1 py-1.5 rounded-md transition-all duration-200"
+            :class="activeTab === 'blue' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+            @click="activeTab = 'blue'"
+          >
+            Blue Holders
+          </button>
+        </div>
+      </div>
       
       <div class="custom-scrollbar flex-1 overflow-y-auto min-h-0">
           <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
@@ -113,8 +133,8 @@ onActivated(() => {
             >
               <div class="flex gap-4 p-4 min-h-[200px]">
                   <!-- Left (Red) Holders -->
-                  <div class="flex-1 flex flex-col gap-3">
-                      <div class="text-xs font-bold text-red-600 uppercase tracking-wider mb-2 border-b border-red-100 pb-2">Red Holders</div>
+                  <div class="flex-1 flex flex-col gap-3" :class="activeTab === 'red' ? 'flex' : 'hidden md:flex'">
+                      <div class="hidden md:block text-xs font-bold text-red-600 uppercase tracking-wider mb-2 border-b border-red-100 pb-2">Red Holders</div>
                       <div v-for="(holder, idx) in redList" :key="holder.ethAddr + 'red'" 
                       v-show="holder.ethAddr != market.battle.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100">
@@ -135,11 +155,11 @@ onActivated(() => {
                   </div>
 
                   <!-- Vertical Divider -->
-                  <div class="w-px bg-gray-100"></div>
+                  <div class="w-px bg-gray-100 hidden md:block"></div>
 
                   <!-- Right (Blue) Holders -->
-                  <div class="flex-1 flex flex-col gap-3">
-                      <div class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 border-b border-blue-100 pb-2">Blue Holders</div>
+                  <div class="flex-1 flex flex-col gap-3" :class="activeTab === 'blue' ? 'flex' : 'hidden md:flex'">
+                      <div class="hidden md:block text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 border-b border-blue-100 pb-2">Blue Holders</div>
                        <div v-for="(holder, idx) in blueList" :key="holder.ethAddr + 'blue'" 
                        v-show="holder.ethAddr != market.battle.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
