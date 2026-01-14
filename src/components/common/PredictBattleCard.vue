@@ -40,6 +40,10 @@ const totalCuration = computed(() => {
   return aAmount.value + bAmount.value
 })
 
+const isSettled = computed(() => {
+  return props.battle.status !== 1 || (Math.max(props.tweets[props.battle.predictAID]?.dayNumber, props.tweets[props.battle.predictBID]?.dayNumber) + 3) * 86400000 < Date.now()
+})
+
 const openTweet = () => {
   router.push(`/predict-detail/${props.battle.marketMaker}`)
 }
@@ -334,7 +338,7 @@ const confirmBuy = async () => {
                 <button 
                   class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
                   @click="buyRed()"
-                  :disabled="battle.status !== 1 || (tweets[battle.predictAID]?.dayNumber + 3) * 86400000 < Date.now()"
+                  :disabled="isSettled"
                 >
                   {{ $t('predictTrade.buyRed') || '购买红色' }}
                  ({{ percentA.toFixed(2) }})
@@ -342,7 +346,7 @@ const confirmBuy = async () => {
                 <button 
                   class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
                   @click="buyBlue()"
-                  :disabled="battle.status !== 1 || (tweets[battle.predictBID]?.dayNumber + 3) * 86400000 < Date.now()"
+                  :disabled="isSettled"
                 >
                   {{ $t('predictTrade.buyBlue') || '购买蓝色' }}
                   ({{ percentB.toFixed(2) }})

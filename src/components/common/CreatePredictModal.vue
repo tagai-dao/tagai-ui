@@ -157,14 +157,14 @@ const createPredict = async () => {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
-  if (!(await validateForm())) {
-    return
-  }
   
   createLoading.value = true
   const accInfo = accStore.getAccountInfo
   
   try {
+    if (!(await validateForm())) {
+      return
+    }
     // 检查用户余额是否足够
     const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
     if (b < parseUnits(formData.initAmount.toString(), 18)) {
