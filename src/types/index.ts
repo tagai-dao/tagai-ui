@@ -283,6 +283,7 @@ export type Community = OnchainTokenInfo & {
   createdByAi?: number | null | undefined;
   distribution: string;
   creditPolicy?: string;
+  predictionCreditPolicy?: string;
   deboxConversationId?: string;
   feePath?: string | object | null | undefined,
 };
@@ -453,6 +454,8 @@ export type BattleData = {
   token: string,
   reserveA: number | undefined | null,
   reserveB: number | undefined | null,
+  amounta: number | undefined | null,  // community members vote volume by prediction credit
+  amountb: number | undefined | null,
   solvedBalances: Array<number> | undefined | null,
   title: string,
   predictAID: string,

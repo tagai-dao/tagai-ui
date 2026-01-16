@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getHolderList, getCommunityCredits } from '@/apis/api'
+import { getHolderList, getCommunityPredictionCredits } from '@/apis/api'
 import { useTools } from '@/composables/useTools';
 import { useCommunityStore } from '@/stores/community';
 import { type CommunityCredit } from '@/types';
@@ -65,7 +65,9 @@ async function onRefresh() {
   refreshing.value = true;
   finished.value = false;
   try{
-    let list: any = await getCommunityCredits(comStore.currentSelectedCommunity!.tick)
+    console.log(1)
+    let list: any = await getCommunityPredictionCredits(comStore.currentSelectedCommunity!.tick)
+    console.log(2, list)
     if (list && list.length > 0) {
       holdingList.value = list as CommunityCredit[];
     }
@@ -84,7 +86,7 @@ async function onLoad() {
   if (refreshing.value || finished.value || holdingList.value.length == 0) return;
   loading.value = true;
   try{
-    let list: any = await getCommunityCredits(comStore.currentSelectedCommunity!.tick, Math.floor((holdingList.value.length - 1) / 30) + 1);
+    let list: any = await getCommunityPredictionCredits(comStore.currentSelectedCommunity!.tick, Math.floor((holdingList.value.length - 1) / 30) + 1);
 
     if (list && list.length > 0) {
       holdingList.value = holdingList.value.concat(list as CommunityCredit[]);
@@ -117,7 +119,7 @@ onMounted(async () => {
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
   }
-  let creditPolicy = comStore.currentSelectedCommunity.creditPolicy
+  let creditPolicy = comStore.currentSelectedCommunity.predictionCreditPolicy ?? comStore.currentSelectedCommunity.creditPolicy
   if (!creditPolicy) {
     pieChartOptions.value = {
       chart: {

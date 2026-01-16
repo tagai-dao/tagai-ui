@@ -37,8 +37,6 @@ async function fetchData(isUpdate = false) {
       true
     );
 
-    console.log(53, res)
-
     if (res && res.length > 0) {
       const newItems = res as KlineData[];
       

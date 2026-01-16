@@ -30,10 +30,10 @@ const bnbFee = ref(0);
 const trading = ref(false);
 
 const aAmount = computed(() => {
-  return props.tweets[props.battle.predictAID]?.amount ?? 0
+  return props.battle.amounta || (props.tweets[props.battle.predictAID]?.amount ?? 0)
 })
 const bAmount = computed(() => {
-  return props.tweets[props.battle.predictBID]?.amount ?? 0
+  return props.battle.amountb || (props.tweets[props.battle.predictBID]?.amount ?? 0)
 })
 
 const totalCuration = computed(() => {

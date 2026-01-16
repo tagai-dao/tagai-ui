@@ -163,6 +163,9 @@ export const updateCommunityInfo = async (community: Community, twitterId: strin
 export const getCommunityCredits = async (tick: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/communityCredits', {tick, pages})
 
+export const getCommunityPredictionCredits = async (tick: string, pages?: number) =>
+  get(BACKEND_API_URL + '/community/communityPredictionCredits', {tick, pages})
+
 export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
   get(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
 

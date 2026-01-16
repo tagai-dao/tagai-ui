@@ -19,10 +19,10 @@ const openTweet = (tweet: Tweet) => {
 }
 
 const aAmount = computed(() => {
-  return props.market.tweets[props.market.battle.predictAID]?.amount ?? 0
+  return props.market.battle.amounta || (props.market.tweets[props.market.battle.predictAID]?.amount ?? 0)
 })
 const bAmount = computed(() => {
-  return props.market.tweets[props.market.battle.predictBID]?.amount ?? 0
+  return props.market.battle.amountb || (props.market.tweets[props.market.battle.predictBID]?.amount ?? 0)
 })
 
 const totalCuration = computed(() => {
