@@ -21,7 +21,7 @@ const accStore = useAccountStore()
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
 const userBalance = ref(0)
-const { accountMismatch } = useAccount()
+const { accountMismatch, op } = useAccount()
 
 // Tab状态
 const activeTab = ref<'event' | 'battle'>('event')
@@ -290,7 +290,7 @@ const validateRealWorldForm = (): boolean => {
     isValid = false
   } else {
     // 简单检查日期是否在未来
-    if (new Date(realWorldFormData.announceDate).getTime() < Date.now()) {
+    if (new Date(realWorldFormData.announceDate).getTime() <= Date.now()) {
       realWorldErrors.announceDate = t('createPredict.announceDateFuture')
       isValid = false
     }
@@ -302,6 +302,15 @@ const validateRealWorldForm = (): boolean => {
     isValid = false
   } else if (isNaN(Number(realWorldFormData.initAmount)) || Number(realWorldFormData.initAmount) <= 0) {
     realWorldErrors.initAmount = t('createPredict.invalidAmount')
+    isValid = false
+  } else if (Number(realWorldFormData.initAmount) > userBalance.value) {
+    realWorldErrors.initAmount = t('errMessage.insufficientBalance')
+    isValid = false
+  }
+
+  // 验证OP
+  if (op.value < 200) {
+    notify({ message: t('errMessage.insufficientOp'), type: 'info' })
     isValid = false
   }
 
