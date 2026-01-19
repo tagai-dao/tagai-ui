@@ -5,7 +5,6 @@ import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType, type Tweet} from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import PredictBattle from "@/views/tag-detail/PredictBattle.vue";
-import TagCredit from "@/views/tag-detail/.vue";
 import CreditIndex from "@/views/tag-detail/Credit/Index.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
