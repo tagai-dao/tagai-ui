@@ -353,8 +353,8 @@ onMounted(async () => {
     </div>
 
     <!-- 标题 (通用) -->
-    <div class="text-center mb-6" v-if="activeTab === 'battle'">
-      <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
+    <div class="text-left mb-6" v-if="activeTab === 'battle'">
+      <!-- <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
         {{ $t('createPredict.title') }}
         <el-tooltip
           class="box-item"
@@ -366,11 +366,11 @@ onMounted(async () => {
             ?
           </button>
         </el-tooltip>
-      </h2>
-      <p class="text-grey-normal text-sm">{{ $t('createPredict.subtitle') }}</p>
+      </h2> -->
+      <p class="text-grey-normal text-sm">{{ $t('createPredict.tabBattleDesc') }}</p>
     </div>
-    <div class="text-center mb-6" v-else>
-      <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
+    <div class="text-left mb-6" v-else>
+      <!-- <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
         {{ $t('createPredict.eventTitle') }}
         <el-tooltip
           class="box-item"
@@ -382,8 +382,8 @@ onMounted(async () => {
             ?
           </button>
         </el-tooltip>
-      </h2>
-      <p class="text-grey-normal text-sm">{{ $t('createPredict.eventSubtitle') }}</p>
+      </h2> -->
+      <p class="text-grey-normal text-sm">{{ $t('createPredict.tabEventDesc') }}</p>
     </div>
 
     <!-- 预测对战表单 -->
