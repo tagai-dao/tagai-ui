@@ -90,7 +90,7 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
     const tweetB = tweets[battle.predictBID]
     if (tweetA && tweetB) {
         if (tweetA.isSettled && tweetB.isSettled) {
-            return (tweetA.amount ?? 0) > (tweetB.amount ?? 0) ? 'left' : 'right'
+            return (battle.amounta || (tweetA.amount ?? 0)) > (battle.amountb || (tweetB.amount ?? 0)) ? 'left' : 'right'
         }
         return null
     }
