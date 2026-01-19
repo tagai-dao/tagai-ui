@@ -22,7 +22,11 @@ const modalStore = useModalStore()
 const comStore = useCommunityStore()
 const userBalance = ref(0)
 const { accountMismatch } = useAccount()
-// 表单数据
+
+// Tab状态
+const activeTab = ref<'event' | 'battle'>('event')
+
+// 表单数据 - 对战
 const formData = reactive({
   title: '',
   predict1: '',
@@ -33,11 +37,28 @@ const formData = reactive({
   distributionHint: 50
 })
 
-// 错误信息
+// 表单数据 - 真实世界
+const realWorldFormData = reactive({
+  title: '',
+  body: '',
+  announceDate: '',
+  initAmount: '',
+  distributionHint: 50
+})
+
+// 错误信息 - 对战
 const errors = reactive({
   title: '',
   predict1: '',
   predict2: '',
+  initAmount: ''
+})
+
+// 错误信息 - 真实世界
+const realWorldErrors = reactive({
+  title: '',
+  body: '',
+  announceDate: '',
   initAmount: ''
 })
 
@@ -52,7 +73,7 @@ const validateTwitterUrl = (url: string): RegExpMatchArray | null => {
   return url.trim().match(twitterUrlRegex)
 }
 
-// 验证表单
+// 验证表单 - 对战
 const validateForm = async (): Promise<boolean> => {
   
   // 重置错误信息
@@ -151,7 +172,58 @@ const validateForm = async (): Promise<boolean> => {
   return true
 }
 
-// 创建预测
+// 验证表单 - 真实世界
+const validateRealWorldForm = (): boolean => {
+  realWorldErrors.title = ''
+  realWorldErrors.body = ''
+  realWorldErrors.announceDate = ''
+  realWorldErrors.initAmount = ''
+
+  let isValid = true
+
+  // 验证标题
+  if (!realWorldFormData.title.trim()) {
+    realWorldErrors.title = t('createPredict.titleRequired')
+    isValid = false
+  } else if (realWorldFormData.title.trim().length < 3) {
+    realWorldErrors.title = t('createPredict.titleTooShort')
+    isValid = false
+  } else if (realWorldFormData.title.trim().length > 100) {
+    realWorldErrors.title = t('createPredict.titleTooLong')
+    isValid = false
+  }
+
+  // 验证内容
+  if (!realWorldFormData.body.trim()) {
+    realWorldErrors.body = t('createPredict.bodyRequired')
+    isValid = false
+  }
+
+  // 验证日期
+  if (!realWorldFormData.announceDate) {
+    realWorldErrors.announceDate = t('createPredict.announceDateRequired')
+    isValid = false
+  } else {
+    // 简单检查日期是否在未来
+    if (new Date(realWorldFormData.announceDate).getTime() < Date.now()) {
+      realWorldErrors.announceDate = t('createPredict.announceDateFuture')
+      isValid = false
+    }
+  }
+
+  // 验证初始资金
+  if (!realWorldFormData.initAmount) {
+    realWorldErrors.initAmount = t('createPredict.amountRequired')
+    isValid = false
+  } else if (isNaN(Number(realWorldFormData.initAmount)) || Number(realWorldFormData.initAmount) <= 0) {
+    realWorldErrors.initAmount = t('createPredict.invalidAmount')
+    isValid = false
+  }
+
+  return isValid
+}
+
+// 创建预测 - 对战
 const createPredict = async () => {
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
@@ -162,41 +234,64 @@ const createPredict = async () => {
   const accInfo = accStore.getAccountInfo
   
   try {
-    if (!(await validateForm())) {
-      return
+    if (activeTab.value === 'battle') {
+        if (!(await validateForm())) {
+            return
+        }
+        // 检查用户余额是否足够
+        const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
+        if (b < parseUnits(formData.initAmount.toString(), 18)) {
+            notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
+            return;
+        }
+
+        useModalStore().setModalCloseEnable(false);
+
+        // 预创建市场记录，并生成questionid
+        const preMarketData: any = await preCreateFPMMMarket(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId);
+        console.log(633, preMarketData)
+        let { questionId, needOP, feePath, dayNumber } = preMarketData;
+
+        if (feePath && typeof(feePath) === 'string') {
+        feePath = JSON.parse(feePath)
+        }
+
+        if (!(await preCheckCuration(OperateType.CREATE_PREDICT, undefined, needOP))) {
+        notify({ message: t('errMessage.insufficientOp'), type: 'info' })
+        return;
+        }
+
+        // 开始创建市场
+        const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], formData.distributionHint, (dayNumber + 3) * 86400, parseUnits(formData.initAmount.toString(), 18))
+        console.log({hash, fpmmMaker})
+        await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
+        console.log('创建预测:', formData, fpmmMaker, hash)
+        // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
+        useModalStore().setModalCloseEnable(true);
+        modalStore.setModalVisible(false);
+        emitter.emit('createPredictSuccess')
+    } else {
+        // Real World Predict Creation Logic
+        if (!validateRealWorldForm()) {
+            return
+        }
+        
+         // 检查用户余额是否足够
+        const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
+        if (b < parseUnits(realWorldFormData.initAmount.toString(), 18)) {
+            notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
+            return;
+        }
+        
+        console.log(t('createPredict.createRealWorld'), realWorldFormData)
+        // TODO: 调用后端API
+        // 模拟成功
+        // notify({ message: '创建成功(模拟)', type: 'success' })
+        // modalStore.setModalVisible(false)
+        useModalStore().setModalCloseEnable(true); // Ensure modal can be closed if it fails or finishes
+        // Temporary: keep modal open or close? User said "API pending", so maybe just log.
     }
-    // 检查用户余额是否足够
-    const b = await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)
-    if (b < parseUnits(formData.initAmount.toString(), 18)) {
-      notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
-      return;
-    }
 
-    useModalStore().setModalCloseEnable(false);
-
-    // 预创建市场记录，并生成questionid
-    const preMarketData: any = await preCreateFPMMMarket(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId);
-    console.log(633, preMarketData)
-    let { questionId, needOP, feePath, dayNumber } = preMarketData;
-
-    if (feePath && typeof(feePath) === 'string') {
-      feePath = JSON.parse(feePath)
-    }
-
-    if (!(await preCheckCuration(OperateType.CREATE_PREDICT, undefined, needOP))) {
-      notify({ message: t('errMessage.insufficientOp'), type: 'info' })
-      return;
-    }
-
-    // 开始创建市场
-    const { hash, fpmmMaker } = await createMarket(questionId, comStore.currentSelectedCommunity?.token as `0x${string}`, feePath ?? [], formData.distributionHint, (dayNumber + 3) * 86400, parseUnits(formData.initAmount.toString(), 18))
-    console.log({hash, fpmmMaker})
-    await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
-    console.log('创建预测:', formData, fpmmMaker, hash)
-    // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
-    useModalStore().setModalCloseEnable(true);
-    modalStore.setModalVisible(false);
-    emitter.emit('createPredictSuccess')
   } catch (error) {
     console.log(66, error)
     handleErrorTip(error)
@@ -218,6 +313,16 @@ const closeModal = () => {
   errors.predict1 = ''
   errors.predict2 = ''
   errors.initAmount = ''
+
+  // 重置真实世界表单
+  realWorldFormData.title = ''
+  realWorldFormData.body = ''
+  realWorldFormData.announceDate = ''
+  realWorldFormData.initAmount = ''
+  realWorldErrors.title = ''
+  realWorldErrors.body = ''
+  realWorldErrors.announceDate = ''
+  realWorldErrors.initAmount = ''
 }
 
 onMounted(async () => {
@@ -228,14 +333,61 @@ onMounted(async () => {
 
 <template>
   <div class="create-predict-modal">
-    <!-- 标题 -->
-    <div class="text-center mb-6">
-      <h2 class="text-2xl font-bold text-black mb-2">{{ $t('createPredict.title') }}</h2>
-      <p class="text-grey-normal text-sm">{{ $t('createPredict.subtitle') }}</p>
+    <!-- Tabs -->
+    <div class="flex p-1 bg-gray-100 rounded-lg mb-6">
+
+      <button 
+        class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200"
+        :class="activeTab === 'event' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
+        @click="activeTab = 'event'"
+      >
+        {{ $t('createPredict.tabEvent') }}
+      </button>
+      <button 
+        class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200"
+        :class="activeTab === 'battle' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
+        @click="activeTab = 'battle'"
+      >
+        {{ $t('createPredict.tabBattle') }}
+      </button>
     </div>
 
-    <!-- 表单 -->
-    <div class="space-y-4">
+    <!-- 标题 (通用) -->
+    <div class="text-center mb-6" v-if="activeTab === 'battle'">
+      <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
+        {{ $t('createPredict.title') }}
+        <el-tooltip
+          class="box-item"
+          effect="dark"
+          :content="$t('createPredict.tabBattleDesc')"
+          placement="top"
+        >
+          <button class="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+            ?
+          </button>
+        </el-tooltip>
+      </h2>
+      <p class="text-grey-normal text-sm">{{ $t('createPredict.subtitle') }}</p>
+    </div>
+    <div class="text-center mb-6" v-else>
+      <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
+        {{ $t('createPredict.eventTitle') }}
+        <el-tooltip
+          class="box-item"
+          effect="dark"
+          :content="$t('createPredict.tabEventDesc')"
+          placement="top"
+        >
+          <button class="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+            ?
+          </button>
+        </el-tooltip>
+      </h2>
+      <p class="text-grey-normal text-sm">{{ $t('createPredict.eventSubtitle') }}</p>
+    </div>
+
+    <!-- 预测对战表单 -->
+    <div class="space-y-4" v-if="activeTab === 'battle'">
       <!-- 预测标题 -->
       <div>
         <label class="block text-sm font-medium text-black mb-2">
@@ -381,6 +533,164 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- 真实世界预测表单 -->
+    <div class="space-y-4" v-else-if="activeTab === 'event'">
+        <!-- 标题 -->
+        <div>
+            <label class="block text-sm font-medium text-black mb-2">
+            {{ $t('createPredict.titleLabel') }}
+            <span class="text-red-500">*</span>
+            </label>
+            <input
+            v-model="realWorldFormData.title"
+            type="text"
+            :placeholder="$t('createPredict.titlePlaceholderEvent')"
+            class="w-full px-4 py-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            :class="{
+                'border-red-500': realWorldErrors.title,
+                'border-grey-light': !realWorldErrors.title
+            }"
+            maxlength="100"
+            />
+            <div v-if="realWorldErrors.title" class="text-red-500 text-sm mt-1">
+            {{ realWorldErrors.title }}
+            </div>
+            <div class="text-grey-normal text-xs mt-1">
+            {{ realWorldFormData.title.length }}/100 {{ $t('createPredict.characters') }}
+            </div>
+        </div>
+
+        <!-- 预测内容主体 -->
+        <div>
+            <label class="block text-sm font-medium text-black mb-2">
+            {{ $t('createPredict.bodyLabel') }}
+            <span class="text-red-500">*</span>
+            </label>
+            <textarea
+            v-model="realWorldFormData.body"
+            :placeholder="$t('createPredict.bodyPlaceholder')"
+            rows="4"
+            class="w-full px-4 py-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            :class="{
+                'border-red-500': realWorldErrors.body,
+                'border-grey-light': !realWorldErrors.body
+            }"
+            ></textarea>
+            <div v-if="realWorldErrors.body" class="text-red-500 text-sm mt-1">
+            {{ realWorldErrors.body }}
+            </div>
+        </div>
+
+        <!-- 事件公布日期 -->
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-black mb-2">
+            {{ $t('createPredict.announceDateLabel') }}
+            <span class="text-red-500">*</span>
+            <el-tooltip
+                class="box-item"
+                effect="dark"
+                :content="$t('createPredict.announceDateTip')"
+                placement="top"
+            >
+                <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+                ?
+                </button>
+            </el-tooltip>
+            </label>
+            <el-date-picker
+                v-model="realWorldFormData.announceDate"
+                type="datetime"
+                :placeholder="$t('createPredict.announceDatePlaceholder')"
+                class="w-full !w-full"
+                format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                :class="{
+                    'border-red-500': realWorldErrors.announceDate
+                }"
+            />
+            <div v-if="realWorldErrors.announceDate" class="text-red-500 text-sm mt-1">
+            {{ realWorldErrors.announceDate }}
+            </div>
+        </div>
+
+        <!-- Initial Ratio Slider -->
+        <div>
+            <div class="flex justify-between items-center mb-2">
+            <label class="flex items-center gap-1 text-sm font-medium text-black">
+                {{ $t('createPredict.initialRatio') }}
+                <span class="text-red-500">*</span>
+                <el-tooltip
+                class="box-item"
+                effect="dark"
+                :content="$t('createPredict.initialRatioTip')"
+                placement="top"
+                >
+                <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+                    ?
+                </button>
+                </el-tooltip>
+            </label>
+            <span class="text-sm font-medium">
+                <span class="text-red-500">{{ realWorldFormData.distributionHint }}%</span> / <span class="text-blue-500">{{ 100 - realWorldFormData.distributionHint }}%</span>
+            </span>
+            </div>
+            
+            <div class="relative h-6 flex items-center">
+            <input 
+                type="range" 
+                v-model.number="realWorldFormData.distributionHint" 
+                min="1" 
+                max="99"
+                class="w-full h-2 rounded-lg appearance-none cursor-pointer slider-thumb"
+                :style="{
+                background: `linear-gradient(to right, #ef4444 ${realWorldFormData.distributionHint}%, #3b82f6 ${realWorldFormData.distributionHint}%)`
+                }"
+            />
+            </div>
+        </div>
+
+        <!-- 注入资金 -->
+        <div>
+            <label class="flex items-center gap-1 text-sm font-medium text-black mb-2">
+            {{ $t('createPredict.initAmount') }}
+            <span class="text-red-500">*</span>
+            <el-tooltip
+                class="box-item"
+                effect="dark"
+                :content="$t('createPredict.initAmountTip')"
+                placement="top"
+            >
+                <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
+                ?
+                </button>
+            </el-tooltip>
+            </label>
+            <div class="relative">
+            <input
+                v-model="realWorldFormData.initAmount"
+                type="number"
+                step="0.0001"
+                min="0"
+                :placeholder="$t('createPredict.amountPlaceholder')"
+                class="w-full px-4 py-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-20"
+                :class="{
+                'border-red-500': realWorldErrors.initAmount,
+                'border-grey-light': !realWorldErrors.initAmount
+                }"
+            />
+            <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-grey-normal text-sm font-medium">{{ comStore.currentSelectedCommunity?.tick }}</span>
+            </div>
+            <div class="flex justify-between items-start mt-1">
+            <div class="text-red-500 text-sm">
+                {{ realWorldErrors.initAmount }}
+            </div>
+            <div class="text-grey-normal text-xs text-right ml-auto">
+                {{ $t('balance') }}: {{ formatAmount(userBalance)}} {{ comStore.currentSelectedCommunity?.tick }}
+            </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 按钮区域 -->
     <div class="gap-3 mt-8">
       <button
@@ -407,12 +717,12 @@ onMounted(async () => {
 }
 
 /* 输入框聚焦样式 */
-input:focus {
+input:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* 错误状态样式 */
-input.border-red-500:focus {
+input.border-red-500:focus, textarea.border-red-500:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
@@ -437,5 +747,16 @@ input.border-red-500:focus {
   border: 2px solid #e5e7eb;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Element Plus DatePicker Customization if needed */
+:deep(.el-input__wrapper) {
+  padding: 11px 16px;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 1px #e5e7eb inset;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #3b82f6 inset !important;
 }
 </style>

@@ -460,7 +460,22 @@
     "amountRequired": "Please enter amount",
     "initialRatio": "Initial Ratio",
     "initialRatioTip": "Set initial prediction probability. For example, if you think the Red side has a 70% chance of winning, you can drag the slider so the Red part takes up 70%.",
-    "creatingTip": "Please do not close this window before the creation is complete"
+    "creatingTip": "Please do not close this window before the creation is complete",
+    "tabBattle": "Battle Prediction",
+    "tabEvent": "Real World Prediction",
+    "eventTitle": "Create Event Prediction",
+    "eventSubtitle": "Predict the outcome of real-world events",
+    "titleLabel": "Title",
+    "titlePlaceholderEvent": "Enter event prediction title",
+    "bodyLabel": "Prediction Content",
+    "bodyPlaceholder": "Describe the content and rules of the prediction event in detail...",
+    "announceDateLabel": "Announcement Date",
+    "announceDatePlaceholder": "Select date and time",
+    "bodyRequired": "Please enter prediction content",
+    "announceDateRequired": "Please select announcement date",
+    "announceDateFuture": "Announcement date must be in the future",
+    "tabBattleDesc": "Based on the battle between tweets from two communities, prediction is based on 2+1 days of curation by community members. When the post is settled, the side with higher curation weight wins, and users can redeem prediction rewards.",
+    "tabEventDesc": "Prediction is based on the content described in the prediction subject. Currently, only binary prediction is supported. Tagai will create a prediction market with Yes and No results for each prediction. After the set event end time arrives, trading will automatically stop. In the following 24 hours, users with community prediction credit can vote on the result. The final result will be determined by the side with higher voting weight and published on-chain. The winning side of the vote will share a portion of the transaction fees."
   },
   "predictTrade": {
     "shareAmount": "Shares to Trade",

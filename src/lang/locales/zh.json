@@ -460,7 +460,22 @@
     "amountRequired": "请输入金额",
     "initialRatio": "初始比例",
     "initialRatioTip": "设置初始的预测概率，比如，你认为红方胜出的概率是70%，那么你可以拖动滑条使红方部分占70%",
-    "creatingTip": "请不要关闭此窗口，直到创建完成"
+    "creatingTip": "请不要关闭此窗口，直到创建完成",
+    "tabBattle": "预测对战",
+    "tabEvent": "事件预测",
+    "eventTitle": "创建事件预测",
+    "eventSubtitle": "预测现实世界事件结果",
+    "titleLabel": "标题",
+    "titlePlaceholderEvent": "请输入预测事件标题",
+    "bodyLabel": "预测内容主体",
+    "bodyPlaceholder": "详细描述预测事件的内容和规则...",
+    "announceDateLabel": "事件公布日期",
+    "announceDatePlaceholder": "选择日期时间",
+    "bodyRequired": "请输入预测内容主体",
+    "announceDateRequired": "请选择事件公布日期",
+    "announceDateFuture": "事件公布日期必须在未来",
+    "tabBattleDesc": "基于两个社区的推文进行pk对战，根据社区成员持续2+1天的策展情况进行预测，帖子结算时，策展权重更高的一方将获胜，用户即可兑付预测奖励。",
+    "tabEventDesc": "根据预测内容主体描述的内容进行预测，目前只支持二元预测。Tagai会为每个预测创建Yes和No两个结果的预测市场。在设置的事件结束时间到达后，交易将自动停止，后续的24小时中，拥有社区预测credit的用户可以对结果进行投票，最终结果以投票权重高的一方为准，并且将该结果公布到链上。投票获胜的一方将瓜分部分交易手续费。"
   },
   "predictTrade": {
     "shareAmount": "交易份额数量",
