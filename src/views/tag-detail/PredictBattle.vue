@@ -113,7 +113,7 @@ onMounted(async () => {
     <div class="flex justify-end items-center p-2">
       <button class="flex gap-2 items-center cursor-pointer px-4 py-0 rounded-full bg-gradient-primary text-white"
               @click="createPredictBattle">
-        <span class="text-2xl">+</span>
+        <span class="text-2xl -mt-1">+</span>
         <span class="whitespace-nowrap">{{$t('createPredictBattle')}}</span>
       </button>
     </div>

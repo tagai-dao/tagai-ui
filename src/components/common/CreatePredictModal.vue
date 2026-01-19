@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
@@ -25,6 +25,88 @@ const { accountMismatch } = useAccount()
 
 // Tab状态
 const activeTab = ref<'event' | 'battle'>('event')
+
+// 描述文字展开/收起状态
+const battleDescExpanded = ref(false)
+const eventDescExpanded = ref(false)
+const battleDescRef = ref<HTMLElement | null>(null)
+const eventDescRef = ref<HTMLElement | null>(null)
+const battleDescNeedMore = ref(false)
+const eventDescNeedMore = ref(false)
+
+// 检查文字是否需要展开按钮
+const checkDescOverflow = async () => {
+  await nextTick()
+  // 检查 Battle 描述
+  if (battleDescRef.value) {
+    const element = battleDescRef.value
+    // 创建一个隐藏的副本来测量完整高度
+    const clone = element.cloneNode(true) as HTMLElement
+    clone.style.position = 'absolute'
+    clone.style.visibility = 'hidden'
+    clone.style.height = 'auto'
+    clone.style.maxHeight = 'none'
+    clone.style.width = element.offsetWidth + 'px'
+    clone.classList.remove('line-clamp-2')
+    document.body.appendChild(clone)
+    const fullHeight = clone.scrollHeight
+    document.body.removeChild(clone)
+    // 计算2行的预期高度
+    const computedStyle = window.getComputedStyle(element)
+    const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.5
+    const expectedHeight = lineHeight * 2
+    battleDescNeedMore.value = fullHeight > expectedHeight + 1
+  }
+  // 检查 Event 描述
+  if (eventDescRef.value) {
+    const element = eventDescRef.value
+    const clone = element.cloneNode(true) as HTMLElement
+    clone.style.position = 'absolute'
+    clone.style.visibility = 'hidden'
+    clone.style.height = 'auto'
+    clone.style.maxHeight = 'none'
+    clone.style.width = element.offsetWidth + 'px'
+    clone.classList.remove('line-clamp-2')
+    document.body.appendChild(clone)
+    const fullHeight = clone.scrollHeight
+    document.body.removeChild(clone)
+    const computedStyle = window.getComputedStyle(element)
+    const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.5
+    const expectedHeight = lineHeight * 2
+    eventDescNeedMore.value = fullHeight > expectedHeight + 1
+  }
+}
+
+// 切换描述文字展开/收起
+const toggleBattleDesc = () => {
+  battleDescExpanded.value = !battleDescExpanded.value
+}
+
+const toggleEventDesc = () => {
+  eventDescExpanded.value = !eventDescExpanded.value
+}
+
+// 监听 Tab 切换，重置展开状态
+watch(activeTab, () => {
+  battleDescExpanded.value = false
+  eventDescExpanded.value = false
+  nextTick(() => {
+    checkDescOverflow()
+  })
+})
+
+// 监听国际化语言变化，重新检查
+watch(() => t('createPredict.tabBattleDesc'), () => {
+  nextTick(() => {
+    checkDescOverflow()
+  })
+})
+
+watch(() => t('createPredict.tabEventDesc'), () => {
+  nextTick(() => {
+    checkDescOverflow()
+  })
+})
 
 // 表单数据 - 对战
 const formData = reactive({
@@ -197,6 +279,9 @@ const validateRealWorldForm = (): boolean => {
   if (!realWorldFormData.body.trim()) {
     realWorldErrors.body = t('createPredict.bodyRequired')
     isValid = false
+  } else if (realWorldFormData.body.trim().length > 300) {
+    realWorldErrors.body = t('createPredict.bodyTooLong')
+    isValid = false
   }
 
   // 验证日期
@@ -328,11 +413,22 @@ const closeModal = () => {
 onMounted(async () => {
   // @ts-ignore
   userBalance.value = Number((await getTokenBalance(comStore.currentSelectedCommunity?.token as `0x${string}`)).toString() / 1e18)
+  // 检查描述文字是否需要展开按钮
+  await nextTick()
+  checkDescOverflow()
 })
 </script>
 
 <template>
   <div class="create-predict-modal">
+    <!-- 关闭按钮 -->
+    <img
+      class="absolute top-4 right-4 sm:top-6 sm:right-6 cursor-pointer w-6 h-6 hover:opacity-70 transition-opacity z-10"
+      @click="closeModal"
+      src="~@/assets/icons/icon-modal-close.svg"
+      alt="Close"
+    />
+    
     <!-- Tabs -->
     <div class="flex p-1 bg-gray-100 rounded-lg mb-6">
 
@@ -354,36 +450,40 @@ onMounted(async () => {
 
     <!-- 标题 (通用) -->
     <div class="text-left mb-6" v-if="activeTab === 'battle'">
-      <!-- <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
-        {{ $t('createPredict.title') }}
-        <el-tooltip
-          class="box-item"
-          effect="dark"
-          :content="$t('createPredict.tabBattleDesc')"
-          placement="top"
+      <div class="relative">
+        <p 
+          ref="battleDescRef"
+          class="text-grey-normal text-sm"
+          :class="!battleDescExpanded && battleDescNeedMore ? 'line-clamp-2' : ''"
         >
-          <button class="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
-            ?
-          </button>
-        </el-tooltip>
-      </h2> -->
-      <p class="text-grey-normal text-sm">{{ $t('createPredict.tabBattleDesc') }}</p>
+          {{ $t('createPredict.tabBattleDesc') }}
+        </p>
+        <button
+          v-if="battleDescNeedMore"
+          @click="toggleBattleDesc"
+          class="text-blue-500 underline text-sm mt-1 inline-block hover:text-blue-600 transition-colors"
+        >
+          {{ battleDescExpanded ? $t('less') : $t('more') }}
+        </button>
+      </div>
     </div>
     <div class="text-left mb-6" v-else>
-      <!-- <h2 class="text-2xl font-bold text-black mb-2 flex items-center justify-center gap-2">
-        {{ $t('createPredict.eventTitle') }}
-        <el-tooltip
-          class="box-item"
-          effect="dark"
-          :content="$t('createPredict.tabEventDesc')"
-          placement="top"
+      <div class="relative">
+        <p 
+          ref="eventDescRef"
+          class="text-grey-normal text-sm"
+          :class="!eventDescExpanded && eventDescNeedMore ? 'line-clamp-2' : ''"
         >
-          <button class="w-5 h-5 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
-            ?
-          </button>
-        </el-tooltip>
-      </h2> -->
-      <p class="text-grey-normal text-sm">{{ $t('createPredict.tabEventDesc') }}</p>
+          {{ $t('createPredict.tabEventDesc') }}
+        </p>
+        <button
+          v-if="eventDescNeedMore"
+          @click="toggleEventDesc"
+          class="text-blue-500 underline text-sm mt-1 inline-block hover:text-blue-600 transition-colors"
+        >
+          {{ eventDescExpanded ? $t('less') : $t('more') }}
+        </button>
+      </div>
     </div>
 
     <!-- 预测对战表单 -->
@@ -570,6 +670,7 @@ onMounted(async () => {
             v-model="realWorldFormData.body"
             :placeholder="$t('createPredict.bodyPlaceholder')"
             rows="4"
+            maxlength="300"
             class="w-full px-4 py-3 border rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             :class="{
                 'border-red-500': realWorldErrors.body,
@@ -579,6 +680,9 @@ onMounted(async () => {
             <div v-if="realWorldErrors.body" class="text-red-500 text-sm mt-1">
             {{ realWorldErrors.body }}
             </div>
+            <div class="text-grey-normal text-xs mt-1">
+            {{ realWorldFormData.body.length }}/300 {{ $t('createPredict.characters') }}
+            </div>
         </div>
 
         <!-- 事件公布日期 -->
@@ -586,16 +690,6 @@ onMounted(async () => {
             <label class="flex items-center gap-1 text-sm font-medium text-black mb-2">
             {{ $t('createPredict.announceDateLabel') }}
             <span class="text-red-500">*</span>
-            <el-tooltip
-                class="box-item"
-                effect="dark"
-                :content="$t('createPredict.announceDateTip')"
-                placement="top"
-            >
-                <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
-                ?
-                </button>
-            </el-tooltip>
             </label>
             <el-date-picker
                 v-model="realWorldFormData.announceDate"
@@ -622,7 +716,7 @@ onMounted(async () => {
                 <el-tooltip
                 class="box-item"
                 effect="dark"
-                :content="$t('createPredict.initialRatioTip')"
+                :content="$t('createPredict.initialRatioTipEvent')"
                 placement="top"
                 >
                 <button class="w-4 h-4 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs hover:bg-gray-300 transition-colors">
@@ -714,6 +808,28 @@ onMounted(async () => {
 <style scoped>
 .create-predict-modal {
   padding: 24px;
+  position: relative;
+  /* 移动端：限制最大高度，上下留白 */
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .create-predict-modal {
+    max-height: calc(100vh - 3rem);
+    padding: 20px;
+  }
+}
+
+/* 文本截断样式 */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 输入框聚焦样式 */
