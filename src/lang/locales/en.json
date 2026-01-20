@@ -527,7 +527,9 @@
     "redTotal": "Total Red",
     "blueTotal": "Total Blue",
     "yesTotal": "Total Yes",
-    "noTotal": "Total No"
+    "noTotal": "Total No",
+    "voteYes": "Vote Yes",
+    "voteNo": "Vote No"
   },
   "predictLiquidity": {
     "management": "Liquidity Management",

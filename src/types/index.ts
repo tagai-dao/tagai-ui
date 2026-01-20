@@ -478,6 +478,7 @@ export type EventPredictData = Tweet & {
   voteYes: number | undefined | null,  // community members vote volume by prediction credit
   voteNo: number | undefined | null,
   solvedBalances: Array<number> | undefined | null,
+  voteResult?: number | undefined | null,
   title: string,
   winner: 'yes' | 'no' | null,
   questionId: string,

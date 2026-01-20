@@ -11,7 +11,7 @@ import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits } from "viem";
 import { writeContract, readContract } from "./contract";
 
-export async function approveToken(spender: `0x${string}`, tokenAddress: `0x${string}`, amount: bigint) {
+export async function approveToken(spender: `0x${string}`, tokenAddress: `0x${string}`, amount: bigint | BigInt) {
    console.log(35, spender, tokenAddress, amount)
     const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, spender], tokenAddress)
     console.log(36, allowance)
@@ -286,16 +286,7 @@ export async function buyToken(battle: BattleData | EventPredictData, collateral
     const minOutcomeTokensToBuyBi = parseUnits(minOutcomeTokensToBuy.toFixed(18), 18)
     if (minOutcomeTokensToBuyBi === 0n) return;
 
-    // approve token
-    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, battle.marketMaker], collateralToken as `0x${string}`)
-    if (allowance < sharesBi) {
-        await writeContract({
-            contractName: 'Token1',
-            functionName: 'approve',
-            args: [battle.marketMaker, sharesBi],
-            address: collateralToken as `0x${string}`
-        })
-    }
+    await approveToken(battle.marketMaker, collateralToken as `0x${string}`, sharesBi);
     
     const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
 

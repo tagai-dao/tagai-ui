@@ -527,7 +527,9 @@
     "redTotal": "红方总份额",
     "blueTotal": "蓝方总份额",
     "yesTotal": "Yes总份额",
-    "noTotal": "No总份额"
+    "noTotal": "No总份额",
+    "voteYes": "投票Yes",
+    "voteNo": "投票No"
   },
   "predictLiquidity": {
     "management": "流动性管理",

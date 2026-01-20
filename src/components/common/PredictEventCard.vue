@@ -47,6 +47,11 @@ const isSettled = computed(() => {
   return props.market.status == 3 || (props.market.endTime * 1000 + 86400000 < Date.now())
 })
 
+// 判断用户是否已投票（voteResult 不为空：不为 null、undefined 或 0）
+const hasVoted = computed(() => {
+  return props.market.voteResult !== null && props.market.voteResult !== undefined && props.market.voteResult !== 0
+})
+
 const openTweet = () => {
   router.push(`/predict-event-detail/${props.market.marketMaker}`)
 }
@@ -232,11 +237,37 @@ const confirmBuy = async () => {
                   </span>
               </div>
           </div>
-          <!-- 底部：购买按钮区域 -->
+          <!-- 底部：购买/投票按钮区域 -->
           <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
             <Transition name="buy-buttons" mode="out-in">
+              <!-- 投票状态：两个投票按钮 -->
+              <div v-if="isVoting && !showBuyInput" key="vote-buttons" class="flex gap-3 sm:gap-4 w-full">
+                <!-- Vote Yes 按钮 -->
+                <button 
+                  class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-yes-btn"
+                  :class="{
+                    'opacity-50 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
+                  }"
+                  :disabled="hasVoted"
+                  :style="market.voteResult === 1 ? 'opacity: 1 !important;' : ''"
+                >
+                  {{ $t('predictTrade.voteYes') || '投票Yes' }}
+                </button>
+                <!-- Vote No 按钮 -->
+                <button 
+                  class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-no-btn"
+                  :class="{
+                    'opacity-50 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
+                  }"
+                  :disabled="hasVoted"
+                  :style="market.voteResult === 2 ? 'opacity: 1 !important;' : ''"
+                >
+                  {{ $t('predictTrade.voteNo') || '投票No' }}
+                </button>
+              </div>
+              
               <!-- 默认状态：两个购买按钮 -->
-              <div v-if="!showBuyInput" key="buttons" class="flex gap-3 sm:gap-4 w-full">
+              <div v-else-if="!showBuyInput" key="buttons" class="flex gap-3 sm:gap-4 w-full">
                 <button 
                   class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
                   @click="buyYes()"
@@ -349,6 +380,12 @@ const confirmBuy = async () => {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none !important;
+    }
+    
+    /* 投票按钮样式覆盖 */
+    .vote-yes-btn:disabled,
+    .vote-no-btn:disabled {
+      cursor: not-allowed;
     }
     
     /* VS 标识样式 */
