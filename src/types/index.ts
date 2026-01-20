@@ -469,6 +469,26 @@ export type BattleData = {
   fee: number | undefined | null,  // 当前费率
 }
 
+export type EventPredictData = Tweet & {
+  marketMaker: string,
+  tick: string,
+  token: string,
+  reserveA: number | undefined | null,
+  reserveB: number | undefined | null,
+  voteYes: number | undefined | null,  // community members vote volume by prediction credit
+  voteNo: number | undefined | null,
+  solvedBalances: Array<number> | undefined | null,
+  title: string,
+  winner: 'yes' | 'no' | null,
+  questionId: string,
+  status: number,
+  endTime: number,
+  positionAID: string,
+  positionBID: string,
+  conditionID: string,
+  fee: number | undefined | null,  // 当前费率
+}
+
 export type MarketData = {
   battle: BattleData,
   tweets: { [key: string]: Tweet }

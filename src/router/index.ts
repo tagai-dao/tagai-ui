@@ -14,7 +14,6 @@ import LoginCallBack from '@/views/LoginCallBack.vue'
 import ClankerDetail from '@/views/clanker/ClankerDetail.vue'
 import TipTokenRecord from "@/views/wallet/TipTokenRecord.vue";
 import UserView from '@/views/profile/UserView.vue'
-import PredictBattle from '@/views/tag-detail/PredictBattle.vue'
 import PredictDetail from '@/views/predict-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
 
@@ -96,12 +95,6 @@ const router = createRouter({
     },
     {
       path: "/callback", component: () => import("@/views/Callback.vue")
-    },
-    {
-      path: "/predict-battle",
-      name: "predict-battle",
-      component: PredictBattle,
-      meta: { tabBar: true, topBar: true }
     },
     {
       path: '/predict-detail/:id',

@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { getPredictBattleData, tweet } from '@/apis/api'
-import { GlobalModalType, type BattleData, type Tweet } from '@/types'
+import { type BattleData, type Tweet } from '@/types'
 import { useCommunityStore } from '@/stores/community'
 import { handleErrorTip } from '@/utils/notify'
-import { EthWalletState, useAccountStore } from '@/stores/web3'
-import { useModalStore } from '@/stores/common'
+import { useAccountStore } from '@/stores/web3'
 import emitter from '@/utils/emitter'
 import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
 import { getMarketInfos } from '@/utils/fpmm'
@@ -88,18 +87,9 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
     return null
 }
 
-const createPredictBattle = () => {
-  if (!accStore.getAccountInfo?.twitterId) {
-    useModalStore().setModalVisible(true, GlobalModalType.Login)
-    return;
-  }
-  if (accStore.ethConnectState !== EthWalletState.Connected) {
-    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
-    return;
-  }
-
-  useModalStore().setModalVisible(true, GlobalModalType.CreatePredict)
-}
+defineExpose({
+  onRefresh
+})
 
 onMounted(async () => {
   await onRefresh()
@@ -110,13 +100,6 @@ onMounted(async () => {
 
 <template>
   <div class="predict-battle-container rounded-t-2xl overflow-hidden">
-    <div class="flex justify-end items-center p-2">
-      <button class="flex gap-2 items-center cursor-pointer px-4 py-0 rounded-full bg-gradient-primary text-white"
-              @click="createPredictBattle">
-        <span class="text-2xl -mt-1">+</span>
-        <span class="whitespace-nowrap">{{$t('createPredictBattle')}}</span>
-      </button>
-    </div>
     <van-pull-refresh class="h-full min-h-full"
       v-model="refreshing"
       @refresh="onRefresh"
@@ -144,7 +127,7 @@ onMounted(async () => {
 
 <style scoped>
 .predict-battle-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 120px);
   background-color: #f8f9fa;
 }
 

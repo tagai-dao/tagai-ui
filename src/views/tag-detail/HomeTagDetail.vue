@@ -4,7 +4,7 @@ import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType, type Tweet} from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
-import PredictBattle from "@/views/tag-detail/PredictBattle.vue";
+import PredictIndex from '@/views/tag-detail/Prediction/Index.vue';
 import CreditIndex from "@/views/tag-detail/Credit/Index.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
@@ -492,7 +492,7 @@ onBeforeRouteLeave((to, from, next) => {
           <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
             <TagContent v-if="activeTab==='content'"/>
-            <PredictBattle v-if="activeTab==='predict'"/>
+            <PredictIndex v-if="activeTab==='predict'"/>
             <TagTippedContent v-if="activeTab==='tipped'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>

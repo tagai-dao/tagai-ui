@@ -1,4 +1,4 @@
-import type { BattleData, Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
+import type { BattleData, Community, CreateCommunity, EventPredictData, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
     USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee, 
     FPMMDeterministicFactory2} from "@/config";
@@ -104,7 +104,7 @@ export async function createEventMarket(questionId: string, tokenAddress: `0x${s
     }
 }
 
-export const getMarketInfos = async (markets: BattleData[]) => {
+export const getMarketInfos = async (markets: BattleData[] | EventPredictData[]) => {
     if (markets.length === 0) {
         return []
     }
@@ -212,7 +212,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
     return result;
 }
 
-export async function getBuyData(battle: BattleData, shares: number, outcome: 'red' | 'blue') {
+export async function getBuyData(battle: BattleData | EventPredictData, shares: number, outcome: 'yes' | 'no' | 'red' | 'blue') {
     if (!shares) return 0;
     const sharesBi = parseUnits(shares.toFixed(18), 18)
     if (sharesBi === 0n) return 0;
@@ -222,7 +222,7 @@ export async function getBuyData(battle: BattleData, shares: number, outcome: 'r
         call: [
             'calcBuyAmount(uint256,uint256)(uint256)',
             sharesBi.toString(),
-            outcome === 'red' ? 0 : 1
+            (outcome === 'red' || outcome === 'yes') ? 0 : 1
         ],
         returns: [
             ['amount', (val: any) => val.toString() / 1e18]
@@ -281,7 +281,7 @@ export async function getSellData(battle: BattleData, reserveA: number, reserveB
     return {receive: stateReturnAmount, fee};
 }
 
-export async function buyToken(battle: BattleData, collateralToken: string, sharesBi: BigInt, minOutcomeTokensToBuy: number, outcome: 'red' | 'blue', bnbFee: number) {
+export async function buyToken(battle: BattleData | EventPredictData, collateralToken: string, sharesBi: BigInt, minOutcomeTokensToBuy: number, outcome: 'yes' | 'no' | 'red' | 'blue', bnbFee: number) {
     if (!isAddress(battle.marketMaker)) return;
     const minOutcomeTokensToBuyBi = parseUnits(minOutcomeTokensToBuy.toFixed(18), 18)
     if (minOutcomeTokensToBuyBi === 0n) return;
@@ -302,14 +302,14 @@ export async function buyToken(battle: BattleData, collateralToken: string, shar
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'buy',
-        args: [sharesBi, outcome === 'red' ? 0 : 1, minOutcomeTokensToBuyBi],
+        args: [sharesBi, (outcome === 'red' || outcome === 'yes') ? 0 : 1, minOutcomeTokensToBuyBi],
         value: bnbFeeBi,
         address: battle.marketMaker
     })
 
 }
 
-export async function sellToken(battle: BattleData, sharesBi: BigInt, maxOutcomeTokensToSell: BigInt, outcome: 'red' | 'blue', bnbFee: number) {
+export async function sellToken(battle: BattleData | EventPredictData, sharesBi: BigInt, maxOutcomeTokensToSell: BigInt, outcome: 'yes' | 'no' | 'red' | 'blue', bnbFee: number) {
     if (!isAddress(battle.marketMaker)) return;
     if (sharesBi === 0n) return;
     
@@ -330,7 +330,7 @@ export async function sellToken(battle: BattleData, sharesBi: BigInt, maxOutcome
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'sell',
-        args: [sharesBi, outcome === 'red' ? 0 : 1, maxOutcomeTokensToSell],
+        args: [sharesBi, (outcome === 'red' || outcome === 'yes') ? 0 : 1, maxOutcomeTokensToSell],
         value: bnbFeeBi,
         address: battle.marketMaker
     })
