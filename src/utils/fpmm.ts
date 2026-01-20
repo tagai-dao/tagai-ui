@@ -1,28 +1,32 @@
 import type { BattleData, Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
-    USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee } from "@/config";
+    USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee, 
+    FPMMDeterministicFactory2} from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
-import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
-import errCode from "@/errCode";
 import _ from 'lodash'
 import { useStateStore } from "@/stores/common";
-import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits } from "viem";
 import { writeContract, readContract } from "./contract";
 
-export async function createMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, dayNumber: number, funding: bigint) {
-    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, FPMMDeterministicFactory], tokenAddress)
-    if (funding > allowance) {
+export async function approveToken(spender: `0x${string}`, tokenAddress: `0x${string}`, amount: bigint) {
+   console.log(35, spender, tokenAddress, amount)
+    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, spender], tokenAddress)
+    console.log(36, allowance)
+    if (amount > allowance) {
         await writeContract({
             contractName: 'Token1',
             functionName: 'approve',
-            args: [FPMMDeterministicFactory, funding],
+            args: [spender, maxUint256],
             address: tokenAddress
         })
     }
+}
+
+export async function createMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, dayNumber: number, funding: bigint) {
+    await approveToken(FPMMDeterministicFactory, tokenAddress, funding);
 
     const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
     distributionHint = Math.ceil(distributionHint)
@@ -35,6 +39,45 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
 
     // 预创建预测市场
 
+    let tx = await getTransactionReceipt(hash as `0x${string}`)
+    // event FixedProductMarketMakerCreation(
+    //     address indexed creator,
+    //     FixedProductMarketMaker fixedProductMarketMaker,
+    //     ConditionalTokens conditionalTokens,
+    //     IERC20 collateralToken,
+    //     bytes32[] conditionIds,
+    //     uint fee,
+    //     uint maxFee,
+    //     uint endTime
+    // );
+    const event: any = getCreateFPMMMarketMakerEventByHash(tx);
+    if (event && event.creator === useAccountStore().ethConnectAddress) {
+        // 读取链上的conditionid是否和事件中的一致
+        const conditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, 2])
+        if (conditionId !== event.conditionIds[0]) {
+            throw 'Invalid transaction'
+        }
+        // 创建成功，返回txhash，event.lmsrMarketMaker
+        return {hash, fpmmMaker: event.fixedProductMarketMaker};
+    }else {
+        // 非法交易
+        throw 'Invalid transaction'
+    }
+}
+
+export async function createEventMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, endTime: number, funding: bigint) {
+    await approveToken(FPMMDeterministicFactory2, tokenAddress, funding);
+
+    const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
+    distributionHint = Math.ceil(distributionHint)
+    // 生成lmsrMarketMaker
+    const hash = await writeContract({
+        contractName: 'FPMMDeterministicFactory2',
+        functionName: 'create2FixedProductMarketMakerWithCondition',
+        args: [tokenAddress, questionId, [100 - distributionHint, distributionHint], feePath, [nonce, 2, PredictionMinFee, PredictionMaxFee, endTime, funding]]
+    });
+
+    // 预创建预测市场
     let tx = await getTransactionReceipt(hash as `0x${string}`)
     // event FixedProductMarketMakerCreation(
     //     address indexed creator,

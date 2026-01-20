@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick, watch } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import { handleErrorTip, notify } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
-import { getTweetCurations, createFPMMMarket as createFPMMMarketApi, preCreateFPMMMarket } from '@/apis/api'
+import { getTweetCurations, createFPMMMarket as createFPMMMarketApi, createFPMMMarketForEvent, preCreateFPMMMarket, preCreateFPMMMarketEvent } from '@/apis/api'
 import { OperateType, useTweet } from '@/composables/useTweet'
 import { useCommunityStore } from '@/stores/community'
 import { useAccount } from '@/composables/useAccount'
 import emitter from '@/utils/emitter'
 import { getTokenBalance } from '@/utils/web3'
-import { formatAmount } from '@/utils/helper'
+import { formatAmount, sleep } from '@/utils/helper'
 import { parseUnits } from 'viem'
-import { createMarket } from '@/utils/fpmm'
+import { approveToken, createEventMarket, createMarket } from '@/utils/fpmm'
+import { FPMMDeterministicFactory2 } from '@/config'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
@@ -347,12 +348,12 @@ const createPredict = async () => {
         let { questionId, needOP, feePath, dayNumber } = preMarketData;
 
         if (feePath && typeof(feePath) === 'string') {
-        feePath = JSON.parse(feePath)
+          feePath = JSON.parse(feePath)
         }
 
         if (!(await preCheckCuration(OperateType.CREATE_PREDICT, undefined, needOP))) {
-        notify({ message: t('errMessage.insufficientOp'), type: 'info' })
-        return;
+          notify({ message: t('errMessage.insufficientOp'), type: 'info' })
+          return;
         }
 
         // 开始创建市场
@@ -361,7 +362,7 @@ const createPredict = async () => {
         await createFPMMMarketApi(accInfo.twitterId, questionId, hash);
         console.log('创建预测:', formData, fpmmMaker, hash)
         // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
-        useModalStore().setModalCloseEnable(true);
+        modalStore.setModalCloseEnable(true);
         modalStore.setModalVisible(false);
         emitter.emit('createPredictSuccess')
     } else {
@@ -378,12 +379,36 @@ const createPredict = async () => {
         }
         
         console.log(t('createPredict.createRealWorld'), realWorldFormData)
-        // TODO: 调用后端API
-        // 模拟成功
-        // notify({ message: '创建成功(模拟)', type: 'success' })
-        // modalStore.setModalVisible(false)
-        useModalStore().setModalCloseEnable(true); // Ensure modal can be closed if it fails or finishes
-        // Temporary: keep modal open or close? User said "API pending", so maybe just log.
+        
+        modalStore.setModalCloseEnable(false)
+        // 授权使用代币
+        await approveToken(FPMMDeterministicFactory2, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(realWorldFormData.initAmount.toString(), 18));
+
+        // 预创建市场记录，并生成questionid
+        const preMarketData: any = await preCreateFPMMMarketEvent(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', realWorldFormData.title, realWorldFormData.body);
+        console.log(633, preMarketData)
+        let { questionId, needOP, feePath } = preMarketData;
+
+        if (feePath && typeof(feePath) === 'string') {
+          feePath = JSON.parse(feePath)
+        }
+
+        // 开始创建市场
+        const endTime =  Math.floor(new Date(realWorldFormData.announceDate).getTime() / 1000)
+        const { hash, fpmmMaker } = await createEventMarket(
+          questionId, 
+          comStore.currentSelectedCommunity?.token as `0x${string}`, 
+          feePath ?? [], 
+          realWorldFormData.distributionHint, 
+          endTime, 
+          parseUnits(realWorldFormData.initAmount.toString(), 18))
+        console.log({hash, fpmmMaker})
+        
+        await createFPMMMarketForEvent(accInfo.twitterId, questionId, hash);
+        console.log('创建预测:', realWorldFormData, fpmmMaker, hash)
+        useModalStore().setModalCloseEnable(true);
+        modalStore.setModalVisible(false);
+        emitter.emit('createPredictSuccess')
     }
 
   } catch (error) {
@@ -395,8 +420,51 @@ const createPredict = async () => {
   }
 }
 
+// 计算剩余时间
+const timeRemaining = ref('')
+
+const updateTimeRemaining = () => {
+  if (!realWorldFormData.announceDate) {
+    timeRemaining.value = ''
+    return
+  }
+
+  const targetTime = new Date(realWorldFormData.announceDate).getTime()
+  const now = Date.now()
+  const diff = targetTime - now
+
+  if (diff <= 0) {
+    timeRemaining.value = t('createPredict.timeExpired') || 'Expired'
+    return
+  }
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+  let res = []
+  if (days > 0) res.push(`${days}d`)
+  if (hours > 0) res.push(`${hours}h`)
+  res.push(`${minutes}m`)
+  res.push(`${seconds}s`)
+
+  timeRemaining.value = res.join(' ')
+}
+
+// 监听日期变化
+watch(() => realWorldFormData.announceDate, () => {
+  updateTimeRemaining()
+})
+
+// 定时更新
+let timer: ReturnType<typeof setInterval> | null = null
+
 // 关闭模态框
 const closeModal = () => {
+  if (createLoading.value) {
+    return;
+  }
   modalStore.setModalVisible(false)
   // 重置表单和错误
   formData.title = ''
@@ -417,6 +485,7 @@ const closeModal = () => {
   realWorldErrors.body = ''
   realWorldErrors.announceDate = ''
   realWorldErrors.initAmount = ''
+  timeRemaining.value = ''
 }
 
 onMounted(async () => {
@@ -425,6 +494,18 @@ onMounted(async () => {
   // 检查描述文字是否需要展开按钮
   await nextTick()
   checkDescOverflow()
+  
+  timer = setInterval(() => {
+    if (realWorldFormData.announceDate) {
+      updateTimeRemaining()
+    }
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timer) {
+    clearInterval(timer)
+  }
 })
 </script>
 
@@ -432,7 +513,7 @@ onMounted(async () => {
   <div class="create-predict-modal">
     <!-- 关闭按钮 -->
     <img
-      class="absolute top-4 right-4 sm:top-6 sm:right-6 cursor-pointer w-6 h-6 hover:opacity-70 transition-opacity z-10"
+      class="absolute top-0 right-0 cursor-pointer w-6 h-6 hover:opacity-70 transition-opacity z-10"
       @click="closeModal"
       src="~@/assets/icons/icon-modal-close.svg"
       alt="Close"
@@ -444,14 +525,14 @@ onMounted(async () => {
       <button 
         class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200"
         :class="activeTab === 'event' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
-        @click="activeTab = 'event'"
+        @click="createLoading ? null : (activeTab = 'event')"
       >
         {{ $t('createPredict.tabEvent') }}
       </button>
       <button 
         class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200"
         :class="activeTab === 'battle' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
-        @click="activeTab = 'battle'"
+        @click="createLoading ? null : (activeTab = 'battle')"
       >
         {{ $t('createPredict.tabBattle') }}
       </button>
@@ -713,6 +794,10 @@ onMounted(async () => {
             />
             <div v-if="realWorldErrors.announceDate" class="text-red-500 text-sm mt-1">
             {{ realWorldErrors.announceDate }}
+            </div>
+            <div v-else-if="timeRemaining" class="text-blue-500 text-sm mt-1 flex items-center gap-1">
+              <span class="font-medium">{{ $t('createPredict.timeLeft') }}:</span>
+              <span>{{ timeRemaining }}</span>
             </div>
         </div>
 
