@@ -20,6 +20,8 @@
   "prediction": "Prediction",
   "tag": "Tag",
   "tagCoin": "Tag Coin",
+  "ip": "IP",
+  "ip.priceSupply": "Price / Supply",
   "profile": "Profile",
   "rule": "Rule",
   "confirm": "Confirm",

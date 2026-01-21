@@ -19,6 +19,7 @@ import PostTypeOption from "@/views/home/PostTypeOption.vue";
 import MindShare from "@/views/mind-share/MindShare.vue";
 import {useAccountStore} from "@/stores/web3";
 import Predict from "@/views/predict/Index.vue";
+import IPList from "@/views/ip/IPList.vue";
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
@@ -37,7 +38,7 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['tweets', 'prediction', 'tagCoin']
+const tabOptions = ['tweets', 'prediction', 'tagCoin', 'ip']
 const activeTab = ref('tweets')
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
@@ -384,6 +385,9 @@ const onCreate = (type: GlobalModalType) => {
     </template>
     <Predict :type="predictSortType" v-if="activeTab==='prediction'"/>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
+    <div class="flex-1 overflow-auto" v-if="activeTab==='ip'">
+      <IPList />
+    </div>
     <div>
       <button v-if="activeTab==='tagCoin'"
               class="absolute bottom-[80px] right-[10px] web:bottom-8"

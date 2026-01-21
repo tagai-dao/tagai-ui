@@ -20,6 +20,8 @@
   "prediction": "预测",
   "tag": "Tag",
   "tagCoin": "标签币",
+  "ip": "IP",
+  "ip.priceSupply": "价格 / 供应量",
   "profile": "我的",
   "rule": "规则",
   "confirm": "确认",
