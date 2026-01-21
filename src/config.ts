@@ -1,8 +1,14 @@
 import { parseUnits } from "viem";
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
-export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
-// export const BACKEND_API_URL = "http://localhost:3000";
+/**
+ * Backend API base URL
+ * - Dev: default to local `tagai-api` on port 9901 unless overridden
+ * - Prod: set `VITE_BACKEND_API_URL` at build time
+ */
+export const BACKEND_API_URL =
+  import.meta.env.VITE_BACKEND_API_URL ||
+  (import.meta.env.DEV ? "http://localhost:9901" : "https://bsc-api.tagai.fun");
 
 // base main net
 export const ChainConfig = {

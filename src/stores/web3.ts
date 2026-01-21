@@ -97,7 +97,117 @@ export const useAccountStore = defineStore('account', {
 export const useIpshareData = defineStore('ipshareData', {
     state() {
         return {
-            ipshareListBySupply: [] as Array<IPShare>
+            ipshareListBySupply: [] as Array<IPShare>,
+            // IPShare 资产数据 (从 Donut 迁移)
+            ipshareBalances: {} as Record<string, number>,      // 用户持有的 IPShare { address: balance }
+            ipshareSupplies: {} as Record<string, number>,      // IPShare 供应量 { address: supply }
+            stakeInfos: {} as Record<string, any>,              // 质押信息 { address: StakeInfo }
+            totalStakedIPshares: {} as Record<string, number>,  // 总质押量 { address: totalStaked }
+            pendingIPshareProfits: {} as Record<string, number>, // 待领取收益 { address: profit }
+            keyFundRatios: {} as Record<string, number>         // 密钥基金比例 { address: ratio }
+        }
+    },
+    actions: {
+        /**
+         * 保存 IPShare 持有量
+         */
+        saveIPshareBalances(balances: Record<string, number>) {
+            this.ipshareBalances = {
+                ...this.ipshareBalances,
+                ...balances
+            }
+        },
+
+        /**
+         * 保存 IPShare 供应量
+         */
+        saveIPshareSupplies(supplies: Record<string, number>) {
+            this.ipshareSupplies = {
+                ...this.ipshareSupplies,
+                ...supplies
+            }
+        },
+
+        /**
+         * 保存质押信息
+         */
+        saveStakeInfos(infos: Record<string, any>) {
+            this.stakeInfos = {
+                ...this.stakeInfos,
+                ...infos
+            }
+        },
+
+        /**
+         * 保存总质押量
+         */
+        saveTotalStakedIPshares(totals: Record<string, number>) {
+            this.totalStakedIPshares = {
+                ...this.totalStakedIPshares,
+                ...totals
+            }
+        },
+
+        /**
+         * 保存待领取收益
+         */
+        savePendingIPshareProfits(profits: Record<string, number>) {
+            this.pendingIPshareProfits = {
+                ...this.pendingIPshareProfits,
+                ...profits
+            }
+        },
+
+        /**
+         * 保存密钥基金比例
+         */
+        saveKeyFundRatios(ratios: Record<string, number>) {
+            this.keyFundRatios = {
+                ...this.keyFundRatios,
+                ...ratios
+            }
+        },
+
+        /**
+         * 清空所有数据
+         */
+        clear() {
+            this.ipshareBalances = {}
+            this.ipshareSupplies = {}
+            this.stakeInfos = {}
+            this.totalStakedIPshares = {}
+            this.pendingIPshareProfits = {}
+            this.keyFundRatios = {}
+            this.ipshareListBySupply = []
+        }
+    },
+    getters: {
+        /**
+         * 获取指定 IPShare 的持有量
+         */
+        getIPshareBalance: (state) => (address: string): number => {
+            return state.ipshareBalances[address] || 0
+        },
+
+        /**
+         * 获取指定 IPShare 的供应量
+         */
+        getIPshareSupply: (state) => (address: string): number => {
+            return state.ipshareSupplies[address] || 0
+        },
+
+        /**
+         * 获取指定 IPShare 的质押信息
+         */
+        getStakeInfo: (state) => (address: string): any => {
+            return state.stakeInfos[address] || null
+        },
+
+        /**
+         * 获取指定 IPShare 的待领取收益
+         */
+        getPendingProfit: (state) => (address: string): number => {
+            return state.pendingIPshareProfits[address] || 0
         }
     }
 })
