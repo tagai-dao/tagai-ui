@@ -1,5 +1,5 @@
 import { get, post, put } from "./axios"
-import { BACKEND_API_URL } from '@/config'
+import { BACKEND_API_URL, VP_CONSUME } from '@/config'
 import type { Community, CreateCommunity } from '@/types'
 
 /************************************ common **********************************/
@@ -311,6 +311,9 @@ export const searchMindShareByUsername = async (username: string) =>
 
 
 /************************************  predict  **********************************/
+export const getUserPredictVP = async (twitterId: string, tick: string) =>
+  get(BACKEND_API_URL +'/predict/getUserPredictVP', {twitterId, tick}) 
+
 export const getPredictBattleData = async (tick: string, twitterId?: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/getPredictBattleData', { tick, twitterId, pageIndex })
 
@@ -352,3 +355,6 @@ export const getFPMMKlineData = async (fpmm: string, timestamp: number | undefin
 
 export const getFPMMUserHoldings = async (marketAddr: string, positionAID: string, positionBID: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/userHoldings', { marketAddr, positionAID, positionBID, pageIndex })
+
+export const voteEventPrediction = async (twitterId: string, marketAddr: string, voteResult: number, voteVp?: number) =>
+  post(BACKEND_API_URL + '/predict/voteEventPrediction', { twitterId, marketAddr, voteResult, voteVp })

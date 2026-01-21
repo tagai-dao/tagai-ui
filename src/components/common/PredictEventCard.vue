@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, computed } from 'vue'
-import type { BattleData, EventPredictData, Tweet } from '@/types'
+import { getUserPredictVP, voteEventPrediction } from '@/apis/api';
+import type { BattleData, CommunityMember, EventPredictData, Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper';
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
@@ -11,6 +12,7 @@ import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
+import { MAX_VP, VP_CONSUME, VP_RECOVER_DAY } from '@/config';
 
 const props = defineProps<{
     market: EventPredictData,
@@ -19,6 +21,7 @@ const props = defineProps<{
 const router = useRouter();
 const accStore = useAccountStore();
 const { percentA, percentB } = useEventPredict(props.market);
+
 // 购买状态管理
 const showBuyInput = ref(false);
 const selectedColor = ref<'yes' | 'no' | null>(null);
@@ -27,6 +30,11 @@ const willReceiveAmount = ref(0);
 const calculatingAmount = ref(false);
 const bnbFee = ref(0);
 const trading = ref(false);
+const voting = ref(false);
+const showVoteModal = ref(false);
+const currentVP = ref(0);
+const selectedVoteOption = ref<'yes' | 'no' | null>(null);
+const showPopover = ref(false);
 
 const aAmount = computed(() => {
   return props.market.voteYes || (props.market?.amount ?? 0)
@@ -130,7 +138,7 @@ watch([buyAmount, selectedColor], () => {
   }
 });
 
-// 确认购买（功能待实现）
+// 确认购买
 const confirmBuy = async () => {
   if (trading.value) return;
   trading.value = true;
@@ -150,6 +158,63 @@ const confirmBuy = async () => {
     // 购买成功后关闭输入框
     closeBuyInput();
   }
+}
+
+const preVote = async (yes: boolean) => {
+  if (hasVoted.value) return;
+  if (!accStore.getAccountInfo?.twitterId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Login)
+    return;
+  } 
+
+  if (!accStore.getAccountInfo?.steemId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Register)
+      return false;
+    }
+
+
+  try {
+    voting.value = true;
+    const vpInfo: CommunityMember | unknown = await getUserPredictVP(accStore.getAccountInfo?.twitterId, props.market.tick)
+
+    let vp = 200
+    // 如果没有社区成员记录，则默认给200vp
+    if (vpInfo && typeof vpInfo === 'object' && 'lastUpdateVPStamp' in vpInfo && 'predictVP' in vpInfo) {
+      if (vpInfo.lastUpdateVPStamp == 0) {
+        vp = 200;
+      } else {
+        vp = ((vpInfo as CommunityMember).predictVP + (Date.now() - (vpInfo as CommunityMember).lastUpdateVPStamp) * MAX_VP / (86400000 * VP_RECOVER_DAY))
+        vp = vp > MAX_VP ? MAX_VP : vp
+      }
+    }
+    
+    currentVP.value = Math.floor(vp);
+    selectedVoteOption.value = yes ? 'yes' : 'no';
+    showVoteModal.value = true;
+
+  } catch (error) {
+    handleErrorTip(error)
+  }finally {
+    voting.value = false;
+  }
+}
+
+const confirmVote = () => {
+  if (selectedVoteOption.value) {
+    vote(selectedVoteOption.value === 'yes');
+  }
+  showVoteModal.value = false;
+}
+
+const vote = async (yes: boolean) => {
+ try {
+  voting.value = true
+  await voteEventPrediction(accStore.getAccountInfo?.twitterId, props.market.marketMaker, yes ? 1 : 2)
+ } catch (error) {
+  
+ } finally {
+  voting.value = false;
+ }
 }
 
 </script>
@@ -244,25 +309,37 @@ const confirmBuy = async () => {
               <div v-if="isVoting && !showBuyInput" key="vote-buttons" class="flex gap-3 sm:gap-4 w-full">
                 <!-- Vote Yes 按钮 -->
                 <button 
-                  class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-yes-btn"
+                  class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center gap-2 vote-yes-btn"
                   :class="{
-                    'opacity-50 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
+                    'opacity-50 cursor-not-allowed': hasVoted,
+                    'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
                   }"
+                  @click.stop="preVote(true)"
                   :disabled="hasVoted"
-                  :style="market.voteResult === 1 ? 'opacity: 1 !important;' : ''"
                 >
                   {{ $t('predictTrade.voteYes') || '投票Yes' }}
+                  <span v-if="hasVoted && market.voteResult === 1" class="bg-white rounded-full p-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </span>
                 </button>
                 <!-- Vote No 按钮 -->
                 <button 
-                  class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-no-btn"
+                  class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center gap-2 vote-no-btn"
                   :class="{
-                    'opacity-50 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
+                    'opacity-50 cursor-not-allowed': hasVoted,
+                    'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
                   }"
+                  @click.stop="preVote(false)"
                   :disabled="hasVoted"
-                  :style="market.voteResult === 2 ? 'opacity: 1 !important;' : ''"
                 >
                   {{ $t('predictTrade.voteNo') || '投票No' }}
+                  <span v-if="hasVoted && market.voteResult === 2" class="bg-white rounded-full p-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                  </span>
                 </button>
               </div>
               
@@ -326,9 +403,92 @@ const confirmBuy = async () => {
           </div>
         </div>
       </div>
+
+    <!-- 投票确认弹窗 -->
+    <van-dialog
+      v-model:show="showVoteModal"
+      :show-confirm-button="false"
+      :show-cancel-button="false"
+      class="vote-confirm-dialog"
+      close-on-click-overlay
+    >
+      <div class="py-6 px-10 relative">
+        <button 
+          class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          @click="showVoteModal = false"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        <h3 class="text-xl font-bold text-center mb-4 text-gray-800">{{ $t('predictTrade.voteConfirmTitle') }}</h3>
+        
+        <p class="text-gray-500 text-ml mb-4 leading-relaxed">
+          {{ $t('predictTrade.voteConfirmText') }}
+        </p>
+
+        <p class="text-center text-base font-medium text-blue-600 mb-8 bg-blue-50 py-2 rounded-lg">
+          {{ selectedVoteOption === 'yes' ? $t('predictTrade.voteForYes') : $t('predictTrade.voteForNo') }}
+        </p>
+        
+        <div class="flex flex-col gap-4 mb-8">
+          <div class="flex items-center text-base">
+            <div class="flex items-center gap-1 w-28">
+              <span class="text-gray-600">{{ $t('predictTrade.vpConsume') }}</span>
+              
+              <van-popover
+                v-model:show="showPopover"
+                theme="dark"
+                placement="top"
+              >
+                <div class="p-3 text-xs w-64 text-center leading-relaxed">
+                  {{ $t('predictTrade.vpDesc') }}
+                </div>
+                <template #reference>
+                  <div 
+                    class="cursor-help flex items-center"
+                    @mouseenter="showPopover = true"
+                    @mouseleave="showPopover = false"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </template>
+              </van-popover>
+            </div>
+            <span class="text-red-500 font-medium text-lg">: {{ VP_CONSUME.PREDICT_VOTE }}</span>
+          </div>
+          <div class="flex items-center text-base">
+            <span class="text-gray-600 w-28">{{ $t('predictTrade.vpRemain') }}</span>
+            <span 
+              class="font-medium text-lg"
+              :class="currentVP >= VP_CONSUME.PREDICT_VOTE ? 'text-green-500' : 'text-red-500'"
+            >
+              : {{ currentVP }}
+            </span>
+          </div>
+        </div>
+
+        <button
+          class="w-full py-3 rounded-full text-white font-bold text-lg shadow-md transition-all duration-200"
+          :class="currentVP >= VP_CONSUME.PREDICT_VOTE ? 'bg-gradient-primary hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]' : 'bg-gray-300 cursor-not-allowed'"
+          :disabled="currentVP < VP_CONSUME.PREDICT_VOTE"
+          @click="confirmVote"
+        >
+          {{ $t('predictTrade.voteConfirmBtn') }}
+        </button>
+      </div>
+    </van-dialog>
 </template>
 
 <style scoped>
+/* 添加渐变色类，确保与全局一致 */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #FE913F 0%, #E58339 100%);
+}
+
     .predict-battle-container {
       min-height: 100vh;
       background-color: #f8f9fa;

@@ -120,6 +120,7 @@ export const SendPubKey = new Uint8Array([
 
 // vp consume
 export const VP_CONSUME = Object.freeze({
+    PREDICT_VOTE: 10,
     RETWEET: 5,
     LIKE: 3,
     REPLY: 3

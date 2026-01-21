@@ -288,6 +288,13 @@ export type Community = OnchainTokenInfo & {
   feePath?: string | object | null | undefined,
 };
 
+export type CommunityMember = {
+  twitterId: string,
+  communityId: string,
+  predictVP: number,
+  lastUpdateVPStamp: number
+}
+
 export type ClankerToken = OnchainTokenInfo & {
   logo?: string,
   name?: string,

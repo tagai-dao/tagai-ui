@@ -529,7 +529,15 @@
     "yesTotal": "Yes总份额",
     "noTotal": "No总份额",
     "voteYes": "投票Yes",
-    "voteNo": "投票No"
+    "voteNo": "投票No",
+    "voteConfirmTitle": "结果投票",
+    "voteConfirmText": "请对该事件的真实结果进行投票",
+    "voteForYes": "您将投给该事件【会发生】",
+    "voteForNo": "您将投给该事件【不会发生】",
+    "vpConsume": "消耗VP",
+    "vpRemain": "当前剩余VP",
+    "vpDesc": "该VP值不同于平台策展VP，是每个社区中独立的预测市场投票VP。每个用户默认在每个社区有200VP值，线性恢复时间是3天。",
+    "voteConfirmBtn": "确认投票"
   },
   "predictLiquidity": {
     "management": "流动性管理",

@@ -529,7 +529,15 @@
     "yesTotal": "Total Yes",
     "noTotal": "Total No",
     "voteYes": "Vote Yes",
-    "voteNo": "Vote No"
+    "voteNo": "Vote No",
+    "voteConfirmTitle": "Vote Result",
+    "voteConfirmText": "Please vote for the real result of this event",
+    "voteForYes": "You will vote for the event [Will Happen]",
+    "voteForNo": "You will vote for the event [Will Not Happen]",
+    "vpConsume": "Consume VP",
+    "vpRemain": "Remaining VP",
+    "vpDesc": "This VP is different from the platform curation VP. It is an independent prediction market voting VP in each community. Each user has a default of 200 VP in each community, with a linear recovery time of 3 days.",
+    "voteConfirmBtn": "Confirm Vote"
   },
   "predictLiquidity": {
     "management": "Liquidity Management",
