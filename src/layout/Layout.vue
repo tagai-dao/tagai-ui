@@ -2,6 +2,7 @@
 import {RouterView, useRouter} from "vue-router";
 import TopBar from "@/layout/TopBar.vue";
 import TabBar from "@/layout/TabBar.vue";
+import LeftSidebar from "@/layout/LeftSidebar.vue";
 import CreateCoinModal from "@/components/common/CreateCoinModal.vue";
 import {useModalStore} from "@/stores/common";
 import {GlobalModalType} from "@/types";
@@ -130,8 +131,51 @@ onMounted( () => {
 
 <template>
   <WrappedReactComponent>
-    <main class="w-full h-full ">
-      <main class="w-full h-full flex flex-col max-w-[1200px] mx-auto relative">
+    <main class="w-full h-full">
+      <!-- PC 端布局：左侧边栏 + 主内容区 -->
+      <div class="hidden web:flex h-full">
+        <!-- 左侧边栏 -->
+        <LeftSidebar />
+        
+        <!-- 主内容区 -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+          <!-- PC 端不显示 TopBar，移动端显示 -->
+          <div class="web:hidden">
+            <TopBar v-show="$route.meta.topBar"/>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <router-view v-slot="{ Component }">
+              <keep-alive :include="cachedComponents">
+                <component :is="Component" :key="$route.name"/>
+              </keep-alive>
+            </router-view>
+          </div>
+        </div>
+        <!-- PC 端模态框 -->
+        <el-dialog v-model="modalStore.modalVisible"
+                   :close-on-click-modal="modalStore.modalCloseEnable"
+                   :close-on-press-escape="modalStore.modalCloseEnable"
+                   :modal-class="`overlay-white ${modalStore.modalType===GlobalModalType.Login?'modal-gradient-bg':''}`"
+                   :class="modalStore.modalType===GlobalModalType.PredictTrade ? 'max-w-[900px] rounded-[20px]' : 'max-w-[500px] rounded-[20px]'"
+                   width="90%" :show-close="false" align-center destroy-on-close>
+          <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
+          <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
+          <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace" :default-tick="false"/>
+          <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
+          <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
+          <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
+          <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
+          <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
+          <CreatePredictModal v-if="modalStore.modalType === GlobalModalType.CreatePredict" />
+          <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
+          <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
+          <PredictTradeModal v-if="modalStore.modalType === GlobalModalType.PredictTrade"/>
+          <PredictLiquidityModal v-if="modalStore.modalType === GlobalModalType.PredictLiquidity"/>
+        </el-dialog>
+      </div>
+
+      <!-- 移动端布局：保持原有布局 -->
+      <main class="web:hidden w-full h-full flex flex-col max-w-[1200px] mx-auto relative">
         <TopBar v-show="$route.meta.topBar"/>
         <div class="flex-1 overflow-hidden">
           <router-view v-slot="{ Component }">
@@ -140,7 +184,7 @@ onMounted( () => {
             </keep-alive>
           </router-view>
         </div>
-        <TabBar class="web:hidden" v-if="$route.meta.tabBar"/>
+        <TabBar v-if="$route.meta.tabBar"/>
         <el-dialog v-model="modalStore.modalVisible"
                    :close-on-click-modal="modalStore.modalCloseEnable"
                    :close-on-press-escape="modalStore.modalCloseEnable"

@@ -25,7 +25,10 @@ const uniqueArray = <T>(arr: T[]): T[] => {
 export const getIPshareSupplies = async (subjects: string[]): Promise<Record<string, number>> => {
     try {
         subjects = uniqueArray(subjects).filter(s => isAddress(s));
-        if (subjects.length === 0) return {};
+        if (subjects.length === 0) {
+            console.log('No valid addresses to query IPShare supplies');
+            return {};
+        }
 
         const calls = subjects.map(s => ({
             target: IPShareContract2,
@@ -34,14 +37,19 @@ export const getIPshareSupplies = async (subjects: string[]): Promise<Record<str
                 s
             ],
             returns: [
-                [s, (val: any) => parseFloat(val.toString()) / 1e18]
+                [s, (val: any) => {
+                    const supply = parseFloat(val.toString()) / 1e18;
+                    return isNaN(supply) ? 0 : supply;
+                }]
             ]
         }));
 
         const res = await aggregate(calls, ChainConfig.multiConfig);
-        return res.results.transformed;
+        const result = res.results?.transformed || {};
+        console.log('IPShare supplies fetched:', result);
+        return result;
     } catch (e) {
-        console.log('Get IPShare supplies fail:', e);
+        console.error('Get IPShare supplies fail:', e);
         return {};
     }
 }

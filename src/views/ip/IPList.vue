@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { getIPShareList } from '@/apis/api'
 import { formatPrice, formatAmount } from '@/utils/helper'
 import { calculateIPsharePriceLocal } from '@/utils/ipshare'
@@ -41,26 +41,64 @@ async function onRefresh() {
     refreshing.value = true
     listFinished.value = false
     const ips = await getIPShareList(0)
+    console.log('📥 IPShare 列表 - 从后端获取的原始数据:', ips)
+    
     if (ips && Array.isArray(ips)) {
-      list.value = ips
-      // 批量获取所有 IPShare 的供应量
-      const ethAddrs = ips.filter(ip => isAddress(ip.ethAddr)).map(ip => ip.ethAddr)
+      console.log(`📊 IPShare 列表 - 共 ${ips.length} 条数据`)
+      
+      // 确保每个 IPShare 都有基本数据
+      ips.forEach((ip, index) => {
+        console.log(`\n👤 IPShare #${index + 1}:`, {
+          twitterId: ip.twitterId,
+          twitterName: ip.twitterName,
+          twitterUsername: ip.twitterUsername,
+          ethAddr: ip.ethAddr,
+          supply: ip.supply,
+          profile: ip.profile,
+          followers: ip.followers,
+          followings: ip.followings
+        })
+        
+        // 如果后端没有返回 supply，尝试从链上获取
+        if (!ip.supply && ip.ethAddr && isAddress(ip.ethAddr)) {
+          // 先设置为 0，避免显示 -- / --
+          ip.supply = 0
+        }
+      })
+      
+      // 批量获取所有 IPShare 的供应量（仅更新那些后端没有返回 supply 的）
+      const ethAddrs = ips
+        .filter(ip => isAddress(ip.ethAddr) && (!ip.supply || ip.supply === 0))
+        .map(ip => ip.ethAddr)
+      
       if (ethAddrs.length > 0) {
-        getIPshareSupplies(ethAddrs)
-          .then(supplies => {
-            list.value.forEach((ip, index) => {
-              if (ip.ethAddr && supplies[ip.ethAddr] !== undefined) {
-                ip.supply = supplies[ip.ethAddr]
-              }
-            })
+        console.log(`🔗 需要从链上获取供应量的地址 (${ethAddrs.length} 个):`, ethAddrs)
+        try {
+          const supplies = await getIPshareSupplies(ethAddrs)
+          console.log('📦 从链上获取的供应量:', supplies)
+          // 更新供应量到列表中（只更新那些没有 supply 的）
+          ips.forEach((ip) => {
+            if (ip.ethAddr && supplies[ip.ethAddr] !== undefined) {
+              const oldSupply = ip.supply
+              ip.supply = supplies[ip.ethAddr]
+              console.log(`✅ 更新供应量: ${ip.ethAddr} - ${oldSupply} → ${ip.supply}`)
+            }
           })
-          .catch(() => {})
+        } catch (e) {
+          console.error('Get IPShare supplies error:', e)
+        }
       }
+      
+      // 使用展开运算符创建新数组以触发响应式更新
+      list.value = [...ips]
+      console.log('✅ IPShare 列表 - 最终数据已更新到列表:', list.value)
+      console.log('📋 IPShare 列表 - 完整数据:', JSON.stringify(list.value, null, 2))
     } else {
       list.value = []
+      console.warn('⚠️ IPShare 列表 - 后端返回的数据格式不正确:', ips)
     }
   } catch (e) {
-    console.error('Refresh IP list error:', e)
+    console.error('❌ Refresh IP list error:', e)
     handleErrorTip(e)
   } finally {
     refreshing.value = false
@@ -72,31 +110,64 @@ async function onLoad() {
     if (refreshing.value || listFinished.value || listLoading.value || list.value.length === 0) return
     listLoading.value = true
     const pageIndex = Math.floor((list.value.length - 1) / 30) + 1
+    console.log(`📄 加载更多 IPShare - 页码: ${pageIndex}`)
     const ips = await getIPShareList(pageIndex)
+    console.log('📥 IPShare 列表 - 加载更多数据:', ips)
+    
     if (!ips || ips.length < 30) {
       listFinished.value = true
     }
     if (ips && Array.isArray(ips) && ips.length > 0) {
-      list.value = list.value.concat(ips)
-      // 批量获取新加载的 IPShare 的供应量
-      const ethAddrs = ips.filter(ip => isAddress(ip.ethAddr)).map(ip => ip.ethAddr)
+      console.log(`📊 IPShare 列表 - 新增 ${ips.length} 条数据`)
+      
+      // 确保每个 IPShare 都有基本数据
+      ips.forEach((ip, index) => {
+        console.log(`\n👤 新增 IPShare #${index + 1}:`, {
+          twitterId: ip.twitterId,
+          twitterName: ip.twitterName,
+          twitterUsername: ip.twitterUsername,
+          ethAddr: ip.ethAddr,
+          supply: ip.supply,
+          profile: ip.profile,
+          followers: ip.followers,
+          followings: ip.followings
+        })
+        
+        // 如果后端没有返回 supply，尝试从链上获取
+        if (!ip.supply && ip.ethAddr && isAddress(ip.ethAddr)) {
+          // 先设置为 0，避免显示 -- / --
+          ip.supply = 0
+        }
+      })
+      
+      // 批量获取新加载的 IPShare 的供应量（仅更新那些后端没有返回 supply 的）
+      const ethAddrs = ips
+        .filter(ip => isAddress(ip.ethAddr) && (!ip.supply || ip.supply === 0))
+        .map(ip => ip.ethAddr)
+      
       if (ethAddrs.length > 0) {
-        getIPshareSupplies(ethAddrs)
-          .then(supplies => {
-            ips.forEach((ip, index) => {
-              if (ip.ethAddr && supplies[ip.ethAddr] !== undefined) {
-                const listIndex = list.value.length - ips.length + index
-                if (list.value[listIndex]) {
-                  list.value[listIndex].supply = supplies[ip.ethAddr]
-                }
-              }
-            })
+        console.log(`🔗 需要从链上获取供应量的地址 (${ethAddrs.length} 个):`, ethAddrs)
+        try {
+          const supplies = await getIPshareSupplies(ethAddrs)
+          console.log('📦 从链上获取的供应量:', supplies)
+          // 更新供应量到新加载的列表中（只更新那些没有 supply 的）
+          ips.forEach((ip) => {
+            if (ip.ethAddr && supplies[ip.ethAddr] !== undefined) {
+              const oldSupply = ip.supply
+              ip.supply = supplies[ip.ethAddr]
+              console.log(`✅ 更新供应量: ${ip.ethAddr} - ${oldSupply} → ${ip.supply}`)
+            }
           })
-          .catch(() => {})
+        } catch (e) {
+          console.error('Get IPShare supplies error:', e)
+        }
       }
+      // 使用展开运算符创建新数组以触发响应式更新
+      list.value = [...list.value, ...ips]
+      console.log(`✅ IPShare 列表 - 总数据量: ${list.value.length} 条`)
     }
   } catch (e) {
-    console.error('Load more IP list error:', e)
+    console.error('❌ Load more IP list error:', e)
     handleErrorTip(e)
   } finally {
     listLoading.value = false
@@ -162,14 +233,19 @@ onMounted(() => {
                 alt=""
               >
               <div class="flex flex-col gap-1 truncate">
-                <div class="text-white font-bold text-h3 leading-5 truncate">{{ ip.twitterName }}</div>
-                <div class="text-12px leading-4 text-grey-8d">@{{ ip.twitterUsername }}</div>
+                <div class="text-black font-bold text-h3 leading-5 truncate">{{ ip.twitterName || 'Unknown' }}</div>
+                <div class="text-12px leading-4 text-grey-8d">@{{ ip.twitterUsername || 'unknown' }}</div>
               </div>
             </div>
             <div class="flex-1 text-center flex justify-end items-center gap-3">
               <div class="text-right flex flex-col gap-1">
-                <div class="text-white font-bold leading-5 text-h4">
-                  {{ formatPrice(stateStore.ethPrice * calculateIPsharePriceLocal(ip.supply)) }} / {{ formatAmount(ip.supply || 0) }}
+                <div class="text-black font-bold leading-5 text-h4">
+                  <template v-if="ip.supply !== undefined && ip.supply !== null && ip.supply > 0">
+                    {{ formatPrice(stateStore.ethPrice * calculateIPsharePriceLocal(ip.supply)) }} / {{ formatAmount(ip.supply) }}
+                  </template>
+                  <template v-else>
+                    <span class="text-grey-8d">-- / --</span>
+                  </template>
                 </div>
                 <div class="whitespace-nowrap text-12px leading-4 text-grey-8d">{{ $t('ip.priceSupply') }}</div>
               </div>

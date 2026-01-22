@@ -42,8 +42,20 @@ export const useStateStore = defineStore('state', {
       referee: '' as string | null | undefined,
       idType: IdType.ENS,
       ethPrice: 0,
-      sellsman: ''
+      sellsman: '',
+      activeHomeTab: 'tweets' as 'tweets' | 'prediction' | 'tagCoin' | 'ip',
+      homeSubMenu: 'tweets' as 'tweets' | 'prediction',
+      coinSubMenu: 'tagCoin' as 'tagCoin' | 'ip'
     }
   },
-
+  actions: {
+    setActiveHomeTab(tab: 'tweets' | 'prediction' | 'tagCoin' | 'ip') {
+      this.activeHomeTab = tab
+      if (tab === 'tweets' || tab === 'prediction') {
+        this.homeSubMenu = tab
+      } else if (tab === 'tagCoin' || tab === 'ip') {
+        this.coinSubMenu = tab
+      }
+    }
+  }
 })

@@ -159,7 +159,7 @@ onActivated(() => {
     </div>
     <div class="col-span-1 h-full overflow-hidden hidden web:block">
       <div class="h-auto max-h-full bg-white rounded-2xl flex flex-col">
-        <div class="font-bold text-h3 py-3 px-4">IP Share</div>
+        <div class="font-bold text-h3 py-3 px-4">Top X Creators</div>
         <div class="flex-1 overflow-auto no-scroll-bar">
           <UserList/>
         </div>

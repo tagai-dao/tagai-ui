@@ -10,6 +10,7 @@ import {handleErrorTip} from '@/utils/notify'
 import {useRouter} from "vue-router";
 import {getTokenInfo} from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
 import {formatPrice} from "../utils/helper";
@@ -30,6 +31,7 @@ const curationStore = useCurationStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const router = useRouter();
+const stateStore = useStateStore();
 const finished = reactive({
   [ListType.MarketCap]: false,
   [ListType.Trending]: false,
@@ -39,7 +41,10 @@ const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
 const tabOptions = ['tweets', 'prediction', 'tagCoin', 'ip']
-const activeTab = ref('tweets')
+const activeTab = computed({
+  get: () => stateStore.activeHomeTab,
+  set: (val) => stateStore.setActiveHomeTab(val)
+})
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -47,7 +52,8 @@ watch(listType, (val) => {
   refresh()
 })
 watch(activeTab, (val) => {
-  // gotoChain(val)
+  // 标签页切换时的处理
+  console.log('Active tab changed to:', val)
 })
 
 async function refresh() {
@@ -210,21 +216,20 @@ const needScroll = ref(true)
 watch([() => contentWidth.value, () => scrollContainer.value], () => {
   if(!scrollContainer.value) return
   needScroll.value = contentWidth.value>scrollContainer.value.clientWidth
-})
-
-const stateStore = useStateStore()
-const scrollNewCommunities = computed(() => {
+  })
+  
+  const scrollNewCommunities = computed(() => {
   if(!comStore.newCommunities) return []
   return comStore.newCommunities.slice(0, 10)
 })
 
 const newComDuration = computed(() => {
-  const totalWidth = scrollNewCommunities.value.length * 210
+  const totalWidth = scrollNewCommunities.value.length * 120
   return (totalWidth / 120) * 1000
 })
 
 const newComContentWidth = computed(() => {
-  return scrollNewCommunities.value.length * 210;
+  return scrollNewCommunities.value.length * 120;
 })
 
 const newComNeedScroll = ref(true)
@@ -265,58 +270,18 @@ const onCreate = (type: GlobalModalType) => {
           <div class="blinking-text text-white text-xs font-bold">Space</div>
         </div>
       </div>
-      <div class="mt-3 flex">
-        <div class="w-full overflow-x-hidden whitespace-nowrap relative" >
-          <div class="flex" :class="newComNeedScroll?'scroll-content':''"
-               :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
-            <div class="w-[210px] min-w-[210px] flex justify-end" @click="gotoDetail(community)"
-                 v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
-                 :key="index">
-              <div class="h-[60px] px-2 rounded-xl shadow-sm bg-white w-full max-w-[200px] flex items-center gap-2">
-                <div class="flex">
-                  <div class="border-[1px] border-white rounded-lg bg-gray-400 w-[40px] h-[40px] z-30">
-                    <img class="w-full h-full rounded-lg" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
-                  </div>
-                </div>
-                <div class="flex flex-col">
-                  <div class="flex-1 multi-content multi-content-2 text-sm font-bold leading-4 " :class="community.listed ? 'text-orange-normal' : ''">{{community.tick}}</div>
-                  <div class="font-400 flex flex-nowrap text-sm">
-                    <span class="">{{$t('marketCap')}}</span>
-                    <span class="mx-1">·</span>
-                    <span class="font-bold">{{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-red-normal w-[100px] h-[14px] flex justify-center items-center
-                  absolute top-[15px] left-[15px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
-                  whitespace-nowrap">
-            <div class="blinking-text text-white text-sm font-bold">New</div>
-          </div>
-        </div>
-      </div>
     </div>
     <div class="px-3 flex justify-between gap-2 web:gap-10" ref="scrollContainer">
-      <div class="bg-white flex rounded-full overflow-hidden shadow-popper-tip">
+      <!-- 移动端显示标签切换，PC 端隐藏（在左侧边栏显示） -->
+      <div class="bg-white flex rounded-full overflow-hidden shadow-popper-tip web:hidden">
         <div v-for="tab of tabOptions" :key="tab"
-             class="h-10 min-w-[80px] web:min-w-[100px] px-2 flex justify-center items-center text-h5 web:text-h3 text-black rounded-full cursor-pointer"
+             class="h-10 min-w-[80px] px-2 flex justify-center items-center text-h5 text-black rounded-full cursor-pointer"
              :class="activeTab===tab?'bg-gradient-primary text-white':''"
              @click="activeTab=tab">{{$t(tab)}}</div>
       </div>
       <SearchBar class="hidden web:flex"/>
-      <PostTypeOption v-if="activeTab==='tweets'"/>
-      <template v-if="activeTab==='tagCoin'">
-        <el-select
-            v-model="listType"
-            class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-10 flex items-center text-h4 text-black"
-            popper-class="c-select-popper rounded-xl"
-        >
-          <el-option :value="ListType.MarketCap" :label="$t('marketCap')" />
-          <el-option :value="ListType.Trending" :label="$t('trending')" />
-          <el-option :value="ListType.New" :label="$t('new')" />
-        </el-select>
-      </template>
+      <!-- 语言切换按钮 - 移到原来 Trending 的位置 -->
+      <LanguageSwitcher class="hidden web:flex" />
       <template v-if="activeTab==='mindshare'">
         <el-select
             v-model="mindShareType"
@@ -328,18 +293,77 @@ const onCreate = (type: GlobalModalType) => {
         </el-select>
       </template>
 
-      <template v-if="activeTab==='prediction'">
+    </div>
+    
+    <!-- Tweets 和 Prediction 按钮 - 仅在首页显示，放在 Search 框和内容之间 -->
+    <div v-if="activeTab==='tweets' || activeTab==='prediction'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
+      <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
+        <button 
+          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          :class="activeTab==='tweets' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setActiveHomeTab('tweets')"
+        >
+          {{ $t('tweets') || 'Tweets' }}
+        </button>
+        <button 
+          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          :class="activeTab==='prediction' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setActiveHomeTab('prediction')"
+        >
+          {{ $t('prediction') || 'Prediction' }}
+        </button>
+      </div>
+      <!-- Trending/New 选择器 - 显示在按钮同一行，靠右对齐（仅在 tweets 时显示） -->
+      <div v-if="activeTab==='tweets'" class="flex-shrink-0">
+        <PostTypeOption />
+      </div>
+      <!-- All/Online/Ended 选择器 - 显示在按钮同一行，靠右对齐（仅在 prediction 时显示） -->
+      <div v-if="activeTab==='prediction'" class="flex-shrink-0">
         <el-select
-            v-model="predictSortType"
-            class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-10 flex items-center text-h4 text-black"
-            popper-class="c-select-popper rounded-xl"
+          v-model="predictSortType"
+          class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
+          popper-class="c-select-popper rounded-xl"
         >
           <el-option :value="PredictSortType.All" :label="$t('all')" />
           <el-option :value="PredictSortType.Online" :label="$t('online')" />
           <el-option :value="PredictSortType.Ended" :label="$t('ended')" />
         </el-select>
-      </template>
+      </div>
     </div>
+    
+    <!-- TagCoin 和 IPShare 按钮 - 仅在 Coin 标签页显示，放在 Search 框和内容之间 -->
+    <div v-if="activeTab==='tagCoin' || activeTab==='ip'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
+      <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
+        <button 
+          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          :class="activeTab==='tagCoin' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setActiveHomeTab('tagCoin')"
+        >
+          {{ $t('tagCoin') || 'TagCoin' }}
+        </button>
+        <button 
+          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          :class="activeTab==='ip' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setActiveHomeTab('ip')"
+        >
+          {{ $t('ip') || 'IPShare' }}
+        </button>
+      </div>
+      <!-- Trending 切换按钮 - 移到右侧，与 TagCoin 内容区域右边对齐 -->
+      <div class="flex-shrink-0">
+        <el-select
+          v-if="activeTab==='tagCoin'"
+          v-model="listType"
+          class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
+          popper-class="c-select-popper rounded-xl"
+        >
+          <el-option :value="ListType.MarketCap" :label="$t('marketCap')" />
+          <el-option :value="ListType.Trending" :label="$t('trending')" />
+          <el-option :value="ListType.New" :label="$t('new')" />
+        </el-select>
+      </div>
+    </div>
+    
     <HomePost v-if="activeTab==='tweets'"/>
     <template v-if="activeTab==='tagCoin'">
       <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
@@ -388,6 +412,36 @@ const onCreate = (type: GlobalModalType) => {
     <div class="flex-1 overflow-auto" v-if="activeTab==='ip'">
       <IPList />
     </div>
+    
+    <!-- 新社区列表 - 缩小到 1/5，放在底部 -->
+    <div class="h-[14px] web:h-[16px] mt-auto web:px-3 pb-2 flex-shrink-0">
+      <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
+        <div class="flex h-full" :class="newComNeedScroll?'scroll-content':''"
+             :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
+          <div class="w-[120px] min-w-[120px] flex justify-end h-full" @click="gotoDetail(community)"
+               v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
+               :key="index">
+            <div class="h-full px-1.5 rounded-lg shadow-sm bg-white w-full max-w-[115px] flex items-center gap-1.5">
+              <div class="flex-shrink-0">
+                <div class="border-[1px] border-gray-200 rounded bg-gray-400 w-3 h-3 web:w-4 web:h-4 z-30">
+                  <img class="w-full h-full rounded" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
+                </div>
+              </div>
+              <div class="flex items-center gap-1 flex-1 min-w-0">
+                <div class="text-[10px] web:text-xs font-bold leading-tight truncate" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
+                <span class="text-[10px] web:text-xs font-bold text-black">${{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-red-normal w-[60px] h-[8px] web:w-[80px] web:h-[10px] flex justify-center items-center
+                absolute top-[2px] left-[8px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
+                whitespace-nowrap">
+          <div class="blinking-text text-white text-[8px] web:text-[10px] font-bold">New</div>
+        </div>
+      </div>
+    </div>
+    
     <div>
       <button v-if="activeTab==='tagCoin'"
               class="absolute bottom-[80px] right-[10px] web:bottom-8"
