@@ -410,6 +410,7 @@
     "twitterErr": "Twitter api error",
     "invalideTwitterId": "Invalid twitter id",
     "userNotRegisterd": "You havn't registed",
+    "userNotRegisterdSocial": "You have not registered a social account",
     "userOrderPending": "You have a pending order now",
     "noRewardToClaim": "No reward to claim or the reward has been claimed",
     "existTick": "The tick is exists",
@@ -434,7 +435,9 @@
     "tweetsAreInADifferentDay": "Tweets are in a different settlement day",
     "marketIsCreated": "Market has been created",
     "marketCreatorNotMatch": "The creator of the market does not match the current user",
-    "tokenNotListed": "Token is not listed"
+    "tokenNotListed": "Token is not listed",
+    "predictNotVoting": "The prediction is not in the voting stage",
+    "predictHasVoted": "You have already participated in this prediction market vote"
   },
   "createPredict": {
     "title": "Create Predict Battle",
@@ -537,7 +540,8 @@
     "vpConsume": "Consume VP",
     "vpRemain": "Remaining VP",
     "vpDesc": "This VP is different from the platform curation VP. It is an independent prediction market voting VP in each community. Each user has a default of 200 VP in each community, with a linear recovery time of 3 days.",
-    "voteConfirmBtn": "Confirm Vote"
+    "voteConfirmBtn": "Confirm Vote",
+    "voteNow": "Vote Now"
   },
   "predictLiquidity": {
     "management": "Liquidity Management",

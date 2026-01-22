@@ -410,6 +410,7 @@
     "twitterErr": "推特api错误",
     "invalideTwitterId": "无效的Twitter ID",
     "userNotRegisterd": "您还未注册",
+    "userNotRegisterdSocial": "您还未注册社交账号",
     "userOrderPending": "您当前有一个待处理的领取订单。",
     "noRewardToClaim": "没有奖励可领取或该奖励已经被领取。",
     "existTick": "该Tick已存在",
@@ -434,7 +435,9 @@
     "tweetsAreInADifferentDay": "两个推文在不同的结算日",
     "marketIsCreated": "该市场已创建",
     "marketCreatorNotMatch": "市场创建者不匹配当前用户",
-    "tokenNotListed": "代币未上市"
+    "tokenNotListed": "代币未上市",
+    "predictNotVoting": "该预测未在投票阶段",
+    "predictHasVoted": "您已经参与过了该预测市场投票"
   },
   "createPredict": {
     "title": "创建预测对战",
@@ -537,7 +540,8 @@
     "vpConsume": "消耗VP",
     "vpRemain": "当前剩余VP",
     "vpDesc": "该VP值不同于平台策展VP，是每个社区中独立的预测市场投票VP。每个用户默认在每个社区有200VP值，线性恢复时间是3天。",
-    "voteConfirmBtn": "确认投票"
+    "voteConfirmBtn": "确认投票",
+    "voteNow": "立即投票"
   },
   "predictLiquidity": {
     "management": "流动性管理",

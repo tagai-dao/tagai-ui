@@ -15,8 +15,8 @@ import { handleErrorTip } from '@/utils/notify';
 import { MAX_VP, VP_CONSUME, VP_RECOVER_DAY } from '@/config';
 
 const props = defineProps<{
-    market: EventPredictData,
-    showCommunity?: boolean
+  market: EventPredictData,
+  showCommunity?: boolean
 }>()
 const router = useRouter();
 const accStore = useAccountStore();
@@ -37,10 +37,10 @@ const selectedVoteOption = ref<'yes' | 'no' | null>(null);
 const showPopover = ref(false);
 
 const aAmount = computed(() => {
-  return props.market.voteYes || (props.market?.amount ?? 0)
+  return props.market.voteYes ?? 0
 })
 const bAmount = computed(() => {
-  return props.market.voteNo || (props.market?.amount ?? 0)
+  return props.market.voteNo ?? 0
 })
 
 const totalCuration = computed(() => {
@@ -48,11 +48,7 @@ const totalCuration = computed(() => {
 })
 
 const isVoting = computed(() => {
-  return props.market.status == 2 || (props.market.endTime * 1000 + 86400000 > Date.now() && props.market.endTime * 1000 < Date.now())
-})
-
-const isSettled = computed(() => {
-  return props.market.status == 3 || (props.market.endTime * 1000 + 86400000 < Date.now())
+  return props.market.status == 2 && (props.market.endTime * 1000 + 86400000 > Date.now() && props.market.endTime * 1000 < Date.now())
 })
 
 // 判断用户是否已投票（voteResult 不为空：不为 null、undefined 或 0）
@@ -60,7 +56,7 @@ const hasVoted = computed(() => {
   return props.market.voteResult !== null && props.market.voteResult !== undefined && props.market.voteResult !== 0
 })
 
-const openTweet = () => {
+const gotoDetail = () => {
   router.push(`/predict-event-detail/${props.market.marketMaker}`)
 }
 
@@ -75,7 +71,7 @@ const buyYes = () => {
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
-  }else {
+  } else {
     selectedColor.value = 'yes';
     showBuyInput.value = true;
     buyAmount.value = '';
@@ -88,7 +84,7 @@ const buyNo = () => {
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
-  }else {
+  } else {
     selectedColor.value = 'no';
     showBuyInput.value = true;
     buyAmount.value = '';
@@ -165,12 +161,12 @@ const preVote = async (yes: boolean) => {
   if (!accStore.getAccountInfo?.twitterId) {
     useModalStore().setModalVisible(true, GlobalModalType.Login)
     return;
-  } 
+  }
 
   if (!accStore.getAccountInfo?.steemId) {
     useModalStore().setModalVisible(true, GlobalModalType.Register)
-      return false;
-    }
+    return false;
+  }
 
 
   try {
@@ -187,300 +183,246 @@ const preVote = async (yes: boolean) => {
         vp = vp > MAX_VP ? MAX_VP : vp
       }
     }
-    
+
     currentVP.value = Math.floor(vp);
     selectedVoteOption.value = yes ? 'yes' : 'no';
     showVoteModal.value = true;
 
   } catch (error) {
     handleErrorTip(error)
-  }finally {
+  } finally {
     voting.value = false;
   }
 }
 
-const confirmVote = () => {
-  if (selectedVoteOption.value) {
-    vote(selectedVoteOption.value === 'yes');
+const vote = async () => {
+  try {
+    voting.value = true
+    await voteEventPrediction(accStore.getAccountInfo?.twitterId, props.market.marketMaker, selectedVoteOption.value == 'yes' ? 1 : 2)
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    voting.value = false;
   }
-  showVoteModal.value = false;
-}
-
-const vote = async (yes: boolean) => {
- try {
-  voting.value = true
-  await voteEventPrediction(accStore.getAccountInfo?.twitterId, props.market.marketMaker, yes ? 1 : 2)
- } catch (error) {
-  
- } finally {
-  voting.value = false;
- }
 }
 
 </script>
 
 <template>
-    <div @click="openTweet()" class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border mb-3 border-grey-light"
-      >
-        <!-- 卡片头部 -->
-        <div class="flex justify-between items-start">
-          <h3 class="text-base sm:text-lg font-semibold text-black flex-1 pr-2 md:h-[3rem] md:line-clamp-2">
-            {{ market.title }}
-            <span v-if="showCommunity" class="cursor-pointer" @click.stop="openCommunity(market.tick)">
-              (@<span class="text-blue-600 underline">{{ market.tick }}</span>)
-            </span>
-          </h3>
-          <!-- 倒计时/状态 -->
-          <div class="flex flex-col items-end">
-            <div
-              class="px-2 py-1 rounded-full text-xs font-medium"
-              :class="{
-                'bg-green-light text-green-dark': !market.winner,
-                'bg-grey-light text-grey-normal': !!market.winner,
-              }"
-            >
-              {{ market.status == 1 ? parseTimestamp(market.endTime * 1000) : (isVoting ? $t('predictTrade.voting') : $t('ended')) }}
-            </div>
-          </div>
-        </div>
-
-        <!-- 对战双方 - 上下布局 -->
-        <div class="flex flex-col gap-3 sm:gap-4 relative overflow-hidden rounded-xl sm:rounded-2xl border-2 p-3 sm:p-4"
-          :class="{
-            'bg-gray-50 border-gray-200': !market.winner,
-            'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!market.winner
-          }"
-        >
-          <div class="flex items-stretch gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg border border-red-normal/20 bg-white/50">
-            <!-- 左侧：头像和用户名 -->
-            <div class="flex flex-col items-center gap-2 flex-shrink-0 w-20 sm:w-24">
-              <div class="relative">
-                <UserAvatar
-                  :profile-img="market?.profile"
-                  :name="market.twitterName"
-                  :username="market.twitterUsername"
-                  :followers="market.followers"
-                  :followings="market.followings"
-                  :credit="market.credit"
-                  :steem-id="market.steemId"
-                  :eth-addr="market.ethAddr"
-                  :teleported="true"
-                >
-                  <template #avatar-img>
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-red-normal shadow-md">
-                      <img
-                        v-if="market?.profile"
-                        :src="market?.profile"
-                        :alt="market?.twitterName"
-                        class="w-full h-full object-cover"
-                      >
-                      <div v-else class="w-full h-full bg-red-normal flex items-center justify-center">
-                        <i-ep-avatar class="text-white text-lg sm:text-2xl" />
-                      </div>
-                    </div>
-                  </template>
-                </UserAvatar>
-              </div>
-              <p class="text-xs sm:text-sm font-bold text-red-normal leading-tight break-words text-center max-w-[80px]">
-                {{ market.twitterUsername }}
-              </p>
-            </div>
-
-            <!-- 中间：推文内容 -->
-            <div class="flex-1 overflow-hidden min-w-0">
-              <div class="text-sm sm:text-base text-grey-normal leading-relaxed">
-                <div class="line-clamp-3 sm:line-clamp-4" :title="market?.content ?? ''">
-                  {{ market?.content ?? '' }}
-                </div>
-              </div>
-            </div>
-
-            <!-- 右侧：结果显示 -->
-              <div v-if="market.status == 1" class="flex flex-col text-red-600 text-xs sm:text-sm items-center justify-center flex-shrink-0 self-stretch square-button border-2 border-red-normal rounded-lg px-1 py-2 w-16 sm:w-20 cursor-pointer hover:opacity-90 transition-opacity">
-                  <span class="text-lg">
-                    {{ market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no') }}
-                  </span>
-              </div>
-          </div>
-          <!-- 底部：购买/投票按钮区域 -->
-          <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
-            <Transition name="buy-buttons" mode="out-in">
-              <!-- 投票状态：两个投票按钮 -->
-              <div v-if="isVoting && !showBuyInput" key="vote-buttons" class="flex gap-3 sm:gap-4 w-full">
-                <!-- Vote Yes 按钮 -->
-                <button 
-                  class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center gap-2 vote-yes-btn"
-                  :class="{
-                    'opacity-50 cursor-not-allowed': hasVoted,
-                    'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
-                  }"
-                  @click.stop="preVote(true)"
-                  :disabled="hasVoted"
-                >
-                  {{ $t('predictTrade.voteYes') || '投票Yes' }}
-                  <span v-if="hasVoted && market.voteResult === 1" class="bg-white rounded-full p-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                  </span>
-                </button>
-                <!-- Vote No 按钮 -->
-                <button 
-                  class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center gap-2 vote-no-btn"
-                  :class="{
-                    'opacity-50 cursor-not-allowed': hasVoted,
-                    'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted
-                  }"
-                  @click.stop="preVote(false)"
-                  :disabled="hasVoted"
-                >
-                  {{ $t('predictTrade.voteNo') || '投票No' }}
-                  <span v-if="hasVoted && market.voteResult === 2" class="bg-white rounded-full p-0.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
-                  </span>
-                </button>
-              </div>
-              
-              <!-- 默认状态：两个购买按钮 -->
-              <div v-else-if="!showBuyInput" key="buttons" class="flex gap-3 sm:gap-4 w-full">
-                <button 
-                  class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
-                  @click="buyYes()"
-                  :disabled="isSettled"
-                >
-                  {{ $t('predictTrade.buyYes') || '购买是' }}
-                 ({{ percentA.toFixed(2) }})
-                </button>
-                <button 
-                  class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
-                  @click="buyNo()"
-                  :disabled="isSettled"
-                >
-                  {{ $t('predictTrade.buyNo') || '购买不是' }}
-                  ({{ percentB.toFixed(2) }})
-                </button>
-              </div>
-              
-              <!-- 输入状态：输入框、购买按钮、关闭按钮 -->
-              <div v-else key="input" class="flex gap-2 sm:gap-3 w-full items-center">
-                <input
-                  v-model="buyAmount"
-                  type="number"
-                  :placeholder="$t('predictTrade.intputTokenAmount', { tick: market.tick })"
-                  class="flex-1 h-14 sm:h-16 px-3 sm:px-4 text-sm sm:text-base border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all"
-                  :class="selectedColor === 'yes' ? 'border-red-normal focus:ring-red-normal' : 'border-blue-600 focus:ring-blue-600'"
-                  @keyup.enter="confirmBuy"
-                />
-                <button
-                  @click="confirmBuy()"
-                  class="h-14 sm:h-16 px-4 sm:px-6 text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center text-white"
-                  :class="selectedColor === 'no' ? 'bg-red-normal' : 'bg-blue-600'"
-                  :disabled="!buyAmount || parseFloat(buyAmount) <= 0 || calculatingAmount || trading"
-                >
-                  <span>{{ $t('buy') || '购买' }}</span>
-                  <i-ep-loading v-if="trading" class="animate-spin" />
-                  <span v-if="willReceiveAmount > 0 && !trading" class="text-xs opacity-90 mt-0.5">
-                   {{ $t('predictTrade.getResult', {
-                      amount: formatAmount(willReceiveAmount), 
-                      result: selectedColor === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no')
-                    }) }}
-                  </span>
-                  <span v-else-if="calculatingAmount" class="text-xs opacity-90 mt-0.5">
-                    {{ $t('predictTrade.calculating') }}
-                  </span>
-                </button>
-                <button
-                  @click="closeBuyInput()"
-                  class="h-6 sm:h-8 w-8 sm:w-10 flex items-center justify-center rounded-lg bg-gray-200 hover:bg-gray-300 active:scale-[0.98] transition-all duration-200"
-                  title="关闭"
-                >
-                  <i-ep-close class="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </Transition>
-          </div>
+  <div @click="gotoDetail()"
+    class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border mb-3 border-grey-light">
+    <!-- 卡片头部 -->
+    <div class="flex justify-between items-start">
+      <h3 class="text-base sm:text-lg font-semibold text-black flex-1 pr-2 md:h-[3rem] md:line-clamp-2">
+        {{ market.title }}
+        <span v-if="showCommunity" class="cursor-pointer" @click.stop="openCommunity(market.tick)">
+          (@<span class="text-blue-600 underline">{{ market.tick }}</span>)
+        </span>
+      </h3>
+      <!-- 倒计时/状态 -->
+      <div class="flex flex-col items-end">
+        <div class="px-2 py-1 rounded-full text-xs font-medium" :class="{
+          'bg-green-light text-green-dark': !market.winner,
+          'bg-grey-light text-grey-normal': !!market.winner,
+        }">
+          {{ market.status == 1 ? parseTimestamp(market.endTime * 1000) : (isVoting ? $t('predictTrade.voting') :
+            $t('ended')) }}
         </div>
       </div>
+    </div>
 
-    <!-- 投票确认弹窗 -->
-    <van-dialog
-      v-model:show="showVoteModal"
-      :show-confirm-button="false"
-      :show-cancel-button="false"
-      class="vote-confirm-dialog"
-      close-on-click-overlay
-    >
-      <div class="py-6 px-10 relative">
-        <button 
-          class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          @click="showVoteModal = false"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <h3 class="text-xl font-bold text-center mb-4 text-gray-800">{{ $t('predictTrade.voteConfirmTitle') }}</h3>
-        
-        <p class="text-gray-500 text-ml mb-4 leading-relaxed">
-          {{ $t('predictTrade.voteConfirmText') }}
-        </p>
-
-        <p class="text-center text-base font-medium text-blue-600 mb-8 bg-blue-50 py-2 rounded-lg">
-          {{ selectedVoteOption === 'yes' ? $t('predictTrade.voteForYes') : $t('predictTrade.voteForNo') }}
-        </p>
-        
-        <div class="flex flex-col gap-4 mb-8">
-          <div class="flex items-center text-base">
-            <div class="flex items-center gap-1 w-28">
-              <span class="text-gray-600">{{ $t('predictTrade.vpConsume') }}</span>
-              
-              <van-popover
-                v-model:show="showPopover"
-                theme="dark"
-                placement="top"
-              >
-                <div class="p-3 text-xs w-64 text-center leading-relaxed">
-                  {{ $t('predictTrade.vpDesc') }}
-                </div>
-                <template #reference>
-                  <div 
-                    class="cursor-help flex items-center"
-                    @mouseenter="showPopover = true"
-                    @mouseleave="showPopover = false"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+    <!-- 对战双方 - 上下布局 -->
+    <div class="flex flex-col gap-3 sm:gap-4 relative overflow-hidden rounded-xl sm:rounded-2xl border-2 p-3 sm:p-4"
+      :class="{
+        'bg-gray-50 border-gray-200': !market.winner,
+        'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!market.winner
+      }">
+      <div class="flex items-stretch gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg border border-red-normal/20 bg-white/50">
+        <!-- 左侧：头像和用户名 -->
+        <div class="flex flex-col items-center gap-2 flex-shrink-0 w-20 sm:w-24">
+          <div class="relative">
+            <UserAvatar :profile-img="market?.profile" :name="market.twitterName" :username="market.twitterUsername"
+              :followers="market.followers" :followings="market.followings" :credit="market.credit"
+              :steem-id="market.steemId" :eth-addr="market.ethAddr" :teleported="true">
+              <template #avatar-img>
+                <div
+                  class="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-red-normal shadow-md">
+                  <img v-if="market?.profile" :src="market?.profile" :alt="market?.twitterName"
+                    class="w-full h-full object-cover">
+                  <div v-else class="w-full h-full bg-red-normal flex items-center justify-center">
+                    <i-ep-avatar class="text-white text-lg sm:text-2xl" />
                   </div>
-                </template>
-              </van-popover>
-            </div>
-            <span class="text-red-500 font-medium text-lg">: {{ VP_CONSUME.PREDICT_VOTE }}</span>
+                </div>
+              </template>
+            </UserAvatar>
           </div>
-          <div class="flex items-center text-base">
-            <span class="text-gray-600 w-28">{{ $t('predictTrade.vpRemain') }}</span>
-            <span 
-              class="font-medium text-lg"
-              :class="currentVP >= VP_CONSUME.PREDICT_VOTE ? 'text-green-500' : 'text-red-500'"
-            >
-              : {{ currentVP }}
-            </span>
+          <p class="text-xs sm:text-sm font-bold text-red-normal leading-tight break-words text-center max-w-[80px]">
+            {{ market.twitterUsername }}
+          </p>
+        </div>
+
+        <!-- 中间：推文内容 -->
+        <div class="flex-1 overflow-hidden min-w-0">
+          <div class="text-sm sm:text-base text-grey-normal leading-relaxed">
+            <div class="line-clamp-3 sm:line-clamp-4" :title="market?.content ?? ''">
+              {{ market?.content ?? '' }}
+            </div>
           </div>
         </div>
 
-        <button
-          class="w-full py-3 rounded-full text-white font-bold text-lg shadow-md transition-all duration-200"
-          :class="currentVP >= VP_CONSUME.PREDICT_VOTE ? 'bg-gradient-primary hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]' : 'bg-gray-300 cursor-not-allowed'"
-          :disabled="currentVP < VP_CONSUME.PREDICT_VOTE"
-          @click="confirmVote"
-        >
-          {{ $t('predictTrade.voteConfirmBtn') }}
-        </button>
+        <!-- 右侧：结果显示 -->
       </div>
-    </van-dialog>
+      <!-- 底部：购买/投票按钮区域 -->
+      <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
+        <Transition name="buy-buttons" mode="out-in">
+
+          <!-- 默认状态：两个购买按钮 -->
+          <div v-if="!showBuyInput" key="buttons" class="flex gap-3 sm:gap-4 w-full">
+            <button
+              class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
+              @click="buyYes()" :disabled="!!market.winner || isVoting">
+              {{ $t('predictTrade.buyYes') || '购买是' }}
+              ({{ percentA.toFixed(2) }})
+            </button>
+            <button
+              class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
+              @click="buyNo()" :disabled="!!market.winner || isVoting">
+              {{ $t('predictTrade.buyNo') || '购买不是' }}
+              ({{ percentB.toFixed(2) }})
+            </button>
+            <!-- 投票状态：两个投票按钮 -->
+            <button v-if="isVoting && !showBuyInput"
+              class="flex-1 h-10 sm:h-12 bg-gradient-primary text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+              @click="gotoDetail()">
+              {{ $t('predictTrade.voteNow') }}
+              <!-- 如果已投票，显示勾选图标 -->
+              <!-- <span v-if="hasVoted" class="bg-white rounded-full p-0.5 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                      </span> -->
+            </button>
+            <div v-if="market.winner"
+              @click="gotoDetail()"
+              class="flex-1 h-10 sm:h-12 bg-gradient-primary text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
+              :class="market.winner === 'yes' ? 'bg-[#293233] border-[#374244]' : 'bg-[#293233] border-[#374244]'">
+              <span class="text-lg font-bold text-white">
+                {{ market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no') }}
+              </span>
+              <div class="rounded-full p-0.5" :class="market.winner === 'yes' ? 'bg-green-500' : 'bg-red-500'">
+                <svg v-if="market.winner === 'yes'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white"
+                  viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clip-rule="evenodd" />
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20"
+                  fill="currentColor">
+                  <path fill-rule="evenodd"
+                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                    clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- 输入状态：输入框、购买按钮、关闭按钮 -->
+          <div v-else key="input" class="flex gap-2 sm:gap-3 w-full items-center">
+            <input v-model="buyAmount" type="number"
+              :placeholder="$t('predictTrade.intputTokenAmount', { tick: market.tick })"
+              class="flex-1 h-14 sm:h-16 px-3 sm:px-4 text-sm sm:text-base border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all"
+              :class="selectedColor === 'yes' ? 'border-red-normal focus:ring-red-normal' : 'border-blue-600 focus:ring-blue-600'"
+              @keyup.enter="confirmBuy" />
+            <button @click="confirmBuy()"
+              class="h-14 sm:h-16 px-4 sm:px-6 text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center text-white"
+              :class="selectedColor === 'no' ? 'bg-red-normal' : 'bg-blue-600'"
+              :disabled="!buyAmount || parseFloat(buyAmount) <= 0 || calculatingAmount || trading">
+              <span>{{ $t('buy') || '购买' }}</span>
+              <i-ep-loading v-if="trading" class="animate-spin" />
+              <span v-if="willReceiveAmount > 0 && !trading" class="text-xs opacity-90 mt-0.5">
+                {{ $t('predictTrade.getResult', {
+                  amount: formatAmount(willReceiveAmount),
+                  result: selectedColor === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no')
+                }) }}
+              </span>
+              <span v-else-if="calculatingAmount" class="text-xs opacity-90 mt-0.5">
+                {{ $t('predictTrade.calculating') }}
+              </span>
+            </button>
+            <button @click="closeBuyInput()"
+              class="h-6 sm:h-8 w-8 sm:w-10 flex items-center justify-center rounded-lg bg-gray-200 hover:bg-gray-300 active:scale-[0.98] transition-all duration-200"
+              title="关闭">
+              <i-ep-close class="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+        </Transition>
+      </div>
+    </div>
+  </div>
+
+  <!-- 投票确认弹窗 -->
+  <van-dialog v-model:show="showVoteModal" :show-confirm-button="false" :show-cancel-button="false"
+    class="vote-confirm-dialog" close-on-click-overlay>
+    <div class="py-6 px-10 relative">
+      <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+        @click="showVoteModal = false">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <h3 class="text-xl font-bold text-center mb-4 text-gray-800">{{ $t('predictTrade.voteConfirmTitle') }}</h3>
+
+      <p class="text-gray-500 text-ml mb-4 leading-relaxed">
+        {{ $t('predictTrade.voteConfirmText') }}
+      </p>
+
+      <p class="text-center text-base font-medium text-blue-600 mb-8 bg-blue-50 py-2 rounded-lg">
+        {{ selectedVoteOption === 'yes' ? $t('predictTrade.voteForYes') : $t('predictTrade.voteForNo') }}
+      </p>
+
+      <div class="flex flex-col gap-4 mb-8">
+        <div class="flex items-center text-base">
+          <div class="flex items-center gap-1 w-28">
+            <span class="text-gray-600">{{ $t('predictTrade.vpConsume') }}</span>
+
+            <van-popover v-model:show="showPopover" theme="dark" placement="top">
+              <div class="p-3 text-xs w-64 text-center leading-relaxed">
+                {{ $t('predictTrade.vpDesc') }}
+              </div>
+              <template #reference>
+                <div class="cursor-help flex items-center" @mouseenter="showPopover = true"
+                  @mouseleave="showPopover = false">
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </template>
+            </van-popover>
+          </div>
+          <span class="text-red-500 font-medium text-lg">: {{ VP_CONSUME.PREDICT_VOTE }}</span>
+        </div>
+        <div class="flex items-center text-base">
+          <span class="text-gray-600 w-28">{{ $t('predictTrade.vpRemain') }}</span>
+          <span class="font-medium text-lg"
+            :class="currentVP >= VP_CONSUME.PREDICT_VOTE ? 'text-green-500' : 'text-red-500'">
+            : {{ currentVP }}
+          </span>
+        </div>
+      </div>
+
+      <button
+        class="w-full py-3 rounded-full text-white font-bold text-lg shadow-md transition-all duration-200 flex items-center justify-center"
+        :class="(currentVP >= VP_CONSUME.PREDICT_VOTE && !voting) ? 'bg-gradient-primary hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]' : 'bg-gray-300 cursor-not-allowed'"
+        :disabled="currentVP < VP_CONSUME.PREDICT_VOTE || voting" @click="vote">
+        {{ $t('predictTrade.voteConfirmBtn') }}
+        <i-ep-loading v-if="voting" class="animate-spin mr-2" />
+      </button>
+    </div>
+  </van-dialog>
 </template>
 
 <style scoped>
@@ -489,472 +431,497 @@ const vote = async (yes: boolean) => {
   background: linear-gradient(135deg, #FE913F 0%, #E58339 100%);
 }
 
-    .predict-battle-container {
-      min-height: 100vh;
-      background-color: #f8f9fa;
-    }
-    
-    .battle-card {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      backdrop-filter: blur(10px);
-    }
-    
-    .battle-card:hover {
-      transform: translateY(-4px) scale(1.02);
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    }
-    
-    /* 玩家卡片样式 */
-    .player-card {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    /* 支持按钮样式 */
-    .support-btn {
-      position: relative;
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-    }
-    
-    .support-btn::before {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0;
-      height: 0;
-      background: rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-      transition: width 0.6s, height 0.6s;
-    }
-    
-    .support-btn:active::before {
-      width: 300px;
-      height: 300px;
-    }
-    
-    .support-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-    
-    /* 投票按钮样式覆盖 */
-    .vote-yes-btn:disabled,
-    .vote-no-btn:disabled {
-      cursor: not-allowed;
-    }
-    
-    /* VS 标识样式 */
-    .vs-container {
-      position: relative;
-      z-index: 10;
-      width: 5rem; /* 固定宽度 80px */
-      flex-shrink: 0; /* 不允许收缩 */
-    }
-    
-    .vs-bg {
-      position: relative;
-      z-index: 2;
-      background: linear-gradient(135deg, #FE913F 0%, #E58339 100%);
-      box-shadow: 
-        0 15px 40px rgba(254, 145, 63, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.3),
-        inset 0 2px 0 rgba(255, 255, 255, 0.4),
-        inset 0 -2px 0 rgba(0, 0, 0, 0.1);
-    }
-    
-    .vs-text {
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-      letter-spacing: 2px;
-    }
-    
-    /* 浮动动画 */
-    @keyframes float {
-      0%, 100% {
-        transform: translateY(0px);
-      }
-      50% {
-        transform: translateY(-10px);
-      }
-    }
-    
-    /* 脉冲动画 */
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 0.3;
-        transform: scale(1);
-      }
-      50% {
-        opacity: 0.6;
-        transform: scale(1.05);
-      }
-    }
-    
-    .vs-indicator .animate-pulse {
-      animation: pulse 2s ease-in-out infinite;
-    }
-    
-    /* VS 装饰动画 */
-    @keyframes rotate {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(360deg);
-      }
-    }
-    
-    .vs-indicator .animate-spin {
-      animation: rotate 8s linear infinite;
-    }
-    
-    /* 火焰动画 */
-    @keyframes flame {
-      0%, 100% {
-        transform: scale(1) rotate(-2deg);
-      }
-      50% {
-        transform: scale(1.1) rotate(2deg);
-      }
-    }
-    
-    .absolute.-top-3.-right-3 {
-      animation: flame 1.5s ease-in-out infinite;
-    }
-    
-    /* 箭头脉冲动画 */
-    @keyframes arrowPulse {
-      0%, 100% {
-        opacity: 0.8;
-        transform: translateY(-50%) scale(1);
-      }
-      50% {
-        opacity: 1;
-        transform: translateY(-50%) scale(1.1);
-      }
-    }
-    
-    .absolute.-left-4,
-    .absolute.-right-4 {
-      animation: arrowPulse 2s ease-in-out infinite;
-    }
-    
-    .absolute.-left-4 {
-      animation-delay: 0s;
-    }
-    
-    .absolute.-right-4 {
-      animation-delay: 1s;
-    }
-    
-    /* 头像边框动画 */
-    .player-card .w-16 {
-      transition: all 0.3s ease;
-    }
-    
-    .player-card:hover .w-16 {
-      transform: scale(1.1);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    }
-    
-    /* 在线状态指示器动画 */
-    .player-card .absolute.-bottom-1.-right-1 {
-      animation: heartbeat 2s ease-in-out infinite;
-    }
-    
-    @keyframes heartbeat {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.1);
-      }
-    }
-    
-    /* 响应式设计 */
-    @media (max-width: 768px) {
-      .battle-card {
-        margin: 0 -8px 0.75rem -8px; /* 保持底部边距 mb-3 (0.75rem) */
-        border-radius: 1rem;
-      }
-      
-      .vs-bg {
-        width: 4rem;
-        height: 4rem;
-      }
-      
-      .vs-text {
-        font-size: 1rem;
-      }
-      
-      .player-card {
-        padding: 0.5rem;
-        min-height: 180px;
-      }
-      
-      .player-card .w-16 {
-        width: 3rem;
-        height: 3rem;
-      }
-      
-      .support-btn {
-        padding: 0.75rem;
-        font-size: 0.875rem;
-      }
-    }
-    
-    @media (max-width: 640px) {
-      .battle-card {
-        margin: 0 -4px 0.75rem -4px; /* 保持底部边距 mb-3 (0.75rem) */
-        border-radius: 0.75rem;
-      }
-      
-      .player-card {
-        padding: 0.5rem;
-        min-height: 160px;
-      }
-      
-      .vs-container {
-        width: 3rem;
-        padding: 0 0.25rem;
-      }
-      
-      .vs-bg {
-        width: 3rem;
-        height: 3rem;
-      }
-      
-      .vs-text {
-        font-size: 0.875rem;
-      }
-    }
-    
-    @media (max-width: 640px) {
-      .flex.items-center.gap-4 {
-        gap: 0.5rem;
-      }
-      
-      .vs-container {
-        width: 3rem; /* 移动端更小的固定宽度 */
-      }
-      
-      .vs-container {
-        padding: 0 0.5rem;
-      }
-      
-      .player-card .flex.items-center.gap-3 {
-        gap: 0.75rem;
-      }
-      
-      .player-card h4 {
-        font-size: 1rem;
-      }
-      
-      .player-card p {
-        font-size: 0.75rem;
-      }
-    }
-    
-    /* 确保背景始终为白色 */
-    .predict-battle-container {
-      background-color: #f8f9fa !important;
-    }
-    
-    /* 文本截断样式 */
-    .line-clamp-3 {
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.4;
-      max-height: calc(1.4em * 3);
-    }
-    
-    .line-clamp-5 {
-      display: -webkit-box;
-      -webkit-line-clamp: 5;
-      line-clamp: 5;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      line-height: 1.4;
-      max-height: calc(1.4em * 5);
-    }
-    
-    /* 卡片高度一致性 */
-    .battle-player-card {
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .player-card {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    
-    /* 预测文字区域样式 */
-    .prediction-text {
-      background: rgba(255, 255, 255, 0.5);
-      backdrop-filter: blur(10px);
-      border-radius: 0.75rem;
-      padding: 0.75rem;
-      font-size: 0.875rem;
-      line-height: 1.5;
-      color: #3b3b3b;
-      flex: 1;
-      display: flex;
-      align-items: flex-start;
-    }
-    
-    /* 支持按钮样式 */
-    .support-btn-small {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-      border: 1px solid;
-    }
-    
-    .support-btn-small:hover {
-      transform: scale(1.1);
-    }
-    
-    /* Winner标识样式 */
-    .winner-overlay {
-      position: absolute;
-      top: -0.25rem;
-      right: -0.25rem;
-      width: 1.5rem;
-      height: 1.5rem;
-      background: #34C759;
-      border-radius: 50%;
-      border: 2px solid white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      z-index: 10;
-    }
-    
-    .winner-overlay img {
-      width: 0.75rem;
-      height: 0.75rem;
-    }
-    
-    /* 已结束对战的样式 */
-    .player-card.ended {
-      opacity: 0.8;
-      filter: grayscale(0.3);
-    }
-    
-    /* 胜利者样式 */
-    .winner-badge {
-      background: linear-gradient(135deg, #34C759 0%, #30A46C 100%);
-      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
-      animation: winnerGlow 2s ease-in-out infinite alternate;
-    }
-    
-    @keyframes winnerGlow {
-      0% {
-        box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
-      }
-      100% {
-        box-shadow: 0 6px 20px rgba(52, 199, 89, 0.5);
-      }
-    }
-    
-    /* 已结束状态样式 */
-    .ended-badge {
-      background: linear-gradient(135deg, #6F6F6F 0%, #5A5A5A 100%);
-      opacity: 0.8;
-    }
-    
-    /* 加载动画 */
-    @keyframes shimmer {
-      0% {
-        background-position: -200px 0;
-      }
-      100% {
-        background-position: calc(200px + 100%) 0;
-      }
-    }
-    
-    .player-card.loading {
-      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-      background-size: 200px 100%;
-      animation: shimmer 1.5s infinite;
-    }
-    
-    /* 成功状态动画 */
-    @keyframes successPulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7);
-      }
-      70% {
-        box-shadow: 0 0 0 10px rgba(52, 199, 89, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(52, 199, 89, 0);
-      }
-    }
-    
-    .support-btn.success {
-      animation: successPulse 0.6s ease-out;
-    }
-    
-    /* 自定义滚动条 */
-    .predict-battle-container::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    .predict-battle-container::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.1);
-      border-radius: 3px;
-    }
-    
-    .predict-battle-container::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.3);
-      border-radius: 3px;
-    }
-    
-    .predict-battle-container::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 0, 0, 0.5);
-    }
-    
-    /* 正方形按钮样式 - 高度等于推文高度，宽度固定 */
-    .square-button {
-      /* 宽度已通过 w-16 sm:w-20 设置，高度通过 self-stretch 拉伸 */
-      min-width: 0; /* 允许在 flex 容器中正确计算 */
-    }
-    
-    /* 购买按钮动画 */
-    .buy-buttons-enter-active,
-    .buy-buttons-leave-active {
-      transition: all 0.3s ease;
-    }
-    
-    .buy-buttons-enter-from {
-      opacity: 0;
-      transform: translateY(-10px) scale(0.9);
-    }
-    
-    .buy-buttons-leave-to {
-      opacity: 0;
-      transform: translateY(10px) scale(0.9);
-    }
-    
-    .buy-buttons-move {
-      transition: transform 0.3s ease;
-    }
-    </style>
-    
+.predict-battle-container {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.battle-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.battle-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 玩家卡片样式 */
+.player-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 支持按钮样式 */
+.support-btn {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+}
+
+.support-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.support-btn:active::before {
+  width: 300px;
+  height: 300px;
+}
+
+.support-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* 投票按钮样式覆盖 */
+.vote-yes-btn:disabled,
+.vote-no-btn:disabled {
+  cursor: not-allowed;
+}
+
+/* VS 标识样式 */
+.vs-container {
+  position: relative;
+  z-index: 10;
+  width: 5rem;
+  /* 固定宽度 80px */
+  flex-shrink: 0;
+  /* 不允许收缩 */
+}
+
+.vs-bg {
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, #FE913F 0%, #E58339 100%);
+  box-shadow:
+    0 15px 40px rgba(254, 145, 63, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.3),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.1);
+}
+
+.vs-text {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 2px;
+}
+
+/* 浮动动画 */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.6;
+    transform: scale(1.05);
+  }
+}
+
+.vs-indicator .animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* VS 装饰动画 */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vs-indicator .animate-spin {
+  animation: rotate 8s linear infinite;
+}
+
+/* 火焰动画 */
+@keyframes flame {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(-2deg);
+  }
+
+  50% {
+    transform: scale(1.1) rotate(2deg);
+  }
+}
+
+.absolute.-top-3.-right-3 {
+  animation: flame 1.5s ease-in-out infinite;
+}
+
+/* 箭头脉冲动画 */
+@keyframes arrowPulse {
+
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: translateY(-50%) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+  }
+}
+
+.absolute.-left-4,
+.absolute.-right-4 {
+  animation: arrowPulse 2s ease-in-out infinite;
+}
+
+.absolute.-left-4 {
+  animation-delay: 0s;
+}
+
+.absolute.-right-4 {
+  animation-delay: 1s;
+}
+
+/* 头像边框动画 */
+.player-card .w-16 {
+  transition: all 0.3s ease;
+}
+
+.player-card:hover .w-16 {
+  transform: scale(1.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 在线状态指示器动画 */
+.player-card .absolute.-bottom-1.-right-1 {
+  animation: heartbeat 2s ease-in-out infinite;
+}
+
+@keyframes heartbeat {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .battle-card {
+    margin: 0 -8px 0.75rem -8px;
+    /* 保持底部边距 mb-3 (0.75rem) */
+    border-radius: 1rem;
+  }
+
+  .vs-bg {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .vs-text {
+    font-size: 1rem;
+  }
+
+  .player-card {
+    padding: 0.5rem;
+    min-height: 180px;
+  }
+
+  .player-card .w-16 {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .support-btn {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .battle-card {
+    margin: 0 -4px 0.75rem -4px;
+    /* 保持底部边距 mb-3 (0.75rem) */
+    border-radius: 0.75rem;
+  }
+
+  .player-card {
+    padding: 0.5rem;
+    min-height: 160px;
+  }
+
+  .vs-container {
+    width: 3rem;
+    padding: 0 0.25rem;
+  }
+
+  .vs-bg {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .vs-text {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .flex.items-center.gap-4 {
+    gap: 0.5rem;
+  }
+
+  .vs-container {
+    width: 3rem;
+    /* 移动端更小的固定宽度 */
+  }
+
+  .vs-container {
+    padding: 0 0.5rem;
+  }
+
+  .player-card .flex.items-center.gap-3 {
+    gap: 0.75rem;
+  }
+
+  .player-card h4 {
+    font-size: 1rem;
+  }
+
+  .player-card p {
+    font-size: 0.75rem;
+  }
+}
+
+/* 确保背景始终为白色 */
+.predict-battle-container {
+  background-color: #f8f9fa !important;
+}
+
+/* 文本截断样式 */
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: calc(1.4em * 3);
+}
+
+.line-clamp-5 {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: calc(1.4em * 5);
+}
+
+/* 卡片高度一致性 */
+.battle-player-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 预测文字区域样式 */
+.prediction-text {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #3b3b3b;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+}
+
+/* 支持按钮样式 */
+.support-btn-small {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+.support-btn-small:hover {
+  transform: scale(1.1);
+}
+
+/* Winner标识样式 */
+.winner-overlay {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: #34C759;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.winner-overlay img {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
+/* 已结束对战的样式 */
+.player-card.ended {
+  opacity: 0.8;
+  filter: grayscale(0.3);
+}
+
+/* 胜利者样式 */
+.winner-badge {
+  background: linear-gradient(135deg, #34C759 0%, #30A46C 100%);
+  box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+  animation: winnerGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes winnerGlow {
+  0% {
+    box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+  }
+
+  100% {
+    box-shadow: 0 6px 20px rgba(52, 199, 89, 0.5);
+  }
+}
+
+/* 已结束状态样式 */
+.ended-badge {
+  background: linear-gradient(135deg, #6F6F6F 0%, #5A5A5A 100%);
+  opacity: 0.8;
+}
+
+/* 加载动画 */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.player-card.loading {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* 成功状态动画 */
+@keyframes successPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 199, 89, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 199, 89, 0);
+  }
+}
+
+.support-btn.success {
+  animation: successPulse 0.6s ease-out;
+}
+
+/* 自定义滚动条 */
+.predict-battle-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.predict-battle-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.predict-battle-container::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.predict-battle-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* 正方形按钮样式 - 高度等于推文高度，宽度固定 */
+.square-button {
+  /* 宽度已通过 w-16 sm:w-20 设置，高度通过 self-stretch 拉伸 */
+  min-width: 0;
+  /* 允许在 flex 容器中正确计算 */
+}
+
+/* 购买按钮动画 */
+.buy-buttons-enter-active,
+.buy-buttons-leave-active {
+  transition: all 0.3s ease;
+}
+
+.buy-buttons-enter-from {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.9);
+}
+
+.buy-buttons-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.9);
+}
+
+.buy-buttons-move {
+  transition: transform 0.3s ease;
+}
+</style>

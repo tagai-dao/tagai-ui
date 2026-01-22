@@ -258,6 +258,15 @@ export const handleServerError = (code: number) => {
     case errCode.TOKEN_NOT_LISTED:
       notify({ message: t('errMessage.tokenNotListed'), type: 'error'});
       break;
+    case errCode.USER_NOT_REGISTERED_SOCIAL_ACCOUNT:
+      notify({ message: t('errMessage.userNotRegisterdSocial'), type: 'error'});
+      break;
+    case errCode.MARKET_NOT_IN_VOTING_PERIOD:
+      notify({ message: t('errMessage.predictNotVoting'), type: 'error'});
+      break;
+    case errCode.USER_ALREADY_VOTED:
+      notify({ message: t('errMessage.predictHasVoted'), type: 'error'});
+      break;
     default:
       break;
   }
