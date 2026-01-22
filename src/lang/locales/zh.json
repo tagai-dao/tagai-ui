@@ -149,7 +149,10 @@
     "createYourCoin": "创建您的社区代币",
     "bindFacaster": "绑定你的 Farcaster",
     "holding": "持有",
+    "ipshare": "IPShare",
     "socialAccount": "社交账户",
+    "feeIncome": "手续费收入",
+    "feeIncomeDesc": "用户购买/售出 IPShare 都会产生手续费。其中4.5%进入KOL的地址, 2.5%进入协议。",
     "addToken": "添加代币",
     "wrap": "Wrap",
     "availableBalance": "可用余额",
@@ -383,7 +386,8 @@
     "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",
     "createIpShare": "创建 IPShare",
     "createIPShareTip": "您可以先创建IPShare",
-    "curateDerictly": "直接策展"
+    "curateDerictly": "直接策展",
+    "totalSupply": "总供应量"
   },
   "errMessage": {
     "idUsed": "身份已经被使用",
@@ -516,5 +520,10 @@
     "winner": "赢家: {winner}",
     "predictionInProgress": "预测进行中",
     "rewardTip": "您可以在预测对决揭晓后赎回您的获胜奖励。"
+  },
+  "walletView": {
+    "totalAmount": "总量",
+    "holdAmount": "持有",
+    "stakedAmount": "已质押"
   }
 }

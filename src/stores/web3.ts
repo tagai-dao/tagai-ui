@@ -104,7 +104,8 @@ export const useIpshareData = defineStore('ipshareData', {
             stakeInfos: {} as Record<string, any>,              // 质押信息 { address: StakeInfo }
             totalStakedIPshares: {} as Record<string, number>,  // 总质押量 { address: totalStaked }
             pendingIPshareProfits: {} as Record<string, number>, // 待领取收益 { address: profit }
-            keyFundRatios: {} as Record<string, number>         // 密钥基金比例 { address: ratio }
+            keyFundRatios: {} as Record<string, number>,         // 密钥基金比例 { address: ratio }
+            kolsInfo: {} as Record<string, number>               // KOL 费用信息 { address: fee } (参考 Donut)
         }
     },
     actions: {
@@ -169,6 +170,16 @@ export const useIpshareData = defineStore('ipshareData', {
         },
 
         /**
+         * 保存 KOL 费用信息（参考 Donut 实现）
+         */
+        saveKolsInfo(kolsInfo: Record<string, number>) {
+            this.kolsInfo = {
+                ...this.kolsInfo,
+                ...kolsInfo
+            }
+        },
+
+        /**
          * 清空所有数据
          */
         clear() {
@@ -178,6 +189,7 @@ export const useIpshareData = defineStore('ipshareData', {
             this.totalStakedIPshares = {}
             this.pendingIPshareProfits = {}
             this.keyFundRatios = {}
+            this.kolsInfo = {}
             this.ipshareListBySupply = []
         }
     },

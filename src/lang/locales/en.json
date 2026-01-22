@@ -149,7 +149,10 @@
     "createYourCoin": "Create your tweet tag",
     "bindFacaster": "Bind Farcaster",
     "holding": "Holding",
+    "ipshare": "IPShare",
     "socialAccount": "Social account",
+    "feeIncome": "Fee Income",
+    "feeIncomeDesc": "Users buy/sell IPShare will cost BNB for fee. 4.5% is to the KOL, 2.5% is to protocol.",
     "addToken": "Add token",
     "wrap": "Wrap",
     "availableBalance": "Available balance",
@@ -383,7 +386,8 @@
     "desc": "Create IPShare, become a personal IP, receive support, and earn IPShare transaction fees.",
     "createIpShare": "Create IPShare",
     "createIPShareTip": "You can create IPShare first",
-    "curateDerictly": "Curate directly"
+    "curateDerictly": "Curate directly",
+    "totalSupply": "Total Supply"
   },
   "errMessage": {
     "idUsed": "Identify has been used",
@@ -516,5 +520,10 @@
     "winner": "Winner: {winner}",
     "predictionInProgress": "Prediction in Progress",
     "rewardTip": "You can redeem your winning positions after the event is resolved."
+  },
+  "walletView": {
+    "totalAmount": "supply",
+    "holdAmount": "holding",
+    "stakedAmount": "staking"
   }
 }

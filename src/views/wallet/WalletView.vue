@@ -7,6 +7,7 @@ import { useAccount } from "@/composables/useAccount";
 import { formatAddress, formatBalance, formatPrice } from "@/utils/helper";
 import { useTools } from "@/composables/useTools";
 import TabSocialAccount from "@/views/wallet/TabSocialAccount.vue";
+import TabIPShareHolding from "@/views/wallet/TabIPShareHolding.vue";
 import { usePrivyStore } from "@/stores/privy";
 import {applyPureReactInVue} from "veaury";
 import Wallet from "@/react_app/Wallet.jsx";
@@ -18,7 +19,7 @@ const ReactWallet = applyPureReactInVue(Wallet);
 
 const accStore = useAccountStore()
 const privyStore = usePrivyStore()
-const tabOptions = ['holding', 'prediction', 'socialAccount']
+const tabOptions = ['holding', 'ipshare', 'prediction', 'socialAccount']
 const activeTab = ref('holding')
 const showPrivyModal = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
@@ -103,6 +104,7 @@ onMounted(() => {
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabHoldTag v-if="activeTab==='holding'"/>
+      <TabIPShareHolding v-if="activeTab==='ipshare'"/>
       <TabPrediction v-if="activeTab==='prediction'"/>
       <TabSocialAccount v-if="activeTab==='socialAccount'"/>
     </div>

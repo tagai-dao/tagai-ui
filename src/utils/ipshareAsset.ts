@@ -6,7 +6,7 @@
 import { aggregate } from '@makerdao/multicall'
 import { IPShareContract2, ChainConfig } from '@/config'
 import { isAddress } from 'viem'
-import { useAccountStore } from '@/stores/web3'
+import { useAccountStore, useIpshareData } from '@/stores/web3'
 
 /**
  * 去重数组
@@ -47,6 +47,16 @@ export const getIPshareSupplies = async (subjects: string[]): Promise<Record<str
         const res = await aggregate(calls, ChainConfig.multiConfig);
         const result = res.results?.transformed || {};
         console.log('IPShare supplies fetched:', result);
+        
+        // 保存到 store（参考 Donut 实现）
+        const ipshareStore = useIpshareData();
+        const currentSupplies = ipshareStore.ipshareSupplies;
+        const mergedSupplies = {
+            ...currentSupplies,
+            ...result
+        };
+        ipshareStore.saveIPshareSupplies(mergedSupplies);
+        
         return result;
     } catch (e) {
         console.error('Get IPShare supplies fail:', e);
@@ -61,8 +71,14 @@ export const getIPshareSupplies = async (subjects: string[]): Promise<Record<str
  */
 export const getIPshareBalances = async (subjects: string[]): Promise<Record<string, number>> => {
     try {
-        const address = useAccountStore().ethConnectAddress;
+        const accountStore = useAccountStore();
+        // 优先使用连接的钱包地址，如果没有则使用账户绑定的地址
+        let address = accountStore.ethConnectAddress;
         if (!isAddress(address)) {
+            address = accountStore.getAccountInfo?.ethAddr;
+        }
+        if (!isAddress(address)) {
+            console.log('Get IPShare balances: No valid address found');
             return {};
         }
 
@@ -82,7 +98,18 @@ export const getIPshareBalances = async (subjects: string[]): Promise<Record<str
         }));
 
         const res = await aggregate(calls, ChainConfig.multiConfig);
-        return res.results.transformed;
+        const result = res.results.transformed || {};
+        
+        // 保存到 store（参考 Donut 实现）
+        const ipshareStore = useIpshareData();
+        const currentBalances = ipshareStore.ipshareBalances;
+        const mergedBalances = {
+            ...currentBalances,
+            ...result
+        };
+        ipshareStore.saveIPshareBalances(mergedBalances);
+        
+        return result;
     } catch (e) {
         console.log('Get user IPShare balances fail:', e);
         return {};
@@ -108,8 +135,14 @@ export interface StakeInfo {
  */
 export const getIPshareStaked = async (subjects: string[]): Promise<Record<string, StakeInfo>> => {
     try {
-        const address = useAccountStore().ethConnectAddress;
+        const accountStore = useAccountStore();
+        // 优先使用连接的钱包地址，如果没有则使用账户绑定的地址
+        let address = accountStore.ethConnectAddress;
         if (!isAddress(address)) {
+            address = accountStore.getAccountInfo?.ethAddr;
+        }
+        if (!isAddress(address)) {
+            console.log('Get IPShare staked: No valid address found');
             return {};
         }
 
@@ -147,6 +180,15 @@ export const getIPshareStaked = async (subjects: string[]): Promise<Record<strin
             stakeInfos[id][type] = stakeData[key];
         }
 
+        // 保存到 store（参考 Donut 实现）
+        const ipshareStore = useIpshareData();
+        const currentStakeInfos = ipshareStore.stakeInfos;
+        const mergedStakeInfos = {
+            ...currentStakeInfos,
+            ...stakeInfos
+        };
+        ipshareStore.saveStakeInfos(mergedStakeInfos);
+
         return stakeInfos;
     } catch (e) {
         console.log('Get IPShare staked fail:', e);
@@ -176,7 +218,18 @@ export const getTotalStakedIPshares = async (subjects: string[]): Promise<Record
         }));
 
         const res = await aggregate(calls, ChainConfig.multiConfig);
-        return res.results.transformed;
+        const result = res.results.transformed || {};
+        
+        // 保存到 store（参考 Donut 实现）
+        const ipshareStore = useIpshareData();
+        const currentTotalStaked = ipshareStore.totalStakedIPshares;
+        const mergedTotalStaked = {
+            ...currentTotalStaked,
+            ...result
+        };
+        ipshareStore.saveTotalStakedIPshares(mergedTotalStaked);
+        
+        return result;
     } catch (e) {
         console.log('Get total staked IPShares fail:', e);
         return {};

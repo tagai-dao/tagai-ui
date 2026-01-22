@@ -259,6 +259,15 @@ export const getIpshareInfo = async (ethAddr: string) =>
 export const getIPShareList = async (pages?: number) =>
     get(BACKEND_API_URL + '/ipshare/list', {pages})
 
+export const getIPShareHoldingList = async (ethAddr: string, pages?: number) =>
+    get(BACKEND_API_URL + '/ipshare/holdingList', {ethAddr, pages})
+
+export const getIPShareFee = async (ethAddr: string) =>
+    get(BACKEND_API_URL + '/ipshare/kolFee', {ethAddr})
+
+export const getCapturedFee = async (ethAddr: string) =>
+    get(BACKEND_API_URL + '/ipshare/capturedFee', {ethAddr})
+
 /************************************ clanker **********************************/
 export const getClankerTickers = async () =>
   get(BACKEND_API_URL + '/clanker/ticks')
