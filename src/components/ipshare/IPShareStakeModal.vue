@@ -34,7 +34,7 @@
         </div>
         <div class="overview-item">
           <span class="label">Pending Rewards</span>
-          <span class="value">{{ formatNumber(pendingRewards) }} BNB</span>
+          <span class="value">{{ formatNumber(pendingRewards) }} IP.Share</span>
         </div>
       </div>
 
@@ -79,7 +79,7 @@
           :loading="claiming"
           @click="handleClaim"
         >
-          Claim {{ formatNumber(pendingRewards) }} BNB
+          Claim {{ formatNumber(pendingRewards) }} IP.Share
         </el-button>
 
         <!-- Redeem 按钮 -->
@@ -113,6 +113,8 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAccountStore, useIpshareData } from '@/stores/web3'
+import { useModalStore } from '@/stores/common'
+import { GlobalModalType } from '@/types'
 import { stake, unstake, claim, redeem } from '@/utils/ipshare'
 import {
   getIPshareBalances,
@@ -120,18 +122,37 @@ import {
   getPendingIPshareProfits,
   type StakeInfo
 } from '@/utils/ipshareAsset'
+import { parseViemRevertReason } from '@/utils/notify'
+import { readContract } from '@/utils/contract'
+import { isAddress } from 'viem'
 
 interface Props {
   modelValue: boolean
-  subjectAddress: string
+  subjectAddress?: string
   subjectInfo?: {
     name?: string
   }
+  accountInfo?: any
 }
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
-  subjectInfo: () => ({})
+  subjectInfo: () => ({}),
+  accountInfo: () => null
+})
+
+// 如果通过 accountInfo 传入，使用 accountInfo 的地址
+const subjectAddress = computed(() => {
+  if (props.subjectAddress) {
+    return props.subjectAddress
+  }
+  if (props.accountInfo?.ethAddr) {
+    return props.accountInfo.ethAddr
+  }
+  if (props.accountInfo?.ipShare) {
+    return props.accountInfo.ipShare
+  }
+  return accountStore.getAccountInfo?.ethAddr || ''
 })
 
 const emit = defineEmits<{
@@ -211,31 +232,72 @@ const setMaxAmount = () => {
 
 const loadData = async () => {
   try {
-    const address = accountStore.ethConnectAddress
+    // 先尝试从 store 读取已有数据（如果有的话）
+    const storeBalances = ipshareStore.ipshareBalances
+    const storeStakeInfos = ipshareStore.stakeInfos
+    const storeProfits = ipshareStore.pendingIPshareProfits
+    
+    // 如果 store 中有数据，先显示
+    const address = subjectAddress.value
     if (!address) return
+    
+    if (storeBalances[address] !== undefined) {
+      ipshareBalance.value = storeBalances[address] || 0
+    }
+    if (storeStakeInfos[address]) {
+      const info = storeStakeInfos[address]
+      stakeInfo.value = info
+      stakedAmount.value = info.amount || 0
+    }
+    if (storeProfits[address] !== undefined) {
+      pendingRewards.value = storeProfits[address] || 0
+    }
 
-    // 获取 IPShare 余额
-    const balances = await getIPshareBalances([props.subjectAddress])
-    ipshareBalance.value = balances[props.subjectAddress] || 0
+    // 获取 IPShare 余额（函数内部会处理地址获取）
+    const balances = await getIPshareBalances([address])
+    if (balances[address] !== undefined) {
+      ipshareBalance.value = balances[address] || 0
+    }
 
     // 获取质押信息
-    const stakeInfos = await getIPshareStaked([props.subjectAddress])
-    const info = stakeInfos[props.subjectAddress]
+    const stakeInfos = await getIPshareStaked([address])
+    const info = stakeInfos[address]
     if (info) {
       stakeInfo.value = info
       stakedAmount.value = info.amount || 0
     }
 
     // 获取待领取收益
-    const profits = await getPendingIPshareProfits([props.subjectAddress])
-    pendingRewards.value = profits[props.subjectAddress] || 0
+    const profits = await getPendingIPshareProfits([address])
+    if (profits[address] !== undefined) {
+      pendingRewards.value = profits[address] || 0
+    }
 
-    // 保存到 store
+    // 保存到 store（函数内部已经保存，这里确保数据同步）
     ipshareStore.saveIPshareBalances(balances)
     ipshareStore.saveStakeInfos(stakeInfos)
     ipshareStore.savePendingIPshareProfits(profits)
   } catch (e) {
     console.error('Load stake data failed:', e)
+    // 如果获取失败，尝试从 store 读取
+    const storeBalances = ipshareStore.ipshareBalances
+    const storeStakeInfos = ipshareStore.stakeInfos
+    const storeProfits = ipshareStore.pendingIPshareProfits
+    
+    const address = subjectAddress.value
+    if (!address) return
+    
+    if (storeBalances[address] !== undefined) {
+      ipshareBalance.value = storeBalances[address] || 0
+    }
+    if (storeStakeInfos[address]) {
+      const info = storeStakeInfos[address]
+      stakeInfo.value = info
+      stakedAmount.value = info.amount || 0
+    }
+    if (storeProfits[address] !== undefined) {
+      pendingRewards.value = storeProfits[address] || 0
+    }
   }
 }
 
@@ -250,30 +312,135 @@ const handleConfirm = async () => {
 
   try {
     processing.value = true
-    let hash: string
-
+    
+    // 检查是否连接钱包（适用于质押和解除质押）
+    const stakeAddress = accountStore.ethConnectAddress
+    if (!stakeAddress || !isAddress(stakeAddress)) {
+      processing.value = false
+      // 弹出连接钱包模态框
+      const modalStore = useModalStore()
+      modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+      return
+    }
+    
     if (isStake.value) {
+      // 质押前重新获取最新余额并验证
+      // 确保使用与 writeContract 中 simulateContract 相同的地址（ethConnectAddress）
+      const address = subjectAddress.value
+      
+      if (!address || !isAddress(address)) {
+        ElMessage.error('Invalid IPShare address')
+        processing.value = false
+        return
+      }
+      
+      console.log('Stake - ethConnectAddress:', stakeAddress)
+      console.log('Stake - getAccountInfo?.ethAddr:', accountStore.getAccountInfo?.ethAddr)
+      console.log('Stake - Subject address:', address)
+      console.log('Stake - Current balance:', ipshareBalance.value, 'Amount to stake:', amountNum)
+      
+      // 直接从链上查询余额，使用与 writeContract 相同的地址
+      try {
+        const balanceBigInt = await readContract('IPShare2', 'ipshareBalance', [
+          address,
+          stakeAddress
+        ]) as bigint
+        const latestBalance = parseFloat(balanceBigInt.toString()) / 1e18
+        console.log('Stake - Latest balance from chain (direct query):', latestBalance, 'for address:', stakeAddress)
+        console.log('Stake - Balance in BigInt:', balanceBigInt.toString())
+        console.log('Stake - Amount to stake in BigInt:', BigInt(Math.floor(amountNum * 1e18)).toString())
+        
+        // 更新本地余额
+        ipshareBalance.value = latestBalance
+        
+        // 使用 BigInt 进行精确比较，避免浮点数精度问题
+        const amountBigInt = BigInt(Math.floor(amountNum * 1e18))
+        if (balanceBigInt < amountBigInt) {
+          ElMessage.error(`余额不足。当前余额: ${formatNumber(latestBalance)} IP.Share，尝试质押: ${formatNumber(amountNum)} IP.Share`)
+          processing.value = false
+          return
+        }
+      } catch (e) {
+        console.error('Failed to query balance directly:', e)
+        // 如果直接查询失败，使用批量查询
+        const latestBalances = await getIPshareBalances([address])
+        const latestBalance = latestBalances[address] || 0
+        console.log('Stake - Latest balance from batch query:', latestBalance)
+        
+        // 使用浮点数比较（批量查询返回的是浮点数）
+        if (latestBalance < amountNum - 0.0001) {
+          ElMessage.error(`余额不足。当前余额: ${formatNumber(latestBalance)} IP.Share，尝试质押: ${formatNumber(amountNum)} IP.Share`)
+          processing.value = false
+          return
+        }
+      }
+      
       // 质押
-      hash = await stake(props.subjectAddress, amountNum)
+      const hash = await stake(address, amountNum)
       ElMessage.success('Stake successfully!')
+      console.log('Transaction hash:', hash)
+
+      // 刷新数据
+      await loadData()
+
+      // 通知父组件
+      emit('success')
+
+      // 清空输入
+      amount.value = ''
+      return
     } else {
+      // 解除质押前重新获取最新质押信息并验证
+      const address = subjectAddress.value
+      console.log('Unstake - Current staked amount:', stakedAmount.value, 'Amount to unstake:', amountNum)
+      const latestStakeInfos = await getIPshareStaked([address])
+      const latestStakeInfo = latestStakeInfos[address]
+      const latestStaked = latestStakeInfo?.amount || 0
+      console.log('Unstake - Latest staked amount from chain:', latestStaked)
+      
+      // 更新本地质押数量
+      if (latestStakeInfo) {
+        stakeInfo.value = latestStakeInfo
+        stakedAmount.value = latestStaked
+      }
+      
+      // 再次验证质押数量是否足够
+      if (latestStaked < amountNum) {
+        ElMessage.error(`质押数量不足。当前质押: ${formatNumber(latestStaked)} IP.Share，尝试解除质押: ${formatNumber(amountNum)} IP.Share`)
+        return
+      }
+      
       // 解除质押
-      hash = await unstake(props.subjectAddress, amountNum)
+      const hash = await unstake(address, amountNum)
       ElMessage.success('Unstake successfully! Please wait for unlock time to redeem.')
+      console.log('Transaction hash:', hash)
+
+      // 刷新数据
+      await loadData()
+
+      // 通知父组件
+      emit('success')
+
+      // 清空输入
+      amount.value = ''
+      return
     }
 
-    console.log('Transaction hash:', hash)
-
-    // 刷新数据
-    await loadData()
-
-    // 通知父组件
-    emit('success')
-
-    // 清空输入
-    amount.value = ''
   } catch (e: any) {
     console.error('Operation failed:', e)
+    
+    // 使用统一的错误解析函数
+    try {
+      const parsedErrorMsg = parseViemRevertReason(e)
+      if (parsedErrorMsg) {
+        // parseViemRevertReason 已经显示了通知，这里不需要再显示
+        return
+      }
+    } catch (parseError) {
+      console.error('Parse error failed:', parseError)
+    }
+    
+    // 如果解析失败，显示原始错误信息
     ElMessage.error(e.message || 'Operation failed')
   } finally {
     processing.value = false
@@ -281,9 +448,24 @@ const handleConfirm = async () => {
 }
 
 const handleClaim = async () => {
+  const address = subjectAddress.value
+  if (!address) {
+    ElMessage.error('Invalid IPShare address')
+    return
+  }
+  
+  // 检查是否连接钱包
+  const stakeAddress = accountStore.ethConnectAddress
+  if (!stakeAddress || !isAddress(stakeAddress)) {
+    // 弹出连接钱包模态框
+    const modalStore = useModalStore()
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+    return
+  }
+  
   try {
     claiming.value = true
-    const hash = await claim(props.subjectAddress)
+    const hash = await claim(address)
     ElMessage.success('Claim rewards successfully!')
     console.log('Claim hash:', hash)
 
@@ -292,6 +474,17 @@ const handleClaim = async () => {
     emit('success')
   } catch (e: any) {
     console.error('Claim failed:', e)
+    
+    // 使用统一的错误解析函数
+    try {
+      const parsedErrorMsg = parseViemRevertReason(e)
+      if (parsedErrorMsg) {
+        return
+      }
+    } catch (parseError) {
+      console.error('Parse error failed:', parseError)
+    }
+    
     ElMessage.error(e.message || 'Claim failed')
   } finally {
     claiming.value = false
@@ -299,6 +492,21 @@ const handleClaim = async () => {
 }
 
 const handleRedeem = async () => {
+  const address = subjectAddress.value
+  if (!address) {
+    ElMessage.error('Invalid IPShare address')
+    return
+  }
+  
+  // 检查是否连接钱包
+  const stakeAddress = accountStore.ethConnectAddress
+  if (!stakeAddress || !isAddress(stakeAddress)) {
+    // 弹出连接钱包模态框
+    const modalStore = useModalStore()
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+    return
+  }
+  
   if (!stakeInfo.value || stakeInfo.value.redeemAmount <= 0) {
     ElMessage.warning('No redeemable amount')
     return
@@ -312,7 +520,7 @@ const handleRedeem = async () => {
 
   try {
     redeeming.value = true
-    const hash = await redeem(props.subjectAddress)
+    const hash = await redeem(address)
     ElMessage.success('Redeem successfully!')
     console.log('Redeem hash:', hash)
 
@@ -321,6 +529,17 @@ const handleRedeem = async () => {
     emit('success')
   } catch (e: any) {
     console.error('Redeem failed:', e)
+    
+    // 使用统一的错误解析函数
+    try {
+      const parsedErrorMsg = parseViemRevertReason(e)
+      if (parsedErrorMsg) {
+        return
+      }
+    } catch (parseError) {
+      console.error('Parse error failed:', parseError)
+    }
+    
     ElMessage.error(e.message || 'Redeem failed')
   } finally {
     redeeming.value = false
@@ -334,9 +553,9 @@ const handleClose = () => {
   }
 }
 
-// 监听弹窗打开
-watch(visible, (val) => {
-  if (val) {
+// 监听弹窗打开或 subjectAddress 变化
+watch([visible, subjectAddress], ([val, address]) => {
+  if (val && address) {
     loadData()
   }
 })

@@ -10,8 +10,23 @@ import { getWalletClient } from "./wallets";
 
 const t = i18n.global.t;
 
-function parseViemRevertReason(error: any): string {
-  const hexData = error?.cause?.data;
+export function parseViemRevertReason(error: any): string {
+  // 尝试从多个位置提取错误数据
+  const hexData = error?.cause?.data || error?.cause?.cause?.data || error?.data;
+  const errorMessage = error?.message || error?.shortMessage || '';
+  
+  // 首先检查错误消息中是否包含错误签名
+  if (typeof errorMessage === 'string') {
+    if (errorMessage.includes('0x39996567')) {
+      notify({ message: '交易失败：IPShare 余额不足。请检查您的持有量。', type: "error" });
+      return 'InsufficientShares';
+    }
+    if (errorMessage.includes('0x619f5d2e')) {
+      notify({ message: '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。', type: "error" });
+      return 'OutOfSlippage';
+    }
+  }
+  
   let result = ''
   if (typeof hexData === 'string' && hexData.startsWith('0x08c379a0')) {
     try {
@@ -25,19 +40,49 @@ function parseViemRevertReason(error: any): string {
     } catch (err) {
       console.warn('ABI decode error:', err);
     }
-  }else {// decode custom errors
-    const errorData = error.cause?.data || error.cause?.cause?.data || extractRevertReasonFromError(error.shortMessage);
-    console.log('custom error', error.details, errorData)
+  } else {// decode custom errors
+    const errorData = hexData || extractRevertReasonFromError(errorMessage);
+    console.log('custom error', error.details, errorData, 'hexData:', hexData)
     if (errorData) {
+      // 检查是否是已知的错误签名
+      // 0x619f5d2e = OutOfSlippage()
+      if (typeof errorData === 'string' && (errorData.startsWith('0x619f5d2e') || errorData === '0x619f5d2e')) {
+        notify({ message: '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。', type: "error" });
+        return 'OutOfSlippage';
+      }
+      // 0x39996567 = InsufficientShares()
+      if (typeof errorData === 'string' && (errorData.startsWith('0x39996567') || errorData === '0x39996567')) {
+        notify({ message: '交易失败：IPShare 余额不足。请检查您的持有量。', type: "error" });
+        return 'InsufficientShares';
+      }
+      
       try {
         const decodedError = decodeErrorResult({
           abi: abis.errors,      // 错误 ABI 列表
           data: errorData              // 合约抛出的错误 revert data
         });
-        notify({ message: decodedError.errorName, type: "error" });
+        // 根据错误类型提供友好的中文提示
+        if (decodedError.errorName === 'OutOfSlippage') {
+          notify({ message: '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。', type: "error" });
+        } else if (decodedError.errorName === 'InsufficientShares') {
+          notify({ message: '交易失败：IPShare 余额不足。请检查您的持有量。', type: "error" });
+        } else {
+          notify({ message: decodedError.errorName, type: "error" });
+        }
         return decodedError.errorName;
       } catch (error) {
         console.log('decodeError fail:', error);
+        // 如果解码失败，检查是否是已知的错误签名
+        if (typeof errorData === 'string') {
+          if (errorData.includes('0x619f5d2e') || errorData.includes('slippage')) {
+            notify({ message: '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。', type: "error" });
+            return 'OutOfSlippage';
+          }
+          if (errorData.includes('0x39996567') || errorData.includes('InsufficientShares')) {
+            notify({ message: '交易失败：IPShare 余额不足。请检查您的持有量。', type: "error" });
+            return 'InsufficientShares';
+          }
+        }
       }
     }
   }
@@ -273,6 +318,12 @@ export const handleServerError = (code: number) => {
  */
 function extractRevertReasonFromError(errorString: string): string | null {
   if (!errorString) return null;
+  
+  // 尝试从错误消息中提取错误签名（例如：0x39996567）
+  const signatureMatch = errorString.match(/0x[a-fA-F0-9]{8}/);
+  if (signatureMatch) {
+    return signatureMatch[0];
+  }
   const errorMatch = errorString.match(/error=({.*}),\s*code=/s);
 
   try {

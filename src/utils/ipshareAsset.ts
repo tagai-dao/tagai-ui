@@ -73,11 +73,11 @@ export const getIPshareBalances = async (subjects: string[]): Promise<Record<str
     try {
         const accountStore = useAccountStore();
         // 优先使用连接的钱包地址，如果没有则使用账户绑定的地址
-        let address = accountStore.ethConnectAddress;
-        if (!isAddress(address)) {
+        let address: string | undefined = accountStore.ethConnectAddress;
+        if (!address || !isAddress(address)) {
             address = accountStore.getAccountInfo?.ethAddr;
         }
-        if (!isAddress(address)) {
+        if (!address || !isAddress(address)) {
             console.log('Get IPShare balances: No valid address found');
             return {};
         }
@@ -137,11 +137,11 @@ export const getIPshareStaked = async (subjects: string[]): Promise<Record<strin
     try {
         const accountStore = useAccountStore();
         // 优先使用连接的钱包地址，如果没有则使用账户绑定的地址
-        let address = accountStore.ethConnectAddress;
-        if (!isAddress(address)) {
+        let address: string | undefined = accountStore.ethConnectAddress;
+        if (!address || !isAddress(address)) {
             address = accountStore.getAccountInfo?.ethAddr;
         }
-        if (!isAddress(address)) {
+        if (!address || !isAddress(address)) {
             console.log('Get IPShare staked: No valid address found');
             return {};
         }

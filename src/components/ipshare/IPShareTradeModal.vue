@@ -61,7 +61,7 @@
           <div class="input-label">
             <span>{{ isBuy ? 'Cost' : 'Receive' }}</span>
             <span class="balance">
-              Balance: {{ formatNumber(ethBalance) }} BNB
+              Balance: {{ formatNumber(ethBalance, 3) }} BNB
             </span>
           </div>
           <div class="output-wrapper">
@@ -81,9 +81,40 @@
           <span>Price</span>
           <span>{{ formatNumber(price) }} BNB</span>
         </div>
-        <div class="info-row">
+        <div class="info-row slippage-row">
           <span>Slippage</span>
-          <span>{{ isBuy ? '2%' : '2%' }}</span>
+          <div class="slippage-input-wrapper">
+            <input
+              v-model.number="slippage"
+              type="number"
+              min="0"
+              max="50"
+              step="0.1"
+              class="slippage-input"
+              @input="validateSlippage"
+            />
+            <span class="slippage-percent">%</span>
+            <div class="slippage-buttons">
+              <button
+                type="button"
+                class="slippage-btn"
+                @click="adjustSlippage(1)"
+                :disabled="slippage >= 50"
+                title="增加滑点"
+              >
+                <span class="slippage-icon">+</span>
+              </button>
+              <button
+                type="button"
+                class="slippage-btn"
+                @click="adjustSlippage(-1)"
+                :disabled="slippage <= 0"
+                title="减少滑点"
+              >
+                <span class="slippage-icon">−</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -123,6 +154,8 @@ import {
   getSellPriceAfterFee
 } from '@/utils/ipshareAsset'
 import { getReadOnlyClient } from '@/utils/wallets'
+import { isAddress } from 'viem'
+import { parseViemRevertReason } from '@/utils/notify'
 
 interface Props {
   modelValue: boolean
@@ -159,6 +192,7 @@ const trading = ref(false)
 const ethBalance = ref(0)
 const ipshareBalance = ref(0)
 const supply = ref(0)
+const slippage = ref(15) // 默认滑点 15%
 
 // 计算属性
 const price = computed(() => {
@@ -177,9 +211,15 @@ const canTrade = computed(() => {
 })
 
 // 方法
-const formatNumber = (num: number, decimals = 4): string => {
-  if (!num) return '0'
-  return parseFloat(num.toString()).toFixed(decimals)
+const formatNumber = (num: number | string | null | undefined, decimals = 4): string => {
+  if (num === null || num === undefined) {
+    return '0.' + '0'.repeat(decimals)
+  }
+  const numValue = typeof num === 'number' ? num : parseFloat(String(num))
+  if (isNaN(numValue)) {
+    return '0.' + '0'.repeat(decimals)
+  }
+  return numValue.toFixed(decimals)
 }
 
 const switchToBuy = () => {
@@ -205,10 +245,23 @@ const setMaxAmount = () => {
   updateReceive()
 }
 
+// 滑点相关方法
+const validateSlippage = () => {
+  if (slippage.value < 0) {
+    slippage.value = 0
+  } else if (slippage.value > 50) {
+    slippage.value = 50
+  }
+}
+
+const adjustSlippage = (delta: number) => {
+  slippage.value = Math.max(0, Math.min(50, slippage.value + delta))
+}
+
 let updateTimer: any = null
-const updateReceive = () => {
+const updateReceive = async () => {
   clearTimeout(updateTimer)
-  updateTimer = setTimeout(() => {
+  updateTimer = setTimeout(async () => {
     const amountNum = parseFloat(amount.value || '0')
     if (amountNum <= 0) {
       receive.value = 0
@@ -218,15 +271,38 @@ const updateReceive = () => {
     if (isBuy.value) {
       receive.value = calculateEthNeedToBuyIPshares(supply.value, amountNum)
     } else {
-      receive.value = calculateEthReceivedWhenSellIPshare(supply.value, amountNum)
+      // 卖出时，优先使用链上查询的实际价格（含手续费）
+      try {
+        const chainPrice = await getSellPriceAfterFee(props.subjectAddress, amountNum)
+        if (chainPrice > 0) {
+          receive.value = chainPrice
+        } else {
+          // 如果链上查询失败，使用本地计算
+          receive.value = calculateEthReceivedWhenSellIPshare(supply.value, amountNum)
+        }
+      } catch (e) {
+        console.error('Get sell price after fee failed:', e)
+        // 使用本地计算作为后备
+        receive.value = calculateEthReceivedWhenSellIPshare(supply.value, amountNum)
+      }
     }
   }, 300)
 }
 
 const loadBalances = async () => {
   try {
-    const address = accountStore.ethConnectAddress
-    if (!address) return
+    // 优先使用连接的钱包地址，如果没有则使用账户绑定的地址
+    let address: string | undefined = accountStore.ethConnectAddress
+    if (!address || !isAddress(address)) {
+      const ethAddr = accountStore.getAccountInfo?.ethAddr
+      address = (ethAddr && typeof ethAddr === 'string') ? ethAddr : undefined
+    }
+    
+    if (!address || !isAddress(address)) {
+      // 如果都没有地址，使用 store 中已有的余额值
+      ethBalance.value = accountStore.ethBalance || 0
+      return
+    }
 
     // 获取 ETH 余额
     const client = getReadOnlyClient()
@@ -246,6 +322,10 @@ const loadBalances = async () => {
     ipshareStore.saveIPshareSupplies(supplies)
   } catch (e) {
     console.error('Load balances failed:', e)
+    // 如果获取失败，尝试使用 store 中已有的余额值
+    if (accountStore.ethBalance > 0) {
+      ethBalance.value = accountStore.ethBalance
+    }
   }
 }
 
@@ -278,11 +358,57 @@ const handleConfirm = async () => {
       )
       ElMessage.success('Buy IPShare successfully!')
     } else {
-      // 卖出 (应用 2% 滑点保护)
+      // 卖出时，在提交交易前再次查询最新的链上价格并应用滑点保护
+      let amountOutMin = 0
+      try {
+        // 在提交交易前再次获取最新的链上实际价格（含手续费）
+        // 这样可以确保使用最新的价格，减少价格变化导致的滑点错误
+        const chainPrice = await getSellPriceAfterFee(props.subjectAddress, amountNum)
+        console.log('Sell - Chain price after fee:', chainPrice, 'Estimated receive:', receive.value)
+        
+        if (chainPrice > 0) {
+          // 使用链上价格和本地估算价格中的较小值，应用用户设置的滑点保护
+          const minPrice = Math.min(chainPrice, receive.value)
+          const slippageMultiplier = (100 - slippage.value) / 100
+          amountOutMin = minPrice * slippageMultiplier
+          console.log('Sell - Chain price:', chainPrice, 'Local estimate:', receive.value, 'Min price:', minPrice, `Min receive (${slippage.value}% slippage):`, amountOutMin)
+        } else {
+          // 如果链上查询失败，使用本地计算的价格，应用用户设置的滑点
+          const slippageMultiplier = (100 - slippage.value) / 100
+          amountOutMin = receive.value * slippageMultiplier
+          console.log(`Sell - Using local price with ${slippage.value}% slippage:`, amountOutMin)
+        }
+      } catch (e) {
+        console.error('Get sell price after fee failed:', e)
+        // 使用本地计算作为后备，应用用户设置的滑点
+        const slippageMultiplier = (100 - slippage.value) / 100
+        amountOutMin = receive.value * slippageMultiplier
+      }
+      
+      // 确保 amountOutMin 不为 0 且合理
+      if (amountOutMin <= 0) {
+        ElMessage.error('无法计算最小接收金额，请重试。')
+        return
+      }
+      
+      // 确保 amountOutMin 不会太小（至少是估算价格的 50%）
+      if (receive.value > 0 && amountOutMin < receive.value * 0.5) {
+        console.warn('amountOutMin seems too small, using 50% of estimated price')
+        amountOutMin = receive.value * 0.5
+      }
+      
+      // 如果用户设置的滑点过大（>50%），限制为 50%
+      if (slippage.value > 50) {
+        console.warn('Slippage too high, limiting to 50%')
+        amountOutMin = receive.value * 0.5
+      }
+      
+      console.log('Sell - Final amountOutMin:', amountOutMin, 'for amount:', amountNum, 'Estimated receive:', receive.value)
+      
       hash = await sellShares(
         props.subjectAddress,
         amountNum,
-        receive.value * 0.98
+        amountOutMin
       )
       ElMessage.success('Sell IPShare successfully!')
     }
@@ -299,7 +425,51 @@ const handleConfirm = async () => {
     handleClose()
   } catch (e: any) {
     console.error('Trade failed:', e)
-    ElMessage.error(e.message || 'Trade failed')
+    
+    // 检查错误数据中是否包含 0x619f5d2e 签名
+    const errorData = e?.cause?.data || e?.cause?.cause?.data || e?.data
+    const errorMsgStr = e?.message || e?.shortMessage || ''
+    const errorString = String(errorMsgStr)
+    
+    // 检查是否是滑点错误（错误签名 0x619f5d2e）
+    if (errorData === '0x619f5d2e' || 
+        (typeof errorData === 'string' && errorData.includes('0x619f5d2e')) ||
+        errorString.includes('0x619f5d2e')) {
+      ElMessage.error('交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。')
+      return
+    }
+    
+    // 使用统一的错误解析函数
+    try {
+      const parsedErrorMsg = parseViemRevertReason(e)
+      if (parsedErrorMsg) {
+        ElMessage.error(parsedErrorMsg)
+        return
+      }
+    } catch (parseError) {
+      console.error('Parse error failed:', parseError)
+    }
+    
+    // 解析错误信息
+    let finalErrorMessage = '交易失败'
+    if (e?.message) {
+      finalErrorMessage = e.message
+    } else if (e?.shortMessage) {
+      finalErrorMessage = e.shortMessage
+    } else if (typeof e === 'string') {
+      finalErrorMessage = e
+    }
+    
+    // 检查是否是滑点错误（包括未知的错误签名）
+    if (finalErrorMessage.includes('0x619f5d2e') || 
+        finalErrorMessage.includes('OutOfSlippage') || 
+        finalErrorMessage.includes('slippage') ||
+        finalErrorMessage.includes('amountOutMin') ||
+        finalErrorMessage.includes('Unable to decode signature')) {
+      finalErrorMessage = '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。'
+    }
+    
+    ElMessage.error(finalErrorMessage)
   } finally {
     trading.value = false
   }
@@ -467,6 +637,7 @@ onMounted(() => {
   .info-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 8px 0;
     font-size: 14px;
     color: #999;
@@ -478,6 +649,82 @@ onMounted(() => {
     span:last-child {
       color: white;
       font-weight: 500;
+    }
+  }
+
+  .slippage-row {
+    .slippage-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 4px 8px;
+      background: #1a1a1a;
+      min-width: 100px;
+    }
+
+    .slippage-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: right;
+      width: 50px;
+      padding: 0 4px;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      -moz-appearance: textfield;
+    }
+
+    .slippage-percent {
+      color: #ff6b35;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .slippage-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-left: 4px;
+    }
+
+    .slippage-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 12px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #999;
+      padding: 0;
+      transition: color 0.2s;
+      line-height: 1;
+
+      &:hover:not(:disabled) {
+        color: #ff6b35;
+      }
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .slippage-icon {
+        font-size: 12px;
+        font-weight: bold;
+        line-height: 1;
+      }
     }
   }
 }

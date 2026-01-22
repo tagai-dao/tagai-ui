@@ -11,7 +11,7 @@ import { useInterval, useTools } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import {applyPureReactInVue} from "veaury";
 import LogoutOAuth from '@/react_app/Logout.jsx'
 import { formatAddress, formatAmount, formatPrice } from "@/utils/helper";
@@ -31,6 +31,7 @@ const activeTab = ref('post')
 const { onCopy } = useTools()
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
 const { setInter } = useInterval()
+const router = useRouter()
 
 // IPShare 相关状态
 const showTradeModal = ref(false)
@@ -118,9 +119,10 @@ async function loadIPShareData(ethAddr: string) {
 async function loadKolFee(ethAddr: string) {
   try {
     const fee = await getIPShareFee(ethAddr);
-    kolFee.value = fee || 0;
+    const feeValue = typeof fee === 'number' ? fee : (typeof fee === 'object' && fee !== null ? 0 : Number(fee) || 0);
+    kolFee.value = feeValue;
     // 保存到 store（参考 Donut 实现）
-    ipshareStore.saveKolsInfo({ [ethAddr]: fee || 0 });
+    ipshareStore.saveKolsInfo({ [ethAddr]: feeValue });
   } catch (error) {
     console.error('Load kol fee error:', error);
   }
@@ -129,7 +131,8 @@ async function loadKolFee(ethAddr: string) {
 async function loadCapturedFee(ethAddr: string) {
   try {
     const fee = await getCapturedFee(ethAddr);
-    capturedFee.value = fee || 0;
+    const feeValue = typeof fee === 'number' ? fee : (typeof fee === 'object' && fee !== null ? 0 : Number(fee) || 0);
+    capturedFee.value = feeValue;
   } catch (error) {
     console.error('Load captured fee error:', error);
   }

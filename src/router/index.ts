@@ -112,6 +112,12 @@ const router = createRouter({
       path: '/mindshare',
       name: 'mindshare',
       component: MindShareIndex
+    },
+    {
+      path: '/staking/:user?',
+      name: 'staking',
+      component: () => import('@/views/profile/StakingView.vue'),
+      meta: { tabBar: false, topBar: false }
     }
   ]
 })
