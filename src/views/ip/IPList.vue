@@ -46,8 +46,11 @@ async function onRefresh() {
     if (ips && Array.isArray(ips)) {
       console.log(`📊 IPShare 列表 - 共 ${ips.length} 条数据`)
       
-      // 确保每个 IPShare 都有基本数据
-      ips.forEach((ip, index) => {
+      // 初始只显示前30个，只处理这30个的供应量
+      const initialIPs = ips.slice(0, 30)
+      
+      // 确保前30个 IPShare 都有基本数据
+      initialIPs.forEach((ip, index) => {
         console.log(`\n👤 IPShare #${index + 1}:`, {
           twitterId: ip.twitterId,
           twitterName: ip.twitterName,
@@ -66,8 +69,8 @@ async function onRefresh() {
         }
       })
       
-      // 批量获取所有 IPShare 的供应量（仅更新那些后端没有返回 supply 的）
-      const ethAddrs = ips
+      // 批量获取前30个 IPShare 的供应量（仅更新那些后端没有返回 supply 的）
+      const ethAddrs = initialIPs
         .filter(ip => isAddress(ip.ethAddr) && (!ip.supply || ip.supply === 0))
         .map(ip => ip.ethAddr)
       
@@ -77,7 +80,7 @@ async function onRefresh() {
           const supplies = await getIPshareSupplies(ethAddrs)
           console.log('📦 从链上获取的供应量:', supplies)
           // 更新供应量到列表中（只更新那些没有 supply 的）
-          ips.forEach((ip) => {
+          initialIPs.forEach((ip) => {
             if (ip.ethAddr && supplies[ip.ethAddr] !== undefined) {
               const oldSupply = ip.supply
               ip.supply = supplies[ip.ethAddr]
@@ -89,10 +92,15 @@ async function onRefresh() {
         }
       }
       
-      // 使用展开运算符创建新数组以触发响应式更新
-      list.value = [...ips]
+      // 使用展开运算符创建新数组以触发响应式更新，初始只显示前30个
+      list.value = [...initialIPs]
       console.log('✅ IPShare 列表 - 最终数据已更新到列表:', list.value)
-      console.log('📋 IPShare 列表 - 完整数据:', JSON.stringify(list.value, null, 2))
+      console.log(`📋 IPShare 列表 - 初始显示 ${list.value.length} 条数据（共 ${ips.length} 条）`)
+      
+      // 如果后端返回的数据少于30条，标记为已完成
+      if (ips.length < 30) {
+        listFinished.value = true
+      }
     } else {
       list.value = []
       console.warn('⚠️ IPShare 列表 - 后端返回的数据格式不正确:', ips)

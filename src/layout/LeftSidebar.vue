@@ -33,46 +33,39 @@ const isActive = (path: string | string[]) => {
   return route.path === path || route.path.startsWith(path + '/')
 }
 
-// 判断 Coin 是否激活（仅在 tag-detail 或 buy-sell 路由，或明确选择了 Coin 子菜单时）
+// 判断 Coin 是否激活（仅在 tag-detail 或 buy-sell 路由，或明确选择了 Coin 主菜单时）
 const isCoinActive = computed(() => {
   // 如果不在首页，检查是否是 tag-detail 或 buy-sell 路由
   if (!isActive('/')) {
     return isActive(['/tag-detail', '/buy-sell'])
   }
-  // 在首页时，只有当 activeTab 是 tagCoin 或 ip 时才激活 Coin
-  return stateStore.activeHomeTab === 'tagCoin' || stateStore.activeHomeTab === 'ip'
+  // 在首页时，只有当 activeMainMenu 是 coin 时才激活 Coin
+  return stateStore.activeMainMenu === 'coin'
 })
 
-// 判断 Home 是否激活（在首页且 activeTab 是 tweets 或 prediction，且 Coin 未激活）
-const isHomeActive = computed(() => {
+// 判断 Tag 是否激活（在首页且 activeMainMenu 是 tag）
+const isTagActive = computed(() => {
   if (!isActive('/')) {
     return false
   }
-  // 如果 Coin 激活了，Home 不激活
-  if (isCoinActive.value) {
-    return false
-  }
-  // 在首页时，只有当 activeTab 是 tweets 或 prediction 时才激活 Home
-  const activeTab = stateStore.activeHomeTab
-  return activeTab === 'tweets' || activeTab === 'prediction'
+  // 在首页时，只有当 activeMainMenu 是 tag 时才激活 Tag
+  return stateStore.activeMainMenu === 'tag'
 })
 
-// 导航到首页
-const goToHome = () => {
+// 导航到 Tag 菜单
+const goToTag = () => {
   router.push('/')
-  // 确保切换到 tweets，这样 Home 会激活
-  stateStore.setActiveHomeTab('tweets')
+  // 切换到 Tag 主菜单，默认显示 tweets
+  stateStore.setActiveMainMenu('tag')
+  stateStore.setTagSubMenu('tweets')
 }
 
-// 导航到 Coin
+// 导航到 Coin 菜单
 const goToCoin = () => {
   router.push('/')
-  // 如果 coinSubMenu 还没有值，默认设置为 tagCoin
-  if (!coinSubMenu.value || coinSubMenu.value === 'tagCoin') {
-    stateStore.setActiveHomeTab('tagCoin')
-  } else {
-    stateStore.setActiveHomeTab('ip')
-  }
+  // 切换到 Coin 主菜单，默认显示 tagCoin
+  stateStore.setActiveMainMenu('coin')
+  stateStore.setCoinSubMenu('tagCoin')
 }
 
 // 创建 TagCoin
@@ -123,14 +116,14 @@ const handleWalletClick = (e?: Event) => {
 
     <!-- 菜单项 -->
     <nav class="flex-1 px-2 py-4 space-y-1">
-      <!-- 1. 首页 -->
+      <!-- 1. Tag 菜单 -->
       <div 
         class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isHomeActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="goToHome"
+        :class="isTagActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        @click="goToTag"
       >
         <img 
-          v-if="isHomeActive" 
+          v-if="isTagActive" 
           class="w-6 h-6 mr-3 transition-all" 
           src="~@/assets/icons/icon-tabbar-home-active.svg" 
           alt=""

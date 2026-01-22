@@ -22,7 +22,7 @@ async function onRefresh() {
     refreshing.value = true;
     finished.value = false;
     list.value = await getIPShareList() as IpShareUser[]
-    if (list.value.length < 8) {
+    if (list.value.length < 6) {
       finished.value = true
     }
   } catch (e) {
@@ -36,9 +36,9 @@ async function onLoad() {
   try{
     if (refreshing.value || finished.value) return
     loading.value = true
-    const tempList = await getIPShareList(Math.floor((list.value.length - 1) / 8) + 1) as IpShareUser[]
+    const tempList = await getIPShareList(Math.floor((list.value.length - 1) / 6) + 1) as IpShareUser[]
     list.value = list.value.concat(tempList)
-    if (tempList && tempList.length < 8) {
+    if (tempList && tempList.length < 6) {
       finished.value = true
     }
   } catch (e) {

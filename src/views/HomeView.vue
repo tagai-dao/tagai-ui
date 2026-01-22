@@ -40,11 +40,15 @@ const finished = reactive({
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
-const tabOptions = ['tweets', 'prediction', 'tagCoin', 'ip']
 const activeTab = computed({
   get: () => stateStore.activeHomeTab,
   set: (val) => stateStore.setActiveHomeTab(val)
 })
+
+// 主菜单和子菜单
+const activeMainMenu = computed(() => stateStore.activeMainMenu)
+const tagSubMenu = computed(() => stateStore.tagSubMenu)
+const coinSubMenu = computed(() => stateStore.coinSubMenu)
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -224,12 +228,17 @@ watch([() => contentWidth.value, () => scrollContainer.value], () => {
 })
 
 const newComDuration = computed(() => {
-  const totalWidth = scrollNewCommunities.value.length * 120
-  return (totalWidth / 120) * 1000
+  // 移动端卡片宽度是 180px（360px / 2），PC 端是 120px
+  const cardWidth = 180 // 移动端缩小到1/2
+  const totalWidth = scrollNewCommunities.value.length * cardWidth
+  // 速度降低到1/2，意味着动画时间需要增加2倍
+  return (totalWidth / cardWidth) * 1000 * 2
 })
 
 const newComContentWidth = computed(() => {
-  return scrollNewCommunities.value.length * 120;
+  // 移动端卡片宽度是 180px（360px / 2），PC 端是 120px
+  const cardWidth = 180 // 移动端缩小到1/2
+  return scrollNewCommunities.value.length * cardWidth;
 })
 
 const newComNeedScroll = ref(true)
@@ -272,13 +281,6 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     <div class="px-3 flex justify-between gap-2 web:gap-10" ref="scrollContainer">
-      <!-- 移动端显示标签切换，PC 端隐藏（在左侧边栏显示） -->
-      <div class="bg-white flex rounded-full overflow-hidden shadow-popper-tip web:hidden">
-        <div v-for="tab of tabOptions" :key="tab"
-             class="h-10 min-w-[80px] px-2 flex justify-center items-center text-h5 text-black rounded-full cursor-pointer"
-             :class="activeTab===tab?'bg-gradient-primary text-white':''"
-             @click="activeTab=tab">{{$t(tab)}}</div>
-      </div>
       <SearchBar class="hidden web:flex"/>
       <!-- 语言切换按钮 - 移到原来 Trending 的位置 -->
       <LanguageSwitcher class="hidden web:flex" />
@@ -295,30 +297,59 @@ const onCreate = (type: GlobalModalType) => {
 
     </div>
     
-    <!-- Tweets 和 Prediction 按钮 - 仅在首页显示，放在 Search 框和内容之间 -->
-    <div v-if="activeTab==='tweets' || activeTab==='prediction'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
+    <!-- 新社区列表 - 移动端显示在 Search 和 Tweets 标签页之间，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
+    <div class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
+      <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
+        <div class="flex h-full" :class="newComNeedScroll?'scroll-content':''"
+             :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
+          <div class="w-[180px] min-w-[180px] flex justify-end h-full" @click="gotoDetail(community)"
+               v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
+               :key="index">
+            <div class="h-full px-[18px] rounded-lg shadow-sm bg-white w-full max-w-[173px] flex items-center gap-[18px]">
+              <div class="flex-shrink-0">
+                <div class="border-[1px] border-gray-200 rounded bg-gray-400 w-9 h-9 web:w-4 web:h-4 z-30">
+                  <img class="w-full h-full rounded" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
+                </div>
+              </div>
+              <div class="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
+                <div class="text-[11.25px] web:text-xs font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
+                <span class="text-[11.25px] web:text-xs font-bold text-black truncate w-full">${{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-red-normal w-[90px] h-[12px] web:w-[80px] web:h-[10px] flex justify-center items-center
+                absolute top-[3px] left-[12px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
+                whitespace-nowrap">
+          <div class="blinking-text text-white text-[12px] web:text-[10px] font-bold leading-none">New</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Tag 菜单：Tweets 和 Prediction 按钮 -->
+    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
       <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
         <button 
           class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
-          :class="activeTab==='tweets' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setActiveHomeTab('tweets')"
+          :class="tagSubMenu==='tweets' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setTagSubMenu('tweets')"
         >
           {{ $t('tweets') || 'Tweets' }}
         </button>
         <button 
           class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
-          :class="activeTab==='prediction' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setActiveHomeTab('prediction')"
+          :class="tagSubMenu==='prediction' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setTagSubMenu('prediction')"
         >
           {{ $t('prediction') || 'Prediction' }}
         </button>
       </div>
       <!-- Trending/New 选择器 - 显示在按钮同一行，靠右对齐（仅在 tweets 时显示） -->
-      <div v-if="activeTab==='tweets'" class="flex-shrink-0">
+      <div v-if="tagSubMenu==='tweets'" class="flex-shrink-0">
         <PostTypeOption />
       </div>
       <!-- All/Online/Ended 选择器 - 显示在按钮同一行，靠右对齐（仅在 prediction 时显示） -->
-      <div v-if="activeTab==='prediction'" class="flex-shrink-0">
+      <div v-if="tagSubMenu==='prediction'" class="flex-shrink-0">
         <el-select
           v-model="predictSortType"
           class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
@@ -331,20 +362,20 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- TagCoin 和 IPShare 按钮 - 仅在 Coin 标签页显示，放在 Search 框和内容之间 -->
-    <div v-if="activeTab==='tagCoin' || activeTab==='ip'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
+    <!-- Coin 菜单：TagCoin 和 IPShare 按钮 -->
+    <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
       <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
         <button 
           class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
-          :class="activeTab==='tagCoin' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setActiveHomeTab('tagCoin')"
+          :class="coinSubMenu==='tagCoin' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setCoinSubMenu('tagCoin')"
         >
           {{ $t('tagCoin') || 'TagCoin' }}
         </button>
         <button 
           class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
-          :class="activeTab==='ip' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setActiveHomeTab('ip')"
+          :class="coinSubMenu==='ip' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="stateStore.setCoinSubMenu('ip')"
         >
           {{ $t('ip') || 'IPShare' }}
         </button>
@@ -352,7 +383,7 @@ const onCreate = (type: GlobalModalType) => {
       <!-- Trending 切换按钮 - 移到右侧，与 TagCoin 内容区域右边对齐 -->
       <div class="flex-shrink-0">
         <el-select
-          v-if="activeTab==='tagCoin'"
+          v-if="coinSubMenu==='tagCoin'"
           v-model="listType"
           class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
           popper-class="c-select-popper rounded-xl"
@@ -364,8 +395,8 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <HomePost v-if="activeTab==='tweets'"/>
-    <template v-if="activeTab==='tagCoin'">
+    <HomePost v-if="activeMainMenu==='tag' && tagSubMenu==='tweets'"/>
+    <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
       <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh v-model="refreshing" @refresh="refresh"
                           class="min-h-full"
@@ -407,48 +438,19 @@ const onCreate = (type: GlobalModalType) => {
         </van-pull-refresh>
       </div>
     </template>
-    <Predict :type="predictSortType" v-if="activeTab==='prediction'"/>
+    <Predict :type="predictSortType" v-if="activeMainMenu==='tag' && tagSubMenu==='prediction'"/>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
-    <div class="flex-1 overflow-auto" v-if="activeTab==='ip'">
+    <div class="flex-1 overflow-auto" v-if="activeMainMenu==='coin' && coinSubMenu==='ip'">
       <IPList />
     </div>
     
-    <!-- 新社区列表 - 缩小到 1/5，放在底部 -->
-    <div class="h-[14px] web:h-[16px] mt-auto web:px-3 pb-2 flex-shrink-0">
-      <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
-        <div class="flex h-full" :class="newComNeedScroll?'scroll-content':''"
-             :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
-          <div class="w-[120px] min-w-[120px] flex justify-end h-full" @click="gotoDetail(community)"
-               v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
-               :key="index">
-            <div class="h-full px-1.5 rounded-lg shadow-sm bg-white w-full max-w-[115px] flex items-center gap-1.5">
-              <div class="flex-shrink-0">
-                <div class="border-[1px] border-gray-200 rounded bg-gray-400 w-3 h-3 web:w-4 web:h-4 z-30">
-                  <img class="w-full h-full rounded" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
-                </div>
-              </div>
-              <div class="flex items-center gap-1 flex-1 min-w-0">
-                <div class="text-[10px] web:text-xs font-bold leading-tight truncate" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
-                <span class="text-[10px] web:text-xs font-bold text-black">${{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-red-normal w-[60px] h-[8px] web:w-[80px] web:h-[10px] flex justify-center items-center
-                absolute top-[2px] left-[8px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
-                whitespace-nowrap">
-          <div class="blinking-text text-white text-[8px] web:text-[10px] font-bold">New</div>
-        </div>
-      </div>
-    </div>
-    
     <div>
-      <button v-if="activeTab==='tagCoin'"
+      <button v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'"
               class="absolute bottom-[80px] right-[10px] web:bottom-8"
               @click="onCreate(GlobalModalType.CreateCoin)">
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
       </button>
-      <button v-else-if="activeTab==='tweets'"
+      <button v-else-if="activeMainMenu==='tag' && tagSubMenu==='tweets'"
               class="absolute bottom-[80px] right-[10px] web:bottom-8"
               @click="onCreate(GlobalModalType.CreateTweet)">
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
