@@ -156,7 +156,7 @@ export const getMarketInfos = async (markets: BattleData[] | EventPredictData[])
     return res.results.transformed;
 }
 
-export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData) {
+export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData | EventPredictData) {
     if (!isAddress(tokenAddr) || !isAddress(battle.marketMaker)) return {balance: 0, balanceA: 0, balanceB: 0, lpBalance: 0};
     let calls = [
         {
@@ -241,7 +241,7 @@ export async function getBuyData(battle: BattleData | EventPredictData, shares: 
     return res.results.transformed;
 }
 
-export async function getSellData(battle: BattleData, reserveA: number, reserveB: number, shares: number, outcome: 'red' | 'blue') {
+export async function getSellData(battle: BattleData | EventPredictData, reserveA: number, reserveB: number, shares: number, outcome: 'red' | 'blue') {
     if (!shares) return {receive: 0, fee: 0};
     if (parseFloat(shares.toFixed(18)) === 0) return {receive: 0, fee: 0};
 
@@ -387,7 +387,7 @@ export async function calculateMaxSellAmount(battle: BattleData, index: number) 
     return parseUnits(stateReturnAmount.toFixed(18), 18);
 }
 
-export async function addLiquidity(battle: BattleData, amount: number, collateralToken: string) {
+export async function addLiquidity(battle: BattleData | EventPredictData, amount: number, collateralToken: string) {
     if (!isAddress(battle.marketMaker)) return;
     const amountBi = parseUnits(amount.toFixed(18), 18)
     if (amountBi === 0n) return;
@@ -411,7 +411,7 @@ export async function addLiquidity(battle: BattleData, amount: number, collatera
     })
 }
 
-export async function removeLiquidity(battle: BattleData, sharesBi: bigint) {
+export async function removeLiquidity(battle: BattleData | EventPredictData, sharesBi: bigint) {
     if (!isAddress(battle.marketMaker)) return
     // 留一些流动性在里面，可以维持当前的价格
     const newSharesBi = BigInt(sharesBi) - BigInt(10000000000)
@@ -424,7 +424,7 @@ export async function removeLiquidity(battle: BattleData, sharesBi: bigint) {
     })
 }
 
-export async function redeemPositions(battle: BattleData, collateralToken: string) {
+export async function redeemPositions(battle: BattleData | EventPredictData, collateralToken: string) {
      if (!isAddress(ConditionalTokens)) return;
      // indexSets: [1, 2] for binary
      const indexSets = [1, 2];
@@ -438,7 +438,7 @@ export async function redeemPositions(battle: BattleData, collateralToken: strin
     })
 }
 
-export async function getUserLpBalance(battle: BattleData, accAddr: `0x${string}`) {
+export async function getUserLpBalance(battle: BattleData | EventPredictData, accAddr: `0x${string}`) {
     if (!isAddress(battle.marketMaker)) return 0;
     const res: any = await readContract('FixedProductMarketMaker', 'balanceOf', [accAddr], battle.marketMaker)
     return Number(res) / 1e18

@@ -11,6 +11,7 @@ import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
+import { newParticipation } from '@/apis/api';
 
 const props = defineProps<{
     battle: BattleData,
@@ -146,6 +147,9 @@ const confirmBuy = async () => {
   try {
     const hash = await buyToken(props.battle as BattleData, props.battle.token as `0x${string}`, parseUnits(parseFloat(buyAmount.value).toFixed(18), 18), willReceiveAmount.value * 0.95, selectedColor.value!, bnbFee.value)
     console.log('buy hash', hash)
+    if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
+      await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.battle.marketMaker as `0x${string}`)
+    }
     getMarketInfos([props.battle]).then((infos: any) => {
       props.battle.reserveA = infos[props.battle.marketMaker + '-priceA']
       props.battle.reserveB = infos[props.battle.marketMaker + '-priceB']

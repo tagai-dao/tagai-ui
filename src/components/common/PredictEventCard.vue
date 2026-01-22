@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, computed } from 'vue'
-import { getUserPredictVP, voteEventPrediction } from '@/apis/api';
+import { getUserPredictVP, newParticipation, voteEventPrediction } from '@/apis/api';
 import type { BattleData, CommunityMember, EventPredictData, Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper';
 import { useModalStore } from '@/stores/common'
@@ -142,6 +142,9 @@ const confirmBuy = async () => {
   try {
     const hash = await buyToken(props.market, props.market.token as `0x${string}`, parseUnits(parseFloat(buyAmount.value).toFixed(18), 18), willReceiveAmount.value * 0.95, selectedColor.value!, bnbFee.value)
     console.log('buy hash', hash)
+    if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
+      await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.marketMaker as `0x${string}`, 'event')
+    }
     getMarketInfos([props.market]).then((infos: any) => {
       props.market.reserveA = infos[props.market.marketMaker + '-priceA']
       props.market.reserveB = infos[props.market.marketMaker + '-priceB']
