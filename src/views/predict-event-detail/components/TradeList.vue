@@ -2,7 +2,7 @@
 import { ref, onMounted, onActivated } from 'vue'
 import { formatAddress, formatAmount, formatDate, formatPrice } from '@/utils/helper'
 import { getFPMMTradeList } from '@/apis/api'
-import type { FPMMTrade, MarketData } from '@/types'
+import type { EventPredictData, FPMMTrade, MarketData } from '@/types'
 import { handleErrorTip } from '@/utils/notify'
 import { useI18n } from 'vue-i18n'
 import { ChainConfig } from '@/config'
@@ -10,7 +10,7 @@ import { ChainConfig } from '@/config'
 const { t } = useI18n()
 
 const props = defineProps<{
-  market: MarketData
+  market: EventPredictData
 }>()
 
 const list = ref<FPMMTrade[]>([])
@@ -23,7 +23,7 @@ const onLoad = async () => {
     if (refreshing.value || loading.value || finished.value || list.value.length == 0) {
       return;
     }   
-    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.battle.marketMaker, Math.floor((list.value.length - 1) / 30) + 1)) as unknown as FPMMTrade[]
+    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.marketMaker, Math.floor((list.value.length - 1) / 30) + 1)) as unknown as FPMMTrade[]
     list.value = list.value.concat(trades)
     if (trades.length < 30) {
       finished.value = true
@@ -39,7 +39,7 @@ const onRefresh = async () => {
   try {
     finished.value = false
     refreshing.value = true
-    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.battle.marketMaker)) as unknown as FPMMTrade[]
+    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.marketMaker)) as unknown as FPMMTrade[]
     list.value = trades
   } catch (error) {
     handleErrorTip(error)
@@ -122,7 +122,7 @@ onActivated(() => {
                     at {{ getPrice(item) }}
                 </span>
                 <span class="text-gray-400 whitespace-nowrap">
-                    ({{ formatAmount(item.amount) }} {{ market.battle.tick }})
+                    ({{ formatAmount(item.amount) }} {{ market.tick }})
                 </span>
             </div>
 
@@ -130,7 +130,7 @@ onActivated(() => {
                 <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterName ? `@${item.twitterName}` : formatAddress(item.ethAddr) }}</span>
                 <span class="text-green-500">{{ $t('predictLiquidity.add') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getTradeTypeColor(item.isBuy)">
-                    {{ formatAmount(getAddShares(item)) }} {{ market.battle.tick }}
+                    {{ formatAmount(getAddShares(item)) }} {{ market.tick }}
                 </span> 
                 <span>
                   {{ $t('predictLiquidity.get') }}

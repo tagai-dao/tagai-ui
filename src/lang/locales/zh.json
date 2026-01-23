@@ -541,7 +541,9 @@
     "vpRemain": "当前剩余VP",
     "vpDesc": "该VP值不同于平台策展VP，是每个社区中独立的预测市场投票VP。每个用户默认在每个社区有200VP值，线性恢复时间是3天。",
     "voteConfirmBtn": "确认投票",
-    "voteNow": "立即投票"
+    "voteNow": "立即投票",
+    "timeLeftVoting": "距离投票结束还有：",
+    "endStill": "距离交易结束还有： "
   },
   "predictLiquidity": {
     "management": "流动性管理",

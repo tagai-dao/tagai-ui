@@ -3,22 +3,25 @@ import { ref, computed } from 'vue'
 import { formatAddress, parseTimestamp } from '@/utils/helper'
 import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
 import type { EventPredictData, CommunityMember } from '@/types'
-import { useClipboard } from '@vueuse/core'
+import { useClipboard, useNow } from '@vueuse/core'
 import { useRouter } from 'vue-router'
 import { getUserPredictVP, voteEventPrediction } from '@/apis/api'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { handleErrorTip } from '@/utils/notify'
+import { useI18n } from 'vue-i18n'
 import { MAX_VP, VP_CONSUME, VP_RECOVER_DAY } from '@/config'
 
 const props = defineProps<{
   market: EventPredictData
 }>()
 
+const { t } = useI18n()
 const { copy, copied } = useClipboard()
 const router = useRouter()
 const accStore = useAccountStore()
+const now = useNow()
 
 // 投票相关状态
 const voting = ref(false)
@@ -27,8 +30,69 @@ const currentVP = ref(0)
 const selectedVoteOption = ref<'yes' | 'no' | null>(null)
 const showPopover = ref(false)
 
+const voteEndTime = computed(() => props.market.endTime * 1000 + 86400000)
+const tradeEndTime = computed(() => props.market.endTime * 1000)
+
 const isVoting = computed(() => {
-  return props.market.status == 2 && (props.market.endTime * 1000 + 86400000 > Date.now() && props.market.endTime * 1000 < Date.now())
+  // 使用 now.value 确保响应式更新
+  const current = now.value.getTime()
+  return props.market.status == 2 && (voteEndTime.value > current && tradeEndTime.value < current)
+})
+
+// 时间格式化辅助函数
+const pad = (n: number) => n.toString().padStart(2, '0')
+
+const formatDurationColon = (ms: number) => {
+  if (ms < 0) return '00:00:00'
+  const totalSeconds = Math.floor(ms / 1000)
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  // 如果超过24小时，显示天数
+  if (h > 24) {
+      const d = Math.floor(h / 24)
+      const remainH = h % 24
+      return `${d}d ${pad(remainH)}:${pad(m)}:${pad(s)}`
+  }
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
+
+const formatDurationText = (ms: number) => {
+  if (ms < 0) return '0s'
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  
+  if (hours > 0) {
+      return `${hours}h${minutes}min${seconds}s`
+  }
+  return `${minutes}min${seconds}s`
+}
+
+const statusText = computed(() => {
+  if (props.market.winner) return t('ended')
+  
+  const current = now.value.getTime()
+  
+  // 投票阶段
+  if (isVoting.value) {
+    const diff = voteEndTime.value - current
+    return `${t('predictTrade.timeLeftVoting')}${formatDurationText(diff)}`
+  }
+  
+  // 交易阶段 (未结束且未开始投票)
+  if (!props.market.winner && current < tradeEndTime.value) {
+     const diff = tradeEndTime.value - current
+     return `${t('predictTrade.endStill')}${formatDurationColon(diff)}`
+  }
+  
+  // 已经结束但还没有 winner 状态（等待结算中）
+  if (current >= voteEndTime.value) {
+      return t('ended')
+  }
+  
+  // 处于交易结束到投票开始之间的短暂间隙（如果有）或者状态不对齐
+  return t('ended')
 })
 
 // 判断用户是否已投票（voteResult 不为空：不为 null、undefined 或 0）
@@ -50,6 +114,20 @@ const voteNoAmount = computed(() => {
 
 const totalCuration = computed(() => {
   return voteYesAmount.value + voteNoAmount.value
+})
+
+const voteTotal = computed(() => {
+  return (props.market.voteYes ?? 0) + (props.market.voteNo ?? 0)
+})
+
+const voteYesPercent = computed(() => {
+  if (voteTotal.value === 0) return 0
+  return Math.round((props.market.voteYes ?? 0) / voteTotal.value * 100)
+})
+
+const voteNoPercent = computed(() => {
+  if (voteTotal.value === 0) return 0
+  return 100 - voteYesPercent.value
 })
 
 // 投票前准备
@@ -119,11 +197,11 @@ const vote = async () => {
          <span 
           class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
           :class="{
-            'bg-green-light text-green-dark': !market.winner,
-            'bg-grey-light text-grey-normal': !!market.winner
+            'bg-green-light text-green-dark': !market.winner && now.getTime() < voteEndTime,
+            'bg-grey-light text-grey-normal': !!market.winner || now.getTime() >= voteEndTime
           }"
          >
-          {{ market.winner ? 'Ended' : parseTimestamp(market.endTime * 1000) }}
+          {{ statusText }}
         </span>
         <div class="flex items-center gap-1">
           <span 
@@ -171,31 +249,43 @@ const vote = async () => {
         <!-- 投票状态：两个投票按钮 -->
         <div v-if="isVoting" class="flex gap-3 sm:gap-4 w-full">
           <!-- Vote Yes 按钮 -->
-          <button 
-            class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-yes-btn"
-            :class="{
-              'opacity-50 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
-              'opacity-50': market.voteResult === 2
-            }"
-            :disabled="hasVoted"
-            :style="market.voteResult === 1 ? 'opacity: 1 !important;' : ''"
-            @click="preVote(true)"
-          >
-            {{ $t('predictTrade.voteYes') || '投票Yes' }}
-          </button>
+          <div class="relative flex-1">
+            <button 
+              class="w-full h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-yes-btn"
+              :class="{
+                'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                'opacity-50 cursor-not-allowed': hasVoted
+              }"
+              :disabled="hasVoted"
+              @click="preVote(true)"
+            >
+              {{ $t('predictTrade.voteYes') || '投票Yes' }} <span class="ml-1 text-xs opacity-90">({{ voteYesPercent }}%)</span>
+            </button>
+            <div v-if="market.voteResult === 1" class="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
           <!-- Vote No 按钮 -->
-          <button 
-            class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-no-btn"
-            :class="{
-              'opacity-50 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
-              'opacity-50': market.voteResult === 1
-            }"
-            :disabled="hasVoted"
-            :style="market.voteResult === 2 ? 'opacity: 1 !important;' : ''"
-            @click="preVote(false)"
-          >
-            {{ $t('predictTrade.voteNo') || '投票No' }}
-          </button>
+          <div class="relative flex-1">
+            <button 
+              class="w-full h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-no-btn"
+              :class="{
+                'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                'opacity-50 cursor-not-allowed': hasVoted
+              }"
+              :disabled="hasVoted"
+              @click="preVote(false)"
+            >
+              {{ $t('predictTrade.voteNo') || '投票No' }} <span class="ml-1 text-xs opacity-90">({{ voteNoPercent }}%)</span>
+            </button>
+            <div v-if="market.voteResult === 2" class="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onActivated, ref } from 'vue'
-import type { FPMMUserHolding, MarketData } from '@/types'
+import type { EventPredictData, FPMMUserHolding } from '@/types'
 import { getFPMMUserHoldings } from '@/apis/api'
 import { handleErrorTip } from '@/utils/notify'
 import { formatAddress } from '@/utils/helper';
 import UserAvatar from '@/components/common/UserAvatar.vue';
 
 const props = defineProps<{
-  market: MarketData
+  market: EventPredictData
 }>()
 
 const loading = ref(false)
@@ -28,9 +28,9 @@ const onLoad = async () => {
     // Note: The API likely returns { listA: [], listB: [] } or similar. 
     // We assume the API handles pagination for both lists simultaneously.
     const res: any = await getFPMMUserHoldings(
-      props.market.battle.marketMaker,
-      props.market.battle.positionAID,
-      props.market.battle.positionBID,
+      props.market.marketMaker,
+      props.market.positionAID,
+      props.market.positionBID,
       page
     )
 
@@ -63,9 +63,9 @@ const onRefresh = async () => {
     finished.value = false
     refreshing.value = true
     const res: any = await getFPMMUserHoldings(
-      props.market.battle.marketMaker,
-      props.market.battle.positionAID,
-      props.market.battle.positionBID
+      props.market.marketMaker,
+      props.market.positionAID,
+      props.market.positionBID
     )
     if (res) {
       redList.value = res.b1 || []
@@ -136,7 +136,7 @@ onActivated(() => {
                   <div class="flex-1 flex flex-col gap-3" :class="activeTab === 'red' ? 'flex' : 'hidden md:flex'">
                       <div class="hidden md:block text-xs font-bold text-red-600 uppercase tracking-wider mb-2 border-b border-red-100 pb-2">Red Holders</div>
                       <div v-for="(holder, idx) in redList" :key="holder.ethAddr + 'red'" 
-                      v-show="holder.ethAddr != market.battle.marketMaker"
+                      v-show="holder.ethAddr != market.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100">
                            <div class="relative">
                               <img :src="holder.profile" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
@@ -145,7 +145,7 @@ onActivated(() => {
                               </div> -->
                           </div>
                           <div class="flex-1 min-w-0">
-                            <div v-if="holder.ethAddr == market.battle.marketMaker" class="font-bold text-sm text-red-600 truncate">{{ 'Market' }}</div>
+                            <div v-if="holder.ethAddr == market.marketMaker" class="font-bold text-sm text-red-600 truncate">{{ 'Market' }}</div>
                             <div v-else-if="holder.twitterId" class="font-bold text-sm text-gray-900 truncate">{{ holder.twitterName || holder.twitterUsername || 'Unknown' }}</div>
                             <div v-else class="text-xs text-gray-500 font-mono">{{ formatAddress(holder.ethAddr) }}</div>
                           </div>
@@ -161,7 +161,7 @@ onActivated(() => {
                   <div class="flex-1 flex flex-col gap-3" :class="activeTab === 'blue' ? 'flex' : 'hidden md:flex'">
                       <div class="hidden md:block text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 border-b border-blue-100 pb-2">Blue Holders</div>
                        <div v-for="(holder, idx) in blueList" :key="holder.ethAddr + 'blue'" 
-                       v-show="holder.ethAddr != market.battle.marketMaker"
+                       v-show="holder.ethAddr != market.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
                           <div class="relative">
                               <img :src="holder.profile" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
@@ -170,7 +170,7 @@ onActivated(() => {
                               </div> -->
                           </div>
                           <div class="flex-1 min-w-0">
-                            <div v-if="holder.ethAddr == market.battle.marketMaker" class="font-bold text-sm text-blue-600 truncate">{{ 'Market' }}</div>
+                            <div v-if="holder.ethAddr == market.marketMaker" class="font-bold text-sm text-blue-600 truncate">{{ 'Market' }}</div>
                             <div v-else-if="holder.twitterId" class="font-bold text-sm text-gray-900 truncate">{{ holder.twitterName || holder.twitterUsername || 'Unknown' }}</div>
                             <div v-else class="text-xs text-gray-500 font-mono">{{ formatAddress(holder.ethAddr) }}</div>
                           </div>

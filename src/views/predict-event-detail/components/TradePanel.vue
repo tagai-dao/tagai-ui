@@ -11,6 +11,8 @@ import debounce from 'lodash.debounce'
 import { handleErrorTip } from '@/utils/notify'
 import { useModalStore } from '@/stores/common'
 import { useEventPredict } from '@/composables/usePredict'
+import { useNow } from '@vueuse/core'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{
     market: EventPredictData
@@ -19,6 +21,9 @@ const props = defineProps<{
 const accStore = useAccountStore()
 const { onCopy } = useTools()
 const { percentA: showingPercentA, percentB: showingPercentB } = useEventPredict(props.market)
+const now = useNow()
+const { t } = useI18n()
+
 // Global Tab State
 const mainTab = ref<'trade' | 'liquidity' | 'redeem'>('trade')
 
@@ -321,6 +326,34 @@ onUnmounted(() => {
 function copyMarketAddress(address: `0x${string}`) {
   onCopy(address)
 }
+
+// 倒计时和状态逻辑
+const tradeEndTime = computed(() => props.market.endTime * 1000)
+const isTradeEnded = computed(() => {
+  return now.value.getTime() >= tradeEndTime.value
+})
+
+const pad = (n: number) => n.toString().padStart(2, '0')
+const formatDurationColon = (ms: number) => {
+  if (ms < 0) return '00:00:00'
+  const totalSeconds = Math.floor(ms / 1000)
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  // 如果超过24小时，显示天数
+  if (h > 24) {
+      const d = Math.floor(h / 24)
+      const remainH = h % 24
+      return `${d}d ${pad(remainH)}:${pad(m)}:${pad(s)}`
+  }
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
+
+const tradeTimeLeftText = computed(() => {
+  if (isTradeEnded.value) return ''
+  const diff = tradeEndTime.value - now.value.getTime()
+  return `${t('predictTrade.endStill')}${formatDurationColon(diff)}`
+})
 </script>
 
 <template>
@@ -450,20 +483,27 @@ function copyMarketAddress(address: `0x${string}`) {
         >
         {{ $t('connect') }}
         </button>
-        <button v-else-if="props.market.status !== 1"
-            disabled
-            class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
-        >
-          {{ $t('ended') }}
-        </button>
-        <button v-else
-            class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
-            @click="executeTrade"
-            :disabled="tradeCalculating || tradeLoading || !tradeShares || props.market.status !== 1"
-        >
-            {{ tradeActiveTab === 'buy' ? $t("buy") : $t("sell") }} {{ tradeSelectedOutcome === 'red' ? $t("predictTrade.red") : $t("predictTrade.blue") }}
-            <i-ep-loading v-if="tradeCalculating || tradeLoading" class="animate-spin ml-2" />
-        </button>
+        <div v-else-if="props.market.status !== 1 || isTradeEnded" class="w-full">
+            <button
+                disabled
+                class="w-full py-4 flex justify-center items-center rounded-full bg-gray-300 font-bold text-lg text-white cursor-not-allowed"
+            >
+              {{ $t('predictTrade.tradeEnded') || '已结束交易' }}
+            </button>
+        </div>
+        <div v-else class="w-full flex flex-col gap-2">
+            <button
+                class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white primary-button shadow-lg transition-all transform active:scale-[0.99]"
+                @click="executeTrade"
+                :disabled="tradeCalculating || tradeLoading || !tradeShares"
+            >
+                {{ tradeActiveTab === 'buy' ? $t("buy") : $t("sell") }} {{ tradeSelectedOutcome === 'red' ? $t("predictTrade.red") : $t("predictTrade.blue") }}
+                <i-ep-loading v-if="tradeCalculating || tradeLoading" class="animate-spin ml-2" />
+            </button>
+            <div class="text-center text-xs text-red-500 font-medium">
+                 {{ tradeTimeLeftText }}
+            </div>
+        </div>
     </div>
 
     <!-- LIQUIDITY TAB CONTENT -->
