@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TagCurationReward from "@/components/profile/TagCurationReward.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
-import { onMounted, ref, watch, type PropType } from "vue";
+import { onMounted, ref, watch, computed, type PropType } from "vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
@@ -51,6 +51,8 @@ const onLoad = async () => {
     const acc = props.userInfo ?? accStore.getAccountInfo
     let list: any = await getUserTweets(acc.twitterId, Math.floor((tweetsList.value.length - 1) / 30) + 1)
     if (list && list.length > 0) {
+      // 过滤掉 Blinks Tweet（有 commerceId 的 tweet）
+      list = list.filter((tweet: any) => !tweet.commerceId)
       tweetsList.value = tweetsList.value.concat(await getTokenInfoOfTweets(list))
     }
     if (list.length === 0) {
@@ -71,10 +73,14 @@ const onRefresh = async () => {
     refreshing.value = true
     finished.value = false
     const acc = props.userInfo ?? accStore.getAccountInfo
-    const list: any = await getUserTweets(acc.twitterId)
+    let list: any = await getUserTweets(acc.twitterId)
     if (list && list.length > 0) {
+      // 过滤掉 Blinks Tweet（有 commerceId 的 tweet）
+      list = list.filter((tweet: any) => !tweet.commerceId)
       tweetsList.value = await getTokenInfoOfTweets(list)
       if (list.length < 30) finished.value = true
+    } else {
+      tweetsList.value = []
     }
   } catch (e) {
     handleErrorTip(e)

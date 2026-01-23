@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, onUnmounted } from 'vue'
 import { useCommunityStore } from '@/stores/community'
 import { formatPrice } from '@/utils/helper'
 import { useStateStore } from '@/stores/common'
@@ -15,7 +15,19 @@ const router = useRouter()
 
 const loading = ref(false)
 const finished = ref(false)
-const displayedCount = ref(6) // 初始显示6个
+const displayedCount = ref(6) // 移动端初始显示6个
+const isExpanded = ref(false) // PC 端是否展开
+const isPC = ref(false) // 是否是 PC 端
+
+// PC 端默认显示数量
+const PC_DEFAULT_COUNT = 5
+
+// 检测是否是 PC 端
+function checkIsPC() {
+  if (typeof window !== 'undefined') {
+    isPC.value = window.innerWidth >= 1024
+  }
+}
 
 // 获取市值排序后的 TagCoin 列表
 const sortedTagCoins = computed(() => {
@@ -32,13 +44,40 @@ const sortedTagCoins = computed(() => {
     })
 })
 
-// 获取当前显示的 TagCoin（前 displayedCount 个）
+// 获取当前显示的 TagCoin
 const topTagCoins = computed(() => {
-  return sortedTagCoins.value.slice(0, displayedCount.value)
+  // PC 端：如果未展开，只显示前 5 个；如果展开，显示全部
+  // 移动端：使用 displayedCount
+  if (isPC.value) {
+    // PC 端
+    if (isExpanded.value) {
+      return sortedTagCoins.value
+    } else {
+      return sortedTagCoins.value.slice(0, PC_DEFAULT_COUNT)
+    }
+  } else {
+    // 移动端
+    return sortedTagCoins.value.slice(0, displayedCount.value)
+  }
 })
+
+// 是否有更多可以展开（PC 端）
+const hasMoreToExpand = computed(() => {
+  return isPC.value && !isExpanded.value && sortedTagCoins.value.length > PC_DEFAULT_COUNT
+})
+
+// 切换展开状态（PC 端）
+function toggleExpand() {
+  isExpanded.value = !isExpanded.value
+}
 
 // 如果 marketCapCommunities 为空，则加载数据
 onMounted(async () => {
+  checkIsPC()
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', checkIsPC)
+  }
+  
   if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length === 0) {
     try {
       const communities = await getCommunityByMarketCap() as Array<Community>
@@ -49,6 +88,12 @@ onMounted(async () => {
     } catch (e) {
       console.error('Load market cap communities error:', e)
     }
+  }
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', checkIsPC)
   }
 })
 
@@ -136,11 +181,23 @@ function gotoDetail(community: Community) {
             </div>
           </div>
         </div>
+        <!-- PC 端：Show more 按钮（展开/收起） -->
+        <div v-if="hasMoreToExpand" class="px-4 py-2 text-center web:block hidden">
+          <button class="py-2 text-sm text-orange-normal hover:underline" @click="toggleExpand">
+            {{ $t('showMore') }}
+          </button>
+        </div>
+        <div v-else-if="isExpanded && sortedTagCoins.length > PC_DEFAULT_COUNT" class="px-4 py-2 text-center web:block hidden">
+          <button class="py-2 text-sm text-orange-normal hover:underline" @click="toggleExpand">
+            {{ $t('showLess') || 'Show less' }}
+          </button>
+        </div>
+        <!-- 移动端：原有的加载更多逻辑 -->
         <template v-if="!loading">
-          <div v-if="!finished" class="px-4 py-2 text-center">
+          <div v-if="!finished" class="px-4 py-2 text-center web:hidden">
             <button class="py-2 text-sm text-orange-normal" @click="onLoad">{{$t('showMore')}}</button>
           </div>
-          <div v-else-if="topTagCoins.length > 0" class="text-center text-sm text-grey-light-active pb-3">{{$t('noMore')}}</div>
+          <div v-else-if="topTagCoins.length > 0" class="text-center text-sm text-grey-light-active pb-3 web:hidden">{{$t('noMore')}}</div>
         </template>
       </div>
     </div>

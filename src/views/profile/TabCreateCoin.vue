@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import { getCreatedList } from '@/apis/api'
+import { getCreatedList, getCapturedFee } from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfo, getAIBalance } from "@/utils/pump";
@@ -9,6 +9,7 @@ import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { formatAmount } from "@/utils/helper";
 import { redeemIxoReward } from '@/apis/api'
+import { isAddress } from "viem";
 
 const accStore = useAccountStore()
 
@@ -17,6 +18,21 @@ const loading = ref(false)
 const finished = ref(false)
 const scroller = document.querySelector('#profile-tab-scroller')
 let aiBalance: any = {}
+const capturedFee = ref(0)
+
+const valueCaptured = computed(() => {
+  return formatAmount(capturedFee.value);
+})
+
+async function loadCapturedFee(ethAddr: string) {
+  try {
+    const fee = await getCapturedFee(ethAddr);
+    const feeValue = typeof fee === 'number' ? fee : (typeof fee === 'object' && fee !== null ? 0 : Number(fee) || 0);
+    capturedFee.value = feeValue;
+  } catch (error) {
+    console.error('Load captured fee error:', error);
+  }
+}
 
 const onLoad = async () => {
   if(loading.value || finished.value || !accStore.getAccountInfo.ethAddr || accStore.createdTokenList.length == 0) return
@@ -56,8 +72,18 @@ const claimReward = async (token: string) => {
   }
 }
 
+// 监听账户信息变化，加载 Value Captured 数据
+watch(() => accStore.getAccountInfo?.ethAddr, (newAddr) => {
+  if (newAddr && isAddress(newAddr)) {
+    loadCapturedFee(newAddr);
+  }
+}, { immediate: true })
+
 onMounted(() => {
   onRefresh()
+  if (accStore.getAccountInfo?.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
+    loadCapturedFee(accStore.getAccountInfo.ethAddr);
+  }
 })
 
 </script>
@@ -76,6 +102,25 @@ onMounted(() => {
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">
+        <!-- Value Captured -->
+        <div class="px-3 mb-3">
+          <div class="border-1 border-orange-normal rounded-xl px-4 py-3 bg-gray-50">
+            <div class="text-sm text-grey-8d mb-1 flex items-center gap-2">
+              <span>{{ $t('profileView.valueCaptured') || 'Value Captured' }}</span>
+              <el-tooltip popper-class="c-arrow-popper">
+                <template #content>
+                  <div class="text-white p-2 max-w-200px text-xs">{{ $t('profileView.valueCapturedDesc') || 'Total value captured from IPShare trading fees.' }}</div>
+                </template>
+                <button>
+                  <img class="w-4 h-4" src="~@/assets/icons/icon-tip.svg" alt="">
+                </button>
+              </el-tooltip>
+            </div>
+            <div class="text-center">
+              <span class="text-orange-normal text-2xl font-bold">{{ valueCaptured }} BNB</span>
+            </div>
+          </div>
+        </div>
         <div v-if="accStore.createdTokenList.length>0" class="px-3">
           <TagListItem v-for="(community, i) of accStore.createdTokenList" :key="i"
                        @click="$router.push(`/tag-detail/${community.tick}`)"

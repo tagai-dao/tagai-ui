@@ -261,7 +261,37 @@ const onCreate = (type: GlobalModalType) => {
 
 <template>
   <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2">
-    <div class="web:px-3">
+    <!-- 新社区列表（TagCoin 滚动条）- 移动端显示在 Space 滚动条上方，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
+    <div class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
+      <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
+        <div class="flex h-full" :class="newComNeedScroll?'scroll-content':''"
+             :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
+          <div class="w-[144px] min-w-[144px] flex justify-end h-full" @click="gotoDetail(community)"
+               v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
+               :key="index">
+            <div class="h-full pl-[10px] pr-[18px] rounded-lg shadow-sm bg-white w-full max-w-[138px] flex items-center gap-[18px]">
+              <div class="flex-shrink-0">
+                <div class="border-[1px] border-gray-200 rounded bg-gray-400 w-7 h-7 web:w-4 web:h-4 z-30">
+                  <img class="w-full h-full rounded" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
+                </div>
+              </div>
+              <div class="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
+                <div class="text-[10px] web:text-xs font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
+                <span class="text-[10px] web:text-xs font-bold text-black truncate w-full">${{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-red-normal w-[90px] h-[12px] web:w-[80px] web:h-[10px] flex justify-center items-center
+                absolute top-[3px] left-[12px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
+                whitespace-nowrap">
+          <div class="blinking-text text-white text-[12px] web:text-[10px] font-bold leading-none">New</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Space 滚动条 - 仅在移动端显示，PC 端在右侧 Live Spaces 框中显示 -->
+    <div class="web:hidden px-3">
       <div class="relative flex overflow-hidden">
         <div class="w-full overflow-x-hidden whitespace-nowrap relative">
           <div class="flex" :class="needScroll?'scroll-content':''"
@@ -277,51 +307,6 @@ const onCreate = (type: GlobalModalType) => {
                   absolute top-[15px] left-[15px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
                   whitespace-nowrap">
           <div class="blinking-text text-white text-xs font-bold">Space</div>
-        </div>
-      </div>
-    </div>
-    <div class="px-3 flex justify-between gap-2 web:gap-10" ref="scrollContainer">
-      <SearchBar class="hidden web:flex"/>
-      <!-- 语言切换按钮 - 移到原来 Trending 的位置 -->
-      <LanguageSwitcher class="hidden web:flex" />
-      <template v-if="activeTab==='mindshare'">
-        <el-select
-            v-model="mindShareType"
-            class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-10 flex items-center text-h4 text-black"
-            popper-class="c-select-popper rounded-xl"
-        >
-          <el-option :value="MindShareType.Project" :label="$t('mindShare.project')" />
-          <el-option :value="MindShareType.User" :label="$t('mindShare.user')" />
-        </el-select>
-      </template>
-
-    </div>
-    
-    <!-- 新社区列表 - 移动端显示在 Search 和 Tweets 标签页之间，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
-    <div class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
-      <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
-        <div class="flex h-full" :class="newComNeedScroll?'scroll-content':''"
-             :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
-          <div class="w-[180px] min-w-[180px] flex justify-end h-full" @click="gotoDetail(community)"
-               v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
-               :key="index">
-            <div class="h-full px-[18px] rounded-lg shadow-sm bg-white w-full max-w-[173px] flex items-center gap-[18px]">
-              <div class="flex-shrink-0">
-                <div class="border-[1px] border-gray-200 rounded bg-gray-400 w-9 h-9 web:w-4 web:h-4 z-30">
-                  <img class="w-full h-full rounded" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
-                </div>
-              </div>
-              <div class="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
-                <div class="text-[11.25px] web:text-xs font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
-                <span class="text-[11.25px] web:text-xs font-bold text-black truncate w-full">${{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-red-normal w-[90px] h-[12px] web:w-[80px] web:h-[10px] flex justify-center items-center
-                absolute top-[3px] left-[12px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
-                whitespace-nowrap">
-          <div class="blinking-text text-white text-[12px] web:text-[10px] font-bold leading-none">New</div>
         </div>
       </div>
     </div>

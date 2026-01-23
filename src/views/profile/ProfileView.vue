@@ -3,6 +3,7 @@ import {onMounted, ref, computed, watch} from "vue";
 import TabBlink from "@/views/profile/TabBlink.vue";
 import TabPost from "@/views/profile/TabPost.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
+import TabBlinksTweet from "@/views/profile/TabBlinksTweet.vue";
 import { useAccountStore, useIpshareData } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP } from "@/config";
@@ -26,7 +27,7 @@ const ReactLogoutOAuth = applyPureReactInVue(LogoutOAuth);
 const accStore = useAccountStore()
 const ipshareStore = useIpshareData()
 const stateStore = useStateStore()
-const tabOptions = ['post', 'createCoin']
+const tabOptions = ['post', 'blinksTweet', 'createCoin']
 const activeTab = ref('post')
 const { onCopy } = useTools()
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
@@ -39,6 +40,7 @@ const showStakeModal = ref(false)
 const kolFee = ref(0)
 const capturedFee = ref(0)
 const loadingIPShare = ref(false)
+const ipshareExpanded = ref(false) // IPShare Section 折叠/展开状态
 
 const profileTableData = ref([
   { action: 'Curation', vp: 'Selected vp', op: 'Selected vp'},
@@ -285,68 +287,58 @@ onMounted(() => {
       
       <!-- IPShare Info -->
       <template v-else-if="isCreatedIPshare">
-        <!-- Supply -->
-        <div class="border-1 border-orange-normal rounded-xl px-4 py-3 mt-2">
-          <div class="text-sm text-grey-8d">{{ $t('ipshare.totalSupply') || 'Total Supply' }}</div>
-          <div class="text-center">
-            <span class="text-orange-normal text-3xl font-bold">{{ formatAmount(ipshareStore.ipshareSupplies[donutEth] || 0) }}</span>
-          </div>
-        </div>
-        
-        <!-- Price and TVL -->
-        <div class="px-2 flex justify-between items-center text-xs my-2">
-          <span>IPShare {{ $t('common.price') || 'Price' }} <span class="text-orange-normal">{{ ipsharePrice }}</span></span>
-          <span>TVL {{ tvl }} $BNB</span>
-        </div>
-        
-        <!-- Trade and Staking Buttons -->
-        <div class="flex gap-4 mt-4">
-          <button class="h-9 flex-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  @click="onTrade">
-            <span class="text-orange-normal font-bold">{{ $t('trade') || 'Trade' }}</span>
-          </button>
-          <button class="h-9 flex-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                  @click="onStake">
-            <span class="text-orange-normal font-bold">{{ $t('walletView.stakedAmount') || 'Staking' }}</span>
-          </button>
-        </div>
-        
-        <!-- Value Captured and Fee Income -->
-        <div class="mt-4 space-y-3">
-          <!-- Value Captured -->
-          <div class="border-1 border-orange-normal rounded-xl px-4 py-3 bg-gray-50">
-            <div class="text-sm text-grey-8d mb-1 flex items-center gap-2">
-              <span>{{ $t('profileView.valueCaptured') || 'Value Captured' }}</span>
-              <el-tooltip popper-class="c-arrow-popper">
-                <template #content>
-                  <div class="text-white p-2 max-w-200px text-xs">{{ $t('profileView.valueCapturedDesc') || 'Total value captured from IPShare trading fees.' }}</div>
-                </template>
-                <button>
-                  <img class="w-4 h-4" src="~@/assets/icons/icon-tip.svg" alt="">
-                </button>
-              </el-tooltip>
-            </div>
+        <!-- Header with Expand/Collapse Button -->
+        <div class="flex items-center justify-between cursor-pointer" @click="ipshareExpanded = !ipshareExpanded">
+          <div class="border-1 border-orange-normal rounded-xl px-4 py-3 flex-1">
+            <div class="text-sm text-grey-8d">{{ $t('ipshare.totalSupply') || 'IPShare Supply' }}</div>
             <div class="text-center">
-              <span class="text-orange-normal text-2xl font-bold">{{ valueCaptured }} BNB</span>
+              <span class="text-orange-normal text-3xl font-bold">{{ formatAmount(ipshareStore.ipshareSupplies[donutEth] || 0) }}</span>
             </div>
           </div>
-          
-          <!-- Fee Income -->
-          <div v-if="kolFee > 0" class="flex items-center justify-between bg-gray-50 rounded-full px-4 h-10">
-            <div class="flex gap-2 items-center">
-              <span class="text-sm text-grey-8d">{{ $t('profileView.feeIncome') || 'Fee Income' }}</span>
-              <span class="font-medium text-black">{{ subjectFee }}</span>
-              <el-tooltip popper-class="c-arrow-popper">
-                <template #content>
-                  <div class="text-white p-2 max-w-200px text-xs">{{ $t('profileView.feeIncomeDesc') || 'Users buy/sell IPShare will cost BNB for fee. 4.5% is to the KOL, 2.5% is to protocol.' }}</div>
-                </template>
-                <button>
-                  <img class="w-4 h-4" src="~@/assets/icons/icon-tip.svg" alt="">
-                </button>
-              </el-tooltip>
-            </div>
-          </div>
+          <button class="ml-3 p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <i-ep-caret-bottom v-if="!ipshareExpanded" class="w-5 h-5 text-grey-8d transition-transform" />
+            <i-ep-caret-top v-else class="w-5 h-5 text-grey-8d transition-transform" />
+          </button>
         </div>
+        
+        <!-- Collapsible Content -->
+        <el-collapse-transition>
+          <div v-show="ipshareExpanded">
+            <!-- Price and TVL -->
+            <div class="px-2 flex justify-between items-center text-xs my-2">
+              <span>IPShare {{ $t('common.price') || 'Price' }} <span class="text-orange-normal">{{ ipsharePrice }}</span></span>
+              <span>TVL {{ tvl }} $BNB</span>
+            </div>
+            
+            <!-- Trade and Staking Buttons -->
+            <div class="flex gap-4 mt-4">
+              <button class="h-9 flex-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                      @click="onTrade">
+                <span class="text-orange-normal font-bold">{{ $t('trade') || 'Trade' }}</span>
+              </button>
+              <button class="h-9 flex-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                      @click="onStake">
+                <span class="text-orange-normal font-bold">{{ $t('walletView.stakedAmount') || 'Staking' }}</span>
+              </button>
+            </div>
+            
+            <!-- Fee Income -->
+            <div v-if="kolFee > 0" class="flex items-center justify-between bg-gray-50 rounded-full px-4 h-10 mt-3">
+              <div class="flex gap-2 items-center">
+                <span class="text-sm text-grey-8d">{{ $t('profileView.feeIncome') || 'Fee Income' }}</span>
+                <span class="font-medium text-black">{{ subjectFee }}</span>
+                <el-tooltip popper-class="c-arrow-popper">
+                  <template #content>
+                    <div class="text-white p-2 max-w-200px text-xs">{{ $t('profileView.feeIncomeDesc') || 'Users buy/sell IPShare will cost BNB for fee. 4.5% is to the KOL, 2.5% is to protocol.' }}</div>
+                  </template>
+                  <button>
+                    <img class="w-4 h-4" src="~@/assets/icons/icon-tip.svg" alt="">
+                  </button>
+                </el-tooltip>
+              </div>
+            </div>
+          </div>
+        </el-collapse-transition>
       </template>
     </div>
     
@@ -359,6 +351,7 @@ onMounted(() => {
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabPost v-if="activeTab==='post'"/>
+      <TabBlinksTweet v-if="activeTab==='blinksTweet'"/>
       <TabBlink v-if="activeTab==='blink'"/>
       <TabCreateCoin v-if="activeTab==='createCoin'"/>
     </div>

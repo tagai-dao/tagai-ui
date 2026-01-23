@@ -13,6 +13,7 @@ import { handleErrorTip } from "@/utils/notify";
 import { useCurationStore } from "@/stores/curation";
 import UserList from "@/views/home/UserList.vue";
 import TopTagCoin from "@/components/home/TopTagCoin.vue";
+import TopOnlineSpaces from "@/components/home/TopOnlineSpaces.vue";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import {usePageScroll} from "@/composables/useTools";
 import emitter from "@/utils/emitter";
@@ -160,6 +161,8 @@ onActivated(() => {
     </div>
     <div class="col-span-1 h-full overflow-hidden hidden web:block">
       <div class="h-full flex flex-col gap-3">
+        <!-- Live Spaces -->
+        <TopOnlineSpaces />
         <!-- Top TagCoin -->
         <TopTagCoin />
         <!-- Top X Creators -->

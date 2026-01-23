@@ -2,7 +2,6 @@
 import {ref} from "vue";
 import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
-import CreateBtn from "@/layout/CreateBtn.vue";
 import { useAccountStore } from "@/stores/web3";
 import RuleModal from "@/components/common/RuleModal.vue";
 import { useRouter } from "vue-router";
@@ -35,6 +34,16 @@ function onClickWallet() {
   }
 }
 
+async function createTagCoin() {
+  if (!accStore.ethConnectAddress) {
+    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    return
+  } else {
+    useModalStore().setModalVisible(true, GlobalModalType.CreateCoin)
+    return
+  }
+}
+
 </script>
 
 <template>
@@ -48,9 +57,24 @@ function onClickWallet() {
               @click="ruleModalVisible = true">{{ $t('rule') }}</button>
     </div>
     <div class="flex items-center gap-3 web:gap-6">
-      <img class="w-6 cursor-pointer web:hidden"
-           src="~@/assets/icons/icon-search.svg" alt=""
-           @click="modalVisible=true">
+      <!-- 移动端：搜索、通知、创建 TagCoin 图标 -->
+      <div class="flex items-center gap-3 web:hidden">
+        <img class="w-6 cursor-pointer"
+             src="~@/assets/icons/icon-search.svg" alt=""
+             @click="modalVisible=true">
+        <div v-if="!!useAccountStore().getAccountInfo?.twitterId" class="relative">
+          <img class="w-6 cursor-pointer"
+               src="~@/assets/icons/icon-notification.svg" alt=""
+               @click="$router.push('/notification')">
+          <div v-if="useAccountStore().unreadMessageCount > 0" class="bg-red-e6 h-[12px] w-[12px] min-w-[12px] rounded-full text-[10px] text-white
+              absolute -top-1 -right-1 flex justify-center items-center">
+            {{ useAccountStore().unreadMessageCount }}
+          </div>
+        </div>
+        <img class="w-6 cursor-pointer"
+             src="~@/assets/icons/icon-tabbar-create.svg" alt=""
+             @click="createTagCoin">
+      </div>
       <ProfileBtn class="hidden web:flex"/>
       <router-link to="/wallet/">
         <div class=" gap-2 items-center cursor-pointer hidden web:flex">
@@ -66,19 +90,6 @@ function onClickWallet() {
         </template>
         <template #default>
           <div class="p-2 flex flex-col gap-3">
-            <div v-if="!!useAccountStore().getAccountInfo?.twitterId"
-                 @click="menuRef.hide(); $router.push('/notification')"
-                 class="flex gap-2 items-center cursor-pointer">
-              <div class="relative">
-                <img class="w-4" src="~@/assets/icons/icon-notification.svg" alt="">
-                <div v-if="useAccountStore().unreadMessageCount > 0" class="bg-red-e6 h-[12px] w-[12px] min-w-[12px] rounded-full text-[10px] text-white
-                    absolute bottom-[2px] right-0 flex justify-center items-center">
-                  {{ useAccountStore().unreadMessageCount }}
-                </div>
-              </div>
-              <span>{{$t('notification')}}</span>
-            </div>
-            <CreateBtn />
             <router-link to="/mindshare/" class="flex gap-2 items-center cursor-pointer">
               <img class="w-4" src="~@/assets/icons/icon-mindshare.svg" alt="">
               <span>{{$t('mindshare')}}</span>
