@@ -14,7 +14,8 @@ const tabOptions = [
 
 <template>
   <div class="h-full overflow-hidden flex flex-col gap-3">
-    <BackHeader class="px-3">
+    <!-- 移动端：显示返回头部，PC 端隐藏 -->
+    <BackHeader class="px-3 web:hidden">
       <template #title>
         <div class="text-lg font-semibold text-black-19 ">{{$t('notificationView.notification')}}</div>
       </template>

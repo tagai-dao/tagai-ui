@@ -29,6 +29,8 @@ import {useAccount} from "@/composables/useAccount";
 import {sleep} from "@/utils/helper";
 import CreateUserInfo from "@/components/login/CreateUserInfo.vue";
 import {getUserProfile} from "@/apis/api";
+import SearchBar from "@/components/common/SearchBar.vue";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher.vue";
 
 const router = useRouter();
 const accStore = useAccountStore();
@@ -142,6 +144,15 @@ onMounted( () => {
           <!-- PC 端不显示 TopBar，移动端显示 -->
           <div class="web:hidden">
             <TopBar v-show="$route.meta.topBar"/>
+          </div>
+          <!-- PC 端顶部栏：搜索框和语言切换 -->
+          <div class="hidden web:flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+            <div class="flex-1 max-w-2xl">
+              <SearchBar />
+            </div>
+            <div class="ml-4">
+              <LanguageSwitcher />
+            </div>
           </div>
           <div class="flex-1 overflow-hidden">
             <router-view v-slot="{ Component }">
