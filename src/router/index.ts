@@ -17,6 +17,8 @@ import UserView from '@/views/profile/UserView.vue'
 import PredictBattle from '@/views/tag-detail/PredictBattle.vue'
 import PredictDetail from '@/views/predict-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
+import MiniAppView from '@/views/MiniApp/MiniAppView.vue'
+import MiniAppsExplore from '@/views/MiniApp/MiniAppsExplore.vue'
 
 const router = createRouter({
   // @ts-ignore
@@ -117,6 +119,19 @@ const router = createRouter({
       path: '/staking/:user?',
       name: 'staking',
       component: () => import('@/views/profile/StakingView.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // Mini Apps Routes
+    {
+      path: '/miniapps',
+      name: 'miniapps',
+      component: MiniAppsExplore,
+      meta: { tabBar: true, topBar: true }
+    },
+    {
+      path: '/miniapps/:appId',
+      name: 'miniapp',
+      component: MiniAppView,
       meta: { tabBar: false, topBar: false }
     }
   ]

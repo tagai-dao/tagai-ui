@@ -140,3 +140,89 @@ export type MiniAppContext = {
   location?: LocationContext
   features?: ClientFeatures
 }
+
+// ==========================================
+// Context Management Functions
+// ==========================================
+
+import { transport } from './transport';
+
+let cachedContext: MiniAppContext | null = null;
+let contextPromise: Promise<MiniAppContext> | null = null;
+
+/**
+ * Get Mini App context
+ */
+export async function getContext(): Promise<MiniAppContext> {
+  // Return cached context if available
+  if (cachedContext) {
+    return cachedContext;
+  }
+
+  // Return in-progress promise if exists
+  if (contextPromise) {
+    return contextPromise;
+  }
+
+  // Create new request
+  contextPromise = (async () => {
+    try {
+      const context = await transport.sendMessage<MiniAppContext>('getContext');
+      cachedContext = context;
+      return context;
+    } catch (error) {
+      contextPromise = null; // Clear promise on error to allow retry
+      throw error;
+    }
+  })();
+
+  return contextPromise;
+}
+
+/**
+ * Refresh context (clear cache)
+ */
+export async function refreshContext(): Promise<MiniAppContext> {
+  cachedContext = null;
+  contextPromise = null;
+  return getContext();
+}
+
+/**
+ * Check if running in Mini App environment
+ */
+export async function isInMiniApp(timeoutMs = 1000): Promise<boolean> {
+  // SSR check
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  // Quick check: definitely not in Mini App
+  if (!window.parent || window.parent === window) {
+    if (!(window as any).ReactNativeWebView) {
+      return false;
+    }
+  }
+
+  // Try to get context to verify
+  try {
+    const result = await Promise.race([
+      getContext().then(() => true),
+      new Promise<boolean>((resolve) => {
+        setTimeout(() => resolve(false), timeoutMs);
+      }),
+    ]);
+
+    return result;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Clear context cache (for testing or logout)
+ */
+export function clearContextCache() {
+  cachedContext = null;
+  contextPromise = null;
+}

@@ -20,11 +20,12 @@ axios.interceptors.request.use(
   }
 )
 
-export function get(url: string, params?: Object) {
+export function get(url: string, params?: Object, config?: any) {
   return new Promise((resolve, reject) => {
     axios
       .get(url, {
-        params: params
+        params: params,
+        ...config
       })
       .then(res => {
         resolve(res.data);
@@ -48,10 +49,10 @@ export function get(url: string, params?: Object) {
   });
 }
 
-export function post(url: string, params?: object) {
+export function post(url: string, params?: object, config?: any) {
   return new Promise((resolve, reject) => {
     axios
-      .post(url, params)
+      .post(url, params, config)
       .then(res => {
         if (res.data.jwt) {
           const accStore = useAccountStore();

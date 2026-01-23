@@ -352,3 +352,43 @@ export const getFPMMKlineData = async (fpmm: string, timestamp: number | undefin
 
 export const getFPMMUserHoldings = async (marketAddr: string, positionAID: string, positionBID: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/userHoldings', { marketAddr, positionAID, positionBID, pageIndex })
+
+/************************************  mini app  **********************************/
+export const generateMiniAppToken = async (twitterId: string, ethAddress: string, steemUsername?: string, twitterUsername?: string) =>
+  post(BACKEND_API_URL + '/miniapp/auth/token', { twitterId, ethAddress, steemUsername, twitterUsername })
+
+export const verifyMiniAppToken = async (token: string) =>
+  post(BACKEND_API_URL + '/miniapp/auth/verify', {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+
+export const fetchMiniAppManifest = async (domain: string) =>
+  get(BACKEND_API_URL + `/miniapp/manifest/${domain}`)
+
+export const verifyMiniAppManifest = async (domain: string) =>
+  post(BACKEND_API_URL + '/miniapp/manifest/verify', { domain })
+
+export const createSteemPost = async (token: string, title: string, body: string, tags?: string[], jsonMetadata?: any, beneficiaries?: any[]) =>
+  post(BACKEND_API_URL + '/miniapp/steem/post', { title, body, tags, jsonMetadata, beneficiaries }, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+
+export const voteSteemPost = async (token: string, author: string, permlink: string, weight: number) =>
+  post(BACKEND_API_URL + '/miniapp/steem/vote', { author, permlink, weight }, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+
+export const createSteemComment = async (token: string, parentAuthor: string, parentPermlink: string, body: string, jsonMetadata?: any) =>
+  post(BACKEND_API_URL + '/miniapp/steem/comment', { parentAuthor, parentPermlink, body, jsonMetadata }, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+
+export const reblogSteemPost = async (token: string, author: string, permlink: string) =>
+  post(BACKEND_API_URL + '/miniapp/steem/reblog', { author, permlink }, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+
+export const checkSteemAccount = async (token: string) =>
+  get(BACKEND_API_URL + '/miniapp/steem/check', {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
