@@ -1,5 +1,5 @@
 // tagai-ui/src/sdk/miniapp-core/src/context.ts
-// Context types for TagAI Mini Apps - based on Farcaster mini apps
+// Context types for TagAI Community Mini Tags - based on Farcaster mini apps
 
 import type { MiniAppNotificationDetails } from './schemas/index.ts'
 

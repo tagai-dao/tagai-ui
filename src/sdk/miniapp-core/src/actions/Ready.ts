@@ -1,5 +1,5 @@
 // tagai-ui/src/sdk/miniapp-core/src/actions/Ready.ts
-// Ready action - signal mini app is ready to display
+// Ready action - signal community mini tag is ready to display
 
 export type ReadyOptions = {
   /**

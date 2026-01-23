@@ -19,7 +19,7 @@ import { useAccountStore } from "@/stores/web3";
 import CreateBlinkModal from '@/components/common/CreateBlinkModal.vue'
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
-import MiniAppIndex from "@/views/tag-detail/miniApps/Index.vue";
+import CommunityMiniTagIndex from "@/views/tag-detail/communityMiniTags/Index.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
@@ -499,7 +499,7 @@ onBeforeRouteLeave((to, from, next) => {
             <CreditIndex v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
             <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
-            <MiniAppIndex  v-if="activeTab==='activity'"/>
+            <CommunityMiniTagIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">

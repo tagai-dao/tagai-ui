@@ -428,7 +428,7 @@ export type IpShareUser = {
   price?: number | null | undefined,
 }
 
-export type MiniApp = {
+export type CommunityMiniTag = {
   id: number,
   name: string,
   type: number,
