@@ -1,18 +1,31 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import PredictHeader from './components/PredictHeader.vue'
 import PredictChart from './components/PredictChart.vue'
 import TradeList from './components/TradeList.vue'
 import HolderList from './components/HolderList.vue'
 import TradePanel from './components/TradePanel.vue'
+import VoteList from './components/VoteList.vue'
 import type { EventPredictData, Tweet } from '@/types'
+import { useNow } from '@vueuse/core'
 
 const activeTab = ref(0)
-const tabs = ['Transactions', 'Holders']
+const now = useNow()
 
 const props = defineProps<{
    market: EventPredictData
 }>()
+
+const isTradeEnded = computed(() => {
+    return now.value.getTime() >= props.market.endTime * 1000
+})
+
+const tabs = computed(() => {
+    if (isTradeEnded.value) {
+        return ['Votes', 'Transactions', 'Holders']
+    }
+    return ['Transactions', 'Holders']
+})
 
 const tradePanelRef = ref<HTMLElement | null>(null)
 const isTradePanelVisible = ref(true)
@@ -73,8 +86,7 @@ const scrollToTrade = () => {
        <!-- Tab Content -->
        <div class="bg-gray-50/50">
            <KeepAlive>
-               <TradeList v-if="activeTab === 0" :market="market" />
-               <HolderList v-else :market="market" />
+               <component :is="isTradeEnded ? (activeTab === 0 ? VoteList : (activeTab === 1 ? TradeList : HolderList)) : (activeTab === 0 ? TradeList : HolderList)" :market="market" />
            </KeepAlive>
        </div>
     </div>

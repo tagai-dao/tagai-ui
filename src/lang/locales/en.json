@@ -543,7 +543,9 @@
     "voteConfirmBtn": "Confirm Vote",
     "voteNow": "Vote Now",
     "timeLeftVoting": "Time left to vote: ",
-    "endStill": "Time left to trade: "
+    "endStill": "Time left to trade: ",
+    "voted": "voted",
+    "potentialReward": "Winners Share:"
   },
   "predictLiquidity": {
     "management": "Liquidity Management",

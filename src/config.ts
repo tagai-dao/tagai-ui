@@ -101,6 +101,7 @@ export const PredictionMinFee = parseUnits("1", 16);
 export const PredictionMaxFee = parseUnits("8", 16);
 export const FPMMDeterministicFactory = '0xDDF74905AD9ff90977154DF960E21517f7e11ACA';
 export const FPMMDeterministicFactory2 = '0xF29faEc2428376d650d84471B4c41499342c6C5a';
+export const OracleDistributor = '0xe63B98dA0c8fbDfE94A08Fc6b5d8797374415F57'
 
 export const USD_CONTRACTS: Record<`0x${string}`, string> = {
     '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1',

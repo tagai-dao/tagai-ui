@@ -1,7 +1,8 @@
 import type { BattleData, Community, CreateCommunity, EventPredictData, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
     USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee, 
-    FPMMDeterministicFactory2} from "@/config";
+    FPMMDeterministicFactory2,
+    OracleDistributor} from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
@@ -212,6 +213,23 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
     return result;
 }
 
+export async function getPotentialReward(market: EventPredictData) {
+    let calls = [{
+        target: OracleDistributor,
+        call: [
+            'marketReward(address)(address,address,uint256)',
+            market.marketMaker
+        ],
+        returns: [
+            ['rewardToken', (val: any) => val],
+            ['marketAddr'],
+            ['rewardAmount', (val: any) => val.toString() / 1e18]
+        ]
+    }]
+    const res: any = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed;
+}
+
 export async function getBuyData(battle: BattleData | EventPredictData, shares: number, outcome: 'yes' | 'no' | 'red' | 'blue') {
     if (!shares) return 0;
     const sharesBi = parseUnits(shares.toFixed(18), 18)
@@ -325,7 +343,6 @@ export async function sellToken(battle: BattleData | EventPredictData, sharesBi:
         value: bnbFeeBi,
         address: battle.marketMaker
     })
-
 }
 
 export async function calculateMaxSellAmount(battle: BattleData, index: number) {

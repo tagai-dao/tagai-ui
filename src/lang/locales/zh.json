@@ -543,7 +543,9 @@
     "voteConfirmBtn": "确认投票",
     "voteNow": "立即投票",
     "timeLeftVoting": "距离投票结束还有：",
-    "endStill": "距离交易结束还有： "
+    "endStill": "距离交易结束还有： ",
+    "voted": "投了",
+    "potentialReward": "赢家可瓜分："
   },
   "predictLiquidity": {
     "management": "流动性管理",

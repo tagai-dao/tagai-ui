@@ -362,3 +362,6 @@ export const getFPMMUserHoldings = async (marketAddr: string, positionAID: strin
 
 export const voteEventPrediction = async (twitterId: string, marketAddr: string, voteResult: number, voteVp?: number) =>
   post(BACKEND_API_URL + '/predict/voteEventPrediction', { twitterId, marketAddr, voteResult, voteVp })
+
+export const getMarketVoteList = async (marketAddr: string, pageIndex?: number) =>
+  get(BACKEND_API_URL + '/predict/getMarketVoteList', { marketAddr, pageIndex })
