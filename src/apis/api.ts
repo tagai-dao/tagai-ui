@@ -323,6 +323,9 @@ export const getAggPredictBattleData = async (type: number, pageIndex?: number)=
 export const getPredictEventData = async (tick: string, twitterId?: string, pageIndex?: number) =>
   get(BACKEND_API_URL +'/predict/getPredictEventData', { tick, twitterId, pageIndex })
 
+export const getAggPredictEventData = async (type: number, pageIndex?: number)=>
+  get(BACKEND_API_URL + '/predict/getAggPredictEventData', { type, pageIndex })
+
 export const getTweetCurations = async (tweetAId: string, tweetBId: string) =>
   get(BACKEND_API_URL + '/predict/getTweetCurations', { tweetAId, tweetBId })
 

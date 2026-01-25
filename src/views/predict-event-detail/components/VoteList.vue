@@ -5,6 +5,7 @@ import { formatAddress, parseTimestamp } from '@/utils/helper'
 import type { EventPredictData } from '@/types'
 import { useAccountStore } from '@/stores/web3'
 import { getPotentialReward } from '@/utils/fpmm'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const props = defineProps<{
   market: EventPredictData
@@ -88,11 +89,28 @@ watch(() => props.market.marketMaker, () => {
           <div v-for="(item, index) in list" :key="index" class="p-4 hover:bg-white transition-colors">
             <div class="flex items-center gap-3">
               <!-- Avatar -->
-              <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-100 flex-shrink-0">
-                 <img v-if="item.profile" :src="item.profile" class="w-full h-full object-cover">
-                 <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
-                    <i-ep-avatar class="text-gray-400 text-lg" />
-                 </div>
+              <div class="flex-shrink-0">
+                <UserAvatar 
+                  :profile-img="item.profile" 
+                  :name="item.twitterName" 
+                  :username="item.twitterUsername"
+                  :followers="item.followers" 
+                  :followings="item.followings" 
+                  :steem-id="item.steemId" 
+                  :eth-addr="item.ethAddr" 
+                  :teleported="true"
+                  :credit="item.predictionCredit"
+                  :credit-factor="item.predictCreditFactor"
+                >
+                  <template #avatar-img>
+                    <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-100">
+                      <img v-if="item.profile" :src="item.profile" class="w-full h-full object-cover" :alt="item.twitterName || item.twitterUsername">
+                      <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
+                        <i-ep-avatar class="text-gray-400 text-lg" />
+                      </div>
+                    </div>
+                  </template>
+                </UserAvatar>
               </div>
               
               <!-- Content -->

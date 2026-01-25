@@ -13,6 +13,8 @@ import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
 import { MAX_VP, VP_CONSUME, VP_RECOVER_DAY } from '@/config';
+import { useNow } from '@vueuse/core';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   market: EventPredictData,
@@ -21,6 +23,8 @@ const props = defineProps<{
 const router = useRouter();
 const accStore = useAccountStore();
 const { percentA, percentB } = useEventPredict(props.market);
+const { t } = useI18n();
+const now = useNow();
 
 // 购买状态管理
 const showBuyInput = ref(false);
@@ -47,8 +51,69 @@ const totalCuration = computed(() => {
   return aAmount.value + bAmount.value
 })
 
+const voteEndTime = computed(() => props.market.endTime * 1000 + 86400000)
+const tradeEndTime = computed(() => props.market.endTime * 1000)
+
 const isVoting = computed(() => {
-  return props.market.status == 2 && (props.market.endTime * 1000 + 86400000 > Date.now() && props.market.endTime * 1000 < Date.now())
+  // 使用 now.value 确保响应式更新
+  const current = now.value.getTime()
+  return props.market.status == 2 && (voteEndTime.value > current && tradeEndTime.value < current)
+})
+
+// 时间格式化辅助函数
+const pad = (n: number) => n.toString().padStart(2, '0')
+
+const formatDurationColon = (ms: number) => {
+  if (ms < 0) return '00:00:00'
+  const totalSeconds = Math.floor(ms / 1000)
+  const h = Math.floor(totalSeconds / 3600)
+  const m = Math.floor((totalSeconds % 3600) / 60)
+  const s = totalSeconds % 60
+  // 如果超过24小时，显示天数
+  if (h > 24) {
+      const d = Math.floor(h / 24)
+      const remainH = h % 24
+      return `${d}d ${pad(remainH)}:${pad(m)}:${pad(s)}`
+  }
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
+
+const formatDurationText = (ms: number) => {
+  if (ms < 0) return '0s'
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  
+  if (hours > 0) {
+      return `${hours}h${minutes}min${seconds}s`
+  }
+  return `${minutes}min${seconds}s`
+}
+
+const statusText = computed(() => {
+  if (props.market.winner) return t('ended')
+  
+  const current = now.value.getTime()
+  
+  // 投票阶段
+  if (isVoting.value) {
+    const diff = voteEndTime.value - current
+    return `${t('predictTrade.timeLeftVoting')}${formatDurationText(diff)}`
+  }
+  
+  // 交易阶段 (未结束且未开始投票)
+  if (!props.market.winner && current < tradeEndTime.value) {
+     const diff = tradeEndTime.value - current
+     return `${t('predictTrade.endStill')}${formatDurationColon(diff)}`
+  }
+  
+  // 已经结束但还没有 winner 状态（等待结算中）
+  if (current >= voteEndTime.value) {
+      return t('ended')
+  }
+  
+  // 处于交易结束到投票开始之间的短暂间隙（如果有）或者状态不对齐
+  return t('ended')
 })
 
 // 判断用户是否已投票（voteResult 不为空：不为 null、undefined 或 0）
@@ -224,13 +289,15 @@ const vote = async () => {
       </h3>
       <!-- 倒计时/状态 -->
       <div class="flex flex-col items-end">
-        <div class="px-2 py-1 rounded-full text-xs font-medium" :class="{
-          'bg-green-light text-green-dark': !market.winner,
-          'bg-grey-light text-grey-normal': !!market.winner,
-        }">
-          {{ market.status == 1 ? parseTimestamp(market.endTime * 1000) : (isVoting ? $t('predictTrade.voting') :
-            $t('ended')) }}
-        </div>
+        <span 
+          class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+          :class="{
+            'bg-green-light text-green-dark': !market.winner && now.getTime() < voteEndTime,
+            'bg-grey-light text-grey-normal': !!market.winner || now.getTime() >= voteEndTime
+          }"
+        >
+          {{ statusText }}
+        </span>
       </div>
     </div>
 

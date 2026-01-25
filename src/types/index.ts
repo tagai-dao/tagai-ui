@@ -31,6 +31,11 @@ export enum PredictSortType {
   Ended = 2
 }
 
+export enum PredictType {
+  Battle = 'battle',
+  Event = 'event'
+}
+
 export enum TwitterTipStatus {
   Pending,
   Success,
