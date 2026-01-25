@@ -59,6 +59,16 @@ export const bondEthByPrivyAccToken = async (twitterId: string, ethAddr: string,
 export const getUserProfile = (twitterId?: string, username?: string) =>
   get(BACKEND_API_URL + '/user/getUserProfile', {twitterId, username})
 
+export const getEthAddressByTwitterId = async (twitterId: string): Promise<string | null> => {
+  try {
+    const user = await getUserProfile(twitterId) as any;
+    return user?.ethAddr || null;
+  } catch (error) {
+    console.error('Failed to get eth address by twitter id:', error);
+    return null;
+  }
+}
+
 export const updateEmailProfile = (twitterId: string, username: string, profile: string) =>
   post(BACKEND_API_URL + '/user/updateEmailProfile', { twitterId, username, profile })
 

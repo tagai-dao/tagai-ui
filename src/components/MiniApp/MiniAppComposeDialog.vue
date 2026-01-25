@@ -124,9 +124,9 @@ const text = ref(props.text || '');
 const submitting = ref(false);
 
 // User info
-const userName = computed(() => accountStore.displayName || 'User');
-const userUsername = computed(() => accountStore.twitterUsername || 'username');
-const userProfile = computed(() => accountStore.avatar || '');
+const userName = computed(() => accountStore.getAccountInfo?.twitterName || 'User');
+const userUsername = computed(() => accountStore.getAccountInfo?.twitterUsername || 'username');
+const userProfile = computed(() => accountStore.getAccountInfo?.profile || '');
 
 // Validation
 const canSubmit = computed(() => {
@@ -234,7 +234,7 @@ async function handleSubmit() {
 }
 
 .submit-btn {
-  background: #5b21b6;
+  background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
   color: white;
   border: none;
   border-radius: 20px;
@@ -249,7 +249,7 @@ async function handleSubmit() {
 }
 
 .submit-btn:hover:not(.disabled) {
-  background: #6d28d9;
+  background: linear-gradient(213.44deg, #FF7A00 -14.77%, #FCA454 116.22%);
 }
 
 .submit-btn.disabled {

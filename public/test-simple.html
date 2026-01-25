@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .status {
+      padding: 12px 24px;
+      background: #d4edda;
+      color: #155724;
+      border-radius: 8px;
+      display: inline-block;
+      font-weight: bold;
+    }
+    button {
+      margin: 10px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎉 测试页面加载成功！</h1>
+    <div class="status">✅ 页面 UI 正常显示</div>
+    <div style="margin-top: 30px;">
+      <button onclick="alert('按钮点击正常！')">测试按钮</button>
+    </div>
+    <p style="color: #666; margin-top: 20px;">
+      如果您看到这个页面，说明基础 HTML 加载正常。<br>
+      接下来需要检查 SDK 导入问题。
+    </p>
+  </div>
+</body>
+</html>

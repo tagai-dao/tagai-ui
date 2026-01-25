@@ -1,13 +1,13 @@
 <template>
-  <div class="miniapps-explore">
-    <!-- Header -->
-    <div class="page-header">
+  <div class="h-full overflow-hidden flex flex-col bg-gray-50">
+    <!-- Header - 固定在顶部 -->
+    <div class="page-header flex-shrink-0">
       <h1>Mini Apps</h1>
       <p>Discover apps built for TagAI</p>
     </div>
 
-    <!-- Search Bar -->
-    <div class="search-section">
+    <!-- Search Bar - 固定在 Header 下方 -->
+    <div class="search-section flex-shrink-0">
       <div class="search-bar">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" class="search-icon">
           <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="2"/>
@@ -22,8 +22,8 @@
       </div>
     </div>
 
-    <!-- Category Tabs -->
-    <div class="category-tabs">
+    <!-- Category Tabs - 固定在搜索框下方 -->
+    <div class="category-tabs flex-shrink-0">
       <button
         v-for="category in categories"
         :key="category.value"
@@ -34,37 +34,40 @@
       </button>
     </div>
 
-    <!-- App Grid -->
-    <div class="apps-grid" v-if="!loading">
-      <MiniAppCard
-        v-for="app in filteredApps"
-        :key="app.domain"
-        :app="app"
-        @click="openApp(app)"
-      />
-    </div>
+    <!-- 可滚动内容区域 -->
+    <div class="scrollable-content flex-1 px-5 pb-20">
+      <!-- App Grid -->
+      <div class="apps-grid" v-if="!loading">
+        <MiniAppCard
+          v-for="app in filteredApps"
+          :key="app.domain"
+          :app="app"
+          @click="openApp(app)"
+        />
+      </div>
 
-    <!-- Loading State -->
-    <div v-else class="loading-container">
-      <div class="spinner"></div>
-      <p>Loading apps...</p>
-    </div>
+      <!-- Loading State -->
+      <div v-else class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading apps...</p>
+      </div>
 
-    <!-- Empty State -->
-    <div v-if="!loading && filteredApps.length === 0" class="empty-state">
-      <div class="empty-icon">🔍</div>
-      <h3>No apps found</h3>
-      <p>Try adjusting your search or filters</p>
-    </div>
+      <!-- Empty State -->
+      <div v-if="!loading && filteredApps.length === 0" class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <h3>No apps found</h3>
+        <p>Try adjusting your search or filters</p>
+      </div>
 
-    <!-- Developer CTA -->
-    <div class="developer-cta">
-      <div class="cta-content">
-        <h3>Build Your Own Mini App</h3>
-        <p>Create apps that run directly in TagAI</p>
-        <button @click="goToDeveloperTools" class="cta-btn">
-          Developer Tools
-        </button>
+      <!-- Developer CTA -->
+      <div class="developer-cta">
+        <div class="cta-content">
+          <h3>Build Your Own Mini App</h3>
+          <p>Create apps that run directly in TagAI</p>
+          <button @click="goToDeveloperTools" class="cta-btn">
+            Developer Tools
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -180,15 +183,37 @@ function goToDeveloperTools() {
 }
 </script>
 
-<style scoped>
-.miniapps-explore {
-  min-height: 100vh;
-  background: #f9fafb;
-  padding-bottom: 80px;
+<style>
+/* 可滚动内容区域 - 强制显示滚动条（非 scoped，确保伪元素样式生效） */
+.scrollable-content {
+  overflow-y: scroll !important;
+  overflow-x: hidden;
 }
 
+/* 自定义滚动条样式 */
+.scrollable-content::-webkit-scrollbar {
+  width: 8px !important;
+  background-color: #e5e7eb !important;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background-color: #9ca3af !important;
+  border-radius: 4px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280 !important;
+}
+</style>
+
+<style scoped>
 .page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
   color: white;
   padding: 40px 20px 60px;
   text-align: center;
@@ -263,13 +288,13 @@ function goToDeveloperTools() {
 }
 
 .category-tab:hover {
-  border-color: #5b21b6;
-  color: #5b21b6;
+  border-color: #FF7A00;
+  color: #FF7A00;
 }
 
 .category-tab.active {
-  background: #5b21b6;
-  border-color: #5b21b6;
+  background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
+  border-color: transparent;
   color: white;
 }
 
@@ -277,7 +302,6 @@ function goToDeveloperTools() {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 16px;
-  padding: 0 20px 20px;
 }
 
 .loading-container {
@@ -293,7 +317,7 @@ function goToDeveloperTools() {
   width: 40px;
   height: 40px;
   border: 4px solid #e5e7eb;
-  border-top-color: #5b21b6;
+  border-top-color: #FF7A00;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -325,8 +349,8 @@ function goToDeveloperTools() {
 }
 
 .developer-cta {
-  margin: 40px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  margin-top: 40px;
+  background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
   border-radius: 16px;
   padding: 32px;
   text-align: center;
@@ -347,7 +371,7 @@ function goToDeveloperTools() {
 
 .cta-btn {
   background: white;
-  color: #5b21b6;
+  color: #FF7A00;
   padding: 12px 24px;
   border: none;
   border-radius: 8px;

@@ -133,6 +133,20 @@ const router = createRouter({
       name: 'miniapp',
       component: MiniAppView,
       meta: { tabBar: false, topBar: false }
+    },
+    // DeFi Actions Test - Host wrapper
+    {
+      path: '/test-defi-host',
+      name: 'test-defi-host',
+      component: () => import('@/views/MiniApp/TestDeFiMiniApp.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // DeFi Actions Test - Mini App content (loaded in iframe)
+    {
+      path: '/test-defi',
+      name: 'test-defi',
+      component: () => import('@/views/MiniApp/DeFiActionsTest.vue'),
+      meta: { tabBar: false, topBar: false }
     }
   ]
 })

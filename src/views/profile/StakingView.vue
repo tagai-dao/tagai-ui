@@ -151,7 +151,6 @@ const claiming = ref(false)
 const redeeming = ref(false)
 const countDown = ref(0)
 const accountInfo = ref<any>(null)
-const modalVisible = ref(false)
 
 // 计算属性
 const donutAddress = computed(() => {

@@ -10,6 +10,7 @@ import { createAuthModule } from './modules/auth';
 import { createSteemModule } from './modules/steem';
 import { createWalletModule } from './modules/wallet';
 import { createActionsModule } from './modules/actions';
+import { NotificationsModule } from './modules/notifications';
 import { EventEmitter } from './utils/event-emitter';
 import type { TagAIMiniAppSDK, MiniAppEventMap } from './types';
 
@@ -21,6 +22,7 @@ const authModule = createAuthModule(transport);
 const steemModule = createSteemModule(transport);
 const walletModule = createWalletModule(transport);
 const actionsModule = createActionsModule(transport, emitter);
+const notificationsModule = new NotificationsModule(transport.sendMessage.bind(transport));
 
 /**
  * Main SDK object
@@ -70,6 +72,12 @@ export const sdk: TagAIMiniAppSDK = {
   // ==========================================
 
   actions: actionsModule,
+
+  // ==========================================
+  // Notifications
+  // ==========================================
+
+  notifications: notificationsModule,
 
   // ==========================================
   // Events

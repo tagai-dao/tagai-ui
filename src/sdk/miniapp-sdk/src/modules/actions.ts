@@ -4,14 +4,28 @@
  */
 
 import type { MiniAppTransport } from '../../../miniapp-core/src/transport';
-import type { ActionsModule, ComposeOptions, ComposeResult, SetPrimaryButtonOptions } from '../types';
+import type {
+  ActionsModule,
+  ComposeOptions,
+  ComposeResult,
+  SetPrimaryButtonOptions,
+  SwapTokenOptions,
+  SwapTokenResult,
+  SendTokenOptions,
+  SendTokenResult,
+  ViewTokenOptions,
+} from '../types';
 import type { EventEmitter } from '../utils/event-emitter';
 import type { MiniAppEventMap } from '../types';
+import { createDeFiActionsModule } from './defi-actions';
 
 export function createActionsModule(
   transport: MiniAppTransport,
   emitter: EventEmitter<MiniAppEventMap>
 ): ActionsModule {
+  // Create DeFi Actions module
+  const defiActions = createDeFiActionsModule(transport);
+
   return {
     async ready(options = {}) {
       await transport.sendMessage('actions.ready', options);
@@ -54,5 +68,10 @@ export function createActionsModule(
         'actions.requestCameraAndMicrophoneAccess'
       );
     },
+
+    // DeFi Actions
+    swapToken: defiActions.swapToken,
+    sendToken: defiActions.sendToken,
+    viewToken: defiActions.viewToken,
   };
 }

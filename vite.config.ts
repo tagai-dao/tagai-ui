@@ -113,7 +113,9 @@ export default defineConfig( (): any => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
-        '~@': fileURLToPath(new URL('./src', import.meta.url))
+        '~@': fileURLToPath(new URL('./src', import.meta.url)),
+        // Mock React Native dependencies for web
+        '@react-native-async-storage/async-storage': fileURLToPath(new URL('./src/mocks/async-storage.ts', import.meta.url))
       },
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json', '.vue', '.mjs']
     },
@@ -144,7 +146,8 @@ export default defineConfig( (): any => {
       }
     },
     server: {
-      host: '0.0.0.0'
+      port: 5173,
+      strictPort: false
     }
   }
 })

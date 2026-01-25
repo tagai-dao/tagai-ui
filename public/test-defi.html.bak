@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeFi Actions Test Mini App</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 24px;
+      font-size: 14px;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    button {
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: white;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    button.success {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .log-container {
+      margin-top: 24px;
+      padding: 16px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .log-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .log-entry {
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      border-left: 3px solid #667eea;
+    }
+
+    .log-entry.error {
+      border-left-color: #f5576c;
+      background: #fff5f5;
+    }
+
+    .log-entry.success {
+      border-left-color: #00f2fe;
+      background: #f0fcff;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .status.loading {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status.ready {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .code {
+      background: #f8f9fa;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 DeFi Actions 测试</h1>
+    <p class="subtitle">TagAI Mini App SDK - P1-1 功能测试</p>
+
+    <div id="status" class="status loading">正在初始化 SDK...</div>
+
+    <!-- ViewToken Section -->
+    <div class="section">
+      <div class="section-title">1️⃣ ViewToken - 查看代币</div>
+      <div class="button-group">
+        <button onclick="testViewBNB()">查看 BNB (BSC Native)</button>
+        <button onclick="testViewUSDT()">查看 USDT (BSC ERC20)</button>
+        <button onclick="testViewETH()">查看 ETH (Ethereum Native)</button>
+      </div>
+    </div>
+
+    <!-- SendToken Section -->
+    <div class="section">
+      <div class="section-title">2️⃣ SendToken - 发送代币</div>
+      <div class="button-group">
+        <button class="secondary" onclick="testSendBNB()">发送 0.001 BNB</button>
+        <button class="secondary" onclick="testSendUSDT()">发送 1 USDT (ERC20)</button>
+        <button class="secondary" onclick="testSendByTwitter()">通过 Twitter ID 发送</button>
+      </div>
+    </div>
+
+    <!-- SwapToken Section -->
+    <div class="section">
+      <div class="section-title">3️⃣ SwapToken - 交换代币</div>
+      <div class="button-group">
+        <button class="success" onclick="testSwapBNBtoUSDT()">交换 BNB → USDT</button>
+        <button class="success" onclick="testSwapUSDTtoBNB()">交换 USDT → BNB</button>
+        <button class="success" onclick="testSwapETH()">交换 ETH → USDC (Ethereum)</button>
+      </div>
+    </div>
+
+    <!-- Log Section -->
+    <div class="log-container">
+      <div class="log-title">📝 执行日志</div>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <!-- Load TagAI Mini App SDK -->
+  <script type="module">
+    import { sdk } from 'http://localhost:5173/src/sdk/miniapp-sdk/src/index.ts';
+
+    window.sdk = sdk;
+
+    // Wait for SDK to be ready
+    (async () => {
+      try {
+        const inMiniApp = await sdk.isInMiniApp(2000);
+        const statusEl = document.getElementById('status');
+
+        if (inMiniApp) {
+          statusEl.className = 'status ready';
+          statusEl.textContent = '✅ SDK 已就绪';
+          log('✅ SDK 初始化成功', 'success');
+
+          // Get context
+          const context = await sdk.context;
+          log(`用户: ${context.user.twitterUsername || 'Unknown'}`, 'success');
+        } else {
+          statusEl.className = 'status error';
+          statusEl.textContent = '❌ 未在 Mini App 环境中';
+          log('❌ 请在 TagAI Mini App Host 中打开此页面', 'error');
+        }
+      } catch (error) {
+        const statusEl = document.getElementById('status');
+        statusEl.className = 'status error';
+        statusEl.textContent = '❌ 初始化失败';
+        log(`❌ SDK 初始化错误: ${error.message}`, 'error');
+      }
+    })();
+
+    // Logging utility
+    window.log = function(message, type = 'info') {
+      const logEl = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      const timestamp = new Date().toLocaleTimeString('zh-CN');
+      entry.textContent = `[${timestamp}] ${message}`;
+      logEl.insertBefore(entry, logEl.firstChild);
+    };
+
+    // Test Functions
+    window.testViewBNB = async function() {
+      log('调用 viewToken(BNB)...');
+      try {
+        await sdk.actions.viewToken({ token: 'eip155:56/native' });
+        log('✅ viewToken(BNB) 调用成功', 'success');
+      } catch (error) {
+        log(`❌ viewToken(BNB) 失败: ${error.message}`, 'error');
+      }
+    };
+
+    window.testViewUSDT = async function() {
+      log('调用 viewToken(USDT)...');
+      try {
+        await sdk.actions.viewToken({
+          token: 'eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955'
+        });
+        log('✅ viewToken(USDT) 调用成功', 'success');
+      } catch (error) {
+        log(`❌ viewToken(USDT) 失败: ${error.message}`, 'error');
+      }
+    };
+
+    window.testViewETH = async function() {
+      log('调用 viewToken(ETH)...');
+      try {
+        await sdk.actions.viewToken({ token: 'eip155:1/native' });
+        log('✅ viewToken(ETH) 调用成功', 'success');
+      } catch (error) {
+        log(`❌ viewToken(ETH) 失败: ${error.message}`, 'error');
+      }
+    };
+
+    window.testSendBNB = async function() {
+      log('调用 sendToken(0.001 BNB)...');
+      try {
+        const result = await sdk.actions.sendToken({
+          token: 'eip155:56/native',
+          amount: '1000000000000000', // 0.001 BNB in wei
+          recipientAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0' // 测试地址
+        });
+
+        if (result.success) {
+          log(`✅ 发送成功! 交易哈希: ${result.send.transaction}`, 'success');
+        } else {
+          log(`❌ 发送失败: ${result.reason}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ sendToken 错误: ${error.message}`, 'error');
+      }
+    };
+
+    window.testSendUSDT = async function() {
+      log('调用 sendToken(1 USDT)...');
+      try {
+        const result = await sdk.actions.sendToken({
+          token: 'eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955',
+          amount: '1000000000000000000', // 1 USDT (18 decimals)
+          recipientAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0'
+        });
+
+        if (result.success) {
+          log(`✅ 发送成功! 交易哈希: ${result.send.transaction}`, 'success');
+        } else {
+          log(`❌ 发送失败: ${result.reason}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ sendToken 错误: ${error.message}`, 'error');
+      }
+    };
+
+    window.testSendByTwitter = async function() {
+      log('调用 sendToken(通过 Twitter ID)...');
+      try {
+        const result = await sdk.actions.sendToken({
+          token: 'eip155:56/native',
+          amount: '1000000000000000', // 0.001 BNB
+          recipientTwitterId: 'test_user' // 测试 Twitter ID
+        });
+
+        if (result.success) {
+          log(`✅ 发送成功! 交易哈希: ${result.send.transaction}`, 'success');
+        } else {
+          log(`❌ 发送失败: ${result.reason}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ sendToken 错误: ${error.message}`, 'error');
+      }
+    };
+
+    window.testSwapBNBtoUSDT = async function() {
+      log('调用 swapToken(BNB → USDT)...');
+      try {
+        const result = await sdk.actions.swapToken({
+          sellToken: 'eip155:56/native',
+          buyToken: 'eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955',
+          sellAmount: '10000000000000000' // 0.01 BNB
+        });
+
+        if (result.success) {
+          log(`✅ 交换成功! 交易: ${result.swap.transactions.join(', ')}`, 'success');
+        } else {
+          log(`❌ 交换失败: ${result.reason}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ swapToken 错误: ${error.message}`, 'error');
+      }
+    };
+
+    window.testSwapUSDTtoBNB = async function() {
+      log('调用 swapToken(USDT → BNB)...');
+      try {
+        const result = await sdk.actions.swapToken({
+          sellToken: 'eip155:56/erc20:0x55d398326f99059fF775485246999027B3197955',
+          buyToken: 'eip155:56/native',
+          sellAmount: '1000000000000000000' // 1 USDT
+        });
+
+        if (result.success) {
+          log(`✅ 交换成功! 交易: ${result.swap.transactions.join(', ')}`, 'success');
+        } else {
+          log(`❌ 交换失败: ${result.reason}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ swapToken 错误: ${error.message}`, 'error');
+      }
+    };
+
+    window.testSwapETH = async function() {
+      log('调用 swapToken(ETH → USDC on Ethereum)...');
+      try {
+        const result = await sdk.actions.swapToken({
+          sellToken: 'eip155:1/native',
+          buyToken: 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+          sellAmount: '10000000000000000' // 0.01 ETH
+        });
+
+        if (result.success) {
+          log(`✅ 交换成功! 交易: ${result.swap.transactions.join(', ')}`, 'success');
+        } else {
+          log(`❌ 交换失败: ${result.reason}`, 'error');
+        }
+      } catch (error) {
+        log(`❌ swapToken 错误: ${error.message}`, 'error');
+      }
+    };
+  </script>
+</body>
+</html>

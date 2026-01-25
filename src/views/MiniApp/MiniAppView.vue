@@ -269,7 +269,7 @@ async function handleShare() {
   width: 40px;
   height: 40px;
   border: 4px solid #e5e7eb;
-  border-top-color: #5b21b6;
+  border-top-color: #FF7A00;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -309,7 +309,7 @@ async function handleShare() {
 
 .retry-btn {
   padding: 12px 24px;
-  background: #5b21b6;
+  background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -320,6 +320,6 @@ async function handleShare() {
 }
 
 .retry-btn:hover {
-  background: #6d28d9;
+  background: linear-gradient(213.44deg, #FF7A00 -14.77%, #FCA454 116.22%);
 }
 </style>

@@ -154,6 +154,72 @@ export interface SetPrimaryButtonOptions {
   loading?: boolean;
 }
 
+// ==========================================
+// DeFi Actions Types
+// ==========================================
+
+/** CAIP-19 asset identifier (e.g., "eip155:56/erc20:0x...") */
+export type AssetId = string;
+
+/** Amount as numeric string (e.g., "1000000" for 1 USDC with 6 decimals) */
+export type TokenAmount = string;
+
+// Error Details
+export interface ErrorDetails {
+  error: string;
+  message?: string;
+}
+
+// SwapToken
+export interface SwapTokenOptions {
+  /** Token to sell (CAIP-19 format) */
+  sellToken?: AssetId;
+  /** Token to buy (CAIP-19 format) */
+  buyToken?: AssetId;
+  /** Amount to sell (numeric string) */
+  sellAmount?: TokenAmount;
+}
+
+export interface SwapTokenDetails {
+  /** Transaction hashes in execution order (may include approval + swap) */
+  transactions: `0x${string}`[];
+}
+
+export type SwapTokenErrorReason = 'rejected_by_user' | 'swap_failed';
+
+export type SwapTokenResult =
+  | { success: true; swap: SwapTokenDetails }
+  | { success: false; reason: SwapTokenErrorReason; error?: ErrorDetails };
+
+// SendToken
+export interface SendTokenOptions {
+  /** Token to send (CAIP-19 format) */
+  token?: AssetId;
+  /** Amount to send (numeric string) */
+  amount?: TokenAmount;
+  /** Recipient Ethereum address */
+  recipientAddress?: Address;
+  /** Recipient Twitter ID (TagAI-specific) */
+  recipientTwitterId?: string;
+}
+
+export interface SendTokenDetails {
+  /** Transaction hash */
+  transaction: `0x${string}`;
+}
+
+export type SendTokenErrorReason = 'rejected_by_user' | 'send_failed';
+
+export type SendTokenResult =
+  | { success: true; send: SendTokenDetails }
+  | { success: false; reason: SendTokenErrorReason; error?: ErrorDetails };
+
+// ViewToken
+export interface ViewTokenOptions {
+  /** Token to view (CAIP-19 format, required) */
+  token: AssetId;
+}
+
 export interface ActionsModule {
   /**
    * Signal that Mini App is ready to be displayed
@@ -213,6 +279,28 @@ export interface ActionsModule {
     camera: boolean;
     microphone: boolean;
   }>;
+
+  // ===== DeFi Actions =====
+
+  /**
+   * Swap tokens using DEX
+   * Opens swap dialog with pre-filled parameters (user can modify)
+   * May execute multiple transactions (approval + swap)
+   */
+  swapToken(options: SwapTokenOptions): Promise<SwapTokenResult>;
+
+  /**
+   * Send tokens to address
+   * Opens send confirmation dialog
+   * Executes transfer transaction
+   */
+  sendToken(options: SendTokenOptions): Promise<SendTokenResult>;
+
+  /**
+   * View token details
+   * Navigates to token detail page
+   */
+  viewToken(options: ViewTokenOptions): Promise<void>;
 }
 
 // ==========================================
@@ -278,6 +366,11 @@ export interface TagAIMiniAppSDK {
    * Actions module
    */
   actions: ActionsModule;
+
+  /**
+   * Notifications module
+   */
+  notifications: any;
 
   /**
    * Event listeners

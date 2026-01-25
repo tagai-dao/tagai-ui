@@ -4,7 +4,7 @@
       <img :src="app.iconUrl" :alt="app.name" class="card-icon" />
       <div v-if="app.verified" class="verified-badge" title="Verified">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 0L9.8 5.6L16 6.4L11.6 10.4L13.2 16L8 12.8L2.8 16L4.4 10.4L0 6.4L6.2 5.6L8 0Z" fill="#5b21b6"/>
+          <path d="M8 0L9.8 5.6L16 6.4L11.6 10.4L13.2 16L8 12.8L2.8 16L4.4 10.4L0 6.4L6.2 5.6L8 0Z" fill="#FF7A00"/>
         </svg>
       </div>
     </div>
@@ -54,8 +54,8 @@ defineEmits<{
 
 .miniapp-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  border-color: #5b21b6;
+  box-shadow: 0 8px 16px rgba(255, 122, 0, 0.2);
+  border-color: #FF7A00;
 }
 
 .card-icon-container {
