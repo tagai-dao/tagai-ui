@@ -31,19 +31,19 @@ const mainTab = ref<'trade' | 'liquidity' | 'redeem'>('trade')
 // TRADE LOGIC (From PredictTradeModal.vue)
 // ==========================================
 enum TradeType {
-  BUY_RED,
-  BUY_BLUE,
-  SELL_RED,
-  SELL_BLUE
+  BUY_YES,
+  BUY_NO,
+  SELL_YES,
+  SELL_NO
 }
 
 const tradeShares = ref()
 const tradeTokenBalance = ref(0);
 const tradeTokenBalanceBi = ref(0n);
-const tradeBlueBalance = ref(0);
-const tradeBlueBalanceBi = ref(0n);
-const tradeRedBalance = ref(0);
-const tradeRedBalanceBi = ref(0n);
+const tradeNoBalance = ref(0);
+const tradeNoBalanceBi = ref(0n);
+const tradeYesBalance = ref(0);
+const tradeYesBalanceBi = ref(0n);
 const tradeWillReceiveAmount = ref(0);
 const tradePriceImpact = ref('')
 const tradeCalculating = ref(false)
@@ -54,7 +54,7 @@ const bnbFee = ref(0);
 const isMax = ref(false);
 
 const tradeActiveTab = ref<'buy' | 'sell'>('buy')
-const tradeSelectedOutcome = ref<'red' | 'blue'>('red')
+const tradeSelectedOutcome = ref<'yes' | 'no'>('yes')
 
 const totalPool = computed(() => reserveA.value + reserveB.value)
 
@@ -71,9 +71,9 @@ const percentB = computed(() => {
 
 const currentTradeType = computed(() => {
   if (tradeActiveTab.value === 'buy') {
-    return tradeSelectedOutcome.value === 'red' ? TradeType.BUY_RED : TradeType.BUY_BLUE
+    return tradeSelectedOutcome.value === 'yes' ? TradeType.BUY_YES : TradeType.BUY_NO
   } else {
-    return tradeSelectedOutcome.value === 'red' ? TradeType.SELL_RED : TradeType.SELL_BLUE
+    return tradeSelectedOutcome.value === 'yes' ? TradeType.SELL_YES : TradeType.SELL_NO
   }
 })
 
@@ -96,17 +96,12 @@ const debouncedTradeCalculate = debounce(async () => {
     props.market.reserveB = reserveB.value
     props.market.fee = marketInfos[props.market.marketMaker + '-fee']
 
-    // getMarketInfos([props.market.battle]).then((infos: any) => {
-    //   reserveA.value = infos[props.market.battle.marketMaker + '-priceA']
-    //   reserveB.value = infos[props.market.battle.marketMaker + '-priceB']
-    //   lpSupply.value = infos[props.market.battle.marketMaker + '-totalSupply'] || 0
-    // })
     if (tradeActiveTab.value === 'buy') {
       const { amount, fee } = await getBuyData(props.market, tradeShares.value, tradeSelectedOutcome.value)
       
       bnbFee.value = fee;
       tradeWillReceiveAmount.value = amount
-      if (tradeSelectedOutcome.value === 'red') {
+      if (tradeSelectedOutcome.value === 'yes') {
         const newPercentA = (reserveB.value + Number(tradeShares.value)) / (totalPool.value + Number(tradeShares.value) * 2 - tradeWillReceiveAmount.value)
         tradePriceImpact.value = `${(percentA.value / 100).toFixed(2)} -> ${newPercentA.toFixed(2)}`
       } else {
@@ -120,7 +115,7 @@ const debouncedTradeCalculate = debounce(async () => {
       const sellData: any = await getSellData(props.market, reserveA.value, reserveB.value, tradeShares.value - 0.1, tradeSelectedOutcome.value)
       bnbFee.value = sellData.fee;
       tradeWillReceiveAmount.value = sellData.receive;
-      if (tradeSelectedOutcome.value === 'red') {
+      if (tradeSelectedOutcome.value === 'yes') {
         const newPercentA = (reserveB.value - sellData.receive) / (totalPool.value - sellData.receive * 2 + Number(tradeShares.value))
         tradePriceImpact.value = `${(percentA.value / 100).toFixed(2)} -> ${newPercentA.toFixed(2)}`
       } else {
@@ -139,15 +134,15 @@ async function getTradeMaxInfo() {
   isMax.value = true
   const type = currentTradeType.value
   switch (type) {
-    case TradeType.BUY_RED:
-    case TradeType.BUY_BLUE:
+    case TradeType.BUY_YES:
+    case TradeType.BUY_NO:
       tradeShares.value = tradeTokenBalance.value
       break
-    case TradeType.SELL_BLUE:
-      tradeShares.value = tradeBlueBalance.value
+    case TradeType.SELL_NO:
+      tradeShares.value = tradeNoBalance.value
       break
-    case TradeType.SELL_RED:
-      tradeShares.value = tradeRedBalance.value
+    case TradeType.SELL_YES:
+      tradeShares.value = tradeYesBalance.value
       break
   }
   debouncedTradeCalculate()
@@ -170,10 +165,10 @@ async function executeTrade() {
     } else {
       console.log(6333,88)
       let shareAmount = parseUnits(tradeShares.value.toFixed(18), 18) * 105n / 100n;
-      if (tradeSelectedOutcome.value === 'red' && shareAmount > tradeRedBalanceBi.value) {
-        shareAmount = tradeRedBalanceBi.value;
-      } else if (tradeSelectedOutcome.value === 'blue' && shareAmount > tradeBlueBalanceBi.value) {
-        shareAmount = tradeBlueBalanceBi.value;
+      if (tradeSelectedOutcome.value === 'yes' && shareAmount > tradeYesBalanceBi.value) {
+        shareAmount = tradeYesBalanceBi.value;
+      } else if (tradeSelectedOutcome.value === 'no' && shareAmount > tradeNoBalanceBi.value) {
+        shareAmount = tradeNoBalanceBi.value;
       }
       await sellToken(props.market, parseUnits(tradeWillReceiveAmount.value.toFixed(18), 18), shareAmount, tradeSelectedOutcome.value, bnbFee.value)
       updateReserves().catch()
@@ -220,7 +215,7 @@ const showRedeemDot = computed(() => {
   return accStore.ethConnectState === EthWalletState.Connected && 
          accStore.getAccountInfo?.ethAddr && 
          isResolved.value && 
-         (tradeRedBalance.value > 0 || tradeBlueBalance.value > 0)
+         (tradeYesBalance.value > 0 || tradeNoBalance.value > 0)
 })
 
 const setLiquidityMax = () => {
@@ -281,12 +276,12 @@ const updateBalances = async () => {
         const bs: any = await getUserTokenBalances(props.market.token as `0x${string}`, accStore.ethConnectAddress as `0x${string}`, props.market)
         // Common
         tradeTokenBalance.value = bs.balance
-        tradeBlueBalance.value = bs.balanceB
-        tradeRedBalance.value = bs.balanceA
+        tradeNoBalance.value = bs.balanceB
+        tradeYesBalance.value = bs.balanceA
         lpBalance.value = bs.lpBalance
         tradeTokenBalanceBi.value = bs.balanceBi;
-        tradeBlueBalanceBi.value = bs.balanceBBi;
-        tradeRedBalanceBi.value = bs.balanceABi;
+        tradeNoBalanceBi.value = bs.balanceBBi;
+        tradeYesBalanceBi.value = bs.balanceABi;
         lpBalanceBi.value = bs.lpBalanceBi;
     }
 }
@@ -407,18 +402,18 @@ const tradeTimeLeftText = computed(() => {
         <div class="grid grid-cols-2 gap-4 mb-6">
             <button 
                 class="flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all relative overflow-hidden group"
-                :class="tradeSelectedOutcome === 'red' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-red-200'"
-                @click="tradeSelectedOutcome = 'red';debouncedTradeCalculate()"
+                :class="tradeSelectedOutcome === 'yes' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-red-200'"
+                @click="tradeSelectedOutcome = 'yes';debouncedTradeCalculate()"
             >
-                <span class="text-lg font-bold z-10">{{ $t('predictTrade.red') }} {{ (showingPercentA).toFixed(2) }} ${{ props.market.tick }}</span>
+                <span class="text-lg font-bold z-10">{{ $t('predictTrade.yes') }} {{ (showingPercentA).toFixed(2) }} ${{ props.market.tick }}</span>
             </button>
             
             <button 
                 class="flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all relative overflow-hidden group"
-                :class="tradeSelectedOutcome === 'blue' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-blue-200'"
-                @click="tradeSelectedOutcome = 'blue';debouncedTradeCalculate()"
+                :class="tradeSelectedOutcome === 'no' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-blue-200'"
+                @click="tradeSelectedOutcome = 'no';debouncedTradeCalculate()"
             >
-                <span class="text-lg font-bold z-10">{{ $t('predictTrade.blue') }} {{ showingPercentB.toFixed(2) }} ${{ props.market.tick }}</span>
+                <span class="text-lg font-bold z-10">{{ $t('predictTrade.no') }} {{ showingPercentB.toFixed(2) }} ${{ props.market.tick }}</span>
             </button>
         </div>
 
@@ -429,8 +424,8 @@ const tradeTimeLeftText = computed(() => {
                 <div class="text-xs text-gray-500">
                 {{ $t('balance') }}: 
                 <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-gray-800">{{ formatAmount(tradeTokenBalance) }} {{ props.market.tick }}</span>
-                <span v-else-if="tradeSelectedOutcome === 'red'" class="font-mono font-bold text-gray-800">{{ formatAmount(tradeRedBalance) }} Red</span>
-                <span v-else class="font-mono font-bold text-gray-800">{{ formatAmount(tradeBlueBalance) }} Blue</span>
+                <span v-else-if="tradeSelectedOutcome === 'yes'" class="font-mono font-bold text-gray-800">{{ formatAmount(tradeYesBalance) }} Yes</span>
+                <span v-else class="font-mono font-bold text-gray-800">{{ formatAmount(tradeNoBalance) }} No</span>
                 </div>
             </div>
             
@@ -464,7 +459,7 @@ const tradeTimeLeftText = computed(() => {
             <div class="border-t border-gray-100 pt-4 space-y-2 mt-4">
                 <div class="flex justify-between items-center">
                     <span class="text-gray-600 text-sm">{{ $t('predictTrade.payReceive') }}</span>
-                    <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ tradeSelectedOutcome === 'red' ? $t('predictTrade.redShare') : $t('predictTrade.blueShare') }}</span>
+                    <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ tradeSelectedOutcome === 'yes' ? $t('predictTrade.yesShare') : $t('predictTrade.noShare') }}</span>
                     <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ props.market.tick }}</span>
                 </div>
                 <div class="flex justify-between items-center text-xs">
@@ -497,7 +492,7 @@ const tradeTimeLeftText = computed(() => {
                 @click="executeTrade"
                 :disabled="tradeCalculating || tradeLoading || !tradeShares"
             >
-                {{ tradeActiveTab === 'buy' ? $t("buy") : $t("sell") }} {{ tradeSelectedOutcome === 'red' ? $t("predictTrade.red") : $t("predictTrade.blue") }}
+                {{ tradeActiveTab === 'buy' ? $t("buy") : $t("sell") }} {{ tradeSelectedOutcome === 'yes' ? $t("predictTrade.yes") : $t("predictTrade.no") }}
                 <i-ep-loading v-if="tradeCalculating || tradeLoading" class="animate-spin ml-2" />
             </button>
             <div class="text-center text-xs text-red-500 font-medium">
@@ -575,12 +570,12 @@ const tradeTimeLeftText = computed(() => {
     <div v-else class="flex-1 flex flex-col gap-6">
         <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-3">
              <div class="flex justify-between items-center">
-                 <span class="text-gray-500">Your Red Positions</span>
-                 <span class="font-mono font-bold text-red-600">{{ formatAmount(tradeRedBalance) }}</span>
+                 <span class="text-gray-500">Your Yes Positions</span>
+                 <span class="font-mono font-bold text-red-600">{{ formatAmount(tradeYesBalance) }}</span>
              </div>
              <div class="flex justify-between items-center">
-                 <span class="text-gray-500">Your Blue Positions</span>
-                 <span class="font-mono font-bold text-blue-600">{{ formatAmount(tradeBlueBalance) }}</span>
+                 <span class="text-gray-500">Your No Positions</span>
+                 <span class="font-mono font-bold text-blue-600">{{ formatAmount(tradeNoBalance) }}</span>
              </div>
         </div>
 

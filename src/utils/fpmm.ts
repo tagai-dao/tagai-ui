@@ -6,7 +6,7 @@ import { ChainConfig, WETH, Ether, USD_CONTRACTS,
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
-import _ from 'lodash'
+import _, { min } from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits } from "viem";
@@ -259,7 +259,7 @@ export async function getBuyData(battle: BattleData | EventPredictData, shares: 
     return res.results.transformed;
 }
 
-export async function getSellData(battle: BattleData | EventPredictData, reserveA: number, reserveB: number, shares: number, outcome: 'red' | 'blue') {
+export async function getSellData(battle: BattleData | EventPredictData, reserveA: number, reserveB: number, shares: number, outcome: 'red' | 'blue' | 'yes' | 'no') {
     if (!shares) return {receive: 0, fee: 0};
     if (parseFloat(shares.toFixed(18)) === 0) return {receive: 0, fee: 0};
 
@@ -269,8 +269,8 @@ export async function getSellData(battle: BattleData | EventPredictData, reserve
 
     if (S === 0) return 0n;
 
-    const P_sell = outcome === 'red' ?  poolBalanceA : poolBalanceB;
-    const P_other = outcome === 'red' ? poolBalanceB : poolBalanceA;
+    const P_sell = (outcome === 'red' || outcome === 'yes') ?  poolBalanceA : poolBalanceB;
+    const P_other = (outcome === 'red' || outcome === 'yes') ? poolBalanceB : poolBalanceA;
 
     // 计算卖出能得到的抵押代币数量
 
@@ -307,7 +307,8 @@ export async function buyToken(battle: BattleData | EventPredictData, collateral
     await approveToken(battle.marketMaker, collateralToken as `0x${string}`, sharesBi);
     
     const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
-
+    console.log(53, battle)
+    console.log(6, sharesBi, outcome, minOutcomeTokensToBuyBi.toString() / 1e18)
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'buy',
