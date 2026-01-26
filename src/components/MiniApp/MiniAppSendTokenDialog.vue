@@ -60,15 +60,15 @@
 
       <!-- Footer -->
       <div class="send-footer">
-        <button class="cancel-btn" @click="handleClose" :disabled="submitting">
+        <button class="cancel-btn" @click="handleClose" :disabled="props.submitting">
           取消
         </button>
         <button
           class="confirm-btn"
           @click="handleConfirm"
-          :disabled="submitting"
+          :disabled="props.submitting"
         >
-          <span v-if="submitting" class="loading-spinner"></span>
+          <span v-if="props.submitting" class="loading-spinner"></span>
           <span v-else>确认发送</span>
         </button>
       </div>
@@ -95,10 +95,12 @@ interface Props {
   recipientAddress?: Address;
   recipientTwitterId?: string;
   estimatedGas?: string;
+  submitting?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
+  submitting: false,
 });
 
 const emit = defineEmits<{
@@ -106,8 +108,6 @@ const emit = defineEmits<{
   confirm: [];
   reject: [];
 }>();
-
-const submitting = ref(false);
 
 // Computed properties
 const tokenSymbol = computed(() => props.tokenInfo?.symbol || 'TOKEN');

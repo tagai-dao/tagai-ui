@@ -147,6 +147,34 @@ const router = createRouter({
       name: 'test-defi',
       component: () => import('@/views/MiniApp/DeFiActionsTest.vue'),
       meta: { tabBar: false, topBar: false }
+    },
+    // SDK Full Test - Host wrapper
+    {
+      path: '/sdk-test-host',
+      name: 'sdk-test-host',
+      component: () => import('@/views/MiniApp/SDKTestHost.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // SDK Full Test - Mini App content (loaded in iframe)
+    {
+      path: '/sdk-test',
+      name: 'sdk-test',
+      component: () => import('@/views/MiniApp/SDKFullTest.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // Testnet DeFi Test - Host wrapper
+    {
+      path: '/testnet-defi-host',
+      name: 'testnet-defi-host',
+      component: () => import('@/views/MiniApp/TestnetDeFiHost.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // Testnet DeFi Test - Mini App content (loaded in iframe)
+    {
+      path: '/testnet-defi',
+      name: 'testnet-defi',
+      component: () => import('@/views/MiniApp/TestnetDeFiTest.vue'),
+      meta: { tabBar: false, topBar: false }
     }
   ]
 })

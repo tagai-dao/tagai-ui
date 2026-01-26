@@ -120,17 +120,34 @@ async function loadAppById(appId: string) {
 async function loadManifest() {
   if (!manifestUrl.value && appUrl.value) {
     // Construct manifest URL from app URL
-    const url = new URL(appUrl.value);
-    manifestUrl.value = `${url.origin}/.well-known/farcaster.json`;
+    try {
+      const url = new URL(appUrl.value);
+      manifestUrl.value = `${url.origin}/.well-known/farcaster.json`;
+    } catch (err) {
+      // Invalid URL, skip manifest loading
+      console.warn('Invalid app URL, skipping manifest load:', err);
+      return;
+    }
   }
 
   try {
-    const response = await fetch(manifestUrl.value);
+    const response = await fetch(manifestUrl.value, {
+      signal: AbortSignal.timeout(5000), // 5 second timeout
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
     const data: MiniAppManifestFull = await response.json();
     manifest.value = data.miniapp;
-  } catch (err) {
-    console.error('Failed to load manifest:', err);
+  } catch (err: any) {
     // Not critical, continue without manifest
+    // Only log warning for non-timeout errors
+    if (err.name !== 'AbortError' && err.name !== 'TypeError') {
+      console.warn('Failed to load manifest (app will still work):', err.message || err);
+    }
+    // Continue without manifest - the app can still function
   }
 }
 

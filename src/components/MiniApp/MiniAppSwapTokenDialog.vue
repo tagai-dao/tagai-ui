@@ -103,15 +103,15 @@
 
       <!-- Footer -->
       <div class="swap-footer">
-        <button class="cancel-btn" @click="handleClose" :disabled="submitting">
+        <button class="cancel-btn" @click="handleClose" :disabled="props.submitting">
           取消
         </button>
         <button
           class="confirm-btn"
           @click="handleConfirm"
-          :disabled="submitting || !quote"
+          :disabled="props.submitting || !quote"
         >
-          <span v-if="submitting" class="loading-spinner"></span>
+          <span v-if="props.submitting" class="loading-spinner"></span>
           <span v-else>{{ needsApproval ? '授权并兑换' : '确认兑换' }}</span>
         </button>
       </div>
@@ -150,12 +150,14 @@ interface Props {
   estimatedGas?: string;
   needsApproval?: boolean;
   loading?: boolean;
+  submitting?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   needsApproval: false,
   loading: false,
+  submitting: false,
 });
 
 const emit = defineEmits<{
@@ -163,8 +165,6 @@ const emit = defineEmits<{
   confirm: [];
   reject: [];
 }>();
-
-const submitting = ref(false);
 
 // Computed properties
 const sellTokenSymbol = computed(() => props.sellTokenInfo?.symbol || 'TOKEN');
@@ -208,21 +208,14 @@ const sellTokenUsdValue = computed(() => null);
 const buyTokenUsdValue = computed(() => null);
 
 function handleClose() {
-  if (submitting.value) return;
+  if (props.submitting) return;
   emit('reject');
   emit('close');
 }
 
-async function handleConfirm() {
-  if (submitting.value) return;
-  submitting.value = true;
-
-  try {
-    emit('confirm');
-  } catch (error) {
-    console.error('Confirm error:', error);
-    submitting.value = false;
-  }
+function handleConfirm() {
+  if (props.submitting) return;
+  emit('confirm');
 }
 </script>
 

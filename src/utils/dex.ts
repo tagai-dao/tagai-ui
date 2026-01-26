@@ -3,8 +3,22 @@ import type { Address } from 'viem';
 // 1inch API endpoints (v5.2)
 const ONEINCH_API_BASE = 'https://api.1inch.dev/swap/v5.2';
 
-// 测试环境：是否使用 mock 报价（避免 API Key 问题）
-const USE_MOCK_QUOTE = true;
+// 从环境变量读取 API Key
+const ONEINCH_API_KEY = import.meta.env.VITE_ONEINCH_API_KEY;
+
+// 是否使用 Mock 环境
+// 优先级: 环境变量强制 > API Key 是否存在
+const FORCE_MOCK = import.meta.env.VITE_USE_MOCK_QUOTE === 'true';
+const USE_MOCK_QUOTE = FORCE_MOCK || !ONEINCH_API_KEY;
+
+// 调试日志
+if (import.meta.env.DEV) {
+  console.log('[DEX Config]', {
+    forceMock: FORCE_MOCK,
+    hasApiKey: !!ONEINCH_API_KEY,
+    useMock: USE_MOCK_QUOTE,
+  });
+}
 
 // 支持的链 ID 映射到 1inch 链 ID
 const CHAIN_ID_MAP: Record<number, number> = {
@@ -14,6 +28,22 @@ const CHAIN_ID_MAP: Record<number, number> = {
   42161: 42161, // Arbitrum
   8453: 8453,   // Base
 };
+
+/**
+ * 辅助函数：创建带 API Key 的 fetch 请求
+ */
+function fetchWithApiKey(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(options.headers);
+
+  if (ONEINCH_API_KEY) {
+    headers.set('Authorization', `Bearer ${ONEINCH_API_KEY}`);
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}
 
 export interface SwapQuote {
   buyAmount: string;
@@ -55,13 +85,13 @@ export async function checkAllowance(
 
     // 获取 1inch 的 spender 地址
     const spenderUrl = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/spender`;
-    const spenderResponse = await fetch(spenderUrl);
+    const spenderResponse = await fetchWithApiKey(spenderUrl);
     const spenderData = await spenderResponse.json();
     const spender = spenderData.address as Address;
 
     // 检查当前授权额度
     const allowanceUrl = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/allowance?tokenAddress=${tokenAddress}&walletAddress=${ownerAddress}`;
-    const allowanceResponse = await fetch(allowanceUrl);
+    const allowanceResponse = await fetchWithApiKey(allowanceUrl);
     const allowanceData = await allowanceResponse.json();
 
     return {
@@ -92,7 +122,7 @@ export async function buildApprovalTransaction(
     const approveAmount = amount || '115792089237316195423570985008687907853269984665640564039457584007913129639935'; // uint256 max
 
     const url = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/transaction?tokenAddress=${tokenAddress}&amount=${approveAmount}`;
-    const response = await fetch(url);
+    const response = await fetchWithApiKey(url);
     const data = await response.json();
 
     return {
@@ -166,7 +196,7 @@ export async function getSwapQuote(
     const toToken = toTokenAddress === 'native' ? NATIVE_TOKEN : toTokenAddress;
 
     const url = `${ONEINCH_API_BASE}/${oneInchChainId}/quote?src=${fromToken}&dst=${toToken}&amount=${amount}`;
-    const response = await fetch(url);
+    const response = await fetchWithApiKey(url);
 
     if (!response.ok) {
       throw new Error(`Failed to get quote: ${response.statusText}`);
@@ -231,7 +261,7 @@ export async function buildSwapTransaction(
 
     const url = `${ONEINCH_API_BASE}/${oneInchChainId}/swap?src=${fromToken}&dst=${toToken}&amount=${amount}&from=${fromAddress}&slippage=${slippage}&disableEstimate=true`;
 
-    const response = await fetch(url);
+    const response = await fetchWithApiKey(url);
 
     if (!response.ok) {
       const errorData = await response.json();

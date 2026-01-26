@@ -136,8 +136,8 @@ onMounted( () => {
     <main class="w-full h-full">
       <!-- PC 端布局：左侧边栏 + 主内容区 -->
       <div class="hidden web:flex h-full">
-        <!-- 左侧边栏 -->
-        <LeftSidebar />
+        <!-- 左侧边栏 - 根据路由 meta 控制显示 -->
+        <LeftSidebar v-if="$route.meta.tabBar !== false" />
         
         <!-- 主内容区 -->
         <div class="flex-1 flex flex-col overflow-hidden">
@@ -145,8 +145,8 @@ onMounted( () => {
           <div class="web:hidden">
             <TopBar v-show="$route.meta.topBar"/>
           </div>
-          <!-- PC 端顶部栏：搜索框和语言切换 -->
-          <div class="hidden web:flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+          <!-- PC 端顶部栏：搜索框和语言切换 - 根据路由 meta 控制显示 -->
+          <div v-if="$route.meta.topBar !== false" class="hidden web:flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
             <div class="flex-1 max-w-2xl">
               <SearchBar />
             </div>

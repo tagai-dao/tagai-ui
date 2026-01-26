@@ -3,6 +3,9 @@
 
 import type { MiniAppNotificationDetails } from './schemas/index.ts'
 
+// Re-export for convenience
+export type { MiniAppNotificationDetails }
+
 export type MiniAppPlatformType = 'web' | 'mobile'
 
 /**

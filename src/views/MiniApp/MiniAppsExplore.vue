@@ -132,17 +132,28 @@ onMounted(async () => {
   await loadApps();
 });
 
+// Generate SVG data URI for app icons
+function generateIconSvg(text: string, bgColor: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+    <rect width="64" height="64" rx="12" fill="${bgColor}"/>
+    <text x="32" y="40" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="20" font-weight="bold">${text}</text>
+  </svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
 async function loadApps() {
   loading.value = true;
 
   try {
     // TODO: Fetch from backend API
     // For now, use mock data
+    const colors = ['#667eea', '#764ba2', '#5b21b6', '#6d28d9'];
+    
     apps.value = [
       {
         domain: 'example.com',
         name: 'Example App',
-        iconUrl: 'https://via.placeholder.com/512/5b21b6/ffffff?text=EA',
+        iconUrl: generateIconSvg('EA', '#5b21b6'),
         subtitle: 'Demo application',
         description: 'A demonstration Mini App showing TagAI SDK features',
         category: 'tools',
@@ -154,7 +165,7 @@ async function loadApps() {
       ...Array.from({ length: 9 }, (_, i) => ({
         domain: `app${i + 1}.com`,
         name: `App ${i + 1}`,
-        iconUrl: `https://via.placeholder.com/512/${['667eea', '764ba2', '5b21b6', '6d28d9'][i % 4]}/ffffff?text=A${i + 1}`,
+        iconUrl: generateIconSvg(`A${i + 1}`, colors[i % 4]),
         subtitle: `Sample app ${i + 1}`,
         description: `Description for app ${i + 1}`,
         category: ['games', 'defi', 'social', 'tools', 'nft'][i % 5],
@@ -162,6 +173,42 @@ async function loadApps() {
         homeUrl: `https://app${i + 1}.com`,
         verified: i % 3 === 0,
       })),
+      // App 10: Test DeFi Host
+      {
+        domain: 'test-defi-host',
+        name: 'Test DeFi Host',
+        iconUrl: generateIconSvg('DeFi', '#FF7A00'),
+        subtitle: 'DeFi Actions Test',
+        description: 'Test Mini App for DeFi actions (send token, swap token, etc.)',
+        category: 'defi',
+        tags: ['defi', 'test', 'demo'],
+        homeUrl: 'http://localhost:5173/test-defi-host',
+        verified: true,
+      },
+      // App 11: SDK Full Test
+      {
+        domain: 'sdk-test-host',
+        name: 'SDK Full Test',
+        iconUrl: generateIconSvg('SDK', '#FE913F'),
+        subtitle: 'SDK 完整功能测试',
+        description: 'Test all Mini App SDK features: Twitter, Steem, Wallet, DeFi, Haptics, Notifications, etc.',
+        category: 'tools',
+        tags: ['sdk', 'test', 'demo', 'developer'],
+        homeUrl: 'http://localhost:5173/sdk-test-host',
+        verified: true,
+      },
+      // App 12: Testnet DeFi Host
+      {
+        domain: 'testnet-defi-host',
+        name: 'Testnet DeFi',
+        iconUrl: generateIconSvg('Test', '#10B981'),
+        subtitle: 'Testnet DeFi 测试',
+        description: 'Test DeFi actions on testnet chains (BSC Testnet, Sepolia). Includes chain switching, send token, swap token, and view token tests.',
+        category: 'defi',
+        tags: ['testnet', 'defi', 'test', 'developer'],
+        homeUrl: 'http://localhost:5173/testnet-defi-host',
+        verified: true,
+      },
     ];
   } catch (error) {
     console.error('Failed to load apps:', error);
@@ -171,6 +218,22 @@ async function loadApps() {
 }
 
 function openApp(app: MiniApp) {
+  // 如果是本地测试页面，直接跳转到路由
+  if (app.domain === 'test-defi-host') {
+    router.push('/test-defi-host');
+    return;
+  }
+  
+  if (app.domain === 'sdk-test-host') {
+    router.push('/sdk-test-host');
+    return;
+  }
+  
+  if (app.domain === 'testnet-defi-host') {
+    router.push('/testnet-defi-host');
+    return;
+  }
+  
   router.push({
     name: 'miniapp',
     params: { appId: app.domain },

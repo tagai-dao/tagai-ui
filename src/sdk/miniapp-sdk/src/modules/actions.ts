@@ -69,6 +69,10 @@ export function createActionsModule(
       );
     },
 
+    async openMiniApp(options: { domain: string; url?: string }) {
+      await transport.sendMessage('actions.openMiniApp', options);
+    },
+
     // DeFi Actions
     swapToken: defiActions.swapToken,
     sendToken: defiActions.sendToken,

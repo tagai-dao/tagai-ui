@@ -1,115 +1,244 @@
 /**
  * Notifications Module
- * 通知权限和订阅管理
+ * Enhanced notification permission and subscription management
+ * Based on Farcaster mini apps notification system
  */
+
+import type { MiniAppNotificationDetails } from '../../../miniapp-core/src/context';
 
 export interface NotificationPermissionResult {
   granted: boolean;
   token?: string;
 }
 
-export class NotificationsModule {
-  private sendRequest: (method: string, params?: any) => Promise<any>;
+/**
+ * Notification subscription status
+ */
+export interface NotificationSubscriptionStatus {
+  subscribed: boolean;
+  token?: string;
+  enabled: boolean;
+}
 
-  constructor(sendRequest: (method: string, params?: any) => Promise<any>) {
+/**
+ * Transport interface for sending messages to Host
+ */
+interface NotificationTransport {
+  (method: string, params?: any): Promise<any>;
+}
+
+export class NotificationsModule {
+  private sendRequest: NotificationTransport;
+  private cachedToken: string | undefined;
+  private cachedEnabled: boolean = false;
+
+  constructor(sendRequest: NotificationTransport) {
     this.sendRequest = sendRequest;
   }
 
   /**
    * Request notification permission
-   * 请求通知权限
+   * Requests both browser permission and registers with TagAI notification service
    */
   async requestPermission(): Promise<NotificationPermissionResult> {
-    // 检查浏览器通知 API 支持
-    if (!('Notification' in window)) {
-      throw new Error('This browser does not support notifications');
-    }
-
-    // 请求权限
-    const permission = await Notification.requestPermission();
-
-    if (permission !== 'granted') {
+    // Check browser notification API support
+    if (typeof window !== 'undefined' && !('Notification' in window)) {
       return { granted: false };
     }
 
-    // 生成通知 Token（在实际实现中，这应该与 Push 服务集成）
-    const token = await this.generateNotificationToken();
+    try {
+      // Request browser permission
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          return { granted: false };
+        }
+      }
 
-    return {
-      granted: true,
-      token
-    };
+      // Request permission from host and get token
+      const result = await this.sendRequest('notifications.requestPermission');
+
+      if (result.granted && result.token) {
+        this.cachedToken = result.token;
+        this.cachedEnabled = true;
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Failed to request notification permission:', error);
+      return { granted: false };
+    }
   }
 
   /**
    * Subscribe to notifications
-   * 订阅通知
+   * Registers the mini app to receive push notifications
    */
   async subscribe(): Promise<string> {
-    const result = await this.requestPermission();
+    // First request permission if not already granted
+    const permResult = await this.requestPermission();
 
-    if (!result.granted || !result.token) {
-      throw new Error('Notification permission denied');
+    if (!permResult.granted || !permResult.token) {
+      throw new Error('Notification permission denied or no token received');
     }
 
-    // 通知宿主环境保存 token
+    // Register subscription with host
     await this.sendRequest('notifications.subscribe', {
-      token: result.token
+      token: permResult.token,
     });
 
-    return result.token;
+    this.cachedToken = permResult.token;
+    this.cachedEnabled = true;
+
+    return permResult.token;
   }
 
   /**
    * Unsubscribe from notifications
-   * 取消订阅通知
+   * Removes the mini app from receiving push notifications
    */
   async unsubscribe(): Promise<void> {
     await this.sendRequest('notifications.unsubscribe');
+    this.cachedToken = undefined;
+    this.cachedEnabled = false;
   }
 
   /**
    * Check if notifications are enabled
-   * 检查通知是否已启用
    */
   async isEnabled(): Promise<boolean> {
-    if (!('Notification' in window)) {
-      return false;
+    // Check browser permission
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission !== 'granted') {
+        return false;
+      }
     }
 
-    return Notification.permission === 'granted';
+    // Check with host
+    try {
+      const result = await this.sendRequest('notifications.isEnabled');
+      this.cachedEnabled = result.enabled;
+      return result.enabled;
+    } catch {
+      return this.cachedEnabled;
+    }
   }
 
   /**
-   * Generate notification token
-   * 生成通知 Token
-   *
-   * 注意：这是一个简化实现
-   * 实际生产环境应该使用 Firebase Cloud Messaging, Web Push 等服务
+   * Get current subscription status
    */
-  private async generateNotificationToken(): Promise<string> {
-    // 简化实现：生成一个随机 token
-    // 在实际应用中，应该注册 Service Worker 并获取 Push 订阅
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  async getSubscriptionStatus(): Promise<NotificationSubscriptionStatus> {
+    try {
+      const result = await this.sendRequest('notifications.getStatus');
+      this.cachedToken = result.token;
+      this.cachedEnabled = result.enabled;
+      return result;
+    } catch {
+      return {
+        subscribed: !!this.cachedToken,
+        token: this.cachedToken,
+        enabled: this.cachedEnabled,
+      };
+    }
   }
 
   /**
-   * Show a local notification (for testing)
-   * 显示本地通知（用于测试）
+   * Get cached notification token
    */
-  async showTestNotification(title: string, body: string): Promise<void> {
-    const isEnabled = await this.isEnabled();
+  get token(): string | undefined {
+    return this.cachedToken;
+  }
 
-    if (!isEnabled) {
-      throw new Error('Notifications are not enabled');
+  /**
+   * Show a local notification (for testing or immediate feedback)
+   */
+  async showLocalNotification(
+    title: string,
+    body: string,
+    options?: {
+      icon?: string;
+      badge?: string;
+      tag?: string;
+      data?: any;
+      onClick?: () => void;
+    }
+  ): Promise<Notification | null> {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      console.warn('Notifications not supported in this environment');
+      return null;
     }
 
-    new Notification(title, {
+    if (Notification.permission !== 'granted') {
+      console.warn('Notification permission not granted');
+      return null;
+    }
+
+    const notification = new Notification(title, {
       body,
-      icon: '/icon.png', // 应用图标
-      badge: '/badge.png', // 徽章图标
+      icon: options?.icon || '/icon.png',
+      badge: options?.badge || '/badge.png',
+      tag: options?.tag,
+      data: options?.data,
     });
+
+    if (options?.onClick) {
+      notification.onclick = options.onClick;
+    }
+
+    return notification;
   }
 }
+
+/**
+ * Notification event types for webhook handling
+ */
+export type NotificationWebhookEvent =
+  | {
+      event: 'miniapp_added';
+      twitterId: string;
+      notificationDetails: MiniAppNotificationDetails;
+    }
+  | {
+      event: 'miniapp_removed';
+      twitterId: string;
+    }
+  | {
+      event: 'notifications_enabled';
+      twitterId: string;
+      notificationDetails: MiniAppNotificationDetails;
+    }
+  | {
+      event: 'notifications_disabled';
+      twitterId: string;
+    };
+
+/**
+ * Notification send request
+ */
+export interface SendNotificationRequest {
+  /** Unique notification ID for idempotency */
+  notificationId: string;
+  /** Notification title (max 32 chars) */
+  title: string;
+  /** Notification body (max 128 chars) */
+  body: string;
+  /** Target URL when notification is clicked (must be same domain) */
+  targetUrl: string;
+  /** Twitter IDs to send to */
+  twitterIds: string[];
+}
+
+/**
+ * Notification send response
+ */
+export interface SendNotificationResponse {
+  /** Number of notifications successfully sent */
+  sent: number;
+  /** Failed delivery details */
+  failed?: Array<{
+    twitterId: string;
+    reason: string;
+  }>;
+}
+
+export { NotificationSubscriptionStatus as SubscriptionStatus };

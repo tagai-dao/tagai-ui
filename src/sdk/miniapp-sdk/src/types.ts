@@ -1,22 +1,48 @@
 /**
  * TagAI Mini App SDK Types
+ * Complete type definitions for TagAI Mini Apps framework
+ * Based on Farcaster mini apps specification with TagAI-specific extensions
  */
 
-import type { MiniAppContext } from '../../miniapp-core/src/context';
+import type { MiniAppContext, MiniAppNotificationDetails } from '../../miniapp-core/src/context';
 import type { WalletClient, Hash, Address } from 'viem';
 
 // ==========================================
 // Auth Module Types
 // ==========================================
 
+export interface SignInOptions {
+  /**
+   * Nonce for signing (auto-generated if not provided)
+   */
+  nonce?: string;
+
+  /**
+   * Accept auth address in response (default: true)
+   */
+  acceptAuthAddress?: boolean;
+}
+
+export interface SignInResult {
+  ethAddress: Address;
+  twitterId?: string;
+  twitterUsername?: string;
+  steemUsername?: string;
+  displayName?: string;
+  avatar?: string;
+  message: string;
+  signature: string;
+}
+
 export interface AuthModule {
   /**
-   * Get current JWT token (if available)
+   * Get current JWT token (if available and not expired)
    */
   readonly token: string | undefined;
 
   /**
    * Get or generate JWT token
+   * Implements automatic caching and refresh
    */
   getToken(options?: {
     forceRefresh?: boolean;
@@ -24,26 +50,19 @@ export interface AuthModule {
 
   /**
    * Sign in user (triggers Privy + Twitter auth)
+   * Returns signed message for verification
    */
-  signIn(options?: {
-    nonce?: string;
-  }): Promise<{
-    ethAddress: Address;
-    twitterId?: string;
-    twitterUsername?: string;
-    steemUsername?: string;
-    message: string;
-    signature: string;
-  }>;
+  signIn(options?: SignInOptions): Promise<SignInResult>;
 
   /**
    * Authenticated fetch (automatically adds Bearer token)
+   * Similar to Farcaster's quickAuth.fetch
    */
   fetch(url: string, options?: RequestInit): Promise<Response>;
 }
 
 // ==========================================
-// Steem Module Types
+// Steem Module Types (TagAI-specific)
 // ==========================================
 
 export interface SteemPostOptions {
@@ -53,14 +72,17 @@ export interface SteemPostOptions {
   jsonMetadata?: Record<string, any>;
   beneficiaries?: Array<{
     account: string;
-    weight: number;
+    weight: number;  // 0-10000 (100% = 10000)
   }>;
+  /** Whether to also post to Twitter (default: true) */
+  crossPostTwitter?: boolean;
 }
 
 export interface SteemPostResult {
   author: string;
   permlink: string;
   url: string;
+  twitterTweetId?: string;
 }
 
 export interface SteemCommentOptions {
@@ -72,12 +94,13 @@ export interface SteemCommentOptions {
 
 export interface SteemModule {
   /**
-   * Create a post on Steem
+   * Create a post on Steem (and optionally Twitter)
    */
   post(options: SteemPostOptions): Promise<SteemPostResult>;
 
   /**
    * Vote on a post/comment
+   * @param weight - Vote weight 0-10000 (100% = 10000, 50% = 5000)
    */
   vote(author: string, permlink: string, weight: number): Promise<void>;
 
@@ -87,7 +110,7 @@ export interface SteemModule {
   comment(options: SteemCommentOptions): Promise<SteemPostResult>;
 
   /**
-   * Reblog a post
+   * Reblog (resteem) a post
    */
   reblog(author: string, permlink: string): Promise<void>;
 }
@@ -140,18 +163,34 @@ export interface ComposeOptions {
   text?: string;
   images?: string[];
   tags?: string[];
+  /** Whether to close mini app after posting */
+  closeOnPost?: boolean;
 }
 
 export interface ComposeResult {
   posted: boolean;
   permlink?: string;
   author?: string;
+  tweetId?: string;
 }
 
 export interface SetPrimaryButtonOptions {
   text: string;
   enabled?: boolean;
   loading?: boolean;
+  disabled?: boolean;
+  hidden?: boolean;
+}
+
+export interface ReadyOptions {
+  /**
+   * Splash screen duration in ms (default: 0)
+   */
+  splashDuration?: number;
+  /**
+   * Disable native gestures like swipe back
+   */
+  disableNativeGestures?: boolean;
 }
 
 // ==========================================
@@ -224,10 +263,7 @@ export interface ActionsModule {
   /**
    * Signal that Mini App is ready to be displayed
    */
-  ready(options?: {
-    splashDuration?: number;
-    disableNativeGestures?: boolean;
-  }): Promise<void>;
+  ready(options?: ReadyOptions): Promise<void>;
 
   /**
    * Close the Mini App
@@ -280,6 +316,14 @@ export interface ActionsModule {
     microphone: boolean;
   }>;
 
+  /**
+   * Open another Mini App
+   */
+  openMiniApp(options: {
+    domain: string;
+    url?: string;
+  }): Promise<void>;
+
   // ===== DeFi Actions =====
 
   /**
@@ -304,27 +348,281 @@ export interface ActionsModule {
 }
 
 // ==========================================
+// Haptics Module Types
+// ==========================================
+
+export type ImpactStyle = 'light' | 'medium' | 'heavy' | 'soft' | 'rigid';
+export type NotificationType = 'success' | 'warning' | 'error';
+
+export interface HapticsModule {
+  /**
+   * Trigger impact feedback
+   */
+  impactOccurred: (style?: ImpactStyle) => Promise<void>;
+
+  /**
+   * Trigger notification feedback
+   */
+  notificationOccurred: (type: NotificationType) => Promise<void>;
+
+  /**
+   * Trigger selection change feedback
+   */
+  selectionChanged: () => Promise<void>;
+}
+
+// ==========================================
+// Platform Module Types
+// ==========================================
+
+export type TagAICapability =
+  | 'wallet.getProvider'
+  | 'wallet.sendTransaction'
+  | 'wallet.signMessage'
+  | 'wallet.getBalance'
+  | 'actions.ready'
+  | 'actions.close'
+  | 'actions.openUrl'
+  | 'actions.compose'
+  | 'actions.share'
+  | 'actions.viewProfile'
+  | 'actions.viewPost'
+  | 'actions.setPrimaryButton'
+  | 'actions.addMiniApp'
+  | 'actions.requestCameraAndMicrophoneAccess'
+  | 'actions.swapToken'
+  | 'actions.sendToken'
+  | 'actions.viewToken'
+  | 'actions.openMiniApp'
+  | 'auth.getToken'
+  | 'auth.signIn'
+  | 'steem.post'
+  | 'steem.vote'
+  | 'steem.comment'
+  | 'steem.reblog'
+  | 'haptics.impactOccurred'
+  | 'haptics.notificationOccurred'
+  | 'haptics.selectionChanged'
+  | 'notifications.requestPermission'
+  | 'notifications.subscribe'
+  | 'notifications.unsubscribe'
+  | 'twitter.post'
+  | 'twitter.share'
+  | 'back';
+
+export type AppState = 'active' | 'inactive' | 'background';
+
+export interface PlatformModule {
+  /**
+   * Get list of supported capabilities
+   */
+  getCapabilities: () => Promise<TagAICapability[]>;
+
+  /**
+   * Check if a specific capability is supported
+   */
+  hasCapability: (capability: TagAICapability) => Promise<boolean>;
+
+  /**
+   * Get list of supported chains (CAIP-2 format)
+   */
+  getChains: () => Promise<string[]>;
+
+  /**
+   * Check if a specific chain is supported
+   */
+  isChainSupported: (chainId: string) => Promise<boolean>;
+
+  /**
+   * Get current platform type
+   */
+  getPlatformType: () => Promise<'web' | 'mobile' | 'desktop'>;
+
+  /**
+   * Get SDK version
+   */
+  getVersion: () => string;
+
+  /**
+   * Check if running in development mode
+   */
+  isDevelopment: () => boolean;
+
+  /**
+   * Listen to app state changes
+   */
+  onAppStateChange: (callback: (state: AppState) => void) => () => void;
+}
+
+// ==========================================
+// Back Module Types
+// ==========================================
+
+export interface BackState {
+  enabled: boolean;
+  handler?: () => void | Promise<void>;
+}
+
+export interface BackModule {
+  /**
+   * Update back navigation state
+   */
+  updateState: (state: BackState) => Promise<void>;
+
+  /**
+   * Enable back navigation
+   */
+  enable: (handler?: () => void | Promise<void>) => Promise<void>;
+
+  /**
+   * Disable back navigation
+   */
+  disable: () => Promise<void>;
+
+  /**
+   * Trigger back navigation programmatically
+   */
+  goBack: () => Promise<void>;
+
+  /**
+   * Check if back navigation is currently enabled
+   */
+  isEnabled: () => boolean;
+}
+
+// ==========================================
+// Twitter Module Types (TagAI-specific)
+// ==========================================
+
+export interface TwitterPostOptions {
+  /** Tweet text content (max 280 chars) */
+  text: string;
+  /** Media URLs to attach (max 4 images) */
+  mediaUrls?: string[];
+  /** Quote tweet ID */
+  quoteTweetId?: string;
+  /** Reply to tweet ID */
+  replyToTweetId?: string;
+}
+
+export interface TwitterPostResult {
+  /** Tweet ID */
+  tweetId: string;
+  /** Tweet URL */
+  url: string;
+  /** Whether post was successful */
+  success: boolean;
+}
+
+export interface TwitterShareOptions {
+  /** URL to share */
+  url: string;
+  /** Pre-filled tweet text */
+  text?: string;
+  /** Hashtags to include */
+  hashtags?: string[];
+  /** Via account */
+  via?: string;
+}
+
+export interface TwitterModule {
+  /**
+   * Post a tweet through TagAI
+   */
+  post(options: TwitterPostOptions): Promise<TwitterPostResult>;
+
+  /**
+   * Open Twitter share dialog
+   */
+  share(options: TwitterShareOptions): Promise<void>;
+
+  /**
+   * Check if user has Twitter connected
+   */
+  isConnected(): Promise<boolean>;
+
+  /**
+   * Get current user's Twitter info
+   */
+  getUser(): Promise<{
+    twitterId: string;
+    username: string;
+    displayName: string;
+    profileImageUrl?: string;
+  } | null>;
+}
+
+// ==========================================
+// Notifications Module Types
+// ==========================================
+
+export interface NotificationPermissionResult {
+  granted: boolean;
+  token?: string;
+}
+
+export interface NotificationsModule {
+  /**
+   * Request notification permission
+   */
+  requestPermission(): Promise<NotificationPermissionResult>;
+
+  /**
+   * Subscribe to notifications
+   */
+  subscribe(): Promise<string>;
+
+  /**
+   * Unsubscribe from notifications
+   */
+  unsubscribe(): Promise<void>;
+
+  /**
+   * Check if notifications are enabled
+   */
+  isEnabled(): Promise<boolean>;
+}
+
+// ==========================================
 // Event Types
 // ==========================================
+
+export type MiniAppAddedEvent = {
+  notificationDetails?: MiniAppNotificationDetails;
+};
+
+export type MiniAppAddRejectedEvent = {
+  reason: 'invalid_domain_manifest' | 'rejected_by_user';
+};
+
+export type NotificationsEnabledEvent = {
+  notificationDetails: MiniAppNotificationDetails;
+};
 
 export type MiniAppEventMap = {
   /** Primary button was clicked */
   primaryButtonClicked: () => void;
 
   /** Mini App was added to user's list */
-  miniAppAdded: () => void;
+  miniAppAdded: (event: MiniAppAddedEvent) => void;
+
+  /** Mini App add was rejected */
+  miniAppAddRejected: (event: MiniAppAddRejectedEvent) => void;
 
   /** Mini App was removed from user's list */
   miniAppRemoved: () => void;
 
   /** Notification permission was granted */
-  notificationsEnabled: () => void;
+  notificationsEnabled: (event: NotificationsEnabledEvent) => void;
 
   /** Notification permission was revoked */
   notificationsDisabled: () => void;
 
   /** Back navigation was triggered */
   backNavigationTriggered: () => void;
+
+  /** App state changed */
+  appStateChanged: (state: AppState) => void;
 };
 
 // ==========================================
@@ -353,7 +651,7 @@ export interface TagAIMiniAppSDK {
   auth: AuthModule;
 
   /**
-   * Steem social module
+   * Steem social module (TagAI-specific)
    */
   steem: SteemModule;
 
@@ -370,7 +668,27 @@ export interface TagAIMiniAppSDK {
   /**
    * Notifications module
    */
-  notifications: any;
+  notifications: NotificationsModule;
+
+  /**
+   * Haptics module (vibration feedback)
+   */
+  haptics: HapticsModule;
+
+  /**
+   * Platform module (capabilities, chains)
+   */
+  platform: PlatformModule;
+
+  /**
+   * Back navigation module
+   */
+  back: BackModule;
+
+  /**
+   * Twitter integration module (TagAI-specific)
+   */
+  twitter: TwitterModule;
 
   /**
    * Event listeners
@@ -392,3 +710,6 @@ export interface TagAIMiniAppSDK {
 
   removeAllListeners(): void;
 }
+
+// Re-export context types
+export type { MiniAppContext, MiniAppNotificationDetails };

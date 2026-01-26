@@ -10,8 +10,66 @@ import type {
   SendTokenResult,
   ViewTokenOptions,
 } from '../types';
-import { parseCAIP19, isValidCAIP19 } from '@/utils/caip';
 import { isAddress, getAddress } from 'viem';
+
+// ==========================================
+// CAIP-19 Utilities (inline to avoid external dependencies)
+// ==========================================
+
+interface ParsedAsset {
+  chainId: number;
+  namespace: 'erc20' | 'native';
+  address?: `0x${string}`;
+}
+
+/**
+ * Parse CAIP-19 asset identifier
+ * Format: eip155:<chainId>/<namespace>(:<address>)?
+ */
+function parseCAIP19(assetId: string): ParsedAsset {
+  const match = assetId.match(/^eip155:(\d+)\/(erc20|native)(?::(.+))?$/);
+
+  if (!match) {
+    throw new Error(`Invalid CAIP-19 format: ${assetId}. Expected format: eip155:<chainId>/<namespace>(:<address>)?`);
+  }
+
+  const [, chainIdStr, namespace, address] = match;
+  const chainId = parseInt(chainIdStr, 10);
+
+  if (namespace === 'erc20') {
+    if (!address) {
+      throw new Error(`ERC20 asset must include address: ${assetId}`);
+    }
+    if (!isAddress(address)) {
+      throw new Error(`Invalid ERC20 address: ${address}`);
+    }
+    return {
+      chainId,
+      namespace: 'erc20',
+      address: address as `0x${string}`,
+    };
+  } else {
+    if (address) {
+      throw new Error(`Native asset should not include address: ${assetId}`);
+    }
+    return {
+      chainId,
+      namespace: 'native',
+    };
+  }
+}
+
+/**
+ * Validate CAIP-19 asset identifier format
+ */
+function isValidCAIP19(assetId: string): boolean {
+  try {
+    parseCAIP19(assetId);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Transport interface for sending messages to Host
