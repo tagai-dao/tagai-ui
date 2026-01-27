@@ -307,8 +307,6 @@ export async function buyToken(battle: BattleData | EventPredictData, collateral
     await approveToken(battle.marketMaker, collateralToken as `0x${string}`, sharesBi);
     
     const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
-    console.log(53, battle)
-    console.log(6, sharesBi, outcome, minOutcomeTokensToBuyBi.toString() / 1e18)
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'buy',
