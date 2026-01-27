@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { ref, reactive, onMounted, computed, watch } from 'vue'
-    import { getUserJoinedMarkets, getUserJoinedEventMarkets } from '@/apis/api'
-    import { GlobalModalType, type BattleData, type Tweet, type EventPredictData } from '@/types'
+    import { getUserJoinedMarkets, getUserJoinedEventMarkets, getMyPredictRewards, getMyUnclaimablePredictRewards } from '@/apis/api'
+    import { GlobalModalType, type BattleData, type Tweet, type EventPredictData, type CurationReward } from '@/types'
     import { useCommunityStore } from '@/stores/community'
     import { handleErrorTip } from '@/utils/notify'
     import { EthWalletState, useAccountStore } from '@/stores/web3'
@@ -9,12 +9,16 @@
     import emitter from '@/utils/emitter'
     import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
     import PredictEventCard from '@/components/common/PredictEventCard.vue'
+    import PredictReward from '@/components/profile/PredictReward.vue'
     import { getMarketInfos } from '@/utils/fpmm'
+    import { getTokenOnchainInfo } from '@/utils/pump'
+    import { useStateStore } from '@/stores/common'
     import { useI18n } from 'vue-i18n'
     
     const { t } = useI18n()
     const comStore = useCommunityStore()
     const accStore = useAccountStore()
+    const stateStore = useStateStore()
     const battles = ref<BattleData[]>([])
     const events = ref<EventPredictData[]>([])
     let tweets = reactive<{ [key: string]: Tweet }>({})
@@ -25,6 +29,12 @@
     const refreshing = ref(false)
     const loading = ref(false)
     const finished = ref(false)
+    
+    // 奖励相关状态
+    const claimableRewards = ref<CurationReward[]>([])
+    const unclaimableRewards = ref<CurationReward[]>([])
+    let rewardTabOptions = ['Processing', 'Claimable']
+    const rewardType = ref('Processing')
     
     const onRefresh = async () => {
         try {
@@ -154,6 +164,52 @@
       useModalStore().setModalVisible(true, GlobalModalType.CreatePredict)
     }
 
+    // 更新奖励列表
+    function updateReward() {
+      if (!accStore.getAccountInfo?.twitterId) return
+      if (rewardType.value === 'Claimable') {
+        getMyPredictRewards(accStore.getAccountInfo.twitterId).then(async (list: any) => {
+          if (list && list.length > 0) {
+            let versions: Record<string, number> = {}
+            for (let t of list) {
+              versions[t.token] = t.version ?? 2
+            }
+            const list1 = await getTokenOnchainInfo(list.map((l: any) => l.token), versions)
+
+            for (let t of list) {
+              t.price = (list1[t.token]?.price ?? 0) * stateStore.ethPrice;
+            }
+
+            claimableRewards.value = list
+          } else {
+            claimableRewards.value = []
+          }
+        })
+      } else {
+        getMyUnclaimablePredictRewards(accStore.getAccountInfo.twitterId).then(async (list: any) => {
+          if (list && list.length > 0) {
+            let versions: Record<string, number> = {}
+            for (let t of list) {
+              versions[t.token] = t.version ?? 2
+            }
+            const list1 = await getTokenOnchainInfo(list.map((l: any) => l.token), versions)
+
+            for (let t of list) {
+              t.price = (list1[t.token]?.price ?? 0) * stateStore.ethPrice;
+            }
+
+            unclaimableRewards.value = list
+          } else {
+            unclaimableRewards.value = []
+          }
+        })
+      }
+    }
+
+    watch(() => rewardType.value, (val) => {
+      updateReward();
+    })
+
     // Watch tab change to refresh data
     watch(currentTab, () => {
         battles.value = []
@@ -164,31 +220,15 @@
     
     onMounted(async () => {
       await onRefresh()
+      updateReward()
       emitter.on('createPredictSuccess', onRefresh);
+      emitter.on('claimedPredictReward', updateReward)
     })
     
     </script>
     
     <template>
       <div class="predict-container rounded-t-2xl overflow-hidden flex flex-col h-full">
-        <!-- Sub Tabs -->
-        <div class="flex gap-4 px-4 py-3 border-b border-gray-100 bg-white">
-            <button 
-                class="px-4 py-2 rounded-full text-sm font-bold transition-all relative overflow-hidden"
-                :class="currentTab === 'battle' ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
-                @click="currentTab = 'battle'"
-            >
-                {{ $t('createPredict.tabBattle') }}
-            </button>
-            <button 
-                class="px-4 py-2 rounded-full text-sm font-bold transition-all relative overflow-hidden"
-                :class="currentTab === 'event' ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
-                @click="currentTab = 'event'"
-            >
-                {{ $t('createPredict.tabEvent') }}
-            </button>
-        </div>
-
         <div class="flex-1 overflow-hidden relative bg-gray-50">
              <van-pull-refresh class="h-full overflow-auto"
                 v-model="refreshing"
@@ -205,6 +245,58 @@
                     :offset="50"
                     @load="onLoad"
                 >
+                    <!-- 奖励领取区域 -->
+                    <div class="flex items-center gap-1 px-3 mt-3">
+                        <span class="font-normal text-sm">事件预测市场投票奖励</span>
+                    </div>
+                    <div v-if="accStore.getAccountInfo?.twitterId" class="my-3 gap-2 bg-white rounded-xl py-3 mx-3">
+                        <div class="flex justify-start mb-2">
+                            <button v-for="tab of rewardTabOptions" :key="tab" class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
+                                :class="tab === rewardType ? 'text-gradient bg-gradient-primary' : 'text-grey-normal'"
+                                @click="rewardType = tab">{{ tab }}</button>
+                        </div>
+
+                        <div v-show="rewardType == 'Claimable'"
+                            class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
+                            <div v-if="claimableRewards.length > 0" class="pb-5 snap-start shrink-0 first:pl-3 last:pr-3"
+                                v-for="reward of claimableRewards" :key="reward.tick + 'claimable'">
+                                <PredictReward v-if="reward.amount > 0" :reward :can-claim="true" :is-profile="true"/>
+                            </div>
+                            <div v-else class="w-full flex my-8 justify-center items-center">
+                                <img src="~@/assets/images/empty-data.svg" alt="">
+                            </div>
+                        </div>
+
+                        <div v-show="rewardType == 'Processing'"
+                            class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
+                            <div v-if="unclaimableRewards.length > 0" class="snap-start shrink-0 first:pl-3 last:pr-3"
+                                v-for="reward of unclaimableRewards" :key="reward.tick + 'unclaimable'">
+                                <PredictReward v-if="reward.amount > 0" :reward :can-claim="false" :is-profile="true"/>
+                            </div>
+                            <div v-else class="w-full flex my-8 justify-center items-center">
+                                <img src="~@/assets/images/empty-data.svg" alt="">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sub Tabs -->
+                    <div class="flex gap-4 px-4 py-3 border-b border-gray-100 bg-white">
+                        <button 
+                            class="px-4 py-2 rounded-full text-sm font-bold transition-all relative overflow-hidden"
+                            :class="currentTab === 'battle' ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                            @click="currentTab = 'battle'"
+                        >
+                            {{ $t('createPredict.tabBattle') }}
+                        </button>
+                        <button 
+                            class="px-4 py-2 rounded-full text-sm font-bold transition-all relative overflow-hidden"
+                            :class="currentTab === 'event' ? 'bg-black text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'"
+                            @click="currentTab = 'event'"
+                        >
+                            {{ $t('createPredict.tabEvent') }}
+                        </button>
+                    </div>
+                    
                     <div v-if="(currentTab === 'battle' && battles.length === 0) || (currentTab === 'event' && events.length === 0)" class="w-full flex my-8 justify-center items-center">
                         <img src="~@/assets/images/empty-data.svg" alt="">
                     </div>

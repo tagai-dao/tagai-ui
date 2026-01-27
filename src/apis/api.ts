@@ -371,3 +371,15 @@ export const voteEventPrediction = async (twitterId: string, marketAddr: string,
 
 export const getMarketVoteList = async (marketAddr: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/getMarketVoteList', { marketAddr, pageIndex })
+
+export const getMyPredictRewards = async (twitterId: string) =>
+  get(BACKEND_API_URL + '/predict/userPredictRewards', { twitterId })
+
+export const getMyUnclaimablePredictRewards = async (twitterId: string) =>
+  get(BACKEND_API_URL + '/predict/userUnclaimablePredictRewards', { twitterId })
+
+export const getUserClaimPredictRewardSignature = async (twitterId: string, tick: string) =>
+  post(BACKEND_API_URL + '/predict/getUserClaimPredictRewardSignature', { twitterId, tick })
+
+export const setPredictOrderClaimed = async (twitterId: string, orderId: string, hash: string) =>
+  post(BACKEND_API_URL + '/predict/setPredictOrderClaimed', { twitterId, orderId, hash })
