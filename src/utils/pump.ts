@@ -138,10 +138,12 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         if (isImport) {
             const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)
             if (allowance < amount) {
+                // 安全: 只授权所需金额，避免无限授权风险
+                const approvalAmount = amount * 2n; // 授权2倍所需金额，减少频繁授权
                 const hash = await writeContract({
                     contractName: 'Token1',
                     functionName: 'approve',
-                    args: [wrappedUniswapV2ForTagAI2, maxUint256],
+                    args: [wrappedUniswapV2ForTagAI2, approvalAmount],
                     address: token
                 })
                 if (!hash) {
@@ -168,10 +170,12 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         }
         const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI], token)
         if (allowance < amount) {
+            // 安全: 只授权所需金额，避免无限授权风险
+            const approvalAmount = amount * 2n; // 授权2倍所需金额，减少频繁授权
             const hash = await writeContract({
                 contractName: 'Token1',
                 functionName: 'approve',
-                args: [wrappedUniswapV2ForTagAI, maxUint256],
+                args: [wrappedUniswapV2ForTagAI, approvalAmount],
                 address: token
             })
             console.log('approve hash', hash)

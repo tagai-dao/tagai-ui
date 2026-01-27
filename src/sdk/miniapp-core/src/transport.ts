@@ -13,9 +13,14 @@ export class MiniAppTransport {
   }>();
 
   private messageIdCounter = 0;
-  private targetOrigin: string = '*'; // 生产环境应该设置具体的域名
+  private targetOrigin: string;
 
   constructor() {
+    // 安全: 默认使用当前页面的 origin，而非 '*'
+    // 在 Mini App 环境中，这通常是宿主应用的 origin
+    this.targetOrigin = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : '*';
     this.setupMessageListener();
   }
 

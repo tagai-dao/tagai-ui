@@ -93,7 +93,7 @@ import { useAccountStore } from '@/stores/web3';
 import type { MiniAppManifestFull } from '@/sdk/miniapp-core/src/types';
 import type { MiniAppContext } from '@/sdk/miniapp-core/src/context';
 import type { Address, Hash } from 'viem';
-import { formatEther, getAddress, formatUnits, isAddress } from 'viem';
+import { formatEther, getAddress, formatUnits, isAddress, zeroAddress } from 'viem';
 import {
   generateMiniAppToken,
   createSteemPost,
@@ -200,6 +200,21 @@ const sandboxPermissions = computed(() => {
   ].join(' ');
 });
 
+// 安全: 计算允许的 origin，用于 postMessage
+const allowedOrigin = computed(() => {
+  try {
+    // 如果 appUrl 是完整 URL，提取 origin
+    if (props.appUrl.startsWith('http://') || props.appUrl.startsWith('https://')) {
+      return new URL(props.appUrl).origin;
+    }
+    // 如果是相对路径（如 /testnet-defi），使用当前 origin
+    return window.location.origin;
+  } catch {
+    // 解析失败时使用当前 origin
+    return window.location.origin;
+  }
+});
+
 // Load manifest
 onMounted(async () => {
   if (props.manifestUrl) {
@@ -239,8 +254,14 @@ function handleIframeLoad() {
 
 // Handle messages from Mini App
 async function handleMessage(event: MessageEvent) {
-  // Validate origin (should match appUrl origin in production)
+  // 安全验证 1: 验证消息来源是 iframe
   if (event.source !== iframeRef.value?.contentWindow) {
+    return;
+  }
+
+  // 安全验证 2: 验证消息 origin 匹配允许的 origin
+  if (event.origin !== allowedOrigin.value) {
+    console.warn('[MiniAppHost] Origin mismatch:', event.origin, '!==', allowedOrigin.value);
     return;
   }
 
@@ -450,7 +471,7 @@ function sendResponse(id: string, result?: any, error?: { code: string; message:
       type: 'tagai:miniapp:response',
       response: { id, result, error },
     },
-    '*' // In production, use specific origin
+    allowedOrigin.value // 安全: 使用具体的 origin 替代 '*'
   );
 }
 
@@ -1036,6 +1057,18 @@ async function handleActionsSendToken(params: any) {
       };
     }
 
+    // 安全: 检查零地址，防止资金损失
+    if (recipientAddress && recipientAddress.toLowerCase() === zeroAddress.toLowerCase()) {
+      return {
+        success: false,
+        reason: 'send_failed',
+        error: {
+          error: 'ZeroAddress',
+          message: 'Cannot send tokens to zero address (0x0000...0000)',
+        },
+      };
+    }
+
     // 解析代币
     const parsedToken = _parsed || (token ? parseCAIP19(token) : null);
 
@@ -1144,10 +1177,13 @@ async function handleSendTokenConfirm() {
     const currentChainId = privyStore.getChainId();
     if (currentChainId !== tokenInfo.chainId) {
       await privyStore.switchChain(tokenInfo.chainId);
+      // 等待链切换完成
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     let txHash: Hash;
     const userAddress = accountStore.ethConnectAddress as `0x${string}`;
+    // 重新获取当前链，确保使用切换后的链
     const chain = privyStore.currentChain;
 
     // 原生代币转账
@@ -1370,10 +1406,13 @@ async function handleSwapTokenConfirm() {
     const currentChainId = privyStore.getChainId();
     if (currentChainId !== sellTokenInfo.chainId) {
       await privyStore.switchChain(sellTokenInfo.chainId);
+      // 等待链切换完成
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     const transactions: Hash[] = [];
     const userAddress = accountStore.ethConnectAddress as Address;
+    // 重新获取当前链，确保使用切换后的链
     const chain = privyStore.currentChain;
 
     // Step 1: 如果需要，先执行授权交易
@@ -1706,7 +1745,7 @@ function handlePrimaryButtonClick() {
       eventName: 'primaryButtonClicked',
       data: {},
     },
-    '*'
+    allowedOrigin.value // 安全: 使用具体的 origin 替代 '*'
   );
 }
 </script>

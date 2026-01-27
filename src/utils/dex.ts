@@ -106,11 +106,12 @@ export async function checkAllowance(
 
 /**
  * 构建授权交易
+ * 安全: 必须指定授权金额，不再支持无限授权
  */
 export async function buildApprovalTransaction(
   chainId: number,
   tokenAddress: Address,
-  amount?: string
+  amount: string // 安全: 改为必需参数，强制调用者指定金额
 ): Promise<SwapTransaction> {
   try {
     const oneInchChainId = CHAIN_ID_MAP[chainId];
@@ -118,10 +119,12 @@ export async function buildApprovalTransaction(
       throw new Error(`Chain ${chainId} not supported by 1inch`);
     }
 
-    // 使用无限授权或指定金额
-    const approveAmount = amount || '115792089237316195423570985008687907853269984665640564039457584007913129639935'; // uint256 max
+    // 安全: 验证授权金额必须指定
+    if (!amount || amount === '0') {
+      throw new Error('Approval amount must be specified for security');
+    }
 
-    const url = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/transaction?tokenAddress=${tokenAddress}&amount=${approveAmount}`;
+    const url = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/transaction?tokenAddress=${tokenAddress}&amount=${amount}`;
     const response = await fetchWithApiKey(url);
     const data = await response.json();
 

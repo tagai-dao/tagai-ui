@@ -127,11 +127,14 @@ export default defineConfig( (): any => {
       minify: 'terser',
       terserOptions: {
         compress: {
+          // 安全: 生产环境移除 console 输出，防止敏感信息泄露
           drop_console: true,
           drop_debugger: true,
+          // 移除特定的 console 方法
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace'],
         },
         format: {
-          comments: true,
+          comments: false, // 安全: 移除注释
         },
         mangle: true,
       },
