@@ -64,7 +64,7 @@ const outcomeColors = ['text-red-500', 'text-blue-500'] as const
 const tradeTypeColors = ['text-green-500', 'text-red-500'] as const
 
 const getOutcomeColor = (index: number): string => outcomeColors[index] ?? 'text-gray-400'
-const getOutcomeName = (index: number): string => index === 0 ? t('predictTrade.red') : t('predictTrade.blue')
+const getOutcomeName = (index: number): string => index === 0 ? t('predictTrade.yes') : t('predictTrade.no')
 const getTradeTypeColor = (isBuy: number): string => isBuy === 1 ? tradeTypeColors[0] : tradeTypeColors[1]
 
 // Mock price logic (since mock data lacks price)
@@ -137,7 +137,7 @@ onActivated(() => {
                 </span>
                 <span class="font-bold whitespace-nowrap" v-show="getAddSharedEarned(item) > 0" :class="getAddSharedEarnedIndex(item) == 0 ? 'text-red-500' : 'text-blue-500'">
                   {{ formatAmount(getAddSharedEarned(item)) }} 
-                  {{ getAddSharedEarnedIndex(item) === 0 ? $t('predictTrade.red') : $t('predictTrade.blue') }}
+                  {{ getAddSharedEarnedIndex(item) === 0 ? $t('predictTrade.yes') : $t('predictTrade.no') }}
                 </span>
                 <span v-show="getAddSharedEarned(item) > 1">
                   {{ $t('predictLiquidity.and') }}
@@ -157,13 +157,13 @@ onActivated(() => {
                   {{ $t('predictLiquidity.get') }}
                 </span>
                 <span class="font-bold whitespace-nowrap text-red-500">
-                  {{ formatAmount(lpAmounts(item)[0]) }} {{ $t('predictTrade.red') }}
+                  {{ formatAmount(lpAmounts(item)[0]) }} {{ $t('predictTrade.yes') }}
                 </span>
                 <span>
                   {{ $t('predictLiquidity.and') }}
                 </span>
                 <span class="font-bold whitespace-nowrap text-blue-500">
-                  {{ formatAmount(lpAmounts(item)[1]) }} {{ $t('predictTrade.blue') }}
+                  {{ formatAmount(lpAmounts(item)[1]) }} {{ $t('predictTrade.no') }}
                 </span>
             </div>
 

@@ -110,14 +110,14 @@ onActivated(() => {
             :class="activeTab === 'red' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
             @click="activeTab = 'red'"
           >
-            Red Holders
+            Yes Holders
           </button>
           <button 
             class="flex-1 py-1.5 rounded-md transition-all duration-200"
             :class="activeTab === 'blue' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
             @click="activeTab = 'blue'"
           >
-            Blue Holders
+            No Holders
           </button>
         </div>
       </div>
@@ -134,7 +134,7 @@ onActivated(() => {
               <div class="flex gap-4 p-4 min-h-[200px]">
                   <!-- Left (Red) Holders -->
                   <div class="flex-1 flex flex-col gap-3" :class="activeTab === 'red' ? 'flex' : 'hidden md:flex'">
-                      <div class="hidden md:block text-xs font-bold text-red-600 uppercase tracking-wider mb-2 border-b border-red-100 pb-2">Red Holders</div>
+                      <div class="hidden md:block text-xs font-bold text-red-600 uppercase tracking-wider mb-2 border-b border-red-100 pb-2">Yes Holders</div>
                       <div v-for="(holder, idx) in redList" :key="holder.ethAddr + 'red'" 
                       v-show="holder.ethAddr != market.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100">
@@ -159,7 +159,7 @@ onActivated(() => {
 
                   <!-- Right (Blue) Holders -->
                   <div class="flex-1 flex flex-col gap-3" :class="activeTab === 'blue' ? 'flex' : 'hidden md:flex'">
-                      <div class="hidden md:block text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 border-b border-blue-100 pb-2">Blue Holders</div>
+                      <div class="hidden md:block text-xs font-bold text-blue-600 uppercase tracking-wider mb-2 border-b border-blue-100 pb-2">No Holders</div>
                        <div v-for="(holder, idx) in blueList" :key="holder.ethAddr + 'blue'" 
                        v-show="holder.ethAddr != market.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">

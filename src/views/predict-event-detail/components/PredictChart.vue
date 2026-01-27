@@ -285,7 +285,7 @@ onUnmounted(() => {
         <div>
             <div class="flex items-baseline gap-2">
                 <h1 class="text-2xl text-bold">
-                    Predict probability(Red)
+                    Predict probability(Yes)
                 </h1>
                 <span class="text-xl font-bold text-red-600">
                     {{ currentPrice ? (currentPrice * 100).toFixed(0) + '%' : '--' }}
