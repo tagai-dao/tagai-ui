@@ -72,7 +72,7 @@ export const RegisterSteemMessage = JSON.stringify(
   null,
   4
 );
-
+export const zero = '0x0000000000000000000000000000000000000000000000000000000000000000';
 export const IPShareContract1 = "0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0";
 export const IPShareContract2 = "0x24328DccA1bA54EeE82e2993F021802e64290486";
 
@@ -98,8 +98,10 @@ export const USD1 = '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
 export const USDT ='0x55d398326f99059fF775485246999027B3197955'
 export const Oracle = '0x6CCA0a99B608D53c77D12e3e0227fE76F3bc12b4'
 export const PredictionMinFee = parseUnits("1", 16);
-export const PredictionMaxFee = parseUnits("10", 16);
+export const PredictionMaxFee = parseUnits("8", 16);
 export const FPMMDeterministicFactory = '0xDDF74905AD9ff90977154DF960E21517f7e11ACA';
+export const FPMMDeterministicFactory2 = '0xB830cF8308eA73DF9dFAc01a6E3CcDd230A1e7Dd';
+export const OracleDistributor = '0xe63B98dA0c8fbDfE94A08Fc6b5d8797374415F57'
 
 export const USD_CONTRACTS: Record<`0x${string}`, string> = {
     '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1',
@@ -119,6 +121,7 @@ export const SendPubKey = new Uint8Array([
 
 // vp consume
 export const VP_CONSUME = Object.freeze({
+    PREDICT_VOTE: 10,
     RETWEET: 5,
     LIKE: 3,
     REPLY: 3

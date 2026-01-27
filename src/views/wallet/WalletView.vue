@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref, onUnmounted} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
-import TabPrediction from "@/views/wallet/TabPrediction.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { formatAddress, formatBalance, formatPrice } from "@/utils/helper";
@@ -18,7 +17,7 @@ const ReactWallet = applyPureReactInVue(Wallet);
 
 const accStore = useAccountStore()
 const privyStore = usePrivyStore()
-const tabOptions = ['holding', 'prediction', 'socialAccount']
+const tabOptions = ['holding', 'socialAccount']
 const activeTab = ref('holding')
 const showPrivyModal = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
@@ -103,7 +102,6 @@ onMounted(() => {
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabHoldTag v-if="activeTab==='holding'"/>
-      <TabPrediction v-if="activeTab==='prediction'"/>
       <TabSocialAccount v-if="activeTab==='socialAccount'"/>
     </div>
     <PrivyModal @close="showPrivyModal = false" v-if="showPrivyModal"/>

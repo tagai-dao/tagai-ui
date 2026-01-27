@@ -1,7 +1,7 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee, USD_CONTRACTS } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
@@ -216,6 +216,23 @@ export const claimReward = async (token: string, version: number, orderId: BigIn
         functionName: 'userClaim',
         args: [token, orderId, amount, signature],
         value: (version === 1 || version === 2 || version === 3) ? '1000000000000000' : ClaimFee
+    })
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }
+    return hash
+}
+
+// 领取预测奖励，使用 OracleDistributor 合约
+export const claimPredictReward = async (token: string, orderId: BigInt, amount: BigInt, signature: string) => {
+    if (!isAddress(token)) throw errCode.PARAMS_ERROR;
+    // 使用 Pump4 的 ABI（userClaim 函数签名相同），但直接指定 OracleDistributor 地址
+    const hash = await writeContract({
+        contractName: 'Pump4',
+        functionName: 'userClaim',
+        args: [token, orderId, amount, signature],
+        address: OracleDistributor as `0x${string}`,
+        value: ClaimFee
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;

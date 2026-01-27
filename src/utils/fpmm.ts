@@ -1,28 +1,33 @@
-import type { BattleData, Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
+import type { BattleData, Community, CreateCommunity, EventPredictData, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
-    USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee } from "@/config";
+    USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee, 
+    FPMMDeterministicFactory2,
+    OracleDistributor} from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
-import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
-import errCode from "@/errCode";
-import _ from 'lodash'
+import _, { min } from 'lodash'
 import { useStateStore } from "@/stores/common";
-import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits } from "viem";
 import { writeContract, readContract } from "./contract";
 
-export async function createMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, dayNumber: number, funding: bigint) {
-    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, FPMMDeterministicFactory], tokenAddress)
-    if (funding > allowance) {
+export async function approveToken(spender: `0x${string}`, tokenAddress: `0x${string}`, amount: bigint | BigInt) {
+   console.log(35, spender, tokenAddress, amount)
+    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, spender], tokenAddress)
+    console.log(36, allowance)
+    if (amount > allowance) {
         await writeContract({
             contractName: 'Token1',
             functionName: 'approve',
-            args: [FPMMDeterministicFactory, funding],
+            args: [spender, maxUint256],
             address: tokenAddress
         })
     }
+}
+
+export async function createMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, dayNumber: number, funding: bigint) {
+    await approveToken(FPMMDeterministicFactory, tokenAddress, funding);
 
     const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
     distributionHint = Math.ceil(distributionHint)
@@ -61,7 +66,46 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
     }
 }
 
-export const getMarketInfos = async (markets: BattleData[]) => {
+export async function createEventMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, endTime: number, funding: bigint) {
+    await approveToken(FPMMDeterministicFactory2, tokenAddress, funding);
+
+    const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
+    distributionHint = Math.ceil(distributionHint)
+    // 生成lmsrMarketMaker
+    const hash = await writeContract({
+        contractName: 'FPMMDeterministicFactory2',
+        functionName: 'create2FixedProductMarketMakerWithCondition',
+        args: [tokenAddress, questionId, [100 - distributionHint, distributionHint], feePath, [nonce, 2, PredictionMinFee, PredictionMaxFee, endTime, funding]]
+    });
+
+    // 预创建预测市场
+    let tx = await getTransactionReceipt(hash as `0x${string}`)
+    // event FixedProductMarketMakerCreation(
+    //     address indexed creator,
+    //     FixedProductMarketMaker fixedProductMarketMaker,
+    //     ConditionalTokens conditionalTokens,
+    //     IERC20 collateralToken,
+    //     bytes32[] conditionIds,
+    //     uint fee,
+    //     uint maxFee,
+    //     uint endTime
+    // );
+    const event: any = getCreateFPMMMarketMakerEventByHash(tx);
+    if (event && event.creator === useAccountStore().ethConnectAddress) {
+        // 读取链上的conditionid是否和事件中的一致
+        const conditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, 2])
+        if (conditionId !== event.conditionIds[0]) {
+            throw 'Invalid transaction'
+        }
+        // 创建成功，返回txhash，event.lmsrMarketMaker
+        return {hash, fpmmMaker: event.fixedProductMarketMaker};
+    }else {
+        // 非法交易
+        throw 'Invalid transaction'
+    }
+}
+
+export const getMarketInfos = async (markets: BattleData[] | EventPredictData[]) => {
     if (markets.length === 0) {
         return []
     }
@@ -113,7 +157,7 @@ export const getMarketInfos = async (markets: BattleData[]) => {
     return res.results.transformed;
 }
 
-export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData) {
+export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData | EventPredictData) {
     if (!isAddress(tokenAddr) || !isAddress(battle.marketMaker)) return {balance: 0, balanceA: 0, balanceB: 0, lpBalance: 0};
     let calls = [
         {
@@ -169,7 +213,24 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
     return result;
 }
 
-export async function getBuyData(battle: BattleData, shares: number, outcome: 'red' | 'blue') {
+export async function getPotentialReward(market: EventPredictData) {
+    let calls = [{
+        target: OracleDistributor,
+        call: [
+            'marketReward(address)(address,address,uint256)',
+            market.marketMaker
+        ],
+        returns: [
+            ['rewardToken', (val: any) => val],
+            ['marketAddr'],
+            ['rewardAmount', (val: any) => val.toString() / 1e18]
+        ]
+    }]
+    const res: any = await aggregate(calls, ChainConfig.multiConfig)
+    return res.results.transformed;
+}
+
+export async function getBuyData(battle: BattleData | EventPredictData, shares: number, outcome: 'yes' | 'no' | 'red' | 'blue') {
     if (!shares) return 0;
     const sharesBi = parseUnits(shares.toFixed(18), 18)
     if (sharesBi === 0n) return 0;
@@ -179,7 +240,7 @@ export async function getBuyData(battle: BattleData, shares: number, outcome: 'r
         call: [
             'calcBuyAmount(uint256,uint256)(uint256)',
             sharesBi.toString(),
-            outcome === 'red' ? 0 : 1
+            (outcome === 'red' || outcome === 'yes') ? 0 : 1
         ],
         returns: [
             ['amount', (val: any) => val.toString() / 1e18]
@@ -198,7 +259,7 @@ export async function getBuyData(battle: BattleData, shares: number, outcome: 'r
     return res.results.transformed;
 }
 
-export async function getSellData(battle: BattleData, reserveA: number, reserveB: number, shares: number, outcome: 'red' | 'blue') {
+export async function getSellData(battle: BattleData | EventPredictData, reserveA: number, reserveB: number, shares: number, outcome: 'red' | 'blue' | 'yes' | 'no') {
     if (!shares) return {receive: 0, fee: 0};
     if (parseFloat(shares.toFixed(18)) === 0) return {receive: 0, fee: 0};
 
@@ -208,8 +269,8 @@ export async function getSellData(battle: BattleData, reserveA: number, reserveB
 
     if (S === 0) return 0n;
 
-    const P_sell = outcome === 'red' ?  poolBalanceA : poolBalanceB;
-    const P_other = outcome === 'red' ? poolBalanceB : poolBalanceA;
+    const P_sell = (outcome === 'red' || outcome === 'yes') ?  poolBalanceA : poolBalanceB;
+    const P_other = (outcome === 'red' || outcome === 'yes') ? poolBalanceB : poolBalanceA;
 
     // 计算卖出能得到的抵押代币数量
 
@@ -238,35 +299,27 @@ export async function getSellData(battle: BattleData, reserveA: number, reserveB
     return {receive: stateReturnAmount, fee};
 }
 
-export async function buyToken(battle: BattleData, collateralToken: string, sharesBi: BigInt, minOutcomeTokensToBuy: number, outcome: 'red' | 'blue', bnbFee: number) {
+export async function buyToken(battle: BattleData | EventPredictData, collateralToken: string, sharesBi: BigInt, minOutcomeTokensToBuy: number, outcome: 'yes' | 'no' | 'red' | 'blue', bnbFee: number) {
     if (!isAddress(battle.marketMaker)) return;
     const minOutcomeTokensToBuyBi = parseUnits(minOutcomeTokensToBuy.toFixed(18), 18)
     if (minOutcomeTokensToBuyBi === 0n) return;
 
-    // approve token
-    const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, battle.marketMaker], collateralToken as `0x${string}`)
-    if (allowance < sharesBi) {
-        await writeContract({
-            contractName: 'Token1',
-            functionName: 'approve',
-            args: [battle.marketMaker, sharesBi],
-            address: collateralToken as `0x${string}`
-        })
-    }
+    await approveToken(battle.marketMaker, collateralToken as `0x${string}`, sharesBi);
     
     const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
-
+    console.log(53, battle)
+    console.log(6, sharesBi, outcome, minOutcomeTokensToBuyBi.toString() / 1e18)
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'buy',
-        args: [sharesBi, outcome === 'red' ? 0 : 1, minOutcomeTokensToBuyBi],
+        args: [sharesBi, (outcome === 'red' || outcome === 'yes') ? 0 : 1, minOutcomeTokensToBuyBi],
         value: bnbFeeBi,
         address: battle.marketMaker
     })
 
 }
 
-export async function sellToken(battle: BattleData, sharesBi: BigInt, maxOutcomeTokensToSell: BigInt, outcome: 'red' | 'blue', bnbFee: number) {
+export async function sellToken(battle: BattleData | EventPredictData, sharesBi: BigInt, maxOutcomeTokensToSell: BigInt, outcome: 'yes' | 'no' | 'red' | 'blue', bnbFee: number) {
     if (!isAddress(battle.marketMaker)) return;
     if (sharesBi === 0n) return;
     
@@ -287,11 +340,10 @@ export async function sellToken(battle: BattleData, sharesBi: BigInt, maxOutcome
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'sell',
-        args: [sharesBi, outcome === 'red' ? 0 : 1, maxOutcomeTokensToSell],
+        args: [sharesBi, (outcome === 'red' || outcome === 'yes') ? 0 : 1, maxOutcomeTokensToSell],
         value: bnbFeeBi,
         address: battle.marketMaker
     })
-
 }
 
 export async function calculateMaxSellAmount(battle: BattleData, index: number) {
@@ -353,7 +405,7 @@ export async function calculateMaxSellAmount(battle: BattleData, index: number) 
     return parseUnits(stateReturnAmount.toFixed(18), 18);
 }
 
-export async function addLiquidity(battle: BattleData, amount: number, collateralToken: string) {
+export async function addLiquidity(battle: BattleData | EventPredictData, amount: number, collateralToken: string) {
     if (!isAddress(battle.marketMaker)) return;
     const amountBi = parseUnits(amount.toFixed(18), 18)
     if (amountBi === 0n) return;
@@ -377,7 +429,7 @@ export async function addLiquidity(battle: BattleData, amount: number, collatera
     })
 }
 
-export async function removeLiquidity(battle: BattleData, sharesBi: bigint) {
+export async function removeLiquidity(battle: BattleData | EventPredictData, sharesBi: bigint) {
     if (!isAddress(battle.marketMaker)) return
     // 留一些流动性在里面，可以维持当前的价格
     const newSharesBi = BigInt(sharesBi) - BigInt(10000000000)
@@ -390,7 +442,7 @@ export async function removeLiquidity(battle: BattleData, sharesBi: bigint) {
     })
 }
 
-export async function redeemPositions(battle: BattleData, collateralToken: string) {
+export async function redeemPositions(battle: BattleData | EventPredictData, collateralToken: string) {
      if (!isAddress(ConditionalTokens)) return;
      // indexSets: [1, 2] for binary
      const indexSets = [1, 2];
@@ -404,7 +456,7 @@ export async function redeemPositions(battle: BattleData, collateralToken: strin
     })
 }
 
-export async function getUserLpBalance(battle: BattleData, accAddr: `0x${string}`) {
+export async function getUserLpBalance(battle: BattleData | EventPredictData, accAddr: `0x${string}`) {
     if (!isAddress(battle.marketMaker)) return 0;
     const res: any = await readContract('FixedProductMarketMaker', 'balanceOf', [accAddr], battle.marketMaker)
     return Number(res) / 1e18

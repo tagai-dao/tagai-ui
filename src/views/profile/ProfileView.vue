@@ -2,6 +2,7 @@
 import {onMounted, ref} from "vue";
 import TabBlink from "@/views/profile/TabBlink.vue";
 import TabPost from "@/views/profile/TabPost.vue";
+import TabPrediction from "@/views/profile/TabPrediction.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import { useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
@@ -19,7 +20,7 @@ import { formatAddress } from "@/utils/helper";
 const ReactLogoutOAuth = applyPureReactInVue(LogoutOAuth);
 
 const accStore = useAccountStore()
-const tabOptions = ['post', 'createCoin']
+const tabOptions = ['post', 'prediction', 'createCoin']
 const activeTab = ref('post')
 const { onCopy } = useTools()
 const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
@@ -167,6 +168,7 @@ onMounted(() => {
     <div class="flex-1 overflow-auto " id="profile-tab-scroller">
       <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabPost v-if="activeTab==='post'"/>
+      <TabPrediction v-if="activeTab==='prediction'"/>
       <TabBlink v-if="activeTab==='blink'"/>
       <TabCreateCoin v-if="activeTab==='createCoin'"/>
     </div>

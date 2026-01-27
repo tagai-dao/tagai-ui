@@ -3,7 +3,8 @@ import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, 
-    wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens } from '@/config'
+    wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens, 
+    FPMMDeterministicFactory2} from '@/config'
 import { useAccountStore } from "@/stores/web3";
 import { customBsc } from "./privy";
 
@@ -23,6 +24,7 @@ const ContractAddress = {
     CoinPurse: CoinPurse,
     WETH: WETH,
     FPMMDeterministicFactory: FPMMDeterministicFactory,
+    FPMMDeterministicFactory2: FPMMDeterministicFactory2,
     ConditionalTokens,
 }
 
@@ -149,6 +151,16 @@ export const writeContract = async ({
         address = ContractAddress[contractName] as `0x${string}`
     }
     const abi = abis[contractName as keyof typeof abis]
+
+    console.log({
+        account: useAccountStore().ethConnectAddress as `0x${string}`,
+        address,
+        abi,
+        functionName,
+        args,
+        chain: customBsc,
+        value: typeof value === 'string' ? BigInt(value) : value
+    })
     
     const { request } = await publicClient.simulateContract({
         account: useAccountStore().ethConnectAddress as `0x${string}`,

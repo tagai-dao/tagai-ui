@@ -4286,6 +4286,91 @@ export const abis = {
         "type": "function"
       }
     ],
+
+    "FPMMDeterministicFactory2": [
+      {
+        "anonymous": false,
+        "inputs": [
+          {
+            "indexed": true,
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "fixedProductMarketMaker",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "conditionalTokens",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "indexed": false,
+            "name": "conditionIds",
+            "type": "bytes32[]"
+          },
+          {
+            "indexed": false,
+            "name": "fee",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "name": "maxFee",
+            "type": "uint256"
+          },
+          {
+            "indexed": false,
+            "name": "endTime",
+            "type": "uint256"
+          }
+        ],
+        "name": "FixedProductMarketMakerCreation",
+        "type": "event"
+      },
+      {
+        "constant": false,
+        "inputs": [
+          {
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "name": "questionId",
+            "type": "bytes32"
+          },
+          {
+            "name": "distributionHint",
+            "type": "uint256[]"
+          },
+          {
+            "name": "feeCheckPath",
+            "type": "address[]"
+          },
+          {
+            "name": "uintParams",
+            "type": "uint256[]"
+          }
+        ],
+        "name": "create2FixedProductMarketMakerWithCondition",
+        "outputs": [
+          {
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
     "FixedProductMarketMaker": [
       {
         "constant": false,
