@@ -152,19 +152,19 @@ const handleWalletClick = (e?: Event) => {
         <span class="text-h4 text-black">{{ $t('coin') || 'Coin' }}</span>
       </div>
 
-      <!-- 3. MindShare -->
+      <!-- 3. Mini Apps -->
       <div 
         class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isActive('/mindshare') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="router.push('/mindshare')"
+        :class="isActive('/miniapps') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        @click="router.push('/miniapps')"
       >
         <img 
           class="w-6 h-6 mr-3 transition-all"
-          :style="isActive('/mindshare') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
-          src="~@/assets/icons/icon-mindshare.svg" 
+          :style="isActive('/miniapps') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          src="~@/assets/icons/icon-miniapp.svg" 
           alt=""
         >
-        <span class="text-h4 text-black">{{ $t('mindshare') || 'MindShare' }}</span>
+        <span class="text-h4 text-black">Mini Apps</span>
       </div>
 
       <!-- 4. 通知 -->
@@ -188,21 +188,6 @@ const handleWalletClick = (e?: Event) => {
           </div>
         </div>
         <span class="text-h4 text-black">{{ $t('notification') || 'Notification' }}</span>
-      </div>
-
-      <!-- 4.5. Mini Apps -->
-      <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isActive('/miniapps') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="router.push('/miniapps')"
-      >
-        <img 
-          class="w-6 h-6 mr-3 transition-all"
-          :style="isActive('/miniapps') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
-          src="~@/assets/icons/icon-miniapp.svg" 
-          alt=""
-        >
-        <span class="text-h4 text-black">Mini Apps</span>
       </div>
 
       <!-- 5. 钱包 -->
@@ -270,7 +255,7 @@ const handleWalletClick = (e?: Event) => {
         <template #reference>
           <div 
             class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors"
-            :class="moreMenuVisible ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+            :class="moreMenuVisible || isActive('/mindshare') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
           >
             <span class="text-h4 mr-3">⋯</span>
             <span class="text-h4">{{ $t('more') || 'More' }}</span>
@@ -278,6 +263,15 @@ const handleWalletClick = (e?: Event) => {
         </template>
         <template #default>
           <div class="p-2 flex flex-col gap-2">
+            <!-- MindShare -->
+            <div 
+              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-gray-50"
+              @click="moreMenuRef.hide(); router.push('/mindshare')"
+            >
+              <img class="w-4" src="~@/assets/icons/icon-mindshare.svg" alt="">
+              <span>{{ $t('mindshare') || 'MindShare' }}</span>
+            </div>
+            
             <!-- Docs -->
             <a 
               class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-gray-50"
