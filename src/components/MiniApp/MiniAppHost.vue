@@ -115,6 +115,11 @@ import {
   buildApprovalTransaction,
   type SwapQuote,
 } from '@/utils/dex';
+import { notify } from '@/utils/notify';
+import { useModalStore } from '@/stores/common';
+import { GlobalModalType } from '@/types';
+import { getProvider, getWalletClient } from '@/utils/wallets';
+import { getChainById } from '@/utils/privy';
 
 interface Props {
   appUrl: string;
@@ -136,6 +141,7 @@ const emit = defineEmits<{
 const privyStore = usePrivyStore();
 const accountStore = useAccountStore();
 const router = useRouter();
+const modalStore = useModalStore();
 
 // Refs
 const iframeRef = ref<HTMLIFrameElement | null>(null);
@@ -932,7 +938,8 @@ async function estimateTransactionGas(
   recipientAddress: Address
 ): Promise<string | undefined> {
   try {
-    if (!privyStore.viemWalletClient) {
+    // walletClient 在部分实现中不包含 estimateGas，这里改用 publicClient
+    if (!privyStore.ethersProvider) {
       return undefined;
     }
 
@@ -941,13 +948,18 @@ async function estimateTransactionGas(
 
     let gasEstimate: bigint;
 
+    const { createPublicClient, custom } = await import('viem');
+    const publicClient = createPublicClient({
+      chain,
+      transport: custom(privyStore.ethersProvider),
+    });
+
     if (tokenInfo.isNative) {
       // Estimate gas for native token transfer
-      gasEstimate = await privyStore.viemWalletClient.estimateGas({
+      gasEstimate = await publicClient.estimateGas({
         account: userAddress,
         to: recipientAddress,
         value: BigInt(amount),
-        chain,
       });
     } else {
       // Estimate gas for ERC20 transfer
@@ -969,16 +981,15 @@ async function estimateTransactionGas(
         args: [recipientAddress, BigInt(amount)],
       });
 
-      gasEstimate = await privyStore.viemWalletClient.estimateGas({
+      gasEstimate = await publicClient.estimateGas({
         account: userAddress,
         to: tokenInfo.address!,
         data,
-        chain,
       });
     }
 
     // Get current gas price
-    const gasPrice = await privyStore.viemWalletClient.getGasPrice();
+    const gasPrice = await publicClient.getGasPrice();
 
     // Calculate total gas cost
     const gasCost = gasEstimate * gasPrice;
@@ -989,9 +1000,94 @@ async function estimateTransactionGas(
     return number.toFixed(6);
   } catch (error: any) {
     console.error('Failed to estimate gas:', error);
-    // Return a reasonable default estimate if estimation fails
-    return '0.001';
+    // 估算失败时不强行给一个“看起来正确”的默认值，避免误导用户
+    return undefined;
   }
+}
+
+function parseChainIdHex(hex: any): number | null {
+  if (typeof hex === 'string') {
+    const n = parseInt(hex, 16);
+    return Number.isFinite(n) ? n : null;
+  }
+  if (typeof hex === 'number') return hex;
+  return null;
+}
+
+async function ensureWalletOnChain(targetChainId: number, timeoutMs = 15000): Promise<void> {
+  const provider = getProvider()?.value ?? getProvider();
+  if (!provider?.request) {
+    throw new Error('Wallet provider is not initialized');
+  }
+
+  // 永远以 provider 实际 eth_chainId 为准
+  const firstHex = await provider.request({ method: 'eth_chainId' });
+  const first = parseChainIdHex(firstHex);
+  if (first !== targetChainId) {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+    });
+  } else {
+    return;
+  }
+
+  // 再用 eth_chainId 轮询确认切链已生效（避免 UI 已切但 provider 仍返回旧链）
+  const start = Date.now();
+  let lastSeen: number | null = first;
+  while (Date.now() - start < timeoutMs) {
+    const hex = await provider.request({ method: 'eth_chainId' });
+    const current = parseChainIdHex(hex);
+    lastSeen = current;
+    if (current === targetChainId) return;
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+
+  throw new Error(`Chain switch timeout: expected ${targetChainId}, got ${lastSeen ?? 'unknown'}`);
+}
+
+async function ensureWalletReadyForSigningAndGetAccount(): Promise<`0x${string}`> {
+  const acc = accountStore.getAccountInfo;
+
+  // 需要先完成 Twitter 授权登录（否则无法判断钱包类型/绑定信息）
+  if (!acc?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login);
+    throw new Error('Please login with Twitter first');
+  }
+
+  const walletClient = getWalletClient();
+  if (!walletClient) {
+    // 外部钱包：弹出选择钱包；Privy 钱包：通常也需要先登录/初始化
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet);
+    throw new Error('Wallet is not connected');
+  }
+
+  const addresses = await walletClient.getAddresses();
+  const active = (addresses?.[0] || '') as `0x${string}`;
+  if (!active) {
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet);
+    throw new Error('Wallet is not connected');
+  }
+
+  // 强约束：非 Privy（walletType !== 1）时，必须使用该 Twitter 绑定的钱包地址
+  if (acc.walletType !== 1 && acc.ethAddr) {
+    const bound = acc.ethAddr.toLowerCase();
+    if (active.toLowerCase() !== bound) {
+      modalStore.setModalVisible(true, GlobalModalType.ChoseWallet);
+      notify({
+        type: 'error',
+        message: `当前连接钱包地址不匹配：已连接 ${active.slice(0, 6)}...${active.slice(-4)}，请连接绑定地址 ${acc.ethAddr.slice(0, 6)}...${acc.ethAddr.slice(-4)} 后再发送。`,
+        duration: 7000,
+      });
+      throw new Error('Connected wallet does not match bound address');
+    }
+  }
+
+  // 同步到 store（避免日志里看到旧地址）
+  accountStore.ethConnectAddress = active;
+  accountStore.ethWalletType = acc.walletType === 1 ? 'privy' : accountStore.ethWalletType || 'metamask';
+
+  return active;
 }
 
 async function handleActionsViewToken(params: any) {
@@ -1168,29 +1264,47 @@ async function handleSendTokenConfirm() {
     // 规范化接收地址（确保正确的校验和格式）
     const normalizedRecipientAddress = getAddress(recipientAddress);
 
-    // 确保钱包已初始化
-    if (!privyStore.viemWalletClient) {
-      await privyStore.initWallet();
+    // 确保已登录且钱包可签名；非 Privy 账户必须连接绑定钱包；返回实际签名地址
+    const userAddress = await ensureWalletReadyForSigningAndGetAccount();
+
+    const walletClient = getWalletClient();
+    if (!walletClient) {
+      throw new Error('Wallet is not connected');
     }
 
-    // 切换到正确的链（如果需要）
-    const currentChainId = privyStore.getChainId();
-    if (currentChainId !== tokenInfo.chainId) {
-      await privyStore.switchChain(tokenInfo.chainId);
-      // 等待链切换完成
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
+    // 切换到正确的链（并确认 provider 链已切换完成）
+    await ensureWalletOnChain(tokenInfo.chainId);
 
     let txHash: Hash;
-    const userAddress = accountStore.ethConnectAddress as `0x${string}`;
-    // 重新获取当前链，确保使用切换后的链
-    const chain = privyStore.currentChain;
+
+    // 发送前做一次余额检查，余额不足时给出提示并保持弹框
+    try {
+      const { createPublicClient, custom } = await import('viem');
+      const chain = getChainById(tokenInfo.chainId);
+      const provider = getProvider()?.value ?? getProvider();
+      const publicClient = createPublicClient({
+        chain,
+        transport: custom(provider),
+      });
+      const bal = await publicClient.getBalance({ address: userAddress as Address });
+      const needValue = tokenInfo.isNative ? BigInt(amount) : 0n;
+      if (bal <= needValue) {
+        notify({
+          type: 'error',
+          message: `余额不足：当前 ${getChainName(tokenInfo.chainId)} 原生币余额不足以支付转账金额/手续费。请先充值后重试。`,
+          duration: 6000,
+        });
+        sendTokenDialog.value.submitting = false;
+        return;
+      }
+    } catch (e) {
+      // 余额检查失败不阻断发送流程
+    }
 
     // 原生代币转账
     if (tokenInfo.isNative) {
-      txHash = await privyStore.viemWalletClient!.sendTransaction({
+      txHash = await walletClient.sendTransaction({
         account: userAddress,
-        chain: chain,
         to: normalizedRecipientAddress,
         value: BigInt(amount),
       });
@@ -1214,9 +1328,8 @@ async function handleSendTokenConfirm() {
         },
       ] as const;
 
-      txHash = await privyStore.viemWalletClient!.writeContract({
+      txHash = await walletClient.writeContract({
         account: userAddress,
-        chain: chain,
         address: tokenInfo.address,
         abi: transferAbi,
         functionName: 'transfer',
@@ -1242,8 +1355,12 @@ async function handleSendTokenConfirm() {
     // 重置提交状态
     sendTokenDialog.value.submitting = false;
 
-    // 关闭对话框并返回错误
-    sendTokenDialog.value.visible = false;
+    // 不自动关闭弹框：让用户看到并可重试/改参数
+    notify({
+      type: 'error',
+      message: error?.shortMessage || error?.message || '发送失败，请检查钱包连接/网络/余额后重试',
+      duration: 6000,
+    });
     if (sendTokenResolve) {
       sendTokenResolve({
         success: false,
@@ -1397,23 +1514,18 @@ async function handleSwapTokenConfirm() {
       throw new Error('Missing required parameters');
     }
 
-    // 确保钱包已初始化
-    if (!privyStore.viemWalletClient) {
-      await privyStore.initWallet();
+    // 确保已登录且钱包可签名；非 Privy 账户必须连接绑定钱包；返回实际签名地址
+    const userAddress = await ensureWalletReadyForSigningAndGetAccount();
+
+    const walletClient = getWalletClient();
+    if (!walletClient) {
+      throw new Error('Wallet is not connected');
     }
 
-    // 切换到正确的链（如果需要）
-    const currentChainId = privyStore.getChainId();
-    if (currentChainId !== sellTokenInfo.chainId) {
-      await privyStore.switchChain(sellTokenInfo.chainId);
-      // 等待链切换完成
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
+    // 切换到正确的链（并确认 provider 链已切换完成）
+    await ensureWalletOnChain(sellTokenInfo.chainId);
 
     const transactions: Hash[] = [];
-    const userAddress = accountStore.ethConnectAddress as Address;
-    // 重新获取当前链，确保使用切换后的链
-    const chain = privyStore.currentChain;
 
     // Step 1: 如果需要，先执行授权交易
     if (needsApproval && sellTokenInfo.address) {
@@ -1422,9 +1534,8 @@ async function handleSwapTokenConfirm() {
         sellTokenInfo.address
       );
 
-      const approveTxHash = await privyStore.viemWalletClient!.sendTransaction({
+      const approveTxHash = await walletClient.sendTransaction({
         account: userAddress,
-        chain: chain,
         to: approvalTx.to,
         data: approvalTx.data,
         value: BigInt(approvalTx.value),
@@ -1449,9 +1560,8 @@ async function handleSwapTokenConfirm() {
       1 // 1% slippage
     );
 
-    const swapTxHash = await privyStore.viemWalletClient!.sendTransaction({
+    const swapTxHash = await walletClient.sendTransaction({
       account: userAddress,
-      chain: chain,
       to: swapTx.to,
       data: swapTx.data,
       value: BigInt(swapTx.value),

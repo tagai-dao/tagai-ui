@@ -62,6 +62,52 @@ export interface AuthModule {
 }
 
 // ==========================================
+// Quick Auth Module Types (Enhanced Auth)
+// ==========================================
+
+export interface QuickAuthModule {
+  /**
+   * 获取认证 Token
+   * 自动缓存并在 15 秒刷新窗口内自动刷新
+   *
+   * @param forceRefresh - 强制刷新 Token（跳过缓存）
+   * @returns Token 信息
+   *
+   * @example
+   * ```typescript
+   * const { token } = await sdk.quickAuth.getToken();
+   * console.log('Token:', token);
+   * ```
+   */
+  getToken(forceRefresh?: boolean): Promise<{
+    token: string;
+    expiresAt: number;
+  }>;
+
+  /**
+   * 便捷的 fetch 方法，自动注入 Bearer Token
+   *
+   * @param url - 请求 URL
+   * @param options - Fetch 选项
+   * @returns Fetch Response
+   *
+   * @example
+   * ```typescript
+   * // 自动添加 Authorization: Bearer <token>
+   * const response = await sdk.quickAuth.fetch('/api/user');
+   * const data = await response.json();
+   * ```
+   */
+  fetch(url: string, options?: RequestInit): Promise<Response>;
+
+  /**
+   * 清除缓存的 Token
+   * 用于登出或强制重新认证场景
+   */
+  clearCache(): void;
+}
+
+// ==========================================
 // Steem Module Types (TagAI-specific)
 // ==========================================
 
@@ -649,6 +695,12 @@ export interface TagAIMiniAppSDK {
    * Authentication module
    */
   auth: AuthModule;
+
+  /**
+   * Quick Auth - 便捷的认证方法
+   * 提供自动 Token 缓存、刷新和便捷的 fetch 方法
+   */
+  quickAuth: QuickAuthModule;
 
   /**
    * Steem social module (TagAI-specific)

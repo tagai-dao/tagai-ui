@@ -13,6 +13,7 @@ import { transport } from '../../miniapp-core/src/transport';
 import { getContext, isInMiniApp, refreshContext } from '../../miniapp-core/src/context';
 import type { MiniAppContext } from '../../miniapp-core/src/context';
 import { createAuthModule } from './modules/auth';
+import { createQuickAuthModule } from './modules/quick-auth';
 import { createSteemModule } from './modules/steem';
 import { createWalletModule } from './modules/wallet';
 import { createActionsModule } from './modules/actions';
@@ -36,6 +37,7 @@ const emitter = new EventEmitter<MiniAppEventMap>();
 
 // Create modules
 const authModule = createAuthModule(transport);
+const quickAuthModule = createQuickAuthModule(transport);
 const steemModule = createSteemModule(transport);
 const walletModule = createWalletModule(transport);
 const actionsModule = createActionsModule(transport, emitter);
@@ -75,6 +77,12 @@ export const sdk: TagAIMiniAppSDK = {
   // ==========================================
 
   auth: authModule,
+
+  /**
+   * Quick Auth - 便捷的认证方法
+   * 自动处理 Token 缓存和刷新，提供便捷的 fetch 方法
+   */
+  quickAuth: quickAuthModule,
 
   // ==========================================
   // Steem Social (TagAI-specific)

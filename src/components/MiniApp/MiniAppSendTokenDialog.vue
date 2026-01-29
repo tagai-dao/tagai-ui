@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { getChainName } from '@/utils/privy';
 import type { Address } from 'viem';
 
@@ -154,21 +154,14 @@ const shortAddress = computed(() => {
 });
 
 function handleClose() {
-  if (submitting.value) return;
+  if (props.submitting) return;
   emit('reject');
   emit('close');
 }
 
-async function handleConfirm() {
-  if (submitting.value) return;
-  submitting.value = true;
-
-  try {
-    emit('confirm');
-  } catch (error) {
-    console.error('Confirm error:', error);
-    submitting.value = false;
-  }
+function handleConfirm() {
+  if (props.submitting) return;
+  emit('confirm');
 }
 </script>
 

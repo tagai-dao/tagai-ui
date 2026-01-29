@@ -175,6 +175,20 @@ const router = createRouter({
       name: 'testnet-defi',
       component: () => import('@/views/MiniApp/TestnetDeFiTest.vue'),
       meta: { tabBar: false, topBar: false }
+    },
+    // Mainnet DeFi Test - Host wrapper
+    {
+      path: '/mainnet-defi-host',
+      name: 'mainnet-defi-host',
+      component: () => import('@/views/MiniApp/MainnetDeFiHost.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // Mainnet DeFi Test - Mini App content (loaded in iframe)
+    {
+      path: '/mainnet-defi',
+      name: 'mainnet-defi',
+      component: () => import('@/views/MiniApp/MainnetDeFiTest.vue'),
+      meta: { tabBar: false, topBar: false }
     }
   ]
 })
@@ -182,6 +196,8 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const account = useAccountStore().getAccountInfo
   if (to.meta.gotoHome && !account?.twitterId) {
+    // 保存当前路由，登录成功后返回此页面
+    localStorage.setItem('current-route', from.fullPath);
     useModalStore().setModalVisible(true, GlobalModalType.Login)
     next({
       path: from.fullPath

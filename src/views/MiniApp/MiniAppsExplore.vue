@@ -209,6 +209,18 @@ async function loadApps() {
         homeUrl: 'http://localhost:5173/testnet-defi-host',
         verified: true,
       },
+      // App 13: Mainnet DeFi Host
+      {
+        domain: 'mainnet-defi-host',
+        name: 'Mainnet DeFi',
+        iconUrl: generateIconSvg('Main', '#3B82F6'),
+        subtitle: 'Mainnet DeFi 测试',
+        description: 'Test DeFi actions on mainnet chains (BSC Mainnet, Ethereum). Includes chain switching, send token, swap token, and view token tests.',
+        category: 'defi',
+        tags: ['mainnet', 'defi', 'test', 'developer'],
+        homeUrl: 'http://localhost:5173/mainnet-defi-host',
+        verified: true,
+      },
     ];
   } catch (error) {
     console.error('Failed to load apps:', error);
@@ -231,6 +243,11 @@ function openApp(app: MiniApp) {
   
   if (app.domain === 'testnet-defi-host') {
     router.push('/testnet-defi-host');
+    return;
+  }
+
+  if (app.domain === 'mainnet-defi-host') {
+    router.push('/mainnet-defi-host');
     return;
   }
   

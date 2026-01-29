@@ -1,6 +1,7 @@
 <template>
-  <div class="testnet-host-wrapper">
+  <div class="testnet-host-wrapper h-full flex flex-col min-h-0">
     <MiniAppHost
+      class="flex-1 min-h-0"
       :app-url="'/testnet-defi'"
       :fullscreen="false"
       @app-loaded="handleAppLoaded"
