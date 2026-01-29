@@ -1527,11 +1527,12 @@ async function handleSwapTokenConfirm() {
 
     const transactions: Hash[] = [];
 
-    // Step 1: 如果需要，先执行授权交易
+    // Step 1: 如果需要，先执行授权交易（授权 Router 可转走本次卖出数量）
     if (needsApproval && sellTokenInfo.address) {
       const approvalTx = await buildApprovalTransaction(
         sellTokenInfo.chainId,
-        sellTokenInfo.address
+        sellTokenInfo.address,
+        sellAmount
       );
 
       const approveTxHash = await walletClient.sendTransaction({

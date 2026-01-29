@@ -1,49 +1,7 @@
 import type { Address } from 'viem';
-
-// 1inch API endpoints (v5.2)
-const ONEINCH_API_BASE = 'https://api.1inch.dev/swap/v5.2';
-
-// 从环境变量读取 API Key
-const ONEINCH_API_KEY = import.meta.env.VITE_ONEINCH_API_KEY;
-
-// 是否使用 Mock 环境
-// 优先级: 环境变量强制 > API Key 是否存在
-const FORCE_MOCK = import.meta.env.VITE_USE_MOCK_QUOTE === 'true';
-const USE_MOCK_QUOTE = FORCE_MOCK || !ONEINCH_API_KEY;
-
-// 调试日志
-if (import.meta.env.DEV) {
-  console.log('[DEX Config]', {
-    forceMock: FORCE_MOCK,
-    hasApiKey: !!ONEINCH_API_KEY,
-    useMock: USE_MOCK_QUOTE,
-  });
-}
-
-// 支持的链 ID 映射到 1inch 链 ID
-const CHAIN_ID_MAP: Record<number, number> = {
-  1: 1,      // Ethereum
-  56: 56,    // BSC
-  10: 10,    // Optimism
-  42161: 42161, // Arbitrum
-  8453: 8453,   // Base
-};
-
-/**
- * 辅助函数：创建带 API Key 的 fetch 请求
- */
-function fetchWithApiKey(url: string, options: RequestInit = {}): Promise<Response> {
-  const headers = new Headers(options.headers);
-
-  if (ONEINCH_API_KEY) {
-    headers.set('Authorization', `Bearer ${ONEINCH_API_KEY}`);
-  }
-
-  return fetch(url, {
-    ...options,
-    headers,
-  });
-}
+import { encodeFunctionData } from 'viem';
+import { readContract } from './contract';
+import { WETH, uniswapV2Router02 } from '@/config';
 
 export interface SwapQuote {
   buyAmount: string;
@@ -61,46 +19,31 @@ export interface SwapTransaction {
 }
 
 /**
- * 检查是否需要授权
+ * 检查是否需要授权（从链上读取 ERC20 allowance）
  */
 export async function checkAllowance(
   chainId: number,
   tokenAddress: Address,
   ownerAddress: Address
 ): Promise<{ allowance: bigint; spender: Address }> {
-  // 测试环境：假设已授权
-  if (USE_MOCK_QUOTE) {
-    console.log('[DEX] Using mock allowance check - assuming sufficient allowance');
-    return {
-      allowance: BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'), // 最大值
-      spender: '0x10ED43C718714eb63d5aA57B78B54704E256024E' as Address, // PancakeSwap Router
-    };
+  const spender = uniswapV2Router02 as Address;
+  if (chainId !== 56) {
+    return { allowance: 0n, spender };
   }
-
   try {
-    const oneInchChainId = CHAIN_ID_MAP[chainId];
-    if (!oneInchChainId) {
-      throw new Error(`Chain ${chainId} not supported by 1inch`);
-    }
-
-    // 获取 1inch 的 spender 地址
-    const spenderUrl = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/spender`;
-    const spenderResponse = await fetchWithApiKey(spenderUrl);
-    const spenderData = await spenderResponse.json();
-    const spender = spenderData.address as Address;
-
-    // 检查当前授权额度
-    const allowanceUrl = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/allowance?tokenAddress=${tokenAddress}&walletAddress=${ownerAddress}`;
-    const allowanceResponse = await fetchWithApiKey(allowanceUrl);
-    const allowanceData = await allowanceResponse.json();
-
+    const allowance = await readContract(
+      'Token1',
+      'allowance',
+      [ownerAddress, spender],
+      tokenAddress as `0x${string}`
+    );
     return {
-      allowance: BigInt(allowanceData.allowance || '0'),
+      allowance: BigInt(allowance as bigint),
       spender,
     };
-  } catch (error) {
-    console.error('Failed to check allowance:', error);
-    throw error;
+  } catch (e) {
+    console.error('[DEX] Failed to check allowance:', e);
+    return { allowance: 0n, spender };
   }
 }
 
@@ -113,30 +56,38 @@ export async function buildApprovalTransaction(
   tokenAddress: Address,
   amount: string // 安全: 改为必需参数，强制调用者指定金额
 ): Promise<SwapTransaction> {
-  try {
-    const oneInchChainId = CHAIN_ID_MAP[chainId];
-    if (!oneInchChainId) {
-      throw new Error(`Chain ${chainId} not supported by 1inch`);
-    }
-
-    // 安全: 验证授权金额必须指定
-    if (!amount || amount === '0') {
-      throw new Error('Approval amount must be specified for security');
-    }
-
-    const url = `${ONEINCH_API_BASE}/${oneInchChainId}/approve/transaction?tokenAddress=${tokenAddress}&amount=${amount}`;
-    const response = await fetchWithApiKey(url);
-    const data = await response.json();
-
-    return {
-      to: data.to,
-      data: data.data,
-      value: data.value || '0',
-    };
-  } catch (error) {
-    console.error('Failed to build approval transaction:', error);
-    throw error;
+  // 仅支持 BSC 主网链 ID 56，保持与 TagAI 主链一致
+  if (chainId !== 56) {
+    throw new Error(`buildApprovalTransaction only supports BSC (56), got ${chainId}`);
   }
+
+  if (!amount || amount === '0') {
+    throw new Error('Approval amount must be specified for security');
+  }
+
+  // 使用标准 ERC20 approve(spender, amount)
+  const data = encodeFunctionData({
+    abi: [
+      {
+        name: 'approve',
+        type: 'function',
+        stateMutability: 'nonpayable',
+        inputs: [
+          { name: 'spender', type: 'address' },
+          { name: 'amount', type: 'uint256' },
+        ],
+        outputs: [{ name: '', type: 'bool' }],
+      },
+    ],
+    functionName: 'approve',
+    args: [uniswapV2Router02 as Address, BigInt(amount)],
+  });
+
+  return {
+    to: tokenAddress,
+    data: data as `0x${string}`,
+    value: '0',
+  };
 }
 
 /**
@@ -148,83 +99,55 @@ export async function getSwapQuote(
   toTokenAddress: Address | 'native',
   amount: string
 ): Promise<SwapQuote> {
-  // 测试环境：使用 mock 报价
-  if (USE_MOCK_QUOTE) {
-    console.log('[DEX] Using mock quote for testing');
-
-    // Mock 汇率：BNB/USDT ≈ 600, ETH/USDC ≈ 3000
-    const fromAmount = BigInt(amount);
-    let mockRate = 1.0;
-    let mockRoute = 'PancakeSwap V2';
-
-    // 简单的 mock 逻辑
-    if (fromTokenAddress === 'native' && chainId === 56) {
-      // BNB → USDT
-      mockRate = 600.0;
-      mockRoute = 'PancakeSwap V2';
-    } else if (fromTokenAddress !== 'native' && toTokenAddress === 'native' && chainId === 56) {
-      // USDT → BNB
-      mockRate = 1 / 600.0;
-      mockRoute = 'PancakeSwap V2';
-    } else if (fromTokenAddress === 'native' && chainId === 1) {
-      // ETH → USDC
-      mockRate = 3000.0;
-      mockRoute = 'Uniswap V3';
-    }
-
-    // 计算买入数量（考虑decimals差异）
-    // BNB (18 decimals) → USDT (18 decimals)
-    const toAmount = BigInt(Math.floor(Number(fromAmount) * mockRate));
-
-    return {
-      buyAmount: toAmount.toString(),
-      estimatedGas: '200000',
-      rate: mockRate.toFixed(6),
-      priceImpact: '0.1',
-      minimumReceived: (Number(toAmount) * 0.995).toFixed(0), // 0.5% slippage
-      route: mockRoute,
-    };
+  // 仅支持 BSC 主网，严格按照 TagAI 原生逻辑
+  if (chainId !== 56) {
+    throw new Error(`getSwapQuote only supports BSC (56), got ${chainId}`);
   }
 
-  // 真实环境：调用 1inch API
-  try {
-    const oneInchChainId = CHAIN_ID_MAP[chainId];
-    if (!oneInchChainId) {
-      throw new Error(`Chain ${chainId} not supported by 1inch`);
-    }
-
-    // 1inch 使用 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE 表示原生代币
-    const NATIVE_TOKEN = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-    const fromToken = fromTokenAddress === 'native' ? NATIVE_TOKEN : fromTokenAddress;
-    const toToken = toTokenAddress === 'native' ? NATIVE_TOKEN : toTokenAddress;
-
-    const url = `${ONEINCH_API_BASE}/${oneInchChainId}/quote?src=${fromToken}&dst=${toToken}&amount=${amount}`;
-    const response = await fetchWithApiKey(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to get quote: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    // 计算汇率
-    const fromAmount = BigInt(amount);
-    const toAmount = BigInt(data.toAmount);
-    const rate = (Number(toAmount) / Number(fromAmount)).toFixed(6);
-
+  const fromAmount = BigInt(amount);
+  if (fromAmount === 0n) {
     return {
-      buyAmount: data.toAmount,
-      estimatedGas: data.estimatedGas || '0',
-      rate,
-      // 1inch API 可能不直接提供这些字段，需要计算
+      buyAmount: '0',
+      estimatedGas: '0',
+      rate: '0',
       priceImpact: undefined,
       minimumReceived: undefined,
-      route: data.protocols?.[0]?.map((p: any) => p[0]?.name).join(' → '),
+      route: 'PancakeSwap V2',
     };
-  } catch (error) {
-    console.error('Failed to get swap quote:', error);
-    throw error;
   }
+
+  // 构造路径：native 用 WETH 替代
+  const from = fromTokenAddress === 'native' ? (WETH as Address) : fromTokenAddress;
+  const to = toTokenAddress === 'native' ? (WETH as Address) : toTokenAddress;
+
+  let path: Address[];
+  if (from === WETH && to === WETH) {
+    // BNB → BNB 理论上不会发生
+    path = [WETH as Address];
+  } else if (from === WETH || to === WETH) {
+    // BNB ↔ ERC20
+    path = [from, to];
+  } else {
+    // ERC20 ↔ ERC20，简单通过 WETH 中转
+    path = [from, WETH as Address, to];
+  }
+
+  // 使用 Router 的 getAmountsOut 计算链上价格
+  const amounts: bigint[] = await readContract('UniswapRouter', 'getAmountsOut', [fromAmount, path]);
+  const toAmount = amounts[amounts.length - 1];
+
+  const rate = Number(toAmount) / Number(fromAmount || 1n);
+
+  return {
+    buyAmount: toAmount.toString(),
+    // 估一个保守的 gas，上层会再调用 estimateGas
+    estimatedGas: '250000',
+    rate: rate.toFixed(6),
+    // 这里暂不计算真实 priceImpact，仅给出最小接收量（0.5% 滑点）
+    priceImpact: undefined,
+    minimumReceived: (Number(toAmount) * 0.995).toFixed(0),
+    route: 'PancakeSwap V2',
+  };
 }
 
 /**
@@ -238,55 +161,115 @@ export async function buildSwapTransaction(
   fromAddress: Address,
   slippage: number = 1 // 1% slippage
 ): Promise<SwapTransaction> {
-  // 测试环境：使用 mock 交易（实际上不会执行，只用于UI测试）
-  if (USE_MOCK_QUOTE) {
-    console.log('[DEX] Using mock swap transaction for testing');
-    console.warn('[DEX] Mock swap - 实际交易不会执行，仅用于 UI 测试');
-
-    // 返回一个假的交易数据（PancakeSwap Router V2 地址）
-    return {
-      to: '0x10ED43C718714eb63d5aA57B78B54704E256024E' as Address, // PancakeSwap Router
-      data: '0x' as `0x${string}`, // 空数据，不会真正执行
-      value: fromTokenAddress === 'native' ? amount : '0',
-    };
+  if (chainId !== 56) {
+    throw new Error(`buildSwapTransaction only supports BSC (56), got ${chainId}`);
   }
 
-  // 真实环境：调用 1inch API
-  try {
-    const oneInchChainId = CHAIN_ID_MAP[chainId];
-    if (!oneInchChainId) {
-      throw new Error(`Chain ${chainId} not supported by 1inch`);
-    }
-
-    const NATIVE_TOKEN = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-    const fromToken = fromTokenAddress === 'native' ? NATIVE_TOKEN : fromTokenAddress;
-    const toToken = toTokenAddress === 'native' ? NATIVE_TOKEN : toTokenAddress;
-
-    const url = `${ONEINCH_API_BASE}/${oneInchChainId}/swap?src=${fromToken}&dst=${toToken}&amount=${amount}&from=${fromAddress}&slippage=${slippage}&disableEstimate=true`;
-
-    const response = await fetchWithApiKey(url);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.description || 'Failed to build swap transaction');
-    }
-
-    const data = await response.json();
-
-    return {
-      to: data.tx.to,
-      data: data.tx.data,
-      value: data.tx.value || '0',
-    };
-  } catch (error) {
-    console.error('Failed to build swap transaction:', error);
-    throw error;
+  const amountIn = BigInt(amount);
+  if (amountIn === 0n) {
+    throw new Error('Swap amount must be greater than 0');
   }
+
+  const from = fromTokenAddress === 'native' ? (WETH as Address) : fromTokenAddress;
+  const to = toTokenAddress === 'native' ? (WETH as Address) : toTokenAddress;
+
+  let path: Address[];
+  if (from === WETH && to === WETH) {
+    throw new Error('Swap path WETH→WETH is not valid');
+  } else if (from === WETH || to === WETH) {
+    path = [from, to];
+  } else {
+    path = [from, WETH as Address, to];
+  }
+
+  // 先用 Router 计算输出，再按 slippage 计算最小接收量
+  const amounts: bigint[] = await readContract('UniswapRouter', 'getAmountsOut', [amountIn, path]);
+  const amountOut = amounts[amounts.length - 1];
+  const amountOutMin = (amountOut * BigInt(10000 - Math.floor(slippage * 100))) / 10000n;
+
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 60 * 10); // 10 分钟
+
+  let data: `0x${string}`;
+  let value = '0';
+
+  if (fromTokenAddress === 'native') {
+    // BNB → Token: swapExactETHForTokens(uint amountOutMin, address[] path, address to, uint deadline)
+    data = encodeFunctionData({
+      abi: [
+        {
+          name: 'swapExactETHForTokens',
+          type: 'function',
+          stateMutability: 'payable',
+          inputs: [
+            { name: 'amountOutMin', type: 'uint256' },
+            { name: 'path', type: 'address[]' },
+            { name: 'to', type: 'address' },
+            { name: 'deadline', type: 'uint256' },
+          ],
+          outputs: [{ name: 'amounts', type: 'uint256[]' }],
+        },
+      ],
+      functionName: 'swapExactETHForTokens',
+      args: [amountOutMin, path, fromAddress, deadline],
+    }) as `0x${string}`;
+    value = amountIn.toString();
+  } else if (toTokenAddress === 'native') {
+    // Token → BNB: swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline)
+    data = encodeFunctionData({
+      abi: [
+        {
+          name: 'swapExactTokensForETH',
+          type: 'function',
+          stateMutability: 'nonpayable',
+          inputs: [
+            { name: 'amountIn', type: 'uint256' },
+            { name: 'amountOutMin', type: 'uint256' },
+            { name: 'path', type: 'address[]' },
+            { name: 'to', type: 'address' },
+            { name: 'deadline', type: 'uint256' },
+          ],
+          outputs: [{ name: 'amounts', type: 'uint256[]' }],
+        },
+      ],
+      functionName: 'swapExactTokensForETH',
+      args: [amountIn, amountOutMin, path, fromAddress, deadline],
+    }) as `0x${string}`;
+    value = '0';
+  } else {
+    // Token → Token: swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] path, address to, uint deadline)
+    data = encodeFunctionData({
+      abi: [
+        {
+          name: 'swapExactTokensForTokens',
+          type: 'function',
+          stateMutability: 'nonpayable',
+          inputs: [
+            { name: 'amountIn', type: 'uint256' },
+            { name: 'amountOutMin', type: 'uint256' },
+            { name: 'path', type: 'address[]' },
+            { name: 'to', type: 'address' },
+            { name: 'deadline', type: 'uint256' },
+          ],
+          outputs: [{ name: 'amounts', type: 'uint256[]' }],
+        },
+      ],
+      functionName: 'swapExactTokensForTokens',
+      args: [amountIn, amountOutMin, path, fromAddress, deadline],
+    }) as `0x${string}`;
+    value = '0';
+  }
+
+  return {
+    to: uniswapV2Router02 as Address,
+    data,
+    value,
+  };
 }
 
 /**
  * 检查链是否支持
  */
 export function isSupportedChain(chainId: number): boolean {
-  return chainId in CHAIN_ID_MAP;
+  // 目前仅支持 BSC 主网，用于 Mainnet DeFi 测试
+  return chainId === 56;
 }
