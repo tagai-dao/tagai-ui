@@ -72,25 +72,77 @@ export class NotificationsModule {
 
   /**
    * Subscribe to notifications
-   * Registers the mini app to receive push notifications
+   * Registers the mini app to receive push notifications using Web Push API
    */
   async subscribe(): Promise<string> {
     // First request permission if not already granted
     const permResult = await this.requestPermission();
 
-    if (!permResult.granted || !permResult.token) {
-      throw new Error('Notification permission denied or no token received');
+    if (!permResult.granted) {
+      throw new Error('Notification permission denied');
     }
 
-    // Register subscription with host
-    await this.sendRequest('notifications.subscribe', {
-      token: permResult.token,
-    });
+    try {
+      // Register service worker if not already registered
+      if ('serviceWorker' in navigator) {
+        let registration = await navigator.serviceWorker.getRegistration();
 
-    this.cachedToken = permResult.token;
-    this.cachedEnabled = true;
+        if (!registration) {
+          registration = await navigator.serviceWorker.register('/sw.js', {
+            scope: '/'
+          });
+          await navigator.serviceWorker.ready;
+        }
 
-    return permResult.token;
+        // Get VAPID public key from backend
+        const vapidResponse = await fetch('/api/notifications/vapid-public-key');
+        const { publicKey } = await vapidResponse.json();
+
+        if (!publicKey) {
+          throw new Error('VAPID public key not available');
+        }
+
+        // Subscribe to push notifications
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(publicKey)
+        });
+
+        // Send subscription to backend
+        await this.sendRequest('notifications.subscribe', {
+          subscription: subscription.toJSON()
+        });
+
+        // Store token (endpoint URL)
+        this.cachedToken = subscription.endpoint;
+        this.cachedEnabled = true;
+
+        return subscription.endpoint;
+      } else {
+        throw new Error('Service Worker not supported');
+      }
+    } catch (error) {
+      console.error('Failed to subscribe to push notifications:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper function to convert VAPID key to Uint8Array
+   */
+  private urlBase64ToUint8Array(base64String: string): Uint8Array {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   }
 
   /**

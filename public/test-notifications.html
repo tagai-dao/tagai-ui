@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TagAI 推送通知测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .status.pending { border-left: 4px solid #ffc107; }
+        .status.success { border-left: 4px solid #28a745; }
+        .status.error { border-left: 4px solid #dc3545; }
+
+        .status-icon {
+            font-size: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+
+        .log-success { color: #4ec9b0; }
+        .log-error { color: #f48771; }
+        .log-info { color: #9cdcfe; }
+        .log-warn { color: #dcdcaa; }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge.success { background: #d4edda; color: #155724; }
+        .badge.error { background: #f8d7da; color: #721c24; }
+        .badge.warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 推送通知测试工具</h1>
+        <p class="subtitle">TagAI Mini App SDK - Notifications Module Testing</p>
+
+        <!-- 系统检查 -->
+        <div class="section">
+            <h2>📋 系统检查</h2>
+            <div id="system-checks"></div>
+        </div>
+
+        <!-- Service Worker -->
+        <div class="section">
+            <h2>⚙️ Service Worker</h2>
+            <div id="sw-status"></div>
+            <div class="button-group">
+                <button onclick="registerSW()">注册 Service Worker</button>
+                <button onclick="unregisterSW()">注销 Service Worker</button>
+                <button onclick="checkSWStatus()">检查状态</button>
+            </div>
+        </div>
+
+        <!-- 推送订阅 -->
+        <div class="section">
+            <h2>📬 推送订阅</h2>
+            <div id="subscription-status"></div>
+            <div class="input-group">
+                <label>Twitter ID (用于后端保存):</label>
+                <input type="text" id="twitter-id" placeholder="输入你的 Twitter ID">
+            </div>
+            <div class="button-group">
+                <button onclick="requestPermission()">请求权限</button>
+                <button onclick="subscribe()">订阅推送</button>
+                <button onclick="unsubscribe()">取消订阅</button>
+                <button onclick="getSubscription()">查看订阅</button>
+            </div>
+        </div>
+
+        <!-- 发送测试通知 -->
+        <div class="section">
+            <h2>📨 发送测试通知</h2>
+            <div class="input-group">
+                <label>Access Token:</label>
+                <input type="text" id="access-token" placeholder="输入你的 access token">
+            </div>
+            <div class="input-group">
+                <label>通知消息:</label>
+                <input type="text" id="notification-message" value="🎉 测试通知成功！">
+            </div>
+            <div class="button-group">
+                <button onclick="sendTestNotification()">发送测试通知</button>
+                <button onclick="getStats()">查看统计</button>
+            </div>
+        </div>
+
+        <!-- 控制台日志 -->
+        <div class="section">
+            <h2>📝 控制台日志</h2>
+            <div class="button-group">
+                <button onclick="clearLog()">清除日志</button>
+            </div>
+            <div id="console-log" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const API_BASE = 'http://localhost:3000/api/notifications';
+
+        // 日志函数
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('console-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = `log-${type}`;
+
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${className}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        function clearLog() {
+            document.getElementById('console-log').innerHTML = '';
+            log('日志已清除', 'info');
+        }
+
+        // 系统检查
+        function checkSystem() {
+            const checks = [];
+
+            // Service Worker 支持
+            if ('serviceWorker' in navigator) {
+                checks.push({ name: 'Service Worker API', status: 'success', message: '✅ 支持' });
+            } else {
+                checks.push({ name: 'Service Worker API', status: 'error', message: '❌ 不支持' });
+            }
+
+            // Notification API
+            if ('Notification' in window) {
+                const perm = Notification.permission;
+                checks.push({
+                    name: 'Notification API',
+                    status: perm === 'granted' ? 'success' : 'warning',
+                    message: `✅ 支持 (权限: ${perm})`
+                });
+            } else {
+                checks.push({ name: 'Notification API', status: 'error', message: '❌ 不支持' });
+            }
+
+            // Push API
+            if ('PushManager' in window) {
+                checks.push({ name: 'Push API', status: 'success', message: '✅ 支持' });
+            } else {
+                checks.push({ name: 'Push API', status: 'error', message: '❌ 不支持' });
+            }
+
+            // 渲染检查结果
+            const container = document.getElementById('system-checks');
+            container.innerHTML = checks.map(check => `
+                <div class="status ${check.status}">
+                    <span class="status-icon">${check.status === 'success' ? '✅' : check.status === 'error' ? '❌' : '⚠️'}</span>
+                    <strong>${check.name}:</strong> ${check.message}
+                </div>
+            `).join('');
+
+            checks.forEach(check => {
+                log(`${check.name}: ${check.message}`, check.status === 'error' ? 'error' : 'success');
+            });
+        }
+
+        // Service Worker 相关
+        async function registerSW() {
+            try {
+                log('正在注册 Service Worker...', 'info');
+                const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                log('✅ Service Worker 注册成功', 'success');
+                log(`Scope: ${registration.scope}`, 'info');
+
+                await navigator.serviceWorker.ready;
+                log('✅ Service Worker 已激活', 'success');
+
+                checkSWStatus();
+            } catch (error) {
+                log(`❌ Service Worker 注册失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function unregisterSW() {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                    log('✅ Service Worker 已注销', 'success');
+                }
+                checkSWStatus();
+            } catch (error) {
+                log(`❌ 注销失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkSWStatus() {
+            const container = document.getElementById('sw-status');
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    const state = registration.active ? registration.active.state : 'none';
+                    container.innerHTML = `
+                        <div class="status success">
+                            <span class="status-icon">✅</span>
+                            <strong>状态:</strong> 已注册
+                            <span class="badge success">${state}</span>
+                        </div>
+                        <div class="status success">
+                            <strong>Scope:</strong> ${registration.scope}
+                        </div>
+                    `;
+                    log(`Service Worker 状态: ${state}`, 'success');
+                } else {
+                    container.innerHTML = `
+                        <div class="status warning">
+                            <span class="status-icon">⚠️</span>
+                            <strong>状态:</strong> 未注册
+                        </div>
+                    `;
+                    log('Service Worker 未注册', 'warn');
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="status error">
+                        <span class="status-icon">❌</span>
+                        <strong>错误:</strong> ${error.message}
+                    </div>
+                `;
+                log(`检查失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 通知权限
+        async function requestPermission() {
+            try {
+                log('请求通知权限...', 'info');
+                const permission = await Notification.requestPermission();
+                log(`权限结果: ${permission}`, permission === 'granted' ? 'success' : 'error');
+                checkSystem();
+            } catch (error) {
+                log(`❌ 请求权限失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 推送订阅
+        async function subscribe() {
+            try {
+                log('开始订阅流程...', 'info');
+
+                // 1. 确保 SW 已就绪
+                const registration = await navigator.serviceWorker.ready;
+                log('✅ Service Worker 已就绪', 'success');
+
+                // 2. 获取 VAPID 公钥
+                log('获取 VAPID 公钥...', 'info');
+                const response = await fetch(`${API_BASE}/vapid-public-key`);
+                const { publicKey } = await response.json();
+                log(`✅ 获取到公钥: ${publicKey.substring(0, 30)}...`, 'success');
+
+                // 3. 订阅推送
+                log('订阅推送通知...', 'info');
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey)
+                });
+
+                log('✅ 浏览器订阅成功', 'success');
+                log(`Endpoint: ${subscription.endpoint.substring(0, 50)}...`, 'info');
+
+                // 4. 保存到后端 (需要 token)
+                const twitterId = document.getElementById('twitter-id').value;
+                const accessToken = document.getElementById('access-token').value;
+
+                if (twitterId && accessToken) {
+                    log('保存订阅到后端...', 'info');
+                    const saveResponse = await fetch(`${API_BASE}/subscribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'accesstoken': accessToken,
+                            'accounttype': '0'
+                        },
+                        body: JSON.stringify({
+                            twitterId,
+                            subscription: subscription.toJSON()
+                        })
+                    });
+
+                    const result = await saveResponse.json();
+                    log('✅ 后端保存成功', 'success');
+                    log(JSON.stringify(result, null, 2), 'info');
+                } else {
+                    log('⚠️  未提供 Twitter ID 或 Access Token，跳过后端保存', 'warn');
+                }
+
+                getSubscription();
+            } catch (error) {
+                log(`❌ 订阅失败: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function unsubscribe() {
+            try {
+                log('取消订阅...', 'info');
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+
+                if (subscription) {
+                    await subscription.unsubscribe();
+                    log('✅ 取消订阅成功', 'success');
+                    getSubscription();
+                } else {
+                    log('⚠️  没有找到活跃的订阅', 'warn');
+                }
+            } catch (error) {
+                log(`❌ 取消订阅失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function getSubscription() {
+            const container = document.getElementById('subscription-status');
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+
+                if (subscription) {
+                    const sub = subscription.toJSON();
+                    container.innerHTML = `
+                        <div class="status success">
+                            <span class="status-icon">✅</span>
+                            <strong>状态:</strong> 已订阅
+                        </div>
+                        <div class="status success">
+                            <strong>Endpoint:</strong> ${subscription.endpoint.substring(0, 60)}...
+                        </div>
+                    `;
+                    log('当前订阅信息:', 'info');
+                    log(JSON.stringify(sub, null, 2), 'info');
+                } else {
+                    container.innerHTML = `
+                        <div class="status warning">
+                            <span class="status-icon">⚠️</span>
+                            <strong>状态:</strong> 未订阅
+                        </div>
+                    `;
+                    log('未找到订阅', 'warn');
+                }
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="status error">
+                        <span class="status-icon">❌</span>
+                        <strong>错误:</strong> ${error.message}
+                    </div>
+                `;
+                log(`获取订阅失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 发送测试通知
+        async function sendTestNotification() {
+            try {
+                const twitterId = document.getElementById('twitter-id').value;
+                const accessToken = document.getElementById('access-token').value;
+                const message = document.getElementById('notification-message').value;
+
+                if (!twitterId || !accessToken) {
+                    log('❌ 请先填写 Twitter ID 和 Access Token', 'error');
+                    return;
+                }
+
+                log('发送测试通知...', 'info');
+                const response = await fetch(`${API_BASE}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'accesstoken': accessToken,
+                        'accounttype': '0'
+                    },
+                    body: JSON.stringify({
+                        twitterId,
+                        message
+                    })
+                });
+
+                const result = await response.json();
+                log('✅ 通知发送成功!', 'success');
+                log(JSON.stringify(result, null, 2), 'info');
+                log('📬 请查看浏览器右上角的通知', 'success');
+            } catch (error) {
+                log(`❌ 发送失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 获取统计
+        async function getStats() {
+            try {
+                const twitterId = document.getElementById('twitter-id').value;
+                const accessToken = document.getElementById('access-token').value;
+
+                if (!twitterId || !accessToken) {
+                    log('❌ 请先填写 Twitter ID 和 Access Token', 'error');
+                    return;
+                }
+
+                log('获取通知统计...', 'info');
+                const response = await fetch(
+                    `${API_BASE}/stats?twitterId=${twitterId}&days=7`,
+                    {
+                        headers: {
+                            'accesstoken': accessToken,
+                            'accounttype': '0'
+                        }
+                    }
+                );
+
+                const stats = await response.json();
+                log('✅ 统计数据:', 'success');
+                log(JSON.stringify(stats, null, 2), 'info');
+            } catch (error) {
+                log(`❌ 获取统计失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 辅助函数
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        // 页面加载时执行
+        window.addEventListener('load', () => {
+            log('=== TagAI 推送通知测试工具 ===', 'success');
+            log('开始系统检查...', 'info');
+            checkSystem();
+            checkSWStatus();
+            getSubscription();
+        });
+    </script>
+</body>
+</html>

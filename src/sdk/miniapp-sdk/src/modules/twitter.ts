@@ -57,6 +57,42 @@ export interface TwitterModule {
   post(options: TwitterPostOptions): Promise<TwitterPostResult>;
 
   /**
+   * Like a tweet
+   * @param tweetId - ID of the tweet to like
+   * @param community - Community/tick to associate with (for curation rewards)
+   */
+  like(tweetId: string, community?: string): Promise<void>;
+
+  /**
+   * Retweet a tweet
+   * @param tweetId - ID of the tweet to retweet
+   * @param community - Community/tick to associate with
+   */
+  retweet(tweetId: string, community?: string): Promise<void>;
+
+  /**
+   * Reply to a tweet
+   * @param tweetId - ID of the tweet to reply to
+   * @param text - Reply text
+   * @param community - Community/tick to associate with
+   */
+  reply(tweetId: string, text: string, community?: string): Promise<TwitterPostResult>;
+
+  /**
+   * Quote tweet with additional comment
+   * @param tweetId - ID of the tweet to quote
+   * @param text - Quote comment text
+   * @param community - Community/tick to associate with
+   */
+  quote(tweetId: string, text: string, community?: string): Promise<TwitterPostResult>;
+
+  /**
+   * Delete a tweet
+   * @param tweetId - ID of the tweet to delete
+   */
+  deleteTweet(tweetId: string): Promise<void>;
+
+  /**
    * Open Twitter share dialog
    * Opens the native Twitter share sheet or web intent
    */
@@ -96,6 +132,54 @@ export function createTwitterModule(transport: MiniAppTransport): TwitterModule 
 
       const result = await transport.sendMessage<TwitterPostResult>('twitter.post', options);
       return result;
+    },
+
+    async like(tweetId: string, community: string = 'default'): Promise<void> {
+      await transport.sendMessage('twitter.like', {
+        tweetId,
+        community,
+      });
+    },
+
+    async retweet(tweetId: string, community: string = 'default'): Promise<void> {
+      await transport.sendMessage('twitter.retweet', {
+        tweetId,
+        community,
+      });
+    },
+
+    async reply(tweetId: string, text: string, community: string = 'default'): Promise<TwitterPostResult> {
+      // Validate text length
+      if (text.length > 280) {
+        throw new Error('Reply text exceeds 280 character limit');
+      }
+
+      const result = await transport.sendMessage<TwitterPostResult>('twitter.reply', {
+        tweetId,
+        text,
+        community,
+      });
+      return result;
+    },
+
+    async quote(tweetId: string, text: string, community: string = 'default'): Promise<TwitterPostResult> {
+      // Validate text length
+      if (text.length > 280) {
+        throw new Error('Quote text exceeds 280 character limit');
+      }
+
+      const result = await transport.sendMessage<TwitterPostResult>('twitter.quote', {
+        tweetId,
+        text,
+        community,
+      });
+      return result;
+    },
+
+    async deleteTweet(tweetId: string): Promise<void> {
+      await transport.sendMessage('twitter.delete', {
+        tweetId,
+      });
     },
 
     async share(options: TwitterShareOptions): Promise<void> {
