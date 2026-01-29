@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>API Debug</title>
+</head>
+<body>
+  <h1>调试 API 调用</h1>
+  <button onclick="testAPI()">测试 API 调用</button>
+  <pre id="result"></pre>
+
+  <script>
+    async function testAPI() {
+      const resultEl = document.getElementById('result');
+      resultEl.textContent = '正在测试...\n';
+
+      // 从 localStorage 获取 accessToken
+      const accountStr = localStorage.getItem('account');
+      if (!accountStr) {
+        resultEl.textContent += '错误: 未找到账户信息\n';
+        return;
+      }
+
+      const account = JSON.parse(accountStr);
+      const accessToken = account.accessToken;
+      const twitterId = account.twitterId;
+
+      resultEl.textContent += `Twitter ID: ${twitterId}\n`;
+      resultEl.textContent += `Access Token: ${accessToken ? accessToken.substring(0, 20) + '...' : '未找到'}\n\n`;
+
+      // 测试 API 调用
+      const url = `http://localhost:9901/api/notifications/subscriptions?twitterId=${twitterId}`;
+
+      resultEl.textContent += `请求 URL: ${url}\n`;
+      resultEl.textContent += `请求头: accesstoken = ${accessToken ? accessToken.substring(0, 20) + '...' : '未设置'}\n\n`;
+
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'accesstoken': accessToken
+          }
+        });
+
+        resultEl.textContent += `响应状态: ${response.status} ${response.statusText}\n`;
+
+        const data = await response.json();
+        resultEl.textContent += `响应数据:\n${JSON.stringify(data, null, 2)}\n`;
+      } catch (error) {
+        resultEl.textContent += `错误: ${error.message}\n`;
+      }
+    }
+  </script>
+</body>
+</html>

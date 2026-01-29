@@ -154,6 +154,7 @@
         v-if="showHost"
         :app-url="appUrl"
         :app-domain="appDomain"
+        :fullscreen="false"
         @close="handleClose"
         @error="handleError"
       />
@@ -390,6 +391,8 @@ function handlePrimaryButtonClick() {
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
+  position: relative;
+  overflow: hidden;
 }
 
 .host-header {
@@ -399,6 +402,9 @@ function handlePrimaryButtonClick() {
   background: linear-gradient(135deg, #FE913F 0%, #FF6B3D 100%);
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .back-btn {
@@ -529,6 +535,9 @@ function handlePrimaryButtonClick() {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 9;
+  flex-shrink: 0;
 }
 
 .verify-tabs {
@@ -664,6 +673,27 @@ function handlePrimaryButtonClick() {
 .host-content {
   flex: 1;
   overflow: hidden;
+  position: relative;
+}
+
+/* 强制覆盖 MiniAppHost 的样式 - 防止其占据整个视口 */
+.sdk-test-host :deep(.miniapp-host) {
+  position: static !important;
+  min-height: auto !important;
+  height: 100% !important;
+  width: 100% !important;
+  max-height: 100% !important;
+}
+
+.sdk-test-host :deep(.miniapp-host.fullscreen) {
+  position: static !important;
+}
+
+.sdk-test-host :deep(.miniapp-iframe) {
+  position: static !important;
+  min-height: auto !important;
+  height: 100% !important;
+  width: 100% !important;
 }
 
 .primary-button-container {

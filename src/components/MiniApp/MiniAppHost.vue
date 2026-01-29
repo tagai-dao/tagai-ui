@@ -500,7 +500,7 @@ async function handleGetContext(): Promise<MiniAppContext> {
       twitterUsername: account?.twitterUsername || '',
       twitterName: account?.twitterName || '',
       profile: account?.profile || '',
-      ethAddr: accountStore.ethConnectAddress,
+      ethAddr: account?.ethAddr || accountStore.ethConnectAddress,
       fid: account?.fid || account?.twitterId || '',
     },
     location: {
@@ -522,9 +522,26 @@ async function handleAuthGetToken(params: any) {
 
     // Generate new token
     const account = accountStore.getAccountInfo;
+    const ethAddress = account?.ethAddr || accountStore.ethConnectAddress;
+
+    // Debug logging
+    console.log('[handleAuthGetToken] 准备生成 token:');
+    console.log('  - twitterId:', account?.twitterId);
+    console.log('  - ethAddress:', ethAddress);
+    console.log('  - steemId:', account?.steemId);
+    console.log('  - twitterUsername:', account?.twitterUsername);
+
+    if (!account?.twitterId) {
+      throw new Error('Twitter ID is missing');
+    }
+
+    if (!ethAddress) {
+      throw new Error('ETH address is missing');
+    }
+
     const result = await generateMiniAppToken(
-      account?.twitterId || '',
-      accountStore.ethConnectAddress,
+      account.twitterId,
+      ethAddress,
       account?.steemId || '',
       account?.twitterUsername || ''
     ) as any;
@@ -538,7 +555,7 @@ async function handleAuthGetToken(params: any) {
       expiresAt: result.expiresAt,
     };
   } catch (error) {
-    console.error('Failed to generate token:', error);
+    console.error('[handleAuthGetToken] Failed to generate token:', error);
     throw new Error('Failed to generate authentication token');
   }
 }
@@ -696,26 +713,37 @@ async function handleTwitterPost(params: any): Promise<{
   // For now, we use the compose dialog which can post to Twitter
   // In the future, this could use a direct Twitter API call
   try {
+    console.log('[handleTwitterPost] 开始发布推文...');
     const tokenResult = await handleAuthGetToken({});
     const token = tokenResult.token;
+    console.log('[handleTwitterPost] Token 获取成功');
 
     // Use Steem post with crossPostTwitter flag to also post to Twitter
+    console.log('[handleTwitterPost] 调用 createSteemPost:', {
+      title: 'Tweet',
+      text,
+      tags: [],
+      jsonMetadata: { mediaUrls, quoteTweetId, replyToTweetId }
+    });
+
     const result = await createSteemPost(
       token,
-      '', // No title for tweet-style posts
+      'Tweet', // Default title for tweet-style posts
       text,
       [], // No tags
       { mediaUrls, quoteTweetId, replyToTweetId },
       []
     );
 
+    console.log('[handleTwitterPost] 发布成功:', result);
     return {
       tweetId: result.data?.twitterTweetId || '',
       url: result.data?.twitterUrl || `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
       success: true,
     };
-  } catch (error) {
-    console.error('Failed to post tweet:', error);
+  } catch (error: any) {
+    console.error('[handleTwitterPost] Failed to post tweet:', error);
+    console.error('[handleTwitterPost] Error details:', error.response || error.message);
     throw new Error('Failed to post tweet');
   }
 }
@@ -1645,42 +1673,47 @@ async function handleNotificationsGetStatus(): Promise<{ subscribed: boolean; to
 
 async function handleNotificationsSubscribe(params: any) {
   try {
-    const { token } = params;
+    const { subscription } = params;
 
-    if (!token) {
-      throw new Error('Notification token is required');
+    if (!subscription || !subscription.endpoint) {
+      throw new Error('Valid subscription is required');
     }
 
-    // 获取当前应用的 domain
-    const appDomain = new URL(props.appUrl).hostname;
     const account = accountStore.getAccountInfo;
 
-    // 调用 webhook 通知后端保存 token
-    // 注意：这里应该调用应用的 webhookUrl，而不是直接调用后端
-    // 在实际实现中，应该通过后端代理 webhook 调用
-    const webhookUrl = manifest.value?.webhookUrl;
-
-    if (webhookUrl) {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          event: 'miniapp_added',
-          twitterId: account?.twitterId || '',
-          notificationDetails: {
-            url: webhookUrl,
-            token: token
-          }
-        })
-      });
+    if (!account?.twitterId) {
+      throw new Error('User not authenticated');
     }
 
-    return { subscribed: true };
-  } catch (error) {
+    // 直接调用后端 API 保存订阅
+    const backendUrl = (window as any).__TAGAI_BACKEND_URL__ || 'http://localhost:9901';
+    const response = await fetch(`${backendUrl}/api/notifications/subscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'accesstoken': account.accessToken || ''
+      },
+      body: JSON.stringify({
+        twitterId: account.twitterId,
+        subscription: subscription
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to subscribe');
+    }
+
+    const result = await response.json();
+    console.log('[MiniAppHost] Subscription saved:', result);
+
+    return {
+      subscribed: true,
+      endpoint: subscription.endpoint
+    };
+  } catch (error: any) {
     console.error('Failed to subscribe to notifications:', error);
-    throw new Error('Failed to subscribe to notifications');
+    throw new Error(error.message || 'Failed to subscribe to notifications');
   }
 }
 

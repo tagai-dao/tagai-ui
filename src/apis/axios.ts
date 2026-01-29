@@ -11,7 +11,8 @@ axios.interceptors.request.use(
     const accStore = useAccountStore();
     const accountInfo = accStore.getAccountInfo;
     if (accountInfo && accountInfo.accessToken) {
-      config.headers['AccessToken'] = accountInfo.accessToken;
+      // 后端期望小写的 accesstoken
+      config.headers['accesstoken'] = accountInfo.accessToken;
     }
     return config;
   },
@@ -66,11 +67,20 @@ export function post(url: string, params?: object, config?: any) {
         resolve(res.data);
       })
       .catch(err => {
+        console.log("network err", err);
         if (err.response) {
-          reject(err.response.status);
+          // 返回完整的错误信息，包括状态码和响应数据
+          const errorInfo = {
+            status: err.response.status,
+            data: err.response.data,
+            message: err.response.data?.message || err.message || 'Network error'
+          };
+          console.error('API Error:', errorInfo);
+          reject(errorInfo);
           return;
+        } else {
+          reject({ status: 500, message: err.message || 'Network error' });
         }
-        reject(500);
       });
   });
 }

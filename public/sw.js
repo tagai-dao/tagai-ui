@@ -1,132 +1,226 @@
+/**
+ * TagAI Mini App - Service Worker
+ * 用于处理推送通知和离线缓存
+ *
+ * 注意：Service Worker 不支持 ES6 import，必须使用传统 JavaScript
+ */
 
-import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching'
+const CACHE_VERSION = 1;
+const CACHE_NAME = 'tagai-cache-v' + CACHE_VERSION;
 
-cleanupOutdatedCaches()
-precacheAndRoute(self.__WB_MANIFEST)
-const CACHE_VERSION = 0
-const CACHE_NAME = 'cache_v' + CACHE_VERSION
+console.log('[Service Worker] Loading...');
 
-const clearCache = () => {
-  return caches.keys().then(keys => {
-    keys.forEach(key => {
-      if (key !== CACHE_NAME) {
-        caches.delete(key)
-      }
-    })
-  })
+// 清理旧缓存
+function clearCache() {
+  return caches.keys().then(function(keys) {
+    return Promise.all(
+      keys.filter(function(key) {
+        return key !== CACHE_NAME;
+      }).map(function(key) {
+        console.log('[Service Worker] Deleting old cache:', key);
+        return caches.delete(key);
+      })
+    );
+  });
 }
 
-self.addEventListener('install', (event) => {
+// 安装 Service Worker
+self.addEventListener('install', function(event) {
+  console.log('[Service Worker] Installing...');
   event.waitUntil(
-    clearCache()
-  )
-})
+    clearCache().then(function() {
+      console.log('[Service Worker] Installed successfully');
+      // 跳过等待，立即激活
+      return self.skipWaiting();
+    })
+  );
+});
 
-self.addEventListener('activated', (event) => {
-  console.log('activated')
+// 激活 Service Worker
+self.addEventListener('activate', function(event) {
+  console.log('[Service Worker] Activating...');
   event.waitUntil(
-    clearCache()
-  )
-})
+    clearCache().then(function() {
+      console.log('[Service Worker] Activated successfully');
+      // 立即控制所有客户端
+      return self.clients.claim();
+    })
+  );
+});
 
-// Push notification event handler
-self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push received', event);
+// 处理推送通知
+self.addEventListener('push', function(event) {
+  console.log('[Service Worker] Push received:', event);
 
-  let notificationData = {
-    title: 'TagAI Mini App',
-    body: 'You have a new notification',
+  var notificationData = {
+    title: 'TagAI',
+    body: '您有一条新消息',
     icon: '/pwa-192x192.png',
-    badge: '/favicon.ico',
-    data: {},
+    badge: '/pwa-192x192.png',
+    data: {}
   };
 
-  // Parse notification data
+  // 解析推送数据
   if (event.data) {
     try {
-      const data = event.data.json();
+      var payload = event.data.json();
+      console.log('[Service Worker] Push payload:', payload);
+
       notificationData = {
-        ...notificationData,
-        ...data
+        title: payload.title || (payload.notification && payload.notification.title) || 'TagAI',
+        body: payload.body || (payload.notification && payload.notification.body) || '您有一条新消息',
+        icon: payload.icon || (payload.notification && payload.notification.icon) || '/pwa-192x192.png',
+        badge: payload.badge || (payload.notification && payload.notification.badge) || '/pwa-192x192.png',
+        tag: payload.tag || 'tagai-notification',
+        data: payload.data || (payload.notification && payload.notification.data) || {},
+        requireInteraction: payload.requireInteraction || false,
+        actions: payload.actions || [],
+        vibrate: payload.vibrate || [200, 100, 200],
+        timestamp: Date.now()
       };
-    } catch (e) {
-      console.error('[Service Worker] Failed to parse push data:', e);
+
+      // 添加图片（如果有）
+      if (payload.image) {
+        notificationData.image = payload.image;
+      }
+    } catch (error) {
+      console.error('[Service Worker] Failed to parse push data:', error);
       notificationData.body = event.data.text();
     }
   }
 
-  const title = notificationData.title || 'TagAI Mini App';
-  const options = {
-    body: notificationData.body || '',
-    icon: notificationData.icon || '/pwa-192x192.png',
-    badge: notificationData.badge || '/favicon.ico',
-    tag: notificationData.tag || 'tagai-notification',
-    data: notificationData.data || {},
-    requireInteraction: notificationData.requireInteraction || false,
-    actions: notificationData.actions || [],
-    vibrate: notificationData.vibrate || [200, 100, 200],
-    timestamp: Date.now(),
+  var title = notificationData.title;
+  var options = {
+    body: notificationData.body,
+    icon: notificationData.icon,
+    badge: notificationData.badge,
+    tag: notificationData.tag,
+    data: notificationData.data,
+    requireInteraction: notificationData.requireInteraction,
+    actions: notificationData.actions,
+    vibrate: notificationData.vibrate,
+    timestamp: notificationData.timestamp
   };
 
-  // Add image if provided
   if (notificationData.image) {
     options.image = notificationData.image;
   }
 
-  // Show notification
   event.waitUntil(
     self.registration.showNotification(title, options)
   );
 });
 
-// Notification click event handler
-self.addEventListener('notificationclick', (event) => {
-  console.log('[Service Worker] Notification clicked', event);
+// 处理通知点击事件
+self.addEventListener('notificationclick', function(event) {
+  console.log('[Service Worker] Notification clicked:', event);
 
-  // Close the notification
   event.notification.close();
 
-  // Determine the URL to open
-  let urlToOpen = event.notification.data.url || '/';
+  var urlToOpen = (event.notification.data && event.notification.data.url) || '/';
 
-  // Handle action clicks
+  // 处理操作按钮点击
   if (event.action) {
-    const action = event.notification.actions.find(a => a.action === event.action);
+    var action = event.notification.actions.find(function(a) {
+      return a.action === event.action;
+    });
     if (action && action.url) {
       urlToOpen = action.url;
     }
   }
 
-  // Focus or open window
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((clientList) => {
-        // Check if there's already a window open with the target URL
-        for (const client of clientList) {
-          if (client.url === urlToOpen && 'focus' in client) {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(function(clientList) {
+        // 检查是否已有打开的窗口
+        for (var i = 0; i < clientList.length; i++) {
+          var client = clientList[i];
+          var clientUrl = new URL(client.url);
+          var targetUrl = new URL(urlToOpen, self.location.origin);
+
+          if (clientUrl.href === targetUrl.href && 'focus' in client) {
             return client.focus();
           }
         }
 
-        // Check if there's any window open
+        // 检查是否有任何窗口打开
         if (clientList.length > 0) {
-          // Navigate the first client to the URL
-          const client = clientList[0];
+          var client = clientList[0];
           if ('navigate' in client) {
-            return client.navigate(urlToOpen).then(client => client ? client.focus() : null);
+            return client.navigate(urlToOpen).then(function(client) {
+              return client ? client.focus() : null;
+            });
           }
           return client.focus();
         }
 
-        // Open new window if none found
-        if (clients.openWindow) {
-          return clients.openWindow(urlToOpen);
+        // 如果没有打开的窗口，打开一个新窗口
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
         }
       })
   );
 });
 
-// Notification close event handler
-self.addEventListener('notificationclose', (event) => {
-  console.log('[Service Worker] Notification closed', event);
+// 处理通知关闭事件
+self.addEventListener('notificationclose', function(event) {
+  console.log('[Service Worker] Notification closed:', event);
 });
+
+// Fetch 事件处理（可选，用于离线缓存）
+self.addEventListener('fetch', function(event) {
+  // 只缓存 GET 请求
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  var url;
+  try {
+    url = new URL(event.request.url);
+  } catch (e) {
+    // 无效的 URL，忽略
+    return;
+  }
+
+  // 跳过某些请求
+  // 1. chrome-extension 或其他浏览器扩展请求
+  if (url.protocol === 'chrome-extension:' ||
+      url.protocol === 'moz-extension:' ||
+      url.protocol === 'safari-extension:') {
+    return;
+  }
+
+  // 2. API 调用
+  if (url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  // 3. 外部域名（只缓存同源请求）
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // 网络优先策略
+  event.respondWith(
+    fetch(event.request)
+      .then(function(response) {
+        // 如果响应有效，克隆并缓存
+        if (response && response.status === 200) {
+          var responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(function(cache) {
+            cache.put(event.request, responseToCache).catch(function(err) {
+              // 忽略缓存错误
+              console.warn('[Service Worker] Cache put failed:', err);
+            });
+          });
+        }
+        return response;
+      })
+      .catch(function() {
+        // 网络失败时，尝试从缓存获取
+        return caches.match(event.request);
+      })
+  );
+});
+
+console.log('[Service Worker] Loaded successfully');

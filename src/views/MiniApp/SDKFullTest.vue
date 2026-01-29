@@ -208,6 +208,7 @@ const statusText = ref('正在初始化 SDK...');
 const statusClass = ref('loading');
 const logs = ref<LogEntry[]>([]);
 const contextInfo = ref<any>(null);
+const lastSteemPost = ref<{ author: string; permlink: string; tweetId?: string } | null>(null);
 
 function log(message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info') {
   const time = new Date().toLocaleTimeString('zh-CN');
@@ -342,7 +343,14 @@ async function testSteemPost() {
       tags: ['tagai', 'test', 'sdk'],
       crossPostTwitter: false,
     });
+    // Save post info for other tests
+    lastSteemPost.value = {
+      author: result.author || '',
+      permlink: result.permlink || '',
+      tweetId: result.tweetId || ''
+    };
     log(`✅ 帖子发布成功: ${result.url}`, 'success');
+    log(`   作者: ${result.author}, Permlink: ${result.permlink}, TweetID: ${result.tweetId}`, 'info');
   } catch (error: any) {
     log(`❌ 发布失败: ${error.message}`, 'error');
   }
@@ -350,8 +358,12 @@ async function testSteemPost() {
 
 async function testSteemVote() {
   log('点赞帖子...');
+  if (!lastSteemPost.value?.author || !lastSteemPost.value?.permlink) {
+    log('❌ 请先发布一篇帖子', 'error');
+    return;
+  }
   try {
-    await sdk.steem.vote('testauthor', 'test-permlink', 10000);
+    await sdk.steem.vote(lastSteemPost.value.author, lastSteemPost.value.permlink, 10000);
     log('✅ 点赞成功', 'success');
   } catch (error: any) {
     log(`❌ 点赞失败: ${error.message}`, 'error');
@@ -360,10 +372,14 @@ async function testSteemVote() {
 
 async function testSteemComment() {
   log('评论帖子...');
+  if (!lastSteemPost.value?.author || !lastSteemPost.value?.permlink) {
+    log('❌ 请先发布一篇帖子', 'error');
+    return;
+  }
   try {
     const result = await sdk.steem.comment({
-      parentAuthor: 'testauthor',
-      parentPermlink: 'test-permlink',
+      parentAuthor: lastSteemPost.value.author,
+      parentPermlink: lastSteemPost.value.permlink,
       body: '这是一条测试评论！',
     });
     log(`✅ 评论成功: ${result.permlink}`, 'success');
@@ -374,8 +390,12 @@ async function testSteemComment() {
 
 async function testSteemReblog() {
   log('转发帖子...');
+  if (!lastSteemPost.value?.author || !lastSteemPost.value?.permlink) {
+    log('❌ 请先发布一篇帖子', 'error');
+    return;
+  }
   try {
-    await sdk.steem.reblog('testauthor', 'test-permlink');
+    await sdk.steem.reblog(lastSteemPost.value.author, lastSteemPost.value.permlink);
     log('✅ 转发成功', 'success');
   } catch (error: any) {
     log(`❌ 转发失败: ${error.message}`, 'error');

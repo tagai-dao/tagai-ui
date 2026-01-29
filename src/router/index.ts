@@ -148,11 +148,25 @@ const router = createRouter({
       component: () => import('@/views/MiniApp/DeFiActionsTest.vue'),
       meta: { tabBar: false, topBar: false }
     },
+    // SDK Full Test - Host wrapper (Simple Test Version)
+    {
+      path: '/sdk-test-host-simple',
+      name: 'sdk-test-host-simple',
+      component: () => import('@/views/MiniApp/SDKTestHostSimple.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
     // SDK Full Test - Host wrapper
     {
       path: '/sdk-test-host',
       name: 'sdk-test-host',
       component: () => import('@/views/MiniApp/SDKTestHost.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // SDK Test Host Debug Page
+    {
+      path: '/sdk-test-debug',
+      name: 'sdk-test-debug',
+      component: () => import('@/views/MiniApp/SDKTestHostDebug.vue'),
       meta: { tabBar: false, topBar: false }
     },
     // SDK Full Test - Mini App content (loaded in iframe)

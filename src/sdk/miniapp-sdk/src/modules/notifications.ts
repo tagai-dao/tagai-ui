@@ -95,7 +95,8 @@ export class NotificationsModule {
         }
 
         // Get VAPID public key from backend
-        const vapidResponse = await fetch('/api/notifications/vapid-public-key');
+        const backendUrl = (window as any).__TAGAI_BACKEND_URL__ || 'http://localhost:9901';
+        const vapidResponse = await fetch(`${backendUrl}/api/notifications/vapid-public-key`);
         const { publicKey } = await vapidResponse.json();
 
         if (!publicKey) {
