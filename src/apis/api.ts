@@ -1,4 +1,4 @@
-import { get, post, put } from "./axios"
+import { get, post, put, del } from "./axios"
 import { BACKEND_API_URL } from '@/config'
 import type { Community, CreateCommunity } from '@/types'
 
@@ -149,6 +149,9 @@ export const newReply = async (twitterId: string, tweetId: string, text: string,
 
 export const newQuote = async (twitterId: string, tweetId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/quote', { twitterId, tweetId, text, tick })
+
+export const deleteTweet = async (tweetId: string, twitterId: string) =>
+  del(BACKEND_API_URL + '/curation/tweet/' + tweetId, { twitterId })
 
 export const getNewTweets = async (twitterId: string | null | undefined, pages?: number) =>
     get(BACKEND_API_URL + '/tweets/byTime', {pages, twitterId})

@@ -91,3 +91,28 @@ export function put(url: string, params?: object) {
       });
   });
 }
+
+export function del(url: string, data?: object) {
+  return new Promise((resolve, reject) => {
+    axios
+      .delete(url, data ? { data } : undefined)
+      .then(res => {
+        if (res.data?.jwt) {
+          const accStore = useAccountStore();
+          accStore.setAccount({
+            ...accStore.getAccountInfo,
+            accessToken: res.data.jwt
+          });
+          return resolve(res.data.data);
+        }
+        resolve(res.data);
+      })
+      .catch(err => {
+        if (err.response) {
+          reject(err.response.status);
+          return;
+        }
+        reject(500);
+      });
+  });
+}

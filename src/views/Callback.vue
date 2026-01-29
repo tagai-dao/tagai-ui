@@ -15,10 +15,10 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error in callback processing:', error);
   }
-  // 即使出错也跳转到之前的页面
-  const path = localStorage.getItem('current-route')
+  // 即使出错也跳转到之前保存的页面
+  const path = localStorage.getItem('current-route') ?? '/'
   localStorage.removeItem('current-route')
-  router.replace(path ?? '/')
+  router.replace(path)
 });
 </script>
 <template>

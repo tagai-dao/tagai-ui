@@ -82,7 +82,8 @@ const handleProfileClick = (e?: Event) => {
     // 已登录，跳转到 profile 页面
     router.push('/profile')
   } else {
-    // 未登录，显示登录框
+    // 未登录，记录登录成功后要前往的页面为 Profile，并显示登录流程
+    localStorage.setItem('current-route', '/profile')
     loginStore.setLoginStep(LoginStepType.AuthTwitter)
   }
 }
@@ -96,7 +97,8 @@ const handleWalletClick = (e?: Event) => {
     // 已登录，跳转到 wallet 页面
     router.push('/wallet')
   } else {
-    // 未登录，显示登录框
+    // 未登录，记录登录成功后要前往的页面为 Wallet，并显示登录流程
+    localStorage.setItem('current-route', '/wallet')
     loginStore.setLoginStep(LoginStepType.AuthTwitter)
   }
 }

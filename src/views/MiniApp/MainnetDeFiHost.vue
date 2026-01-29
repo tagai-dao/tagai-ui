@@ -58,7 +58,7 @@ function goWallet() {
   if (accountStore.ethConnectAddress) {
     router.push('/wallet');
   } else {
-    // Mini App 内登录：保存当前路由，登录成功后返回此页面
+    // Mini App 内登录：登录后留在当前 Mini App 页面
     localStorage.setItem('current-route', router.currentRoute.value.fullPath);
     modalStore.setModalVisible(true, GlobalModalType.Login);
   }

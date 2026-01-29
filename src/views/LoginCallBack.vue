@@ -38,11 +38,12 @@ onMounted(async () => {
         }
         if (userInfo.account) {
             accStore.setAccount(userInfo.account)
-            const path = localStorage.getItem('current-route')
+            const path = localStorage.getItem('current-route') ?? '/'
             localStorage.removeItem('current-route')
-            router.replace(path ?? '/')
+            router.replace(path)
+        } else {
+            router.replace('/')
         }
-        router.replace('/')
     }else {
         router.replace('/')
     }
