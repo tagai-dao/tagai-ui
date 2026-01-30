@@ -203,6 +203,20 @@ const router = createRouter({
       name: 'mainnet-defi',
       component: () => import('@/views/MiniApp/MainnetDeFiTest.vue'),
       meta: { tabBar: false, topBar: false }
+    },
+    // Mainnet Social Test - Host wrapper
+    {
+      path: '/mainnet-social-host',
+      name: 'mainnet-social-host',
+      component: () => import('@/views/MiniApp/MainnetSocialHost.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    // Mainnet Social Test - Mini App content (loaded in iframe)
+    {
+      path: '/mainnet-social',
+      name: 'mainnet-social',
+      component: () => import('@/views/MiniApp/MainnetSocialTest.vue'),
+      meta: { tabBar: false, topBar: false }
     }
   ]
 })

@@ -221,6 +221,18 @@ async function loadApps() {
         homeUrl: 'http://localhost:5173/mainnet-defi-host',
         verified: true,
       },
+      // App 14: Mainnet Social Host
+      {
+        domain: 'mainnet-social-host',
+        name: 'Mainnet Social',
+        iconUrl: generateIconSvg('Soc', '#8B5CF6'),
+        subtitle: 'Mainnet Social 测试',
+        description: 'Test Social Mini App on mainnet: Twitter & Steem integration, post, vote, comment, etc.',
+        category: 'social',
+        tags: ['mainnet', 'social', 'twitter', 'steem', 'test', 'developer'],
+        homeUrl: 'http://localhost:5173/mainnet-social-host',
+        verified: true,
+      },
     ];
   } catch (error) {
     console.error('Failed to load apps:', error);
@@ -248,6 +260,11 @@ function openApp(app: MiniApp) {
 
   if (app.domain === 'mainnet-defi-host') {
     router.push('/mainnet-defi-host');
+    return;
+  }
+
+  if (app.domain === 'mainnet-social-host') {
+    router.push('/mainnet-social-host');
     return;
   }
   

@@ -47,8 +47,23 @@
           <div class="button-group">
             <button @click="testTwitterIsConnected">检查 Twitter 连接</button>
             <button @click="testTwitterGetUser">获取 Twitter 用户信息</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">📤 发布与互动</div>
+          <div class="button-group">
             <button class="primary" @click="testTwitterPost">发布推文</button>
-            <button class="secondary" @click="testTwitterShare">分享到 Twitter</button>
+            <button @click="testTwitterRetweet">转发推文</button>
+            <button @click="testTwitterLike">点赞推文</button>
+            <button @click="testTwitterReply">回复推文</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">🔗 分享功能</div>
+          <div class="button-group">
+            <button class="secondary" @click="testTwitterShare">分享 URL</button>
           </div>
         </div>
       </div>
@@ -209,6 +224,7 @@ const statusClass = ref('loading');
 const logs = ref<LogEntry[]>([]);
 const contextInfo = ref<any>(null);
 const lastSteemPost = ref<{ author: string; permlink: string; tweetId?: string } | null>(null);
+const lastTwitterTweetId = ref<string | null>(null);
 
 function log(message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info') {
   const time = new Date().toLocaleTimeString('zh-CN');
@@ -311,9 +327,58 @@ async function testTwitterPost() {
     const result = await sdk.twitter.post({
       text: 'Hello from TagAI Mini App SDK Test! 🚀 #TagAI #Web3',
     });
+    // Save tweet ID for other tests
+    lastTwitterTweetId.value = result.tweetId;
     log(`✅ 推文发布成功: ${result.url}`, 'success');
+    log(`   Tweet ID: ${result.tweetId}`, 'info');
   } catch (error: any) {
     log(`❌ 发布失败: ${error.message}`, 'error');
+  }
+}
+
+async function testTwitterRetweet() {
+  log('转发推文...');
+  if (!lastTwitterTweetId.value) {
+    log('❌ 请先发布一条推文', 'error');
+    return;
+  }
+  try {
+    await sdk.twitter.retweet(lastTwitterTweetId.value, 'default');
+    log('✅ 转发成功', 'success');
+  } catch (error: any) {
+    log(`❌ 转发失败: ${error.message}`, 'error');
+  }
+}
+
+async function testTwitterLike() {
+  log('点赞推文...');
+  if (!lastTwitterTweetId.value) {
+    log('❌ 请先发布一条推文', 'error');
+    return;
+  }
+  try {
+    await sdk.twitter.like(lastTwitterTweetId.value, 'default');
+    log('✅ 点赞成功', 'success');
+  } catch (error: any) {
+    log(`❌ 点赞失败: ${error.message}`, 'error');
+  }
+}
+
+async function testTwitterReply() {
+  log('回复推文...');
+  if (!lastTwitterTweetId.value) {
+    log('❌ 请先发布一条推文', 'error');
+    return;
+  }
+  try {
+    const result = await sdk.twitter.reply(
+      lastTwitterTweetId.value,
+      '这是一条测试回复！',
+      'default'
+    );
+    log(`✅ 回复成功: ${result.url}`, 'success');
+  } catch (error: any) {
+    log(`❌ 回复失败: ${error.message}`, 'error');
   }
 }
 

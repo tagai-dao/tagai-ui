@@ -101,6 +101,10 @@ import {
   createSteemComment,
   reblogSteemPost,
   getEthAddressByTwitterId,
+  tweet,
+  newCurate,
+  newRetweet,
+  newReply,
 } from '@/apis/api';
 import MiniAppComposeDialog from './MiniAppComposeDialog.vue';
 import MiniAppSendTokenDialog from './MiniAppSendTokenDialog.vue';
@@ -451,6 +455,18 @@ async function handleMessage(event: MessageEvent) {
         result = await handleTwitterPost(params);
         break;
 
+      case 'twitter.like':
+        result = await handleTwitterLike(params);
+        break;
+
+      case 'twitter.retweet':
+        result = await handleTwitterRetweet(params);
+        break;
+
+      case 'twitter.reply':
+        result = await handleTwitterReply(params);
+        break;
+
       case 'twitter.share':
         result = await handleTwitterShare(params);
         break;
@@ -700,7 +716,7 @@ async function handleTwitterPost(params: any): Promise<{
   url: string;
   success: boolean;
 }> {
-  const { text, mediaUrls, quoteTweetId, replyToTweetId } = params;
+  const { text, mediaUrls, quoteTweetId, replyToTweetId, community } = params;
 
   if (!text || text.length === 0) {
     throw new Error('Tweet text is required');
@@ -710,41 +726,141 @@ async function handleTwitterPost(params: any): Promise<{
     throw new Error('Tweet text exceeds 280 character limit');
   }
 
-  // For now, we use the compose dialog which can post to Twitter
-  // In the future, this could use a direct Twitter API call
   try {
-    console.log('[handleTwitterPost] 开始发布推文...');
-    const tokenResult = await handleAuthGetToken({});
-    const token = tokenResult.token;
-    console.log('[handleTwitterPost] Token 获取成功');
+    console.log('[handleTwitterPost] 开始发布推文到 Twitter...');
+    const account = accountStore.getAccountInfo;
 
-    // Use Steem post with crossPostTwitter flag to also post to Twitter
-    console.log('[handleTwitterPost] 调用 createSteemPost:', {
-      title: 'Tweet',
+    if (!account?.twitterId) {
+      throw new Error('User not authenticated');
+    }
+
+    // 使用 TagAI 原生的 tweet API 发布到 Twitter
+    // community tick: 优先使用传入的 community,否则使用空字符串(表示全局推文,不属于任何 community)
+    const tick = community || '';
+
+    const result = await tweet(
+      account.twitterId,
       text,
-      tags: [],
-      jsonMetadata: { mediaUrls, quoteTweetId, replyToTweetId }
-    });
+      tick
+    ) as any;
 
-    const result = await createSteemPost(
-      token,
-      'Tweet', // Default title for tweet-style posts
-      text,
-      [], // No tags
-      { mediaUrls, quoteTweetId, replyToTweetId },
-      []
-    );
+    console.log('[handleTwitterPost] 推文发布成功:', result);
+    console.log('[handleTwitterPost] result type:', typeof result);
+    console.log('[handleTwitterPost] result keys:', result ? Object.keys(result) : 'null/undefined');
 
-    console.log('[handleTwitterPost] 发布成功:', result);
+    // TagAI tweet API 返回格式可能是 { tweetId, url } 或其他格式
+    // 需要根据实际返回值适配
+    const tweetId = result?.tweetId || result?.data?.tweetId || result?.id || '';
+    const username = account.twitterUsername || account.twitterId;
+
+    // 如果 API 直接返回了 URL,使用它;否则构建 URL
+    const twitterUrl = result?.url || result?.data?.url ||
+      (tweetId ? `https://twitter.com/${username}/status/${tweetId}` : `https://twitter.com/${username}`);
+
+    console.log('[handleTwitterPost] 解析结果:', { tweetId, twitterUrl });
+
     return {
-      tweetId: result.data?.twitterTweetId || '',
-      url: result.data?.twitterUrl || `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
+      tweetId,
+      url: twitterUrl,
       success: true,
     };
   } catch (error: any) {
     console.error('[handleTwitterPost] Failed to post tweet:', error);
     console.error('[handleTwitterPost] Error details:', error.response || error.message);
     throw new Error('Failed to post tweet');
+  }
+}
+
+async function handleTwitterLike(params: any): Promise<void> {
+  try {
+    const { tweetId, community = '' } = params;
+    const account = accountStore.getAccountInfo;
+
+    if (!account?.twitterId) {
+      throw new Error('User not authenticated');
+    }
+
+    // 使用 TagAI 原生的 curate API (点赞)
+    // vp (vote power): 默认使用 10 (相当于 10% 的投票权重)
+    await newCurate(
+      account.twitterId,
+      tweetId,
+      community,
+      10 // 默认投票权重
+    );
+
+    console.log('[handleTwitterLike] 点赞成功:', tweetId);
+  } catch (error: any) {
+    console.error('[handleTwitterLike] Failed:', error);
+    throw new Error('Failed to like tweet');
+  }
+}
+
+async function handleTwitterRetweet(params: any): Promise<void> {
+  try {
+    const { tweetId, community = '' } = params;
+    const account = accountStore.getAccountInfo;
+
+    if (!account?.twitterId) {
+      throw new Error('User not authenticated');
+    }
+
+    // 使用 TagAI 原生的 retweet API
+    await newRetweet(
+      account.twitterId,
+      tweetId,
+      community
+    );
+
+    console.log('[handleTwitterRetweet] 转发成功:', tweetId);
+  } catch (error: any) {
+    console.error('[handleTwitterRetweet] Failed:', error);
+    throw new Error('Failed to retweet');
+  }
+}
+
+async function handleTwitterReply(params: any): Promise<{ tweetId: string; url: string; success: boolean }> {
+  try {
+    const { tweetId, text, community = '' } = params;
+    const account = accountStore.getAccountInfo;
+
+    if (!account?.twitterId) {
+      throw new Error('User not authenticated');
+    }
+
+    if (!text || text.length === 0) {
+      throw new Error('Reply text is required');
+    }
+
+    if (text.length > 280) {
+      throw new Error('Reply text exceeds 280 character limit');
+    }
+
+    // 使用 TagAI 原生的 reply API
+    const result = await newReply(
+      account.twitterId,
+      tweetId,
+      text,
+      community
+    ) as any;
+
+    console.log('[handleTwitterReply] 回复成功:', result);
+
+    // 构建回复的 Twitter URL
+    const replyId = result.tweetId || result.data?.tweetId || '';
+    const username = account.twitterUsername || account.twitterId;
+    const url = replyId
+      ? `https://twitter.com/${username}/status/${replyId}`
+      : `https://twitter.com/${username}`;
+
+    return {
+      tweetId: replyId,
+      url,
+      success: true
+    };
+  } catch (error: any) {
+    console.error('[handleTwitterReply] Failed:', error);
+    throw new Error('Failed to reply to tweet');
   }
 }
 

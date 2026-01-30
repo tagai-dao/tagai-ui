@@ -35,12 +35,20 @@ async function showPrivy() {
   // 显示PrivyModal弹窗
   showPrivyModal.value = true
 }
-onMounted(() => {
+onMounted(async () => {
+  // 检查登录状态和 token 有效性
+  const token = await useAccount().checkoutAccessToken()
+  if (!token) {
+    // token 无效，已触发 logout，不继续执行
+    return
+  }
+  
   if (!accStore.getAccountInfo?.ethAddr || !isAddress(accStore.getAccountInfo?.ethAddr)) {
     // show bond address
     useAccount().bondEthAddress()
     return;
   }
+  
   updateBalance()
 })
 
