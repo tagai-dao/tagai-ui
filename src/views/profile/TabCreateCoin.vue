@@ -83,7 +83,7 @@ onMounted(() => {
             <template #default-btn><div>
               <button v-if="aiBalance[community.token] > 0 && community.createdByAi && community.listed"
                 class="h-8 bg-gradient-primary text-white font-medium px-4 rounded-full"
-                @click.stop="claimReward(community.token)">
+                @click.stop="claimReward(community.tick)">
                 {{ formatAmount(aiBalance[community.token]) }} To Claim
               </button>
             </div></template>
