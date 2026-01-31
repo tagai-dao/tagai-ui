@@ -138,13 +138,15 @@
         }
     }
     
-    // 判断胜利者
+    // 判断胜利者：与 PredictBattleCard 显示分数使用相同数据源（amounta/amountb 优先），避免显示分数高但 winner 不一致
     const getWinner = (battle: BattleData): 'left' | 'right' | null => {
         const tweetA = tweets[battle.predictAID]
         const tweetB = tweets[battle.predictBID]
         if (tweetA && tweetB) {
             if (tweetA.isSettled && tweetB.isSettled) {
-                return (tweetA.amount ?? 0) > (tweetB.amount ?? 0) ? 'left' : 'right'
+                const amountA = battle.amounta ?? (tweetA.amount ?? 0)
+                const amountB = battle.amountb ?? (tweetB.amount ?? 0)
+                return amountA > amountB ? 'left' : 'right'
             }
             return null
         }

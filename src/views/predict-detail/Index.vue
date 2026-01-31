@@ -35,14 +35,15 @@ onMounted(async () => {
   }
 })
 
-// 判断胜利者
+// 判断胜利者：与 PredictBattleCard 显示分数使用相同数据源（amounta/amountb 优先），避免显示分数高但 winner 不一致
 const getWinner = (market: MarketData): 'left' | 'right' | null => {
-
     const tweetA = market.tweets[market.battle.predictAID]
     const tweetB = market.tweets[market.battle.predictBID]
     if (tweetA && tweetB) {
         if (tweetA.isSettled && tweetB.isSettled) {
-            return (tweetA.amount ?? 0) > (tweetB.amount ?? 0) ? 'left' : 'right'
+            const amountA = market.battle.amounta ?? (tweetA.amount ?? 0)
+            const amountB = market.battle.amountb ?? (tweetB.amount ?? 0)
+            return amountA > amountB ? 'left' : 'right'
         }
         return null
     }
