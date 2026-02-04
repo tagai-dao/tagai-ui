@@ -94,9 +94,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="predict-event-container rounded-t-2xl overflow-hidden">
+  <div class="predict-event-container rounded-t-2xl overflow-y-auto h-full">
     <!-- 移除了顶部的创建按钮 -->
-    <van-pull-refresh class="h-full min-h-full"
+    <van-pull-refresh
       v-model="refreshing"
       @refresh="onRefresh"
       :loading-text="$t('loading')"
@@ -124,7 +124,7 @@ onMounted(async () => {
 
 <style scoped>
 .predict-event-container {
-  min-height: calc(100vh - 120px); /* 减去顶部 Tab 和 Header 的高度 */
+  height: 100%;
   background-color: #f8f9fa;
 }
 

@@ -101,8 +101,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="predict-battle-container rounded-t-2xl overflow-hidden">
-    <van-pull-refresh class="h-full min-h-full"
+  <div class="predict-battle-container rounded-t-2xl overflow-y-auto h-full">
+    <van-pull-refresh
       v-model="refreshing"
       @refresh="onRefresh"
       :loading-text="$t('loading')"
@@ -129,7 +129,7 @@ onMounted(async () => {
 
 <style scoped>
 .predict-battle-container {
-  min-height: calc(100vh - 120px);
+  height: 100%;
   background-color: #f8f9fa;
 }
 

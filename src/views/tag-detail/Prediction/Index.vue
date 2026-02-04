@@ -54,7 +54,7 @@ const createPredict = () => {
     </div>
 
     <!-- 内容区域 -->
-    <div class="flex-1 overflow-hidden">
+    <div class="flex-1 min-h-0">
       <KeepAlive>
         <component :is="activeTab === 'event' ? PredictEvent : PredictBattle" />
       </KeepAlive>
