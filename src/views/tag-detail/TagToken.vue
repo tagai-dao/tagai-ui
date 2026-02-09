@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useCommunityStore } from "@/stores/community";
-import {computed, onMounted, ref} from "vue";
+import { computed, onMounted, ref, watch, nextTick } from "vue";
 import { formatAddress, formatAmount, formatPrice, sleep, formatDate } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
@@ -17,6 +17,21 @@ const comStore = useCommunityStore()
 const holdingList = ref<TokenHoldingList[]>([])
 const showDistributionModal = ref(false)
 const communityDistribution = ref();
+
+/** 分配弹窗内可滚动容器，用于打开时滚动到当前阶段 */
+const distributionScrollRef = ref<HTMLElement | null>(null)
+/** 各分发阶段对应的 DOM 元素，用于滚动定位 */
+const phaseRefs = ref<(HTMLElement | null)[]>([])
+
+const setPhaseRef = (el: unknown, index: number) => {
+  if (el) {
+    const arr = phaseRefs.value
+    if (index >= arr.length) {
+      arr.length = index + 1
+    }
+    arr[index] = el as HTMLElement
+  }
+}
 
 const chartOptions = ref({
   chart: {
@@ -191,6 +206,38 @@ function isCurrentPeriod(start: number, end: number) {
   return start <= currentTime && end >= currentTime;
 }
 
+/** 将弹窗内容滚动到当前进行中的分发阶段（可重试，应对 dialog 延迟挂载） */
+function scrollToCurrentPhase(retryCount = 0) {
+  const list = communityDistribution.value
+  if (!list?.length) return
+  const currentIndex = list.findIndex((item: { start: number; end: number }) =>
+    isCurrentPeriod(item.start, item.end)
+  )
+  if (currentIndex < 0) return
+  const container = distributionScrollRef.value
+  const targetEl = phaseRefs.value[currentIndex]
+  if (!container || !targetEl) {
+    if (retryCount < 5) {
+      setTimeout(() => scrollToCurrentPhase(retryCount + 1), 50)
+    }
+    return
+  }
+  const containerRect = container.getBoundingClientRect()
+  const targetRect = targetEl.getBoundingClientRect()
+  const offsetTop = targetRect.top - containerRect.top + container.scrollTop
+  container.scrollTop = Math.max(0, offsetTop - 24) // 留 24px 上边距
+}
+
+/** 弹窗完全打开后执行滚动（@opened 时 ref 已就绪） */
+function onDistributionModalOpened() {
+  nextTick(() => scrollToCurrentPhase())
+}
+
+// 弹窗关闭时清空阶段 ref，避免残留
+watch(showDistributionModal, (visible) => {
+  if (!visible) phaseRefs.value = []
+})
+
 onMounted(async () => {
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
@@ -346,7 +393,8 @@ onMounted(async () => {
     <el-dialog v-model="showDistributionModal"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
-               width="90%" :show-close="false" align-center destroy-on-close>
+               width="90%" :show-close="false" align-center destroy-on-close
+               @opened="onDistributionModalOpened">
       <!-- 标题区域 -->
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-grey-e7">
         <h3 class="text-h2 font-semibold text-black-19">{{ $t('postView.rewardDistributionSchedule') }}</h3>
@@ -359,13 +407,14 @@ onMounted(async () => {
       </div>
 
       <!-- 可滚动内容区域 -->
-      <div class="overflow-y-auto pr-2 custom-scrollbar" style="max-height: 60vh;">
+      <div ref="distributionScrollRef" class="overflow-y-auto pr-2 custom-scrollbar" style="max-height: 60vh;">
         <div v-if="communityDistribution && communityDistribution.length > 0" class="relative pl-4">
           <!-- 时间轴线 -->
           <div class="absolute left-[7px] top-3 bottom-3 w-[2px] bg-gradient-to-b from-orange-normal via-purple-500 to-blue-active"></div>
           
           <!-- 时间线记录 -->
           <div v-for="(item, index) in communityDistribution" :key="index"
+               :ref="(el) => setPhaseRef(el, Number(index))"
                class="relative mb-6 last:mb-0">
             <!-- 时间轴连接点 -->
             <div class="absolute left-[-16px] top-2 w-4 h-4 rounded-full border-3 bg-white z-10"
