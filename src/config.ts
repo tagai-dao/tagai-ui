@@ -75,6 +75,7 @@ export const RegisterSteemMessage = JSON.stringify(
 export const zero = '0x0000000000000000000000000000000000000000000000000000000000000000';
 export const IPShareContract1 = "0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0";
 export const IPShareContract2 = "0x24328DccA1bA54EeE82e2993F021802e64290486";
+export const IPShareContract3 = "0x95450AaD4Cc195e03BB4791B7f6f04aC6D9BA922";
 
 export const PumpContract1 = "0xa77253Ac630502A35A6FcD210A01f613D33ba7cD"; // for test: ex ttat
 export const PumpContract2 = "0x3DC52C69C3C8be568372E16d50E9F3FEc796610c"; // fix bug
@@ -82,6 +83,13 @@ export const PumpContract3 = "0xc9FaA3c05a5178C380d9C28Edffa38d90D606F22"; // fi
 export const PumpContract4 = "0x0476571a77Cc8Fc28796935Cf173c265F2021448"; // fix bug
 export const PumpContract5 = "0x2cAbfDE43f93422fFb070f0Fa03d2951dbBC7749"; // ixo: user who has less reputation can't buy
 export const PumpContract6 = "0x201308B193bC0Aa81Ac540A7D3B3ADb530a39861"; // for import tokens
+export const PumpContract7 = "0x3E75E2db40E7cc9C7d7869Fc2d97eDAb01724212"; // PCS V4 hook
+
+// PancakeSwap V4 Infinity
+export const TipTagSwapHook = "0xF815dB0fbeafED4C719F65E41dEC9C50fb357896";
+export const PCSUniversalRouter = "0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB";
+export const PCSPermit2 = "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768";
+export const PCSCLPoolManager = "0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b";
 
 export const PopUp = "0xA3951BcEc6018CAAE34dCEA722858a7dc3177Ed2";
 

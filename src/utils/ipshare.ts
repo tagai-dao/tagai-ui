@@ -1,5 +1,5 @@
 import { ChainConfig } from "@/config";
-import { IPShareContract1, IPShareContract2 } from "@/config";
+import { IPShareContract1, IPShareContract2, IPShareContract3 } from "@/config";
 import { aggregate } from '@makerdao/multicall'
 import _ from 'lodash'
 import { isAddress } from "viem";
@@ -23,7 +23,7 @@ import errCode from "@/errCode";
 export const create = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) return;
     const hash = await writeContract({
-        contractName: 'IPShare2',
+        contractName: 'IPShare3',
         functionName: 'createShare',
         args: [ethAddr]
     })
@@ -52,7 +52,7 @@ export const getIPShareSupply = async (ethAddr: string) => {
     }
 
     let calls = [{
-        target: IPShareContract2,
+        target: IPShareContract3,
         call: [
             'ipshareSupply(address)(uint256)',
             ethAddr
@@ -70,7 +70,7 @@ export const ipshareCreated = async (ethAddr: string) => {
         return {}
     }
     let calls = [{
-        target: IPShareContract2,
+        target: IPShareContract3,
         call: [
                 'ipshareCreated(address)(bool)',
                 ethAddr

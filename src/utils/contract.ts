@@ -4,7 +4,8 @@ import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, 
     wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens, 
-    FPMMDeterministicFactory2} from '@/config'
+    FPMMDeterministicFactory2, PumpContract7, IPShareContract3,
+    PCSUniversalRouter, PCSPermit2} from '@/config'
 import { useAccountStore } from "@/stores/web3";
 import { customBsc } from "./privy";
 
@@ -15,8 +16,10 @@ const ContractAddress = {
     Pump4: PumpContract4,
     Pump5: PumpContract5,
     Pump6: PumpContract6,
+    Pump7: PumpContract7,
     IPShare1: IPShareContract1,
     IPShare2: IPShareContract2,
+    IPShare3: IPShareContract3,
     UniswapRouter: uniswapV2Router02,
     UniswapFactory: uniswapV2Factory,
     WrapSwaper: wrappedUniswapV2ForTagAI,
@@ -26,6 +29,8 @@ const ContractAddress = {
     FPMMDeterministicFactory: FPMMDeterministicFactory,
     FPMMDeterministicFactory2: FPMMDeterministicFactory2,
     ConditionalTokens,
+    UniversalRouter: PCSUniversalRouter,
+    Permit2: PCSPermit2,
 }
 
 export const readContract = async (contractName: string, functionName: string, args: any, address?: `0x${string}`) => {
