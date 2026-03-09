@@ -13,6 +13,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   getBuyAmountUseEth, getSellAmountUseToken,
   getBuyPriceAfterFee
  } from '@/utils/pump'
+import { buyTokenV4, sellTokenV4, type PoolKey } from '@/utils/pcsV4Swap'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -255,8 +256,22 @@ async function confirm() {
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
 
-      // check list
-      const hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
+      let hash: string | undefined;
+      // V7 listed tokens use PCS V4 Universal Router
+      if (token!.version === 7 && listed.value) {
+        const poolKey = JSON.parse(token!.pair ?? '{}') as PoolKey;
+        const ethAmount = willListing ? updatedBuyValue : BigInt(payEth.value * 1e18);
+        hash = await buyTokenV4(
+          poolKey,
+          ethAmount,
+          willListing ? updatedReveiveAmount : (receiveAmount.value ?? 0n),
+          (stateStore.sellsman ?? token.ipshare) as `0x${string}`,
+          Math.ceil(maxSlippage.value * 100)
+        );
+      } else {
+        // check list
+        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
+      }
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
@@ -273,7 +288,21 @@ async function confirm() {
         finalSellAmount = BigInt(tokenOriginalBalance.value)
       }
 
-      const hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100))
+      let hash: string | undefined;
+      // V7 listed tokens use PCS V4 Universal Router
+      if (token!.version === 7 && listed.value) {
+        const poolKey = JSON.parse(token!.pair ?? '{}') as PoolKey;
+        hash = await sellTokenV4(
+          poolKey,
+          token!.token as `0x${string}`,
+          finalSellAmount,
+          receiveEth.value ?? 0n,
+          (stateStore.sellsman ?? token.ipshare) as `0x${string}`,
+          Math.ceil(maxSlippage.value * 100)
+        );
+      } else {
+        hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
+      }
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined

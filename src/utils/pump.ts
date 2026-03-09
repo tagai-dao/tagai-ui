@@ -1,7 +1,7 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
@@ -12,6 +12,7 @@ import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log } from "viem";
 import { writeContract, readContract } from "./contract";
+import { buyTokenV4, sellTokenV4, type PoolKey } from "./pcsV4Swap";
 
 const pumpContract = [
     PumpContract1,
@@ -19,7 +20,8 @@ const pumpContract = [
     PumpContract3,
     PumpContract4,
     PumpContract5,
-    PumpContract6
+    PumpContract6,
+    PumpContract7
 ]
 
 export const checkTickUsed = async (tick: string) => {
@@ -28,17 +30,24 @@ export const checkTickUsed = async (tick: string) => {
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
+    // Read user's last salt index from contract, then use index + 1 as salt
+    const userAddress = useAccountStore().ethConnectAddress;
+    const lastSaltIndex: any = await readContract('Pump7', 'getLastSaltIndex', [userAddress]);
+    const saltNum = BigInt(lastSaltIndex) + 1n;
+    // Encode as bytes32 (uint256 -> hex, left-padded to 64 chars)
+    const salt = ('0x' + saltNum.toString(16).padStart(64, '0')) as `0x${string}`;
+    
     let hash = await writeContract({
-        contractName: 'Pump4',
+        contractName: 'Pump7',
         functionName: 'createToken',
-        args: [createParms.tick],
+        args: [createParms.tick, salt],
         value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
     }    
     let tx = await getTransactionReceipt(hash as `0x${string}`)
-    const event: any = getCreateTokenEventByHash(tx, 2);
+    const event: any = getCreateTokenEventByHash(tx, 7);
     if (event?.tick == createParms.tick) {
         return {token: event.token, createHash: tx.transactionHash}
     }
@@ -51,6 +60,15 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         sellsman = zeroAddress;
     }
     if (listed) {
+        // V7 listed tokens use PCS V4 Universal Router
+        if (version === 7) {
+            // poolKey is passed via the pair field from backend (parsed as JSON)
+            const poolKey = typeof amount === 'bigint' ? undefined : undefined; // poolKey comes from community.pair
+            // This branch is called from BuyAndSellView which passes community data
+            // The actual V4 swap is handled in the calling code via buyTokenV4
+            throw new Error('V7 listed buy should use buyTokenV4 directly');
+        }
+
         // 2% transaction fee
         const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
 
@@ -135,6 +153,11 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         sellsman = zeroAddress;
     }
     if (listed) {
+        // V7 listed tokens use PCS V4 Universal Router
+        if (version === 7) {
+            throw new Error('V7 listed sell should use sellTokenV4 directly');
+        }
+
         if (isImport) {
             const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)
             if (allowance < amount) {

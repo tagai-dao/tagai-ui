@@ -2,7 +2,7 @@
 import { useModalStore } from "@/stores/common";
 import { reactive, ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
-import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, PumpContract6 } from "@/config";
+import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, PumpContract6, PumpContract7 } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
