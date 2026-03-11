@@ -4712,14 +4712,14 @@ export const abis = {
       }
     ],
     "Pump7": [
-      {"inputs":[{"internalType":"string","name":"tick","type":"string"},{"internalType":"bytes32","name":"salt","type":"bytes32"}],"name":"createToken","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"string","name":"tick","type":"string"},{"internalType":"bytes32","name":"salt","type":"bytes32"}],"name":"createToken","outputs":[],"stateMutability":"payable","type":"function"},
       {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"orderId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"signature","type":"bytes"}],"name":"userClaim","outputs":[],"stateMutability":"payable","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"supply","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"getPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"supply","type":"uint256"},{"internalType":"uint256","name":"ethAmount","type":"uint256"}],"name":"getBuyAmountByValue","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"supply","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"getBuyPriceAfterFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"uint256","name":"supply","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"getSellPriceAfterFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"totalClaimedSocialRewards","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getLastSaltIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"getLastSaltIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"tick","type":"string"},{"indexed":false,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"address","name":"creator","type":"address"}],"name":"NewToken","type":"event"}
     ],
     "Token7": [
