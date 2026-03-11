@@ -332,7 +332,9 @@ export const getTokenInfo = async (communities: Community[]) => {
             community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
             community.price = tokenInfo.price;
             community.marketCap = ((community.price ?? 0) * TotalSupply);
-            community.pair = tokenInfo.pair;
+            if ((community.version ?? 2) !== 7) {
+                community.pair = tokenInfo.pair;
+            }
             community.totalSupply = TotalSupply;
         }else{
             const importInfo = importResult[community.token]
@@ -385,7 +387,9 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                 tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
                 tweet.price = tokenInfo.byUSD ? tokenInfo.price / stateStore.ethPrice : tokenInfo.price;
                 tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
-                tweet.pair = tokenInfo.pair;
+                if ((tweet.version ?? 2) !== 7) {
+                    tweet.pair = tokenInfo.pair;
+                }
             }
         }
         return tweets;
@@ -401,6 +405,7 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
     let calls: any[] = []
     for (let token of tokens) {
         if (!isAddress(token)) continue;
+        const version = versions[token] ?? 4;
         calls = calls.concat([
             {
                 target: token,
@@ -428,8 +433,10 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                 returns: [
                     [token + '-totalClaimedSocialRewards', (val: any) => BigInt(val)]
                 ]
-            },
-            {
+            }
+        ])
+        if (version !== 7) {
+            calls.push({
                 target: uniswapV2Factory,
                 call: [
                     'getPair(address,address)(address)',
@@ -439,8 +446,8 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                 returns: [
                     [token + '-pair']
                 ]
-            }
-        ])
+            })
+        }
     }
     
     const res = await aggregate(calls, ChainConfig.multiConfig)
@@ -458,18 +465,23 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
     for (let p of Object.entries(result)) {
         const token = p[0]
         let info: any = p[1]
-        calls.push({
-            target: pumpContract[versions[token] - 1],
-            call: [
-                'getPrice(uint256,uint256)(uint256)',
-                info.bondingCurveSupply.toString(),
-                '1000000000000000000'
-            ],
-            returns: [
-                [token + '-price', (val: any) => (val).toString() / 1e18]
-            ]
-        })
-        if (info.listed) {
+        const version = versions[token] ?? 7;
+        const isV7Listed = version === 7 && info.listed;
+        if (!info.listed) {
+            calls.push({
+                target: pumpContract[version - 1],
+                call: [
+                    'getPrice(uint256,uint256)(uint256)',
+                    info.bondingCurveSupply.toString(),
+                    '1000000000000000000'
+                ],
+                returns: [
+                    [token + '-price', (val: any) => (val).toString() / 1e18]
+                ]
+            })
+            continue;
+        }
+        if (!isV7Listed) {
             calls.push({
                 target: info.pair,
                 call: [
@@ -504,15 +516,30 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
         let res = await aggregate(calls, ChainConfig.multiConfig);
         res = res.results.transformed;
         for (let [key, value] of Object.entries(result)) {
-            // @ts-ignore
-            if (value.listed) {
-                if (res[key + '-token0'] === key) {
-                    result[key].price = res[key + '-2'] / res[key + '-1']
-                }else {
-                    result[key].price = res[key + '-1'] / res[key + '-2']
-                }
-            }else{
+            const version = versions[key] ?? 7;
+            const info: any = value;
+            if (!info.listed) {
                 result[key].price = res[key + '-price']
+                continue;
+            }
+            if (version === 7) {
+                // V7 listed tokens trade on PCS V4. We do not have a reliable V4 spot-price
+                // reader in this module yet, so avoid returning an incorrect V2-derived price.
+                result[key].price = undefined;
+                continue;
+            }
+            if (res[key + '-token0'] === key) {
+                result[key].price = res[key + '-2'] / res[key + '-1']
+            }else {
+                result[key].price = res[key + '-1'] / res[key + '-2']
+            }
+        }
+    } else {
+        for (let [key, value] of Object.entries(result)) {
+            const version = versions[key] ?? 7;
+            const info: any = value;
+            if (info.listed && version === 7) {
+                result[key].price = undefined;
             }
         }
     }
