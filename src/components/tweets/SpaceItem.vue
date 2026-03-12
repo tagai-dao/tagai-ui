@@ -39,6 +39,8 @@ const showPageInfo = computed(() => {
   }
 })
 
+const shouldShowXAccountLink = computed(() => props.tweet.accountType === 0)
+
 const onUserAvatar = () => {
 
 }
@@ -82,8 +84,8 @@ const onUserAvatar = () => {
             <a class="font-bold text-lg" @click.stop="onUserAvatar()">{{
               tweet.twitterName
             }}</a>
-            <span class="mx-4px"> · </span>
-            <button @click="gotoTweet($event)">
+            <span v-if="shouldShowXAccountLink" class="mx-4px"> · </span>
+            <button v-if="shouldShowXAccountLink" @click="gotoTweet($event)">
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="" />
             </button>
           </div>

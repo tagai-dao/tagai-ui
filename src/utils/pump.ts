@@ -368,9 +368,7 @@ export const getTokenInfo = async (communities: Community[]) => {
 export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     if (tweets.length === 0) return tweets;
     try {
-        console.log(222, tweets.length)
         let tokens = tweets.filter(t => !t.isImport).map(t => t.token ?? '')
-        console.log(333, tokens)
         let versions: Record<string, number> = {}
         for (let tweet of tweets) {
             versions[tweet.token!] = tweet.version ?? 2;
