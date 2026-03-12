@@ -1,5 +1,5 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
 import { abis } from './abis'
@@ -12,7 +12,7 @@ import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log } from "viem";
 import { writeContract, readContract } from "./contract";
-import { buyTokenV4, sellTokenV4, type PoolKey } from "./pcsV4Swap";
+import { buyTokenV4, sellTokenV4 } from "./pcsV4Swap";
 
 const pumpContract = [
     PumpContract1,
@@ -23,6 +23,9 @@ const pumpContract = [
     PumpContract6,
     PumpContract7
 ]
+
+const Q192 = 2n ** 192n;
+const TOKEN_DECIMALS = 18n;
 
 export const checkTickUsed = async (tick: string) => {
     const created = await isTokenExist(tick);
@@ -313,6 +316,15 @@ function checkDistributionEnd(config: any) {
     return Date.now() / 1000 > lastTime;
 }
 
+const buildPairMap = (items: Array<{ token?: string; pair?: string | null | undefined; version?: number | null | undefined }>) => {
+    const pairMap: Record<string, string> = {};
+    for (const item of items) {
+        if (!item.token || !item.pair || (item.version ?? 2) !== 7) continue;
+        pairMap[item.token] = item.pair;
+    }
+    return pairMap;
+}
+
 export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
     let tokens = communities.filter(com => !com.isImport).map(com => com.token)
@@ -320,7 +332,7 @@ export const getTokenInfo = async (communities: Community[]) => {
     for (let com of communities) {
         versions[com.token!] = com.version ?? 2;
     }
-    let result = await getTokenOnchainInfo(tokens, versions)
+    let result = await getTokenOnchainInfo(tokens, versions, buildPairMap(communities))
 
     let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport))
 
@@ -356,12 +368,14 @@ export const getTokenInfo = async (communities: Community[]) => {
 export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     if (tweets.length === 0) return tweets;
     try {
+        console.log(222, tweets.length)
         let tokens = tweets.filter(t => !t.isImport).map(t => t.token ?? '')
+        console.log(333, tokens)
         let versions: Record<string, number> = {}
         for (let tweet of tweets) {
             versions[tweet.token!] = tweet.version ?? 2;
         }
-        let result = await getTokenOnchainInfo(tokens, versions)
+        let result = await getTokenOnchainInfo(tokens, versions, buildPairMap(tweets))
         let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport))
 
         const stateStore = useStateStore();
@@ -399,13 +413,51 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     }
 }
 
-export const getTokenOnchainInfo = async (tokens: string[], versions: Record<string, number>) => {
+export const getTokenOnchainInfo = async (
+    tokens: string[],
+    versions: Record<string, number>,
+    pairMap: Record<string, string> = {}
+) => {
     if (tokens.length === 0) return []
     tokens = _.union(tokens)
     let calls: any[] = []
+    const loadBaseInfosByFallback = async () => {
+        const entries = await Promise.all(tokens.map(async token => {
+            if (!isAddress(token)) return null;
+            const version = versions[token] ?? 4;
+            const pumpAddress = pumpContract[version - 1];
+            if (!pumpAddress) return null;
+            try {
+                const [bondingCurveSupply, listed, totalClaimedSocialRewards, pair] = await Promise.all([
+                    readContract('Token1', 'bondingCurveSupply', [], token),
+                    readContract('Token1', 'listed', [], token),
+                    readContract('Pump' + version, 'totalClaimedSocialRewards', [token]),
+                    version !== 7
+                        ? readContract('UniswapFactory', 'getPair', [token, WETH])
+                        : Promise.resolve(undefined)
+                ]);
+                return [token, {
+                    bondingCurveSupply: BigInt(bondingCurveSupply as bigint),
+                    listed,
+                    totalClaimedSocialRewards: BigInt(totalClaimedSocialRewards as bigint),
+                    pair
+                }] as const;
+            } catch (error) {
+                console.error('load token base info failed', token, version, error);
+                return [token, {
+                    bondingCurveSupply: 0n,
+                    listed: false,
+                    totalClaimedSocialRewards: 0n
+                }] as const;
+            }
+        }));
+        return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, any]>);
+    }
     for (let token of tokens) {
         if (!isAddress(token)) continue;
         const version = versions[token] ?? 4;
+        const pumpAddress = pumpContract[version - 1];
+        if (!pumpAddress) continue;
         calls = calls.concat([
             {
                 target: token,
@@ -425,7 +477,7 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                 ]
             },
             {
-                target: pumpContract[versions[token] - 1],
+                target: pumpAddress,
                 call: [
                     'totalClaimedSocialRewards(address)(uint256)',
                     token
@@ -449,12 +501,21 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
             })
         }
     }
-    
-    const res = await aggregate(calls, ChainConfig.multiConfig)
-    let infos = res.results.transformed
+    let infos: any = {}
+    try {
+        const res = await aggregate(calls, ChainConfig.multiConfig)
+        infos = res.results.transformed
+    } catch (error) {
+        console.error('getTokenOnchainInfo base multicall failed, fallback to single calls', error);
+        infos = await loadBaseInfosByFallback();
+    }
     let result: any = {}
     
     for (let [key, value] of Object.entries(infos)) {
+        if (key.startsWith('0x') && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            result[key] = value;
+            continue;
+        }
         const [token, type] = key.split('-')
         if (!result[token]) {
             result[token] = {}
@@ -465,11 +526,13 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
     for (let p of Object.entries(result)) {
         const token = p[0]
         let info: any = p[1]
-        const version = versions[token] ?? 7;
+        const version = versions[token] ?? 4;
+        const pumpAddress = pumpContract[version - 1];
+        if (!pumpAddress) continue;
         const isV7Listed = version === 7 && info.listed;
         if (!info.listed) {
             calls.push({
-                target: pumpContract[version - 1],
+                target: pumpAddress,
                 call: [
                     'getPrice(uint256,uint256)(uint256)',
                     info.bondingCurveSupply.toString(),
@@ -479,6 +542,25 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                     [token + '-price', (val: any) => (val).toString() / 1e18]
                 ]
             })
+            continue;
+        }
+        if (isV7Listed) {
+            const poolId = pairMap[token];
+            if (poolId) {
+                calls.push({
+                    target: PCSCLPoolManager,
+                    call: [
+                        'getSlot0(bytes32)(uint160,int24,uint24,uint24)',
+                        poolId
+                    ],
+                    returns: [
+                        [token + '-sqrtPriceX96', (val: any) => BigInt(val)],
+                        [token + '-tick'],
+                        [token + '-protocolFee'],
+                        [token + '-lpFee']
+                    ]
+                })
+            }
             continue;
         }
         if (!isV7Listed) {
@@ -516,16 +598,28 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
         let res = await aggregate(calls, ChainConfig.multiConfig);
         res = res.results.transformed;
         for (let [key, value] of Object.entries(result)) {
-            const version = versions[key] ?? 7;
+            const version = versions[key] ?? 4;
             const info: any = value;
             if (!info.listed) {
                 result[key].price = res[key + '-price']
                 continue;
             }
             if (version === 7) {
-                // V7 listed tokens trade on PCS V4. We do not have a reliable V4 spot-price
-                // reader in this module yet, so avoid returning an incorrect V2-derived price.
-                result[key].price = undefined;
+                const rawSqrtPriceX96 = res[key + '-sqrtPriceX96'];
+                if (rawSqrtPriceX96 === undefined) {
+                    result[key].price = undefined;
+                    continue;
+                }
+                const sqrtPriceX96 = BigInt(rawSqrtPriceX96);
+                if (sqrtPriceX96 === 0n) {
+                    result[key].price = undefined;
+                    continue;
+                }
+                // Token.sol initializes V7 pools as Native BNB(currency0) <-> Token(currency1)
+                // and uses the default ERC20 18 decimals, so sqrtPriceX96^2 / Q192 is
+                // the onchain BNB price of one token.
+                const scaledPrice = (sqrtPriceX96 * sqrtPriceX96 * (10n ** TOKEN_DECIMALS)) / Q192;
+                result[key].price = Number(scaledPrice) / 1e18;
                 continue;
             }
             if (res[key + '-token0'] === key) {
@@ -534,15 +628,8 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                 result[key].price = res[key + '-1'] / res[key + '-2']
             }
         }
-    } else {
-        for (let [key, value] of Object.entries(result)) {
-            const version = versions[key] ?? 7;
-            const info: any = value;
-            if (info.listed && version === 7) {
-                result[key].price = undefined;
-            }
-        }
     }
+
     return result
 }
 

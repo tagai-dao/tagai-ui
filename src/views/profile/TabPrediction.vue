@@ -167,6 +167,16 @@
     }
 
     // 更新奖励列表
+    const buildPairMap = (list: any[]) => {
+      const pairs: Record<string, string> = {}
+      for (const item of list) {
+        if (item.token && item.pair && (item.version ?? 2) === 7) {
+          pairs[item.token] = item.pair
+        }
+      }
+      return pairs
+    }
+
     function updateReward() {
       if (!accStore.getAccountInfo?.twitterId) return
       if (rewardType.value === 'Claimable') {
@@ -176,7 +186,7 @@
             for (let t of list) {
               versions[t.token] = t.version ?? 2
             }
-            const list1 = await getTokenOnchainInfo(list.map((l: any) => l.token), versions)
+            const list1 = await getTokenOnchainInfo(list.map((l: any) => l.token), versions, buildPairMap(list))
 
             for (let t of list) {
               t.price = (list1[t.token]?.price ?? 0) * stateStore.ethPrice;
@@ -194,7 +204,7 @@
             for (let t of list) {
               versions[t.token] = t.version ?? 2
             }
-            const list1 = await getTokenOnchainInfo(list.map((l: any) => l.token), versions)
+            const list1 = await getTokenOnchainInfo(list.map((l: any) => l.token), versions, buildPairMap(list))
 
             for (let t of list) {
               t.price = (list1[t.token]?.price ?? 0) * stateStore.ethPrice;

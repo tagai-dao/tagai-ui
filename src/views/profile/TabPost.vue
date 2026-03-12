@@ -85,6 +85,15 @@ const onRefresh = async () => {
 
 function updateReward() {
   const acc = props.userInfo ?? accStore.getAccountInfo
+  const buildPairMap = (list: any[]) => {
+    const pairs: Record<string, string> = {}
+    for (const item of list) {
+      if (item.token && item.pair && (item.version ?? 2) === 7) {
+        pairs[item.token] = item.pair
+      }
+    }
+    return pairs
+  }
   if (rewardType.value === 'Claimable') {
     getMyCurationRewards(acc.twitterId).then(async (list: any) => {
       if (list && list.length > 0) {
@@ -92,7 +101,12 @@ function updateReward() {
         for (let t of list) {
           versions[t.token] = t.version ?? 2
         }
-        const list1 = await getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions)
+        const listedTokens = list.filter((l: any) => !l.isImport)
+        const list1 = await getTokenOnchainInfo(
+          listedTokens.map((l: any) => l.token),
+          versions,
+          buildPairMap(listedTokens)
+        )
         const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
 
         for (let t of list) {
@@ -111,7 +125,12 @@ function updateReward() {
         for (let t of list) {
           versions[t.token] = t.version ?? 2
         }
-        const list1 = await getTokenOnchainInfo(list.filter((l: any) => !l.isImport).map((l: any) => l.token), versions)
+        const listedTokens = list.filter((l: any) => !l.isImport)
+        const list1 = await getTokenOnchainInfo(
+          listedTokens.map((l: any) => l.token),
+          versions,
+          buildPairMap(listedTokens)
+        )
         const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
 
         for (let t of list) {
