@@ -65,10 +65,6 @@ const goToCoin = (e?: Event) => {
         <img v-if="isCoinActive" class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="">
       </router-link>
-      <router-link to="/miniapps" class="flex items-center justify-center cursor-pointer p-2">
-        <img v-if="$route.name==='miniapps'" class="w-6 h-6" src="~@/assets/icons/icon-miniapp.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-miniapp.svg" alt="">
-      </router-link>
       <router-link to="/wallet/" class="flex items-center justify-center cursor-pointer p-2">
         <img v-if="$route.name==='wallet'" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-wallet.svg" alt="">

@@ -40,7 +40,11 @@ const onLoad = async () => {
   try{
     loading.value = true
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!, Math.floor((currentLenth - 1) / 30) + 1)
-    const priceList = await getTokenOnchainInfo(list.map((item: any) => item.token), generateTokenVersions(list))
+    const priceList = await getTokenOnchainInfo(
+      list.map((item: any) => item.token),
+      generateTokenVersions(list),
+      generatePairMap(list)
+    )
       accStore.tokenHoldingList = accStore.tokenHoldingList.concat(list.map((item: any) => ({
         ...item,
         price: priceList[item.token]?.price
@@ -77,7 +81,11 @@ const onRefresh = async () => {
 
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!)
     if (list && list.length > 0) {
-      const priceList = await getTokenOnchainInfo(list.map((item: any) => item.token), generateTokenVersions(list))
+      const priceList = await getTokenOnchainInfo(
+        list.map((item: any) => item.token),
+        generateTokenVersions(list),
+        generatePairMap(list)
+      )
       accStore.tokenHoldingList = list.map((item: any) => ({
         ...item,
         price: priceList[item.token]?.price
@@ -111,6 +119,19 @@ const generateTokenVersions = (list: any) => {
     versions[item.token] = item.community?.version ?? 4;
   }
   return versions;
+}
+
+const generatePairMap = (list: any) => {
+  if (!list || list.length === 0) return {};
+  const pairs: Record<string, string> = {};
+  for (const item of list) {
+    const pair = item.community?.pair ?? item.pair;
+    const version = item.community?.version ?? item.version ?? 4;
+    if (item.token && pair && version === 7) {
+      pairs[item.token] = pair;
+    }
+  }
+  return pairs;
 }
 
 function transferTick(holding: any) {

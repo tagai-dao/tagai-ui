@@ -2,7 +2,7 @@
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
-import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, type Space} from '@/types'
+import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
 import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces} from "@/apis/api";
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
@@ -24,7 +24,7 @@ import IPList from "@/views/ip/IPList.vue";
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
-const predictSortType = ref<PredictSortType>(PredictSortType.All) // 0: all, 1: online, 2: ended
+const predictType = ref<PredictType>(PredictType.Event) // 'battle' or 'event', 默认显示事件预测
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
 const curationStore = useCurationStore();
@@ -42,7 +42,7 @@ const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
 const activeTab = computed({
   get: () => stateStore.activeHomeTab,
-  set: (val) => stateStore.setActiveHomeTab(val)
+  set: (val: any) => stateStore.setActiveHomeTab(val)
 })
 
 // 主菜单和子菜单
@@ -336,13 +336,12 @@ const onCreate = (type: GlobalModalType) => {
       <!-- All/Online/Ended 选择器 - 显示在按钮同一行，靠右对齐（仅在 prediction 时显示） -->
       <div v-if="tagSubMenu==='prediction'" class="flex-shrink-0">
         <el-select
-          v-model="predictSortType"
+          v-model="predictType"
           class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
           popper-class="c-select-popper rounded-xl"
         >
-          <el-option :value="PredictSortType.All" :label="$t('all')" />
-          <el-option :value="PredictSortType.Online" :label="$t('online')" />
-          <el-option :value="PredictSortType.Ended" :label="$t('ended')" />
+          <el-option :value="PredictType.Battle" :label="$t('createPredict.tabBattle') || '对战预测'" />
+          <el-option :value="PredictType.Event" :label="$t('createPredict.tabEvent') || '事件预测'" />
         </el-select>
       </div>
     </div>
@@ -423,7 +422,7 @@ const onCreate = (type: GlobalModalType) => {
         </van-pull-refresh>
       </div>
     </template>
-    <Predict :type="predictSortType" v-if="activeMainMenu==='tag' && tagSubMenu==='prediction'"/>
+    <Predict :type="0" :predict-type="predictType" v-if="activeMainMenu==='tag' && tagSubMenu==='prediction'"/>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
     <div class="flex-1 overflow-auto" v-if="activeMainMenu==='coin' && coinSubMenu==='ip'">
       <IPList />

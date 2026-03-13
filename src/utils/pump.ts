@@ -1,7 +1,7 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2 } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, Ether, ClaimFee, USD_CONTRACTS } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
@@ -12,6 +12,7 @@ import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log } from "viem";
 import { writeContract, readContract } from "./contract";
+import { buyTokenV4, sellTokenV4 } from "./pcsV4Swap";
 
 const pumpContract = [
     PumpContract1,
@@ -19,8 +20,12 @@ const pumpContract = [
     PumpContract3,
     PumpContract4,
     PumpContract5,
-    PumpContract6
+    PumpContract6,
+    PumpContract7
 ]
+
+const Q192 = 2n ** 192n;
+const TOKEN_DECIMALS = 18n;
 
 export const checkTickUsed = async (tick: string) => {
     const created = await isTokenExist(tick);
@@ -28,17 +33,24 @@ export const checkTickUsed = async (tick: string) => {
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
+    // Read user's last salt index from contract, then use index + 1 as salt
+    const userAddress = useAccountStore().ethConnectAddress;
+    const lastSaltIndex: any = await readContract('Pump7', 'getLastSaltIndex', [userAddress]);
+    const saltNum = BigInt(lastSaltIndex) + 1n;
+    // Encode as bytes32 (uint256 -> hex, left-padded to 64 chars)
+    const salt = ('0x' + saltNum.toString(16).padStart(64, '0')) as `0x${string}`;
+    
     let hash = await writeContract({
-        contractName: 'Pump4',
+        contractName: 'Pump7',
         functionName: 'createToken',
-        args: [createParms.tick],
+        args: [createParms.tick, salt],
         value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
     }    
     let tx = await getTransactionReceipt(hash as `0x${string}`)
-    const event: any = getCreateTokenEventByHash(tx, 2);
+    const event: any = getCreateTokenEventByHash(tx, 7);
     if (event?.tick == createParms.tick) {
         return {token: event.token, createHash: tx.transactionHash}
     }
@@ -51,6 +63,15 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         sellsman = zeroAddress;
     }
     if (listed) {
+        // V7 listed tokens use PCS V4 Universal Router
+        if (version === 7) {
+            // poolKey is passed via the pair field from backend (parsed as JSON)
+            const poolKey = typeof amount === 'bigint' ? undefined : undefined; // poolKey comes from community.pair
+            // This branch is called from BuyAndSellView which passes community data
+            // The actual V4 swap is handled in the calling code via buyTokenV4
+            throw new Error('V7 listed buy should use buyTokenV4 directly');
+        }
+
         // 2% transaction fee
         const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
 
@@ -135,6 +156,11 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         sellsman = zeroAddress;
     }
     if (listed) {
+        // V7 listed tokens use PCS V4 Universal Router
+        if (version === 7) {
+            throw new Error('V7 listed sell should use sellTokenV4 directly');
+        }
+
         if (isImport) {
             const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)
             if (allowance < amount) {
@@ -227,6 +253,23 @@ export const claimReward = async (token: string, version: number, orderId: BigIn
     return hash
 }
 
+// 领取预测奖励，使用 OracleDistributor 合约
+export const claimPredictReward = async (token: string, orderId: BigInt, amount: BigInt, signature: string) => {
+    if (!isAddress(token)) throw errCode.PARAMS_ERROR;
+    // 使用 Pump4 的 ABI（userClaim 函数签名相同），但直接指定 OracleDistributor 地址
+    const hash = await writeContract({
+        contractName: 'Pump4',
+        functionName: 'userClaim',
+        args: [token, orderId, amount, signature],
+        address: OracleDistributor as `0x${string}`,
+        value: ClaimFee
+    })
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }
+    return hash
+}
+
 export const transferToken = async (token: string, to: string, amount: bigint, isMax: boolean) => {
     if (isMax) {
         amount = await getTokenBalance(token as `0x${string}`);
@@ -277,6 +320,15 @@ function checkDistributionEnd(config: any) {
     return Date.now() / 1000 > lastTime;
 }
 
+const buildPairMap = (items: Array<{ token?: string; pair?: string | null | undefined; version?: number | null | undefined }>) => {
+    const pairMap: Record<string, string> = {};
+    for (const item of items) {
+        if (!item.token || !item.pair || (item.version ?? 2) !== 7) continue;
+        pairMap[item.token] = item.pair;
+    }
+    return pairMap;
+}
+
 export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
     let tokens = communities.filter(com => !com.isImport).map(com => com.token)
@@ -284,7 +336,7 @@ export const getTokenInfo = async (communities: Community[]) => {
     for (let com of communities) {
         versions[com.token!] = com.version ?? 2;
     }
-    let result = await getTokenOnchainInfo(tokens, versions)
+    let result = await getTokenOnchainInfo(tokens, versions, buildPairMap(communities))
 
     let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport))
 
@@ -296,7 +348,9 @@ export const getTokenInfo = async (communities: Community[]) => {
             community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
             community.price = tokenInfo.price;
             community.marketCap = ((community.price ?? 0) * TotalSupply);
-            community.pair = tokenInfo.pair;
+            if ((community.version ?? 2) !== 7) {
+                community.pair = tokenInfo.pair;
+            }
             community.totalSupply = TotalSupply;
         }else{
             const importInfo = importResult[community.token]
@@ -323,7 +377,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         for (let tweet of tweets) {
             versions[tweet.token!] = tweet.version ?? 2;
         }
-        let result = await getTokenOnchainInfo(tokens, versions)
+        let result = await getTokenOnchainInfo(tokens, versions, buildPairMap(tweets))
         let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport))
 
         const stateStore = useStateStore();
@@ -349,7 +403,9 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                 tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
                 tweet.price = tokenInfo.byUSD ? tokenInfo.price / stateStore.ethPrice : tokenInfo.price;
                 tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
-                tweet.pair = tokenInfo.pair;
+                if ((tweet.version ?? 2) !== 7) {
+                    tweet.pair = tokenInfo.pair;
+                }
             }
         }
         return tweets;
@@ -359,12 +415,51 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     }
 }
 
-export const getTokenOnchainInfo = async (tokens: string[], versions: Record<string, number>) => {
+export const getTokenOnchainInfo = async (
+    tokens: string[],
+    versions: Record<string, number>,
+    pairMap: Record<string, string> = {}
+) => {
     if (tokens.length === 0) return []
     tokens = _.union(tokens)
     let calls: any[] = []
+    const loadBaseInfosByFallback = async () => {
+        const entries = await Promise.all(tokens.map(async token => {
+            if (!isAddress(token)) return null;
+            const version = versions[token] ?? 4;
+            const pumpAddress = pumpContract[version - 1];
+            if (!pumpAddress) return null;
+            try {
+                const [bondingCurveSupply, listed, totalClaimedSocialRewards, pair] = await Promise.all([
+                    readContract('Token1', 'bondingCurveSupply', [], token),
+                    readContract('Token1', 'listed', [], token),
+                    readContract('Pump' + version, 'totalClaimedSocialRewards', [token]),
+                    version !== 7
+                        ? readContract('UniswapFactory', 'getPair', [token, WETH])
+                        : Promise.resolve(undefined)
+                ]);
+                return [token, {
+                    bondingCurveSupply: BigInt(bondingCurveSupply as bigint),
+                    listed,
+                    totalClaimedSocialRewards: BigInt(totalClaimedSocialRewards as bigint),
+                    pair
+                }] as const;
+            } catch (error) {
+                console.error('load token base info failed', token, version, error);
+                return [token, {
+                    bondingCurveSupply: 0n,
+                    listed: false,
+                    totalClaimedSocialRewards: 0n
+                }] as const;
+            }
+        }));
+        return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, any]>);
+    }
     for (let token of tokens) {
         if (!isAddress(token)) continue;
+        const version = versions[token] ?? 4;
+        const pumpAddress = pumpContract[version - 1];
+        if (!pumpAddress) continue;
         calls = calls.concat([
             {
                 target: token,
@@ -384,7 +479,7 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                 ]
             },
             {
-                target: pumpContract[versions[token] - 1],
+                target: pumpAddress,
                 call: [
                     'totalClaimedSocialRewards(address)(uint256)',
                     token
@@ -392,8 +487,10 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                 returns: [
                     [token + '-totalClaimedSocialRewards', (val: any) => BigInt(val)]
                 ]
-            },
-            {
+            }
+        ])
+        if (version !== 7) {
+            calls.push({
                 target: uniswapV2Factory,
                 call: [
                     'getPair(address,address)(address)',
@@ -403,15 +500,24 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
                 returns: [
                     [token + '-pair']
                 ]
-            }
-        ])
+            })
+        }
     }
-    
-    const res = await aggregate(calls, ChainConfig.multiConfig)
-    let infos = res.results.transformed
+    let infos: any = {}
+    try {
+        const res = await aggregate(calls, ChainConfig.multiConfig)
+        infos = res.results.transformed
+    } catch (error) {
+        console.error('getTokenOnchainInfo base multicall failed, fallback to single calls', error);
+        infos = await loadBaseInfosByFallback();
+    }
     let result: any = {}
     
     for (let [key, value] of Object.entries(infos)) {
+        if (key.startsWith('0x') && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            result[key] = value;
+            continue;
+        }
         const [token, type] = key.split('-')
         if (!result[token]) {
             result[token] = {}
@@ -422,18 +528,44 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
     for (let p of Object.entries(result)) {
         const token = p[0]
         let info: any = p[1]
-        calls.push({
-            target: pumpContract[versions[token] - 1],
-            call: [
-                'getPrice(uint256,uint256)(uint256)',
-                info.bondingCurveSupply.toString(),
-                '1000000000000000000'
-            ],
-            returns: [
-                [token + '-price', (val: any) => (val).toString() / 1e18]
-            ]
-        })
-        if (info.listed) {
+        const version = versions[token] ?? 4;
+        const pumpAddress = pumpContract[version - 1];
+        if (!pumpAddress) continue;
+        const isV7Listed = version === 7 && info.listed;
+        if (!info.listed) {
+            calls.push({
+                target: pumpAddress,
+                call: [
+                    'getPrice(uint256,uint256)(uint256)',
+                    info.bondingCurveSupply.toString(),
+                    '1000000000000000000'
+                ],
+                returns: [
+                    [token + '-price', (val: any) => (val).toString() / 1e18]
+                ]
+            })
+            continue;
+        }
+        if (isV7Listed) {
+            const poolId = pairMap[token];
+            if (poolId) {
+                calls.push({
+                    target: PCSCLPoolManager,
+                    call: [
+                        'getSlot0(bytes32)(uint160,int24,uint24,uint24)',
+                        poolId
+                    ],
+                    returns: [
+                        [token + '-sqrtPriceX96', (val: any) => BigInt(val)],
+                        [token + '-tick'],
+                        [token + '-protocolFee'],
+                        [token + '-lpFee']
+                    ]
+                })
+            }
+            continue;
+        }
+        if (!isV7Listed) {
             calls.push({
                 target: info.pair,
                 call: [
@@ -468,18 +600,38 @@ export const getTokenOnchainInfo = async (tokens: string[], versions: Record<str
         let res = await aggregate(calls, ChainConfig.multiConfig);
         res = res.results.transformed;
         for (let [key, value] of Object.entries(result)) {
-            // @ts-ignore
-            if (value.listed) {
-                if (res[key + '-token0'] === key) {
-                    result[key].price = res[key + '-2'] / res[key + '-1']
-                }else {
-                    result[key].price = res[key + '-1'] / res[key + '-2']
-                }
-            }else{
+            const version = versions[key] ?? 4;
+            const info: any = value;
+            if (!info.listed) {
                 result[key].price = res[key + '-price']
+                continue;
+            }
+            if (version === 7) {
+                const rawSqrtPriceX96 = res[key + '-sqrtPriceX96'];
+                if (rawSqrtPriceX96 === undefined) {
+                    result[key].price = undefined;
+                    continue;
+                }
+                const sqrtPriceX96 = BigInt(rawSqrtPriceX96);
+                if (sqrtPriceX96 === 0n) {
+                    result[key].price = undefined;
+                    continue;
+                }
+                // Token.sol initializes V7 pools as Native BNB(currency0) <-> Token(currency1)
+                // and uses the default ERC20 18 decimals, so sqrtPriceX96^2 / Q192 is
+                // the onchain BNB price of one token.
+                const scaledPrice = (sqrtPriceX96 * sqrtPriceX96 * (10n ** TOKEN_DECIMALS)) / Q192;
+                result[key].price = Number(scaledPrice) / 1e18;
+                continue;
+            }
+            if (res[key + '-token0'] === key) {
+                result[key].price = res[key + '-2'] / res[key + '-1']
+            }else {
+                result[key].price = res[key + '-1'] / res[key + '-2']
             }
         }
     }
+
     return result
 }
 

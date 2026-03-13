@@ -31,6 +31,11 @@ export enum PredictSortType {
   Ended = 2
 }
 
+export enum PredictType {
+  Battle = 'battle',
+  Event = 'event'
+}
+
 export enum TwitterTipStatus {
   Pending,
   Success,
@@ -288,6 +293,13 @@ export type Community = OnchainTokenInfo & {
   feePath?: string | object | null | undefined,
 };
 
+export type CommunityMember = {
+  twitterId: string,
+  communityId: string,
+  predictVP: number,
+  lastUpdateVPStamp: number
+}
+
 export type ClankerToken = OnchainTokenInfo & {
   logo?: string,
   name?: string,
@@ -463,6 +475,27 @@ export type BattleData = {
   winner: 'left' | 'right' | null,
   questionId: string,
   status: number,
+  positionAID: string,
+  positionBID: string,
+  conditionID: string,
+  fee: number | undefined | null,  // 当前费率
+}
+
+export type EventPredictData = Tweet & {
+  marketMaker: string,
+  tick: string,
+  token: string,
+  reserveA: number | undefined | null,
+  reserveB: number | undefined | null,
+  voteYes: number | undefined | null,  // community members vote volume by prediction credit
+  voteNo: number | undefined | null,
+  solvedBalances: Array<number> | undefined | null,
+  voteResult?: number | undefined | null,
+  title: string,
+  winner: 'yes' | 'no' | null,
+  questionId: string,
+  status: number,
+  endTime: number,
   positionAID: string,
   positionBID: string,
   conditionID: string,

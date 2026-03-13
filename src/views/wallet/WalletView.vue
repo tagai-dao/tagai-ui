@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref, onUnmounted} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
-import TabPrediction from "@/views/wallet/TabPrediction.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { formatAddress, formatBalance, formatPrice } from "@/utils/helper";

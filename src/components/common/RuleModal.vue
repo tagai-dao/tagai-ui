@@ -23,10 +23,10 @@
           2：65% of tokens are allocated via a bonding curve to raise initial liquidity.
         </li>
         <li>
-          3：When enough people buy on the bonding curve it reaches a market cap of $60k, $12k of liquidity is then deposited in PancakeSwap and burned.
+          3：When enough people buy on the bonding curve it reaches a market cap of $60k, $12k of liquidity is then deposited into PancakeSwap v4 and burned.
         </li>
         <li>
-          4：Coin Deployer or Blinks creators will receive 1% of transaction fees from trades.
+          4：Coin Deployer or Blinks creators will receive 0.3% of transaction fees from trades.
         </li>
       </ul>
     </template>
@@ -44,10 +44,10 @@
           2：65%的代币通过销售曲线分配，以提高初始流动性。
         </li>
         <li>
-          3：当足够多的人通过销售曲线购买代币，使其市值达到6万美元时，就会有1.2万美元的流动性被存入PancakeSwap并进行销毁。
+          3：当足够多的人通过销售曲线购买代币，使其市值达到6万美元时，就会有1.2万美元的流动性被存入 PancakeSwap v4 并进行销毁。
         </li>
         <li>
-          4：Coin Deployer 或 Blinks 创建者将从交易中获得 1% 的交易费。
+          4：Coin Deployer 或 Blinks 创建者将从交易中获得 0.3% 的交易费。
         </li>
       </ul>
     </template>

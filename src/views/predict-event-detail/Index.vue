@@ -1,54 +1,35 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import PredictDetailLeft from './PredictDetailLeft.vue'
 import PredictDetailRight from './PredictDetailRight.vue'
 import { useRouter } from 'vue-router'
-import { getMarket } from '@/apis/api'
-import type { BattleData, MarketData } from '@/types'
+import { getEventMarket } from '@/apis/api'
+import type { EventPredictData } from '@/types'
 import { handleErrorTip } from '@/utils/notify'
 import { useAccountStore } from '@/stores/web3'
 import { getMarketInfos } from '@/utils/fpmm'
 
 const accStore = useAccountStore()
 const router = useRouter()
-const market = ref<MarketData | null>(null)
+const market = ref<EventPredictData | null>(null)
 
 onMounted(async () => {
   // 从url中获取market id
   const marketId = router.currentRoute.value.params.id as string
   try {
-    const res: any = await getMarket(marketId, accStore.getAccountInfo?.twitterId) as unknown as MarketData
-    const marketInfos = await getMarketInfos([res.battle] as BattleData[])
+    const res: any = await getEventMarket(marketId, accStore.getAccountInfo?.twitterId) as unknown as EventPredictData
+    const marketInfos = await getMarketInfos([res] as EventPredictData[])
     market.value = {
-        battle: {
-            ...res.battle,
-            winner: getWinner(res),
-            reserveA: marketInfos[res.battle.marketMaker + '-priceA'],
-            reserveB: marketInfos[res.battle.marketMaker + '-priceB'],
-            fee: marketInfos[res.battle.marketMaker + '-fee']
-        },
-        tweets: res.tweets
+        ...res,
+        reserveA: marketInfos[res.marketMaker + '-priceA'],
+        reserveB: marketInfos[res.marketMaker + '-priceB'],
+        fee: marketInfos[res.marketMaker + '-fee']
     } 
   } catch (error) {
     console.log(1, error)
     handleErrorTip(error)
   }
 })
-
-// 判断胜利者：与 PredictBattleCard 显示分数使用相同数据源（amounta/amountb 优先），避免显示分数高但 winner 不一致
-const getWinner = (market: MarketData): 'left' | 'right' | null => {
-    const tweetA = market.tweets[market.battle.predictAID]
-    const tweetB = market.tweets[market.battle.predictBID]
-    if (tweetA && tweetB) {
-        if (tweetA.isSettled && tweetB.isSettled) {
-            const amountA = market.battle.amounta ?? (tweetA.amount ?? 0)
-            const amountB = market.battle.amountb ?? (tweetB.amount ?? 0)
-            return amountA > amountB ? 'left' : 'right'
-        }
-        return null
-    }
-    return null
-}
 
 </script>
 

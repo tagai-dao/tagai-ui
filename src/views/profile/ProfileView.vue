@@ -2,6 +2,7 @@
 import {onMounted, ref, computed, watch} from "vue";
 import TabBlink from "@/views/profile/TabBlink.vue";
 import TabPost from "@/views/profile/TabPost.vue";
+import TabPrediction from "@/views/profile/TabPrediction.vue";
 import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import TabBlinksTweet from "@/views/profile/TabBlinksTweet.vue";
 import { useAccountStore, useIpshareData } from "@/stores/web3";

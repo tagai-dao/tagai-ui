@@ -50,7 +50,7 @@ export const useStateStore = defineStore('state', {
       // Coin 菜单的子标签页：'tagCoin' 或 'ip'
       coinSubMenu: 'tagCoin' as 'tagCoin' | 'ip',
       // 兼容旧代码，保持 activeHomeTab
-      activeHomeTab: 'tweets' as 'tweets' | 'prediction' | 'tagCoin' | 'ip',
+      activeHomeTab: 'tweets' as 'tweets' | 'prediction' | 'tagCoin' | 'ip' | 'mindshare',
       homeSubMenu: 'tweets' as 'tweets' | 'prediction',
     }
   },

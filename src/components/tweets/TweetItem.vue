@@ -128,8 +128,8 @@ onUnmounted(() => {
           <div class="w-full flex items-center flex-wrap gap-x-2">
             <a class="font-bold text-lg"
                @click.stop="onUserAvatar()">{{ tweet.twitterName }}</a>
-            <span class="mx-4px" v-if="tweet.accountType !== 1"> · </span>
-            <button @click="gotoTweet($event)" v-if="tweet.accountType !== 1">
+            <span class="mx-4px" v-if="tweet.accountType == 0"> · </span>
+            <button @click="gotoTweet($event)" v-if="tweet.accountType == 0">
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
 

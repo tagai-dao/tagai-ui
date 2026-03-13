@@ -14,11 +14,9 @@ import LoginCallBack from '@/views/LoginCallBack.vue'
 import ClankerDetail from '@/views/clanker/ClankerDetail.vue'
 import TipTokenRecord from "@/views/wallet/TipTokenRecord.vue";
 import UserView from '@/views/profile/UserView.vue'
-import PredictBattle from '@/views/tag-detail/PredictBattle.vue'
 import PredictDetail from '@/views/predict-detail/Index.vue'
+import PredictEventDetail from '@/views/predict-event-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
-import MiniAppView from '@/views/MiniApp/MiniAppView.vue'
-import MiniAppsExplore from '@/views/MiniApp/MiniAppsExplore.vue'
 
 const router = createRouter({
   // @ts-ignore
@@ -100,12 +98,6 @@ const router = createRouter({
       path: "/callback", component: () => import("@/views/Callback.vue")
     },
     {
-      path: "/predict-battle",
-      name: "predict-battle",
-      component: PredictBattle,
-      meta: { tabBar: true, topBar: true }
-    },
-    {
       path: '/predict-detail/:id',
       name: 'predict-detail',
       component: PredictDetail
@@ -116,65 +108,9 @@ const router = createRouter({
       component: MindShareIndex
     },
     {
-      path: '/staking/:user?',
-      name: 'staking',
-      component: () => import('@/views/profile/StakingView.vue'),
-      meta: { tabBar: false, topBar: false }
-    },
-    // Mini Apps Routes
-    {
-      path: '/miniapps',
-      name: 'miniapps',
-      component: MiniAppsExplore,
-      meta: { tabBar: true, topBar: true }
-    },
-    {
-      path: '/miniapps/:appId',
-      name: 'miniapp',
-      component: MiniAppView,
-      meta: { tabBar: false, topBar: false }
-    },
-    // DeFi Actions Test - Host wrapper
-    {
-      path: '/test-defi-host',
-      name: 'test-defi-host',
-      component: () => import('@/views/MiniApp/TestDeFiMiniApp.vue'),
-      meta: { tabBar: false, topBar: false }
-    },
-    // DeFi Actions Test - Mini App content (loaded in iframe)
-    {
-      path: '/test-defi',
-      name: 'test-defi',
-      component: () => import('@/views/MiniApp/DeFiActionsTest.vue'),
-      meta: { tabBar: false, topBar: false }
-    },
-    // SDK Full Test - Host wrapper
-    {
-      path: '/sdk-test-host',
-      name: 'sdk-test-host',
-      component: () => import('@/views/MiniApp/SDKTestHost.vue'),
-      meta: { tabBar: false, topBar: false }
-    },
-    // SDK Full Test - Mini App content (loaded in iframe)
-    {
-      path: '/sdk-test',
-      name: 'sdk-test',
-      component: () => import('@/views/MiniApp/SDKFullTest.vue'),
-      meta: { tabBar: false, topBar: false }
-    },
-    // Testnet DeFi Test - Host wrapper
-    {
-      path: '/testnet-defi-host',
-      name: 'testnet-defi-host',
-      component: () => import('@/views/MiniApp/TestnetDeFiHost.vue'),
-      meta: { tabBar: false, topBar: false }
-    },
-    // Testnet DeFi Test - Mini App content (loaded in iframe)
-    {
-      path: '/testnet-defi',
-      name: 'testnet-defi',
-      component: () => import('@/views/MiniApp/TestnetDeFiTest.vue'),
-      meta: { tabBar: false, topBar: false }
+      path: '/predict-event-detail/:id',
+      name: 'predict-event-detail',
+      component: PredictEventDetail
     }
   ]
 })
