@@ -392,7 +392,8 @@
     "createIpShare": "创建 IPShare",
     "createIPShareTip": "您可以先创建IPShare",
     "curateDerictly": "直接策展",
-    "totalSupply": "总供应量"
+    "totalSupply": "IPShare 供应量",
+    "stake": "质押"
   },
   "errMessage": {
     "idUsed": "身份已经被使用",

@@ -4,7 +4,7 @@
  */
 
 import { aggregate } from '@makerdao/multicall'
-import { IPShareContract2, ChainConfig } from '@/config'
+import { IPShareContract3, ChainConfig } from '@/config'
 import { isAddress } from 'viem'
 import { useAccountStore, useIpshareData } from '@/stores/web3'
 
@@ -31,7 +31,7 @@ export const getIPshareSupplies = async (subjects: string[]): Promise<Record<str
         }
 
         const calls = subjects.map(s => ({
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'ipshareSupply(address)(uint256)',
                 s
@@ -75,7 +75,7 @@ export const getIPshareBalances = async (subjects: string[]): Promise<Record<str
         // 优先使用连接的钱包地址，如果没有则使用账户绑定的地址
         let address: string | undefined = accountStore.ethConnectAddress;
         if (!address || !isAddress(address)) {
-            address = accountStore.getAccountInfo?.ethAddr;
+            address = accountStore.getAccountInfo?.ethAddr || undefined;
         }
         if (!address || !isAddress(address)) {
             console.log('Get IPShare balances: No valid address found');
@@ -86,7 +86,7 @@ export const getIPshareBalances = async (subjects: string[]): Promise<Record<str
         if (subjects.length === 0) return {};
 
         const calls = subjects.map(s => ({
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'ipshareBalance(address,address)(uint256)',
                 s,
@@ -99,6 +99,7 @@ export const getIPshareBalances = async (subjects: string[]): Promise<Record<str
 
         const res = await aggregate(calls, ChainConfig.multiConfig);
         const result = res.results.transformed || {};
+        console.log('IPShare balances fetched:', address, result);
         
         // 保存到 store（参考 Donut 实现）
         const ipshareStore = useIpshareData();
@@ -150,7 +151,7 @@ export const getIPshareStaked = async (subjects: string[]): Promise<Record<strin
         if (subjects.length === 0) return {};
 
         const calls = subjects.map(s => ({
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'getStakerInfo(address,address)(address,uint256,uint256,uint256,uint256,uint256)',
                 s,
@@ -207,7 +208,7 @@ export const getTotalStakedIPshares = async (subjects: string[]): Promise<Record
         if (subjects.length === 0) return {};
 
         const calls = subjects.map(s => ({
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'totalStakedIPshare(address)(uint256)',
                 s
@@ -252,7 +253,7 @@ export const getPendingIPshareProfits = async (subjects: string[]): Promise<Reco
         if (subjects.length === 0) return {};
 
         const calls = subjects.map(s => ({
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'getPendingProfits(address,address)(uint256)',
                 s,
@@ -284,7 +285,7 @@ export const getPendingProfits = async (subject: string): Promise<number> => {
         }
 
         const call = [{
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'getPendingProfits(address,address)(uint256)',
                 subject,
@@ -314,7 +315,7 @@ export const getKeyFundRatios = async (subjects: string[]): Promise<Record<strin
         if (subjects.length === 0) return {};
 
         const calls = subjects.map(s => ({
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'keyFundRatio(address)(uint256)',
                 s
@@ -344,7 +345,7 @@ export const getMaxStaker = async (subject: string): Promise<{ staker: string; a
         }
 
         const call = [{
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'getMaxStaker(address)(address,uint256)',
                 subject
@@ -378,7 +379,7 @@ export const getBuyPriceAfterFee = async (subject: string, amount: number): Prom
         }
 
         const call = [{
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'getBuyPriceAfterFee(address,uint256)(uint256)',
                 subject,
@@ -410,7 +411,7 @@ export const getSellPriceAfterFee = async (subject: string, amount: number): Pro
         }
 
         const call = [{
-            target: IPShareContract2,
+            target: IPShareContract3,
             call: [
                 'getSellPriceAfterFee(address,uint256)(uint256)',
                 subject,

@@ -139,6 +139,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { RefreshRight } from '@element-plus/icons-vue'
 import { useAccountStore, useIpshareData } from '@/stores/web3'
+import { useModalStore } from '@/stores/common'
+import { GlobalModalType } from '@/types'
 import {
   buyShares,
   sellShares,
@@ -332,6 +334,13 @@ const loadBalances = async () => {
 const handleConfirm = async () => {
   if (!canTrade.value) return
 
+  // 检查是否连接钱包
+  const connectAddress = accountStore.ethConnectAddress
+  if (!connectAddress || !isAddress(connectAddress)) {
+    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    return
+  }
+
   const amountNum = parseFloat(amount.value || '0')
   if (amountNum <= 0) {
     ElMessage.warning('Please input amount')
@@ -511,7 +520,7 @@ onMounted(() => {
   .tab-btn {
     flex: 1;
     height: 40px;
-    border: 1px solid #333;
+    border: 1px solid #e0e0e0;
     background: transparent;
     color: #999;
     border-radius: 8px;
@@ -519,11 +528,11 @@ onMounted(() => {
     transition: all 0.3s;
 
     &:hover {
-      border-color: #666;
+      border-color: #FF7A00;
     }
 
     &.active {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
       border-color: transparent;
       color: white;
     }
@@ -556,8 +565,8 @@ onMounted(() => {
   align-items: center;
   height: 56px;
   padding: 0 16px;
-  background: #1a1a1a;
-  border: 1px solid #333;
+  background: #fff;
+  border: 1px solid #e0e0e0;
   border-radius: 12px;
   gap: 12px;
 }
@@ -568,7 +577,7 @@ onMounted(() => {
   border: none;
   outline: none;
   font-size: 20px;
-  color: white;
+  color: #333;
 
   &::placeholder {
     color: #666;
@@ -586,7 +595,7 @@ onMounted(() => {
 .amount-output {
   flex: 1;
   font-size: 20px;
-  color: white;
+  color: #333;
   font-weight: 500;
 }
 
@@ -598,17 +607,17 @@ onMounted(() => {
 
 .max-btn {
   padding: 6px 12px;
-  background: #333;
+  background: #f0f0f0;
   border: none;
   border-radius: 6px;
-  color: #999;
+  color: #666;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s;
 
   &:hover {
-    background: #444;
-    color: white;
+    background: #e0e0e0;
+    color: #333;
   }
 }
 
@@ -630,7 +639,8 @@ onMounted(() => {
 
 .trade-info {
   padding: 16px;
-  background: #1a1a1a;
+  background: #fff;
+  border: 1px solid #e0e0e0;
   border-radius: 12px;
   margin-bottom: 24px;
 
@@ -643,11 +653,11 @@ onMounted(() => {
     color: #999;
 
     &:not(:last-child) {
-      border-bottom: 1px solid #2a2a2a;
+      border-bottom: 1px solid #e0e0e0;
     }
 
     span:last-child {
-      color: white;
+      color: #333;
       font-weight: 500;
     }
   }
@@ -657,10 +667,10 @@ onMounted(() => {
       display: flex;
       align-items: center;
       gap: 4px;
-      border: 1px solid #333;
+      border: 1px solid #e0e0e0;
       border-radius: 6px;
       padding: 4px 8px;
-      background: #1a1a1a;
+      background: #fff;
       min-width: 100px;
     }
 
@@ -669,7 +679,7 @@ onMounted(() => {
       background: transparent;
       border: none;
       outline: none;
-      color: white;
+      color: #333;
       font-size: 14px;
       font-weight: 500;
       text-align: right;
@@ -739,6 +749,22 @@ onMounted(() => {
     border-radius: 12px;
     font-size: 16px;
     font-weight: 600;
+  }
+
+  :deep(.el-button--primary) {
+    background: linear-gradient(213.44deg, #FCA454 -14.77%, #FF7A00 116.22%);
+    border-color: transparent;
+    color: white;
+
+    &:hover,
+    &:focus {
+      background: linear-gradient(213.44deg, #FDB76E -14.77%, #FF8C1A 116.22%);
+      border-color: transparent;
+    }
+
+    &.is-disabled {
+      opacity: 0.5;
+    }
   }
 }
 </style>

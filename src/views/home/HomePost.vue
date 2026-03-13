@@ -160,7 +160,7 @@ onActivated(() => {
       </div>
     </div>
     <div class="col-span-1 h-full overflow-hidden hidden web:block">
-      <div class="h-full flex flex-col gap-3">
+      <div class="h-full flex flex-col gap-3 overflow-y-auto no-scroll-bar">
         <!-- Live Spaces -->
         <TopOnlineSpaces />
         <!-- Top TagCoin -->

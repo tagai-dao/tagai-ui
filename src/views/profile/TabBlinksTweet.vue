@@ -109,7 +109,7 @@ onMounted(() => {
               <span>{{ $t('profileView.valueCaptured') || 'Value Captured' }}</span>
               <el-tooltip popper-class="c-arrow-popper">
                 <template #content>
-                  <div class="text-white p-2 max-w-200px text-xs">{{ $t('profileView.valueCapturedDesc') || 'Total value captured from IPShare trading fees.' }}</div>
+                  <div class="text-gray-700 p-2 max-w-200px text-xs">{{ $t('profileView.valueCapturedDesc') || 'Total value captured from IPShare trading fees.' }}</div>
                 </template>
                 <button>
                   <img class="w-4 h-4" src="~@/assets/icons/icon-tip.svg" alt="">

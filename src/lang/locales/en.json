@@ -392,7 +392,8 @@
     "createIpShare": "Create IPShare",
     "createIPShareTip": "You can create IPShare first",
     "curateDerictly": "Curate directly",
-    "totalSupply": "Total Supply"
+    "totalSupply": "IPShare Supply",
+    "stake": "Stake"
   },
   "errMessage": {
     "idUsed": "Identify has been used",

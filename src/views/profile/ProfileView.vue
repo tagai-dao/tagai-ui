@@ -279,9 +279,9 @@ onMounted(() => {
     <div v-if="donutEth" class="bg-white py-3 px-3 rounded-2xl mx-3">
       <!-- Create IPShare Button -->
       <button v-if="!isCreatedIPshare"
-              class="h-12 w-full border-1 border-orange-normal rounded-full shadow-sm"
+              class="h-12 w-full bg-gradient-primary text-white rounded-full shadow-sm"
               @click="useModalStore().setModalVisible(true, GlobalModalType.CreateIPShare)">
-        <span class="text-lg text-orange-normal font-bold">
+        <span class="text-lg font-bold">
           {{ $t('ipshare.createIpShare') || 'Create IPShare' }}
         </span>
       </button>
@@ -291,7 +291,7 @@ onMounted(() => {
         <!-- Header with Expand/Collapse Button -->
         <div class="flex items-center justify-between cursor-pointer" @click="ipshareExpanded = !ipshareExpanded">
           <div class="border-1 border-orange-normal rounded-xl px-4 py-3 flex-1">
-            <div class="text-sm text-grey-8d">{{ $t('ipshare.totalSupply') || 'IPShare Supply' }}</div>
+            <div class="text-base font-bold text-grey-8d">{{ $t('ipshare.totalSupply') || 'IPShare Supply' }}</div>
             <div class="text-center">
               <span class="text-orange-normal text-3xl font-bold">{{ formatAmount(ipshareStore.ipshareSupplies[donutEth] || 0) }}</span>
             </div>
@@ -307,19 +307,19 @@ onMounted(() => {
           <div v-show="ipshareExpanded">
             <!-- Price and TVL -->
             <div class="px-2 flex justify-between items-center text-xs my-2">
-              <span>IPShare {{ $t('common.price') || 'Price' }} <span class="text-orange-normal">{{ ipsharePrice }}</span></span>
+              <span>IPShare {{ $t('postView.price') || 'Price' }} <span class="text-orange-normal">{{ ipsharePrice }}</span></span>
               <span>TVL {{ tvl }} $BNB</span>
             </div>
             
             <!-- Trade and Staking Buttons -->
             <div class="flex gap-4 mt-4">
-              <button class="h-9 flex-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              <button class="h-9 flex-1 rounded-full bg-gradient-primary text-white transition-colors"
                       @click="onTrade">
-                <span class="text-orange-normal font-bold">{{ $t('trade') || 'Trade' }}</span>
+                <span class="font-bold">{{ $t('trade') || 'Trade' }}</span>
               </button>
-              <button class="h-9 flex-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              <button class="h-9 flex-1 rounded-full bg-gradient-primary text-white transition-colors"
                       @click="onStake">
-                <span class="text-orange-normal font-bold">{{ $t('walletView.stakedAmount') || 'Staking' }}</span>
+                <span class="font-bold">{{ $t('ipshare.stake') || 'Stake' }}</span>
               </button>
             </div>
             

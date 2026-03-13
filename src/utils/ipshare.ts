@@ -1,5 +1,5 @@
 import { ChainConfig } from "@/config";
-import { IPShareContract1, IPShareContract2, IPShareContract3 } from "@/config";
+import { IPShareContract3 } from "@/config";
 import { aggregate } from '@makerdao/multicall'
 import _ from 'lodash'
 import { isAddress } from "viem";
@@ -113,7 +113,7 @@ export const buyShares = async (
         // 应用 2% 滑点保护
         const amountWithSlippage = amount * 0.98;
         const hash = await writeContract({
-            contractName: 'IPShare2',
+            contractName: 'IPShare3',
             functionName: 'buyShares',
             args: [subject, buyer, BigInt(Math.floor(amountWithSlippage * 1e18))],
             value: BigInt(Math.floor(ethAmount * 1e18))
@@ -150,7 +150,7 @@ export const sellShares = async (
         const expectReceiveBigInt = BigInt(Math.floor(parseFloat(expectReceive.toString()) * 1e18));
 
         const hash = await writeContract({
-            contractName: 'IPShare2',
+            contractName: 'IPShare3',
             functionName: 'sellShares',
             args: [subject, amountBigInt, expectReceiveBigInt]
         });
@@ -188,7 +188,7 @@ export const stake = async (
 
         if (isMax) {
             // 如果是质押全部,查询当前持有量
-            amountBigInt = await readContract('IPShare2', 'ipshareBalance', [
+            amountBigInt = await readContract('IPShare3', 'ipshareBalance', [
                 subject,
                 // @ts-ignore - 从 store 获取用户地址
                 useAccountStore().ethConnectAddress
@@ -196,7 +196,7 @@ export const stake = async (
         }
 
         const hash = await writeContract({
-            contractName: 'IPShare2',
+            contractName: 'IPShare3',
             functionName: 'stake',
             args: [subject, amountBigInt]
         });
@@ -232,7 +232,7 @@ export const unstake = async (
 
         if (isMax) {
             // 如果是解除全部质押,查询当前质押信息
-            const stakeInfo = await readContract('IPShare2', 'getStakerInfo', [
+            const stakeInfo = await readContract('IPShare3', 'getStakerInfo', [
                 subject,
                 // @ts-ignore
                 useAccountStore().ethConnectAddress
@@ -241,7 +241,7 @@ export const unstake = async (
         }
 
         const hash = await writeContract({
-            contractName: 'IPShare2',
+            contractName: 'IPShare3',
             functionName: 'unstake',
             args: [subject, amountBigInt]
         });
@@ -268,7 +268,7 @@ export const redeem = async (subject: string): Promise<string> => {
 
     try {
         const hash = await writeContract({
-            contractName: 'IPShare2',
+            contractName: 'IPShare3',
             functionName: 'redeem',
             args: [subject]
         });
@@ -295,7 +295,7 @@ export const claim = async (subject: string): Promise<string> => {
 
     try {
         const hash = await writeContract({
-            contractName: 'IPShare2',
+            contractName: 'IPShare3',
             functionName: 'claim',
             args: [subject]
         });
