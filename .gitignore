@@ -133,3 +133,4 @@ dist
 package-lock.json
 
 .cursorindexingignore
+_npm_cache/*
