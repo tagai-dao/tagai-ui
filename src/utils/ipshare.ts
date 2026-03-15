@@ -1,5 +1,5 @@
 import { ChainConfig } from "@/config";
-import { IPShareContract3 } from "@/config";
+import { IPShareContract1, IPShareContract2, IPShareContract3 } from "@/config";
 import { aggregate } from '@makerdao/multicall'
 import _ from 'lodash'
 import { isAddress } from "viem";
