@@ -38,7 +38,7 @@ async function onRefresh() {
   try {
     refreshing.value = true
     finished.value = false
-    const ips = await getIPShareList(0)
+    const ips = await getIPShareList(0) as any[]
     console.log('📥 TabIPShare - 从后端获取的原始数据:', ips)
     
     if (ips && Array.isArray(ips)) {
@@ -100,7 +100,7 @@ async function onLoad() {
     
     const pageIndex = Math.floor((list.value.length - 1) / 30) + 1
     console.log(`📄 TabIPShare - 加载更多，页码: ${pageIndex}`)
-    const ips = await getIPShareList(pageIndex)
+    const ips = await getIPShareList(pageIndex) as any[]
     console.log('📥 TabIPShare - 加载更多数据:', ips)
     
     if (!ips || ips.length === 0) {

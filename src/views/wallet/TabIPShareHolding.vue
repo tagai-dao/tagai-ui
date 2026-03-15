@@ -66,7 +66,7 @@ async function onRefresh() {
     }
     
     // 获取用户持有的其他 IPShare
-    const tem = await getIPShareHoldingList(ethAddr, 0)
+    const tem = await getIPShareHoldingList(ethAddr, 0) as any[]
     if (tem && tem.length > 0) {
       // 过滤掉自己的 IPShare
       const filtered = tem.filter((t: any) => t.ipShare !== accStore.getAccountInfo?.ipShare)
@@ -113,7 +113,7 @@ async function onLoad() {
     }
     
     const pageIndex = Math.floor((list.value.length - 1) / 30) + 1
-    const holdingList = await getIPShareHoldingList(ethAddr, pageIndex)
+    const holdingList = await getIPShareHoldingList(ethAddr, pageIndex) as any[]
     
     if (!holdingList || holdingList.length === 0) {
       finished.value = true

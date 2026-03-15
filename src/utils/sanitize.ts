@@ -6,11 +6,10 @@ import DOMPurify from 'dompurify';
 /**
  * DOMPurify 配置 - 只允许安全的标签和属性
  */
-const DOMPURIFY_CONFIG: DOMPurify.Config = {
+const DOMPURIFY_CONFIG = {
   ALLOWED_TAGS: ['br', 'img', 'text', 'span', 'a', 'b', 'i', 'u', 'strong', 'em'],
   ALLOWED_ATTR: ['class', 'src', 'alt', 'href', 'target', 'rel', 'onerror'],
   ALLOW_DATA_ATTR: false,
-  // 允许 onerror 用于 emoji 图片的降级处理，但只允许调用特定函数
   ADD_ATTR: ['onerror'],
 };
 
@@ -21,7 +20,7 @@ const DOMPURIFY_CONFIG: DOMPurify.Config = {
  */
 export function sanitizeHtml(dirty: string): string {
   if (!dirty) return '';
-  return DOMPurify.sanitize(dirty, DOMPURIFY_CONFIG);
+  return DOMPurify.sanitize(dirty, DOMPURIFY_CONFIG) as string;
 }
 
 /**
