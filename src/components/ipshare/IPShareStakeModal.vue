@@ -368,7 +368,7 @@ const handleConfirm = async () => {
         console.log('Stake - Latest balance from batch query:', latestBalance)
         
         // 使用浮点数比较（批量查询返回的是浮点数）
-        if (latestBalance < amountNum - 0.0001) {
+        if (latestBalance < amountNum) {
           ElMessage.error(`余额不足。当前余额: ${formatNumber(latestBalance)} IP.Share，尝试质押: ${formatNumber(amountNum)} IP.Share`)
           processing.value = false
           return
