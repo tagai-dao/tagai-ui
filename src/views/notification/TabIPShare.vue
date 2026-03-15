@@ -1,59 +1,253 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import { ref, onMounted } from "vue";
+import { getIPShareList } from '@/apis/api'
+import { formatPrice, formatAmount } from '@/utils/helper'
+import { calculateIPsharePriceLocal } from '@/utils/ipshare'
+import { getIPshareSupplies } from '@/utils/ipshareAsset'
+import { useStateStore } from '@/stores/common'
+import { useRouter } from 'vue-router'
+import { handleErrorTip } from '@/utils/notify'
+import IPShareTradeModal from '@/components/ipshare/IPShareTradeModal.vue'
+import { isAddress } from 'viem'
+import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
+
+const router = useRouter()
+const stateStore = useStateStore()
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const onLoad = () => {
-  if(loading.value || finished.value) return
-  loading.value = true
-};
+const list = ref<any[]>([])
+const modalVisible = ref(false)
+const selectedIP = ref<any>(null)
 
-const onRefresh = () => {
-  finished.value = false;
-  onLoad();
-};
+const profile = (ip: any) => {
+  if (!ip.profile) return null
+  if (ip.profile) {
+    return ip.profile.replace('normal', '200x200')
+  } else {
+    return 'https://profile-images.heywallet.com/' + ip.twitterId
+  }
+}
 
+const replaceEmptyProfile = (e: any) => {
+  e.target.src = emptyProfile
+}
+
+async function onRefresh() {
+  try {
+    refreshing.value = true
+    finished.value = false
+    const ips = await getIPShareList(0) as any[]
+    console.log('📥 TabIPShare - 从后端获取的原始数据:', ips)
+    
+    if (ips && Array.isArray(ips)) {
+      console.log(`📊 TabIPShare - 共 ${ips.length} 条数据`)
+      
+      // 确保每个 IPShare 都有基本数据
+      ips.forEach((ip) => {
+        // 如果后端没有返回 supply，先设置为 0
+        if (!ip.supply && ip.ethAddr && isAddress(ip.ethAddr)) {
+          ip.supply = 0
+        }
+      })
+      
+      // 批量获取所有 IPShare 的供应量（仅更新那些后端没有返回 supply 的）
+      const ethAddrs = ips
+        .filter(ip => isAddress(ip.ethAddr) && (!ip.supply || ip.supply === 0))
+        .map(ip => ip.ethAddr)
+      
+      if (ethAddrs.length > 0) {
+        try {
+          const supplies = await getIPshareSupplies(ethAddrs)
+          // 更新供应量到列表中
+          ips.forEach((ip) => {
+            if (ip.ethAddr && supplies[ip.ethAddr] !== undefined) {
+              ip.supply = supplies[ip.ethAddr]
+            }
+          })
+        } catch (e) {
+          console.error('Get IPShare supplies error:', e)
+        }
+      }
+      
+      list.value = [...ips]
+      
+      // 如果返回的数据少于 30 条，说明没有更多数据了
+      if (ips.length < 30) {
+        finished.value = true
+        console.log('✅ TabIPShare - 数据已全部加载，共', ips.length, '条')
+      }
+      
+      console.log('✅ TabIPShare - 最终数据已更新到列表:', list.value.length, '条')
+    } else {
+      list.value = []
+      finished.value = true
+    }
+  } catch (e) {
+    console.error('Refresh IPShare list error:', e)
+    handleErrorTip(e)
+    finished.value = true
+  } finally {
+    refreshing.value = false
+  }
+}
+
+async function onLoad() {
+  try {
+    if (refreshing.value || finished.value || loading.value) return
+    loading.value = true
+    
+    const pageIndex = Math.floor((list.value.length - 1) / 30) + 1
+    console.log(`📄 TabIPShare - 加载更多，页码: ${pageIndex}`)
+    const ips = await getIPShareList(pageIndex) as any[]
+    console.log('📥 TabIPShare - 加载更多数据:', ips)
+    
+    if (!ips || ips.length === 0) {
+      finished.value = true
+      console.log('✅ TabIPShare - 没有更多数据了')
+      return
+    }
+    
+    if (ips.length < 30) {
+      finished.value = true
+      console.log('✅ TabIPShare - 数据不足 30 条，标记为已完成')
+    }
+    
+    if (ips && Array.isArray(ips) && ips.length > 0) {
+      console.log(`📊 TabIPShare - 新增 ${ips.length} 条数据`)
+      
+      // 确保每个 IPShare 都有基本数据
+      ips.forEach((ip) => {
+        if (!ip.supply && ip.ethAddr && isAddress(ip.ethAddr)) {
+          ip.supply = 0
+        }
+      })
+      
+      // 批量获取新加载的 IPShare 的供应量
+      const ethAddrs = ips
+        .filter(ip => isAddress(ip.ethAddr) && (!ip.supply || ip.supply === 0))
+        .map(ip => ip.ethAddr)
+      
+      if (ethAddrs.length > 0) {
+        try {
+          const supplies = await getIPshareSupplies(ethAddrs)
+          ips.forEach((ip) => {
+            if (ip.ethAddr && supplies[ip.ethAddr] !== undefined) {
+              ip.supply = supplies[ip.ethAddr]
+            }
+          })
+        } catch (e) {
+          console.error('Get IPShare supplies error:', e)
+        }
+      }
+      
+      list.value = [...list.value, ...ips]
+      console.log(`✅ TabIPShare - 总数据量: ${list.value.length} 条`)
+    }
+  } catch (e) {
+    console.error('Load more IPShare list error:', e)
+    handleErrorTip(e)
+    finished.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+function gotoUserPage(ip: any) {
+  if (ip.twitterUsername) {
+    router.push('/user/' + ip.twitterUsername)
+  }
+}
+
+function onTrade(ip: any) {
+  selectedIP.value = ip
+  modalVisible.value = true
+}
+
+function onModalClose() {
+  modalVisible.value = false
+  selectedIP.value = null
+  // 刷新列表以更新供应量
+  onRefresh()
+}
+
+onMounted(() => {
+  onRefresh()
+})
 </script>
 
 <template>
-  <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                    :loading-text="$t('loading')"
-                    :lpulling-text="$t('pullToRefreshData')"
-                    :loosing-text="$t('releaseToRefresh')">
-    <van-list :loading="loading"
-              :finished="finished"
-              :immediate-check="false"
-              :finished-text="$t('noMore')"
-              :offset="50"
-              @load="onLoad">
-      <div class="bg-white p-4 rounded-2xl flex items-center gap-1.5 mb-2"
-           v-for="i of 2" :key="i">
-        <img class="h-10 w-10 min-h-10 rounded-full"
-             src="~@/assets/icons/icon-default-avatar.svg" alt="">
-        <div class="flex-1">
-          <div class="flex justify-between items-center">
-            <div>
-              <span class="text-grey-normal font-bold text-lg">Username</span>
-              <span class="text-sm text-grey-8d"> • 23 days ago</span>
+  <van-pull-refresh 
+    v-model="refreshing" 
+    @refresh="onRefresh"
+    class="min-h-full"
+    :loading-text="$t('loading')"
+    :lpulling-text="$t('pullToRefreshData')"
+    :loosing-text="$t('releaseToRefresh')">
+    <van-list 
+      :loading="loading"
+      :finished="finished"
+      :immediate-check="false"
+      :finished-text="list.length !== 0 ? $t('noMore') : ''"
+      :offset="50"
+      @load="onLoad">
+      <div class="px-3">
+        <div v-if="list.length === 0 && !refreshing" class="flex justify-center py-6 w-full">
+          <img src="~@/assets/images/empty-data.svg" alt="">
+        </div>
+        <div
+          v-for="ip in list"
+          :key="ip.twitterId || ip.ethAddr"
+          class="bg-white py-3 px-3 rounded-2xl mb-2 flex items-center gap-3"
+          @click="gotoUserPage(ip)"
+        >
+          <div class="flex-1 max-w-1/2 md:max-w-2/3 flex items-center gap-3">
+            <img
+              class="w-10 h-10 min-w-10 min-h-10 rounded-full border-2 border-white cursor-pointer"
+              :src="profile(ip)"
+              @error="replaceEmptyProfile"
+              alt=""
+            >
+            <div class="flex flex-col gap-1 truncate">
+              <div class="text-black font-bold text-h3 leading-5 truncate">{{ ip.twitterName || 'Unknown' }}</div>
+              <div class="text-12px leading-4 text-grey-8d">@{{ ip.twitterUsername || 'unknown' }}</div>
             </div>
-            <div class="font-medium text-grey-3f">0.003 ETH</div>
           </div>
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-1 text-grey-8d">
-              <span>@username</span>
-              <span class="mx-4px"> · </span>
-              <button>
-                <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
-              </button>
+          <div class="flex-1 text-center flex justify-end items-center gap-3">
+            <div class="text-right flex flex-col gap-1">
+              <div class="text-black font-bold leading-5 text-h4">
+                <template v-if="ip.supply !== undefined && ip.supply !== null && ip.supply > 0">
+                  {{ formatPrice(stateStore.ethPrice * calculateIPsharePriceLocal(ip.supply)) }} / {{ formatAmount(ip.supply) }}
+                </template>
+                <template v-else>
+                  <span class="text-grey-8d">-- / --</span>
+                </template>
+              </div>
+              <div class="whitespace-nowrap text-12px leading-4 text-grey-8d">{{ $t('ip.priceSupply') }}</div>
             </div>
-            <span class="text-red-e6 font-medium">Sell</span>
-<!--            <span class="text-green-500 font-medium">Buy</span>-->
+            <button
+              class="border-1 border-orange-normal rounded-full px-4 h-8 text-orange-normal text-h5 whitespace-nowrap hover:bg-orange-normal hover:text-white transition-all"
+              @click.stop="onTrade(ip)"
+            >
+              {{ $t('trade') }}
+            </button>
           </div>
         </div>
       </div>
     </van-list>
   </van-pull-refresh>
+  
+  <IPShareTradeModal
+    v-if="selectedIP"
+    v-model="modalVisible"
+    :subject-address="selectedIP.ethAddr"
+    :subject-info="{
+      name: selectedIP.twitterName,
+      supply: selectedIP.supply
+    }"
+    @success="onModalClose"
+  />
 </template>
 
 <style scoped>

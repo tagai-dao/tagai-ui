@@ -53,7 +53,7 @@
   </template>
   
   <script setup lang="ts">
-import type { MiniApp, Tweet } from '@/types';
+import type { CommunityMiniTag, Tweet } from '@/types';
 import { onMounted, ref } from 'vue';
 import { getCommunityTweetsWithTag } from '@/apis/api';
 import { useAccountStore } from '@/stores/web3';
@@ -62,7 +62,7 @@ import { useCurationStore } from '@/stores/curation'
 import { getTokenInfoOfTweets } from '@/utils/pump'
 
   const props = defineProps<{
-    appData: MiniApp
+    appData: CommunityMiniTag
   }>()
 
   const refreshing = ref(false)

@@ -19,7 +19,7 @@ import { useAccountStore } from "@/stores/web3";
 import CreateBlinkModal from '@/components/common/CreateBlinkModal.vue'
 import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
-import MiniAppIndex from "@/views/tag-detail/miniApps/Index.vue";
+import CommunityMiniTagIndex from "@/views/tag-detail/communityMiniTags/Index.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
@@ -439,10 +439,10 @@ onBeforeRouteLeave((to, from, next) => {
           </el-popover> -->
         </div>
         <div class="flex justify-center text-white space-x-4">
-          <!-- <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+          <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
             Blinks
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-          </button> -->
+          </button>
           <button class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 gap-1 rounded-full h-11"
                   @click="showTradeBox=!showTradeBox">
             <span>{{$t('trade')}}</span>
@@ -456,7 +456,7 @@ onBeforeRouteLeave((to, from, next) => {
 
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
-              <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">{{$t('postView.postToEarn')}}</button>
+              <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post</button>
             </template>
             <template #default>
               <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
@@ -499,7 +499,7 @@ onBeforeRouteLeave((to, from, next) => {
             <CreditIndex v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
             <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
-            <MiniAppIndex  v-if="activeTab==='activity'"/>
+            <CommunityMiniTagIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
@@ -613,10 +613,10 @@ onBeforeRouteLeave((to, from, next) => {
                 </div>
               </div>
               <div class="flex justify-center text-white space-x-8">
-                <!-- <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+                <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
                   Blinks
                   <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-                </button> -->
+                </button>
 
                 <button v-if="accStore.getAccountInfo?.accountType !== 1" :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
                   {{$t('tip')}} ${{ comStore.currentSelectedCommunity?.tick }}
@@ -626,10 +626,10 @@ onBeforeRouteLeave((to, from, next) => {
                 
                 <button v-if="accStore.getAccountInfo?.accountType === 1" 
                   @click="onTweetType(CurationType.TWEET)"
-                class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">{{$t('postView.postToEarn')}}</button>
+                class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post</button>
                 <el-popover v-else popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
                   <template #reference>
-                    <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">{{$t('postView.postToEarn')}}</button>
+                    <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post</button>
                   </template>
                   <template #default>
                     <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
@@ -650,7 +650,7 @@ onBeforeRouteLeave((to, from, next) => {
                 </el-popover>
                 <!-- <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button> -->
               </div>
-              <!-- <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold"
+              <!-- <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold w-full"
               @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">
                 Trade
               </button> -->

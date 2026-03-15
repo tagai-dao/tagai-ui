@@ -59,6 +59,16 @@ export const bondEthByPrivyAccToken = async (twitterId: string, ethAddr: string,
 export const getUserProfile = (twitterId?: string, username?: string) =>
   get(BACKEND_API_URL + '/user/getUserProfile', {twitterId, username})
 
+export const getEthAddressByTwitterId = async (twitterId: string): Promise<string | null> => {
+  try {
+    const user = await getUserProfile(twitterId) as any;
+    return user?.ethAddr || null;
+  } catch (error) {
+    console.error('Failed to get eth address by twitter id:', error);
+    return null;
+  }
+}
+
 export const updateEmailProfile = (twitterId: string, username: string, profile: string) =>
   post(BACKEND_API_URL + '/user/updateEmailProfile', { twitterId, username, profile })
 
@@ -259,6 +269,15 @@ export const getIpshareInfo = async (ethAddr: string) =>
 export const getIPShareList = async (pages?: number) =>
     get(BACKEND_API_URL + '/ipshare/list', {pages})
 
+export const getIPShareHoldingList = async (ethAddr: string, pages?: number) =>
+    get(BACKEND_API_URL + '/ipshare/holdingList', {ethAddr, pages})
+
+export const getIPShareFee = async (ethAddr: string) =>
+    get(BACKEND_API_URL + '/ipshare/kolFee', {ethAddr})
+
+export const getCapturedFee = async (ethAddr: string) =>
+    get(BACKEND_API_URL + '/ipshare/capturedFee', {ethAddr})
+
 /************************************ clanker **********************************/
 export const getClankerTickers = async () =>
   get(BACKEND_API_URL + '/clanker/ticks')
@@ -295,9 +314,9 @@ export const getTokenByTickOrCA = async (tick: string) =>
 export const tipToUser = async (twitterId: string, targetTwitterUsername: string, tick: string, amount: number) =>
   post(BACKEND_API_URL + '/twitterTip/tipToUser', {twitterId, targetTwitterUsername, tick, amount})
 
-/************************************  mini-app  **********************************/
-export const getMiniApps = async (tick: string) =>
-  get(BACKEND_API_URL + '/miniApp/getMiniApps', {tick})
+/************************************  community-mini-tag  **********************************/
+export const getCommunityMiniTags = async (tick: string) =>
+  get(BACKEND_API_URL + '/communityMiniTag/getCommunityMiniTags', {tick})
 
 export const getCommunityTweetsWithTag = async (communityId: string, tag: string, pages?: number, twitterId?: string) =>
   get(BACKEND_API_URL + '/curation/tagTweets', {communityId, tag, pages})

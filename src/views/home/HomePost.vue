@@ -12,6 +12,8 @@ import type { Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { useCurationStore } from "@/stores/curation";
 import UserList from "@/views/home/UserList.vue";
+import TopTagCoin from "@/components/home/TopTagCoin.vue";
+import TopOnlineSpaces from "@/components/home/TopOnlineSpaces.vue";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import {usePageScroll} from "@/composables/useTools";
 import emitter from "@/utils/emitter";
@@ -158,10 +160,17 @@ onActivated(() => {
       </div>
     </div>
     <div class="col-span-1 h-full overflow-hidden hidden web:block">
-      <div class="h-auto max-h-full bg-white rounded-2xl flex flex-col">
-        <div class="font-bold text-h3 py-3 px-4">IP Share</div>
-        <div class="flex-1 overflow-auto no-scroll-bar">
-          <UserList/>
+      <div class="h-full flex flex-col gap-3 overflow-y-auto no-scroll-bar">
+        <!-- Live Spaces -->
+        <TopOnlineSpaces />
+        <!-- Top TagCoin -->
+        <TopTagCoin />
+        <!-- Top X Creators -->
+        <div class="h-auto max-h-full bg-white rounded-2xl flex flex-col">
+          <div class="font-bold text-h3 py-3 px-4">Top X Creators</div>
+          <div class="flex-1 overflow-auto no-scroll-bar">
+            <UserList/>
+          </div>
         </div>
       </div>
     </div>

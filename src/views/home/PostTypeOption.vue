@@ -9,7 +9,7 @@ const tweetsStore = useTweetsStore();
 <template>
   <el-select
       v-model="tweetsStore.homeTweetType"
-      class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-10 flex items-center text-h4 text-black"
+      class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
       popper-class="c-select-popper rounded-xl"
   >
     <el-option :value="TweetListType.Trending" :label="$t('trending')" />

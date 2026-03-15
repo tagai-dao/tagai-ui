@@ -22,6 +22,6 @@ function gotoTrade() {
     <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3"
         @click.stop="gotoTrade"
         v-if="tweet.commerceId">
-        Trade #{{ tweet.tick }}
+        Trade ${{ tweet.tick }}
     </button>
 </template>
