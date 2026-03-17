@@ -270,17 +270,17 @@ async function confirm() {
       // V7 listed tokens use PCS V4 Universal Router
       if (token!.version === 7 && listed.value) {
         const poolKey = JSON.parse(token!.pair ?? '{}') as PoolKey;
-        const ethAmount = willListing ? updatedBuyValue : BigInt(payEth.value * 1e18);
+        const ethAmount = parseEther(payEth.value.toString());
         hash = await buyTokenV4(
           poolKey,
           ethAmount,
-          willListing ? updatedReveiveAmount : (receiveAmount.value ?? 0n),
+          receiveAmount.value ?? 0n,
           (stateStore.sellsman ?? token.ipshare) as `0x${string}`,
           Math.ceil(maxSlippage.value * 100)
         );
       } else {
         // check list
-        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : BigInt(payEth.value * 1e18), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
+        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
       }
       if (hash) {
         payEth.value = undefined
@@ -293,8 +293,8 @@ async function confirm() {
       }
     }else {
       if (!sellAmount.value) return;
-      let finalSellAmount = BigInt(sellAmount.value * 1e18)
-      if (tokenOriginalBalance.value < BigInt(sellAmount.value * 1e18)) {
+      let finalSellAmount = parseEther(sellAmount.value.toString());
+      if (tokenOriginalBalance.value < finalSellAmount) {
         finalSellAmount = BigInt(tokenOriginalBalance.value)
       }
 
