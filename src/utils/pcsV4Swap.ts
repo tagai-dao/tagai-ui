@@ -24,6 +24,9 @@ import errCode from "@/errCode";
 
 // --- Constants ---
 
+// Price math
+const Q192 = 2n ** 192n;
+
 // Universal Router Commands (from Commands.sol)
 const PERMIT2_PERMIT = 0x0a;
 const INFI_SWAP = 0x10;
