@@ -7,7 +7,7 @@
  * Sell flow (Token → BNB): approve Permit2 → PERMIT2_PERMIT + INFI_SWAP
  */
 
-import { PCSUniversalRouter, PCSPermit2, WETH } from "@/config";
+import { PCSUniversalRouter, PCSPermit2, PCSCLPoolManager, WETH } from "@/config";
 import { useAccountStore } from "@/stores/web3";
 import { 
     encodeAbiParameters, 
@@ -322,6 +322,59 @@ const ensurePermit2AllowanceForRouter = async (token: `0x${string}`, amount: big
         });
         if (!hash) throw errCode.TRANSACTION_INVALID;
     }
+}
+
+// --- V4 Quote Functions ---
+
+const getSlot0Abi = [{
+    inputs: [{ name: 'id', type: 'bytes32' }],
+    name: 'getSlot0',
+    outputs: [
+        { name: 'sqrtPriceX96', type: 'uint160' },
+        { name: 'tick', type: 'int24' },
+        { name: 'protocolFee', type: 'uint24' },
+        { name: 'lpFee', type: 'uint24' }
+    ],
+    stateMutability: 'view',
+    type: 'function'
+}] as const;
+
+/**
+ * Read sqrtPriceX96 and lpFee from PCS V4 CLPoolManager by poolId
+ */
+const getV4PoolState = async (poolId: `0x${string}`) => {
+    const publicClient = getReadOnlyClient();
+    const [sqrtPriceX96, , , lpFee] = await publicClient.readContract({
+        address: PCSCLPoolManager as `0x${string}`,
+        abi: getSlot0Abi,
+        functionName: 'getSlot0',
+        args: [poolId]
+    });
+    return { sqrtPriceX96: BigInt(sqrtPriceX96), lpFee: Number(lpFee) };
+}
+
+/**
+ * Estimate token output for buying with BNB via PCS V4 CL pool (spot price)
+ * BNB(currency0) → Token(currency1): tokenOut = ethAmount * sqrtPriceX96^2 / Q192
+ * @param poolId - bytes32 pool id from backend pair field
+ */
+export const getV4BuyQuote = async (poolId: `0x${string}`, ethAmount: bigint): Promise<bigint> => {
+    const { sqrtPriceX96, lpFee } = await getV4PoolState(poolId);
+    if (sqrtPriceX96 === 0n) return 0n;
+    const tokenOut = (ethAmount * sqrtPriceX96 * sqrtPriceX96) / Q192;
+    return tokenOut * BigInt(1000000 - lpFee) / 1000000n;
+}
+
+/**
+ * Estimate BNB output for selling token via PCS V4 CL pool (spot price)
+ * Token(currency1) → BNB(currency0): ethOut = tokenAmount * Q192 / sqrtPriceX96^2
+ * @param poolId - bytes32 pool id from backend pair field
+ */
+export const getV4SellQuote = async (poolId: `0x${string}`, tokenAmount: bigint): Promise<bigint> => {
+    const { sqrtPriceX96, lpFee } = await getV4PoolState(poolId);
+    if (sqrtPriceX96 === 0n) return 0n;
+    const ethOut = (tokenAmount * Q192) / (sqrtPriceX96 * sqrtPriceX96);
+    return ethOut * BigInt(1000000 - lpFee) / 1000000n;
 }
 
 // --- ABI ---

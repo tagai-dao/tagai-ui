@@ -13,7 +13,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   getBuyAmountUseEth, getSellAmountUseToken,
   getBuyPriceAfterFee
  } from '@/utils/pump'
-import { buyTokenV4, sellTokenV4, type PoolKey } from '@/utils/pcsV4Swap'
+import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, type PoolKey } from '@/utils/pcsV4Swap'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -135,8 +135,13 @@ const updateBuyAmount = debounce(async (val: any) => {
   const amount = parseEther(val.toString())
  try {
   if (listed.value) {
-    const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount * 9800n / 10000n)
-    receiveAmount.value = receive
+    if (comStore.currentSelectedCommunity?.version === 7) {
+      const receive = await getV4BuyQuote(comStore.currentSelectedCommunity!.pair as `0x${string}`, amount)
+      receiveAmount.value = receive
+    } else {
+      const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount * 9800n / 10000n)
+      receiveAmount.value = receive
+    }
   }else {
     const {receive, supply} = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
     if (receive > parseEther('650000000') * 9950n / 10000n - supply) {
@@ -168,8 +173,13 @@ const updateSellAmount = debounce(async (val: any) => {
     showFillInfo.value = false
     const amount = parseEther(val.toString())
     if (listed.value) {
-      const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
-      receiveEth.value = receive
+      if (comStore.currentSelectedCommunity?.version === 7) {
+        const receive = await getV4SellQuote(comStore.currentSelectedCommunity!.pair as `0x${string}`, amount)
+        receiveEth.value = receive
+      } else {
+        const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
+        receiveEth.value = receive
+      }
     }else {
       const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
       receiveEth.value = receive
@@ -380,7 +390,7 @@ onMounted(async () => {
       <div v-if="comStore.currentSelectedCommunity?.tick && !props.tick"
            class="w-full h-[360px] hidden web:flex min-w-[320px] flex-1 gap-3">
         <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
-        <iframe v-else :src="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`" 
+        <iframe v-else :src="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.version === 7 ? comStore.currentSelectedCommunity?.token : comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`"
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>
