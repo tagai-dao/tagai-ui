@@ -103,26 +103,51 @@ export default function AuthLoading() {
 
     const {reauthorize} = useOAuthTokens({
         onOAuthTokenGrant: async ({oAuthTokens, user}) => {
-            console.log(
-                'Twitter auth success',
-                oAuthTokens,
-                user
-            );
-            const privyAccessToken = await getAccessToken()
-            const userInfo = await privyLogin(privyAccessToken, oAuthTokens.accessToken, oAuthTokens.refreshToken)
-            emitter.emit('authSuccess', userInfo)
+            try {
+                console.log(
+                    'Twitter auth success',
+                    oAuthTokens,
+                    user
+                );
+                const privyAccessToken = await getAccessToken()
+                if (!privyAccessToken) {
+                    console.error('Failed to get Privy access token')
+                    emitter.emit('authError', 'Failed to get Privy access token')
+                    return
+                }
+                
+                console.log('Calling privyLogin with:', {
+                    privyAccessToken: privyAccessToken.substring(0, 20) + '...',
+                    accessToken: oAuthTokens.accessToken?.substring(0, 20) + '...',
+                    refreshToken: oAuthTokens.refreshToken?.substring(0, 20) + '...'
+                })
+                
+                const userInfo = await privyLogin(privyAccessToken, oAuthTokens.accessToken, oAuthTokens.refreshToken)
+                
+                if (!userInfo) {
+                    console.error('privyLogin returned null or undefined')
+                    emitter.emit('authError', 'Login failed: No user info returned')
+                    return
+                }
+                
+                console.log('Login success, userInfo:', userInfo)
+                emitter.emit('authSuccess', userInfo)
 
-            const wallet = wallets?.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
+                const wallet = wallets?.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
 
-            if (!wallet && 
-                (
-                !userInfo.ethAddr
-                || userInfo.walletType === 1
-                )) {
-                console.log('create new twitter wallet')
-                await createWallet()
-            }else {
-                console.log('no need to create new twitter wallet')
+                if (!wallet && 
+                    (
+                    !userInfo.ethAddr
+                    || userInfo.walletType === 1
+                    )) {
+                    console.log('create new twitter wallet')
+                    await createWallet()
+                }else {
+                    console.log('no need to create new twitter wallet')
+                }
+            } catch (error) {
+                console.error('Twitter OAuth token grant error:', error)
+                emitter.emit('authError', error)
             }
         }
     });

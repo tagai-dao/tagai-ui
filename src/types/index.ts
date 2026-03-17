@@ -131,6 +131,7 @@ export type Account = {
   walletType?: number | null | undefined; // 0: metamask, 1: privy
   accountType?: number | null | undefined; // 0: twitter, 1: email
   isNew?: number | null | undefined; // 0: old, 1: new register
+  ipShare?: string | null | undefined;
 };
 
 export type FarcasterUser = {
@@ -440,7 +441,7 @@ export type IpShareUser = {
   price?: number | null | undefined,
 }
 
-export type MiniApp = {
+export type CommunityMiniTag = {
   id: number,
   name: string,
   type: number,

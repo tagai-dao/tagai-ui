@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { GlobalModalType, type Community } from "@/types";
-import { isAddress, checksumAddress, parseEther } from "viem";
+import { isAddress, checksumAddress, parseEther, zeroAddress } from "viem";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useI18n } from "vue-i18n";
 import { formatBalance } from "@/utils/helper";
@@ -73,7 +73,20 @@ const validateAmount = (amount: string) => {
 
 // 处理地址输入
 const onAddressInput = () => {
-  formErrors.value.toAddress = isAddress(transferForm.value.toAddress as `0x${string}`) ? '' : 'Invalid address';
+  const address = transferForm.value.toAddress.trim();
+  
+  // 验证地址格式
+  if (!isAddress(address)) {
+    formErrors.value.toAddress = 'Invalid address';
+  } 
+  // 安全: 检查零地址
+  else if (address.toLowerCase() === zeroAddress.toLowerCase()) {
+    formErrors.value.toAddress = 'Cannot send to zero address';
+  } 
+  else {
+    formErrors.value.toAddress = '';
+  }
+  
   formErrors.value.general = '';
 };
 

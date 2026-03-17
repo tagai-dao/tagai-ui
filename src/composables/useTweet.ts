@@ -8,6 +8,7 @@ import { useModalStore } from "@/stores/common";
 import { notify } from "@/utils/notify";
 import i18n from "@/lang";
 import { isAddress } from "viem";
+import { sanitizeHtml, escapeHtml } from "@/utils/sanitize";
 
 const t = i18n.global.t
 
@@ -30,7 +31,11 @@ export const useTweet = () => {
     useAccount();
   const formatEmojiText = (str: string) => {
     if (!str || str.trim().length === 0) return "";
-    const nStrList = str.split(/\r\n|\r|\n/)
+    
+    // 安全处理: 先转义 HTML 实体，防止 XSS
+    const escapedStr = escapeHtml(str);
+    
+    const nStrList = escapedStr.split(/\r\n|\r|\n/)
     // @ts-ignore
     const regStr = /[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF][\u200D|\uFE0F]|[\uD83C|\uD83D|\uD83E][\uDC00-\uDFFF]|[0-9|*|#]\uFE0F\u20E3|[0-9|#]\u20E3|[\u203C-\u3299]\uFE0F\u200D|[\u203C-\u3299]\uFE0F|[\u2122-\u2B55]|\u303D|[\A9|\AE]\u3030|\uA9|\uAE|\u3030/gi;
     let nStr = ''
@@ -38,11 +43,14 @@ export const useTweet = () => {
       iStr = iStr.replace(regStr, (char: any) => {
         let code = char?.codePointAt(char)?.toString(16);
         if (code.length < 4) code = code + "-20e3";
+        // 安全处理: alt 属性中的字符已经被转义
         return `<img class="w-5 h-5 mx-0.5 inline-block" src="/emoji/svg/${code}.svg" onerror="showAltText(this)" alt="${char}"/><text class="hidden">${char}</text>`;
       });
       nStr += (iStr+`<br>`)
     }
-    return nStr;
+    
+    // 安全处理: 最终用 DOMPurify 消毒
+    return sanitizeHtml(nStr);
   };
 
   const getTweetIdFromUrl = (url: string) => {

@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import {ref} from "vue";
-import {EthWalletState, useAccountStore} from "@/stores/web3";
+import {EthWalletState, useAccountStore, useIpshareData} from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import BondEthModal from '../login/BondEthModal.vue';
 import {useModalStore} from "@/stores/common";
 import { useAccount } from "@/composables/useAccount";
 import { create } from "@/utils/ipshare";
+import { getIPshareSupplies, getIPshareBalances } from "@/utils/ipshareAsset";
 import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
 
 const acc = useAccountStore().getAccountInfo;
 const modalStore = useModalStore();
+const ipshareStore = useIpshareData();
 const { accountMismatch } = useAccount();
 
 const step = ref(1)
@@ -24,12 +26,23 @@ async function createIPShare() {
       handleErrorTip(errCode.PARAMS_ERROR)
       return;
     }
+
+    // 立即更新 store，让 UI 响应式刷新
+    const ethAddr = acc.ethAddr!;
     useAccountStore().ipshare = {
-      ethAddr: acc.ethAddr!,
+      ethAddr,
       shareSupply: 10,
       created: true
     };
+    ipshareStore.saveIPshareSupplies({ [ethAddr]: 10 });
+
     modalStore.setModalVisible(false)
+
+    // 异步从链上拉取最新数据，无需阻塞 UI
+    Promise.all([
+      getIPshareSupplies([ethAddr]),
+      getIPshareBalances([ethAddr])
+    ]).catch(e => console.error('Refresh IPShare data after creation failed:', e));
   } catch (e) {
     handleErrorTip(e)
   } finally {

@@ -113,7 +113,9 @@ export default defineConfig( (): any => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
-        '~@': fileURLToPath(new URL('./src', import.meta.url))
+        '~@': fileURLToPath(new URL('./src', import.meta.url)),
+        // Mock React Native dependencies for web
+        '@react-native-async-storage/async-storage': fileURLToPath(new URL('./src/mocks/async-storage.ts', import.meta.url))
       },
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json', '.vue', '.mjs']
     },
@@ -125,11 +127,14 @@ export default defineConfig( (): any => {
       minify: 'terser',
       terserOptions: {
         compress: {
+          // 安全: 生产环境移除 console 输出，防止敏感信息泄露
           drop_console: true,
           drop_debugger: true,
+          // 移除特定的 console 方法
+          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.trace'],
         },
         format: {
-          comments: true,
+          comments: false, // 安全: 移除注释
         },
         mangle: true,
       },
@@ -144,7 +149,8 @@ export default defineConfig( (): any => {
       }
     },
     server: {
-      host: '0.0.0.0'
+      port: 5173,
+      strictPort: false
     }
   }
 })

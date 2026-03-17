@@ -20,11 +20,12 @@ axios.interceptors.request.use(
   }
 )
 
-export function get(url: string, params?: Object) {
+export function get(url: string, params?: Object, config?: any) {
   return new Promise((resolve, reject) => {
     axios
       .get(url, {
-        params: params
+        params: params,
+        ...config
       })
       .then(res => {
         resolve(res.data);
@@ -32,19 +33,26 @@ export function get(url: string, params?: Object) {
       .catch(err => {
         console.log("network err", err);
         if (err.response) {
-          reject(err.response.status);
+          // 返回完整的错误信息，包括状态码和响应数据
+          const errorInfo = {
+            status: err.response.status,
+            data: err.response.data,
+            message: err.response.data?.message || err.message || 'Network error'
+          };
+          console.error('API Error:', errorInfo);
+          reject(errorInfo);
           return;
         } else {
-          reject(500);
+          reject({ status: 500, message: err.message || 'Network error' });
         }
-      }).then(resolve);
+      });
   });
 }
 
-export function post(url: string, params?: object) {
+export function post(url: string, params?: object, config?: any) {
   return new Promise((resolve, reject) => {
     axios
-      .post(url, params)
+      .post(url, params, config)
       .then(res => {
         if (res.data.jwt) {
           const accStore = useAccountStore();
