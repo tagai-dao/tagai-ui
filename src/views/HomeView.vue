@@ -315,14 +315,14 @@ const onCreate = (type: GlobalModalType) => {
     <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
       <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
         <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="tagSubMenu==='tweets' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="stateStore.setTagSubMenu('tweets')"
         >
           {{ $t('tweets') || 'Tweets' }}
         </button>
         <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="tagSubMenu==='prediction' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="stateStore.setTagSubMenu('prediction')"
         >
@@ -350,14 +350,14 @@ const onCreate = (type: GlobalModalType) => {
     <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
       <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
         <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="coinSubMenu==='tagCoin' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="stateStore.setCoinSubMenu('tagCoin')"
         >
           {{ $t('tagCoin') || 'TagCoin' }}
         </button>
         <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-xs web:text-sm font-medium transition-colors"
+          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="coinSubMenu==='ip' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="stateStore.setCoinSubMenu('ip')"
         >

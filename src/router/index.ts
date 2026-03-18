@@ -116,6 +116,12 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  // 隐藏 MindShare 页面：任何访问都重定向回首页
+  if (to.path === '/mindshare' || to.name === 'mindshare') {
+    next({ path: '/' })
+    return
+  }
+
   const account = useAccountStore().getAccountInfo
   if (to.meta.gotoHome && !account?.twitterId) {
     useModalStore().setModalVisible(true, GlobalModalType.Login)
