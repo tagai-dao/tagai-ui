@@ -7,7 +7,7 @@ import TabCreateCoin from "@/views/profile/TabCreateCoin.vue";
 import TabBlinksTweet from "@/views/profile/TabBlinksTweet.vue";
 import { useAccountStore, useIpshareData } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
-import { MAX_OP, MAX_VP } from "@/config";
+import { MAX_OP, MAX_VP, VP_CONSUME, OP_CONSUME } from "@/config";
 import { getIPShareSupply, calculateIPsharePriceLocal } from "@/utils/ipshare";
 import { useInterval, useTools } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
@@ -45,11 +45,11 @@ const ipshareExpanded = ref(false) // IPShare Section 折叠/展开状态
 
 const profileTableData = ref([
   { action: 'Curation', vp: 'Selected vp', op: 'Selected vp'},
-  { action: 'Tweet', vp: '0', op: '200'},
-  { action: 'Quote', vp: '0', op: '200'},
-  { action: 'Reply', vp: '0', op: '50'},
-  { action: 'Retweet', vp: '0', op: '5'},
-  { action: 'Like', vp: '0', op: '3'},
+  { action: 'Tweet', vp: '0', op: OP_CONSUME.POST},
+  { action: 'Quote', vp: '0', op: OP_CONSUME.QUOTE},
+  { action: 'Reply', vp: '0', op: OP_CONSUME.REPLY},
+  { action: 'Retweet', vp: '0', op: OP_CONSUME.RETWEET},
+  { action: 'Like', vp: '0', op: OP_CONSUME.LIKE},
 ])
 
 const donutEth = computed(() => accStore.getAccountInfo?.ethAddr)

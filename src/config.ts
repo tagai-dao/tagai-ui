@@ -140,7 +140,7 @@ export const OP_CONSUME = Object.freeze({
     POST: 200,
     QUOTE: 200,
     RETWEET: 5,
-    REPLY: 50,
+    REPLY: 10,
     LIKE: 3
 });
 
