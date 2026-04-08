@@ -3470,6 +3470,190 @@ export const abis = {
         "type": "receive"
       }
     ],
+    "Token7": [
+      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"address","name":"sellsman","type":"address"},{"internalType":"uint16","name":"slippage","type":"uint16"}],"name":"buyToken","outputs":[],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"minReceive","type":"uint256"},{"internalType":"address","name":"sellsman","type":"address"},{"internalType":"uint16","name":"slippage","type":"uint16"}],"name":"sellToken","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"bondingCurveSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"listed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"v4PoolId","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
+    ],
+    "Token8": [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "spender",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "name": "approve",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "expectAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "sellsman",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "slippage",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "name": "buyToken",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "nutboxCommunity",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "nutboxSocialPool",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectReceive",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "sellsman",
+            "type": "address"
+          },
+          {
+            "internalType": "uint16",
+            "name": "slippage",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "name": "sellToken",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
+    "NutboxSocialCurationPool": [
+      {
+        "inputs": [],
+        "name": "totalClaimed",
+        "outputs": [
+          {
+            "internalType": "uint256",
+            "name": "",
+            "type": "uint256"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "uint256",
+            "name": "orderId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "signature",
+            "type": "bytes"
+          }
+        ],
+        "name": "claim",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      }
+    ],
     "UniswapFactory": [
       {
         "inputs": [
@@ -3623,6 +3807,121 @@ export const abis = {
       'function slot0() external view returns (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, uint16 observationCardinality, uint16 observationCardinalityNext, uint8 feeProtocol, bool unlocked)',
     ],
     "errors": [
+      {
+        "inputs": [],
+        "name": "AllowanceOverflow",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "AllowanceUnderflow",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "ClaimOrderExist",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "CostFeeFail",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "DustIssue",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "IPShareNotCreated",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InsufficientAllowance",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InsufficientBalance",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InsufficientFund",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidClaimAmount",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidGatePermission",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidPermit",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "InvalidSignature",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "NutboxAddressesAlreadySet",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "OnlyPump",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "OutOfSlippage",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "PermitExpired",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "ReentrancyGuardReentrantCall",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "RefundFail",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "TokenInitialized",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "TokenListed",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "TokenNotListed",
+        "type": "error"
+      },
+      {
+        "inputs": [],
+        "name": "TotalSupplyOverflow",
+        "type": "error"
+      },
       {
         "type": "error",
         "name": "OnlyHumanAllowed",
@@ -4722,17 +5021,25 @@ export const abis = {
       {"inputs":[],"name":"getLastSaltIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"tick","type":"string"},{"indexed":false,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"address","name":"creator","type":"address"}],"name":"NewToken","type":"event"}
     ],
-    "Token7": [
-      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"address","name":"sellsman","type":"address"},{"internalType":"uint16","name":"slippage","type":"uint16"}],"name":"buyToken","outputs":[],"stateMutability":"payable","type":"function"},
-      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"minReceive","type":"uint256"},{"internalType":"address","name":"sellsman","type":"address"},{"internalType":"uint16","name":"slippage","type":"uint16"}],"name":"sellToken","outputs":[],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[],"name":"bondingCurveSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"listed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"v4PoolId","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
-      {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-      {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
+    "Pump8" :[
+      {"inputs": [], "name": "CantBeZeroAddress", "type": "error"},
+      {"inputs": [], "name": "CantSetSocialDistributionMoreThanTotalSupply", "type": "error"},
+      {"inputs": [], "name": "FailedDeployment", "type": "error"},
+      {"inputs": [{"internalType": "uint256","name": "balance","type": "uint256"},{"internalType": "uint256","name": "needed","type": "uint256"}],"name": "InsufficientBalance","type": "error"},
+      {"inputs": [], "name": "InsufficientCreateFee", "type": "error"},
+      {"inputs": [], "name": "InvalidGatePermission", "type": "error"},
+      {"inputs": [], "name": "NutboxNotConfigured", "type": "error"},
+      {"inputs": [{"internalType": "address","name": "owner","type": "address"}],"name": "OwnableInvalidOwner","type": "error"},
+      {"inputs": [{"internalType": "address","name": "account","type": "address"}],"name": "OwnableUnauthorizedAccount","type": "error"},
+      {"inputs": [], "name": "PreMineTokenFail", "type": "error"},
+      {"inputs": [], "name": "ReentrancyGuardReentrantCall", "type": "error"},
+      {"inputs": [], "name": "RefundFail", "type": "error"},
+      {"inputs": [], "name": "SaltNotAvailable", "type": "error"},
+      {"inputs": [], "name": "TickHasBeenCreated", "type": "error"},
+      {"inputs": [], "name": "TokenNotCreated", "type": "error"},
+      {"inputs": [], "name": "TokenNotListed", "type": "error"},
+      {"inputs": [],"name": "TokenNotCreated","type": "error"},
+      {"inputs": [{"internalType": "uint256","name": "orderId","type": "uint256"},{"internalType": "uint256","name": "amount","type": "uint256"},{"internalType": "uint256","name": "deadline","type": "uint256"},{"internalType": "bytes","name": "signature","type": "bytes"}],"name": "claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
     ],
     "IPShare3": [
       {"inputs":[{"internalType":"address","name":"subject","type":"address"}],"name":"createShare","outputs":[],"stateMutability":"payable","type":"function"},

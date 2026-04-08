@@ -6,7 +6,7 @@ import { GlobalModalType, type CurationReward } from '@/types';
 import { formatAmount, formatPrice, sleep } from '@/utils/helper';
 import { handleErrorTip, notify } from '@/utils/notify';
 import { getClaimSignature, setOrderClaimed } from '@/apis/api'
-import { claimReward } from '@/utils/pump'
+import { claimReward, claimRewardV8 } from '@/utils/pump'
 import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ClaimFee } from '@/config';
@@ -46,7 +46,14 @@ async function claim() {
     claiming.value = true
     const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
     if (res) {
-      const {signature, orderId, amount} = res;
+      const {signature, orderId, amount, deadline} = res;
+      if (props.reward.version === 8) {
+        const hash = await claimRewardV8(props.reward.token, BigInt(orderId), parseEther(amount.toString()), BigInt(deadline), signature);
+        setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, props.reward.version ?? 2).catch(console.error);
+        await sleep(1)
+        emitter.emit('claimedReward')
+        return;
+      }
       const hash = await claimReward(props.reward.token, props.reward.version ?? 2, BigInt(orderId), parseEther(amount.toString()), signature);
       setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, props.reward.version ?? 2).catch(console.error);
       await sleep(1)
