@@ -85,6 +85,7 @@ export const PumpContract4 = "0x0476571a77Cc8Fc28796935Cf173c265F2021448"; // fi
 export const PumpContract5 = "0x2cAbfDE43f93422fFb070f0Fa03d2951dbBC7749"; // ixo: user who has less reputation can't buy
 export const PumpContract6 = "0x201308B193bC0Aa81Ac540A7D3B3ADb530a39861"; // for import tokens
 export const PumpContract7 = "0x3E75E2db40E7cc9C7d7869Fc2d97eDAb01724212"; // PCS V4 hook
+export const PumpContract8 = "0x88d495228E831b01D8Ae6d62f9633cBcC6d27De2"
 
 // PancakeSwap V4 Infinity
 export const TipTagSwapHook = "0xF815dB0fbeafED4C719F65E41dEC9C50fb357896";

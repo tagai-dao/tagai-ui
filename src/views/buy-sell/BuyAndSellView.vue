@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BackHeader from "@/layout/BackHeader.vue";
 import {computed, onActivated, onMounted, provide, ref, watch} from "vue";
+import { useI18n } from "vue-i18n";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
@@ -31,6 +32,7 @@ import { getIPShareSupply } from "@/utils/ipshare";
 const props = defineProps({
   tick: {type: String, required: false, default: null}
 })
+const { t } = useI18n()
 const comStore = useCommunityStore()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
@@ -117,6 +119,14 @@ const invalidToken = computed(() => {
   return comStore.currentSelectedCommunity?.version === 1 && comStore.currentSelectedCommunity?.tick !== 'TTAI' && !comStore.currentSelectedCommunity?.listed
 })
 
+/** v7 / v8 上架后均走 PCS V4（与 pump.ts isPcsV4Listed 一致） */
+const isPcsV4Version = (v: number | undefined | null) => v === 7 || v === 8
+
+/** Pump8：曲线阶段不对普通用户开放买卖，仅 Agent 可走其他入口 */
+const isV8PreListNoTrade = computed(
+  () => comStore.currentSelectedCommunity?.version === 8 && !comStore.currentSelectedCommunity?.listed
+)
+
 const updateBuyAmount = debounce(async (val: any) => {
   if (!val) {
     trading.value = false
@@ -134,8 +144,13 @@ const updateBuyAmount = debounce(async (val: any) => {
   showFillInfo.value = false
   const amount = parseEther(val.toString())
  try {
+  if (isV8PreListNoTrade.value) {
+    receiveAmount.value = ''
+    calculating.value = false
+    return
+  }
   if (listed.value) {
-    if (comStore.currentSelectedCommunity?.version === 7) {
+    if (isPcsV4Version(comStore.currentSelectedCommunity?.version)) {
       const receive = await getV4BuyQuote(comStore.currentSelectedCommunity!.pair as `0x${string}`, amount)
       receiveAmount.value = receive
     } else {
@@ -172,8 +187,13 @@ const updateSellAmount = debounce(async (val: any) => {
     if (parseFloat(val) == 0) return;
     showFillInfo.value = false
     const amount = parseEther(val.toString())
+    if (isV8PreListNoTrade.value) {
+      receiveEth.value = ''
+      calculating.value = false
+      return
+    }
     if (listed.value) {
-      if (comStore.currentSelectedCommunity?.version === 7) {
+      if (isPcsV4Version(comStore.currentSelectedCommunity?.version)) {
         const receive = await getV4SellQuote(comStore.currentSelectedCommunity!.pair as `0x${string}`, amount)
         receiveEth.value = receive
       } else {
@@ -227,6 +247,10 @@ async function confirm() {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
+  if (comStore.currentSelectedCommunity?.version === 8 && !comStore.currentSelectedCommunity?.listed) {
+    notify({ message: t('buyAndSell.v8PreListAgentOnly') })
+    return
+  }
   showNotBondEth.value = false
   if (tradeType.value === 'buy') {
     if (!payEth.value || parseFloat(payEth.value) == 0) {
@@ -267,8 +291,8 @@ async function confirm() {
       if (!payEth.value) return
 
       let hash: string | undefined;
-      // V7 listed tokens use PCS V4 Universal Router
-      if (token!.version === 7 && listed.value) {
+      // v7/v8 上架后代币走 PCS V4 Universal Router
+      if (isPcsV4Version(token!.version) && listed.value) {
         const poolKey = JSON.parse(token!.pair ?? '{}') as PoolKey;
         const ethAmount = parseEther(payEth.value.toString());
         hash = await buyTokenV4(
@@ -299,8 +323,8 @@ async function confirm() {
       }
 
       let hash: string | undefined;
-      // V7 listed tokens use PCS V4 Universal Router
-      if (token!.version === 7 && listed.value) {
+      // v7/v8 上架后代币走 PCS V4 Universal Router
+      if (isPcsV4Version(token!.version) && listed.value) {
         const poolKey = JSON.parse(token!.pair ?? '{}') as PoolKey;
         hash = await sellTokenV4(
           poolKey,
@@ -390,7 +414,7 @@ onMounted(async () => {
       <div v-if="comStore.currentSelectedCommunity?.tick && !props.tick"
            class="w-full h-[360px] hidden web:flex min-w-[320px] flex-1 gap-3">
         <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
-        <iframe v-else :src="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.version === 7 ? comStore.currentSelectedCommunity?.token : comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`"
+        <iframe v-else :src="`https://dexscreener.com/bsc/${isPcsV4Version(comStore.currentSelectedCommunity?.version) ? comStore.currentSelectedCommunity?.token : comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`"
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>
@@ -422,6 +446,7 @@ onMounted(async () => {
               v-model="payEth"
               type="number"
               class="bg-transparent h-full flex-1 w-[120px] text-h3"
+              :disabled="isV8PreListNoTrade"
             />
             <span class="text-h5 whitespace-nowrap">$ BNB</span>
           </div>
@@ -429,6 +454,7 @@ onMounted(async () => {
             <button v-for="i of defaultAmount"
               class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active"
               @click="payEth=i"
+              :disabled="isV8PreListNoTrade"
               :class="payEth === i ? 'bg-gradient-primary' : ''">
               {{ i }}
               </button>
@@ -454,10 +480,11 @@ onMounted(async () => {
               v-model="sellAmount"
               type="number"
               class="bg-transparent h-full flex-1 w-[120px] text-h3"
+              :disabled="isV8PreListNoTrade"
             />
             <span class="text-h5 whitespace-nowrap min-w">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
-          <AmountProgressBar class="h-5 web:h-7"/>
+          <AmountProgressBar class="h-5 web:h-7" :class="{ 'pointer-events-none opacity-50': isV8PreListNoTrade }"/>
           <div class="text-sm flex justify-end">
             {{ $t('balance') }}: {{ formatAmount(tokenBalance) }}
           </div>
@@ -538,15 +565,24 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || accStore.ethConnectState == EthWalletState.Connecting"
+          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || accStore.ethConnectState == EthWalletState.Connecting || isV8PreListNoTrade"
         >
-          <span>{{ (accStore.ethConnectAddress ? (listed ? $t('confirmListed') : $t('confirm')): $t('connect')) }}</span>
+          <span>{{
+            !accStore.ethConnectAddress
+              ? $t('connect')
+              : (isV8PreListNoTrade
+                  ? $t('buyAndSell.v8PreListAgentOnly')
+                  : (listed ? $t('confirmListed') : $t('confirm')))
+          }}</span>
           <i-ep-loading v-show="trading || calculating || accStore.ethConnectState == EthWalletState.Connecting" class="animate-spin" />
         </button>
 
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">
             Maybe listing
           </div>
+        <div v-if="isV8PreListNoTrade" class="text-sm text-grey-normal text-center">
+          {{ $t('buyAndSell.v8PreListAgentOnly') }}
+        </div>
         <div v-if="invalidToken" class="text-sm text-red-e6 text-center">
           {{ $t('buyAndSell.invalidTokenSellTip') }}
         </div>

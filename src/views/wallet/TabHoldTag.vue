@@ -127,7 +127,7 @@ const generatePairMap = (list: any) => {
   for (const item of list) {
     const pair = item.community?.pair ?? item.pair;
     const version = item.community?.version ?? item.version ?? 4;
-    if (item.token && pair && version === 7) {
+    if (item.token && pair && (version === 7 || version === 8)) {
       pairs[item.token] = pair;
     }
   }
