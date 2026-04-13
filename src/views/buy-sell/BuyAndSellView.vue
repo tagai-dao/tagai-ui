@@ -580,7 +580,7 @@ onMounted(async () => {
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">
             Maybe listing
           </div>
-        <div v-if="isV8PreListNoTrade" class="text-sm text-grey-normal text-center">
+        <div v-if="isV8PreListNoTrade" class="text-sm text-red-e6 text-center">
           {{ $t('buyAndSell.v8PreListAgentOnly') }}
         </div>
         <div v-if="invalidToken" class="text-sm text-red-e6 text-center">
