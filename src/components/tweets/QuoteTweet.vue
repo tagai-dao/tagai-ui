@@ -41,7 +41,8 @@ onMounted(() => {
       <div class="flex gap-2 items-stretch">
         <img v-if="tweet && tweet.author && tweet.author.profile_image_url"
              class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-             @error="replaceEmptyImg" :src="tweet.author.profile_image_url" alt="">
+             @error="replaceEmptyImg" :src="tweet.author.profile_image_url"
+             referrerpolicy="no-referrer" alt="">
         <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
              src="@/assets/icons/icon-default-avatar.svg" v-else alt="">
         <div class="flex-1">
@@ -68,6 +69,7 @@ onMounted(() => {
                 :min-scale="0.2"
                 :preview-src-list="imgurls.slice(0, 4)"
                 :initial-index="index"
+                :img-attrs="{ referrerpolicy: 'no-referrer' }"
                 fit="cover"/>
     </div>
   </div>
