@@ -7,6 +7,9 @@ export const usePost = (tweet: Tweet) => {
     /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_#@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/g;
   const reg =
     /(https?:[^:<>"]*\/)([^:<>"]*)(\.((png!thumbnail)|(png)|(jpg)|(webp)))/g;
+  // 匹配 Twitter 新格式图片 URL：https://pbs.twimg.com/media/HASH?format=jpg&name=...
+  const twimgReg =
+    /https?:\/\/pbs\.twimg\.com\/media\/[A-Za-z0-9_-]+\?format=(?:jpg|png|webp)[^\s"<>]*/g;
   const urls = ref<string[]>([]);
   const imgurls = ref<string[]>([]);
   const blogRef = ref()
@@ -85,15 +88,16 @@ export const usePost = (tweet: Tweet) => {
   onMounted(() => {
     if (!tweet || !tweet.content) return;
     const urlsTemp = tweet.content?.match(urlReg) || [];
-    imgurls.value = tweet.content?.match(reg) || [];
+    const regMatches = tweet.content?.match(reg) || [];
+    const twimgMatches = tweet.content?.match(twimgReg) || [];
+    // 合并两种格式的图片 URL，去重
+    imgurls.value = [...new Set([...regMatches, ...twimgMatches])];
     if (urlsTemp && imgurls.value) {
       urls.value = urlsTemp.filter((u: string) => imgurls.value.indexOf(u) < 0);
     } else if (urls) {
       urls.value = urlsTemp;
     }
-    imgurls.value = imgurls.value?.map(
-      (u) => "https://steemitimages.com/0x0/" + u
-    );
+    // steemitimages.com 代理已失效（返回 JSON），直接加载原始 URL
   });
 
   return {

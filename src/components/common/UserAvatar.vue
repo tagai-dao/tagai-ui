@@ -144,7 +144,7 @@ onMounted(() => {
           <img class="w-9 h-9 object-cover rounded-full cursor-pointer"
               @click.stop="gotoUser"
                @error="replaceEmptyImg"
-               :src="profile" alt="">
+               :src="profile" referrerpolicy="no-referrer" alt="">
           <div class="flex-1 flex flex-col gap-y-4px">
             <div class="flex items-end whitespace-nowrap items-center gap-2">
               <span class="font-semibold text-black text-lg">{{(props.name??'').substring(0, 10)}}</span>

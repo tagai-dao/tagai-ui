@@ -118,7 +118,7 @@ onUnmounted(() => {
             <img v-if="profileImg"
                  class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
                  @click.stop="onUserAvatar" @error="replaceEmptyImg" :src="profileImg"
-                 alt="">
+                 referrerpolicy="no-referrer" alt="">
             <img v-else
                  class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
                  @click.stop="onUserAvatar" src="~@/assets/icons/icon-default-avatar.svg" alt="">
@@ -231,6 +231,7 @@ onUnmounted(() => {
                       :preview-src-list="imgurls.slice(0, 4)"
                       :initial-index="index"
                       :hide-on-click-modal="true"
+                      :img-attrs="{ referrerpolicy: 'no-referrer' }"
                       fit="cover"/>
           </div>
           <slot name="tweet-trade"></slot>
