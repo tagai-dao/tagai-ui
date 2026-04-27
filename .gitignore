@@ -134,3 +134,4 @@ package-lock.json
 
 .cursorindexingignore
 _npm_cache/*
+.gstack/

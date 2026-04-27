@@ -44,6 +44,7 @@ function splitData(rawData: (ChartData)[], interval = 60) {
   let lastData: any;
   let lastInterval = getInterval(rawData[0].timestamp, interval);
   const price = useStateStore().ethPrice;
+  if (rawData.length === 0) return {categoryData: [''], values: [[3]]};
   for (let data of rawData) {
     const thisInterval = getInterval(data.timestamp, interval)
     if(values.length === 0){
@@ -121,11 +122,12 @@ function splitData(rawData: (ChartData)[], interval = 60) {
     values: values
   };
 }
+const chartRef = ref<HTMLElement>()
 const chart = ref()
 function updateChart() {
   if(activeTab.value ==='5min') chart.value.applyNewData(data5min.values);
-  if(activeTab.value ==='1h') chart.value.applyNewData(data1h.values);
-  if(activeTab.value ==='1d') chart.value.applyNewData(data1day.values);
+  else if(activeTab.value ==='1h') chart.value.applyNewData(data1h.values);
+  else if(activeTab.value ==='1d') chart.value.applyNewData(data1day.values);
 }
 
 async function getNewData() {
@@ -147,11 +149,7 @@ async function getNewData() {
       data1h.categoryData = h1.categoryData;
       data1h.values = h1.values;
     }
-  } catch (e) {
-
-  } finally {
-
-  }
+  } catch (e) {}
 }
 
 onActivated(async () => {
@@ -182,17 +180,16 @@ onActivated(async () => {
         }
       } catch (e) {
         console.log(53331, e)
-      } finally {
-
-    }
-  }, 3000)
+      }
+    }, 3000)
   }
 })
 
 onMounted(async () => {
   tick.value = route.params.id as string
   await getNewData()
-  chart.value = init(props.chartId,  {
+  if (!chartRef.value) return;
+  chart.value = init(chartRef.value,  {
     decimalFoldThreshold: 4,
     layout: [
       {
@@ -244,8 +241,6 @@ onMounted(async () => {
       }
     } catch (e) {
       console.log(5333, e)
-    } finally {
-
     }
   }, 3000)
 })
@@ -256,6 +251,20 @@ watch(()=> activeTab.value, () => {
 
 watch(() => width.value, () => {
   chart.value.resize()
+})
+
+watch(() => useStateStore().ethPrice, (newPrice, oldPrice) => {
+  if (oldPrice === 0 && newPrice > 0 && originalData.length > 0) {
+    const m1 = splitData(originalData, 60)
+    const m5 = splitData(originalData, 300)
+    const h1 = splitData(originalData, 3600)
+    const day1 = splitData(originalData, 86400)
+    data1min.categoryData = m1.categoryData; data1min.values = m1.values;
+    data5min.categoryData = m5.categoryData; data5min.values = m5.values;
+    data1h.categoryData = h1.categoryData; data1h.values = h1.values;
+    data1day.categoryData = day1.categoryData; data1day.values = day1.values;
+    if (chart.value) updateChart();
+  }
 })
 
 </script>
@@ -273,7 +282,7 @@ watch(() => width.value, () => {
         </button>
       </div>
     </div>
-    <div :id="chartId" class="k-line-chart flex flex-1 z-0"/>
+    <div ref="chartRef" class="k-line-chart flex flex-1 z-0"/>
   </div>
 </template>
 
