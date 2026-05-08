@@ -108,7 +108,7 @@ async function reply() {
           </div>
           <div class="text-left font-normal mt-2">
             <div class="text-sm leading-5 whitespace-pre-line break-word multi-content"
-                 v-html="formatEmojiText(content)"></div>
+                 v-html="formatEmojiText(content, true)"></div>
             <div v-if="imgurls" class="">
               <span v-for="(url, index) of imgurls.slice(0, 4)" :key="index" :title="url">[Pic]</span>
             </div>

@@ -29,11 +29,11 @@ const TweetRex = /https:\/\/(twitter|x)\.com\/[0-9a-zA-Z]+\/status\/([0-9]+)(\/\
 export const useTweet = () => {
   const { updateUserVpLocal, updateUserOPLocal, vp, op, addBackOp, addBackVp } =
     useAccount();
-  const formatEmojiText = (str: string) => {
+  const formatEmojiText = (str: string, preserveHtml = false) => {
     if (!str || str.trim().length === 0) return "";
     
     // 安全处理: 先转义 HTML 实体，防止 XSS
-    const escapedStr = escapeHtml(str);
+    const escapedStr = preserveHtml ? str : escapeHtml(str);
     
     const nStrList = escapedStr.split(/\r\n|\r|\n/)
     // @ts-ignore

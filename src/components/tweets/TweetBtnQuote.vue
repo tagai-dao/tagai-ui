@@ -166,7 +166,7 @@ const quote = async () => {
             <div class="text-sm leading-5">
               <span v-if="isIgnoreAccount" class="text-blue-500 break-all">{{steemUrl}}</span>
               <div v-else class="whitespace-pre-line break-word multi-content multi-content-2"
-                   v-html="formatEmojiText(content)"></div>
+                   v-html="formatEmojiText(content, true)"></div>
             </div>
             <div v-if="imgurls" class="">
               <span v-for="(url, index) of imgurls.slice(0, 4)" :key="index" :title="url">[Pic]</span>

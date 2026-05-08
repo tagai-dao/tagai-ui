@@ -2,6 +2,7 @@ import { ref, computed, onMounted } from "vue";
 import { IgnoreAuthor } from "@/config";
 import type { Tweet } from "@/types";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
+import { escapeHtml } from "@/utils/sanitize";
 export const usePost = (tweet: Tweet) => {
   const urlReg =
     /http[s]?:\/\/(?:[a-zA-Z]|[0-9]|[$-_#@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+/g;
@@ -25,6 +26,19 @@ export const usePost = (tweet: Tweet) => {
     }
   }
 
+  const getReadableUrlLabel = (url: string) => {
+    try {
+      const parsedUrl = new URL(url, window.location.origin);
+      const hostname = parsedUrl.hostname.replace(/^www\./, '');
+      const pathname = parsedUrl.pathname === '/' ? '' : parsedUrl.pathname.replace(/\/$/, '');
+      const search = pathname ? '' : parsedUrl.search;
+      const label = `${hostname}${pathname}${search}`;
+      return label.length > 56 ? `${label.slice(0, 53)}...` : label;
+    } catch (e) {
+      return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    }
+  }
+
   const profileImg = computed(() => {
     if (!tweet.profile) return '';
     if (tweet.profile) {
@@ -42,16 +56,27 @@ export const usePost = (tweet: Tweet) => {
   });
 
   const content = computed(() => {
-    let content = "";
-    content = tweet.content ?? '';
-    content = content.replace(reg, "");
+    let rawContent = "";
+    rawContent = tweet.content ?? '';
+    rawContent = rawContent.replace(reg, "");
+    const visibleUrls: string[] = [];
     for (let i = 0; i < urls.value.length; i++) {
       const url = urls.value[i]
       if (isHiddenPostUrl(url)) {
-        content = content.replace(url, '');
+        rawContent = rawContent.replace(url, '');
       } else {
-        content = content.replace(url, `<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`)
+        visibleUrls.push(url)
       }
+    }
+    let content = escapeHtml(rawContent);
+    content = content.replace(reg, "");
+    for (let i = 0; i < visibleUrls.length; i++) {
+      const url = visibleUrls[i]
+      const label = getReadableUrlLabel(url);
+      content = content.replace(
+        escapeHtml(url),
+        `<span data-url="${escapeHtml(url)}" title="${escapeHtml(url)}" class="inline-flex max-w-full align-baseline text-blue-500 text-14px hover:underline break-words">${escapeHtml(label)}</span>`
+      )
     }
     return content;
   });

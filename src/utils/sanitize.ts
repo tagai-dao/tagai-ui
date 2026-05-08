@@ -8,9 +8,9 @@ import DOMPurify from 'dompurify';
  */
 const DOMPURIFY_CONFIG = {
   ALLOWED_TAGS: ['br', 'img', 'text', 'span', 'a', 'b', 'i', 'u', 'strong', 'em'],
-  ALLOWED_ATTR: ['class', 'src', 'alt', 'href', 'target', 'rel', 'onerror'],
+  ALLOWED_ATTR: ['class', 'src', 'alt', 'href', 'target', 'rel', 'onerror', 'data-url', 'title'],
   ALLOW_DATA_ATTR: false,
-  ADD_ATTR: ['onerror'],
+  ADD_ATTR: ['onerror', 'data-url', 'title'],
 };
 
 /**

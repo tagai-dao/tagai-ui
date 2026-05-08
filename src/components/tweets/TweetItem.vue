@@ -186,7 +186,7 @@ onUnmounted(() => {
                class="cursor-pointer text-base tracking-0.2 z-0">
             <a v-if="isIgnoreAccount" :href="steemUrl" class="text-blue-500 break-all z-0" target="_blank">{{''}}</a>
             <div class="whitespace-pre-line break-words content" :class="multiline ? '' : 'multi-content-3'"
-                 v-else v-html="formatEmojiText(content)"></div>
+                 v-else v-html="formatEmojiText(content, true)"></div>
           </div>
           <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">
             <button

@@ -176,7 +176,7 @@ const onUserAvatar = () => {
           <div
             class="whitespace-pre-line break-words content" :class="multiline ? '' : 'multi-content-3'"
             v-else
-            v-html="formatEmojiText(content)"
+            v-html="formatEmojiText(content, true)"
           ></div>
         </div>
         <div class="px-3 md:pl-12">
