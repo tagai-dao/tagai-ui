@@ -30,7 +30,8 @@ import { isAddress, parseEther } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 
 const props = defineProps({
-  tick: {type: String, required: false, default: null}
+  tick: {type: String, required: false, default: null},
+  sellsman: {type: String, required: false, default: null}
 })
 const { t } = useI18n()
 const comStore = useCommunityStore()
@@ -389,7 +390,8 @@ onMounted(async () => {
     community = (await getTokenInfo([community]))[0]
     comStore.currentSelectedCommunity = community
   }
-  stateStore.sellsman = route.params.sellsman as string
+  const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
+  stateStore.sellsman = props.sellsman ?? routeSellsman
   updateUserTokenInfo()
 })
 </script>
