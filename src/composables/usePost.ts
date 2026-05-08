@@ -14,6 +14,17 @@ export const usePost = (tweet: Tweet) => {
   const imgurls = ref<string[]>([]);
   const blogRef = ref()
 
+  const isHiddenPostUrl = (url: string) => {
+    try {
+      const parsedUrl = new URL(url, window.location.origin);
+      return parsedUrl.pathname.startsWith('/commerce') ||
+        parsedUrl.hostname === 'x.com' ||
+        parsedUrl.hostname === 'twitter.com'
+    } catch (e) {
+      return url.includes('/commerce/');
+    }
+  }
+
   const profileImg = computed(() => {
     if (!tweet.profile) return '';
     if (tweet.profile) {
@@ -36,7 +47,7 @@ export const usePost = (tweet: Tweet) => {
     content = content.replace(reg, "");
     for (let i = 0; i < urls.value.length; i++) {
       const url = urls.value[i]
-      if (url.startsWith(window.location.origin + '/commerce') || url.startsWith('https://x.com') || url.startsWith('https://twitter.com')) {
+      if (isHiddenPostUrl(url)) {
         content = content.replace(url, '');
       } else {
         content = content.replace(url, `<span data-url="${url}" class="text-blue-500 text-14px break-all">${url}</span>`)

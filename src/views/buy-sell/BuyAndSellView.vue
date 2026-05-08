@@ -310,7 +310,7 @@ async function confirm() {
       if (hash) {
         payEth.value = undefined
         receiveAmount.value = undefined
-        // trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        recordCommunityTrade(hash)
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else{
@@ -341,7 +341,7 @@ async function confirm() {
       if (hash) {
         sellAmount.value = undefined
         receiveEth.value = undefined
-        trade(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, hash, useCurationStore().currentSelectedTweet?.commerceId, comStore.currentSelectedCommunity!.token).catch()
+        recordCommunityTrade(hash)
 
         emitter.emit('newTrade')
         updateUserTokenInfo()
@@ -373,6 +373,19 @@ async function updateUserTokenInfo () {
   } catch (error) {
     console.error('get users token info fail', error)
   }
+}
+
+function recordCommunityTrade(hash: string) {
+  const token = comStore.currentSelectedCommunity;
+  if (!token) return;
+
+  trade(
+    token.tick,
+    accStore.getAccountInfo?.twitterId,
+    hash,
+    useCurationStore().currentSelectedTweet?.commerceId,
+    token.token
+  ).catch(console.error)
 }
 
 onActivated(async () => {
