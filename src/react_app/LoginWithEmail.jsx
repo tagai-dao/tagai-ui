@@ -1,8 +1,7 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useLoginWithEmail, useWallets, useCreateWallet, usePrivy } from "@privy-io/react-auth";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useLoginWithEmail, useWallets, usePrivy } from "@privy-io/react-auth";
 import { privyEmailLogin, bondEthByPrivyAccToken } from "../apis/api.ts";
 import { useAccountStore } from "@/stores/web3";
-import { sleep } from "@/utils/helper";
 
 import emitter from "@/utils/emitter.ts";
 import debounce from "lodash.debounce";
@@ -12,9 +11,12 @@ export default function LoginWithEmail() {
   const [code, setCode] = useState("");
   const [step, setStep] = useState("email"); // 'email' | 'code' | 'loading'
   const [isLoading, setIsLoading] = useState(false);
-  const [bondingAddress, setBondingAddress] = useState(false);
   const { logout, getAccessToken } = usePrivy();
   const accStore = useAccountStore();
+
+  /** privyEmailLogin 完成后等待嵌入式钱包（createOnLogin）；再决定是否 bond */
+  const emailLoginSessionRef = useRef(null);
+  const emailLoginBondConsumedRef = useRef(false);
   
   const { sendCode, loginWithCode, state } = useLoginWithEmail({
     onComplete: async (params) => {
@@ -52,48 +54,64 @@ export default function LoginWithEmail() {
   });
   
   const { wallets, ready } = useWallets();
-  const { createWallet } = useCreateWallet({
-    onSuccess: async ({ wallet }) => {
+
+  const findEmbeddedEthWallet = () =>
+    wallets.find(
+      (w) =>
+        w.walletClientType === "privy" &&
+        w.type === "ethereum" &&
+        w.connectorType === "embedded"
+    );
+
+  // PrivyProvider createOnLogin 会创建钱包；此处仅在列表就绪后按需 bond（与 AuthLoading 推特流一致）
+  useEffect(() => {
+    const session = emailLoginSessionRef.current;
+    if (!session || emailLoginBondConsumedRef.current || !ready) {
+      return;
+    }
+
+    const wallet = findEmbeddedEthWallet();
+    if (!wallet) {
+      return;
+    }
+
+    emailLoginBondConsumedRef.current = true;
+
+    const { userInfo, email: loginEmail } = session;
+    const eligibleForPrivyBond =
+      !userInfo.ethAddr || userInfo.walletType === 1;
+    const backendAddr = userInfo.ethAddr
+      ? String(userInfo.ethAddr).toLowerCase()
+      : "";
+    const needBond =
+      eligibleForPrivyBond &&
+      (!userInfo.ethAddr || backendAddr !== wallet.address.toLowerCase());
+
+    if (!needBond) {
+      return;
+    }
+
+    (async () => {
       try {
-        setBondingAddress(true);
-        console.log('Embedded wallet created successfully:', wallet);
-        // 绑定地址
         const privyAccessToken = await getAccessToken();
-        await bondEthByPrivyAccToken(email, wallet.address, privyAccessToken);
+        if (!privyAccessToken) {
+          console.error("Failed to get Privy access token for email bond");
+          emitter.emit("authError", "Failed to get Privy access token");
+          return;
+        }
+        await bondEthByPrivyAccToken(loginEmail, wallet.address, privyAccessToken);
         accStore.setAccount({
           ...accStore.getAccountInfo,
           ethAddr: wallet.address,
           walletType: 1,
-          accountType: 1
-        })
-        setIsLoading(false);
+          accountType: 1,
+        });
       } catch (error) {
-        console.error('Failed to bond email embedded wallet:', error);
-        emitter.emit('authError', error);
-      } finally {
-        try {
-          setIsLoading(false);
-          setBondingAddress(false);
-        } catch (error) {
-          
-        }
+        console.error("Failed to bond email embedded wallet:", error);
+        emitter.emit("authError", error);
       }
-    },
-    onError: (error) => {
-      console.error('Failed to create email embedded wallet:', error);
-      if (error == 'embedded_wallet_already_exists') {
-        console.log('Fiailed to create email embed wallet')
-        return;
-      }
-      console.log(111)
-      emitter.emit('authError', error);
-      try {
-        setIsLoading(false);
-      } catch (error) {
-        
-      }
-    }
-  });
+    })();
+  }, [ready, wallets, getAccessToken]);
 
   const handleSendCode = useCallback(async () => {
     setIsLoading(true);
@@ -140,26 +158,14 @@ export default function LoginWithEmail() {
 
     const accessToken = await getAccessToken();
 
-    let userInfo = await privyEmailLogin(accessToken, email);
+    const userInfo = await privyEmailLogin(accessToken, email);
 
-    emitter.emit('authSuccess', userInfo)
+    emailLoginSessionRef.current = { userInfo, email };
+    emailLoginBondConsumedRef.current = false;
 
-    // 检查是否已有 embedded wallet
-    const hasEmbeddedWallet = wallets.some(wallet =>
-      wallet.walletClientType === 'privy' &&
-      wallet.type === 'ethereum'
-    );
-
-    if (hasEmbeddedWallet) {
-      const provider = await wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum').getEthereumProvider()
-      emitter.emit('walletProvider', provider)
-      setIsLoading(false);
-    } else {
-      // 如果没有钱包，创建一个新的
-      console.log('Creating new embedded wallet for email user');
-      createWallet().catch();
-    }
-  }, [wallets, email])
+    emitter.emit("authSuccess", userInfo);
+    // 嵌入式钱包由 Privy createOnLogin 创建；walletProvider 由 AuthLoading 监听 wallets 统一派发
+  }, [email, getAccessToken]);
 
   const handleBackToEmail = () => {
     setStep("email");
