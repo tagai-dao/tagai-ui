@@ -43,8 +43,8 @@ export const useStateStore = defineStore('state', {
       idType: IdType.ENS,
       ethPrice: 0,
       sellsman: '',
-      // 主菜单：'tag' 或 'coin'
-      activeMainMenu: 'tag' as 'tag' | 'coin',
+      // 主菜单：'tag' 或 'coin' 或 'prediction'
+      activeMainMenu: 'tag' as 'tag' | 'coin' | 'prediction',
       // Tag 菜单的子标签页：'tweets' 或 'prediction'
       tagSubMenu: 'tweets' as 'tweets' | 'prediction',
       // Coin 菜单的子标签页：'tagCoin' 或 'ip'
@@ -56,13 +56,15 @@ export const useStateStore = defineStore('state', {
   },
   actions: {
     // 设置主菜单
-    setActiveMainMenu(menu: 'tag' | 'coin') {
+    setActiveMainMenu(menu: 'tag' | 'coin' | 'prediction') {
       this.activeMainMenu = menu
       // 根据主菜单设置 activeHomeTab（兼容旧代码）
       if (menu === 'tag') {
         this.activeHomeTab = this.tagSubMenu
-      } else {
+      } else if (menu === 'coin') {
         this.activeHomeTab = this.coinSubMenu
+      } else if (menu === 'prediction') {
+        this.activeHomeTab = 'prediction'
       }
     },
     // 设置 Tag 子菜单

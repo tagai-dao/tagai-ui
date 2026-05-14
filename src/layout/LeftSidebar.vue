@@ -68,6 +68,20 @@ const goToCoin = () => {
   stateStore.setCoinSubMenu('tagCoin')
 }
 
+// 判断 Prediction 是否激活
+const isPredictionActive = computed(() => {
+  if (!isActive('/')) {
+    return false
+  }
+  return stateStore.activeMainMenu === 'prediction'
+})
+
+// 导航到 Prediction 菜单
+const goToPrediction = () => {
+  router.push('/')
+  stateStore.setActiveMainMenu('prediction')
+}
+
 // 创建 TagCoin
 const createTagCoin = () => {
   modalStore.setModalVisible(true, GlobalModalType.CreateCoin)
@@ -150,6 +164,21 @@ const handleWalletClick = (e?: Event) => {
           alt="Coin"
         >
         <span class="text-h4 text-black">{{ $t('coin') || 'Coin' }}</span>
+      </div>
+
+      <!-- 3. Prediction -->
+      <div 
+        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+        :class="isPredictionActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        @click="goToPrediction"
+      >
+        <img 
+          class="w-6 h-6 mr-3 transition-all"
+          :style="isPredictionActive ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          src="~@/assets/icons/icon-pie-chart.svg" 
+          alt="Prediction"
+        >
+        <span class="text-h4 text-black">{{ $t('prediction') || 'Prediction' }}</span>
       </div>
 
       <!-- 4. 通知 -->
