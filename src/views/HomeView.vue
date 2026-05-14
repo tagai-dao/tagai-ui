@@ -21,6 +21,7 @@ import MindShare from "@/views/mind-share/MindShare.vue";
 import {useAccountStore} from "@/stores/web3";
 import Predict from "@/views/predict/Index.vue";
 import IPList from "@/views/ip/IPList.vue";
+import {TweetListType, useTweetsStore} from "@/stores/tweets";
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
@@ -28,6 +29,7 @@ const predictType = ref<PredictType>(PredictType.Event) // 'battle' or 'event', 
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
 const curationStore = useCurationStore();
+const tweetsStore = useTweetsStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const router = useRouter();
@@ -311,38 +313,23 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- Tag 菜单：Tweets 和 Prediction 按钮 -->
-    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
-      <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
+    <!-- Tag 菜单：Trending 和 New 按钮 -->
+    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 flex gap-2 items-center">
+      <div class="flex gap-2">
         <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="tagSubMenu==='tweets' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setTagSubMenu('tweets')"
+          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          :class="tweetsStore.homeTweetType === TweetListType.Trending ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="tweetsStore.homeTweetType = TweetListType.Trending"
         >
-          {{ $t('tweets') || 'Tweets' }}
+          {{ $t('trending') || 'Trending' }}
         </button>
         <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="tagSubMenu==='prediction' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setTagSubMenu('prediction')"
+          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          :class="tweetsStore.homeTweetType === TweetListType.New ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="tweetsStore.homeTweetType = TweetListType.New"
         >
-          {{ $t('prediction') || 'Prediction' }}
+          {{ $t('new') || 'New' }}
         </button>
-      </div>
-      <!-- Trending/New 选择器 - 显示在按钮同一行，靠右对齐（仅在 tweets 时显示） -->
-      <div v-if="tagSubMenu==='tweets'" class="flex-shrink-0">
-        <PostTypeOption />
-      </div>
-      <!-- All/Online/Ended 选择器 - 显示在按钮同一行，靠右对齐（仅在 prediction 时显示） -->
-      <div v-if="tagSubMenu==='prediction'" class="flex-shrink-0">
-        <el-select
-          v-model="predictType"
-          class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
-          popper-class="c-select-popper rounded-xl"
-        >
-          <el-option :value="PredictType.Battle" :label="$t('createPredict.tabBattle') || '对战预测'" />
-          <el-option :value="PredictType.Event" :label="$t('createPredict.tabEvent') || '事件预测'" />
-        </el-select>
       </div>
     </div>
     
@@ -379,7 +366,21 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <HomePost v-if="activeMainMenu==='tag' && tagSubMenu==='tweets'"/>
+    <!-- Prediction 菜单：类型选择器 -->
+    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 flex gap-2 items-center justify-end">
+      <div class="flex-shrink-0">
+        <el-select
+          v-model="predictType"
+          class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
+          popper-class="c-select-popper rounded-xl"
+        >
+          <el-option :value="PredictType.Battle" :label="$t('createPredict.tabBattle') || '对战预测'" />
+          <el-option :value="PredictType.Event" :label="$t('createPredict.tabEvent') || '事件预测'" />
+        </el-select>
+      </div>
+    </div>
+    
+    <HomePost v-if="activeMainMenu==='tag'"/>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
       <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh v-model="refreshing" @refresh="refresh"
@@ -422,7 +423,7 @@ const onCreate = (type: GlobalModalType) => {
         </van-pull-refresh>
       </div>
     </template>
-    <Predict :type="0" :predict-type="predictType" v-if="activeMainMenu==='tag' && tagSubMenu==='prediction'"/>
+    <Predict :type="0" :predict-type="predictType" v-if="activeMainMenu==='prediction' || (activeMainMenu==='tag' && tagSubMenu==='prediction')"/>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
     <div class="flex-1 overflow-auto" v-if="activeMainMenu==='coin' && coinSubMenu==='ip'">
       <IPList />
@@ -434,7 +435,7 @@ const onCreate = (type: GlobalModalType) => {
               @click="onCreate(GlobalModalType.CreateCoin)">
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">
       </button>
-      <button v-else-if="activeMainMenu==='tag' && tagSubMenu==='tweets'"
+      <button v-else-if="activeMainMenu==='tag'"
               class="absolute bottom-[80px] right-[10px] web:bottom-8"
               @click="onCreate(GlobalModalType.CreateTweet)">
         <img src="~@/assets/icons/icon-tabbar-create.svg" alt="">

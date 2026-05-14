@@ -38,6 +38,14 @@ const isCoinActive = computed(() => {
   return stateStore.activeMainMenu === 'coin'
 })
 
+// 判断 Prediction 是否激活
+const isPredictionActive = computed(() => {
+  if (!isActive('/')) {
+    return false
+  }
+  return stateStore.activeMainMenu === 'prediction'
+})
+
 // 导航到 Tag 菜单
 const goToTag = (e?: Event) => {
   e?.preventDefault()
@@ -52,6 +60,12 @@ const goToCoin = (e?: Event) => {
   stateStore.setCoinSubMenu('tagCoin')
 }
 
+// 导航到 Prediction 菜单
+const goToPrediction = (e?: Event) => {
+  e?.preventDefault()
+  stateStore.setActiveMainMenu('prediction')
+}
+
 </script>
 
 <template>
@@ -64,6 +78,10 @@ const goToCoin = (e?: Event) => {
       <router-link to="/" class="flex items-center justify-center cursor-pointer p-2" @click="goToCoin">
         <img v-if="isCoinActive" class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="">
+      </router-link>
+      <router-link to="/" class="flex items-center justify-center cursor-pointer p-2" @click="goToPrediction">
+        <img v-if="isPredictionActive" class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
+        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
       </router-link>
       <router-link to="/wallet/" class="flex items-center justify-center cursor-pointer p-2">
         <img v-if="$route.name==='wallet'" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">
