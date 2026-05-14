@@ -366,17 +366,23 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- Prediction 菜单：类型选择器 -->
-    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 flex gap-2 items-center justify-end">
-      <div class="flex-shrink-0">
-        <el-select
-          v-model="predictType"
-          class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
-          popper-class="c-select-popper rounded-xl"
+    <!-- Prediction 菜单：Battle 和 Real World 标签 -->
+    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 flex gap-2 items-center">
+      <div class="flex gap-2">
+        <button
+          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          :class="predictType === PredictType.Battle ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="predictType = PredictType.Battle"
         >
-          <el-option :value="PredictType.Battle" :label="$t('createPredict.tabBattle') || '对战预测'" />
-          <el-option :value="PredictType.Event" :label="$t('createPredict.tabEvent') || '事件预测'" />
-        </el-select>
+          {{ $t('createPredict.tabBattle') || 'Battle Prediction' }}
+        </button>
+        <button
+          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          :class="predictType === PredictType.Event ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="predictType = PredictType.Event"
+        >
+          {{ $t('createPredict.tabEvent') || 'Real World Prediction' }}
+        </button>
       </div>
     </div>
     

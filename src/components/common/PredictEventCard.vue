@@ -376,23 +376,13 @@ const vote = async () => {
               @click="gotoDetail()"
               class="flex-1 h-10 sm:h-12 bg-gradient-primary text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
               :class="market.winner === 'yes' ? 'bg-[#293233] border-[#374244]' : 'bg-[#293233] border-[#374244]'">
+              <!-- 奖杯图标 -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C9.243 2 7 4.243 7 7v2H4a1 1 0 00-1 1v2c0 2.206 1.794 4 4 4h.535c.882 1.785 2.618 3.073 4.682 3.414.024.004.048.006.072.006h1.422c.024 0 .048-.002.072-.006 2.064-.341 3.8-1.629 4.682-3.414H18c2.206 0 4-1.794 4-4v-2a1 1 0 00-1-1h-3V7c0-2.757-2.243-5-5-5zm8 8v1c0 1.103-.897 2-2 2h-.535c.028-.329.035-.661.035-1v-2H20zm-16 0h2.5v2c0 .339.007.671.035 1H6c-1.103 0-2-.897-2-2v-1zm8 8h-2v-2h2v2z"/>
+              </svg>
               <span class="text-lg font-bold text-white">
-                {{ market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no') }}
+                {{ $t('predictTrade.winner') || 'Winner' }}: {{ market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no') }}
               </span>
-              <div class="rounded-full p-0.5" :class="market.winner === 'yes' ? 'bg-green-500' : 'bg-red-500'">
-                <svg v-if="market.winner === 'yes'" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white"
-                  viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clip-rule="evenodd" />
-                </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" viewBox="0 0 20 20"
-                  fill="currentColor">
-                  <path fill-rule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clip-rule="evenodd" />
-                </svg>
-              </div>
             </div>
           </div>
 
