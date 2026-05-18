@@ -38,6 +38,25 @@ const tag = computed(() => {
   return curationStore.currentSelectedTweet?.tick
 })
 
+const parseIdListLength = (raw: string | null | undefined, subtractOne = false) => {
+  if (!raw) return 0
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return 0
+    return subtractOne ? Math.max(0, parsed.length - 1) : parsed.length
+  } catch {
+    return 0
+  }
+}
+
+const coHostCount = computed(() =>
+  parseIdListLength(curationStore.currentSelectedTweet?.hostIds, true),
+)
+
+const speakerCount = computed(() =>
+  parseIdListLength(curationStore.currentSelectedTweet?.speakerIds),
+)
+
 onMounted(async () => {
   const tweetId = route.params.id;
     if (typeof(tweetId) !== 'string') {
@@ -133,7 +152,7 @@ onMounted(async () => {
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">{{ $t('postView.co-host') }}</div>
-                <span>{{ curationStore.currentSelectedTweet?.hostIds ? JSON.parse(curationStore.currentSelectedTweet?.hostIds).length - 1 : 0 }}</span>
+                <span>{{ coHostCount }}</span>
               </div>
               <div class="flex justify-between items-center gap-1">
                 <div class="text-h5 flex-1 truncate">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>
@@ -148,7 +167,7 @@ onMounted(async () => {
             <div class="flex-1 flex flex-col gap-1.5">
               <div class="flex items-center gap-2 text-h4">
                 <div class="flex-1">{{ $t('postView.speaker') }}</div>
-                <span>{{ curationStore.currentSelectedTweet?.speakerIds ? JSON.parse(curationStore.currentSelectedTweet?.speakerIds).length : 0 }}</span>
+                <span>{{ speakerCount }}</span>
               </div>
               <div class="flex justify-between items-center gap-1">
                 <div class="text-h5 flex-1 truncate">{{ formatAmount(everyCurationAmount) }} #{{ tag }}</div>

@@ -11,7 +11,7 @@ import { bytesToHex, formatPrice } from "@/utils/helper";
 import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo, transferToken } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { createCommunity, importCommunity, checkImportTokenDeployed } from '@/apis/api'
-import {tagBgColors, tagTextColors} from "@/composables/useTags";
+import { getTagStyle } from '@/composables/useTags'
 import emitter from '@/utils/emitter'
 import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
@@ -629,7 +629,7 @@ onUnmounted(() => {
           <div v-if="createForm.tags!.length > 0" class="flex flex-wrap gap-4 mt-1">
             <button v-for="(tag, index) of createForm.tags" :key="tag"
                     @click="onRemoveTags(tag)"
-                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                    :style="getTagStyle(index)"
                     class="px-2 rounded-md">#{{ tag }}</button>
           </div>
         </div>
@@ -931,7 +931,7 @@ onUnmounted(() => {
           <div v-if="importForm.tags!.length > 0" class="flex flex-wrap gap-4 mt-1">
             <button v-for="(tag, index) of importForm.tags" :key="tag"
                     @click="onRemoveTags(tag)"
-                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                    :style="getTagStyle(index)"
                     class="px-2 rounded-md">#{{ tag }}</button>
           </div>
         </div>
@@ -1025,7 +1025,7 @@ onUnmounted(() => {
               <span 
                 v-for="(tag, index) of importForm.tags" 
                 :key="tag"
-                :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}"
+                :style="getTagStyle(index)"
                 class="px-3 py-1 rounded-md text-sm"
               >
                 #{{ tag }}

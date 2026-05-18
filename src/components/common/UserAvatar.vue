@@ -78,6 +78,23 @@ const profile = computed(() => {
     return props.profileImg?.replace('normal', '200x200')
 })
 
+const creditFactors = computed((): number[] => {
+  if (!props.creditFactor) return []
+  if (typeof props.creditFactor === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(props.creditFactor)
+      return Array.isArray(parsed)
+        ? parsed.map((v) => Number(v)).filter((n) => !Number.isNaN(n))
+        : []
+    } catch {
+      return []
+    }
+  }
+  return Array.isArray(props.creditFactor)
+    ? (props.creditFactor as number[])
+    : []
+})
+
 const { onCopy } = useTools()
 
 function gotoTwitter() {
@@ -171,13 +188,13 @@ onMounted(() => {
             <span class="text-sm text-grey-normal">{{ $t('credit') }}</span>
           </div>
         </div>
-        <div v-if="props.creditFactor" class="pl-10 my-3 w-full"
-            v-for="(factor, index) in typeof props.creditFactor === 'string' ? JSON.parse(props.creditFactor) : props.creditFactor"
+        <div v-if="creditFactors.length" class="pl-10 my-3 w-full"
+            v-for="(factor, index) in creditFactors"
             :key="index"
         >
           <div class="flex justify-between">
-            <span class="text-sm text-grey-normal">{{ creditType[index as number] }}</span>
-            <span v-if="creditJO[index as number].type === 5" class="text-sm text-black font-semibold">{{ formatPrice((factor || 0) * stateStore.ethPrice) }}</span>
+            <span class="text-sm text-grey-normal">{{ creditType[index] }}</span>
+            <span v-if="creditJO[index]?.type === 5" class="text-sm text-black font-semibold">{{ formatPrice((factor || 0) * stateStore.ethPrice) }}</span>
             <span v-else class="text-sm text-black font-semibold">{{ formatAmount(factor || 0) }}</span>
           </div>
         </div>

@@ -7,7 +7,7 @@ import { useAccountStore } from '@/stores/web3';
 import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
 import { useStateStore } from '@/stores/common';
-import {tagBgColors, tagTextColors} from "@/composables/useTags";
+import { getTagStyle, parseTagsJson } from '@/composables/useTags'
 import IconLinks from "@/components/home/IconLinks.vue";
 
 const curationStore = useCurationStore()
@@ -28,6 +28,8 @@ async function trade() {
   comStore.currentSelectedCommunity = props.community
   router.push('/buy-sell/' + props.community.tick)
 }
+
+const communityTags = computed(() => parseTagsJson(props.community.tags ?? undefined))
 </script>
 
 <template>
@@ -71,10 +73,10 @@ async function trade() {
       </div>
       <div class="flex justify-between items-center mt-2">
         <div class="font-extralight flex flex-wrap gap-2">
-          <template v-if="community.tags" >
-            <button v-for="(tag, index) of JSON.parse(community.tags as string)" :key="tag"
+          <template v-if="communityTags.length" >
+            <button v-for="(tag, index) of communityTags" :key="tag"
                     class="px-2 h-5 text-xs rounded-md"
-                    :style="{backgroundColor: tagBgColors[index], color: tagTextColors[index]}">
+                    :style="getTagStyle(index)">
               {{ tag }}
             </button>
             <!-- <button v-if="community.createdByAi" class="px-2 h-5 text-sm rounded-md gradient-text glow-effect">
