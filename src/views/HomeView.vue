@@ -383,8 +383,8 @@ const onCreate = (type: GlobalModalType) => {
         >
           {{ $t('createPredict.tabEvent') || 'Real World Prediction' }}
         </button>
-      </motion>
-    </motion>
+      </div>
+    </div>
     
     <HomePost v-if="activeMainMenu==='tag'"/>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
