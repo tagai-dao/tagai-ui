@@ -1,0 +1,28 @@
+# Dependabot: keep PR volume low; element-plus upgraded manually (large UI surface).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      npm-dev:
+        patterns:
+          - vite*
+          - "@vitejs/*"
+          - eslint*
+          - vue-tsc
+          - typescript
+      npm-security-patch:
+        patterns:
+          - axios
+          - vue-i18n
+          - "@intlify/*"
+          - dompurify
+    ignore:
+      - dependency-name: element-plus
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
