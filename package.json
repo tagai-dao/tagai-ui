@@ -57,7 +57,6 @@
     "@cloudflare/workers-types": "^4.20250813.0",
     "@iconify-json/ep": "^1.1.15",
     "@intlify/unplugin-vue-i18n": "^11.2.3",
-    "@rolldown/binding-darwin-arm64": "1.0.1",
     "@rushstack/eslint-patch": "^1.8.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/node": "^20.19.0",
@@ -98,8 +97,11 @@
     "@typescript-eslint/eslint-plugin": "^8.57.2"
   },
   "optionalDependencies": {
+    "@rolldown/binding-darwin-arm64": "1.0.1",
+    "@rolldown/binding-darwin-x64": "1.0.1",
     "@rolldown/binding-linux-arm64-gnu": "1.0.1",
     "@rolldown/binding-linux-x64-gnu": "1.0.1",
+    "@rolldown/binding-win32-arm64-msvc": "1.0.1",
     "@rolldown/binding-win32-x64-msvc": "1.0.1"
   }
 }
