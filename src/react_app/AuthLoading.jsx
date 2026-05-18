@@ -1,54 +1,87 @@
-import {useLoginWithOAuth, useOAuthTokens, useWallets, useCreateWallet, usePrivy, useMfaEnrollment} from "@privy-io/react-auth";
+import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import { bondEthByPrivyAccToken } from '@/apis/api.ts';
 import { sleep } from "@/utils/helper";
 import { useAccountStore } from "@/stores/web3";
 
+/** PrivyProvider 已配置 createOnLogin: 'all-users'，嵌入式钱包由 SDK 创建；此处仅在后端仍需绑定时调用 bond API */
 export default function AuthLoading() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
     const {wallets, ready} = useWallets()
-    const { getAccessToken, user } = usePrivy();
+    const { getAccessToken } = usePrivy();
     const accStore = useAccountStore();
     const [ bondingAddress, setBondingAddress ] = useState(false);
-    const { showMfaEnrollmentModal } = useMfaEnrollment();
-    const { createWallet } = useCreateWallet({
-        onSuccess: (async ({wallet}) => {
-            // const provider = await wallet.getEthereumProvider()
+
+    /** 最近一次 Twitter OAuth + privyLogin 返回的 userInfo，用于钱包就绪后补绑 */
+    const oauthTwitterSessionRef = useRef(null);
+    /** 本会话是否已处理过「钱包就绪后的绑定点」（避免 StrictMode / 重复 effect 二次提交） */
+    const oauthTwitterBondConsumedRef = useRef(false);
+
+    const findEmbeddedEthWallet = () =>
+        wallets.find((w) =>
+            w.walletClientType === 'privy' &&
+            w.type === 'ethereum' &&
+            w.connectorType === 'embedded'
+        );
+
+    /**
+     * createOnLogin 完成后 wallets 才出现；在此阶段按需 bond（替代原来的 createWallet + onSuccess）
+     */
+    useEffect(() => {
+        const sessionInfo = oauthTwitterSessionRef.current;
+        if (!sessionInfo || oauthTwitterBondConsumedRef.current || !ready) {
+            return;
+        }
+
+        const wallet = findEmbeddedEthWallet();
+        if (!wallet) {
+            return;
+        }
+
+        oauthTwitterBondConsumedRef.current = true;
+
+        const twitterId = sessionInfo.twitterId;
+        if (!/^\d+$/.test(twitterId ?? '')) {
+            return;
+        }
+
+        const eligibleForPrivyBond = !sessionInfo.ethAddr || sessionInfo.walletType === 1;
+        const backendAddr = sessionInfo.ethAddr ? String(sessionInfo.ethAddr).toLowerCase() : '';
+        const needBond =
+            eligibleForPrivyBond &&
+            (!sessionInfo.ethAddr || backendAddr !== wallet.address.toLowerCase());
+
+        if (!needBond) {
+            return;
+        }
+
+        // 先于 await，避免 getWalletProvider 在 bondingAddress 仍为 false 时抢跑
+        setBondingAddress(true);
+        (async () => {
             try {
-                // 判断twitterId是不是纯数字字符串
-                if (!/^\d+$/.test(accStore.getAccountInfo?.twitterId)) {
-                    console.log('Not twitter account, ignore')
+                const privyAccessToken = await getAccessToken();
+                if (!privyAccessToken) {
+                    console.error('Failed to get Privy access token for bondEthByPrivyAccToken');
+                    emitter.emit('authError', 'Failed to get Privy access token');
                     return;
                 }
-                // 绑定地址
-                setBondingAddress(true);
-                const privyAccessToken = await getAccessToken();
-                await bondEthByPrivyAccToken(accStore.getAccountInfo?.twitterId, wallet.address, privyAccessToken);
+                await bondEthByPrivyAccToken(twitterId, wallet.address, privyAccessToken);
                 accStore.setAccount({
                     ...accStore.getAccountInfo,
                     ethAddr: wallet.address,
                     walletType: 1,
                     accountType: 0
-                })
+                });
             } catch (error) {
                 console.error('Failed to bond twitter embedded wallet:', error);
                 emitter.emit('authError', error);
-            }finally {
+            } finally {
                 setBondingAddress(false);
             }
-        }),
-        onError: (error) => {
-            console.error('Failed to create twitter embedded wallet:', error);
-            if (error == 'embedded_wallet_already_exists') {
-                console.log('Faild to crate twitter wallet')
-                return;
-            }
-            console.log(222)
-            emitter.emit('authError', error);
-        }
-    })
+        })();
+    }, [ready, wallets, getAccessToken]);
 
     // useEffect(() => {
     //     async function checkMfa() {
@@ -94,7 +127,7 @@ export default function AuthLoading() {
 
         }
         getWalletProvider()
-    }, [ready, wallets]);
+    }, [ready, wallets, bondingAddress]);
 
     useEffect(() => {
         console.log('state', state.status)
@@ -131,20 +164,10 @@ export default function AuthLoading() {
                 }
                 
                 console.log('Login success, userInfo:', userInfo)
+                // 嵌入式钱包由 Privy createOnLogin 创建；wallet 就绪后由 effect 决定是否 bondEthByPrivyAccToken
+                oauthTwitterSessionRef.current = userInfo;
+                oauthTwitterBondConsumedRef.current = false;
                 emitter.emit('authSuccess', userInfo)
-
-                const wallet = wallets?.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
-
-                if (!wallet && 
-                    (
-                    !userInfo.ethAddr
-                    || userInfo.walletType === 1
-                    )) {
-                    console.log('create new twitter wallet')
-                    await createWallet()
-                }else {
-                    console.log('no need to create new twitter wallet')
-                }
             } catch (error) {
                 console.error('Twitter OAuth token grant error:', error)
                 emitter.emit('authError', error)
