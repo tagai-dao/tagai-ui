@@ -1,8 +1,8 @@
 {
     "rules": [
         {
-            "pathPattern": "https://tiptag.social/commerce/**",
-            "apiPath": "https://api.tiptag.social/action/commerce/**"
+            "pathPattern": "https://tagai.fun/commerce/**",
+            "apiPath": "https://bsc-api.tagai.fun/action/commerce/**"
         }
     ]
 }
