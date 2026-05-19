@@ -96,7 +96,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
                     amountOut * BigInt(10000 - slippage) / 10000n, 
                     [WETH, token], 
                     useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, 
-                    version == 1 ? IPShareContract1 : IPShareContract2],
+                    IPShareContract3],
                 value: ethAmount
             })
             if (!hash) {    
@@ -215,7 +215,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                 useAccountStore().ethConnectAddress, 
                 Math.floor(Date.now() / 1000) + 300, 
                 sellsman, 
-                version == 1 ? IPShareContract1 : IPShareContract2]
+                IPShareContract3]
         })
         if (!hash) {
             throw errCode.TRANSACTION_INVALID;
