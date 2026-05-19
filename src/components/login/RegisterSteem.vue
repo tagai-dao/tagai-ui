@@ -16,7 +16,7 @@ import { box, generateSteemAuth, getBalance } from "@/utils/web3";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { checksumAddress } from "viem";
-import { randomBytes } from '@noble/hashes/utils'
+import { randomBytes } from '@noble/hashes/utils.js'
 import type { Account } from "@/types";
 
 const accStore = useAccountStore();
