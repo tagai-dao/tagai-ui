@@ -40,7 +40,7 @@
               class="amount-input"
               @input="updateReceive"
             />
-            <span class="token-symbol">IP.Share</span>
+            <span class="token-symbol"><span v-if="subjectInfo.name" class="token-owner">{{ subjectInfo.name }}'s </span>IP.Share</span>
             <button
               v-if="!isBuy"
               class="max-btn"
@@ -603,6 +603,12 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 600;
   color: #999;
+
+  .token-owner {
+    font-size: 0.5em;
+    font-weight: 500;
+    color: #bbb;
+  }
 }
 
 .max-btn {
