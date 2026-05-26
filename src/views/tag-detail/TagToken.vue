@@ -1,22 +1,221 @@
 <script setup lang="ts">
 import { useCommunityStore } from "@/stores/community";
 import { computed, onMounted, ref, watch, nextTick } from "vue";
-import { formatAddress, formatAmount, formatPrice, sleep, formatDate } from "@/utils/helper";
+import { formatAddress, formatAmount, formatAmountTrunc, formatPrice, sleep, formatDate } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
 import { getHolderList, getHolderListOfImportToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
-import { TotalSupply, SocialSupply, ListSupply } from '@/config'
+import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, TipTagSwapHook9, PCSCLPoolManager, PCSVault, ChainConfig } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { getBlockNumber } from "@/utils/wallets";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract5, PumpContract6, PumpContract7 } from "@/config";
+import { getV9DailyRewards } from "@/utils/pump";
+import { readContract } from "@/utils/contract";
+import VueApexCharts from "vue3-apexcharts";
+import type { ApexOptions } from "apexcharts";
+import { useI18n } from "vue-i18n";
+import { isAddress, zeroAddress } from "viem";
+import { useTools } from "@/composables/useTools";
 
+const ApexCharts = VueApexCharts as any;
+const { t } = useI18n();
+const { onCopy } = useTools();
 const comStore = useCommunityStore()
 
 const holdingList = ref<TokenHoldingList[]>([])
 const showDistributionModal = ref(false)
 const communityDistribution = ref();
+
+/** v9：按天聚合的分发量（过去 7 天含今天 + 明日） */
+const v9HourlyAmounts = ref<number[]>([])
+const v9HourlyLabels = ref<string[]>([])
+const v9TodayChartIndex = ref(6)
+const v9HourlyLoaded = ref(false)
+const v9HourlyLoading = ref(false)
+
+const isV9 = computed(() => comStore.currentSelectedCommunity?.version === PUMP9_VERSION)
+
+/** v9 holder 列表特殊地址：Hook / Nutbox Community / PCS V4 */
+const v9HookAddr = ref('')
+const v9NutboxCommunityAddr = ref('')
+const v9SocialPoolAddr = ref('')
+const v9PcsV4Addrs = ref<string[]>([])
+
+const normalizeAddr = (addr?: string | null) => addr?.toLowerCase() ?? ''
+
+const isSameAddr = (a?: string | null, b?: string | null) =>
+  normalizeAddr(a) !== '' && normalizeAddr(a) === normalizeAddr(b)
+
+const isPcsV4Holder = (holderAddr?: string) =>
+  v9PcsV4Addrs.value.some(addr => isSameAddr(holderAddr, addr))
+
+const legacyPumpAddrs = [
+  PumpContract1, PumpContract2, PumpContract3, PumpContract4,
+  PumpContract5, PumpContract6, PumpContract7,
+]
+
+function openBscAddress(addr: string) {
+  if (!addr) return
+  window.open(`${ChainConfig.browser}address/${addr}`, '_blank')
+}
+
+async function loadV9HolderAddresses() {
+  if (!isV9.value) return
+  const token = comStore.currentSelectedCommunity?.token
+  if (!token || !isAddress(token)) return
+
+  try {
+    const tokenAddr = token as `0x${string}`
+    const [community, socialPool] = await Promise.all([
+      readContract('Token9', 'nutboxCommunity', [], tokenAddr) as Promise<string>,
+      readContract('Token9', 'nutboxSocialPool', [], tokenAddr) as Promise<string>,
+    ])
+    v9NutboxCommunityAddr.value = community && community !== zeroAddress ? community : ''
+    v9SocialPoolAddr.value = socialPool && socialPool !== zeroAddress ? socialPool : ''
+
+    let hook = normalizeAddr(TipTagSwapHook9)
+    const pcsAddrs = new Set<string>([
+      normalizeAddr(PCSCLPoolManager),
+      normalizeAddr(PCSVault),
+    ])
+
+    const pair = comStore.currentSelectedCommunity?.pair
+    if (pair?.startsWith('{')) {
+      try {
+        const poolKey = JSON.parse(pair) as { hooks?: string; poolManager?: string }
+        if (poolKey.hooks) hook = normalizeAddr(poolKey.hooks)
+        if (poolKey.poolManager) pcsAddrs.add(normalizeAddr(poolKey.poolManager))
+      } catch (e) {
+        console.error('parse v9 poolKey failed', e)
+      }
+    }
+
+    v9HookAddr.value = hook
+    v9PcsV4Addrs.value = [...pcsAddrs].filter(Boolean)
+  } catch (e) {
+    console.error('loadV9HolderAddresses failed', e)
+    v9HookAddr.value = normalizeAddr(TipTagSwapHook9)
+    v9NutboxCommunityAddr.value = ''
+    v9SocialPoolAddr.value = ''
+    v9PcsV4Addrs.value = [normalizeAddr(PCSCLPoolManager), normalizeAddr(PCSVault)].filter(Boolean)
+  }
+}
+
+/** 柱状图：已发生（黄）/ 预测（紫） */
+const CHART_COLOR_ACTUAL = '#FF8F40'
+const CHART_COLOR_FORECAST = '#9B83FA'
+
+/** 今天已过去的时间占比（0~1，本地时区） */
+function getTodayElapsedRatio() {
+  const now = new Date()
+  const dayStart = new Date(now)
+  dayStart.setHours(0, 0, 0, 0)
+  const elapsedMs = now.getTime() - dayStart.getTime()
+  return Math.min(1, Math.max(0, elapsedMs / (24 * 3600 * 1000)))
+}
+
+const hourlyBarOptions = computed<ApexOptions>(() => ({
+  chart: {
+    type: 'bar',
+    height: 220,
+    stacked: true,
+    toolbar: { show: false },
+    fontFamily: 'inherit',
+  },
+  plotOptions: {
+    bar: {
+      borderRadius: 4,
+      columnWidth: '70%',
+      borderRadiusApplication: 'end',
+      borderRadiusWhenStacked: 'last',
+    },
+  },
+  dataLabels: { enabled: false },
+  xaxis: {
+    categories: v9HourlyLabels.value,
+    labels: {
+      rotate: 0,
+      style: { fontSize: '11px' },
+    },
+  },
+  yaxis: {
+    labels: {
+      formatter: (val: number) => formatAmountTrunc(val),
+    },
+  },
+  tooltip: {
+    y: {
+      formatter: (val: number) => `${formatAmountTrunc(val)} ${comStore.currentSelectedCommunity?.tick ?? ''}`,
+    },
+  },
+  colors: [CHART_COLOR_ACTUAL, CHART_COLOR_FORECAST],
+  legend: {
+    show: true,
+    position: 'top',
+    horizontalAlign: 'right',
+    fontSize: '11px',
+    markers: { size: 6, radius: 2 },
+  },
+  grid: { strokeDashArray: 4 },
+}))
+
+const hourlyBarSeries = computed(() => {
+  const amounts = v9HourlyAmounts.value
+  const todayIdx = v9TodayChartIndex.value
+  const elapsedRatio = getTodayElapsedRatio()
+  const actualData: number[] = []
+  const forecastData: number[] = []
+
+  amounts.forEach((amount, i) => {
+    if (i < todayIdx) {
+      // 历史：全部已发生
+      actualData.push(amount)
+      forecastData.push(0)
+    } else if (i === todayIdx) {
+      // 今天：按已过时间比例拆分黄/紫
+      actualData.push(amount * elapsedRatio)
+      forecastData.push(amount * (1 - elapsedRatio))
+    } else {
+      // 明天及以后：全部预测
+      actualData.push(0)
+      forecastData.push(amount)
+    }
+  })
+
+  return [
+    { name: t('postView.chartActual'), data: actualData },
+    { name: t('postView.chartForecast'), data: forecastData },
+  ]
+})
+
+function formatV9ChartDayLabel(dayStartSec: number, dayIndex: number, todayIndex: number) {
+  const dateStr = new Date(dayStartSec * 1000).toLocaleDateString([], { month: 'numeric', day: 'numeric' })
+  if (dayIndex === todayIndex) return `${dateStr} (${t('postView.chartToday')})`
+  if (dayIndex === todayIndex + 1) return `${dateStr} (${t('postView.chartTomorrow')})`
+  return dateStr
+}
+
+async function loadV9HourlyRewards() {
+  const token = comStore.currentSelectedCommunity?.token
+  if (!token || !isAddress(token) || !isV9.value) return
+  v9HourlyLoading.value = true
+  try {
+    const { dailyRewards, dayStarts, todayIndex } = await getV9DailyRewards(token as `0x${string}`)
+    v9TodayChartIndex.value = todayIndex
+    v9HourlyAmounts.value = dailyRewards.map(r => Number(r) / 1e18)
+    v9HourlyLabels.value = dayStarts.map((ts, i) => formatV9ChartDayLabel(ts, i, todayIndex))
+    v9HourlyLoaded.value = true
+  } catch (e) {
+    console.error('loadV9HourlyRewards failed', e)
+    v9HourlyAmounts.value = []
+    v9HourlyLabels.value = []
+    v9HourlyLoaded.value = false
+  } finally {
+    v9HourlyLoading.value = false
+  }
+}
 
 /** 分配弹窗内可滚动容器，用于打开时滚动到当前阶段 */
 const distributionScrollRef = ref<HTMLElement | null>(null)
@@ -99,6 +298,15 @@ const progressData = ref([
 // -1 means no distribution of this community(not list)
 // 0 means no reward of current day
 const rewardPerDay = computed(() => {
+  if (isV9.value) {
+    if (!v9HourlyLoaded.value) return -1
+    if (v9HourlyAmounts.value.length === 0) return 0
+    // 过去 7 天（含今天），排除分发为 0 的天后取平均
+    const pastSevenDays = v9HourlyAmounts.value.slice(0, v9TodayChartIndex.value + 1)
+    const activeDays = pastSevenDays.filter(amount => amount > 0)
+    if (activeDays.length === 0) return 0
+    return activeDays.reduce((sum, amount) => sum + amount, 0) / activeDays.length
+  }
   if (!comStore?.currentSelectedCommunity?.distribution) {
     return -1;
   }
@@ -119,12 +327,18 @@ const rewardPerDay = computed(() => {
         break;
       }
     }
-    console.log({currentRewardPerSecond})
     return Math.ceil(currentRewardPerSecond * 86400)
   } catch (error) {
     return -1;
   }
 })
+
+async function openDistributionModal() {
+  if (isV9.value) {
+    await loadV9HourlyRewards()
+  }
+  showDistributionModal.value = true
+}
 
 const refreshing = ref(false);
 const loading = ref(false);
@@ -242,8 +456,21 @@ onMounted(async () => {
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
   }
-  
+  if (isV9.value) {
+    await Promise.all([loadV9HourlyRewards(), loadV9HolderAddresses()])
+  }
   onRefresh()
+})
+
+watch(() => comStore.currentSelectedCommunity?.token, async (token) => {
+  if (token && isV9.value) {
+    v9HourlyLoaded.value = false
+    await Promise.all([loadV9HourlyRewards(), loadV9HolderAddresses()])
+  }
+})
+
+watch(() => comStore.currentSelectedCommunity?.pair, () => {
+  if (isV9.value) loadV9HolderAddresses()
 })
 </script>
 
@@ -292,11 +519,41 @@ onMounted(async () => {
         <span class="text-h4 text-grey-93">{{$t('postView.cap')}}</span>
         <span class="text-h5 text-black-19">{{ formatPrice(Math.round((comStore.currentSelectedCommunity.marketCap ?? 0) * useStateStore().ethPrice)) }}</span>
       </div>
-      <div v-show="rewardPerDay>-1" class="flex justify-between items-center h-6">
+      <template v-if="isV9">
+        <div class="flex justify-between items-center h-6">
+          <span class="text-h4 text-grey-93 shrink-0">{{ t('postView.nutboxCommunity') }}</span>
+          <div v-if="v9NutboxCommunityAddr" class="flex items-center gap-1.5">
+            <span
+              class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
+              @click="openBscAddress(v9NutboxCommunityAddr)"
+            >{{ formatAddress(v9NutboxCommunityAddr) }}</span>
+            <button type="button" class="shrink-0 p-0.5" @click.stop="onCopy(v9NutboxCommunityAddr)">
+              <img class="w-[10px] min-w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="" />
+            </button>
+          </div>
+          <span v-else class="text-h5 text-black-19">--</span>
+        </div>
+        <!-- 暂时隐藏社交分发矿池 -->
+        <div v-if="false" class="flex justify-between items-center h-6">
+          <span class="text-h4 text-grey-93 shrink-0">{{ t('postView.socialPool') }}</span>
+          <div v-if="v9SocialPoolAddr" class="flex items-center gap-1.5">
+            <span
+              class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
+              @click="openBscAddress(v9SocialPoolAddr)"
+            >{{ formatAddress(v9SocialPoolAddr) }}</span>
+            <button type="button" class="shrink-0 p-0.5" @click.stop="onCopy(v9SocialPoolAddr)">
+              <img class="w-[10px] min-w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="" />
+            </button>
+          </div>
+          <span v-else class="text-h5 text-black-19">--</span>
+        </div>
+      </template>
+      <div v-show="isV9 || rewardPerDay>-1" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.rewardPerDay')}}</span>
         <span class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
-               @click="showDistributionModal = true">
-          {{ formatAmount(rewardPerDay) }}
+               @click="openDistributionModal">
+          <template v-if="isV9 && v9HourlyLoading">...</template>
+          <template v-else>{{ formatAmount(rewardPerDay) }}</template>
         </span>
       </div>
 
@@ -377,12 +634,20 @@ onMounted(async () => {
             </UserAvatar>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
             <span class="">{{ formatAddress(holder.ethAddr) }}</span>
-            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Contract</span>
-            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Deployer</span>
-            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.pair" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">DEX</span>
+            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.contract') }}</span>
+            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.deployer') }}</span>
+            <!-- v9：PCS V4 流动性合约 -->
+            <span v-show="isV9 && isPcsV4Holder(holder.ethAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.pcsV4') }}</span>
+            <!-- 旧版 Uniswap V2 pair -->
+            <span v-show="!isV9 && holder.ethAddr == comStore.currentSelectedCommunity.pair" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">DEX</span>
             <span v-show="holder.ethAddr == '0x3758AA66caD9F2606F1F501c9CB31b94b713A6d5'" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">NerveNetwork: Bridge</span>
             <span v-show="holder.ethAddr == '0x4daB069f85441f48bB1b1224d6C41D2301451C69' && comStore.currentSelectedCommunity.tick == 'BUIDL'" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Community Fund</span>
-            <span v-show="holder.ethAddr == PumpContract1 || holder.ethAddr == PumpContract2 || holder.ethAddr == PumpContract3 || holder.ethAddr == PumpContract4 || holder.ethAddr == PumpContract5 || holder.ethAddr == PumpContract6 || holder.ethAddr == PumpContract7" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Social Distribution</span>
+            <!-- v9：Hook 持有社交分配代币 -->
+            <span v-show="isV9 && isSameAddr(holder.ethAddr, v9HookAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.swapHook') }}</span>
+            <!-- v9：Nutbox 社区合约 -->
+            <span v-show="isV9 && isSameAddr(holder.ethAddr, v9NutboxCommunityAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.nutbox') }}</span>
+            <!-- v1–v7：Pump 社交分发合约 -->
+            <span v-show="!isV9 && legacyPumpAddrs.includes(holder.ethAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Social Distribution</span>
           </div>
         <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ ((holder.amount as number) / 10000000).toFixed(2) }}%</span>
       </div>
@@ -392,8 +657,8 @@ onMounted(async () => {
     </div>
     <el-dialog v-model="showDistributionModal"
                modal-class="overlay-white"
-               class="max-w-[500px] rounded-[20px]"
-               width="90%" :show-close="false" align-center destroy-on-close
+               class="max-w-[720px] w-[92vw] rounded-[20px]"
+               width="720px" :show-close="false" align-center destroy-on-close
                @opened="onDistributionModalOpened">
       <!-- 标题区域 -->
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-grey-e7">
@@ -408,7 +673,30 @@ onMounted(async () => {
 
       <!-- 可滚动内容区域 -->
       <div ref="distributionScrollRef" class="overflow-y-auto pr-2 custom-scrollbar" style="max-height: 60vh;">
-        <div v-if="communityDistribution && communityDistribution.length > 0" class="relative pl-4">
+        <!-- v9：按日分发柱状图 -->
+        <div v-if="isV9" class="mb-6 p-4 rounded-xl border border-orange-normal/30 bg-orange-50">
+          <div class="text-h4 font-semibold text-black-19 mb-1">{{ $t('postView.hourlyDistributionTitle') }}</div>
+          <div class="text-xs text-grey-93 mb-4">{{ $t('postView.hourlyDistributionDesc') }}</div>
+          <div v-if="v9HourlyLoading" class="py-8 text-center text-grey-93 text-h4">{{ $t('loading') }}</div>
+          <div v-else-if="v9HourlyAmounts.length > 0">
+            <component
+              :is="ApexCharts"
+              type="bar"
+              height="220"
+              :options="hourlyBarOptions"
+              :series="hourlyBarSeries"
+            />
+            <div class="mt-3 flex justify-between text-h5 text-grey-93">
+              <span>{{ $t('postView.rewardPerDay') }}</span>
+              <span class="font-semibold text-orange-normal">
+                {{ formatAmount(rewardPerDay) }} {{ comStore.currentSelectedCommunity?.tick }}
+              </span>
+            </div>
+          </div>
+          <div v-else class="py-8 text-center text-grey-93 text-h4">{{ $t('postView.noDistributionData') }}</div>
+        </div>
+
+        <div v-if="!isV9 && communityDistribution && communityDistribution.length > 0" class="relative pl-4">
           <!-- 时间轴线 -->
           <div class="absolute left-[7px] top-3 bottom-3 w-[2px] bg-gradient-to-b from-orange-normal via-purple-500 to-blue-active"></div>
           
@@ -481,8 +769,8 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- 空状态 -->
-        <div v-else class="py-12 text-center">
+        <!-- 空状态（非 v9 且无静态分发数据） -->
+        <div v-else-if="!isV9" class="py-12 text-center">
           <div class="text-grey-93 text-h4">{{ $t('postView.noDistributionData') }}</div>
         </div>
       </div>

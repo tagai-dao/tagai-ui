@@ -3,19 +3,19 @@ export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
 
 export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
-// export const BACKEND_API_URL = "http://localhost:3000"
-
+// export const BACKEND_API_URL = "http://localhost:5001"
+const BSC_RPC_URL = 'https://bsc-dataseed.binance.org';
 // base main net
 export const ChainConfig = {
     name: "BSC",
-    rpc: 'https://bsc-dataseed.binance.org',
+    rpc: BSC_RPC_URL,
     chainId: 56,
     symbol: 'BNB',
     browser: 'https://bscscan.com/',
     decimals: 18,
     swapUrl: 'https://pancakeswap.finance/v2/add/BNB/0x32ef878D527d860339818571E8DA17005110f04E?chain=bsc&persistChain=1',
     multiConfig: {
-        rpcUrl: 'https://bsc-dataseed.binance.org',
+        rpcUrl: BSC_RPC_URL,
         multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
         interval: 3000
     }
@@ -86,12 +86,22 @@ export const PumpContract5 = "0x2cAbfDE43f93422fFb070f0Fa03d2951dbBC7749"; // ix
 export const PumpContract6 = "0x201308B193bC0Aa81Ac540A7D3B3ADb530a39861"; // for import tokens
 export const PumpContract7 = "0x3E75E2db40E7cc9C7d7869Fc2d97eDAb01724212"; // PCS V4 hook
 export const PumpContract8 = "0x88d495228E831b01D8Ae6d62f9633cBcC6d27De2"
+/** Pump9：Nutbox + HourlyTickCalculator + PCS V4，内盘开放交易 */
+export const PumpContract9 = "0x327a473c763bcf0d60CCd6811F832332939110D5"
+export const TokenImplementation9 = "0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16"
+export const PUMP9_VERSION = 9
 
 // PancakeSwap V4 Infinity
+/** v7/v8 已部署池使用的 Hook */
 export const TipTagSwapHook = "0xF815dB0fbeafED4C719F65E41dEC9C50fb357896";
+/** v9 新部署池使用的 Hook */
+export const TipTagSwapHook9 = "0x78443e75aD3D70DAAab0De33d2D5Dea0cBae0cC1";
+export const HourlyTickCalculator = "0x6cCEC02E7D371FED954D7D16eCb7F2f57cccF54d"
+export const NutboxCommittee = "0xe10F967DD356504EDB731612789D0D0f0ba2929f"
 export const PCSUniversalRouter = "0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB";
 export const PCSPermit2 = "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768";
 export const PCSCLPoolManager = "0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b";
+export const PCSVault = "0x238a358808379702088667322f80aC48bAd5e6c4";
 
 export const PopUp = "0xA3951BcEc6018CAAE34dCEA722858a7dc3177Ed2";
 
