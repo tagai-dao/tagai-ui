@@ -121,7 +121,7 @@ const invalidToken = computed(() => {
 })
 
 /** v7 / v8 上架后均走 PCS V4（与 pump.ts isPcsV4Listed 一致） */
-const isPcsV4Version = (v: number | undefined | null) => v === 7 || v === 8
+const isPcsV4Version = (v: number | undefined | null) => v === 7 || v === 8 || v === 9
 
 /** Pump8：曲线阶段不对普通用户开放买卖，仅 Agent 可走其他入口 */
 const isV8PreListNoTrade = computed(

@@ -1,7 +1,7 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, PUMP9_VERSION, NutboxCommittee } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
@@ -10,9 +10,12 @@ import _ from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
-import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log } from "viem";
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, encodeAbiParameters, keccak256, type Log } from "viem";
 import { writeContract, readContract } from "./contract";
+import { getReadOnlyClient } from "./wallets";
 import { buyTokenV4, sellTokenV4 } from "./pcsV4Swap";
+import { findPump9DeploySalt, verifyPump9SaltVanity } from "./pump9Salt";
+import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
 
 const pumpContract = [
     PumpContract1,
@@ -22,7 +25,8 @@ const pumpContract = [
     PumpContract5,
     PumpContract6,
     PumpContract7,
-    PumpContract8
+    PumpContract8,
+    PumpContract9
 ]
 
 const Q192 = 2n ** 192n;
@@ -34,28 +38,137 @@ export const checkTickUsed = async (tick: string) => {
 }
 
 export const createCoin = async (createParms: CreateCommunity) => {
-    // Read user's last salt index from contract, then use index + 1 as salt
-    const userAddress = useAccountStore().ethConnectAddress;
-    const lastSaltIndex: any = await readContract('Pump7', 'getLastSaltIndex', [userAddress]);
-    const saltNum = BigInt(lastSaltIndex) + 1n;
-    // Encode as bytes32 (uint256 -> hex, left-padded to 64 chars)
-    const salt = ('0x' + saltNum.toString(16).padStart(64, '0')) as `0x${string}`;
-    
+    const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
+    const salt = await findPump9DeploySalt(userAddress);
+    // 部署前链上二次校验，防止本地缓存 salt 或 predict 偏差导致非靓号地址
+    await verifyPump9SaltVanity(userAddress, salt);
+    const createFee = await getPump9CreateFee(userAddress);
+
     let hash = await writeContract({
-        contractName: 'Pump7',
+        contractName: 'Pump9',
         functionName: 'createToken',
         args: [createParms.tick, salt],
-        value: (createParms.initEth ?? 0n) + BigInt(CreateFee)
+        value: (createParms.initEth ?? 0n) + createFee
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
-    }    
+    }
     let tx = await getTransactionReceipt(hash as `0x${string}`)
-    const event: any = getCreateTokenEventByHash(tx, 7);
+    const event: any = getCreateTokenEventByHash(tx, PUMP9_VERSION);
     if (event?.tick == createParms.tick) {
         return {token: event.token, createHash: tx.transactionHash}
     }
     return {createHash: hash}
+}
+
+/** Pump9 创建固定费用：Pump.createFee + Nutbox Committee 费用 + 可选 IPShare 创建费 */
+export const getPump9CreateFee = async (userAddress: `0x${string}`): Promise<bigint> => {
+    const [pumpFee, commFee, settingsFee, ipshareCreated] = await Promise.all([
+        readContract('Pump9', 'createFee', []) as Promise<bigint>,
+        readContract('NutboxCommittee', 'getCreateCommunityFee', []) as Promise<bigint>,
+        readContract('NutboxCommittee', 'getCommunitySettingsFee', []) as Promise<bigint>,
+        readContract('IPShare3', 'ipshareCreated', [userAddress]) as Promise<boolean>,
+    ]);
+    let ipshareFee = 0n;
+    if (!ipshareCreated) {
+        ipshareFee = await readContract('IPShare3', 'createFee', []) as bigint;
+    }
+    return pumpFee + commFee + settingsFee + ipshareFee;
+}
+
+/** Nutbox 比例基数（Community.sol CONSTANTS_10000） */
+const NUTBOX_RATIO_BASE = 10000n
+/** (10000 - feeRatio) * poolRatio 的分母 */
+const NUTBOX_SOCIAL_SCALE_DIVISOR = 100000000n
+/** Community.sol private mapping poolRatios 的 storage slot */
+const NUTBOX_POOL_RATIOS_STORAGE_SLOT = 10n
+
+/** 读取社交矿池在 Nutbox 社区中的 poolRatio（mapping 为 private，优先 storage） */
+async function readNutboxPoolRatio(community: `0x${string}`, pool: `0x${string}`): Promise<bigint> {
+    const slot = keccak256(encodeAbiParameters(
+        [{ type: 'address' }, { type: 'uint256' }],
+        [pool, NUTBOX_POOL_RATIOS_STORAGE_SLOT]
+    ))
+    const raw = await getReadOnlyClient().getStorageAt({ address: community, slot })
+    const ratio = raw != null ? BigInt(raw) : 0n
+    if (ratio > 0n) return ratio
+
+    // Pump9 默认单社交矿池占 100%
+    return NUTBOX_RATIO_BASE
+}
+
+/** Nutbox 社区奖励中实际进入社交矿池的比例：(10000 - feeRatio) * poolRatio / 100000000 */
+async function getNutboxSocialPoolScale(community: `0x${string}`, socialPool: `0x${string}`) {
+    const [feeRatio, poolRatio] = await Promise.all([
+        readContract('NutboxCommunity', 'feeRatio', [], community).then(v => BigInt(v as number | bigint)),
+        readNutboxPoolRatio(community, socialPool),
+    ])
+    return {
+        feeRatio,
+        poolRatio,
+        scaleNumerator: (NUTBOX_RATIO_BASE - feeRatio) * poolRatio,
+        scaleDenominator: NUTBOX_SOCIAL_SCALE_DIVISOR,
+    }
+}
+
+function applyNutboxSocialPoolScale(amount: bigint, scaleNumerator: bigint, scaleDenominator: bigint) {
+    return amount * scaleNumerator / scaleDenominator
+}
+
+/** v9 代币：按天聚合 HourlyTickCalculator 分发量（过去 7 天含今天 + 明日） */
+export const getV9DailyRewards = async (token: `0x${string}`) => {
+    const SECONDS_PER_DAY = 86400
+    const PAST_DAYS = 6 // 索引 0~6 为过去 7 天（含今天）
+    const TOTAL_DAYS = 8 // 含明日
+
+    const getLocalDayStartSec = (dayOffset: number) => {
+        const d = new Date()
+        d.setHours(0, 0, 0, 0)
+        d.setDate(d.getDate() + dayOffset)
+        return Math.floor(d.getTime() / 1000)
+    }
+
+    const community = await readContract('Token9', 'nutboxCommunity', [], token) as `0x${string}`;
+    const socialPool = await readContract('Token9', 'nutboxSocialPool', [], token) as `0x${string}`;
+    const { feeRatio, poolRatio, scaleNumerator, scaleDenominator } =
+        await getNutboxSocialPoolScale(community, socialPool)
+
+    const rangeStart = getLocalDayStartSec(-PAST_DAYS)
+    const hourlyRewards = await readContract(
+        'HourlyTickCalculator',
+        'getHourlyRewards',
+        [community, BigInt(rangeStart), BigInt(TOTAL_DAYS * 24)]
+    ) as bigint[];
+
+    const dailyRewards = Array.from({ length: TOTAL_DAYS }, () => 0n)
+    for (let i = 0; i < hourlyRewards.length; i++) {
+        const dayIdx = Math.floor(i / 24)
+        if (dayIdx < TOTAL_DAYS) {
+            dailyRewards[dayIdx] += applyNutboxSocialPoolScale(
+                hourlyRewards[i],
+                scaleNumerator,
+                scaleDenominator
+            )
+        }
+    }
+
+    const dayStarts = Array.from(
+        { length: TOTAL_DAYS },
+        (_, d) => rangeStart + d * SECONDS_PER_DAY
+    )
+    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio }
+}
+
+/** @deprecated 使用 getV9DailyRewards */
+export const getV9HourlyRewards = async (token: `0x${string}`) => {
+    const community = await readContract('Token9', 'nutboxCommunity', [], token) as `0x${string}`;
+    const startTimestamp = BigInt(Math.floor(Date.now() / 1000 / 3600) * 3600);
+    const rewards = await readContract(
+        'HourlyTickCalculator',
+        'getHourlyRewards',
+        [community, startTimestamp, 24n]
+    ) as bigint[];
+    return { rewards, startTimestamp, community };
 }
 
 export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
@@ -65,8 +178,8 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
     }
     if (listed) {
         // v7/v8 上架后代币走 PCS V4（BuyAndSellView 使用 buyTokenV4）
-        if (version === 7 || version === 8) {
-            throw new Error('V7/V8 listed buy should use buyTokenV4 directly');
+        if (isPcsV4Version(version)) {
+            throw new Error('V7/V8/V9 listed buy should use buyTokenV4 directly');
         }
 
         // 2% transaction fee
@@ -153,8 +266,8 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         sellsman = zeroAddress;
     }
     if (listed) {
-        if (version === 7 || version === 8) {
-            throw new Error('V7/V8 listed sell should use sellTokenV4 directly');
+        if (isPcsV4Version(version)) {
+            throw new Error('V7/V8/V9 listed sell should use sellTokenV4 directly');
         }
 
         if (isImport) {
@@ -250,9 +363,10 @@ export const claimReward = async (token: string, version: number, orderId: BigIn
     return hash
 }
 
-export const claimRewardV8 = async (token: string, orderId: BigInt, amount: BigInt, deadline: BigInt, signature: string) => {
+export const claimRewardV8 = async (token: string, orderId: BigInt, amount: BigInt, deadline: BigInt, signature: string, version = 8) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
-    const socialPool = await readContract('Token8', 'nutboxSocialPool', [], token as `0x${string}`)
+    const tokenAbi = version === 9 ? 'Token9' : 'Token8';
+    const socialPool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`)
     const hash = await writeContract({
         contractName: 'NutboxSocialCurationPool',
         functionName: 'claim',
@@ -298,7 +412,7 @@ export const transferToken = async (token: string, to: string, amount: bigint, i
 }
 
 export const calculateInitEth = async (amount: bigint) => {
-    return await readContract('Pump1', 'getBuyPriceAfterFee', [0n, amount]) as bigint
+    return await readContract('Pump9', 'getBuyPriceAfterFee', [0n, amount]) as bigint
 }
 
 export const getUserTokenInfo = async (token: string, ethAddr: string) => {
@@ -338,7 +452,7 @@ const buildPairMap = (items: Array<{ token?: string; pair?: string | null | unde
     const pairMap: Record<string, string> = {};
     for (const item of items) {
         const v = item.version ?? 2;
-        if (!item.token || !item.pair || (v !== 7 && v !== 8)) continue;
+        if (!item.token || !item.pair || !isPcsV4Version(v)) continue;
         pairMap[item.token] = item.pair;
     }
     return pairMap;
@@ -363,7 +477,7 @@ export const getTokenInfo = async (communities: Community[]) => {
             community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
             community.price = tokenInfo.price;
             community.marketCap = ((community.price ?? 0) * TotalSupply);
-            if ((community.version ?? 2) !== 7 && (community.version ?? 2) !== 8) {
+            if (!isPcsV4Version(community.version ?? 2)) {
                 community.pair = tokenInfo.pair;
             }
             community.totalSupply = TotalSupply;
@@ -418,7 +532,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                 tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
                 tweet.price = tokenInfo.byUSD ? tokenInfo.price / stateStore.ethPrice : tokenInfo.price;
                 tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
-                if ((tweet.version ?? 2) !== 7 && (tweet.version ?? 2) !== 8) {
+                if (!isPcsV4Version(tweet.version ?? 2)) {
                     tweet.pair = tokenInfo.pair;
                 }
             }
@@ -446,16 +560,17 @@ export const getTokenOnchainInfo = async (
             if (!pumpAddress) return null;
             try {
                 const loadTotalClaimed = async (): Promise<bigint> => {
-                    if (version < 7) {
-                        return readContract('Pump' + version, 'totalClaimedSocialRewards', [token]) as Promise<bigint>;
+                    if (usesNutboxSocialPool(version)) {
+                        const tokenAbi = version === 9 ? 'Token9' : 'Token8';
+                        const socialPool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`);
+                        if (!socialPool || socialPool === zeroAddress) return 0n;
+                        return readContract('NutboxSocialCurationPool', 'totalClaimed', [], socialPool as `0x${string}`) as Promise<bigint>;
                     }
-                    if (version === 7) {
+                    if (hasPumpTotalClaimedSocialRewards(version)) {
                         return readContract('Pump7', 'totalClaimedSocialRewards', [token]) as Promise<bigint>;
                     }
-                    // Pump8：累计领取量在 Token 绑定的 nutboxSocialPool 上
-                    const socialPool = await readContract('Token8', 'nutboxSocialPool', [], token as `0x${string}`);
-                    if (!socialPool || socialPool === zeroAddress) return 0n;
-                    return readContract('NutboxSocialCurationPool', 'totalClaimed', [], socialPool as `0x${string}`) as Promise<bigint>;
+                    // v1-v6 无 totalClaimedSocialRewards 接口
+                    return 0n;
                 };
                 const [bondingCurveSupply, listed, totalClaimedSocialRewards, pair] = await Promise.all([
                     readContract('Token1', 'bondingCurveSupply', [], token),
@@ -505,7 +620,7 @@ export const getTokenOnchainInfo = async (
                     [token + '-listed']
                 ]
             },
-            ...(version === 8
+            ...(usesNutboxSocialPool(version)
                 ? [{
                     target: token,
                     call: [
@@ -515,7 +630,8 @@ export const getTokenOnchainInfo = async (
                         [token + '-nutboxSocialPool', (val: any) => val as `0x${string}`]
                     ]
                 }]
-                : [{
+                : hasPumpTotalClaimedSocialRewards(version)
+                ? [{
                     target: pumpAddress,
                     call: [
                         'totalClaimedSocialRewards(address)(uint256)',
@@ -524,10 +640,11 @@ export const getTokenOnchainInfo = async (
                     returns: [
                         [token + '-totalClaimedSocialRewards', (val: any) => BigInt(val)]
                     ]
-                }])
+                }]
+                : [])
         ])
         // v7/v8 走 PCS V4，无 Uniswap V2 pair
-        if (version !== 7 && version !== 8) {
+        if (!isPcsV4Version(version)) {
             calls.push({
                 target: uniswapV2Factory,
                 call: [
@@ -563,11 +680,21 @@ export const getTokenOnchainInfo = async (
         result[token][type] = value;
     }
 
+    // v1-v6 无 totalClaimedSocialRewards，默认 0
+    for (const token of tokens) {
+        if (!isAddress(token)) continue
+        const info = result[token]
+        if (!info) continue
+        if (info.totalClaimedSocialRewards === undefined) {
+            info.totalClaimedSocialRewards = 0n
+        }
+    }
+
     // Pump8：nutboxSocialPool 上 totalClaimed() 无参（首轮 multicall 只拿到了 pool 地址）
     const v8TotalClaimedCalls: any[] = []
     for (const token of tokens) {
         if (!isAddress(token)) continue
-        if ((versions[token] ?? 4) !== 8) continue
+        if (!usesNutboxSocialPool(versions[token] ?? 4)) continue
         const info = result[token]
         if (!info) continue
         // fallback 已写入 totalClaimed，且不会带 nutboxSocialPool
@@ -596,7 +723,7 @@ export const getTokenOnchainInfo = async (
         } catch (e) {
             console.error('getTokenOnchainInfo Pump8 totalClaimed multicall failed', e)
             for (const token of tokens) {
-                if ((versions[token] ?? 4) !== 8) continue
+                if (!usesNutboxSocialPool(versions[token] ?? 4)) continue
                 const info = result[token]
                 if (!info?.nutboxSocialPool || info.nutboxSocialPool === zeroAddress) {
                     if (info) info.totalClaimedSocialRewards = 0n
@@ -625,7 +752,7 @@ export const getTokenOnchainInfo = async (
         const pumpAddress = pumpContract[version - 1];
         if (!pumpAddress) continue;
         // v7/v8 上架后走 PCS V4 定价（pairMap），与 Uniswap V2 无关
-        const isPcsV4Listed = (version === 7 || version === 8) && info.listed;
+        const isPcsV4Listed = isPcsV4Version(version) && info.listed;
         if (!info.listed) {
             calls.push({
                 target: pumpAddress,
@@ -700,7 +827,7 @@ export const getTokenOnchainInfo = async (
                 result[key].price = res[key + '-price']
                 continue;
             }
-            if (version === 7 || version === 8) {
+            if (isPcsV4Version(version)) {
                 const rawSqrtPriceX96 = res[key + '-sqrtPriceX96'];
                 if (rawSqrtPriceX96 === undefined) {
                     result[key].price = undefined;

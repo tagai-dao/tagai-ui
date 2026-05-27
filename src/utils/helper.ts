@@ -224,6 +224,30 @@ export const formatAmount = function (value: number | string | undefined | bigin
   return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fraction + unit;
 }
 
+/** 按小数位截断（不四舍五入），用于图表轴等场景 */
+export function formatAmountTrunc(value: number | string | undefined): string {
+  const nm = Number(value)
+  if (!Number.isFinite(nm) || nm === 0) return '0'
+
+  let digit = 2
+  if (nm < 1) digit = 4
+  if (nm < 0.0001) digit = 6
+  if (nm < 0.000001) digit = 8
+  if (Number.isInteger(nm)) digit = 0
+
+  if (Math.abs(nm) >= 1000) {
+    return formatAmount(nm)
+  }
+
+  const sign = nm < 0 ? '-' : ''
+  const abs = Math.abs(nm)
+  const truncated = Math.trunc(abs * 10 ** digit) / 10 ** digit
+  const str = truncated.toFixed(digit)
+  const [integer, frac = ''] = str.split('.')
+  const formattedInt = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return frac ? `${sign}${formattedInt}.${frac}` : `${sign}${formattedInt}`
+}
+
 export function formatAddress(val: string, start = 6, end = 6) {
   if (!val || val === '' || val.length < 12) return val
   return `${val.substring(0, start)}...${val.substring(val.length - end)}`

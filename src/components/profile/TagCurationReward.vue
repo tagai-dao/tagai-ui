@@ -47,8 +47,8 @@ async function claim() {
     const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
     if (res) {
       const {signature, orderId, amount, deadline} = res;
-      if (props.reward.version === 8) {
-        const hash = await claimRewardV8(props.reward.token, BigInt(orderId), parseEther(amount.toString()), BigInt(deadline), signature);
+      if (props.reward.version === 8 || props.reward.version === 9) {
+        const hash = await claimRewardV8(props.reward.token, BigInt(orderId), parseEther(amount.toString()), BigInt(deadline), signature, props.reward.version ?? 8);
         setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, props.reward.version ?? 2).catch(console.error);
         await sleep(1)
         emitter.emit('claimedReward')

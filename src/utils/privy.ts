@@ -8,6 +8,7 @@ import {
   sepolia,
   type Chain
 } from 'viem/chains'
+import { ChainConfig } from '@/config'
 
 // Custom BSC configuration with multiple RPC endpoints
 export const customBsc = {
@@ -15,7 +16,7 @@ export const customBsc = {
   rpcUrls: {
     default: {
       http: [
-        'https://bsc-dataseed.binance.org',
+        ChainConfig.rpc,
         'https://rpc.ankr.com/bsc',
         'https://bsc.rpc.blxrbdn.com',
         'https://56.rpc.thirdweb.com',

@@ -2,13 +2,13 @@
 import { useModalStore } from "@/stores/common";
 import { reactive, ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
-import { CreateFee, BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, PumpContract6, PumpContract7 } from "@/config";
+import { BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply, PumpContract6, PumpContract7 } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
 import ERR_CODE from "@/errCode";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo, transferToken } from "@/utils/pump";
+import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo, transferToken, getPump9CreateFee } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { createCommunity, importCommunity, checkImportTokenDeployed } from '@/apis/api'
 import { getTagStyle } from '@/composables/useTags'
@@ -98,6 +98,23 @@ watch(() => completedImgUrl.value, (value) => {
 
 const showingInitAmount = ref<number|undefined>()
 const showingInitEth = ref<string|undefined>('$0')
+const showingCreateFee = ref('~ 0.01')
+
+async function refreshCreateFee() {
+  const addr = accStore.ethConnectAddress
+  if (!addr || !isAddress(addr)) {
+    showingCreateFee.value = '~ --'
+    return
+  }
+  try {
+    const fee = await getPump9CreateFee(addr as `0x${string}`)
+    showingCreateFee.value = `~ ${formatPrice(Number(fee) / 1e18)}`
+  } catch (e) {
+    console.error('refreshCreateFee failed', e)
+  }
+}
+
+watch(() => accStore.ethConnectAddress, () => refreshCreateFee(), { immediate: true })
 
 watch(() => showingInitAmount.value, debounce(async (val: number) => {
   if (val && val > 0) {
@@ -713,7 +730,7 @@ onUnmounted(() => {
         </div>
         <div class="flex justify-between items-center gap-2 mt-2 text-sm px-3">
           <span class="text-grey-normal">{{$t('createCommunity.costTopDeploy')}}</span>
-          <span class="text-red-e6 italic">~ {{ (CreateFee as any) / 1e18 }} BNB</span>
+          <span class="text-red-e6 italic">{{ showingCreateFee }} BNB</span>
         </div>
       </div>
     </div>

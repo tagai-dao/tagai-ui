@@ -4,7 +4,8 @@ import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, 
     wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens, 
-    FPMMDeterministicFactory2, PumpContract7, PumpContract8, IPShareContract3,
+    FPMMDeterministicFactory2,     PumpContract7, PumpContract8, PumpContract9, IPShareContract3,
+    HourlyTickCalculator, NutboxCommittee,
     PCSUniversalRouter, PCSPermit2} from '@/config'
 import { useAccountStore } from "@/stores/web3";
 import { customBsc } from "./privy";
@@ -18,6 +19,9 @@ const ContractAddress = {
     Pump6: PumpContract6,
     Pump7: PumpContract7,
     Pump8: PumpContract8,
+    Pump9: PumpContract9,
+    HourlyTickCalculator,
+    NutboxCommittee,
     IPShare1: IPShareContract1,
     IPShare2: IPShareContract2,
     IPShare3: IPShareContract3,

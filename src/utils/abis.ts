@@ -5041,7 +5041,43 @@ export const abis = {
       {"inputs": [],"name": "TokenNotCreated","type": "error"},
       {"inputs": [{"internalType": "uint256","name": "orderId","type": "uint256"},{"internalType": "uint256","name": "amount","type": "uint256"},{"internalType": "uint256","name": "deadline","type": "uint256"},{"internalType": "bytes","name": "signature","type": "bytes"}],"name": "claim","outputs":[],"stateMutability":"nonpayable","type":"function"},
     ],
+    "Pump9": [
+      {"inputs":[{"internalType":"string","name":"tick","type":"string"},{"internalType":"bytes32","name":"salt","type":"bytes32"}],"name":"createToken","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"deployer","type":"address"},{"internalType":"bytes32","name":"salt","type":"bytes32"}],"name":"predictTokenAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"createdTokens","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"createFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"supply","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"getBuyAmountByValue","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"pure","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"supply","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"getBuyPriceAfterFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"supply","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"getSellPriceAfterFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"tick","type":"string"},{"indexed":false,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"address","name":"creator","type":"address"}],"name":"NewToken","type":"event"}
+    ],
+    "Token9": [
+      {"inputs":[{"internalType":"uint256","name":"expectAmount","type":"uint256"},{"internalType":"address","name":"sellsman","type":"address"},{"internalType":"uint16","name":"slippage","type":"uint16"}],"name":"buyToken","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"expectReceive","type":"uint256"},{"internalType":"address","name":"sellsman","type":"address"},{"internalType":"uint16","name":"slippage","type":"uint16"}],"name":"sellToken","outputs":[],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[],"name":"bondingCurveSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"listed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"nutboxCommunity","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"nutboxSocialPool","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"v4PoolId","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
+    ],
+    "HourlyTickCalculator": [
+      {"inputs":[{"internalType":"address","name":"community","type":"address"},{"internalType":"uint256","name":"startTimestamp","type":"uint256"},{"internalType":"uint256","name":"numHours","type":"uint256"}],"name":"getHourlyRewards","outputs":[{"internalType":"uint256[]","name":"rewards","type":"uint256[]"}],"stateMutability":"view","type":"function"}
+    ],
+    "NutboxCommunity": [
+      {"inputs":[],"name":"feeRatio","outputs":[{"internalType":"uint16","name":"","type":"uint16"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"poolRatios","outputs":[{"internalType":"uint16","name":"","type":"uint16"}],"stateMutability":"view","type":"function"},
+      {"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"activedPools","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}
+    ],
+    "NutboxCommittee": [
+      {"inputs":[],"name":"getCreateCommunityFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"getCommunitySettingsFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}
+    ],
     "IPShare3": [
+      {"inputs":[],"name":"createFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
       {"inputs":[{"internalType":"address","name":"subject","type":"address"}],"name":"createShare","outputs":[],"stateMutability":"payable","type":"function"},
       {"inputs":[{"internalType":"address","name":"subject","type":"address"},{"internalType":"address","name":"buyer","type":"address"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"}],"name":"buyShares","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"payable","type":"function"},
       {"inputs":[{"internalType":"address","name":"subject","type":"address"},{"internalType":"uint256","name":"shareAmount","type":"uint256"},{"internalType":"uint256","name":"amountOutMin","type":"uint256"}],"name":"sellShares","outputs":[],"stateMutability":"nonpayable","type":"function"},
