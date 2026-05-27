@@ -170,7 +170,7 @@
     const buildPairMap = (list: any[]) => {
       const pairs: Record<string, string> = {}
       for (const item of list) {
-        if (item.token && item.pair && (item.version ?? 2) === 7) {
+        if (item.token && item.pair && (item.version ?? 2) === 9) {
           pairs[item.token] = item.pair
         }
       }
