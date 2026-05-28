@@ -14,6 +14,13 @@ const props = defineProps<{
 }>();
 
 const { setInter } = useInterval();
+
+function normalizeProbability(value: unknown): number | null {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return Math.min(1, Math.max(0, n));
+}
+
 let lastTimestamp = 0;
 const series = ref<{ name: string; data: [number, number][] }[]>([
   { name: "Probability", data: [] },
@@ -47,6 +54,7 @@ async function fetchData(isUpdate = false) {
       } else {
          allData = newItems;
       }
+      allData.sort((a, b) => a.timestamp - b.timestamp);
       
       if (allData.length > 0) {
         lastTimestamp = allData[allData.length - 1].timestamp;
@@ -66,10 +74,14 @@ function updateChartData() {
   
   // Prepare source data for aggregation
   // Input: API data with seconds timestamp
-  const sourceData = allData.map(d => ({
-      ...d,
-      timestamp: d.timestamp * 1000 // Convert to ms
-  }));
+  const sourceData = allData
+    .map((d) => {
+      const close = normalizeProbability(d.close);
+      if (close === null) return null;
+      return { ...d, close, timestamp: d.timestamp * 1000 };
+    })
+    .filter((d): d is KlineData => d != null);
+  if (sourceData.length === 0) return;
 
   // Determine cutoff and interval based on activeTimeframe
   let cutoff = 0;
@@ -147,17 +159,20 @@ function updateChartData() {
   }
 
   // Map to [timestamp, close]
-  const dataPoints: [number, number][] = processedData.map((d) => [
-    d.timestamp,
-    d.close,
-  ]);
+  const dataPoints: [number, number][] = [];
+  for (const d of processedData) {
+    const close = normalizeProbability(d.close);
+    if (close === null) continue;
+    dataPoints.push([d.timestamp, close]);
+  }
 
   series.value = [{ name: "Probability", data: dataPoints }];
 
-  // Update current price and change
+  if (dataPoints.length === 0) return;
+
   if (processedData.length > 0) {
     const last = processedData[processedData.length - 1];
-    currentPrice.value = last.close;
+    currentPrice.value = normalizeProbability(last.close);
     
     // Calculate change over the visible period
     const first = processedData[0];
@@ -227,16 +242,16 @@ const chartOptions = computed<ApexOptions>(() => {
       }
     },
     yaxis: {
-      opposite: true, // Move y-axis to the right
+      opposite: true,
+      min: 0,
+      max: 1,
+      tickAmount: 4,
       labels: {
         formatter: (value: number) => {
           return (value * 100).toFixed(0) + "%";
         },
         style: { colors: '#9ca3af' }
       },
-      // min: 0,
-      // max: 1, // Probability usually 0-1
-      tickAmount: 4
     },
     grid: {
       borderColor: "#f3f4f6",
