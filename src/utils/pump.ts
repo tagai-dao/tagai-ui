@@ -1047,3 +1047,127 @@ export const getTokenPair = async (token: string) => {
     const pair: any = await readContract('UniswapFactory', 'getPair', [token, WETH])
     return pair
 }
+
+export type DexPoolInfo = {
+    pairAddress: string
+    dexVersion: number
+    dexLabel: string
+    bnbReserves: number
+    tokenReserves: number
+    priceNative: string
+    priceUsd: string
+    liquidityUsd: number
+    logoUrl: string
+    volume24h: number
+    txCount24h: number
+    createdAt: string
+    feeTier: string
+}
+
+export type TokenDexResult = {
+    tokenName: string
+    tokenSymbol: string
+    tokenLogo: string
+    tokenPrice: string
+    fdv: number
+    pools: DexPoolInfo[]
+}
+
+function parseDexVersion(dexId: string): { dexVersion: number, dexLabel: string } {
+    if (dexId.includes('infinity') || dexId.includes('clmm')) return { dexVersion: 4, dexLabel: 'pancakeswap v4' }
+    if (dexId.includes('v3')) return { dexVersion: 3, dexLabel: 'pancakeswap v3' }
+    return { dexVersion: 2, dexLabel: 'pancakeswap v2' }
+}
+
+function parsePoolAttrs(p: any, bnbPrice: number): DexPoolInfo {
+    const attrs = p.attributes ?? {}
+    const dexId: string = p.relationships?.dex?.data?.id ?? ''
+    const { dexVersion, dexLabel } = parseDexVersion(dexId)
+    const reserveUsd = parseFloat(attrs.reserve_in_usd ?? '0')
+    const name: string = attrs.name ?? ''
+    const feeMatch = name.match(/([\d.]+)%/)
+    return {
+        pairAddress: attrs.address ?? '',
+        dexVersion,
+        dexLabel,
+        bnbReserves: reserveUsd / bnbPrice,
+        tokenReserves: 0,
+        priceNative: attrs.base_token_price_native_currency ?? '0',
+        priceUsd: attrs.base_token_price_usd ?? attrs.token_price_usd ?? '0',
+        liquidityUsd: reserveUsd,
+        logoUrl: '',
+        volume24h: parseFloat(attrs.volume_usd?.h24 ?? '0'),
+        txCount24h: (attrs.transactions?.h24?.buys ?? 0) + (attrs.transactions?.h24?.sells ?? 0),
+        createdAt: attrs.pool_created_at ?? '',
+        feeTier: feeMatch ? feeMatch[1] + '%' : ''
+    }
+}
+
+export const getTokenDexPools = async (token: string): Promise<TokenDexResult | null> => {
+    const tokenLower = token.toLowerCase()
+    let poolsJson: any, tokenJson: any
+    try {
+        const [tokenResp, poolsResp] = await Promise.all([
+            fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${tokenLower}`),
+            fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${tokenLower}/pools?page=1`)
+        ])
+        if (!poolsResp.ok) return null
+        poolsJson = await poolsResp.json()
+        if (tokenResp.ok) tokenJson = await tokenResp.json()
+    } catch (e) {
+        console.error('GeckoTerminal fetch error:', e)
+        return null
+    }
+
+    // Parse token info
+    let tokenName = '', tokenSymbol = '', tokenLogo = '', tokenPrice = '0', fdv = 0
+    if (tokenJson) {
+        const tAttrs = tokenJson?.data?.attributes ?? {}
+        tokenName = tAttrs.name ?? ''
+        tokenSymbol = tAttrs.symbol ?? ''
+        tokenLogo = tAttrs.image_url ?? ''
+        tokenPrice = tAttrs.price_usd ?? '0'
+        fdv = parseFloat(tAttrs.fdv_usd ?? '0')
+    }
+
+    // Parse pools
+    const allPools: any[] = poolsJson?.data ?? []
+    const filtered = allPools.filter((p: any) => {
+        const dexId: string = p.relationships?.dex?.data?.id ?? ''
+        return dexId.includes('pancakeswap')
+    })
+    if (filtered.length === 0) return null
+
+    // Get BNB price
+    const stateStore = useStateStore()
+    if (stateStore.ethPrice === 0) {
+        const price: any = await getEthPrice()
+        stateStore.ethPrice = parseFloat(price)
+    }
+    const bnbPrice = stateStore.ethPrice
+
+    // Sort by liquidity descending and map
+    filtered.sort((a: any, b: any) =>
+        parseFloat(b.attributes?.reserve_in_usd ?? '0') - parseFloat(a.attributes?.reserve_in_usd ?? '0')
+    )
+    const pools = filtered.map((p: any) => parsePoolAttrs(p, bnbPrice))
+
+    return { tokenName, tokenSymbol, tokenLogo, tokenPrice, fdv, pools }
+}
+
+export const getTokenERC20Info = async (token: string): Promise<{ totalSupply: number, symbol: string, decimals: number }> => {
+    const calls = [
+        { target: token, call: ['totalSupply()(uint256)'], returns: [[token + '-totalSupply']] },
+        { target: token, call: ['symbol()(string)'], returns: [[token + '-symbol']] },
+        { target: token, call: ['decimals()(uint8)'], returns: [[token + '-decimals']] }
+    ]
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const data = res.results.transformed
+    const decimals = data[token + '-decimals']
+    const totalSupply = Number(data[token + '-totalSupply'].toString()) / (10 ** decimals)
+    return {
+        totalSupply,
+        symbol: data[token + '-symbol'],
+        decimals
+    }
+}

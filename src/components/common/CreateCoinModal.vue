@@ -8,7 +8,7 @@ import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
 import ERR_CODE from "@/errCode";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitEth, checkTickUsed, getTokenPair, getImportTokenOnchainInfo, transferToken, getPump9CreateFee } from "@/utils/pump";
+import { createCoin, calculateInitEth, checkTickUsed, transferToken, getPump9CreateFee, getTokenDexPools, getTokenERC20Info, type TokenDexResult, type DexPoolInfo } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { createCommunity, importCommunity, checkImportTokenDeployed } from '@/apis/api'
 import { getTagStyle } from '@/composables/useTags'
@@ -49,8 +49,17 @@ let importForm = reactive<CreateCommunity>({
 
 const importStep = ref(1);
 const importErrTip = ref('');
+const tokenDexResult = ref<TokenDexResult | null>(null);
+const selectedPoolIndex = ref(-1);
 const createLoading = ref(false);
 const invalidTick = ['tiptag', 'tagai', 'deploy', 'no-tick-of-tiptag', 'no-tick-of-tagai', 'weth', 'wbnb', 'bnb', 'usdt', 'usdc', 'eth', 'btc', 'sol', 'iso', 'ixo']
+
+const formatFDV = (n: number) => {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B'
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M'
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'
+  return n.toFixed(0)
+}
 
 // 分发策略相关
 type DistributionPeriod = '1week' | '1month' | '1year';
@@ -180,7 +189,7 @@ const testTick = async () => {
     showTagForbidden.value = true;
     return false;
   }
-  if (createForm.tick.match(/^(?!\d+$)[A-Za-z0-9\u4e00-\u9fa5]{1,16}$/)) {
+  if (createForm.tick.match(/^(?!\d+$)[A-Za-z0-9\u4e00-\u9fa5_]{1,16}$/)) {
     const created = await checkTickUsed(createForm.tick);
     console.log('created', created)
     if (created) {
@@ -201,7 +210,7 @@ const checkImportment = () => {
       if (importForm.transferHash && importForm.signature && importForm.infoStr) {
         try {
           importing.value = true;
-          importStep.value = 5;
+          importStep.value = 6;
           useModalStore().setModalCloseEnable(true);
           console.log(1, importForm.transferHash)
           const deployed: any = await checkImportTokenDeployed(importForm.transferHash)
@@ -271,50 +280,67 @@ const importTokenStepClick = async () => {
         return
       }
       importForm.token = checksumAddress(importForm.token)
-      // get token pair
-      const pair = await getTokenPair(importForm.token)
-      if (!isAddress(pair)) {
-        importErrTip.value = 'Invalid token pair address'
+
+      // get dex pools + token info
+      const result = await getTokenDexPools(importForm.token)
+      if (!result || result.pools.length === 0) {
+        importErrTip.value = 'No PancakeSwap pool found for this token'
         return
       }
-      importForm.pair = pair
-      // check pair price from pancake v2
-      let tokenInfo = await getImportTokenOnchainInfo([{token: importForm.token, pair, dexVersion: 2}])
+      tokenDexResult.value = result
+      selectedPoolIndex.value = 0
 
-      tokenInfo = tokenInfo[importForm.token]
-      if (!tokenInfo || isNaN(tokenInfo.price) || tokenInfo.price * tokenInfo.totalSupply < 1) {
-        importErrTip.value = 'Token not in Pancake V2 Pool Or marketcap less than 1 BNB'
-        return
-      }
-
-      if (tokenInfo.decimals != 18) {
-        importErrTip.value = `Decimals: ${tokenInfo.decimals} is not supported now`
+      // get ERC20 info from chain
+      const erc20Info = await getTokenERC20Info(importForm.token)
+      if (erc20Info.decimals != 18) {
+        importErrTip.value = `Decimals: ${erc20Info.decimals} is not supported now`
         return;
       }
 
-      // check tick used
-      if (await checkTickUsed(tokenInfo.symbol)) {
-        importErrTip.value = `Tick<${tokenInfo.symbol}> has been used by other TagAI token`
+      // sanitize tick: replace spaces with underscores
+      const tick = erc20Info.symbol.replace(/\s+/g, '_')
+      if (!tick || !/^[a-zA-Z0-9_]+$/.test(tick)) {
+        importErrTip.value = `Token symbol "${erc20Info.symbol}" is not valid`
         return
       }
-      if (invalidTick.includes(tokenInfo.symbol.toLowerCase())) {
+      // check tick used
+      if (await checkTickUsed(tick)) {
+        importErrTip.value = `Tick<${tick}> has been used by other TagAI token`
+        return
+      }
+      if (invalidTick.includes(tick.toLowerCase())) {
         importErrTip.value = 'Cannt set this symbol as a community tag.'
         return false;
       }
-      importForm.tick = tokenInfo.symbol
-      const totalSupply = tokenInfo.totalSupply
-      importForm.decimals = tokenInfo.decimals
+      importForm.tick = tick
+      importForm.decimals = erc20Info.decimals
+      importStep.value = 2
 
+    } else if (importStep.value === 2) {
+      // pool selection
+      if (selectedPoolIndex.value < 0 || !tokenDexResult.value) {
+        importErrTip.value = 'Please select a pool'
+        return
+      }
+      const pool = tokenDexResult.value.pools[selectedPoolIndex.value]
+      if (pool.bnbReserves < 1) {
+        importErrTip.value = 'Selected pool liquidity must be greater than 1 BNB'
+        return
+      }
+      importForm.pair = pool.pairAddress
+      importForm.dexVersion = pool.dexVersion
+
+      // setup distribution strategies
+      const erc20Info = await getTokenERC20Info(importForm.token)
+      const totalSupply = erc20Info.totalSupply
       distributionStrategies.value = [
         { period: '1week', label: 'createCommunity.week1Distribution', minAmount: totalSupply * 0.002 },
         { period: '1month', label: 'createCommunity.month1Distribution', minAmount: totalSupply * 0.005 },
         { period: '1year', label: 'createCommunity.year1Distribution', minAmount: totalSupply * 0.01 },
       ]
-      
-      importStep.value = 2
-      console.log('tokenInfo', tokenInfo)
-      
-    } else if (importStep.value === 2) {
+      importStep.value = 3
+
+    } else if (importStep.value === 3) {
       // 验证是否选择了策略
       if (!selectedPeriod.value) {
         importErrTip.value = 'Please select a distribution strategy'
@@ -326,8 +352,8 @@ const importTokenStepClick = async () => {
         amountError.value = true
         return
       }
-      importStep.value = 3
-    } else if (importStep.value === 3) {
+      importStep.value = 4
+    } else if (importStep.value === 4) {
       console.log('importForm', importForm)
       // check input info
       if (!importForm.logoUrl || importForm.logoUrl.length === 0) {
@@ -349,8 +375,8 @@ const importTokenStepClick = async () => {
       // cache info to local storage
       localStorage.setItem('importTokenForm', JSON.stringify(importForm))
 
-      importStep.value = 4
-    } else if (importStep.value === 4) {
+      importStep.value = 5
+    } else if (importStep.value === 5) {
       const infoStr = JSON.stringify({
         "contract": importForm.token,
         "distribution-period": importForm.distributionPeriod,
@@ -371,12 +397,12 @@ const importTokenStepClick = async () => {
         await importCommunity(importForm, accStore.ethConnectAddress, signature, infoStr)
         importing.value = true;
         checkImportment();
-        importStep.value = 5;
+        importStep.value = 6;
       } catch (error) {
         useModalStore().setModalCloseEnable(true);
         handleErrorTip(error)
       }
-    } else if (importStep.value === 5) {
+    } else if (importStep.value === 6) {
       clear()
       useModalStore().setModalCloseEnable(true);
       useModalStore().setModalVisible(false);
@@ -468,13 +494,13 @@ onMounted(async () => {
     if (info.signature) {
       activeTab.value = 'import';
       importForm = info;
-      importStep.value = 4;
+      importStep.value = 5;
       useModalStore().setModalCloseEnable(false);
       checkImportment()
     }else if (info.transferHash) {
       activeTab.value = 'import';
       importForm = info;
-      importStep.value = 3;
+      importStep.value = 4;
       useModalStore().setModalCloseEnable(false);
     }else {
       localStorage.removeItem('importTokenForm')
@@ -753,7 +779,69 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <div class="flex flex-col gap-4" v-show="importStep==2">
+      <!-- Step 2: Pool selection -->
+      <div class="flex flex-col gap-3" v-show="importStep==2" v-if="tokenDexResult">
+        <!-- Token info header -->
+        <div class="flex items-center gap-3 pb-2 border-b border-grey-e6">
+          <img v-if="tokenDexResult.tokenLogo" :src="tokenDexResult.tokenLogo" class="w-10 h-10 rounded-full" @error="($event.target as HTMLImageElement).style.display='none'" />
+          <div class="flex flex-col">
+            <span class="text-xl font-bold text-black">{{ tokenDexResult.tokenName || tokenDexResult.tokenSymbol }}</span>
+            <span class="text-sm text-grey-normal">{{ tokenDexResult.tokenSymbol }} · ${{ Number(tokenDexResult.tokenPrice).toFixed(6) }} · FDV ${{ formatFDV(tokenDexResult.fdv) }}</span>
+          </div>
+        </div>
+
+        <p class="text-grey-normal text-sm">Select a pool to use ({{ tokenDexResult.pools.length }} found):</p>
+
+        <!-- Pool list -->
+        <div class="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+          <div
+            v-for="(pool, index) in tokenDexResult.pools"
+            :key="pool.pairAddress"
+            @click="selectedPoolIndex = index"
+            class="border-2 rounded-lg p-3 cursor-pointer transition-all duration-200"
+            :class="{
+              'border-orange-light-active bg-orange-50': selectedPoolIndex === index,
+              'border-grey-e6 bg-white': selectedPoolIndex !== index
+            }"
+          >
+            <div class="flex justify-between items-center mb-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-bold text-white"
+                  :class="{
+                    'bg-purple-500': pool.dexVersion === 4,
+                    'bg-blue-500': pool.dexVersion === 3,
+                    'bg-green-500': pool.dexVersion === 2
+                  }"
+                >V{{ pool.dexVersion }}</span>
+                <span class="font-medium text-black">{{ pool.feeTier }}</span>
+              </div>
+              <span class="text-sm font-medium" :class="pool.bnbReserves >= 1 ? 'text-green-600' : 'text-red-e6'">
+                {{ pool.bnbReserves.toFixed(2) }} BNB
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-xs">
+              <div>
+                <span class="text-grey-normal">Liquidity</span>
+                <p class="text-black font-medium">${{ formatFDV(pool.liquidityUsd) }}</p>
+              </div>
+              <div>
+                <span class="text-grey-normal">24h Volume</span>
+                <p class="text-black font-medium">${{ formatFDV(pool.volume24h) }}</p>
+              </div>
+              <div>
+                <span class="text-grey-normal">24h Txns</span>
+                <p class="text-black font-medium">{{ pool.txCount24h }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p v-show="importErrTip.length > 0" class="text-red-e6 text-sm">
+          {{ importErrTip }}
+        </p>
+      </div>
+
+      <!-- Step 3: Distribution strategy -->
+      <div class="flex flex-col gap-4" v-show="importStep==3">
         <div class="flex flex-col gap-1">
           <label class="leading-8 text-lg font-medium text-black">
             <span class="text-orange-normal h1 text-2xl text-bold">
@@ -868,7 +956,7 @@ onUnmounted(() => {
       </div>
 
       <!-- input community info: icon & description -->
-      <div class="flex flex-col gap-1" v-show="importStep==3">
+      <div class="flex flex-col gap-1" v-show="importStep==4">
         <label class="leading-10  text-2xl text-bold">{{$t('createCommunity.communityInfo', {tick: importForm.tick})}}:</label>
         <!-- desc -->
         <div class="flex flex-col gap-1">
@@ -991,7 +1079,7 @@ onUnmounted(() => {
       </div>
 
       <!-- 确认信息页面 -->
-      <div class="flex flex-col gap-4" v-show="importStep==4">
+      <div class="flex flex-col gap-4" v-show="importStep==5">
         <!-- 标题提示 -->
         <div class="flex flex-col gap-2 pb-2 border-b border-grey-e6">
           <h3 class="text-2xl font-bold text-black">{{ $t('createCommunity.signInfo') }}</h3>
@@ -1171,7 +1259,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-show="importStep==5" class="text-center">
+      <div v-show="importStep==6" class="text-center">
         <!-- 庆祝动画容器 -->
         <div class="relative mb-6">
           <!-- 装饰性星星 -->
@@ -1213,7 +1301,7 @@ onUnmounted(() => {
       </div>
 
       <div class="py-2 flex gap-2 justify-between mx-3">
-        <button v-if="importStep > 1 && importStep != 4 && importStep != 5"
+        <button v-if="importStep > 1 && importStep != 5 && importStep != 6"
           class="h-12 flex-1 border border-gray-300 bg-gray-50 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
           @click="importErrTip = '';importStep -= 1"
           :disabled="createLoading"
@@ -1225,8 +1313,8 @@ onUnmounted(() => {
           @click="importTokenStepClick"
           :disabled="createLoading || importing"
         >
-          <span v-if="importStep === 5">🎉 {{ importing ? $t('createCommunity.importing') : $t('createCommunity.complete') }}</span>
-          <span v-else>{{ importStep === 3 ? $t('createCommunity.transfer') : importStep === 4 ? $t('createCommunity.import') : $t('createCommunity.next') }}</span>
+          <span v-if="importStep === 6">🎉 {{ importing ? $t('createCommunity.importing') : $t('createCommunity.complete') }}</span>
+          <span v-else>{{ importStep === 4 ? $t('createCommunity.transfer') : importStep === 5 ? $t('createCommunity.import') : $t('createCommunity.next') }}</span>
           <i-ep-loading v-if="createLoading || importing" class="animate-spin" />
         </button>
       </div>

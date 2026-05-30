@@ -334,6 +334,7 @@ export type CreateCommunity = {
   transferHash?: string,
   infoStr?: string,
   signature?: string,
+  dexVersion?: number,
 }
 
 export type TokenHoldingList = {
