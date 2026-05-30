@@ -17,6 +17,7 @@ import UserView from '@/views/profile/UserView.vue'
 import PredictDetail from '@/views/predict-detail/Index.vue'
 import PredictEventDetail from '@/views/predict-event-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
+import AboutView from '@/views/about/AboutView.vue'
 
 const router = createRouter({
   // @ts-ignore
@@ -111,6 +112,12 @@ const router = createRouter({
       path: '/predict-event-detail/:id',
       name: 'predict-event-detail',
       component: PredictEventDetail
+    },
+    {
+      path: '/about',
+      name: 'about',
+      component: AboutView,
+      meta: { tabBar: true, topBar: true }
     }
   ]
 })
