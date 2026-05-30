@@ -254,7 +254,22 @@ const handleWalletClick = (e?: Event) => {
         <span class="text-h4 text-black">{{ $t('profile') || 'Profile' }}</span>
       </div>
 
-      <!-- 7. More -->
+      <!-- 7. About -->
+      <div 
+        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+        :class="isActive('/about') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        @click="router.push('/about')"
+      >
+        <img 
+          class="w-6 h-6 mr-3 transition-all"
+          :style="isActive('/about') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          src="~@/assets/icons/icon-docs.svg" 
+          alt=""
+        >
+        <span class="text-h4 text-black">{{ $t('about') || 'About' }}</span>
+      </div>
+
+      <!-- 8. More -->
       <el-popover 
         popper-class="c-select-popper" 
         ref="moreMenuRef"
