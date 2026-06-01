@@ -307,7 +307,15 @@
     "complete": "完成",
     "basicInfo": "基本信息",
     "socialLinks": "社交链接",
-    "contractAddress": "合约地址"
+    "contractAddress": "合约地址",
+    "enableSocialDist": "开启社交分发",
+    "enableSocialDistTip": "注入代币到社交矿池，奖励用户的社交互动（点赞、转发、回复）。注入的代币将在 {days} 天内线性释放到社交策展矿池。您可以稍后再注入更多代币，也可以跳过此步骤。",
+    "injectAmount": "注入数量",
+    "injectAmountPlaceholder": "输入代币数量（可选）",
+    "enableDistribution": "开启分发",
+    "skipAndComplete": "跳过并完成",
+    "communityCreated": "社区创建成功！",
+    "socialDistEnabled": "社交分发已开启！"
   },
   "buyAndSell": {
     "setMaxSlippage": "设置最大滑点 %",
@@ -391,6 +399,8 @@
     "ongoing": "进行中",
     "startDate": "开始时间",
     "endDate": "结束时间",
+    "startBlock": "起始区块",
+    "endBlock": "结束区块",
     "rewardDistributionSchedule": "社交分发策略",
     "hourlyDistributionTitle": "过去 7 天及明日分发",
     "hourlyDistributionDesc": "含今日在内过去 7 天及明日，按 HourlyTickCalculator 小时数据按天聚合，并扣除社区 dev 费后按社交矿池比例折算",
@@ -398,7 +408,14 @@
     "chartTomorrow": "明天",
     "chartActual": "已发生",
     "chartForecast": "预测",
-    "noDistributionData": "暂无分发数据"
+    "noDistributionData": "暂无分发数据",
+    "injectRewards": "注入奖励",
+    "injectDesc": "将代币注入社交矿池，注入的代币将在 7 天内线性释放，用于奖励用户的社交互动（点赞、转发、回复）。",
+    "injectAmount": "注入数量",
+    "injectAmountPlaceholder": "输入代币数量",
+    "confirmInject": "确认注入",
+    "injecting": "注入中",
+    "balance": "余额"
   },
   "ipshare": {
     "desc": "创建IPShare，成为个人IP，获得支持，并赚取IPShare交易费用。",

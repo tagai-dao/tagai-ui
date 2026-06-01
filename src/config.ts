@@ -88,6 +88,8 @@ export const PumpContract7 = "0x3E75E2db40E7cc9C7d7869Fc2d97eDAb01724212"; // PC
 export const PumpContract8 = "0x88d495228E831b01D8Ae6d62f9633cBcC6d27De2"
 /** Pump9：Nutbox + HourlyTickCalculator + PCS V4，内盘开放交易 */
 export const PumpContract9 = "0x327a473c763bcf0d60CCd6811F832332939110D5"
+/** ImportHelper：导入外部代币到 Nutbox 社区 */
+export const ImportHelper = "0xF346A700830633bB27a46fC1e7eAAE49F593A4c6"
 export const TokenImplementation9 = "0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16"
 export const PUMP9_VERSION = 9
 
@@ -97,6 +99,8 @@ export const TipTagSwapHook = "0xF815dB0fbeafED4C719F65E41dEC9C50fb357896";
 /** v9 新部署池使用的 Hook */
 export const TipTagSwapHook9 = "0x78443e75aD3D70DAAab0De33d2D5Dea0cBae0cC1";
 export const HourlyTickCalculator = "0x6cCEC02E7D371FED954D7D16eCb7F2f57cccF54d"
+export const LinearCalculator = "0x5114966657Bd6209B47aa16eaa4EAfbbC9595ec0"
+export const LinearTimeCalculator = "0xc76e00e150e13EC95514E9a52Ab0314c7faE8207"
 export const NutboxCommittee = "0xe10F967DD356504EDB731612789D0D0f0ba2929f"
 export const PCSUniversalRouter = "0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB";
 export const PCSPermit2 = "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768";

@@ -1,12 +1,13 @@
 import { getReadOnlyClient, getWalletClient, setup, waitForTx } from "./wallets";
 import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
-    PumpContract2, PumpContract3, PumpContract4, IPShareContract2, 
-    wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6, 
-    wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens, 
+    PumpContract2, PumpContract3, PumpContract4, IPShareContract2,
+    wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6,
+    wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens,
     FPMMDeterministicFactory2,     PumpContract7, PumpContract8, PumpContract9, IPShareContract3,
     HourlyTickCalculator, NutboxCommittee,
-    PCSUniversalRouter, PCSPermit2} from '@/config'
+    PCSUniversalRouter, PCSPermit2, ImportHelper,
+    LinearCalculator, LinearTimeCalculator} from '@/config'
 import { useAccountStore } from "@/stores/web3";
 import { customBsc } from "./privy";
 
@@ -21,7 +22,10 @@ const ContractAddress = {
     Pump8: PumpContract8,
     Pump9: PumpContract9,
     HourlyTickCalculator,
+    LinearCalculator,
+    LinearTimeCalculator,
     NutboxCommittee,
+    ImportHelper,
     IPShare1: IPShareContract1,
     IPShare2: IPShareContract2,
     IPShare3: IPShareContract3,
