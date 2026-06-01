@@ -5,6 +5,8 @@ import { useAccountStore } from '@/stores/web3';
 axiosRetry(axios, { retries: 3 });
 
 axios.defaults.timeout = 30000;
+axios.defaults.headers.common['Cache-Control'] = 'no-cache';
+axios.defaults.headers.common['Pragma'] = 'no-cache';
 
 axios.interceptors.request.use(
   config => {
