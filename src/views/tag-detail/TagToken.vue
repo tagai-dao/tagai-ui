@@ -40,6 +40,8 @@ const v9HourlyLabels = ref<string[]>([])
 const v9TodayChartIndex = ref(6)
 const v9HourlyLoaded = ref(false)
 const v9HourlyLoading = ref(false)
+/** 今天的每小时分发量（24 个值，用于精确拆分已发生/预测） */
+const v9TodayHourlyAmounts = ref<number[]>([])
 
 /** v10：链上分发信息（根据 calculator 类型不同，数据结构不同） */
 const v10Distribution = ref<V10DistributionInfo | null>(null)
@@ -199,6 +201,9 @@ async function loadV10Distribution() {
       v9TodayChartIndex.value = info.hourly.todayIndex
       v9HourlyAmounts.value = info.hourly.dailyRewards.map(r => Number(r) / 1e18)
       v9HourlyLabels.value = info.hourly.dayStarts.map((ts, i) => formatV9ChartDayLabel(ts, i, info.hourly!.todayIndex))
+      // 提取今天的 24 小时分发量
+      const todayStart = info.hourly.todayIndex * 24
+      v9TodayHourlyAmounts.value = info.hourly.hourlyRewards.slice(todayStart, todayStart + 24).map(r => Number(r) / 1e18)
       v9HourlyLoaded.value = true
     }
     v10Loaded.value = true
@@ -272,7 +277,7 @@ const hourlyBarOptions = computed<ApexOptions>(() => ({
 const hourlyBarSeries = computed(() => {
   const amounts = v9HourlyAmounts.value
   const todayIdx = v9TodayChartIndex.value
-  const elapsedRatio = getTodayElapsedRatio()
+  const todayHourly = v9TodayHourlyAmounts.value
   const actualData: number[] = []
   const forecastData: number[] = []
 
@@ -281,8 +286,23 @@ const hourlyBarSeries = computed(() => {
       // 历史：全部已发生
       actualData.push(amount)
       forecastData.push(0)
+    } else if (i === todayIdx && todayHourly.length === 24) {
+      // 今天：按小时精确拆分，当前小时整小时算预测
+      const currentHour = new Date().getHours()
+      let actual = 0
+      let forecast = 0
+      for (let h = 0; h < 24; h++) {
+        if (h < currentHour) {
+          actual += todayHourly[h]
+        } else {
+          forecast += todayHourly[h]
+        }
+      }
+      actualData.push(actual)
+      forecastData.push(forecast)
     } else if (i === todayIdx) {
-      // 今天：按已过时间比例拆分黄/紫
+      // 今天但无小时数据时回退到时间比例
+      const elapsedRatio = getTodayElapsedRatio()
       actualData.push(amount * elapsedRatio)
       forecastData.push(amount * (1 - elapsedRatio))
     } else {
@@ -310,15 +330,19 @@ async function loadV9HourlyRewards() {
   if (!token || !isAddress(token) || !isV9.value) return
   v9HourlyLoading.value = true
   try {
-    const { dailyRewards, dayStarts, todayIndex } = await getV9DailyRewards(token as `0x${string}`)
+    const { dailyRewards, dayStarts, todayIndex, hourlyRewards } = await getV9DailyRewards(token as `0x${string}`)
     v9TodayChartIndex.value = todayIndex
     v9HourlyAmounts.value = dailyRewards.map(r => Number(r) / 1e18)
     v9HourlyLabels.value = dayStarts.map((ts, i) => formatV9ChartDayLabel(ts, i, todayIndex))
+    // 提取今天的 24 小时分发量
+    const todayStart = todayIndex * 24
+    v9TodayHourlyAmounts.value = hourlyRewards.slice(todayStart, todayStart + 24).map(r => Number(r) / 1e18)
     v9HourlyLoaded.value = true
   } catch (e) {
     console.error('loadV9HourlyRewards failed', e)
     v9HourlyAmounts.value = []
     v9HourlyLabels.value = []
+    v9TodayHourlyAmounts.value = []
     v9HourlyLoaded.value = false
   } finally {
     v9HourlyLoading.value = false

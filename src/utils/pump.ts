@@ -238,7 +238,7 @@ export const getV9DailyRewards = async (token: `0x${string}`) => {
         { length: TOTAL_DAYS },
         (_, d) => rangeStart + d * SECONDS_PER_DAY
     )
-    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio }
+    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio, hourlyRewards }
 }
 
 /** @deprecated 使用 getV9DailyRewards */
@@ -264,6 +264,7 @@ export type V10DistributionInfo = {
         socialPool: string
         feeRatio: bigint
         poolRatio: bigint
+        hourlyRewards: bigint[]
     }
     phases?: {
         amount: bigint    // per second (timestamp) or per block (block)
@@ -285,12 +286,12 @@ export const getV10DistributionInfo = async (communityAddress: string, socialPoo
         const calculatorLower = calculator.toLowerCase()
 
         if (calculatorLower === HourlyTickCalculator.toLowerCase()) {
-            const { dailyRewards, dayStarts, todayIndex, feeRatio, poolRatio } =
+            const { dailyRewards, dayStarts, todayIndex, feeRatio, poolRatio, hourlyRewards } =
                 await getV9DailyRewardsByCommunity(community, socialPool)
             return {
                 calculator,
                 calculatorType: 'hourly',
-                hourly: { dailyRewards, dayStarts, todayIndex, community, socialPool, feeRatio, poolRatio },
+                hourly: { dailyRewards, dayStarts, todayIndex, community, socialPool, feeRatio, poolRatio, hourlyRewards },
                 community,
                 socialPool
             }
@@ -364,7 +365,7 @@ async function getV9DailyRewardsByCommunity(community: `0x${string}`, socialPool
         { length: TOTAL_DAYS },
         (_, d) => rangeStart + d * SECONDS_PER_DAY
     )
-    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio }
+    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio, hourlyRewards }
 }
 
 export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
