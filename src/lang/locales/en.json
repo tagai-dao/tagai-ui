@@ -307,7 +307,15 @@
     "complete": "Complete",
     "basicInfo": "Basic Information",
     "socialLinks": "Social Links",
-    "contractAddress": "Contract Address"
+    "contractAddress": "Contract Address",
+    "enableSocialDist": "Enable Social Distribution",
+    "enableSocialDistTip": "Inject tokens into the social mining pool to reward users for social interactions (likes, retweets, replies). The injected tokens will be linearly released over {days} days to the social curation pool. You can inject more tokens later, or skip this step.",
+    "injectAmount": "Inject Amount",
+    "injectAmountPlaceholder": "Enter token amount (optional)",
+    "enableDistribution": "Enable Distribution",
+    "skipAndComplete": "Skip & Complete",
+    "communityCreated": "Community created successfully!",
+    "socialDistEnabled": "Social distribution enabled!"
   },
   "buyAndSell": {
     "setMaxSlippage": "Set max. slippage (%)",
@@ -391,6 +399,8 @@
     "ongoing": "Ongoing",
     "startDate": "Start Date",
     "endDate": "End Date",
+    "startBlock": "Start Block",
+    "endBlock": "End Block",
     "rewardDistributionSchedule": "Reward Distribution",
     "hourlyDistributionTitle": "Past 7 days & tomorrow",
     "hourlyDistributionDesc": "Past 7 days including today and tomorrow, aggregated daily from HourlyTickCalculator hourly ticks, scaled by social pool share after dev fee",
@@ -398,7 +408,14 @@
     "chartTomorrow": "Tomorrow",
     "chartActual": "Actual",
     "chartForecast": "Forecast",
-    "noDistributionData": "No distribution data"
+    "noDistributionData": "No distribution data",
+    "injectRewards": "Inject Rewards",
+    "injectDesc": "Inject tokens into the social mining pool. The injected tokens will be linearly released over 7 days to reward users for social interactions (likes, retweets, replies).",
+    "injectAmount": "Inject Amount",
+    "injectAmountPlaceholder": "Enter token amount",
+    "confirmInject": "Confirm Inject",
+    "injecting": "Injecting",
+    "balance": "Balance"
   },
   "ipshare": {
     "desc": "Create IPShare, become a personal IP, receive support, and earn IPShare transaction fees.",

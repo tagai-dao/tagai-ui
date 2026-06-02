@@ -292,6 +292,8 @@ export type Community = OnchainTokenInfo & {
   predictionCreditPolicy?: string;
   deboxConversationId?: string;
   feePath?: string | object | null | undefined,
+  communityAddress?: string;  // v10: Nutbox Community 合约地址
+  socialPoolAddress?: string; // v10: SocialCuration Pool 地址
 };
 
 export type CommunityMember = {
@@ -334,6 +336,9 @@ export type CreateCommunity = {
   transferHash?: string,
   infoStr?: string,
   signature?: string,
+  dexVersion?: number,
+  communityAddress?: string,  // Nutbox Community 地址（V10 导入代币）
+  socialPoolAddress?: string, // SocialCuration Pool 地址（V10 导入代币）
 }
 
 export type TokenHoldingList = {

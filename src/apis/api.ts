@@ -216,7 +216,7 @@ export const getTokenTradeList = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/tradeList', { token, pages })
 
 export const isTokenExist = async (tick: string) =>
-  get(BACKEND_API_URL + '/community/isTokenExist', { tick })
+  get(BACKEND_API_URL + '/community/isTokenExist', { tick, _: Date.now() })
 
 export const getTokenTradeData = async (tick: string, timestamp: number | undefined, isNew: boolean) =>
   get(BACKEND_API_URL + '/community/getTokenTradeData', {tick, timestamp, isNew})

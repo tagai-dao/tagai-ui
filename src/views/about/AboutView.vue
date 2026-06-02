@@ -1189,7 +1189,7 @@ const buidlaiStats = [
     grid-template-columns: 1fr;
   }
 
-  .framework-pill {
+.framework-pill {
     width: auto;
   }
 }

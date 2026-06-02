@@ -1,7 +1,7 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, PUMP9_VERSION, NutboxCommittee } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregate } from '@makerdao/multicall'
@@ -74,6 +74,88 @@ export const getPump9CreateFee = async (userAddress: `0x${string}`): Promise<big
         ipshareFee = await readContract('IPShare3', 'createFee', []) as bigint;
     }
     return pumpFee + commFee + settingsFee + ipshareFee;
+}
+
+// ==================== ImportHelper (V10 导入代币) ====================
+
+/** ImportHelper 部署费用：Committee.getCreateCommunityFee + Committee.getCommunitySettingsFee */
+export const getDeployNutboxFee = async (): Promise<bigint> => {
+    const [createFee, settingsFee] = await Promise.all([
+        readContract('NutboxCommittee', 'getCreateCommunityFee', []) as Promise<bigint>,
+        readContract('NutboxCommittee', 'getCommunitySettingsFee', []) as Promise<bigint>,
+    ]);
+    return createFee + settingsFee;
+}
+
+/** 调用 ImportHelper.createCommunityAndPool 链上创建 Nutbox Community + SocialCuration Pool */
+export const deployNutboxCommunity = async (
+    token: `0x${string}`,
+    calculator: `0x${string}` = HourlyTickCalculator as `0x${string}`,
+    distributionPolicy: `0x${string}` = '0x'
+): Promise<{ community: string; pool: string; txHash: string }> => {
+    const fee = await getDeployNutboxFee();
+    const hash = await writeContract({
+        contractName: 'ImportHelper',
+        functionName: 'createCommunityAndPool',
+        args: [token, calculator, distributionPolicy],
+        value: fee
+    });
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }
+    const tx = await getTransactionReceipt(hash as `0x${string}`);
+    const event = getCommunityCreatedEvent(tx);
+    return {
+        community: (event as any)?.community ?? zeroAddress,
+        pool: (event as any)?.pool ?? zeroAddress,
+        txHash: hash
+    };
+}
+
+/** 注入代币到 HourlyTickCalculator（开启社交分发） */
+export const injectTokens = async (
+    community: `0x${string}`,
+    token: `0x${string}`,
+    amount: bigint
+): Promise<string> => {
+    const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
+    // 检查 allowance
+    const allowance = await readContract('Token1', 'allowance', [userAddress, HourlyTickCalculator], token) as bigint;
+    if (allowance < amount) {
+        await writeContract({
+            contractName: 'Token1',
+            functionName: 'approve',
+            args: [HourlyTickCalculator, amount],
+            address: token
+        });
+    }
+    const hash = await writeContract({
+        contractName: 'HourlyTickCalculator',
+        functionName: 'inject',
+        args: [community, amount]
+    });
+    if (!hash) {
+        throw errCode.TRANSACTION_INVALID;
+    }
+    return hash;
+}
+
+/** 从 receipt 解析 CommunityCreated event */
+const getCommunityCreatedEvent = (tx: { logs: Log[] }) => {
+    try {
+        const events = parseEventLogs({
+            abi: abis.ImportHelper,
+            logs: tx.logs,
+        });
+        for (const event of events) {
+            if ((event as any).eventName === 'CommunityCreated') {
+                return (event as any).args;
+            }
+        }
+    } catch (err) {
+        console.error('Parse CommunityCreated event failed:', err);
+    }
+    return null;
 }
 
 /** Nutbox 比例基数（Community.sol CONSTANTS_10000） */
@@ -156,7 +238,7 @@ export const getV9DailyRewards = async (token: `0x${string}`) => {
         { length: TOTAL_DAYS },
         (_, d) => rangeStart + d * SECONDS_PER_DAY
     )
-    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio }
+    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio, hourlyRewards }
 }
 
 /** @deprecated 使用 getV9DailyRewards */
@@ -169,6 +251,121 @@ export const getV9HourlyRewards = async (token: `0x${string}`) => {
         [community, startTimestamp, 24n]
     ) as bigint[];
     return { rewards, startTimestamp, community };
+}
+
+export type V10DistributionInfo = {
+    calculator: string
+    calculatorType: 'hourly' | 'timestamp' | 'block'
+    hourly?: {
+        dailyRewards: bigint[]
+        dayStarts: number[]
+        todayIndex: number
+        community: string
+        socialPool: string
+        feeRatio: bigint
+        poolRatio: bigint
+        hourlyRewards: bigint[]
+    }
+    phases?: {
+        amount: bigint    // per second (timestamp) or per block (block)
+        startCursor: bigint
+        stopCursor: bigint
+    }[]
+    community: string
+    socialPool: string
+}
+
+/** v10 导入代币：根据社区使用的分发策略获取分发信息 */
+export const getV10DistributionInfo = async (communityAddress: string, socialPoolAddress: string): Promise<V10DistributionInfo | null> => {
+    if (!isAddress(communityAddress)) return null
+    const community = communityAddress as `0x${string}`
+    const socialPool = socialPoolAddress as `0x${string}`
+
+    try {
+        const calculator = await readContract('NutboxCommunity', 'rewardCalculator', [], community) as string
+        const calculatorLower = calculator.toLowerCase()
+
+        if (calculatorLower === HourlyTickCalculator.toLowerCase()) {
+            const { dailyRewards, dayStarts, todayIndex, feeRatio, poolRatio, hourlyRewards } =
+                await getV9DailyRewardsByCommunity(community, socialPool)
+            return {
+                calculator,
+                calculatorType: 'hourly',
+                hourly: { dailyRewards, dayStarts, todayIndex, community, socialPool, feeRatio, poolRatio, hourlyRewards },
+                community,
+                socialPool
+            }
+        }
+
+        if (calculatorLower === LinearTimeCalculatorAddress.toLowerCase()) {
+            const phases = await readDistributionEras('LinearTimeCalculator', community)
+            return { calculator, calculatorType: 'timestamp', phases, community, socialPool }
+        }
+
+        if (calculatorLower === LinearCalculatorAddress.toLowerCase()) {
+            const phases = await readDistributionEras('LinearCalculator', community)
+            return { calculator, calculatorType: 'block', phases, community, socialPool }
+        }
+
+        console.warn('Unknown calculator:', calculator)
+        return null
+    } catch (e) {
+        console.error('getV10DistributionInfo failed', e)
+        return null
+    }
+}
+
+/** 从 LinearCalculator / LinearTimeCalculator 读取分发阶段列表 */
+async function readDistributionEras(contractName: string, community: `0x${string}`) {
+    const count = await readContract(contractName, 'distributionCountMap', [], community) as bigint
+    const phases: { amount: bigint; startCursor: bigint; stopCursor: bigint }[] = []
+    for (let i = 0n; i < count; i++) {
+        const era = await readContract(contractName, 'distributionErasMap', [community, i]) as [bigint, bigint, bigint]
+        phases.push({ amount: era[0], startCursor: era[1], stopCursor: era[2] })
+    }
+    return phases
+}
+
+/** 按社区地址获取 HourlyTickCalculator 每日分发量（与 getV9DailyRewards 逻辑相同，但直接传入 community/socialPool） */
+async function getV9DailyRewardsByCommunity(community: `0x${string}`, socialPool: `0x${string}`) {
+    const SECONDS_PER_DAY = 86400
+    const PAST_DAYS = 6
+    const TOTAL_DAYS = 8
+
+    const getLocalDayStartSec = (dayOffset: number) => {
+        const d = new Date()
+        d.setHours(0, 0, 0, 0)
+        d.setDate(d.getDate() + dayOffset)
+        return Math.floor(d.getTime() / 1000)
+    }
+
+    const { feeRatio, poolRatio, scaleNumerator, scaleDenominator } =
+        await getNutboxSocialPoolScale(community, socialPool)
+
+    const rangeStart = getLocalDayStartSec(-PAST_DAYS)
+    const hourlyRewards = await readContract(
+        'HourlyTickCalculator',
+        'getHourlyRewards',
+        [community, BigInt(rangeStart), BigInt(TOTAL_DAYS * 24)]
+    ) as bigint[];
+
+    const dailyRewards = Array.from({ length: TOTAL_DAYS }, () => 0n)
+    for (let i = 0; i < hourlyRewards.length; i++) {
+        const dayIdx = Math.floor(i / 24)
+        if (dayIdx < TOTAL_DAYS) {
+            dailyRewards[dayIdx] += applyNutboxSocialPoolScale(
+                hourlyRewards[i],
+                scaleNumerator,
+                scaleDenominator
+            )
+        }
+    }
+
+    const dayStarts = Array.from(
+        { length: TOTAL_DAYS },
+        (_, d) => rangeStart + d * SECONDS_PER_DAY
+    )
+    return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio, hourlyRewards }
 }
 
 export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
@@ -365,7 +562,8 @@ export const claimReward = async (token: string, version: number, orderId: BigIn
 
 export const claimRewardV8 = async (token: string, orderId: BigInt, amount: BigInt, deadline: BigInt, signature: string, version = 8) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
-    const tokenAbi = version === 9 ? 'Token9' : 'Token8';
+    // V9/V10 使用 Token9 ABI（V10 导入代币本身不是 Pump 创建，但 nutboxSocialPool 接口相同）
+    const tokenAbi = version >= 9 ? 'Token9' : 'Token8';
     const socialPool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`)
     const hash = await writeContract({
         contractName: 'NutboxSocialCurationPool',
@@ -447,13 +645,16 @@ function checkDistributionEnd(config: any) {
     return Date.now() / 1000 > lastTime;
 }
 
-/** PCS V4 poolId（bytes32）来自后端 pair 字段，v7/v8 上架代币定价共用 */
-const buildPairMap = (items: Array<{ token?: string; pair?: string | null | undefined; version?: number | null | undefined }>) => {
+/** PCS V4 poolId（bytes32）来自后端 pair 字段，v7/v8/v10 上架代币定价共用 */
+const buildPairMap = (items: Array<{ token?: string; pair?: string | null | undefined; version?: number | null | undefined; dexVersion?: number | null | undefined }>) => {
     const pairMap: Record<string, string> = {};
     for (const item of items) {
+        if (!item.token || !item.pair) continue;
         const v = item.version ?? 2;
-        if (!item.token || !item.pair || !isPcsV4Version(v)) continue;
-        pairMap[item.token] = item.pair;
+        // Pump 创建的 V7/V8/V9 代币，或导入代币 dexVersion=4
+        if (isPcsV4Version(v) || (v === 10 && item.dexVersion === 4)) {
+            pairMap[item.token] = item.pair;
+        }
     }
     return pairMap;
 }
@@ -465,9 +666,10 @@ export const getTokenInfo = async (communities: Community[]) => {
     for (let com of communities) {
         versions[com.token!] = com.version ?? 2;
     }
-    let result = await getTokenOnchainInfo(tokens, versions, buildPairMap(communities))
+    const pairMap = buildPairMap(communities)
+    let result = await getTokenOnchainInfo(tokens, versions, pairMap)
 
-    let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport))
+    let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport), pairMap)
 
     for (let community of communities) {
         const tokenInfo = result[community.token]
@@ -483,12 +685,14 @@ export const getTokenInfo = async (communities: Community[]) => {
             community.totalSupply = TotalSupply;
         }else{
             const importInfo = importResult[community.token]
-            community.listed = true;
-            community.bondingCurveSupply = 0;
-            community.totalClaimedSocialRewards = 0;
-            community.price = importInfo.price;
-            community.marketCap = (community.price ?? 0) * importInfo.totalSupply;
-            community.totalSupply = importInfo.totalSupply;
+            if (importInfo) {
+                community.listed = true;
+                community.bondingCurveSupply = 0;
+                community.totalClaimedSocialRewards = 0;
+                community.price = importInfo.price;
+                community.marketCap = (community.price ?? 0) * importInfo.totalSupply;
+                community.totalSupply = importInfo.totalSupply;
+            }
         }
         // const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
@@ -506,8 +710,9 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         for (let tweet of tweets) {
             versions[tweet.token!] = tweet.version ?? 2;
         }
-        let result = await getTokenOnchainInfo(tokens, versions, buildPairMap(tweets))
-        let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport))
+        const pairMap = buildPairMap(tweets)
+        let result = await getTokenOnchainInfo(tokens, versions, pairMap)
+        let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap)
 
         const stateStore = useStateStore();
         if (stateStore.ethPrice == 0) {
@@ -520,12 +725,14 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
             const tokenInfo = result[tweet.token]
             if (tweet.isImport) {
                 const importInfo = importResult[tweet.token]
-                tweet.listed = true;
-                tweet.bondingCurveSupply = 0;
-                tweet.totalClaimedSocialRewards = 0;
-                tweet.price = importInfo.byUSD ? importInfo.price / stateStore.ethPrice : importInfo.price;
-                tweet.marketCap = importInfo.price * importInfo.totalSupply;
-                tweet.totalSupply = importInfo.totalSupply;
+                if (importInfo) {
+                    tweet.listed = true;
+                    tweet.bondingCurveSupply = 0;
+                    tweet.totalClaimedSocialRewards = 0;
+                    tweet.price = importInfo.price;
+                    tweet.marketCap = importInfo.price * importInfo.totalSupply;
+                    tweet.totalSupply = importInfo.totalSupply;
+                }
             }else {
                 tweet.listed = tokenInfo.listed;
                 tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
@@ -856,102 +1063,72 @@ export const getTokenOnchainInfo = async (
     return result
 }
 
-export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[]) => {
-    if (communities.length === 0) return []
-    let calls: any[] = []
-    for (let i = 0; i < communities.length; i++) {
-        const community = communities[i]
-        if (community.dexVersion != 2) continue;
-        let token = community.token
-        let pair = community.pair
-        if (!isAddress(token)) continue;
-        calls.push({
-            target: token,
-            call: [
-                'totalSupply()(uint256)'
-            ],
-            returns: [
-                [token + '-totalSupply', (val: any) => (val).toString() / 1e18]
-            ]
-        })
-        calls.push({
-            target: token,
-            call: [
-                'symbol()(string)'
-            ],
-            returns: [
-                [token + '-symbol']
-            ]
-        })
-        calls.push({
-            target: token,
-            call: [
-                'decimals()(uint8)'
-            ],
-            returns: [
-                [token + '-decimals']
-            ]
-        })
-        calls.push({
-            target: pair,
-            call: [
-                'getReserves()(uint256, uint256)'
-            ],
-            returns: [
-                [token + '-1', (val: any) => (val).toString() / 1e18],
-                [token + '-2', (val: any) => (val).toString() / 1e18]
-            ]
-        })
-        calls.push({
-            target: pair,
-            call: [
-                'token0()(address)',
-            ],
-            returns: [
-                [token + '-token0']
-            ]
-        })
-        calls.push({
-            target: pair,
-            call: [
-                'token1()(address)',
-            ],
-            returns: [
-                [token + '-token1']
-            ]
-        })
+/** 根据 dexVersion 获取导入代币价格 */
+const getImportTokenPrice = async (token: string, pair: string, dexVersion: number, pairMap: Record<string, string>, ethPrice: number): Promise<number | undefined> => {
+    try {
+        if (dexVersion === 4) {
+            const poolId = pairMap[token] || pair
+            const slot0 = await readContract('PCSCLPoolManager', 'getSlot0', [poolId])
+            const sqrtPriceX96 = BigInt((slot0 as any)[0])
+            if (sqrtPriceX96 === 0n) return undefined
+            const scaledPrice = (sqrtPriceX96 * sqrtPriceX96 * (10n ** TOKEN_DECIMALS)) / Q192;
+            return Number(scaledPrice) / 1e18
+        }
+        if (dexVersion === 3) {
+            const [slot0, token0] = await Promise.all([
+                readContract('UniswapV3Pool', 'slot0', [], pair as `0x${string}`),
+                readContract('UniswapV3Pool', 'token0', [], pair as `0x${string}`),
+            ])
+            const sqrtPriceX96 = BigInt((slot0 as any)[0])
+            if (sqrtPriceX96 === 0n) return undefined
+            const scaledPrice = (sqrtPriceX96 * sqrtPriceX96 * (10n ** TOKEN_DECIMALS)) / Q192;
+            let price = Number(scaledPrice) / 1e18
+            if ((token0 as string).toLowerCase() !== token.toLowerCase()) {
+                price = price > 0 ? 1 / price : 0
+            }
+            return price
+        }
+        // dexVersion === 2: UniswapV2 pair getReserves
+        const [reserves, token0] = await Promise.all([
+            readContract('UniswapV2Pair', 'getReserves', [], pair as `0x${string}`),
+            readContract('UniswapV2Pair', 'token0', [], pair as `0x${string}`),
+        ])
+        const r0 = Number((reserves as any)[0]) / 1e18
+        const r1 = Number((reserves as any)[1]) / 1e18
+        const price = (token0 as string).toLowerCase() === token.toLowerCase() ? r1 / r0 : r0 / r1
+        const pairedToken = (token0 as string).toLowerCase() === token.toLowerCase()
+            ? (await readContract('UniswapV2Pair', 'token1', [], pair as `0x${string}`)) as string
+            : token0 as string
+        return USD_CONTRACTS[checksumAddress(pairedToken as `0x${string}`) as `0x${string}`] ? price / ethPrice : price
+    } catch (e) {
+        console.error('getImportTokenPrice failed', token, dexVersion, e)
+        return undefined
     }
-    const res = await aggregate(calls, ChainConfig.multiConfig)
-    let infos = res.results.transformed
-    let result: any = {};
+}
+
+export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[], pairMap: Record<string, string> = {}) => {
+    if (communities.length === 0) return []
+
     const stateStore = useStateStore();
     if (stateStore.ethPrice == 0) {
         const price: any = await getEthPrice()
         stateStore.ethPrice = parseFloat(price)
     }
-    for (let community of communities) {
+
+    let result: any = {}
+
+    for (const community of communities) {
         const token = community.token
-        if (!result[token]) {
-            result[token] = {}
-        }
-        if (infos[token + '-token0'].toLowerCase() === token.toLowerCase()) {
-            result[token].price = infos[token + '-2'] / infos[token + '-1']
-            result[token].totalSupply = infos[token + '-totalSupply']
-            result[token].symbol = infos[token + '-symbol']
-            result[token].decimals = infos[token + '-decimals']
-            if (USD_CONTRACTS[checksumAddress(infos[token + '-token1']) as `0x${string}`]) {
-                result[token].price = result[token].price / stateStore.ethPrice;
-            }
-        }else {
-            result[token].price = infos[token + '-1'] / infos[token + '-2']
-            result[token].totalSupply = infos[token + '-totalSupply']
-            result[token].symbol = infos[token + '-symbol']
-            result[token].decimals = infos[token + '-decimals']
-            if (USD_CONTRACTS[checksumAddress(infos[token + '-token0']) as `0x${string}`]) {
-                result[token].price = result[token].price / stateStore.ethPrice;
-            }
+        if (!isAddress(token) || !community.pair) continue;
+        const [price, erc20Info] = await Promise.all([
+            getImportTokenPrice(token, community.pair, community.dexVersion ?? 2, pairMap, stateStore.ethPrice),
+            getTokenERC20Info(token)
+        ])
+        if (price !== undefined) {
+            result[token] = { price, totalSupply: erc20Info.totalSupply }
         }
     }
+
     return result;
 }
 
@@ -1046,4 +1223,128 @@ export const getAIBalance = async (tokens: string[]) => {
 export const getTokenPair = async (token: string) => {
     const pair: any = await readContract('UniswapFactory', 'getPair', [token, WETH])
     return pair
+}
+
+export type DexPoolInfo = {
+    pairAddress: string
+    dexVersion: number
+    dexLabel: string
+    bnbReserves: number
+    tokenReserves: number
+    priceNative: string
+    priceUsd: string
+    liquidityUsd: number
+    logoUrl: string
+    volume24h: number
+    txCount24h: number
+    createdAt: string
+    feeTier: string
+}
+
+export type TokenDexResult = {
+    tokenName: string
+    tokenSymbol: string
+    tokenLogo: string
+    tokenPrice: string
+    fdv: number
+    pools: DexPoolInfo[]
+}
+
+function parseDexVersion(dexId: string): { dexVersion: number, dexLabel: string } {
+    if (dexId.includes('infinity') || dexId.includes('clmm')) return { dexVersion: 4, dexLabel: 'pancakeswap v4' }
+    if (dexId.includes('v3')) return { dexVersion: 3, dexLabel: 'pancakeswap v3' }
+    return { dexVersion: 2, dexLabel: 'pancakeswap v2' }
+}
+
+function parsePoolAttrs(p: any, bnbPrice: number): DexPoolInfo {
+    const attrs = p.attributes ?? {}
+    const dexId: string = p.relationships?.dex?.data?.id ?? ''
+    const { dexVersion, dexLabel } = parseDexVersion(dexId)
+    const reserveUsd = parseFloat(attrs.reserve_in_usd ?? '0')
+    const name: string = attrs.name ?? ''
+    const feeMatch = name.match(/([\d.]+)%/)
+    return {
+        pairAddress: attrs.address ?? '',
+        dexVersion,
+        dexLabel,
+        bnbReserves: reserveUsd / bnbPrice,
+        tokenReserves: 0,
+        priceNative: attrs.base_token_price_native_currency ?? '0',
+        priceUsd: attrs.base_token_price_usd ?? attrs.token_price_usd ?? '0',
+        liquidityUsd: reserveUsd,
+        logoUrl: '',
+        volume24h: parseFloat(attrs.volume_usd?.h24 ?? '0'),
+        txCount24h: (attrs.transactions?.h24?.buys ?? 0) + (attrs.transactions?.h24?.sells ?? 0),
+        createdAt: attrs.pool_created_at ?? '',
+        feeTier: feeMatch ? feeMatch[1] + '%' : ''
+    }
+}
+
+export const getTokenDexPools = async (token: string): Promise<TokenDexResult | null> => {
+    const tokenLower = token.toLowerCase()
+    let poolsJson: any, tokenJson: any
+    try {
+        const [tokenResp, poolsResp] = await Promise.all([
+            fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${tokenLower}`),
+            fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${tokenLower}/pools?page=1`)
+        ])
+        if (!poolsResp.ok) return null
+        poolsJson = await poolsResp.json()
+        if (tokenResp.ok) tokenJson = await tokenResp.json()
+    } catch (e) {
+        console.error('GeckoTerminal fetch error:', e)
+        return null
+    }
+
+    // Parse token info
+    let tokenName = '', tokenSymbol = '', tokenLogo = '', tokenPrice = '0', fdv = 0
+    if (tokenJson) {
+        const tAttrs = tokenJson?.data?.attributes ?? {}
+        tokenName = tAttrs.name ?? ''
+        tokenSymbol = tAttrs.symbol ?? ''
+        tokenLogo = tAttrs.image_url ?? ''
+        tokenPrice = tAttrs.price_usd ?? '0'
+        fdv = parseFloat(tAttrs.fdv_usd ?? '0')
+    }
+
+    // Parse pools
+    const allPools: any[] = poolsJson?.data ?? []
+    const filtered = allPools.filter((p: any) => {
+        const dexId: string = p.relationships?.dex?.data?.id ?? ''
+        return dexId.includes('pancakeswap')
+    })
+    if (filtered.length === 0) return null
+
+    // Get BNB price
+    const stateStore = useStateStore()
+    if (stateStore.ethPrice === 0) {
+        const price: any = await getEthPrice()
+        stateStore.ethPrice = parseFloat(price)
+    }
+    const bnbPrice = stateStore.ethPrice
+
+    // Sort by liquidity descending and map
+    filtered.sort((a: any, b: any) =>
+        parseFloat(b.attributes?.reserve_in_usd ?? '0') - parseFloat(a.attributes?.reserve_in_usd ?? '0')
+    )
+    const pools = filtered.map((p: any) => parsePoolAttrs(p, bnbPrice))
+
+    return { tokenName, tokenSymbol, tokenLogo, tokenPrice, fdv, pools }
+}
+
+export const getTokenERC20Info = async (token: string): Promise<{ totalSupply: number, symbol: string, decimals: number }> => {
+    const calls = [
+        { target: token, call: ['totalSupply()(uint256)'], returns: [[token + '-totalSupply']] },
+        { target: token, call: ['symbol()(string)'], returns: [[token + '-symbol']] },
+        { target: token, call: ['decimals()(uint8)'], returns: [[token + '-decimals']] }
+    ]
+    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const data = res.results.transformed
+    const decimals = data[token + '-decimals']
+    const totalSupply = Number(data[token + '-totalSupply'].toString()) / (10 ** decimals)
+    return {
+        totalSupply,
+        symbol: data[token + '-symbol'],
+        decimals
+    }
 }
