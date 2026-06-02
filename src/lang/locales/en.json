@@ -623,6 +623,7 @@
     "repDesc": "Total claimable",
     "atocDesc": "ATOC stands for 'Agent Take Over the Community.' ATOC Agents enable true community autonomy.",
     "firstCommunity": "The 1st Autonomous Community: buidlai.online",
+    "firstCommunityPrefix": "The 1st Autonomous Community: ",
     "createNow": "Create Now",
     "importToken": "Import Community Token (Supports any token on BNBChain)",
     "createCommunity": "Create an Autonomous Community {'@'}LaunchOnBnb"
