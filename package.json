@@ -59,7 +59,7 @@
     "@intlify/unplugin-vue-i18n": "^11.2.3",
     "@rushstack/eslint-patch": "^1.8.0",
     "@tsconfig/node20": "^20.1.4",
-    "@types/node": "^20.19.0",
+    "@types/node": "^25.9.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^6.0.2",
