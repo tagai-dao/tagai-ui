@@ -2,13 +2,17 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import communityTagsImg from '@/assets/about/community-tags.png'
-import blinksLinksImg from '@/assets/about/blinks-links.png'
+import socialOracleBridgeImg from '@/assets/about/social-oracle-bridge.png'
 import communityEconomyImg from '@/assets/about/community-economy.png'
+import xAndBlinksImg from '@/assets/about/x-and-blinks.png'
+import selfIpNetworkImg from '@/assets/about/self-ip-network.png'
+import tasAndLlmWikiImg from '@/assets/about/tas-and-llm-wiki.png'
 
 const { t } = useI18n()
 
 // Section 1 tab state: 'tags' | 'blinks'
 const syncTab = ref<'tags' | 'blinks'>('tags')
+const economyTab = ref<'distribution' | 'blinks' | 'ip'>('distribution')
 </script>
 
 <template>
@@ -42,7 +46,7 @@ const syncTab = ref<'tags' | 'blinks'>('tags')
               :class="syncTab === 'blinks' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
               @click="syncTab = 'blinks'"
             >
-              Blinks Links
+              Social Oracle（Bridge）
             </button>
           </div>
         </div>
@@ -59,22 +63,69 @@ const syncTab = ref<'tags' | 'blinks'>('tags')
           >
           <img
             v-show="syncTab === 'blinks'"
-            :src="blinksLinksImg"
+            :src="socialOracleBridgeImg"
             class="w-full h-auto rounded-lg"
-            alt="Blinks Links"
+            alt="Social Oracle（Bridge）"
           >
         </div>
       </section>
 
       <!-- Section 2: A Community Economy built around Community Token -->
       <section class="mb-14">
-        <h2 class="text-base font-bold text-grey-normal mb-4">{{ t('aboutView.feature2Title') }}</h2>
+        <div class="flex flex-col web:flex-row web:items-center gap-3 mb-4">
+          <h2 class="text-base font-bold text-grey-normal">{{ t('aboutView.feature2Title') }}</h2>
+          <div class="flex flex-wrap gap-2">
+            <button
+              class="px-3 py-1 rounded-md text-xs transition-colors"
+              :class="economyTab === 'distribution' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
+              @click="economyTab = 'distribution'"
+            >
+              {{ t('aboutView.modularTokenDistribution') }}
+            </button>
+            <button
+              class="px-3 py-1 rounded-md text-xs transition-colors"
+              :class="economyTab === 'blinks' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
+              @click="economyTab = 'blinks'"
+            >
+              {{ t('aboutView.xAndBlinks') }}
+            </button>
+            <button
+              class="px-3 py-1 rounded-md text-xs transition-colors"
+              :class="economyTab === 'ip' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
+              @click="economyTab = 'ip'"
+            >
+              {{ t('aboutView.selfIpNetwork') }}
+            </button>
+          </div>
+        </div>
+
         <div class="border border-gray-200 rounded-2xl p-4 web:p-6">
-          <img
-            :src="communityEconomyImg"
-            class="w-full h-auto rounded-lg"
-            alt="Community Economy"
-          >
+          <div v-show="economyTab === 'distribution'" class="economy-panel">
+            <p class="economy-panel-desc">{{ t('aboutView.modularTokenDistributionDesc') }}</p>
+            <img
+              :src="communityEconomyImg"
+              class="w-full h-auto rounded-lg"
+              :alt="t('aboutView.modularTokenDistribution')"
+            >
+          </div>
+
+          <div v-show="economyTab === 'blinks'" class="economy-panel">
+            <p class="economy-panel-desc">{{ t('aboutView.xAndBlinksDesc') }}</p>
+            <img
+              :src="xAndBlinksImg"
+              class="w-full h-auto rounded-lg"
+              :alt="t('aboutView.xAndBlinks')"
+            >
+          </div>
+
+          <div v-show="economyTab === 'ip'" class="economy-panel">
+            <p class="economy-panel-desc">{{ t('aboutView.selfIpNetworkDesc') }}</p>
+            <img
+              :src="selfIpNetworkImg"
+              class="w-full h-auto rounded-lg"
+              :alt="t('aboutView.selfIpNetwork')"
+            >
+          </div>
         </div>
       </section>
 
@@ -150,6 +201,11 @@ const syncTab = ref<'tags' | 'blinks'>('tags')
               </div>
             </div>
           </div>
+          <img
+            :src="tasAndLlmWikiImg"
+            class="w-full h-auto rounded-lg mt-4"
+            alt="TAS and LLM Wiki"
+          >
           <!-- ATOC description -->
           <p class="text-xs web:text-sm text-grey-8d text-center mt-6">
             {{ t('aboutView.atocDesc') }}
@@ -189,3 +245,17 @@ const syncTab = ref<'tags' | 'blinks'>('tags')
     </div>
   </div>
 </template>
+
+<style scoped>
+.economy-panel {
+  min-height: 260px;
+  color: #333;
+}
+
+.economy-panel-desc {
+  margin-bottom: 14px;
+  font-size: 12px;
+  color: #555;
+}
+
+</style>
