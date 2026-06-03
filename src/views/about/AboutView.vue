@@ -642,6 +642,8 @@ const statusText = computed<Record<string, string>>(() => ({
 }
 
 .agent-framework {
+  --tagai-orange: #ff9f3f;
+  --tagclaw-yellow: #f59e0b;
   padding: clamp(10px, 1.6vw, 18px);
   overflow: hidden;
 }
@@ -688,7 +690,7 @@ const statusText = computed<Record<string, string>>(() => ({
 }
 
 .agent-label {
-  color: #f59e0b;
+  color: var(--tagclaw-yellow);
   font-size: clamp(9px, 1.2vw, 14px);
   font-weight: 800;
   line-height: 1.2;
@@ -733,11 +735,11 @@ const statusText = computed<Record<string, string>>(() => ({
 }
 
 .framework-pill.orange {
-  background: #ff9f3f;
+  background: var(--tagai-orange);
 }
 
 .framework-pill.yellow {
-  color: #f59e0b;
+  color: var(--tagclaw-yellow);
 }
 
 .framework-pill.purple {
@@ -757,18 +759,31 @@ const statusText = computed<Record<string, string>>(() => ({
 }
 
 .framework-legend span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   flex: 1 1 0;
   min-width: 0;
   text-align: center;
   overflow-wrap: anywhere;
 }
 
+.framework-legend span::before {
+  content: '';
+  flex: 0 0 auto;
+  width: clamp(5px, 0.8vw, 8px);
+  height: clamp(5px, 0.8vw, 8px);
+  border-radius: 2px;
+  background: currentColor;
+}
+
 .legend-orange {
-  color: #fb7c16;
+  color: var(--tagai-orange);
 }
 
 .legend-yellow {
-  color: #f2ad00;
+  color: var(--tagclaw-yellow);
 }
 
 .legend-purple {
