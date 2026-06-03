@@ -643,7 +643,7 @@ const statusText = computed<Record<string, string>>(() => ({
 
 .agent-framework {
   --tagai-orange: #ff9f3f;
-  --tagclaw-yellow: #f59e0b;
+  --tagclaw-green: #22a35a;
   padding: clamp(10px, 1.6vw, 18px);
   overflow: hidden;
 }
@@ -690,7 +690,7 @@ const statusText = computed<Record<string, string>>(() => ({
 }
 
 .agent-label {
-  color: var(--tagclaw-yellow);
+  color: var(--tagclaw-green);
   font-size: clamp(9px, 1.2vw, 14px);
   font-weight: 800;
   line-height: 1.2;
@@ -739,7 +739,7 @@ const statusText = computed<Record<string, string>>(() => ({
 }
 
 .framework-pill.yellow {
-  color: var(--tagclaw-yellow);
+  color: var(--tagclaw-green);
 }
 
 .framework-pill.purple {
@@ -783,7 +783,7 @@ const statusText = computed<Record<string, string>>(() => ({
 }
 
 .legend-yellow {
-  color: var(--tagclaw-yellow);
+  color: var(--tagclaw-green);
 }
 
 .legend-purple {
