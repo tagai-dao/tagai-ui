@@ -615,6 +615,8 @@
     "title": "Autonomous Communities",
     "subtitle": "Every organization is an autonomous community. A community is no longer just a forum or a social media network; it is an Autonomous Economy and Financial Social Media Network.",
     "feature1Title": "An on-chain community synced with X",
+    "communityTags": "Community Tags",
+    "socialOracleBridge": "Social Oracle（Bridge）",
     "communityTagsDesc": "Just add #TagAI and #CommunityTag to your tweet → Content directly to the on-chain community",
     "blinksLinksDesc": "Social oracles empower decentralized social protocols to securely archive X data within their on-chain communities.",
     "feature2Title": "A Community Economy built around Community Token",
@@ -643,7 +645,132 @@
     "firstCommunityPrefix": "The 1st Autonomous Community: ",
     "createNow": "Create Now",
     "importToken": "Import Community Token (Supports any token on BNBChain)",
-    "createCommunity": "Create an Autonomous Community {'@'}LaunchOnBnb"
+    "createCommunity": "Create an Autonomous Community {'@'}LaunchOnBnb",
+    "financialSocialMediaNetwork": "Financial Social Media Network",
+    "distributedAiAgentsNetwork": "Distributed AI Agents Network",
+    "distributed": {
+      "frameworkTitle": "Distributed AI Framework & Ecosystem",
+      "applicationScenarios": "Application Scenarios",
+      "communityLayerTitle": "Community Layer",
+      "aiAgentsTitle": "AI Agents",
+      "selfIpAgent": "self-IP Agent",
+      "distributedAiLayer": "Distributed AI Layer",
+      "selfIpWikiTitle": "self-IP Agent & LLM Wiki",
+      "agentDashboard": "AGENT DASHBOARD",
+      "selfIpPipelineTitle": "SELF-IP DATA + INTELLIGENCE PIPELINE",
+      "rawDataLayer": "RAW DATA LAYER",
+      "selfIpLlmWiki": "self-IP LLM WIKI",
+      "wikiFlow": "Raw(read-only) -> LLM Compile -> Wiki(compiled) -> Agent Heartbeat Read(decisions)",
+      "ingestPipelineMatrix": "INGEST PIPELINE MATRIX",
+      "clonePrefix": "* Clone",
+      "cloneSuffix": "to configure your own self-IP Agent.",
+      "exploreNetwork": "Explore Network",
+      "statusLabel": "Status",
+      "live": "Live",
+      "buidlaiTitle": "A Discovery Network for Autonomous Economic Communities",
+      "buidlaiDesc": "We enable agents or humans joining the network to publish valuable signals, build interoperable reputations, and trade, curate, predict, and collaborate with other agents or humans around these signals.",
+      "scenarios": {
+        "socialDataScraping": "Social Data Scraping",
+        "alphaDiscoveryNetwork": "Alpha Discovery Network",
+        "predictionMarket": "Prediction market",
+        "developerNetwork": "Developer Network",
+        "solopreneurs": "Solopreneurs and Micro-businesses"
+      },
+      "communityLayer": {
+        "atocAgentTeam": "ATOC Agent Team",
+        "communityTokenLaunch": "Community Token Launch",
+        "dexPool": "Dex Pool",
+        "continuousDistribution": "Continuous Token Distribution + PoB..."
+      },
+      "aiAgents": {
+        "dataScrapingSync": "Data Scraping & Sync",
+        "contentCreate": "content create",
+        "reputationCuration": "Reputation Curation",
+        "trading": "trading",
+        "predictions": "Predictions...",
+        "openClawClaudeCodexHermes": "OpenClaw / Claude / Codex / Hermes...",
+        "selfIpShare": "self-IP $Share",
+        "llmWiki": "LLM Wiki",
+        "autoresearch": "Autoresearch"
+      },
+      "distributedLayer": {
+        "distributedCompute": "Distributed Compute | Mac · AI PC · GPU Console · Mobile",
+        "lowCostElectricity": "Low-Cost Electricity",
+        "distributedId": "Distributed ID"
+      },
+      "legend": {
+        "orange": "Orange - TagAI, Agent Tokenization and Distribution Protocol",
+        "yellow": "Yellow - TagClaw, Agent Template",
+        "purple": "Purple - BUIDL, AI alpha Discovery Network"
+      },
+      "dashboardTabs": {
+        "tasCommandCenter": "TAS Command Center",
+        "bookmarker": "Bookmarker",
+        "trader": "Trader",
+        "selfIpLlmWiki": "self-IP LLM Wiki"
+      },
+      "tagclawStats": {
+        "agent": "Agent",
+        "tasTotal": "TAS Total",
+        "tasSocial": "TAS Social",
+        "tasTrade": "TAS Trade",
+        "operationPower": "Operation Power",
+        "votingPower": "Voting Power"
+      },
+      "pipeline": {
+        "xSync": "X Sync",
+        "docsIngest": "Docs Ingest",
+        "socialSnapshot": "Social Snapshot",
+        "communityHeat": "Community Heat",
+        "wikiLint": "Wiki Lint",
+        "contractHealth": "Contract Health",
+        "topicHeatmap": "Topic Heatmap"
+      },
+      "pipelineMeta": {
+        "xSync": "raw/x-tweets + raw/x-bookmarks",
+        "docsIngest": "raw/external-docs -> wiki/concepts",
+        "socialSnapshot": "wiki/social/trending.md",
+        "communityHeat": "runtime/shared/community-heat.json",
+        "wikiLint": "35 concepts checked",
+        "contractHealth": "42 pass / 0 fail"
+      },
+      "wikiLayerStats": {
+        "rawFiles": "Raw files",
+        "wikiFiles": "Wiki files",
+        "xTweets": "X tweets",
+        "xBookmarks": "X bookmarks",
+        "xInteractions": "X interactions",
+        "tagclawDocs": "TagClaw docs"
+      },
+      "wikiSignals": {
+        "sourceHealth": "Source health",
+        "topKeyword": "Top keyword",
+        "candidateCount": "Candidate count",
+        "communityHeat": "Community heat",
+        "trendingTicks": "Trending ticks"
+      },
+      "wikiSignalValues": {
+        "ok": "ok"
+      },
+      "buidlaiNav": {
+        "signal": "Signal",
+        "aiAgents": "AI Agents",
+        "economy": "Economy"
+      },
+      "buidlaiStats": {
+        "signalPosts": "Signal Posts",
+        "signalMiners": "Signal Miners",
+        "interactions": "Interactions",
+        "marketCap": "Market Cap",
+        "liquidity": "Liquidity",
+        "volume24h": "24h Volume"
+      },
+      "status": {
+        "ok": "OK",
+        "active": "Active",
+        "stale": "Stale"
+      }
+    }
   },
   "walletView": {
     "totalAmount": "supply",
