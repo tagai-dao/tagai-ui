@@ -11,7 +11,10 @@ import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
-import { newParticipation } from '@/apis/api';
+import { newParticipation, sharePredictBlink } from '@/apis/api';
+import { notify } from '@/utils/notify';
+import { ensureUserIPShare } from '@/composables/useIPShareGate';
+import PredictShareDialog from '@/components/common/PredictShareDialog.vue';
 
 const props = defineProps<{
     battle: BattleData,
@@ -46,7 +49,7 @@ const isSettled = computed(() => {
 })
 
 const openTweet = () => {
-  router.push(`/predict-detail/${props.battle.marketMaker}`)
+  router.push(`/predict/battle/${props.battle.marketMaker}`)
 }
 
 const openTradeModal = () => {
@@ -67,6 +70,35 @@ const openLiquidityModal = () => {
 
 const openCommunity = (tick: string) => {
   router.push(`/tag-detail/${tick}`)
+}
+
+const sharing = ref(false);
+const showShareModal = ref(false);
+const openShareModal = async () => {
+  if (!(await ensureUserIPShare())) return
+  showShareModal.value = true;
+}
+const confirmShare = async (text: string) => {
+  if (sharing.value) return;
+  sharing.value = true;
+  try {
+    const res: any = await sharePredictBlink(
+      accStore.getAccountInfo!.twitterId!,
+      props.battle.marketMaker,
+      'battle',
+      text
+    );
+    if (res && res.c === 0 && res.d?.tweetUrl) {
+      notify({ message: 'Shared to Twitter!' });
+      showShareModal.value = false;
+    } else {
+      handleErrorTip(res);
+    }
+  } catch (e) {
+    handleErrorTip(e);
+  } finally {
+    sharing.value = false;
+  }
 }
 
 // 购买红色按钮
@@ -178,7 +210,15 @@ const confirmBuy = async () => {
             </span>
           </h3>
           <!-- 倒计时/状态 -->
-          <div class="flex flex-col items-end">
+          <div class="flex flex-col items-end gap-1">
+            <button
+              @click.stop="openShareModal()"
+              class="p-1 rounded-full hover:bg-gray-100 transition-colors"
+              :class="{ 'opacity-50 pointer-events-none': sharing }"
+              title="Share to Twitter"
+            >
+              <i-ep-promotion class="w-4 h-4 text-gray-400" />
+            </button>
             <div
               class="px-2 py-1 rounded-full text-xs font-medium"
               :class="{
@@ -397,6 +437,15 @@ const confirmBuy = async () => {
           </div>
         </div>
       </div>
+
+    <!-- 分享弹窗 -->
+    <PredictShareDialog
+      v-model:show="showShareModal"
+      type="battle"
+      :market-address="battle.marketMaker"
+      :sharing="sharing"
+      @confirm="confirmShare"
+    />
 </template>
 
 <style scoped>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, computed } from 'vue'
-import { getUserPredictVP, newParticipation, voteEventPrediction } from '@/apis/api';
+import { getUserPredictVP, newParticipation, voteEventPrediction, sharePredictBlink } from '@/apis/api';
+import { notify } from '@/utils/notify';
 import type { BattleData, CommunityMember, EventPredictData, Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper';
 import { useModalStore } from '@/stores/common'
@@ -12,6 +13,8 @@ import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
+import { ensureUserIPShare } from '@/composables/useIPShareGate';
+import PredictShareDialog from '@/components/common/PredictShareDialog.vue';
 import { MAX_VP, VP_CONSUME, VP_RECOVER_DAY } from '@/config';
 import { useNow } from '@vueuse/core';
 import { useI18n } from 'vue-i18n';
@@ -122,11 +125,40 @@ const hasVoted = computed(() => {
 })
 
 const gotoDetail = () => {
-  router.push(`/predict-event-detail/${props.market.marketMaker}`)
+  router.push(`/predict/event/${props.market.marketMaker}`)
 }
 
 const openCommunity = (tick: string) => {
   router.push(`/tag-detail/${tick}`)
+}
+
+const sharing = ref(false);
+const showShareModal = ref(false);
+const openShareModal = async () => {
+  if (!(await ensureUserIPShare())) return
+  showShareModal.value = true;
+}
+const confirmShare = async (text: string) => {
+  if (sharing.value) return;
+  sharing.value = true;
+  try {
+    const res: any = await sharePredictBlink(
+      accStore.getAccountInfo!.twitterId!,
+      props.market.marketMaker,
+      'event',
+      text
+    );
+    if (res && res.c === 0 && res.d?.tweetUrl) {
+      notify({ message: 'Shared to Twitter!' });
+      showShareModal.value = false;
+    } else {
+      handleErrorTip(res);
+    }
+  } catch (e) {
+    handleErrorTip(e);
+  } finally {
+    sharing.value = false;
+  }
 }
 
 // 购买Yes按钮
@@ -288,7 +320,15 @@ const vote = async () => {
         </span>
       </h3>
       <!-- 倒计时/状态 -->
-      <div class="flex flex-col items-end">
+      <div class="flex flex-col items-end gap-1">
+        <button
+          @click.stop="openShareModal()"
+          class="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          :class="{ 'opacity-50 pointer-events-none': sharing }"
+          title="Share to Twitter"
+        >
+          <i-ep-promotion class="w-4 h-4 text-gray-400" />
+        </button>
         <span 
           class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
           :class="{
@@ -483,6 +523,15 @@ const vote = async () => {
       </button>
     </div>
   </van-dialog>
+
+  <!-- 分享弹窗 -->
+  <PredictShareDialog
+    v-model:show="showShareModal"
+    type="event"
+    :market-address="market.marketMaker"
+    :sharing="sharing"
+    @confirm="confirmShare"
+  />
 </template>
 
 <style scoped>
