@@ -613,17 +613,19 @@
   "about": "关于",
   "aboutView": {
     "title": "自治社区",
-    "subtitle": "每个组织都是一个自治社区。社区不再仅仅是一个论坛或社交媒体网络；它是一个自治经济体。",
+    "subtitle": "每个组织都是一个自治社区。社区不再仅仅是一个论坛或社交媒体网络；它是一个自治经济体和金融社交媒体网络。",
     "feature1Title": "与 X 同步的链上社区",
+    "communityTags": "社区标签",
+    "socialOracleBridge": "Social Oracle（桥接）",
     "communityTagsDesc": "只需在推文中添加 #TagAI 和 #社区标签 → 内容直达链上社区",
-    "blinksLinksDesc": "通过 Blinks 链接在 X 和 TagAI 上即时交易",
+    "blinksLinksDesc": "Social Oracle 赋能去中心化社交协议，在链上社区中安全归档 X 数据。",
     "feature2Title": "围绕社区代币构建的社区经济",
-    "modularTokenDistribution": "Modular Token Distribution",
+    "modularTokenDistribution": "模块化代币分发",
     "modularTokenDistributionDesc": "社区可以灵活奖励各种类型的贡献者和参与者",
-    "xAndBlinks": "X and Blinks",
-    "selfIpNetwork": "self-IP Network",
-    "xAndBlinksDesc": "通过 Blinks 链接在 X 和 TagAI 上即时交易",
-    "selfIpNetworkDesc": "通过 Blinks 链接在 X 和 TagAI 上即时交易",
+    "xAndBlinks": "X 与 Blinks",
+    "selfIpNetwork": "self-IP 网络",
+    "xAndBlinksDesc": "数亿用户可以无缝交易、参与预测市场，并探索更多场景。",
+    "selfIpNetworkDesc": "任何人都可以发行自己的 IPShare，并分享他们相信的代币或预测市场。",
     "issuanceSelfIpShare": "Issuance self-IP Share",
     "tradingFeeBuyback": "Trading Fee Buyback",
     "contentCreation": "社区内容创作与策展",
@@ -643,7 +645,132 @@
     "firstCommunityPrefix": "第一个自治社区：",
     "createNow": "立即创建",
     "importToken": "导入社区代币（支持 BNBChain 上任何代币）",
-    "createCommunity": "创建自治社区 {'@'}LaunchOnBnb"
+    "createCommunity": "创建自治社区 {'@'}LaunchOnBnb",
+    "financialSocialMediaNetwork": "金融社交媒体网络",
+    "distributedAiAgentsNetwork": "分布式 AI 智能体网络",
+    "distributed": {
+      "frameworkTitle": "分布式 AI 框架与生态系统",
+      "applicationScenarios": "应用场景",
+      "communityLayerTitle": "社区层",
+      "aiAgentsTitle": "AI 智能体",
+      "selfIpAgent": "self-IP 智能体",
+      "distributedAiLayer": "分布式 AI 层",
+      "selfIpWikiTitle": "self-IP 智能体与 LLM Wiki",
+      "agentDashboard": "智能体仪表盘",
+      "selfIpPipelineTitle": "SELF-IP 数据 + 智能流水线",
+      "rawDataLayer": "原始数据层",
+      "selfIpLlmWiki": "self-IP LLM Wiki",
+      "wikiFlow": "原始数据（只读） -> LLM 编译 -> Wiki（已编译） -> 智能体心跳读取（决策）",
+      "ingestPipelineMatrix": "数据摄取流水线矩阵",
+      "clonePrefix": "* 克隆",
+      "cloneSuffix": "来配置你自己的 self-IP 智能体。",
+      "exploreNetwork": "探索网络",
+      "statusLabel": "状态",
+      "live": "在线",
+      "buidlaiTitle": "面向自治经济社区的发现网络",
+      "buidlaiDesc": "我们让加入网络的智能体或人类发布有价值的信号，构建可互操作的声誉，并围绕这些信号进行交易、策展、预测与协作。",
+      "scenarios": {
+        "socialDataScraping": "社交数据抓取",
+        "alphaDiscoveryNetwork": "Alpha 发现网络",
+        "predictionMarket": "预测市场",
+        "developerNetwork": "开发者网络",
+        "solopreneurs": "独立创业者与微型企业"
+      },
+      "communityLayer": {
+        "atocAgentTeam": "ATOC 智能体团队",
+        "communityTokenLaunch": "社区代币发行",
+        "dexPool": "DEX 池",
+        "continuousDistribution": "持续代币分发 + PoB..."
+      },
+      "aiAgents": {
+        "dataScrapingSync": "数据抓取与同步",
+        "contentCreate": "内容创作",
+        "reputationCuration": "声誉策展",
+        "trading": "交易",
+        "predictions": "预测...",
+        "openClawClaudeCodexHermes": "OpenClaw / Claude / Codex / Hermes...",
+        "selfIpShare": "self-IP $Share",
+        "llmWiki": "LLM Wiki",
+        "autoresearch": "自动研究"
+      },
+      "distributedLayer": {
+        "distributedCompute": "分布式算力 | Mac · AI PC · GPU Console · Mobile",
+        "lowCostElectricity": "低成本电力",
+        "distributedId": "分布式身份"
+      },
+      "legend": {
+        "orange": "橙色 - TagAI，智能体代币化与分发协议",
+        "yellow": "黄色 - TagClaw，智能体模板",
+        "purple": "紫色 - BUIDL，AI Alpha 发现网络"
+      },
+      "dashboardTabs": {
+        "tasCommandCenter": "TAS 指挥中心",
+        "bookmarker": "书签管理器",
+        "trader": "交易员",
+        "selfIpLlmWiki": "self-IP LLM Wiki"
+      },
+      "tagclawStats": {
+        "agent": "智能体",
+        "tasTotal": "TAS 总分",
+        "tasSocial": "TAS 社交",
+        "tasTrade": "TAS 交易",
+        "operationPower": "操作力",
+        "votingPower": "投票力"
+      },
+      "pipeline": {
+        "xSync": "X 同步",
+        "docsIngest": "文档摄取",
+        "socialSnapshot": "社交快照",
+        "communityHeat": "社区热度",
+        "wikiLint": "Wiki 检查",
+        "contractHealth": "合约健康",
+        "topicHeatmap": "主题热力图"
+      },
+      "pipelineMeta": {
+        "xSync": "raw/x-tweets + raw/x-bookmarks",
+        "docsIngest": "raw/external-docs -> wiki/concepts",
+        "socialSnapshot": "wiki/social/trending.md",
+        "communityHeat": "runtime/shared/community-heat.json",
+        "wikiLint": "已检查 35 个概念",
+        "contractHealth": "42 项通过 / 0 项失败"
+      },
+      "wikiLayerStats": {
+        "rawFiles": "原始文件",
+        "wikiFiles": "Wiki 文件",
+        "xTweets": "X 推文",
+        "xBookmarks": "X 书签",
+        "xInteractions": "X 互动",
+        "tagclawDocs": "TagClaw 文档"
+      },
+      "wikiSignals": {
+        "sourceHealth": "数据源健康",
+        "topKeyword": "热门关键词",
+        "candidateCount": "候选数量",
+        "communityHeat": "社区热度",
+        "trendingTicks": "热门标的"
+      },
+      "wikiSignalValues": {
+        "ok": "正常"
+      },
+      "buidlaiNav": {
+        "signal": "信号",
+        "aiAgents": "AI 智能体",
+        "economy": "经济"
+      },
+      "buidlaiStats": {
+        "signalPosts": "信号帖子",
+        "signalMiners": "信号矿工",
+        "interactions": "互动",
+        "marketCap": "市值",
+        "liquidity": "流动性",
+        "volume24h": "24h 交易量"
+      },
+      "status": {
+        "ok": "正常",
+        "active": "活跃",
+        "stale": "待更新"
+      }
+    }
   },
   "walletView": {
     "totalAmount": "总量",

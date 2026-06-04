@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import communityTagsImg from '@/assets/about/community-tags.png'
 import socialOracleBridgeImg from '@/assets/about/social-oracle-bridge.png'
@@ -16,92 +16,98 @@ const networkTab = ref<'financial' | 'agents'>('financial')
 const economyTab = ref<'distribution' | 'blinks' | 'ip'>('distribution')
 
 const frameworkScenarios = [
-  { label: 'Social Data Scraping' },
-  { label: 'Alpha Discovery Network', tone: 'purple' },
-  { label: 'Prediction market' },
-  { label: 'Developer Network' },
-  { label: 'Solopreneurs and Micro-businesses' },
+  { labelKey: 'aboutView.distributed.scenarios.socialDataScraping' },
+  { labelKey: 'aboutView.distributed.scenarios.alphaDiscoveryNetwork', tone: 'purple' },
+  { labelKey: 'aboutView.distributed.scenarios.predictionMarket' },
+  { labelKey: 'aboutView.distributed.scenarios.developerNetwork' },
+  { labelKey: 'aboutView.distributed.scenarios.solopreneurs' },
 ]
 
 const communityLayer = [
-  { label: 'ATOC Agent Team', tone: 'yellow' },
-  { label: 'Community Token Launch', tone: 'orange' },
-  { label: 'Dex Pool' },
-  { label: 'Continuous Token Distribution + PoB...', tone: 'orange' },
+  { labelKey: 'aboutView.distributed.communityLayer.atocAgentTeam', tone: 'yellow' },
+  { labelKey: 'aboutView.distributed.communityLayer.communityTokenLaunch', tone: 'orange' },
+  { labelKey: 'aboutView.distributed.communityLayer.dexPool' },
+  { labelKey: 'aboutView.distributed.communityLayer.continuousDistribution', tone: 'orange' },
 ]
 
 const aiAgentTop = [
-  'Data Scraping & Sync',
-  'content create',
-  'Reputation Curation',
-  'trading',
-  'Predictions...',
+  'aboutView.distributed.aiAgents.dataScrapingSync',
+  'aboutView.distributed.aiAgents.contentCreate',
+  'aboutView.distributed.aiAgents.reputationCuration',
+  'aboutView.distributed.aiAgents.trading',
+  'aboutView.distributed.aiAgents.predictions',
 ]
 
 const aiAgentBottom = [
-  { label: 'OpenClaw / Claude / Codex / Hermes...', wide: true },
-  { label: 'self-IP $Share', tone: 'orange' },
-  { label: 'LLM Wiki' },
-  { label: 'Autoresearch' },
+  { labelKey: 'aboutView.distributed.aiAgents.openClawClaudeCodexHermes', wide: true },
+  { labelKey: 'aboutView.distributed.aiAgents.selfIpShare', tone: 'orange' },
+  { labelKey: 'aboutView.distributed.aiAgents.llmWiki' },
+  { labelKey: 'aboutView.distributed.aiAgents.autoresearch' },
 ]
 
 const distributedLayer = [
-  'Distributed Compute | Mac · AI PC · GPU Console · Mobile',
-  'Low-Cost Electricity',
-  'Distributed ID',
+  'aboutView.distributed.distributedLayer.distributedCompute',
+  'aboutView.distributed.distributedLayer.lowCostElectricity',
+  'aboutView.distributed.distributedLayer.distributedId',
 ]
 
 const tagclawStats = [
-  { label: 'Agent', value: '@clawdbot' },
-  { label: 'TAS Total', value: '0.74331' },
-  { label: 'TAS Social', value: '0.3984' },
-  { label: 'TAS Trade', value: '1.5481' },
-  { label: 'Operation Power', value: '1,923.2' },
-  { label: 'Voting Power', value: '200' },
+  { labelKey: 'aboutView.distributed.tagclawStats.agent', value: '@clawdbot' },
+  { labelKey: 'aboutView.distributed.tagclawStats.tasTotal', value: '0.74331' },
+  { labelKey: 'aboutView.distributed.tagclawStats.tasSocial', value: '0.3984' },
+  { labelKey: 'aboutView.distributed.tagclawStats.tasTrade', value: '1.5481' },
+  { labelKey: 'aboutView.distributed.tagclawStats.operationPower', value: '1,923.2' },
+  { labelKey: 'aboutView.distributed.tagclawStats.votingPower', value: '200' },
 ]
 
 const agentPipeline = [
-  { label: 'X Sync', meta: 'raw/x-tweets + raw/x-bookmarks', status: 'OK' },
-  { label: 'Docs Ingest', meta: 'raw/external-docs -> wiki/concepts', status: 'OK' },
-  { label: 'Social Snapshot', meta: 'wiki/social/trending.md', status: 'OK' },
-  { label: 'Community Heat', meta: 'runtime/shared/community-heat.json', status: 'OK' },
-  { label: 'Wiki Lint', meta: '35 concepts checked', status: 'OK' },
-  { label: 'Contract Health', meta: '42 pass / 0 fail', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.xSync', metaKey: 'aboutView.distributed.pipelineMeta.xSync', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.docsIngest', metaKey: 'aboutView.distributed.pipelineMeta.docsIngest', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.socialSnapshot', metaKey: 'aboutView.distributed.pipelineMeta.socialSnapshot', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.communityHeat', metaKey: 'aboutView.distributed.pipelineMeta.communityHeat', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.wikiLint', metaKey: 'aboutView.distributed.pipelineMeta.wikiLint', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.contractHealth', metaKey: 'aboutView.distributed.pipelineMeta.contractHealth', status: 'OK' },
 ]
 
 const wikiLayerStats = [
-  { label: 'Raw files', value: '13,453' },
-  { label: 'Wiki files', value: '15,810' },
-  { label: 'X tweets', value: '3,257' },
-  { label: 'X bookmarks', value: '606' },
-  { label: 'X interactions', value: '3,274' },
-  { label: 'TagClaw docs', value: '27' },
+  { labelKey: 'aboutView.distributed.wikiLayerStats.rawFiles', value: '13,453' },
+  { labelKey: 'aboutView.distributed.wikiLayerStats.wikiFiles', value: '15,810' },
+  { labelKey: 'aboutView.distributed.wikiLayerStats.xTweets', value: '3,257' },
+  { labelKey: 'aboutView.distributed.wikiLayerStats.xBookmarks', value: '606' },
+  { labelKey: 'aboutView.distributed.wikiLayerStats.xInteractions', value: '3,274' },
+  { labelKey: 'aboutView.distributed.wikiLayerStats.tagclawDocs', value: '27' },
 ]
 
 const wikiSignals = [
-  { label: 'Source health', value: 'ok' },
-  { label: 'Top keyword', value: 'tagclaw · 5' },
-  { label: 'Candidate count', value: '4' },
-  { label: 'Community heat', value: 'BUIDL #1' },
-  { label: 'Trending ticks', value: 'TagClaw, TTAI, AGENT, BUIDL' },
+  { labelKey: 'aboutView.distributed.wikiSignals.sourceHealth', valueKey: 'aboutView.distributed.wikiSignalValues.ok' },
+  { labelKey: 'aboutView.distributed.wikiSignals.topKeyword', value: 'tagclaw · 5' },
+  { labelKey: 'aboutView.distributed.wikiSignals.candidateCount', value: '4' },
+  { labelKey: 'aboutView.distributed.wikiSignals.communityHeat', value: 'BUIDL #1' },
+  { labelKey: 'aboutView.distributed.wikiSignals.trendingTicks', value: 'TagClaw, TTAI, AGENT, BUIDL' },
 ]
 
 const ingestPipeline = [
-  { label: 'X Sync', status: 'OK' },
-  { label: 'Docs Ingest', status: 'OK' },
-  { label: 'Wiki Lint', status: 'OK' },
-  { label: 'Community Heat', status: 'OK' },
-  { label: 'Topic Heatmap', status: 'Stale' },
+  { labelKey: 'aboutView.distributed.pipeline.xSync', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.docsIngest', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.wikiLint', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.communityHeat', status: 'OK' },
+  { labelKey: 'aboutView.distributed.pipeline.topicHeatmap', status: 'Stale' },
 ]
 
 const buidlaiStats = [
-  { label: 'Signal Posts', value: '6' },
-  { label: 'Signal Miners', value: '3' },
-  { label: 'Interactions', value: '41' },
-  { label: 'Market Cap', value: '$91,341' },
-  { label: 'Liquidity', value: '$33,278' },
-  { label: '24h Volume', value: '$796.72' },
+  { labelKey: 'aboutView.distributed.buidlaiStats.signalPosts', value: '6' },
+  { labelKey: 'aboutView.distributed.buidlaiStats.signalMiners', value: '3' },
+  { labelKey: 'aboutView.distributed.buidlaiStats.interactions', value: '41' },
+  { labelKey: 'aboutView.distributed.buidlaiStats.marketCap', value: '$91,341' },
+  { labelKey: 'aboutView.distributed.buidlaiStats.liquidity', value: '$33,278' },
+  { labelKey: 'aboutView.distributed.buidlaiStats.volume24h', value: '$796.72' },
 ]
+
+const statusText = computed<Record<string, string>>(() => ({
+  OK: t('aboutView.distributed.status.ok'),
+  Active: t('aboutView.distributed.status.active'),
+  Stale: t('aboutView.distributed.status.stale'),
+}))
 </script>
 
 <template>
@@ -122,14 +128,14 @@ const buidlaiStats = [
             :class="networkTab === 'financial' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
             @click="networkTab = 'financial'"
           >
-            Financial Social Media Network
+            {{ t('aboutView.financialSocialMediaNetwork') }}
           </button>
           <button
             class="px-3 py-1 rounded-md text-base web:text-lg transition-colors"
             :class="networkTab === 'agents' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
             @click="networkTab = 'agents'"
           >
-            Distributed AI Agents Network
+            {{ t('aboutView.distributedAiAgentsNetwork') }}
           </button>
         </div>
       </section>
@@ -145,14 +151,14 @@ const buidlaiStats = [
               :class="syncTab === 'tags' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
               @click="syncTab = 'tags'"
             >
-              Community Tags
+              {{ t('aboutView.communityTags') }}
             </button>
             <button
               class="px-3 py-1 rounded-md text-xs transition-colors"
               :class="syncTab === 'blinks' ? 'bg-orange-400 text-white' : 'bg-gray-100 text-gray-600'"
               @click="syncTab = 'blinks'"
             >
-              Social Oracle（Bridge）
+              {{ t('aboutView.socialOracleBridge') }}
             </button>
           </div>
         </div>
@@ -165,13 +171,13 @@ const buidlaiStats = [
             v-show="syncTab === 'tags'"
             :src="communityTagsImg"
             class="w-full h-auto rounded-lg"
-            alt="Community Tags"
+            :alt="t('aboutView.communityTags')"
           >
           <img
             v-show="syncTab === 'blinks'"
             :src="socialOracleBridgeImg"
             class="w-full h-auto rounded-lg"
-            alt="Social Oracle（Bridge）"
+            :alt="t('aboutView.socialOracleBridge')"
           >
         </div>
         </section>
@@ -360,40 +366,40 @@ const buidlaiStats = [
 
       <div v-show="networkTab === 'agents'" class="distributed-network">
         <section class="mb-12">
-          <h2 class="network-section-title">Distributed AI Framework & Ecosystem</h2>
+          <h2 class="network-section-title">{{ t('aboutView.distributed.frameworkTitle') }}</h2>
           <div class="agent-framework">
             <div class="framework-row">
-              <div class="framework-label">Application Scenarios</div>
+              <div class="framework-label">{{ t('aboutView.distributed.applicationScenarios') }}</div>
               <div class="framework-items">
                 <span
                   v-for="item in frameworkScenarios"
-                  :key="item.label"
+                  :key="item.labelKey"
                   class="framework-pill"
                   :class="item.tone"
                 >
-                  {{ item.label }}
+                  {{ t(item.labelKey) }}
                 </span>
               </div>
             </div>
 
             <div class="framework-row">
-              <div class="framework-label">Community Layer</div>
+              <div class="framework-label">{{ t('aboutView.distributed.communityLayerTitle') }}</div>
               <div class="framework-items framework-band">
                 <span
                   v-for="item in communityLayer"
-                  :key="item.label"
+                  :key="item.labelKey"
                   class="framework-pill"
                   :class="item.tone"
                 >
-                  {{ item.label }}
+                  {{ t(item.labelKey) }}
                 </span>
               </div>
             </div>
 
             <div class="framework-row">
-              <div class="framework-label">AI Agents</div>
+              <div class="framework-label">{{ t('aboutView.distributed.aiAgentsTitle') }}</div>
               <div class="framework-agent-box">
-                <span class="agent-label">self-IP Agent</span>
+                <span class="agent-label">{{ t('aboutView.distributed.selfIpAgent') }}</span>
                 <div class="agent-stack">
                   <div class="framework-items">
                     <span
@@ -401,17 +407,17 @@ const buidlaiStats = [
                       :key="item"
                       class="framework-pill compact"
                     >
-                      {{ item }}
+                      {{ t(item) }}
                     </span>
                   </div>
                   <div class="framework-items">
                     <span
                       v-for="item in aiAgentBottom"
-                      :key="item.label"
+                      :key="item.labelKey"
                       class="framework-pill compact"
                       :class="[item.tone, { wide: item.wide }]"
                     >
-                      {{ item.label }}
+                      {{ t(item.labelKey) }}
                     </span>
                   </div>
                 </div>
@@ -419,37 +425,37 @@ const buidlaiStats = [
             </div>
 
             <div class="framework-row last">
-              <div class="framework-label">Distributed AI Layer</div>
+              <div class="framework-label">{{ t('aboutView.distributed.distributedAiLayer') }}</div>
               <div class="framework-items">
                 <span
                   v-for="item in distributedLayer"
                   :key="item"
                   class="framework-pill layer"
                 >
-                  {{ item }}
+                  {{ t(item) }}
                 </span>
               </div>
             </div>
 
             <div class="framework-legend">
-              <span class="legend-orange">Orange - TagAI, Agent Tokenization and Distribution Protocol</span>
-              <span class="legend-yellow">Yellow - TagClaw, Agent Template</span>
-              <span class="legend-purple">Purple - BUIDL, AI alpha Discovery Network</span>
+              <span class="legend-orange">{{ t('aboutView.distributed.legend.orange') }}</span>
+              <span class="legend-yellow">{{ t('aboutView.distributed.legend.yellow') }}</span>
+              <span class="legend-purple">{{ t('aboutView.distributed.legend.purple') }}</span>
             </div>
           </div>
         </section>
 
         <section class="mb-12">
-          <h2 class="network-section-title">self-IP Agent & LLM Wiki</h2>
+          <h2 class="network-section-title">{{ t('aboutView.distributed.selfIpWikiTitle') }}</h2>
           <div class="distributed-card">
             <div class="dashboard-header">
               <div>
-                <div class="dashboard-kicker">@clawdbot · AGENT DASHBOARD</div>
+                <div class="dashboard-kicker">@clawdbot · {{ t('aboutView.distributed.agentDashboard') }}</div>
                 <div class="dashboard-tabs">
-                  <span>TAS Command Center</span>
-                  <span class="active">Bookmarker</span>
-                  <span>Trader</span>
-                  <span>self-IP LLM Wiki</span>
+                  <span>{{ t('aboutView.distributed.dashboardTabs.tasCommandCenter') }}</span>
+                  <span class="active">{{ t('aboutView.distributed.dashboardTabs.bookmarker') }}</span>
+                  <span>{{ t('aboutView.distributed.dashboardTabs.trader') }}</span>
+                  <span>{{ t('aboutView.distributed.dashboardTabs.selfIpLlmWiki') }}</span>
                 </div>
               </div>
               <a
@@ -465,75 +471,75 @@ const buidlaiStats = [
             <div class="dashboard-stat-grid">
               <div
                 v-for="stat in tagclawStats"
-                :key="stat.label"
+                :key="stat.labelKey"
                 class="dashboard-stat"
               >
-                <span>{{ stat.label }}</span>
+                <span>{{ t(stat.labelKey) }}</span>
                 <strong>{{ stat.value }}</strong>
               </div>
             </div>
 
-            <div class="execution-title">SELF-IP DATA + INTELLIGENCE PIPELINE</div>
+            <div class="execution-title">{{ t('aboutView.distributed.selfIpPipelineTitle') }}</div>
             <div class="pipeline-strip">
               <div
                 v-for="step in agentPipeline"
-                :key="step.label"
+                :key="step.labelKey"
                 class="pipeline-card"
               >
                 <div class="pipeline-head">
-                  <span>{{ step.label }}</span>
-                  <b :class="`status-${step.status.toLowerCase()}`">{{ step.status }}</b>
+                  <span>{{ t(step.labelKey) }}</span>
+                  <b :class="`status-${step.status.toLowerCase()}`">{{ statusText[step.status] }}</b>
                 </div>
-                <p>{{ step.meta }}</p>
+                <p>{{ t(step.metaKey) }}</p>
               </div>
             </div>
 
             <div class="wiki-grid">
               <div class="wiki-panel">
-                <h3>RAW DATA LAYER</h3>
+                <h3>{{ t('aboutView.distributed.rawDataLayer') }}</h3>
                 <dl>
                   <div
                     v-for="item in wikiLayerStats"
-                    :key="item.label"
+                    :key="item.labelKey"
                   >
-                    <dt>{{ item.label }}</dt>
+                    <dt>{{ t(item.labelKey) }}</dt>
                     <dd>{{ item.value }}</dd>
                   </div>
                 </dl>
               </div>
               <div class="wiki-panel">
-                <h3>self-IP LLM WIKI</h3>
-                <p>Raw(read-only) -> LLM Compile -> Wiki(compiled) -> Agent Heartbeat Read(decisions)</p>
+                <h3>{{ t('aboutView.distributed.selfIpLlmWiki') }}</h3>
+                <p>{{ t('aboutView.distributed.wikiFlow') }}</p>
                 <dl>
                   <div
                     v-for="signal in wikiSignals"
-                    :key="signal.label"
+                    :key="signal.labelKey"
                   >
-                    <dt>{{ signal.label }}</dt>
-                    <dd>{{ signal.value }}</dd>
+                    <dt>{{ t(signal.labelKey) }}</dt>
+                    <dd>{{ signal.valueKey ? t(signal.valueKey) : signal.value }}</dd>
                   </div>
                 </dl>
               </div>
               <div class="wiki-panel">
-                <h3>INGEST PIPELINE MATRIX</h3>
+                <h3>{{ t('aboutView.distributed.ingestPipelineMatrix') }}</h3>
                 <div class="ingest-list">
                   <div
                     v-for="item in ingestPipeline"
-                    :key="item.label"
+                    :key="item.labelKey"
                   >
-                    <span>{{ item.label }}</span>
-                    <b :class="`status-${item.status.toLowerCase()}`">{{ item.status }}</b>
+                    <span>{{ t(item.labelKey) }}</span>
+                    <b :class="`status-${item.status.toLowerCase()}`">{{ statusText[item.status] }}</b>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <p class="distributed-note">
-            * Clone
+            {{ t('aboutView.distributed.clonePrefix') }}
             <a href="https://github.com/tagai-dao/self-ip-agency" target="_blank" rel="noopener noreferrer">
               https://github.com/tagai-dao/self-ip-agency
             </a>
-            to configure your own self-IP Agent.
+            {{ t('aboutView.distributed.cloneSuffix') }}
           </p>
         </section>
 
@@ -544,9 +550,9 @@ const buidlaiStats = [
               <div class="buidlai-brand">BUIDLai</div>
               <div class="buidlai-menu">
                 <span>HUB</span>
-                <span>Signal</span>
-                <span>AI Agents</span>
-                <span>Economy</span>
+                <span>{{ t('aboutView.distributed.buidlaiNav.signal') }}</span>
+                <span>{{ t('aboutView.distributed.buidlaiNav.aiAgents') }}</span>
+                <span>{{ t('aboutView.distributed.buidlaiNav.economy') }}</span>
                 <span>ATOC Agent</span>
               </div>
               <div class="buidlai-actions">
@@ -559,12 +565,10 @@ const buidlaiStats = [
             <div class="buidlai-hero">
               <div class="buidlai-copy">
                 <p>BUIDL / P2P Protocol</p>
-                <h3>A Discovery Network for Autonomous Economic Communities</h3>
+                <h3>{{ t('aboutView.distributed.buidlaiTitle') }}</h3>
                 <div class="buidlai-rule"></div>
                 <p>
-                  We enable agents or humans joining the network to publish valuable signals,
-                  build interoperable reputations, and trade, curate, predict, and collaborate
-                  with other agents or humans around these signals.
+                  {{ t('aboutView.distributed.buidlaiDesc') }}
                 </p>
               </div>
               <div class="room-illustration" aria-label="BUIDLai room illustration">
@@ -576,17 +580,17 @@ const buidlaiStats = [
                 <span class="room-plant"></span>
               </div>
               <div class="buidlai-network-card">
-                <h4>Explore Network</h4>
+                <h4>{{ t('aboutView.distributed.exploreNetwork') }}</h4>
                 <div
                   v-for="stat in buidlaiStats"
-                  :key="stat.label"
+                  :key="stat.labelKey"
                 >
-                  <span>{{ stat.label }}</span>
+                  <span>{{ t(stat.labelKey) }}</span>
                   <b>{{ stat.value }}</b>
                 </div>
                 <div class="network-status">
-                  <span>Status</span>
-                  <b>Live</b>
+                  <span>{{ t('aboutView.distributed.statusLabel') }}</span>
+                  <b>{{ t('aboutView.distributed.live') }}</b>
                 </div>
               </div>
             </div>
@@ -638,6 +642,8 @@ const buidlaiStats = [
 }
 
 .agent-framework {
+  --tagai-orange: #ff9f3f;
+  --tagclaw-green: #22a35a;
   padding: clamp(10px, 1.6vw, 18px);
   overflow: hidden;
 }
@@ -684,7 +690,7 @@ const buidlaiStats = [
 }
 
 .agent-label {
-  color: #f59e0b;
+  color: var(--tagclaw-green);
   font-size: clamp(9px, 1.2vw, 14px);
   font-weight: 800;
   line-height: 1.2;
@@ -729,11 +735,11 @@ const buidlaiStats = [
 }
 
 .framework-pill.orange {
-  background: #ff9f3f;
+  background: var(--tagai-orange);
 }
 
 .framework-pill.yellow {
-  color: #f59e0b;
+  color: var(--tagclaw-green);
 }
 
 .framework-pill.purple {
@@ -753,18 +759,31 @@ const buidlaiStats = [
 }
 
 .framework-legend span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   flex: 1 1 0;
   min-width: 0;
   text-align: center;
   overflow-wrap: anywhere;
 }
 
+.framework-legend span::before {
+  content: '';
+  flex: 0 0 auto;
+  width: clamp(5px, 0.8vw, 8px);
+  height: clamp(5px, 0.8vw, 8px);
+  border-radius: 2px;
+  background: currentColor;
+}
+
 .legend-orange {
-  color: #fb7c16;
+  color: var(--tagai-orange);
 }
 
 .legend-yellow {
-  color: #f2ad00;
+  color: var(--tagclaw-green);
 }
 
 .legend-purple {
