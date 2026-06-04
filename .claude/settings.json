@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd '/Volumes/Extreme Pro/wangxi/work/tiptag/tiptag-ui' && npx vue-tsc --noEmit 2>&1 | tail -20 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

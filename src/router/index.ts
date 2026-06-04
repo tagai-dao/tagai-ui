@@ -99,9 +99,13 @@ const router = createRouter({
       path: "/callback", component: () => import("@/views/Callback.vue")
     },
     {
-      path: '/predict-detail/:id',
+      path: '/predict/battle/:id',
       name: 'predict-detail',
       component: PredictDetail
+    },
+    {
+      path: '/predict-detail/:id',
+      redirect: to => ({ path: `/predict/battle/${to.params.id}` })
     },
     {
       path: '/mindshare',
@@ -109,9 +113,13 @@ const router = createRouter({
       component: MindShareIndex
     },
     {
-      path: '/predict-event-detail/:id',
+      path: '/predict/event/:id',
       name: 'predict-event-detail',
       component: PredictEventDetail
+    },
+    {
+      path: '/predict-event-detail/:id',
+      redirect: to => ({ path: `/predict/event/${to.params.id}` })
     },
     {
       path: '/about',

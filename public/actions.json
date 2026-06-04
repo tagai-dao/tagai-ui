@@ -3,6 +3,14 @@
         {
             "pathPattern": "https://tagai.fun/commerce/**",
             "apiPath": "https://bsc-api.tagai.fun/action/commerce/**"
+        },
+        {
+            "pathPattern": "https://tagai.fun/predict/battle/**",
+            "apiPath": "https://bsc-api.tagai.fun/action/predict/battle/**"
+        },
+        {
+            "pathPattern": "https://tagai.fun/predict/event/**",
+            "apiPath": "https://bsc-api.tagai.fun/action/predict/event/**"
         }
     ]
 }
