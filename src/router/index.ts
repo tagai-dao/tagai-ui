@@ -100,12 +100,8 @@ const router = createRouter({
     },
     {
       path: '/predict/battle/:id',
-      name: 'predict-detail',
+      name: 'predict-battle',
       component: PredictDetail
-    },
-    {
-      path: '/predict-detail/:id',
-      redirect: to => ({ path: `/predict/battle/${to.params.id}` })
     },
     {
       path: '/mindshare',
@@ -114,12 +110,8 @@ const router = createRouter({
     },
     {
       path: '/predict/event/:id',
-      name: 'predict-event-detail',
+      name: 'predict-event',
       component: PredictEventDetail
-    },
-    {
-      path: '/predict-event-detail/:id',
-      redirect: to => ({ path: `/predict/event/${to.params.id}` })
     },
     {
       path: '/about',
