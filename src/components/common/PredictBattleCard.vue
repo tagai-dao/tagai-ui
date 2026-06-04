@@ -13,6 +13,8 @@ import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
 import { newParticipation, sharePredictBlink } from '@/apis/api';
 import { notify } from '@/utils/notify';
+import { ensureUserIPShare } from '@/composables/useIPShareGate';
+import PredictShareDialog from '@/components/common/PredictShareDialog.vue';
 
 const props = defineProps<{
     battle: BattleData,
@@ -72,20 +74,20 @@ const openCommunity = (tick: string) => {
 
 const sharing = ref(false);
 const showShareModal = ref(false);
-const shareText = ref('');
-const openShareModal = () => {
-  if (!accStore.getAccountInfo?.twitterId) {
-    useModalStore().setModalVisible(true, GlobalModalType.Login)
-    return;
-  }
-  shareText.value = '';
+const openShareModal = async () => {
+  if (!(await ensureUserIPShare())) return
   showShareModal.value = true;
 }
-const confirmShare = async () => {
+const confirmShare = async (text: string) => {
   if (sharing.value) return;
   sharing.value = true;
   try {
-    const res: any = await sharePredictBlink(props.battle.marketMaker, 'battle', shareText.value);
+    const res: any = await sharePredictBlink(
+      accStore.getAccountInfo!.twitterId!,
+      props.battle.marketMaker,
+      'battle',
+      text
+    );
     if (res && res.c === 0 && res.d?.tweetUrl) {
       notify({ message: 'Shared to Twitter!' });
       showShareModal.value = false;
@@ -437,37 +439,13 @@ const confirmBuy = async () => {
       </div>
 
     <!-- 分享弹窗 -->
-    <van-dialog v-model:show="showShareModal" :show-confirm-button="false" :show-cancel-button="false"
-      class="share-blink-dialog" close-on-click-overlay>
-      <div class="py-6 px-6 relative">
-        <button class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          @click="showShareModal = false">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <h3 class="text-lg font-bold text-center mb-4 text-gray-800">Share to Twitter</h3>
-
-        <textarea
-          v-model="shareText"
-          class="w-full border border-gray-200 rounded-lg p-3 text-base resize-none focus:outline-none focus:border-orange-normal"
-          rows="4"
-          maxlength="200"
-          placeholder="Say something about this prediction..."
-        ></textarea>
-
-        <p class="text-xs text-gray-400 mt-1 mb-4 text-right">{{ shareText.length }}/200</p>
-
-        <button
-          class="w-full py-3 rounded-full text-white font-bold text-lg shadow-md transition-all duration-200 flex items-center justify-center"
-          :class="sharing ? 'bg-gray-300 cursor-not-allowed' : 'bg-gradient-primary hover:shadow-lg'"
-          :disabled="sharing" @click="confirmShare">
-          {{ sharing ? 'Posting...' : 'Post' }}
-          <i-ep-loading v-if="sharing" class="animate-spin mr-2" />
-        </button>
-      </div>
-    </van-dialog>
+    <PredictShareDialog
+      v-model:show="showShareModal"
+      type="battle"
+      :market-address="battle.marketMaker"
+      :sharing="sharing"
+      @confirm="confirmShare"
+    />
 </template>
 
 <style scoped>

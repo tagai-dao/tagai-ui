@@ -403,5 +403,5 @@ export const getUserClaimPredictRewardSignature = async (twitterId: string, tick
 export const setPredictOrderClaimed = async (twitterId: string, orderId: string, hash: string) =>
   post(BACKEND_API_URL + '/predict/setPredictOrderClaimed', { twitterId, orderId, hash })
 
-export const sharePredictBlink = async (marketAddress: string, type: 'battle' | 'event', text?: string) =>
-  post(BACKEND_API_URL + '/predict/shareBlink', { marketAddress, type, text })
+export const sharePredictBlink = async (twitterId: string, marketAddress: string, type: 'battle' | 'event', text?: string) =>
+  post(BACKEND_API_URL + '/predict/shareBlink', { twitterId, marketAddress, type, text })
