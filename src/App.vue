@@ -6,7 +6,7 @@ import { EthWalletState, useAccountStore } from "./stores/web3";
 import { onMounted, onUnmounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
-import { getEthPrice, getUserProfile, redirectTweet } from "@/apis/api"
+import { getEthPrice, getUserProfile, resolveCommerce } from "@/apis/api"
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
@@ -79,11 +79,21 @@ onMounted(async () => {
   }
 
   if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {
-    redirectTweet(route.params.commerceid).then((tweetId: any) => {
-      if (tweetId) {
+    const commerceId = route.params.commerceid
+    resolveCommerce(commerceId).then((res: any) => {
+      if (res?.c !== 0 || !res?.d) return
+      const { commerceType, tweetId, fpmm, tick } = res.d
+      // 预测类 commerce：推文已绑定且有关联 fpmm 时，进预测详情页
+      if (tweetId && fpmm && commerceType === 2) {
+        router.replace(`/predict/battle/${fpmm}`)
+      } else if (tweetId && fpmm && commerceType === 3) {
+        router.replace(`/predict/event/${fpmm}`)
+      } else if (tweetId) {
         router.replace('/post-detail/' + tweetId)
+      } else if (tick) {
+        router.replace('/tag-detail/' + tick)
       }
-    })
+    }).catch()
   }
 
   getEthPrice().then((p: any) => {

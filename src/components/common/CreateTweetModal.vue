@@ -3,14 +3,13 @@ import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import {onMounted, ref} from "vue";
 import { OperateType, useTweet } from "@/composables/useTweet";
-import { handleErrorTip, notify } from "@/utils/notify";
+import { handleErrorTip } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
-import emitter from "@/utils/emitter";
 import debounce from "lodash.debounce";
 import { searchTick } from "@/apis/api";
-import { sleep } from "@/utils/helper";
 import { useModalStore } from "@/stores/common";
 import { useAccountStore } from "@/stores/web3";
+import { openTwitterIntent } from "@/utils/twitterPost";
 
 const comStore = useCommunityStore()
 const {
@@ -19,7 +18,6 @@ const {
   contentEl,
   leftWordsLength,
   tweetLength,
-  checkSpecialCommand,
   contentInput,
   getBlur,
   onPaste,
@@ -27,7 +25,7 @@ const {
   formatElToTextContent
 } = useCreateTweet(280 - 10)
 
-const { preCheckCuration, userTweet } = useTweet();
+const { preCheckCuration } = useTweet();
 const tagColors = [
   '#B8CFE4', '#F2E9E0', '#ECF0E8', '#F2E1D0', '#DEF0EA',
   '#ECE4E2', '#C5E4BA', '#ECC5C2', '#D6B5F9', '#C1FDF1',
@@ -51,19 +49,9 @@ const onPostTweet = async () => {
     if (!(await preCheckCuration(OperateType.TWEET))) {
       return;
     }
-    let content = formatElToTextContent(contentRef.value)
-    const { isTip, isDeployCmd, isTwitterTip } = checkSpecialCommand(content)
-    if (isTip || isDeployCmd || isTwitterTip) {
-      window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(content)}`, '_blank')
-      emit('close')
-      return;
-    }
-    userTweet(content, selectedTag.value).then(res => {
-      emitter.emit('tweeted')
-      notify({message: "Tweet success", type: 'success'})
-    }).catch(handleErrorTip)
+    const content = formatElToTextContent(contentRef.value)
+    openTwitterIntent({ text: content, tick: selectedTag.value })
     useModalStore().setModalVisible(false)
-    // await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!)
     emit('close')
   } catch (e) {
     handleErrorTip(e)

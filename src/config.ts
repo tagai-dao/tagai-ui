@@ -3,6 +3,9 @@ export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
 
 export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
+/** 前端站点根 URL，用于 commerce blink 链接 */
+export const SITE_URL = "https://tagai.fun";
+export const COMMERCE_SITE_URL = `${SITE_URL}/commerce/`;
 // export const BACKEND_API_URL = "http://localhost:5001"
 const BSC_RPC_URL = 'https://bsc-dataseed.binance.org';
 // base main net

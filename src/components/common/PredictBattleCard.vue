@@ -11,7 +11,8 @@ import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
-import { newParticipation, sharePredictBlink } from '@/apis/api';
+import { newParticipation, createPredictCommerce } from '@/apis/api';
+import { openTwitterIntent } from '@/utils/twitterPost';
 import { notify } from '@/utils/notify';
 import { ensureUserIPShare } from '@/composables/useIPShareGate';
 import PredictShareDialog from '@/components/common/PredictShareDialog.vue';
@@ -82,18 +83,23 @@ const confirmShare = async (text: string) => {
   if (sharing.value) return;
   sharing.value = true;
   try {
-    const res: any = await sharePredictBlink(
-      accStore.getAccountInfo!.twitterId!,
+    const twitterId = accStore.getAccountInfo!.twitterId!
+    const res: any = await createPredictCommerce(
+      twitterId,
       props.battle.marketMaker,
       'battle',
-      text
     );
-    if (res && res.c === 0 && res.d?.tweetUrl) {
-      notify({ message: 'Shared to Twitter!' });
-      showShareModal.value = false;
-    } else {
+    if (res?.c !== 0 || !res?.d?.commerceUrl) {
       handleErrorTip(res);
+      return;
     }
+    openTwitterIntent({
+      text,
+      tick: props.battle.tick,
+      commerceUrl: res.d.commerceUrl,
+    });
+    notify({ message: 'Opening Twitter to share...' });
+    showShareModal.value = false;
   } catch (e) {
     handleErrorTip(e);
   } finally {

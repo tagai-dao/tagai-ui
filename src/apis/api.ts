@@ -228,11 +228,37 @@ export const getCommunityDeployTweet = async (tick: string, twitterId: string) =
   get(BACKEND_API_URL + '/curation/communityDeployTweet', {tick, twitterId})
 
 /************************************ commerce **********************************/
-export const newCommerce = async (text: string, twitterId: string, tick: string, token: string) => 
-  post(BACKEND_API_URL + '/commerce/newCommerce', {text, twitterId, tick, token})
+export type CommerceType = 1 | 2 | 3
 
+export type CommerceResolveResult = {
+  commerceType: CommerceType
+  tweetId?: string | null
+  fpmm?: string | null
+  tick?: string | null
+}
+
+/** 创建代币销售 commerce（不代发 Twitter） */
+export const createTokenCommerce = async (twitterId: string, tick: string, token: string) =>
+  post(BACKEND_API_URL + '/commerce/newCommerce', { twitterId, tick, token })
+
+/** 创建预测市场 commerce（不代发 Twitter） */
+export const createPredictCommerce = async (
+  twitterId: string,
+  marketAddress: string,
+  type: 'battle' | 'event'
+) => post(BACKEND_API_URL + '/commerce/newPredictCommerce', { twitterId, marketAddress, type })
+
+/** 解析 commerce 类型，用于前端路由跳转 */
+export const resolveCommerce = async (commerceId: string) =>
+  get(BACKEND_API_URL + '/commerce/resolve', { commerceId }) as Promise<{ c: number; d: CommerceResolveResult }>
+
+/** @deprecated 使用 createTokenCommerce */
+export const newCommerce = async (_text: string, twitterId: string, tick: string, token: string) =>
+  createTokenCommerce(twitterId, tick, token)
+
+/** @deprecated 使用 resolveCommerce */
 export const redirectTweet = async (commerceId: string) =>
-  get(BACKEND_API_URL + '/commerce/redirectTweet', { commerceId})
+  get(BACKEND_API_URL + '/commerce/redirectTweet', { commerceId })
 
 /************************************ curation **********************************/
 export const getOnlineSpaces = async () =>
@@ -402,6 +428,3 @@ export const getUserClaimPredictRewardSignature = async (twitterId: string, tick
 
 export const setPredictOrderClaimed = async (twitterId: string, orderId: string, hash: string) =>
   post(BACKEND_API_URL + '/predict/setPredictOrderClaimed', { twitterId, orderId, hash })
-
-export const sharePredictBlink = async (twitterId: string, marketAddress: string, type: 'battle' | 'event', text?: string) =>
-  post(BACKEND_API_URL + '/predict/shareBlink', { twitterId, marketAddress, type, text })

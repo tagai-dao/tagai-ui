@@ -8,11 +8,11 @@ import debounce from 'lodash.debounce'
 import {getSpaceInfoById, searchTick} from '@/apis/api'
 import { useAccountStore } from "@/stores/web3";
 import { useSpace, InvalidSpaceCurationType } from "@/composables/useSpace";
-import { handleErrorTip, notify } from "@/utils/notify";
+import { handleErrorTip } from "@/utils/notify";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import type { Space } from "@/types";
 import i18n from "@/lang";
-import emitter from "@/utils/emitter";
+import { openTwitterIntent } from "@/utils/twitterPost";
 const t = i18n.global.t;
 
 const modalStore = useModalStore();
@@ -33,7 +33,7 @@ const {
 
 const emit = defineEmits(['close'])
 
-const { getSpaceIdFromUrl, userTweetWithSpace } = useSpace();
+const { getSpaceIdFromUrl } = useSpace();
 const { preCheckCuration } = useTweet();
 
 const invalidSpaceType = ref<InvalidSpaceCurationType>(InvalidSpaceCurationType.OK);
@@ -92,9 +92,10 @@ const onPostTweet = async () => {
       invalidSpaceType.value = InvalidSpaceCurationType.NOT_YOUR_SPACE
       return;
     }
-    await userTweetWithSpace(`${tweetContent}\n${spaceLink.value}`, comStore.currentSelectedCommunity!.tick, spaceId)
-    emitter.emit('tweeted')
-    notify({message: 'Tweet success', type: 'success'})
+    openTwitterIntent({
+      text: `${tweetContent}\n${spaceLink.value}`,
+      tick: comStore.currentSelectedCommunity!.tick,
+    })
     emit('close')
   } catch (e) {
     console.log(e);

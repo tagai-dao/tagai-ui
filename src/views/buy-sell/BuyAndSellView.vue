@@ -7,7 +7,7 @@ import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useRoute } from "vue-router";
-import { getCommunityDetail, trade, newCommerce } from '@/apis/api'
+import { getCommunityDetail, trade, createTokenCommerce } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
@@ -22,6 +22,7 @@ import { handleErrorTip, notify } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
+import { openTwitterIntent } from "@/utils/twitterPost";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
@@ -44,7 +45,7 @@ const trading = ref(false)
 const showFillInfo = ref(false)
 const showNotBondEth = ref(false)
 const defaultAmount = ref([0.02, 0.05, 0.1, 0.2])
-const { preCheckCuration, userTweet } = useTweet();
+const { preCheckCuration } = useTweet();
 const stateStore = useStateStore()
 const calculating = ref(false)
 let willListing = false;
@@ -278,10 +279,22 @@ async function confirm() {
     if (!(await preCheckCuration(OperateType.TWEET))) {
       return;
     }
-    let content = formatElToTextContent(contentRef.value)
-    newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!).catch(console.error);
+    const content = formatElToTextContent(contentRef.value)
+    const token = comStore.currentSelectedCommunity!
+    const account = accStore.getAccountInfo
+    if (!account?.twitterId) return
 
-    // userTweet(content, comStore.currentSelectedCommunity!.tick).catch(handleErrorTip)
+    const res: any = await createTokenCommerce(account.twitterId, token.tick, token.token!)
+    if (res?.c !== 0 || !res?.d?.commerceUrl) {
+      handleErrorTip(res)
+      return
+    }
+
+    openTwitterIntent({
+      text: content,
+      tick: token.tick,
+      commerceUrl: res.d.commerceUrl,
+    })
   }
 
   try{

@@ -1,36 +1,26 @@
 <script setup lang="ts">
 import {parseTimestamp} from "@/utils/helper";
 import {handleErrorTip} from "@/utils/notify";
-import {useStateStore} from "@/stores/common";
 import {ref} from "vue";
-import {OperateType, useTweet} from "@/composables/useTweet";
-import { useCreateTweet } from "@/composables/useCreateTweet";
+import {useTweet} from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
 import { type Tweet } from "@/types";
-import emitter from "@/utils/emitter";
+import { openTwitterIntent } from "@/utils/twitterPost";
 
 const props = defineProps<{
     tweet: Tweet;
     hideNumber?: boolean;
   }>()
-const emits = defineEmits(['newComment'])
 const { content, imgurls, profileImg } = usePost(props.tweet);
-const { checkSpecialCommand } = useCreateTweet()
 
 const tweetInput = ref()
-
-const stateStore = useStateStore()
 const isRepling = ref(false)
 const replyVisible = ref(false)
-const {formatEmojiText, preCheckCuration, userReply} = useTweet()
+const {formatEmojiText} = useTweet()
 
 const preReply = async () => {
   try{
-    // isRepling.value = true
-    // if (!(await preCheckCuration(OperateType.REPLY, props.tweet))) {
-    //   return;
-    // }
     replyVisible.value = true
   } catch (e) {
     handleErrorTip(e)
@@ -46,19 +36,14 @@ async function reply() {
     return;
   }
 
-    const { isTip, isDeployCmd, isTwitterTip } = checkSpecialCommand(text)
-    if (isTip || isDeployCmd || isTwitterTip) {
-      window.open(`https://x.com/intent/tweet?in_reply_to=${props.tweet.tweetId}&text=${encodeURIComponent(text)}`, '_blank')
-      replyVisible.value = false
-      return;
-    }
   try{
     isRepling.value = true
-    await userReply(props.tweet, text, props.tweet.tick!)
-    props.tweet.replied = 1;
-    props.tweet.replyCount += 1;
+    openTwitterIntent({
+      text,
+      tick: props.tweet.tick,
+      replyToTweetId: props.tweet.tweetId,
+    })
     replyVisible.value = false
-    emitter.emit('newReply')
   } catch (e) {
     handleErrorTip(e)
   } finally {

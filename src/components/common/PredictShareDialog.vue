@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { stringLength } from '@/utils/helper'
 import {
-  getPredictShareTextMaxLength,
+  getCommerceShareTextMaxLength,
   truncateToMaxStringLength,
   type PredictShareType,
 } from '@/utils/predictShare'
@@ -20,7 +20,7 @@ const emit = defineEmits<{
 }>()
 
 const shareText = ref('')
-const maxLength = computed(() => getPredictShareTextMaxLength(props.type, props.marketAddress))
+const maxLength = computed(() => getCommerceShareTextMaxLength())
 const shareTextLength = computed(() => stringLength(shareText.value))
 const leftWordsLength = computed(() => maxLength.value - shareTextLength.value)
 

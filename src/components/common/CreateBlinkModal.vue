@@ -2,12 +2,12 @@
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { ref } from "vue";
-import { newCommerce } from '@/apis/api'
 import { OperateType, useTweet } from "@/composables/useTweet";
-import { handleErrorTip, notify } from "@/utils/notify";
-import { useAccountStore } from "@/stores/web3";
+import { handleErrorTip } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
-import emitter from "@/utils/emitter";
+import { useAccountStore } from "@/stores/web3";
+import { createTokenCommerce } from "@/apis/api";
+import { openTwitterIntent } from "@/utils/twitterPost";
 
 const comStore = useCommunityStore()
 const {
@@ -23,7 +23,7 @@ const {
   formatElToTextContent
 } = useCreateTweet(280 - (comStore.currentSelectedCommunity?.tick.length ?? 0) - 46)
 
-const { preCheckCuration, userTweet } = useTweet();
+const { preCheckCuration } = useTweet();
 
 const tweetLoading = ref(false)
 
@@ -39,13 +39,22 @@ const onPostTweet = async () => {
     if (!(await preCheckCuration(OperateType.BLINK))) {
       return;
     }
-    let content = formatElToTextContent(contentRef.value)
-    if (leftWordsLength.value < 0){
-      return;
+    const content = formatElToTextContent(contentRef.value)
+    const community = comStore.currentSelectedCommunity
+    const account = useAccountStore().getAccountInfo
+    if (!community?.token || !account?.twitterId) return
+
+    const res: any = await createTokenCommerce(account.twitterId, community.tick, community.token)
+    if (res?.c !== 0 || !res?.d?.commerceUrl) {
+      handleErrorTip(res)
+      return
     }
 
-    await newCommerce(content, useAccountStore().getAccountInfo.twitterId, useCommunityStore().currentSelectedCommunity!.tick!, useCommunityStore().currentSelectedCommunity!.token!);
-    emitter.emit('tweeted')
+    openTwitterIntent({
+      text: content,
+      tick: community.tick,
+      commerceUrl: res.d.commerceUrl,
+    })
     emit('close')
   } catch (e) {
     handleErrorTip(e)

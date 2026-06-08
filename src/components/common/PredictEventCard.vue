@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, computed } from 'vue'
-import { getUserPredictVP, newParticipation, voteEventPrediction, sharePredictBlink } from '@/apis/api';
+import { getUserPredictVP, newParticipation, voteEventPrediction, createPredictCommerce } from '@/apis/api';
+import { openTwitterIntent } from '@/utils/twitterPost';
 import { notify } from '@/utils/notify';
 import type { BattleData, CommunityMember, EventPredictData, Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper';
@@ -142,18 +143,23 @@ const confirmShare = async (text: string) => {
   if (sharing.value) return;
   sharing.value = true;
   try {
-    const res: any = await sharePredictBlink(
-      accStore.getAccountInfo!.twitterId!,
+    const twitterId = accStore.getAccountInfo!.twitterId!
+    const res: any = await createPredictCommerce(
+      twitterId,
       props.market.marketMaker,
       'event',
-      text
     );
-    if (res && res.c === 0 && res.d?.tweetUrl) {
-      notify({ message: 'Shared to Twitter!' });
-      showShareModal.value = false;
-    } else {
+    if (res?.c !== 0 || !res?.d?.commerceUrl) {
       handleErrorTip(res);
+      return;
     }
+    openTwitterIntent({
+      text,
+      tick: props.market.tick,
+      commerceUrl: res.d.commerceUrl,
+    });
+    notify({ message: 'Opening Twitter to share...' });
+    showShareModal.value = false;
   } catch (e) {
     handleErrorTip(e);
   } finally {

@@ -9,6 +9,7 @@ import {OperateType, useTweet} from "@/composables/useTweet";
 import { type Tweet } from "@/types";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { handleErrorTip } from "@/utils/notify";
+import { openTwitterIntent } from "@/utils/twitterPost";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -20,7 +21,7 @@ const isQuoting = ref(false);
 const quoteVisible = ref(false);
 
 const {profileImg, isIgnoreAccount, steemUrl, imgurls, content} = usePost(props.tweet)
-const {formatEmojiText, preCheckCuration, userQuote} = useTweet()
+const {formatEmojiText, preCheckCuration} = useTweet()
 const {
   contentEl,
   contentRef,
@@ -31,7 +32,6 @@ const {
   showClear,
   leftWordsLength,
   tweetLength,
-  checkSpecialCommand,
   formatElToTextContent
 } = useCreateTweet()
 
@@ -67,17 +67,14 @@ const quote = async () => {
     }
     const text = formatElToTextContent(contentRef.value);
 
-    const { isTip, isDeployCmd, isTwitterTip } = checkSpecialCommand(text)
-    if (isTip || isDeployCmd || isTwitterTip) {
-      window.open(`https://x.com/intent/tweet?url=https://x.com/${props.tweet.twitterUsername}/status/${props.tweet.tweetId}&text=${encodeURIComponent(text)}`, '_blank')
-      quoteVisible.value = false
-      return;
-    }
     isQuoting.value = true;
-    await userQuote(props.tweet, text, props.tweet.tick!)
+    openTwitterIntent({
+      text,
+      tick: props.tweet.tick,
+      quoteTweetUsername: props.tweet.twitterUsername,
+      quoteTweetId: props.tweet.tweetId,
+    })
     quoteVisible.value = false
-    props.tweet.quoteCount += 1;
-    props.tweet.quoted = 1;
   } catch (e) {
     handleErrorTip(e)
   } finally {
