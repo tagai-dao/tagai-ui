@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { stringLength } from '@/utils/helper'
+import { watch } from 'vue'
+import { EmojiPicker } from 'vue3-twemoji-picker-final'
+import { useCreateTweet } from '@/composables/useCreateTweet'
 import {
   getCommerceShareTextMaxLength,
-  truncateToMaxStringLength,
   type PredictShareType,
 } from '@/utils/predictShare'
 
@@ -19,72 +19,116 @@ const emit = defineEmits<{
   confirm: [text: string]
 }>()
 
-const shareText = ref('')
-const maxLength = computed(() => getCommerceShareTextMaxLength())
-const shareTextLength = computed(() => stringLength(shareText.value))
-const leftWordsLength = computed(() => maxLength.value - shareTextLength.value)
+const {
+  contentRef,
+  showClear,
+  contentEl,
+  leftWordsLength,
+  tweetLength,
+  contentInput,
+  getBlur,
+  onPaste,
+  selectEmoji,
+  formatElToTextContent,
+} = useCreateTweet(getCommerceShareTextMaxLength())
+
+const resetEditor = () => {
+  contentEl.value = ''
+  showClear.value = false
+  tweetLength.value = 0
+  if (contentRef.value) {
+    contentRef.value.innerHTML = ''
+  }
+}
 
 watch(() => props.show, (visible) => {
-  if (visible) shareText.value = ''
-})
-
-watch(shareText, (val) => {
-  const truncated = truncateToMaxStringLength(val, maxLength.value)
-  if (truncated !== val) shareText.value = truncated
+  if (visible) resetEditor()
 })
 
 const close = () => emit('update:show', false)
 
 const onConfirm = () => {
   if (leftWordsLength.value < 0 || props.sharing) return
-  emit('confirm', shareText.value.trim())
+  const text = contentRef.value ? formatElToTextContent(contentRef.value).trim() : ''
+  emit('confirm', text)
 }
 </script>
 
 <template>
-  <van-dialog
-    :show="show"
-    :show-confirm-button="false"
-    :show-cancel-button="false"
-    class="share-blink-dialog"
-    close-on-click-overlay
-    @update:show="emit('update:show', $event)"
+  <el-dialog
+    :model-value="show"
+    modal-class="overlay-white"
+    class="max-w-[500px] rounded-[20px]"
+    width="90%"
+    append-to-body
+    :show-close="false"
+    align-center
+    destroy-on-close
+    @update:model-value="emit('update:show', $event)"
   >
-    <div class="py-6 px-6 relative">
-      <button
-        class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-        @click="close"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
+    <div class="flex flex-col gap-y-4 py-2">
+      <h3 class="text-xl font-medium text-black text-center">Share to Twitter</h3>
 
-      <h3 class="text-lg font-bold text-center mb-4 text-gray-800">Share to Twitter</h3>
+      <div>
+        <div class="flex justify-between items-center px-2 mb-1">
+          <div class="text-sm text-gray-600">{{ $t('postView.typeTip') }}</div>
+          <div class="text-sm" :class="leftWordsLength < 0 ? 'text-red-e6' : 'text-gray-400'">
+            {{ leftWordsLength }}
+          </div>
+        </div>
 
-      <div class="flex justify-between items-center mb-1">
-        <div class="text-sm text-gray-600">{{ $t('postView.typeTip') }}</div>
-        <div class="text-sm" :class="leftWordsLength < 0 ? 'text-red-e6' : 'text-gray-400'">
-          {{ leftWordsLength }}
+        <div class="max-h-[176px] overflow-hidden relative flex flex-col bg-grey-f0/90 rounded-2xl">
+          <div
+            contenteditable
+            class="outline-none flex-1 overflow-auto no-scroll-bar min-h-[56px] px-3 pt-2 whitespace-pre-line text-lg z-10 relative"
+            ref="contentRef"
+            @input="contentInput"
+            @blur="getBlur"
+            @paste="onPaste"
+            v-html="contentEl"
+          />
+          <div v-if="!showClear" class="absolute top-3 left-3 text-14px leading-24px z-0 opacity-30 pointer-events-none">
+            {{ $t('postView.pleaseInput') }}
+          </div>
+          <div class="flex justify-between items-center px-3 py-2">
+            <el-popover trigger="click" width="300" :teleported="true" :persistent="false">
+              <template #reference>
+                <img
+                  class="w-1.8rem h-1.8rem lg:w-1.4rem lg:h-1.4rem cursor-pointer"
+                  src="~@/assets/icons/icon-emoji.svg"
+                  alt=""
+                />
+              </template>
+              <template #default>
+                <div class="h-[310px] lg:h-[400px]">
+                  <EmojiPicker
+                    :options="{ imgSrc: '/emoji/', locals: 'en', hasSkinTones: false, hasGroupIcons: false }"
+                    @select="(e: any) => selectEmoji(e)"
+                  />
+                </div>
+              </template>
+            </el-popover>
+          </div>
         </div>
       </div>
 
-      <textarea
-        v-model="shareText"
-        class="w-full border border-gray-200 rounded-lg p-3 text-base resize-none focus:outline-none focus:border-orange-normal"
-        rows="4"
-        :placeholder="$t('postView.pleaseInput')"
-      />
-
-      <button
-        class="w-full py-3 mt-4 rounded-full text-white font-bold text-lg shadow-md transition-all duration-200 flex items-center justify-center"
-        :class="sharing ? 'bg-gray-300 cursor-not-allowed' : 'bg-gradient-primary hover:shadow-lg'"
-        :disabled="sharing || leftWordsLength < 0"
-        @click="onConfirm"
-      >
-        {{ sharing ? 'Posting...' : 'Post' }}
-        <i-ep-loading v-if="sharing" class="animate-spin mr-2" />
-      </button>
+      <div class="flex justify-center gap-3">
+        <button
+          class="h-10 px-5 rounded-full text-gray-600 font-medium border border-grey-e6"
+          :disabled="sharing"
+          @click="close"
+        >
+          {{ $t('cancel') }}
+        </button>
+        <button
+          class="h-10 px-5 bg-gradient-primary rounded-full flex justify-center items-center gap-2 disabled:opacity-30"
+          :disabled="sharing || leftWordsLength < 0"
+          @click="onConfirm"
+        >
+          <span class="text-white font-bold text-lg">{{ sharing ? 'Posting...' : 'Post' }}</span>
+          <i-ep-loading v-if="sharing" class="animate-spin text-white" />
+        </button>
+      </div>
     </div>
-  </van-dialog>
+  </el-dialog>
 </template>
