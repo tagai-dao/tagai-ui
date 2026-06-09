@@ -46,10 +46,27 @@ export type TwitterIntentOptions = {
   quoteTweetId?: string
 }
 
+/** accountType === 0 为绑定真实 Twitter 的账号，需自行去推特发帖 */
+export const isNativeTwitterAccount = (accountType?: number | null) =>
+  accountType === 0
+
 const appendCommerceUrl = (text: string, commerceUrl?: string) => {
   if (!commerceUrl) return text
   const trimmed = text.trimEnd()
   return trimmed ? `${trimmed}\n\n${commerceUrl}` : commerceUrl
+}
+
+/** 平台 API 发帖时拼接正文（含标签与 commerce 链接） */
+export const buildPlatformPostText = (text: string, options?: { tick?: string; commerceUrl?: string }) =>
+  appendCommerceUrl(prepareTwitterPostText(text, options?.tick), options?.commerceUrl)
+
+/** 是否为真实 Twitter 推文 ID（纯数字且长度足够） */
+export const isRealTwitterTweetId = (tweetId?: string | null) =>
+  !!tweetId && /^\d{15,}$/.test(tweetId)
+
+/** 打开 Twitter 转推页 */
+export const openTwitterRetweetIntent = (tweetId: string) => {
+  window.open(`https://x.com/intent/retweet?tweet_id=${tweetId}`, '_blank')
 }
 
 /** 打开 Twitter 发帖页（新推 / 回复 / 引用） */

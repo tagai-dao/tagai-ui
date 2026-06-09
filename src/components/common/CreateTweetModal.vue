@@ -9,7 +9,9 @@ import debounce from "lodash.debounce";
 import { searchTick } from "@/apis/api";
 import { useModalStore } from "@/stores/common";
 import { useAccountStore } from "@/stores/web3";
-import { openTwitterIntent } from "@/utils/twitterPost";
+import { isNativeTwitterAccount, openTwitterIntent } from "@/utils/twitterPost";
+import { useAccount } from "@/composables/useAccount";
+import { OP_CONSUME } from "@/config";
 
 const comStore = useCommunityStore()
 const {
@@ -25,7 +27,8 @@ const {
   formatElToTextContent
 } = useCreateTweet(280 - 10)
 
-const { preCheckCuration } = useTweet();
+const { preCheckCuration, userTweet } = useTweet();
+const { updateUserOPLocal } = useAccount();
 const tagColors = [
   '#B8CFE4', '#F2E9E0', '#ECF0E8', '#F2E1D0', '#DEF0EA',
   '#ECE4E2', '#C5E4BA', '#ECC5C2', '#D6B5F9', '#C1FDF1',
@@ -50,7 +53,13 @@ const onPostTweet = async () => {
       return;
     }
     const content = formatElToTextContent(contentRef.value)
-    openTwitterIntent({ text: content, tick: selectedTag.value })
+    const account = useAccountStore().getAccountInfo
+    if (isNativeTwitterAccount(account?.accountType)) {
+      openTwitterIntent({ text: content, tick: selectedTag.value })
+    } else {
+      await userTweet(content, selectedTag.value)
+      updateUserOPLocal(OP_CONSUME.POST)
+    }
     useModalStore().setModalVisible(false)
     emit('close')
   } catch (e) {

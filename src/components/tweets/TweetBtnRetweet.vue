@@ -7,6 +7,9 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
 
+import {useAccountStore} from "@/stores/web3";
+import { isNativeTwitterAccount, isRealTwitterTweetId, openTwitterRetweetIntent } from "@/utils/twitterPost";
+
 const props = defineProps<{
     tweet: Tweet;
   }>()
@@ -14,6 +17,7 @@ const stateStore = useStateStore()
 
 const isRetweeting = ref(false);
 const { preCheckCuration, userRetweet } = useTweet()
+const accStore = useAccountStore()
 
 async function retweet() {
   try{
@@ -21,7 +25,17 @@ async function retweet() {
     if (!await preCheckCuration(OperateType.RETWEET, props.tweet)) {
       return;
     }
-    const res = await userRetweet(props.tweet, props.tweet.tick!)
+    const account = accStore.getAccountInfo
+    const needTwitterWeb = isNativeTwitterAccount(account?.accountType)
+      && props.tweet.accountType === 0
+      && isRealTwitterTweetId(props.tweet.tweetId)
+
+    if (needTwitterWeb) {
+      openTwitterRetweetIntent(props.tweet.tweetId)
+      return
+    }
+
+    await userRetweet(props.tweet, props.tweet.tick!)
 
 
     props.tweet.retweetCount += 1;

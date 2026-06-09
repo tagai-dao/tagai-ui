@@ -6,8 +6,10 @@ import { OperateType, useTweet } from "@/composables/useTweet";
 import { handleErrorTip } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
 import { useAccountStore } from "@/stores/web3";
-import { createTokenCommerce } from "@/apis/api";
-import { openTwitterIntent } from "@/utils/twitterPost";
+import { createTokenCommerce, tweet } from "@/apis/api";
+import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from "@/utils/twitterPost";
+import { useAccount } from "@/composables/useAccount";
+import { OP_CONSUME } from "@/config";
 
 const comStore = useCommunityStore()
 const {
@@ -24,6 +26,7 @@ const {
 } = useCreateTweet(280 - (comStore.currentSelectedCommunity?.tick.length ?? 0) - 46)
 
 const { preCheckCuration } = useTweet();
+const { updateUserOPLocal } = useAccount();
 
 const tweetLoading = ref(false)
 
@@ -50,11 +53,20 @@ const onPostTweet = async () => {
       return
     }
 
-    openTwitterIntent({
-      text: content,
-      tick: community.tick,
-      commerceUrl: res.d.commerceUrl,
-    })
+    if (isNativeTwitterAccount(account.accountType)) {
+      openTwitterIntent({
+        text: content,
+        tick: community.tick,
+        commerceUrl: res.d.commerceUrl,
+      })
+    } else {
+      const postText = buildPlatformPostText(content, {
+        tick: community.tick,
+        commerceUrl: res.d.commerceUrl,
+      })
+      await tweet(account.twitterId, postText, community.tick)
+      updateUserOPLocal(OP_CONSUME.POST)
+    }
     emit('close')
   } catch (e) {
     handleErrorTip(e)

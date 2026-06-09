@@ -9,7 +9,7 @@ import {OperateType, useTweet} from "@/composables/useTweet";
 import { type Tweet } from "@/types";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { handleErrorTip } from "@/utils/notify";
-import { openTwitterIntent } from "@/utils/twitterPost";
+import { openTwitterIntent, isNativeTwitterAccount } from "@/utils/twitterPost";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -21,7 +21,7 @@ const isQuoting = ref(false);
 const quoteVisible = ref(false);
 
 const {profileImg, isIgnoreAccount, steemUrl, imgurls, content} = usePost(props.tweet)
-const {formatEmojiText, preCheckCuration} = useTweet()
+const {formatEmojiText, preCheckCuration, userQuote} = useTweet()
 const {
   contentEl,
   contentRef,
@@ -68,12 +68,16 @@ const quote = async () => {
     const text = formatElToTextContent(contentRef.value);
 
     isQuoting.value = true;
-    openTwitterIntent({
-      text,
-      tick: props.tweet.tick,
-      quoteTweetUsername: props.tweet.twitterUsername,
-      quoteTweetId: props.tweet.tweetId,
-    })
+    if (isNativeTwitterAccount(accStore.getAccountInfo?.accountType)) {
+      openTwitterIntent({
+        text,
+        tick: props.tweet.tick,
+        quoteTweetUsername: props.tweet.twitterUsername,
+        quoteTweetId: props.tweet.tweetId,
+      })
+    } else {
+      await userQuote(props.tweet, text, props.tweet.tick!)
+    }
     quoteVisible.value = false
   } catch (e) {
     handleErrorTip(e)

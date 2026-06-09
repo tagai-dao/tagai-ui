@@ -2,11 +2,12 @@
 import {parseTimestamp} from "@/utils/helper";
 import {handleErrorTip} from "@/utils/notify";
 import {ref} from "vue";
-import {useTweet} from "@/composables/useTweet";
+import { OperateType, useTweet } from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
 import TweetInput from "@/components/tweets/TweetInput.vue";
 import { type Tweet } from "@/types";
-import { openTwitterIntent } from "@/utils/twitterPost";
+import { openTwitterIntent, isNativeTwitterAccount } from "@/utils/twitterPost";
+import { useAccountStore } from "@/stores/web3";
 
 const props = defineProps<{
     tweet: Tweet;
@@ -17,7 +18,8 @@ const { content, imgurls, profileImg } = usePost(props.tweet);
 const tweetInput = ref()
 const isRepling = ref(false)
 const replyVisible = ref(false)
-const {formatEmojiText} = useTweet()
+const {formatEmojiText, preCheckCuration, userReply} = useTweet()
+const accStore = useAccountStore()
 
 const preReply = async () => {
   try{
@@ -38,11 +40,18 @@ async function reply() {
 
   try{
     isRepling.value = true
-    openTwitterIntent({
-      text,
-      tick: props.tweet.tick,
-      replyToTweetId: props.tweet.tweetId,
-    })
+    if (!(await preCheckCuration(OperateType.REPLY, props.tweet))) {
+      return
+    }
+    if (isNativeTwitterAccount(accStore.getAccountInfo?.accountType)) {
+      openTwitterIntent({
+        text,
+        tick: props.tweet.tick,
+        replyToTweetId: props.tweet.tweetId,
+      })
+    } else {
+      await userReply(props.tweet, text, props.tweet.tick!)
+    }
     replyVisible.value = false
   } catch (e) {
     handleErrorTip(e)

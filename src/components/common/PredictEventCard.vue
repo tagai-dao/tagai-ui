@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, nextTick, watch, computed } from 'vue'
-import { getUserPredictVP, newParticipation, voteEventPrediction, createPredictCommerce } from '@/apis/api';
-import { openTwitterIntent } from '@/utils/twitterPost';
+import { getUserPredictVP, newParticipation, voteEventPrediction, createPredictCommerce, tweet } from '@/apis/api';
+import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from '@/utils/twitterPost';
+import { useAccount } from '@/composables/useAccount';
+import { OP_CONSUME } from '@/config';
 import { notify } from '@/utils/notify';
 import type { BattleData, CommunityMember, EventPredictData, Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper';
@@ -26,6 +28,7 @@ const props = defineProps<{
 }>()
 const router = useRouter();
 const accStore = useAccountStore();
+const { updateUserOPLocal } = useAccount();
 const { percentA, percentB } = useEventPredict(props.market);
 const { t } = useI18n();
 const now = useNow();
@@ -153,12 +156,23 @@ const confirmShare = async (text: string) => {
       handleErrorTip(res);
       return;
     }
-    openTwitterIntent({
-      text,
-      tick: props.market.tick,
-      commerceUrl: res.d.commerceUrl,
-    });
-    notify({ message: 'Opening Twitter to share...' });
+    const account = accStore.getAccountInfo!
+    if (isNativeTwitterAccount(account.accountType)) {
+      openTwitterIntent({
+        text,
+        tick: props.market.tick,
+        commerceUrl: res.d.commerceUrl,
+      });
+      notify({ message: 'Opening Twitter to share...' });
+    } else {
+      const postText = buildPlatformPostText(text, {
+        tick: props.market.tick,
+        commerceUrl: res.d.commerceUrl,
+      })
+      await tweet(twitterId, postText, props.market.tick)
+      updateUserOPLocal(OP_CONSUME.POST)
+      notify({ message: 'Shared successfully' });
+    }
     showShareModal.value = false;
   } catch (e) {
     handleErrorTip(e);

@@ -7,7 +7,7 @@ import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useRoute } from "vue-router";
-import { getCommunityDetail, trade, createTokenCommerce } from '@/apis/api'
+import { getCommunityDetail, trade, createTokenCommerce, tweet } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
@@ -22,7 +22,8 @@ import { handleErrorTip, notify } from "@/utils/notify";
 import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
-import { openTwitterIntent } from "@/utils/twitterPost";
+import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from "@/utils/twitterPost";
+import { OP_CONSUME } from "@/config";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
@@ -54,7 +55,7 @@ let updatedReveiveAmount = 0n;
 
 const payEth = ref()
 const sellAmount = ref()
-const {replaceEmptyProfile} = useAccount()
+const {replaceEmptyProfile, updateUserOPLocal} = useAccount()
 
 const account = computed(() => {
   return accStore.getAccountInfo
@@ -290,11 +291,20 @@ async function confirm() {
       return
     }
 
-    openTwitterIntent({
-      text: content,
-      tick: token.tick,
-      commerceUrl: res.d.commerceUrl,
-    })
+    if (isNativeTwitterAccount(account.accountType)) {
+      openTwitterIntent({
+        text: content,
+        tick: token.tick,
+        commerceUrl: res.d.commerceUrl,
+      })
+    } else {
+      const postText = buildPlatformPostText(content, {
+        tick: token.tick,
+        commerceUrl: res.d.commerceUrl,
+      })
+      await tweet(account.twitterId, postText, token.tick)
+      updateUserOPLocal(OP_CONSUME.POST)
+    }
   }
 
   try{

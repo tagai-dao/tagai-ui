@@ -12,12 +12,15 @@ import { handleErrorTip } from "@/utils/notify";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import type { Space } from "@/types";
 import i18n from "@/lang";
-import { openTwitterIntent } from "@/utils/twitterPost";
+import { openTwitterIntent, isNativeTwitterAccount } from "@/utils/twitterPost";
+import { useAccount } from "@/composables/useAccount";
+import { OP_CONSUME } from "@/config";
 const t = i18n.global.t;
 
 const modalStore = useModalStore();
 const comStore = useCommunityStore();
 const accStore = useAccountStore();
+const { updateUserOPLocal } = useAccount();
 const {
   contentRef,
   showClear,
@@ -33,7 +36,7 @@ const {
 
 const emit = defineEmits(['close'])
 
-const { getSpaceIdFromUrl } = useSpace();
+const { getSpaceIdFromUrl, userTweetWithSpace } = useSpace();
 const { preCheckCuration } = useTweet();
 
 const invalidSpaceType = ref<InvalidSpaceCurationType>(InvalidSpaceCurationType.OK);
@@ -92,10 +95,14 @@ const onPostTweet = async () => {
       invalidSpaceType.value = InvalidSpaceCurationType.NOT_YOUR_SPACE
       return;
     }
-    openTwitterIntent({
-      text: `${tweetContent}\n${spaceLink.value}`,
-      tick: comStore.currentSelectedCommunity!.tick,
-    })
+    const spaceText = `${tweetContent}\n${spaceLink.value}`
+    const tick = comStore.currentSelectedCommunity!.tick
+    if (isNativeTwitterAccount(accStore.getAccountInfo?.accountType)) {
+      openTwitterIntent({ text: spaceText, tick })
+    } else {
+      await userTweetWithSpace(spaceText, tick, spaceId)
+      updateUserOPLocal(OP_CONSUME.POST)
+    }
     emit('close')
   } catch (e) {
     console.log(e);

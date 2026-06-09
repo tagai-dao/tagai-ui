@@ -11,8 +11,10 @@ import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
-import { newParticipation, createPredictCommerce } from '@/apis/api';
-import { openTwitterIntent } from '@/utils/twitterPost';
+import { newParticipation, createPredictCommerce, tweet } from '@/apis/api';
+import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from '@/utils/twitterPost';
+import { useAccount } from '@/composables/useAccount';
+import { OP_CONSUME } from '@/config';
 import { notify } from '@/utils/notify';
 import { ensureUserIPShare } from '@/composables/useIPShareGate';
 import PredictShareDialog from '@/components/common/PredictShareDialog.vue';
@@ -24,6 +26,7 @@ const props = defineProps<{
 }>()
 const router = useRouter();
 const accStore = useAccountStore();
+const { updateUserOPLocal } = useAccount();
 const { percentA, percentB } = usePredict(props.battle);
 // 购买状态管理
 const showBuyInput = ref(false);
@@ -93,12 +96,23 @@ const confirmShare = async (text: string) => {
       handleErrorTip(res);
       return;
     }
-    openTwitterIntent({
-      text,
-      tick: props.battle.tick,
-      commerceUrl: res.d.commerceUrl,
-    });
-    notify({ message: 'Opening Twitter to share...' });
+    const account = accStore.getAccountInfo!
+    if (isNativeTwitterAccount(account.accountType)) {
+      openTwitterIntent({
+        text,
+        tick: props.battle.tick,
+        commerceUrl: res.d.commerceUrl,
+      });
+      notify({ message: 'Opening Twitter to share...' });
+    } else {
+      const postText = buildPlatformPostText(text, {
+        tick: props.battle.tick,
+        commerceUrl: res.d.commerceUrl,
+      })
+      await tweet(twitterId, postText, props.battle.tick)
+      updateUserOPLocal(OP_CONSUME.POST)
+      notify({ message: 'Shared successfully' });
+    }
     showShareModal.value = false;
   } catch (e) {
     handleErrorTip(e);
