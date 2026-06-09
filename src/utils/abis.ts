@@ -4586,7 +4586,7 @@ export const abis = {
       }
     ],
 
-    "FPMMDeterministicFactory2": [
+    "FPMMDeterministicFactoryEvent": [
       {
         "anonymous": false,
         "inputs": [

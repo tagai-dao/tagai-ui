@@ -1,7 +1,7 @@
 import type { BattleData, Community, CreateCommunity, EventPredictData, OnchainTokenInfo, Tweet } from "@/types";
 import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
     USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee, 
-    FPMMDeterministicFactory2,
+    FPMMDeterministicFactoryEvent,
     OracleDistributor} from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
@@ -67,13 +67,13 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
 }
 
 export async function createEventMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, endTime: number, funding: bigint) {
-    await approveToken(FPMMDeterministicFactory2, tokenAddress, funding);
+    await approveToken(FPMMDeterministicFactoryEvent, tokenAddress, funding);
 
     const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
     distributionHint = Math.ceil(distributionHint)
     // 生成lmsrMarketMaker
     const hash = await writeContract({
-        contractName: 'FPMMDeterministicFactory2',
+        contractName: 'FPMMDeterministicFactoryEvent',
         functionName: 'create2FixedProductMarketMakerWithCondition',
         args: [tokenAddress, questionId, [100 - distributionHint, distributionHint], feePath, [nonce, 2, PredictionMinFee, PredictionMaxFee, endTime, funding]]
     });
