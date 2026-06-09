@@ -17,6 +17,7 @@ import TopOnlineSpaces from "@/components/home/TopOnlineSpaces.vue";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import {usePageScroll} from "@/composables/useTools";
 import emitter from "@/utils/emitter";
+import { IgnoreAuthor } from "@/config";
 
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
@@ -32,13 +33,13 @@ const comStore = useCommunityStore();
 const curationStore = useCurationStore()
 
 const showingTweets = computed(() => {
-  if(tweetsStore && tweetsStore.homeTweetType === TweetListType.New) {
+  if (tweetsStore?.homeTweetType === TweetListType.New) {
     return tweetsStore.newTweets
   }
-  if(tweetsStore && tweetsStore.homeTweetType === TweetListType.Trending) {
+  if (tweetsStore?.homeTweetType === TweetListType.Trending) {
     return tweetsStore.trendingTweets
   }
-  return [] as Tweet[];
+  return [] as Tweet[]
 });
 
 async function onRefresh() {
@@ -124,37 +125,43 @@ onActivated(() => {
               :offset="50"
               @load="onLoad"
           >
-            <div v-for="(tweet, index) of showingTweets" :key="tweet.tweetId" class="mb-2">
-              <SpaceItem
-                  v-if="tweet.spaceId"
-                  class="bg-white rounded-2xl"
-                  :tweet="tweet"
-                  @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
+            <!-- 用 template 包 v-for，避免与 v-if 同元素时 v-if 优先导致 tweet 被解析为 api.tweet 函数 -->
+            <template v-for="(tweet, index) of showingTweets" :key="tweet.tweetId">
+              <div
+                  v-if="IgnoreAuthor.indexOf(tweet?.twitterId ?? '') === -1"
+                  class="mb-2"
               >
-                <template #tweet-action-bar>
-                  <PostButtonGroup
-                      @click.stop
-                      :tweet="tweet"
-                  />
-                </template>
-              </SpaceItem>
-              <TweetItem
-                  v-else
-                  class="bg-white rounded-2xl"
-                  :tweet="tweet"
-                  @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
-              >
-                <template #tweet-trade v-if="tweet.commerceId">
-                  <CommerceBtn :tweet="tweet"/>
-                </template>
-                <template #tweet-action-bar>
-                  <PostButtonGroup
-                      @click.stop
-                      :tweet="tweet"
-                  />
-                </template>
-              </TweetItem>
-            </div>
+                <SpaceItem
+                    v-if="tweet.spaceId"
+                    class="bg-white rounded-2xl"
+                    :tweet="tweet"
+                    @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
+                >
+                  <template #tweet-action-bar>
+                    <PostButtonGroup
+                        @click.stop
+                        :tweet="tweet"
+                    />
+                  </template>
+                </SpaceItem>
+                <TweetItem
+                    v-else
+                    class="bg-white rounded-2xl"
+                    :tweet="tweet"
+                    @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
+                >
+                  <template #tweet-trade v-if="tweet.commerceId">
+                    <CommerceBtn :tweet="tweet"/>
+                  </template>
+                  <template #tweet-action-bar>
+                    <PostButtonGroup
+                        @click.stop
+                        :tweet="tweet"
+                    />
+                  </template>
+                </TweetItem>
+              </div>
+            </template>
           </van-list>
         </van-pull-refresh>
       </div>
