@@ -779,5 +779,7 @@
     "holdAmount": "보유량",
     "stakedAmount": "스테이킹"
   },
-  "login": "로그인"
+  "login": "로그인",
+  "retweet": "리트윗",
+  "share": "공유"
 }

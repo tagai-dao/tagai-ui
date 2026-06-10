@@ -63,7 +63,7 @@ async function reply() {
 </script>
 
 <template>
-  <button class="flex justify-center items-center gap-2"
+  <button class="flex justify-center items-center gap-2 p-2 -m-2" :aria-label="$t('postView.reply')" :title="$t('postView.reply')"
           @click.stop="preReply"
           :disabled="isRepling">
     <i-ep-loading v-if="isRepling" class="animate-spin w-5 h-5"/>

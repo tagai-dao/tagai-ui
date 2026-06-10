@@ -43,24 +43,28 @@ const goToTag = () => {
 
 <template>
   <div class="relative h-14 bg-white">
-    <div class="w-full h-full flex justify-between items-center px-8 relative z-10">
-      <router-link to="/" class="flex items-center justify-center cursor-pointer p-2" @click="goToTag">
+    <div class="w-full h-full flex justify-between items-center px-6 relative z-10">
+      <router-link to="/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]" @click="goToTag">
         <img v-if="isTagActive" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
+        <span class="text-[10px] leading-none" :class="isTagActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('home') }}</span>
       </router-link>
-      <router-link to="/coins" class="flex items-center justify-center cursor-pointer p-2">
+      <router-link to="/coins" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="isCoinActive" class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="">
+        <span class="text-[10px] leading-none" :class="isCoinActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('coin') }}</span>
       </router-link>
-      <router-link to="/predictions" class="flex items-center justify-center cursor-pointer p-2">
+      <router-link to="/predictions" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="isPredictionActive" class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
+        <span class="text-[10px] leading-none" :class="isPredictionActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('prediction') }}</span>
       </router-link>
-      <router-link to="/wallet/" class="flex items-center justify-center cursor-pointer p-2">
+      <router-link to="/wallet/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="$route.name==='wallet'" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-wallet.svg" alt="">
+        <span class="text-[10px] leading-none" :class="$route.name==='wallet' ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('wallet') }}</span>
       </router-link>
-      <ProfileBtn class="flex items-center justify-center cursor-pointer p-2" />
+      <ProfileBtn class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]" />
     </div>
   </div>
 </template>

@@ -89,7 +89,7 @@ const quote = async () => {
 </script>
 
 <template>
-  <button class="flex justify-center items-center gap-2"
+  <button class="flex justify-center items-center gap-2 p-2 -m-2" :aria-label="$t('curation.quote')" :title="$t('curation.quote')"
           @click.stop="preQuote"
           :disabled="isQuoting">
     <i-ep-loading v-if="isQuoting" class="animate-spin w-5 h-5"/>

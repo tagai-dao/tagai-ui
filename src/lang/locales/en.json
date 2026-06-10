@@ -779,5 +779,7 @@
     "holdAmount": "holding",
     "stakedAmount": "staking"
   },
-  "login": "Log in"
+  "login": "Log in",
+  "retweet": "Retweet",
+  "share": "Share"
 }

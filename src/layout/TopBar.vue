@@ -71,9 +71,7 @@ async function createTagCoin() {
             {{ useAccountStore().unreadMessageCount }}
           </div>
         </div>
-        <img class="w-6 cursor-pointer"
-             src="~@/assets/icons/icon-tabbar-create.svg" alt=""
-             @click="createTagCoin">
+        <!-- 创建入口统一为页面右下角 FAB，顶栏不再重复放置 + 按钮 -->
       </div>
       <ProfileBtn class="hidden web:flex"/>
       <router-link to="/wallet/">

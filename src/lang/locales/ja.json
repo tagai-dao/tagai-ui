@@ -779,5 +779,7 @@
     "holdAmount": "保有量",
     "stakedAmount": "ステーキング"
   },
-  "login": "ログイン"
+  "login": "ログイン",
+  "retweet": "リツイート",
+  "share": "共有"
 }

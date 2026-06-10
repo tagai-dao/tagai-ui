@@ -29,9 +29,20 @@ const TweetRex = /https:\/\/(twitter|x)\.com\/[0-9a-zA-Z]+\/status\/([0-9]+)(\/\
 export const useTweet = () => {
   const { updateUserVpLocal, updateUserOPLocal, vp, op, addBackOp, addBackVp } =
     useAccount();
+  // Agent 生成的内容常带原始 Markdown 标记（**bold**、## 标题、`code`），
+  // 展示层不渲染 Markdown，统一剥离标记，避免 ** 裸奔
+  const stripMarkdownMarks = (str: string) => {
+    return str
+      .replace(/\*\*([^*]+)\*\*/g, '$1')   // **bold**
+      .replace(/__([^_]+)__/g, '$1')        // __bold__
+      .replace(/`([^`]+)`/g, '$1')          // `code`
+      .replace(/^#{1,6}\s+/gm, '')          // # 标题
+  }
+
   const formatEmojiText = (str: string, preserveHtml = false) => {
     if (!str || str.trim().length === 0) return "";
-    
+
+    str = stripMarkdownMarks(str)
     // 安全处理: 先转义 HTML 实体，防止 XSS
     const escapedStr = preserveHtml ? str : escapeHtml(str);
     

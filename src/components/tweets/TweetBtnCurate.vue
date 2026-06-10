@@ -88,7 +88,7 @@ async function confirmCurate() {
 </script>
 
 <template>
-  <button class="flex justify-center items-center gap-2"
+  <button class="flex justify-center items-center gap-2 p-2 -m-2" :aria-label="$t('curation.curate')" :title="$t('curation.curate')"
           :class="btnclass"
           :disabled="isCurating"
           @click.stop="preCurate">

@@ -489,7 +489,7 @@ onMounted(async () => {
             <input
               v-model="payEth"
               type="number"
-              class="bg-transparent h-full flex-1 w-[120px] text-h3"
+              class="bg-transparent h-full flex-1 w-[120px] text-h3 tabular-nums"
               :disabled="isV8PreListNoTrade"
             />
             <span class="text-h5 whitespace-nowrap">$ BNB</span>
@@ -518,7 +518,7 @@ onMounted(async () => {
             <span class="text-h5"
               >{{$t('receive')}} ${{ comStore.currentSelectedCommunity?.tick }}</span
             >
-            <span class="text-h3">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
+            <span class="text-h3 tabular-nums">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
           </div>
           <div v-if="receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
@@ -533,7 +533,7 @@ onMounted(async () => {
             <input
               v-model="sellAmount"
               type="number"
-              class="bg-transparent h-full flex-1 w-[120px] text-h3"
+              class="bg-transparent h-full flex-1 w-[120px] text-h3 tabular-nums"
               :disabled="isV8PreListNoTrade"
             />
             <span class="text-h5 whitespace-nowrap min-w">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
@@ -546,7 +546,7 @@ onMounted(async () => {
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
           >
             <span class="text-h5">{{ $t('receive') }} $BNB</span>
-            <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
+            <span class="text-h3 tabular-nums">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
           </div>
           <div v-if="receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
