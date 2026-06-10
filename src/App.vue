@@ -12,12 +12,15 @@ import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
 import { isAddress } from "viem";
+import { useDocumentTitle } from "./composables/useDocumentTitle";
 
 const stateStore = useStateStore();
 const route = useRoute();
 const router = useRouter();
 const { setInter } = useInterval();
 const { updateVPOP, updateUnreadMessageCount } = useAccount();
+
+useDocumentTitle(route);
 
 function updateOgUrl() {
     const currentUrl = window.location.href;
