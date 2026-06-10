@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {ref, watch} from "vue";
 import debounce from "lodash.debounce"
-import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, searchMindShareByUsername } from "@/apis/api";
+import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, searchMindShareByUsername, getTokenByTickOrCA } from "@/apis/api";
 import { type Community, type MindShare, type Tweet } from "@/types";
 import TagListItem from "../home/TagListItem.vue";
 import { useCommunityStore } from "@/stores/community";
 import { useRouter } from "vue-router";
 
 type SearchResult = {
-  type: 'tweet' | 'space' | 'user' | 'community'
+  type: 'tweet' | 'space' | 'user' | 'community' | 'ca'
   id: string
 }
 
@@ -26,6 +26,8 @@ const router = useRouter();
 const spaceRegex = /https:\/\/(twitter|x)\.com\/i\/spaces\/([0-9a-z-A-Z]+)(\/\w)?/
 const tweetRegex = /https:\/\/(twitter|x)\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\/\w)?/
 const userRegex = /^@([a-zA-Z0-9_]+)/
+// 加密用户习惯：直接粘贴合约地址定位代币
+const caRegex = /^0x[0-9a-fA-F]{40}$/
 
 const onSearch = (e: any) => {
   if(searchText.value.trim().length > 0 && e.keyCode === 13) {
@@ -34,6 +36,12 @@ const onSearch = (e: any) => {
 }
 
 const testSearchText = (text: string) => {
+  if(caRegex.test(text)) {
+    return {
+      type: 'ca',
+      id: text
+    }
+  }
   if(tweetRegex.test(text)) {
     const match = text.match(tweetRegex);
     if (match) {
@@ -73,6 +81,12 @@ const onInput = debounce(async () => {
   if(!searchText.value.trim()) showSearchList.value = false
   searchResult.value = testSearchText(searchText.value.trim()) as SearchResult
   switch(searchResult.value.type) {
+    case 'ca': {
+      // 粘贴合约地址 → 命中则作为社区结果展示，点击直达 tag-detail
+      const token = await getTokenByTickOrCA(searchResult.value.id as string) as any
+      list.value = token?.tick ? [token] : []
+      break
+    }
     case 'tweet':
       tweetsList.value = [await getTweetById(searchResult.value.id as string) as any]
       break
@@ -127,7 +141,7 @@ function gotoProfile(username: string) {
       <div v-show="showSearchList"
            class="absolute top-14 bg-white left-0 right-0 rounded-2xl px-4 py-6 z-[999]">
 
-        <div v-if="searchResult.type === 'community'" class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
+        <div v-if="searchResult.type === 'community' || searchResult.type === 'ca'" class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
           <TagListItem v-for="community of list" :community :key="community.tick" @click="gotoDetail(community)"/>
         </div>
         <div v-if="(searchResult.type == 'tweet' || searchResult.type == 'space') && tweetsList.length > 0" class="grid h-screen overflow-auto">
