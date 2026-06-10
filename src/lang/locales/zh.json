@@ -233,7 +233,7 @@
     "invalidTickTip": "请输入1-16个字符(可以是数字/大小写字母/中文汉字， 但不能是纯数字)",
     "tagForbidden": "不能创建这个标贴",
     "descTooLong": "描述信息在1024个字符内",
-    "maxAmountTip" : "请输入小于650000000",
+    "maxAmountTip": "请输入小于650000000",
     "tickUsed": "这个名称已经被注册，请更换",
     "pay": "支付",
     "next": "下一步",
@@ -776,5 +776,6 @@
     "totalAmount": "总量",
     "holdAmount": "持有",
     "stakedAmount": "已质押"
-  }
+  },
+  "login": "登录"
 }

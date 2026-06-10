@@ -146,10 +146,10 @@
 新增 `/coins`、`/predictions` 路由指向 `HomeView`（meta 驱动 `stateStore.activeMainMenu`），子 Tab 用 `?tab=`；登录守卫补 `?redirect=` 回跳；导航改 `<router-link>`。
 落点：`src/router/index.ts`、`LeftSidebar.vue:56-83`、`TabBar.vue`、`HomeView.vue`。
 
-### 4.2 顶栏常驻身份入口 + 统一登录抽屉
-- 顶栏（3.1 腾出的位置）：未登录 → 「Connect / Sign in」主按钮；已登录 → 头像 + BNB 余额下拉。
-- 抽屉双段：「用 X 账号开始」（Privy，`src/react_app/`）/「连接钱包」（`ChoseWallet.vue` 扩展 OKX + WalletConnect v2，`src/utils/wallets.ts`）；记住上次方式标 "Recent"。
-- 全站所有登录触发点收敛到此抽屉（`GlobalModalType` 调度不变）。
+### 4.2 登录入口（按产品负责人决定调整：保留原有流程，不加顶栏登录按钮）
+- 保留原有登录流程：点击 Profile → Twitter 授权（Privy）。
+- 未登录时侧边栏/底栏的「Profile / 我的」显示为「登录 / Log in」，作为唯一显性登录入口（已实现）。
+- 钱包扩展（OKX + WalletConnect v2，`ChoseWallet.vue` + `src/utils/wallets.ts`）保留在后续批次，仅用于交易/创建场景的钱包选择，不与账号登录混合。
 
 ### 4.3 币卡片与详情页信息升级
 - 依赖 API 2.2 ①②③④⑦：卡片按 3.5 改版；列表工具栏加排序（新创建/市值/24h 涨幅/即将毕业）与「隐藏未验证」开关（默认开）。

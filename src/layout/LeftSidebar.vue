@@ -216,7 +216,8 @@ const handleWalletClick = (e?: Event) => {
             alt=""
           >
         </div>
-        <span class="text-h4 text-black">{{ $t('profile') || 'Profile' }}</span>
+        <!-- 未登录时显示「登录」，点击进入原有 Twitter 授权流程 -->
+        <span class="text-h4 text-black">{{ accStore.getAccountInfo ? ($t('profile') || 'Profile') : ($t('login') || 'Log in') }}</span>
       </div>
 
       <!-- 7. About -->

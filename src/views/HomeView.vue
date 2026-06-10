@@ -115,7 +115,7 @@ async function loadMore() {
       if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length == 0) {
         return;
       }
-      let communities = await getCommunityByMarketCap((comStore.marketCapCommunities.length - 1) / 30 + 1) as Array<Community>;
+      let communities = await getCommunityByMarketCap(Math.floor((comStore.marketCapCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
       }
@@ -127,7 +127,7 @@ async function loadMore() {
         return;
       }
       if (finished[ListType.New]) return;
-      let communities = await getCommunitiesByNew((comStore.newCommunities.length - 1) / 30 + 1) as Array<Community>;
+      let communities = await getCommunitiesByNew(Math.floor((comStore.newCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = comStore.newCommunities.concat(await getTokenInfo(communities))
       }
@@ -139,7 +139,7 @@ async function loadMore() {
         return;
       }
       if (finished[ListType.Trending]) return;
-      let communities = await getCommunitiesByTrending((comStore.trendingCommunities.length - 1) / 30 + 1) as Array<Community>;
+      let communities = await getCommunitiesByTrending(Math.floor((comStore.trendingCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
       }
@@ -187,6 +187,13 @@ function gotoDetail(com: Community) {
   comStore.currentSelectedCommunity = com
   router.push(`/tag-detail/${com.tick}`)
 }
+
+// 当前排序对应的列表（finished 文案据此判断，避免"加载完毕"被静默吞掉）
+const currentCoinList = computed(() => {
+  if (listType.value == ListType.MarketCap) return comStore.marketCapCommunities
+  if (listType.value == ListType.New) return comStore.newCommunities
+  return comStore.trendingCommunities
+})
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（深链 ?tab=ip 由路由守卫恢复）
 const route = useRoute()
@@ -272,7 +279,7 @@ const onCreate = (type: GlobalModalType) => {
 </script>
 
 <template>
-  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2 web:max-w-[1240px] web:mx-auto w-full">
+  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2 w-full">
     <!-- 新社区列表（TagCoin 滚动条）- 移动端显示在 Space 滚动条上方，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
     <div class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
       <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
@@ -324,7 +331,7 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Tag 菜单：Trending 和 New 按钮 -->
-    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 flex gap-2 items-center">
+    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center">
       <div class="flex gap-2">
         <button 
           class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
@@ -344,7 +351,7 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Coin 菜单：TagCoin 和 IPShare 按钮 -->
-    <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
+    <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center justify-between">
       <div class="flex gap-2">
         <button
           class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
@@ -377,7 +384,7 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Prediction 菜单：Battle 和 Real World 标签 -->
-    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 flex gap-2 items-center">
+    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center">
       <div class="flex gap-2">
         <button
           class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
@@ -400,14 +407,15 @@ const onCreate = (type: GlobalModalType) => {
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
       <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh v-model="refreshing" @refresh="refresh"
-                          class="min-h-full"
+                          class="min-h-full web:max-w-[1240px] web:mx-auto"
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
           <van-list :loading="loading"
                     :finished="finished[listType]"
                     :immediate-check="false"
-                    :finished-text="comStore.marketCapCommunities.length==0?'':$t('noMore')"
+                    :loading-text="$t('loading')"
+                    :finished-text="currentCoinList.length==0?'':$t('noMore')"
                     :offset="50"
                     @load="loadMore">
 
