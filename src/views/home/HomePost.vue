@@ -128,7 +128,6 @@ onActivated(() => {
             <!-- 用 template 包 v-for，避免与 v-if 同元素时 v-if 优先导致 tweet 被解析为 api.tweet 函数 -->
             <template v-for="(tweet, index) of showingTweets" :key="tweet.tweetId">
               <div
-                  v-if="IgnoreAuthor.indexOf(tweet?.twitterId ?? '') === -1"
                   class="mb-2"
               >
                 <SpaceItem
