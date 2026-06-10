@@ -4,6 +4,7 @@ import utc from 'dayjs/plugin/utc';
 import dayjs from 'dayjs';
 import { BACKEND_API_URL } from '@/config';
 import { reportLog as reportLogApi } from '@/apis/api';
+import { getCurrentLocale } from '@/lang';
 (dayjs as any).extend(utc)
 
 export const sleep = async (time: number) => {
@@ -277,52 +278,42 @@ export function formatPastTime(timeSecond: number) {
   }
 }
 
+// 按当前语言的相对时间格式化（修复原先 "1 days ago" 英文硬拼接，支持 en/zh/ko/ja）
+const rtfCache: Record<string, Intl.RelativeTimeFormat> = {}
+function getRelativeTimeFormat() {
+  const locale = getCurrentLocale()
+  if (!rtfCache[locale]) {
+    rtfCache[locale] = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' })
+  }
+  return rtfCache[locale]
+}
+
 export function parseTimestamp(time: any) {
   if (!time) {
     return ''
   }
-  
-  let timestamp = new Date(time).getTime() / 1000
-  // if (typeof(time) === 'string' && !time.match(/^[0-9]$/)) {
-  //   let local = new Date().getTimezoneOffset()
-  //   timestamp = timestamp + local * 60
-  // }
 
-  let nowStamp = new Date().getTime() / 1000
-  nowStamp = Math.ceil(nowStamp)
-  timestamp = Math.ceil(timestamp)
-  let diff = nowStamp - timestamp;
-  if (diff < 0) {
-    diff = timestamp - nowStamp
-    if (diff < 10) {
-      return 'Now'
-    } else if (diff < 60) {
-      return `${diff} seconds left`
-    } else if (diff < 3600) {
-      return `${Math.floor(diff / 60)} mins left`
-    } else if (diff < 3600 * 24) {
-      return `${Math.floor(diff / 3600)} hours left`
-    } else if (diff < 3600 * 24 * 30) {
-      return `${Math.floor(diff / 3600 / 24)} days left`
-    } else if (diff < 3600 * 24 * 60) {
-      return '1 month left'
-    } else {
-      return getDateString(null, null, timestamp - nowStamp)
-    }
+  const timestamp = Math.ceil(new Date(time).getTime() / 1000)
+  const nowStamp = Math.ceil(Date.now() / 1000)
+  // 正值 = 未来，负值 = 过去（Intl.RelativeTimeFormat 的约定）
+  const delta = timestamp - nowStamp
+  const abs = Math.abs(delta)
+  const rtf = getRelativeTimeFormat()
+
+  if (abs < 10) {
+    return rtf.format(0, 'second')
+  } else if (abs < 60) {
+    return rtf.format(Math.trunc(delta), 'second')
+  } else if (abs < 3600) {
+    return rtf.format(Math.trunc(delta / 60), 'minute')
+  } else if (abs < 3600 * 24) {
+    return rtf.format(Math.trunc(delta / 3600), 'hour')
+  } else if (abs < 3600 * 24 * 30) {
+    return rtf.format(Math.trunc(delta / 3600 / 24), 'day')
+  } else if (delta > 0 && abs < 3600 * 24 * 60) {
+    return rtf.format(1, 'month')
   } else {
-    if (diff < 10) {
-      return 'Now'
-    } else if (diff < 60) {
-      return `${diff} seconds ago`
-    } else if (diff < 3600) {
-      return `${Math.floor(diff / 60)} mins ago`
-    } else if (diff < 3600 * 24) {
-      return `${Math.floor(diff / 3600)} hours ago`
-    } else if (diff < 3600 * 24 * 30) {
-      return `${Math.floor(diff / 3600 / 24)} days ago`
-    } else {
-      return getDateString(null, null, timestamp - nowStamp)
-    }
+    return getDateString(null, null, delta)
   }
 }
 

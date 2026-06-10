@@ -8,6 +8,7 @@ import { useRouter } from "vue-router";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useI18n } from 'vue-i18n'
+import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
 
 const modalVisible = ref(false)
 const ruleModalVisible = ref(false)
@@ -18,10 +19,9 @@ const menuRef = ref()
 
 const { locale } = useI18n()
 
-const switchLanguage = (lang: string) => {
+const switchLanguage = (lang: LocaleCode) => {
   menuRef.value?.hide()
-  locale.value = lang
-  localStorage.setItem('language', lang)
+  setLocale(lang)
 }
 
 function onClickWallet() {
@@ -100,17 +100,16 @@ async function createTagCoin() {
 <!--              <img class="w-4" src="~@/assets/icons/icon-wallet.svg" alt="">-->
 <!--              <span>{{$t('wallet')}}</span>-->
 <!--            </div>-->
-            <div v-if="$i18n.locale==='zh'"
-                 @click="switchLanguage('en')"
-                 class="flex gap-2 items-center cursor-pointer">
-              <img class="w-4" src="~@/assets/icons/icon-lang-en.svg" alt="">
-              <span>英文</span>
-            </div>
-            <div v-if="$i18n.locale==='en'"
-                 @click="switchLanguage('zh')"
-                 class="flex gap-2 items-center cursor-pointer">
-              <img class="w-4 cursor-pointer" src="~@/assets/icons/icon-lang-zh.svg" alt="">
-              <span>中文</span>
+            <!-- 四语切换：当前语言打勾 -->
+            <div v-for="l of SUPPORTED_LOCALES" :key="l.code"
+                 @click="switchLanguage(l.code)"
+                 class="flex gap-2 items-center justify-between cursor-pointer"
+                 :class="locale === l.code ? 'text-orange-normal font-semibold' : ''">
+              <div class="flex gap-2 items-center">
+                <img class="w-4" src="~@/assets/icons/icon-lang-en.svg" alt="">
+                <span>{{ l.label }}</span>
+              </div>
+              <span v-if="locale === l.code">✓</span>
             </div>
             <a class="flex gap-2 items-center cursor-pointer"
                @click="menuRef.hide()"

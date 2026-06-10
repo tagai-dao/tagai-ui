@@ -483,7 +483,9 @@
     "marketCreatorNotMatch": "市场创建者不匹配当前用户",
     "tokenNotListed": "代币未上市",
     "predictNotVoting": "该预测未在投票阶段",
-    "predictHasVoted": "您已经参与过了该预测市场投票"
+    "predictHasVoted": "您已经参与过了该预测市场投票",
+    "tweetAIsIllegalForPredict": "推文A在另一个社区或已结算或是Space策展",
+    "tweetBIsIllegalForPredict": "推文B在另一个社区或已结算或是Space策展"
   },
   "createPredict": {
     "title": "创建预测对战",
@@ -779,5 +781,6 @@
     "holdAmount": "持有",
     "stakedAmount": "已质押"
   },
-  "login": "登录"
+  "login": "登录",
+  "amount": "数量"
 }
