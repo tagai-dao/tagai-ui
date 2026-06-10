@@ -51,10 +51,15 @@ const communityTags = computed(() => parseTagsJson(props.community.tags ?? undef
       <div class="flex gap-x-2 items-end flex-wrap">
         <span class="text-grey-normal text-h2 font-bold leading-6" :class="community.listed ? 'text-orange-normal' : ''">{{ community.tick }}</span>
         <div class="flex-1 flex justify-end mt-1">
-          <div v-if="community.marketCap" class="flex items-end gap-1">
+          <div v-if="community.marketCap" class="flex items-end gap-1.5">
             <span class="font-normal italic text-grey-64 leading-5 text-sm">{{ $t('marketCap') }}</span>
             <span class="font-medium italic text-orange-normal leading-5 text-sm">
               {{ formatUsdCompact(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}
+            </span>
+            <span v-if="typeof community.priceChange24h === 'number'"
+                  class="font-semibold leading-5 text-sm whitespace-nowrap"
+                  :class="community.priceChange24h >= 0 ? 'text-up' : 'text-down'">
+              {{ community.priceChange24h >= 0 ? '+' : '' }}{{ community.priceChange24h.toFixed(1) }}%
             </span>
           </div>
         </div>

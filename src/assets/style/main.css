@@ -11,6 +11,12 @@ html, body {
   background: white;
 }
 
+/* 涨跌语义色：默认绿涨红跌；P1 将按 locale（zh/ko/ja 红涨）切换这两个变量 */
+:root {
+  --color-up: #16A34A;
+  --color-down: #E6374D;
+}
+
 #app {
   position: absolute;
   top: 0;
