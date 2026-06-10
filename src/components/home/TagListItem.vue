@@ -12,6 +12,7 @@ import { useCommunityStore } from '@/stores/community';
 import { useStateStore } from '@/stores/common';
 import { getTagStyle, parseTagsJson } from '@/composables/useTags'
 import IconLinks from "@/components/home/IconLinks.vue";
+import Sparkline from "@/components/common/Sparkline.vue";
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
@@ -88,7 +89,7 @@ const createTimeText = computed(() => {
           <div class="truncate text-grey-5a text-[14px] leading-[20px] font-medium" :title="community.description">
             {{ community.description }}
           </div>
-          <!-- 数据行：bonding curve 进度（内盘币）/ 创建时间 -->
+          <!-- 数据行：内盘币显示 bonding curve 进度，已上市币显示 24h sparkline / 创建时间 -->
           <div class="flex items-center gap-2 mt-1.5 text-sm text-grey-64">
             <template v-if="!community.listed && !community.isImport && typeof community.bondingCurveSupply === 'number'">
               <div class="w-[72px] h-1.5 rounded-full bg-grey-light-active overflow-hidden">
@@ -96,6 +97,7 @@ const createTimeText = computed(() => {
               </div>
               <span class="tabular-nums">{{ curveProgress.toFixed(0) }}%</span>
             </template>
+            <Sparkline v-else-if="community.sparkline24h && community.sparkline24h.length > 1" :points="community.sparkline24h" />
             <span v-if="createTimeText" class="ml-auto whitespace-nowrap">{{ createTimeText }}</span>
           </div>
         </div>
