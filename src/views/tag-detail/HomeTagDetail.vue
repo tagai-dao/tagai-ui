@@ -369,15 +369,23 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
           <span class="text-sm font-semibold whitespace-nowrap">CA</span>
           <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px]">
             {{ comStore.currentSelectedCommunity?.token }}
           </div>
-          <button @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
+          <button class="p-1.5 -m-1" @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
                   :disabled="!(comStore.currentSelectedCommunity?.token)">
-            <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
+            <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
           </button>
+          <div v-if="comStore.currentSelectedCommunity?.token" class="flex items-center gap-2 text-xs text-grey-64">
+            <a class="hover:text-orange-normal underline underline-offset-2" target="_blank" rel="noopener"
+               :href="`https://bscscan.com/token/${comStore.currentSelectedCommunity?.token}`">BscScan</a>
+            <a class="hover:text-orange-normal underline underline-offset-2" target="_blank" rel="noopener"
+               :href="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.token}`">DexScreener</a>
+            <a class="hover:text-orange-normal underline underline-offset-2" target="_blank" rel="noopener"
+               :href="`https://gmgn.ai/bsc/token/${comStore.currentSelectedCommunity?.token}`">GMGN</a>
+          </div>
         </div>
         <div v-if="!comStore.currentSelectedCommunity?.isImport" class="text-base font-medium flex items-center gap-1">
           <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
@@ -575,10 +583,18 @@ onBeforeRouteLeave((to, from, next) => {
                 <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px] flex-1 truncate">
                   {{ comStore.currentSelectedCommunity?.token }}
                 </div>
-                <button @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
+                <button class="p-2 -m-1" @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
                         :disabled="!(comStore.currentSelectedCommunity?.token)">
-                  <img class="w-[8px]" src="~@/assets/icons/icon-copy.svg" alt="">
+                  <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
                 </button>
+              </div>
+              <div v-if="comStore.currentSelectedCommunity?.token" class="flex items-center gap-3 text-xs text-grey-64">
+                <a class="underline underline-offset-2" target="_blank" rel="noopener"
+                   :href="`https://bscscan.com/token/${comStore.currentSelectedCommunity?.token}`">BscScan</a>
+                <a class="underline underline-offset-2" target="_blank" rel="noopener"
+                   :href="`https://dexscreener.com/bsc/${comStore.currentSelectedCommunity?.token}`">DexScreener</a>
+                <a class="underline underline-offset-2" target="_blank" rel="noopener"
+                   :href="`https://gmgn.ai/bsc/token/${comStore.currentSelectedCommunity?.token}`">GMGN</a>
               </div>
               <div v-if="!comStore.currentSelectedCommunity?.isImport" class="text-base font-medium flex items-center gap-1">
                 <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
