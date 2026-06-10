@@ -78,7 +78,7 @@ onMounted(async () => {
       <van-list :loading="loading"
                 :finished="finished"
                 :immediate-check="false"
-                :finished-text="$t('noMore')"
+                :finished-text="listData.length === 0 ? $t('emptyStates.beFirstComment') : $t('noMore')"
                 :scroller="scroller"
                 :offset="50"
                 @load="onLoad">

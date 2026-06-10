@@ -785,5 +785,18 @@
   "amount": "数量",
   "retweet": "转发",
   "share": "分享",
-  "hideDust": "隐藏小市值"
+  "hideDust": "隐藏小市值",
+  "emptyStates": {
+    "noLiveSpaces": "当前没有进行中的 Space",
+    "startSpaceTip": "去 X 发起一个，带上 #TagAI",
+    "beFirstComment": "成为第一个评论的人"
+  },
+  "onboard": {
+    "title": "初来 TagAI？",
+    "step1": "发推带上 #TagAI + 社区标签，内容直接上链",
+    "step2": "策展优质帖子，赚取 TagCoin 奖励",
+    "step3": "交易 TagCoin，或与社区一起参与预测市场",
+    "learnMore": "了解更多",
+    "dismiss": "知道了"
+  }
 }

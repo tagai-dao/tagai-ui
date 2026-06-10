@@ -782,5 +782,18 @@
   "login": "ログイン",
   "retweet": "リツイート",
   "share": "共有",
-  "hideDust": "小額コインを非表示"
+  "hideDust": "小額コインを非表示",
+  "emptyStates": {
+    "noLiveSpaces": "現在進行中のスペースはありません",
+    "startSpaceTip": "Xで #TagAI を付けてスペースを始めましょう",
+    "beFirstComment": "最初のコメントを書いてみましょう"
+  },
+  "onboard": {
+    "title": "TagAIは初めてですか？",
+    "step1": "#TagAI + コミュニティタグでツイートすると、コンテンツがオンチェーンに記録されます",
+    "step2": "良い投稿をキュレーションしてTagCoin報酬を獲得",
+    "step3": "TagCoinを取引したり、コミュニティと予測マーケットに参加したり",
+    "learnMore": "詳しく見る",
+    "dismiss": "OK"
+  }
 }

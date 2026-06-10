@@ -782,5 +782,18 @@
   "login": "Log in",
   "retweet": "Retweet",
   "share": "Share",
-  "hideDust": "Hide dust"
+  "hideDust": "Hide dust",
+  "emptyStates": {
+    "noLiveSpaces": "No live Spaces right now",
+    "startSpaceTip": "Start one on X with #TagAI",
+    "beFirstComment": "Be the first to comment"
+  },
+  "onboard": {
+    "title": "New to TagAI?",
+    "step1": "Tweet with #TagAI + a community tag — your content goes on-chain",
+    "step2": "Curate good posts to earn TagCoin rewards",
+    "step3": "Trade TagCoins or join prediction markets with your community",
+    "learnMore": "Learn more",
+    "dismiss": "Got it"
+  }
 }

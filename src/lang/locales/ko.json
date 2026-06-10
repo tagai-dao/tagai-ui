@@ -782,5 +782,18 @@
   "login": "로그인",
   "retweet": "리트윗",
   "share": "공유",
-  "hideDust": "소액 코인 숨기기"
+  "hideDust": "소액 코인 숨기기",
+  "emptyStates": {
+    "noLiveSpaces": "진행 중인 스페이스가 없습니다",
+    "startSpaceTip": "X에서 #TagAI와 함께 스페이스를 시작해 보세요",
+    "beFirstComment": "첫 번째 댓글을 남겨 보세요"
+  },
+  "onboard": {
+    "title": "TagAI가 처음이신가요?",
+    "step1": "#TagAI + 커뮤니티 태그로 트윗하면 콘텐츠가 온체인에 기록됩니다",
+    "step2": "좋은 게시물을 큐레이션하고 TagCoin 보상을 받으세요",
+    "step3": "TagCoin을 거래하거나 커뮤니티와 함께 예측 마켓에 참여하세요",
+    "learnMore": "더 알아보기",
+    "dismiss": "알겠습니다"
+  }
 }
