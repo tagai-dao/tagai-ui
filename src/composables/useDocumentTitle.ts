@@ -2,19 +2,23 @@ import { watchEffect } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { useCommunityStore } from '@/stores/community'
 import { useCurationStore } from '@/stores/curation'
+import i18n from '@/lang'
 
-const routeTitles: Record<string, string> = {
-  home: 'Home',
-  commerce: 'Home',
-  profile: 'Profile',
-  wallet: 'Wallet',
-  notification: 'Notifications',
-  'login-call-back': 'Login',
+// 路由名 -> i18n key（已有四语翻译的导航词直接复用）
+const routeTitleKeys: Record<string, string> = {
+  home: 'home',
+  commerce: 'home',
+  coins: 'coin',
+  predictions: 'prediction',
+  profile: 'profile',
+  wallet: 'wallet',
+  notification: 'notification',
+  'login-call-back': 'login',
   'clanker-token': 'Token',
-  'tip-record': 'Tip Records',
-  'predict-battle': 'Prediction Battle',
-  'predict-event': 'Prediction Market',
-  about: 'About'
+  'tip-record': 'tips',
+  'predict-battle': 'createPredict.tabBattle',
+  'predict-event': 'createPredict.tabEvent',
+  about: 'about'
 }
 
 function trimTitle(value: string, maxLength = 60) {
@@ -57,11 +61,18 @@ function getPageTitle(route: RouteLocationNormalizedLoaded) {
     return username ? `@${username}` : 'User'
   }
 
-  return routeTitles[routeName] || 'TagAI'
+  const key = routeTitleKeys[routeName]
+  if (key) {
+    // @ts-ignore composition t
+    const translated = i18n.global.t(key)
+    return translated === key ? key : translated
+  }
+  return 'TagAI'
 }
 
 export function useDocumentTitle(route: RouteLocationNormalizedLoaded) {
   watchEffect(() => {
+    // i18n.global.t 订阅 locale，语言切换时标题随之更新
     const pageTitle = getPageTitle(route)
     document.title = pageTitle === 'TagAI' ? pageTitle : `${pageTitle} | TagAI`
   })

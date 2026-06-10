@@ -47,13 +47,35 @@ export function getCurrentLocale(): LocaleCode {
   return isSupported(code) ? code : 'en'
 }
 
+// 四语 SEO 描述（meta description / og:description 随 locale）
+const SEO_DESCRIPTION: Record<LocaleCode, string> = {
+  en: 'TagAI — social fair launch and trading on BNB Chain. Turn tweets into TagCoins, curate to earn, trade and predict with your community.',
+  zh: 'TagAI — BNB Chain 上的社交公平发射与交易平台。推文变代币，策展即收益，与社区一起交易和预测。',
+  ko: 'TagAI — BNB Chain 기반 소셜 페어런치 & 트레이딩 플랫폼. 트윗을 TagCoin으로, 큐레이션으로 수익을, 커뮤니티와 함께 거래와 예측을.',
+  ja: 'TagAI — BNB Chain上のソーシャルフェアローンチ＆取引プラットフォーム。ツイートをTagCoinに、キュレーションで報酬を、コミュニティと一緒に取引と予測を。',
+}
+
 /**
- * 语言切换的副作用统一在这里：持久化、<html lang>、涨跌色习惯。
+ * 语言切换的副作用统一在这里：持久化、<html lang>、SEO 描述、涨跌色习惯。
  * 东亚（zh/ko/ja）交易习惯为红涨绿跌，欧美为绿涨红跌。
  */
 export function applyLocaleSideEffects(code: LocaleCode) {
   localStorage.setItem('language', code)
   document.documentElement.lang = code
+
+  // meta description / og:description 随语言
+  const desc = SEO_DESCRIPTION[code]
+  for (const selector of ['meta[name="description"]', 'meta[property="og:description"]', 'meta[name="twitter:description"]']) {
+    let el = document.querySelector(selector) as HTMLMetaElement | null
+    if (!el) {
+      el = document.createElement('meta')
+      const m = selector.match(/\[(name|property)="([^"]+)"\]/)
+      if (m) el.setAttribute(m[1], m[2])
+      document.head.appendChild(el)
+    }
+    el.setAttribute('content', desc)
+  }
+
   const redUp = code === 'zh' || code === 'ko' || code === 'ja'
   const root = document.documentElement.style
   root.setProperty('--color-up', redUp ? '#E6374D' : '#16A34A')
