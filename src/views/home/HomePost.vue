@@ -108,8 +108,8 @@ onActivated(() => {
 </script>
 
 <template>
-  <!-- 内容列限宽 600px（阅读行长上限），右栏固定 340px，整体居中；窄屏自动收缩 -->
-  <div class="flex-1 overflow-hidden grid grid-cols-1 web:grid-cols-[minmax(0,600px)_minmax(280px,340px)] web:justify-center gap-3 px-3">
+  <!-- 内容列限宽 600px（阅读行长上限）；中间档（804-1080）单列居中，≥1080 右栏 340px -->
+  <div class="flex-1 overflow-hidden grid grid-cols-1 web:grid-cols-[minmax(0,600px)] desk:grid-cols-[minmax(0,600px)_minmax(280px,340px)] web:justify-center gap-3 px-3">
     <div class="h-full overflow-hidden min-w-0">
       <div class="h-full overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh class="min-h-full"
@@ -166,7 +166,7 @@ onActivated(() => {
         </van-pull-refresh>
       </div>
     </div>
-    <div class="h-full overflow-hidden hidden web:block">
+    <div class="h-full overflow-hidden hidden desk:block">
       <div class="h-full flex flex-col gap-3 overflow-y-auto no-scroll-bar">
         <!-- Live Spaces -->
         <TopOnlineSpaces />

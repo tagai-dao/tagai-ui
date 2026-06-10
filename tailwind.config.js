@@ -99,6 +99,8 @@ export default {
     },
     screens: {
       'web': '804px',
+      // 中间档：804–1080 侧栏图标化、隐藏右栏；≥1080 完整三栏
+      'desk': '1080px',
       ...defaultTheme.screens,
     }
   },
