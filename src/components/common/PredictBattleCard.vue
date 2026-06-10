@@ -394,26 +394,31 @@ const confirmBuy = async () => {
             </TweetBtnCurate>
           </div>
 
+          <!-- 红/蓝占比双色条 -->
+          <div v-if="!isSettled" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+            <div class="h-full bg-red-normal transition-all duration-300" :style="{ width: (percentA * 100).toFixed(1) + '%' }"></div>
+            <div class="h-full bg-blue-600 transition-all duration-300" :style="{ width: (percentB * 100).toFixed(1) + '%' }"></div>
+          </div>
           <!-- 底部：购买按钮区域 -->
           <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
             <Transition name="buy-buttons" mode="out-in">
-              <!-- 默认状态：两个购买按钮 -->
+              <!-- 默认状态：两个购买按钮（概率大字为主视觉） -->
               <div v-if="!showBuyInput" key="buttons" class="flex gap-3 sm:gap-4 w-full">
-                <button 
-                  class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
+                <button
+                  class="flex-1 h-10 sm:h-12 bg-red-normal text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
                   @click="buyRed()"
                   :disabled="isSettled"
                 >
-                  {{ $t('predictTrade.buyRed') || '购买红色' }}
-                 ({{ percentA.toFixed(2) }})
+                  <span class="text-base sm:text-lg">{{ (percentA * 100).toFixed(0) }}%</span>
+                  <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyRed') || '购买红色' }}</span>
                 </button>
-                <button 
-                  class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
+                <button
+                  class="flex-1 h-10 sm:h-12 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
                   @click="buyBlue()"
                   :disabled="isSettled"
                 >
-                  {{ $t('predictTrade.buyBlue') || '购买蓝色' }}
-                  ({{ percentB.toFixed(2) }})
+                  <span class="text-base sm:text-lg">{{ (percentB * 100).toFixed(0) }}%</span>
+                  <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyBlue') || '购买蓝色' }}</span>
                 </button>
               </div>
               
