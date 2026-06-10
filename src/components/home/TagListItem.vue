@@ -2,7 +2,7 @@
 import { type Community } from '@/types';
 import { computed } from 'vue'
 import { useCurationStore } from '@/stores/curation';
-import { formatPrice } from '@/utils/helper';
+import { formatUsdCompact } from '@/utils/format';
 import { useAccountStore } from '@/stores/web3';
 import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
@@ -54,7 +54,7 @@ const communityTags = computed(() => parseTagsJson(props.community.tags ?? undef
           <div v-if="community.marketCap" class="flex items-end gap-1">
             <span class="font-normal italic text-grey-64 leading-5 text-sm">{{ $t('marketCap') }}</span>
             <span class="font-medium italic text-orange-normal leading-5 text-sm">
-              {{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}
+              {{ formatUsdCompact(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}
             </span>
           </div>
         </div>

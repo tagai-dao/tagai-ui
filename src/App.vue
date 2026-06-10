@@ -114,6 +114,14 @@ onMounted(async () => {
   emitter.on('login', updateVPOP);
   emitter.on('login', updateUnreadMessageCount);
   emitter.on('login', updateIPShare);
+  // 登录前被守卫拦截的页面（见 router beforeEach），登录成功后回跳
+  emitter.on('login', () => {
+    const redirect = sessionStorage.getItem('login-redirect')
+    if (redirect) {
+      sessionStorage.removeItem('login-redirect')
+      router.push(redirect)
+    }
+  });
 
   updateOgUrl();
 })

@@ -147,7 +147,7 @@ onMounted( () => {
           </div>
           <!-- PC 端顶部栏：搜索框和语言切换 - 根据路由 meta 控制显示 -->
           <div v-if="$route.meta.topBar !== false" class="hidden web:flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-            <div class="flex-1 max-w-2xl">
+            <div class="flex-1 max-w-[360px] focus-within:max-w-[480px] transition-all duration-200">
               <SearchBar />
             </div>
             <div class="ml-4">

@@ -7,13 +7,14 @@ import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, 
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
 import {handleErrorTip} from '@/utils/notify'
-import {useRouter} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import {getTokenInfo} from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
 import {formatPrice} from "../utils/helper";
+import {formatUsdCompact} from "@/utils/format";
 import {useModalStore, useStateStore} from "@/stores/common";
 import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
@@ -187,6 +188,15 @@ function gotoDetail(com: Community) {
   router.push(`/tag-detail/${com.tick}`)
 }
 
+// Coin 子 Tab 切换：状态 + URL query 双向同步（深链 ?tab=ip 由路由守卫恢复）
+const route = useRoute()
+function switchCoinTab(tab: 'tagCoin' | 'ip') {
+  stateStore.setCoinSubMenu(tab)
+  if (route.name === 'coins') {
+    router.replace({ query: tab === 'ip' ? { tab: 'ip' } : {} })
+  }
+}
+
 
 onMounted(async () => {
   refresh();
@@ -262,7 +272,7 @@ const onCreate = (type: GlobalModalType) => {
 </script>
 
 <template>
-  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2">
+  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2 web:max-w-[1240px] web:mx-auto w-full">
     <!-- 新社区列表（TagCoin 滚动条）- 移动端显示在 Space 滚动条上方，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
     <div class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
       <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
@@ -278,8 +288,8 @@ const onCreate = (type: GlobalModalType) => {
                 </div>
               </div>
               <div class="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
-                <div class="text-[10px] web:text-xs font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
-                <span class="text-[10px] web:text-xs font-bold text-black truncate w-full">${{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
+                <div class="text-sm font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
+                <span class="text-sm font-bold text-black truncate w-full">{{ formatUsdCompact(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}</span>
               </div>
             </div>
           </div>
@@ -317,14 +327,14 @@ const onCreate = (type: GlobalModalType) => {
     <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 flex gap-2 items-center">
       <div class="flex gap-2">
         <button 
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="tweetsStore.homeTweetType === TweetListType.Trending ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="tweetsStore.homeTweetType = TweetListType.Trending"
         >
           {{ $t('trending') || 'Trending' }}
         </button>
         <button 
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="tweetsStore.homeTweetType === TweetListType.New ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="tweetsStore.homeTweetType = TweetListType.New"
         >
@@ -335,18 +345,18 @@ const onCreate = (type: GlobalModalType) => {
     
     <!-- Coin 菜单：TagCoin 和 IPShare 按钮 -->
     <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
-      <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
-        <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
+      <div class="flex gap-2">
+        <button
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="coinSubMenu==='tagCoin' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setCoinSubMenu('tagCoin')"
+          @click="switchCoinTab('tagCoin')"
         >
           {{ $t('tagCoin') || 'TagCoin' }}
         </button>
-        <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
+        <button
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="coinSubMenu==='ip' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setCoinSubMenu('ip')"
+          @click="switchCoinTab('ip')"
         >
           {{ $t('ip') || 'IPShare' }}
         </button>
@@ -370,14 +380,14 @@ const onCreate = (type: GlobalModalType) => {
     <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 flex gap-2 items-center">
       <div class="flex gap-2">
         <button
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="predictType === PredictType.Battle ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="predictType = PredictType.Battle"
         >
           {{ $t('createPredict.tabBattle') || 'Battle Prediction' }}
         </button>
         <button
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="predictType === PredictType.Event ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="predictType = PredictType.Event"
         >
