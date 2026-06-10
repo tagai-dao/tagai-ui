@@ -1,5 +1,7 @@
 # TagAI（tagai.fun）UI/UX 优化方案 v2
 
+> **📋 执行状态（2026-06-11 凌晨更新）：方案已基本执行完毕，详见文末「九、执行状态总表」与《验收报告-2026-06-11.md》。**
+
 > 本版整合三方信息：① 线上站点实地走查（桌面 1280px / 移动 375px，中英双语）；② `tagai-ui` 前端源码核对；③ `tiptag-api` 后端能力盘点。
 > **本版新增**：API 能力对照（哪些数据后端已有、哪些需要新增）+ 布局与控件尺寸级的 UI 细节规范。
 > 取代 `UI-UX-优化方案.md`（v1）。优先级：P0 = 转化与信任；P1 = 多语言与增长；P2 = 打磨。
@@ -248,3 +250,38 @@
 | 垃圾币过滤参数 | `routes/community.js` 三个 list 接口 + SQL WHERE | 可选 query |
 | OG meta 接口 | 新增 `routes/meta.js`，复用 `/community/detail` 与 post 查询 | 新端点 |
 | 文档 | 每个新端点/字段补 `@openapi` 注释（规范见 `config/swagger.js`） | 文档 |
+
+---
+
+## 九、执行状态总表（2026-06-11）
+
+| 方案条目 | 状态 | 说明 |
+|----------|------|------|
+| 4.1 路由重构（/coins /predictions、?tab=、登录回跳） | ✅ | |
+| 4.2 登录入口 | ✅ | 按产品决定保留原 Profile→Twitter 流程，未登录显示「登录」 |
+| 4.3 币卡片/详情升级（24h%、进度条、创建时间、CA 外链、sparkline） | ✅ | 24h% 与 sparkline 需部署 tiptag-api 分支后生效 |
+| 4.4 格式化统一 + $$ 修复 | ✅ | |
+| 4.5 搜索 CA 直达 | ✅ | 复用现有接口，无需后端改动 |
+| 3.1 三栏布局（600/340/1240） | ✅ | |
+| 3.2 中间档断点（804-1080 图标侧栏） | ✅ | desk:1080 屏档 |
+| 3.3 字号/CJK 行高/负字距 | ✅ | 金额最小 12px；CJK 行高 1.6 |
+| 3.4 控件尺寸（滑点/快捷金额/MAX/TabBar 标签/触达区） | ✅ | 移动端弹窗改底部抽屉**未做**（modal 系统共用，风险大，列入下期） |
+| 3.5 币卡片信息行 | ✅ | holders 数受限于 The Graph 无 count 聚合，**未做** |
+| 3.6 帖子徽章/行宽/markdown | ✅ | 正文保留 3 行截断（feed 密度考量，未按方案改 8 行） |
+| 3.7 交易面板（min received、滑点 chips、MAX） | ✅ | 价格影响/手续费行**未做**：各合约版本费率不同，待逐版本确认，宁缺毋错 |
+| 3.8 预测卡（概率主视觉、双色条、Winner 徽章） | ✅ | |
+| 5.1 四语 i18n 架构（ko/ja、下拉、自动检测、html lang） | ✅ | **韩日翻译需母语 review 后再上线** |
+| 5.2 Intl 时间/数字格式化 | ✅ | |
+| 5.3 CJK 字体栈 | ✅ | 系统字体栈，无 web font 开销 |
+| 5.4 涨跌色 locale 化（zh/ko/ja 红涨） | ✅ | |
+| 5.5 SEO（四语 title/desc、OG Worker） | ✅ 代码 / ⚠️ 部署 | Worker 在 workers/og-injector/，**需 zone 权限执行 wrangler deploy** |
+| P2 可访问性（语义导航、aria-label、缩放、对比度） | ✅ 大部分 | 全站对比度逐项过 AA 未完成（已修主要问题），列入下期 |
+| P2 空态/新手引导 | ✅ | |
+| API ① 24h%（priceChange24h） | ✅ 代码 | tiptag-api feat/price-change-24h 分支，**待部署** |
+| API ③ sparkline | ✅ 代码 | 同上 |
+| API ⑥ OG meta（GET /meta/og） | ✅ 代码 | 同上 |
+| API ⑦ 列表过滤参数 | ✅ 代码 | 同上 |
+| API ② holderCount | ❌ | The Graph 不支持 count 聚合，需改 subgraph schema 或接索引服务 |
+| API ④ 后端下发曲线进度 | ➖ 不再需要 | 前端已用链上 multicall 字段（getTokenInfo）直接计算 |
+| 文案全量 key 化（63 文件硬编码清扫） | ⚠️ 部分 | 用户可见高频路径已覆盖；长尾组件内剩余硬编码列入下期滚动清理 |
+| 暗色模式 / 移动底部抽屉 / 全站对比度审计 | 📋 下期 | 色板已 token 化，为暗色模式铺路 |
