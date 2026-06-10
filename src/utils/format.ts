@@ -51,6 +51,15 @@ export function formatUsdCompact(value: number | string | undefined): string {
   return usdCompact.format(n)
 }
 
+/** 短日期（卡片用）：30 天内交给相对时间，更早显示本地化短日期（如 Aug 5 / 8月5日） */
+export function formatShortDate(value: string | number | Date, locale = 'en-US'): string {
+  const d = new Date(value)
+  if (isNaN(d.getTime())) return ''
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric'
+  return new Intl.DateTimeFormat(locale, opts).format(d)
+}
+
 /** 代币数量，紧凑缩写（不带货币符号）：9.4K / 1.2M */
 export function formatTokenAmount(value: number | string | undefined): string {
   const n = Number(value)

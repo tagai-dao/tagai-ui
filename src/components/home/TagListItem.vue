@@ -2,7 +2,10 @@
 import { type Community } from '@/types';
 import { computed } from 'vue'
 import { useCurationStore } from '@/stores/curation';
-import { formatUsdCompact } from '@/utils/format';
+import { formatShortDate, formatUsdCompact } from '@/utils/format';
+import { parseTimestamp } from '@/utils/helper';
+import { getCurrentLocale } from '@/lang';
+import { BondingCurveSupply } from '@/config';
 import { useAccountStore } from '@/stores/web3';
 import { useRouter } from 'vue-router';
 import { useCommunityStore } from '@/stores/community';
@@ -30,6 +33,21 @@ async function trade() {
 }
 
 const communityTags = computed(() => parseTagsJson(props.community.tags ?? undefined))
+
+// 内盘曲线进度（listed 后为 100%，由上方 v-if 排除显示）
+const curveProgress = computed(() => {
+  const sold = Number(props.community.bondingCurveSupply ?? 0)
+  return Math.max(0, (sold / BondingCurveSupply) * 100)
+})
+
+// 30 天内显示相对时间，更早显示本地化短日期，避免长 datetime 撑爆卡片
+const createTimeText = computed(() => {
+  if (!props.community.createAt) return ''
+  const ts = new Date(props.community.createAt).getTime()
+  if (isNaN(ts)) return ''
+  if (Date.now() - ts < 30 * 24 * 3600 * 1000) return parseTimestamp(props.community.createAt)
+  return formatShortDate(props.community.createAt, getCurrentLocale())
+})
 </script>
 
 <template>
@@ -66,13 +84,24 @@ const communityTags = computed(() => parseTagsJson(props.community.tags ?? undef
       </div>
       <div class="flex-1 w-full flex justify-between pt-1">
         <div class="flex-1 truncate">
-          <div class="whitespace-pre-line text-grey-5a text-[14px] leading-[16px] font-medium multi-content multi-content-2">
+          <!-- 描述压缩为单行，hover 显全文；让位给下方数据行（v2 方案 3.5） -->
+          <div class="truncate text-grey-5a text-[14px] leading-[20px] font-medium" :title="community.description">
             {{ community.description }}
+          </div>
+          <!-- 数据行：bonding curve 进度（内盘币）/ 创建时间 -->
+          <div class="flex items-center gap-2 mt-1.5 text-sm text-grey-64">
+            <template v-if="!community.listed && !community.isImport && typeof community.bondingCurveSupply === 'number'">
+              <div class="w-[72px] h-1.5 rounded-full bg-grey-light-active overflow-hidden">
+                <div class="h-full bg-gradient-primary rounded-full" :style="{ width: Math.min(curveProgress, 100) + '%' }"></div>
+              </div>
+              <span class="tabular-nums">{{ curveProgress.toFixed(0) }}%</span>
+            </template>
+            <span v-if="createTimeText" class="ml-auto whitespace-nowrap">{{ createTimeText }}</span>
           </div>
         </div>
         <slot name="default-btn">
           <div class="flex items-center">
-            
+
           </div>
         </slot>
       </div>

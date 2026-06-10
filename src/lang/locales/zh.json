@@ -784,5 +784,6 @@
   "login": "登录",
   "amount": "数量",
   "retweet": "转发",
-  "share": "分享"
+  "share": "分享",
+  "hideDust": "隐藏小市值"
 }

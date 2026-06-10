@@ -195,6 +195,18 @@ const currentCoinList = computed(() => {
   return comStore.trendingCommunities
 })
 
+// 隐藏小市值（垃圾/测试币）：official / listed / 已导入 / 市值≥$4,200 的保留
+const HIDE_DUST_KEY = 'hide-dust-coins'
+const hideDust = ref(localStorage.getItem(HIDE_DUST_KEY) !== 'false')
+watch(hideDust, (v) => localStorage.setItem(HIDE_DUST_KEY, String(v)))
+function filterDust(list: Community[]) {
+  if (!hideDust.value) return list
+  return list.filter(c =>
+    c.official || c.listed || c.isImport ||
+    (parseFloat(c.marketCap as any) || 0) * stateStore.ethPrice >= 4200
+  )
+}
+
 // Coin 子 Tab 切换：状态 + URL query 双向同步（深链 ?tab=ip 由路由守卫恢复）
 const route = useRoute()
 function switchCoinTab(tab: 'tagCoin' | 'ip') {
@@ -368,8 +380,12 @@ const onCreate = (type: GlobalModalType) => {
           {{ $t('ip') || 'IPShare' }}
         </button>
       </div>
-      <!-- Trending 切换按钮 - 移到右侧，与 TagCoin 内容区域右边对齐 -->
-      <div class="flex-shrink-0">
+      <!-- 排序 + 隐藏小市值开关 -->
+      <div class="flex-shrink-0 flex items-center gap-3">
+        <label v-if="coinSubMenu==='tagCoin'" class="flex items-center gap-1.5 cursor-pointer text-sm text-grey-64 select-none" :title="$t('hideDust')">
+          <el-switch v-model="hideDust" size="small" style="--el-switch-on-color: #FE913F" />
+          <span class="hidden web:inline">{{ $t('hideDust') }}</span>
+        </label>
         <el-select
           v-if="coinSubMenu==='tagCoin'"
           v-model="listType"
@@ -425,7 +441,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.Trending"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterDust(comStore.trendingCommunities)" :community :key="community.tick" @click="gotoDetail(community)" />
             </div>
             <div v-if="comStore.newCommunities.length == 0 && !loading && listType == ListType.New"
                  class="flex justify-center py-6 w-full">
@@ -433,7 +449,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.New"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterDust(comStore.newCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
             <div v-if="comStore.marketCapCommunities.length == 0 && !loading && listType == ListType.MarketCap"
                  class="flex justify-center py-6 w-full">
@@ -441,7 +457,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.MarketCap"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of comStore.marketCapCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterDust(comStore.marketCapCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
           </van-list>
         </van-pull-refresh>

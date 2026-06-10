@@ -781,5 +781,6 @@
   },
   "login": "Log in",
   "retweet": "Retweet",
-  "share": "Share"
+  "share": "Share",
+  "hideDust": "Hide dust"
 }

@@ -781,5 +781,6 @@
   },
   "login": "로그인",
   "retweet": "리트윗",
-  "share": "공유"
+  "share": "공유",
+  "hideDust": "소액 코인 숨기기"
 }
