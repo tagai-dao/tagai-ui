@@ -103,13 +103,16 @@ const setWallet = async () => {
   }
 }
 
-const handleReactLoginError = async () => {
+const handleReactLoginError = async (error?: any) => {
+  // 透出后端真实错误（auth.js 各拒绝分支均返回 {error} + 业务码 301），
+  // 否则只有写死的 Please try again，无法定位问题
+  const serverMsg = error?.data?.error || error?.data?.message || error?.message
   notify({
     title: 'Login failed',
-    message: 'Please try again',
+    message: serverMsg ? String(serverMsg) : 'Please try again',
     type: 'error'
   });
-  console.error('Failed to login tip')
+  console.error('Failed to login tip', error)
   await sleep(1)
   accStore.clear();
   router.replace(localStorage.getItem('current-route') || '/')
