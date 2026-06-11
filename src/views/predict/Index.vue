@@ -15,15 +15,18 @@ import { useStateStore } from '@/stores/common'
 import { getCommunitiesByTrending } from '@/apis/api'
 import { TotalSupply } from '@/config'
 import { formatUsdCompact } from '@/utils/format'
+import { isWorldCupMarket } from '@/composables/useWorldCupMarkets'
 import type { Community } from '@/types'
 
 const props = defineProps<{
     type: number
-    predictType?: 'battle' | 'event'
+    predictType?: 'battle' | 'event' | 'worldcup'
 }>()
 
-// Tab 切换 - 根据外部传入的 predictType 决定，如果没有传入则默认为 event（事件预测）
-const activeTab = ref<'battle' | 'event'>((props.predictType as 'battle' | 'event') || 'event')
+type PredictTab = 'battle' | 'event' | 'worldcup'
+
+// Tab 切换 - 根据外部传入的 predictType 决定，如果没有传入则默认为 worldcup（世界杯）
+const activeTab = ref<PredictTab>((props.predictType as PredictTab) || 'worldcup')
 
 // 对战预测相关状态
 const battleRefreshing = ref(false)
@@ -108,9 +111,15 @@ const priceOfTick = (tick: string): number => {
     return 0
 }
 
+// 事件类 tab 的全量数据：worldcup 是事件数据的子集；世界杯事件同时保留在 event tab 中
+const eventsForTab = computed<EventPredictData[]>(() => {
+    const list = events.value[props.type] ?? []
+    return activeTab.value === 'worldcup' ? list.filter(isWorldCupMarket) : list
+})
+
 // 当前 tab 全量数据（筛选与聚合的共同来源）
 const currentItems = computed<Array<BattleData | EventPredictData>>(() =>
-    activeTab.value === 'battle' ? (battles.value[props.type] ?? []) : (events.value[props.type] ?? [])
+    activeTab.value === 'battle' ? (battles.value[props.type] ?? []) : eventsForTab.value
 )
 
 // tick -> Σ(reserveA+reserveB) × 价格 × BNB 美元价
@@ -130,7 +139,7 @@ const filteredBattles = computed(() =>
     selectedTick.value ? (battles.value[props.type] ?? []).filter(b => b.tick === selectedTick.value) : (battles.value[props.type] ?? [])
 )
 const filteredEvents = computed(() =>
-    selectedTick.value ? (events.value[props.type] ?? []).filter(e => e.tick === selectedTick.value) : (events.value[props.type] ?? [])
+    selectedTick.value ? eventsForTab.value.filter(e => e.tick === selectedTick.value) : eventsForTab.value
 )
 
 // tab 切换时若选中的社区在新列表不存在，回到全部
@@ -304,6 +313,7 @@ onMounted(async () => {
             <el-select v-model="activeTab"
                        class="bg-white rounded-full overflow-hidden w-[190px] min-w-[120px] c-select h-9 flex items-center text-sm text-black flex-shrink-0"
                        popper-class="c-select-popper rounded-xl">
+                <el-option value="worldcup" :label="$t('createPredict.tabWorldCup')" />
                 <el-option value="event" :label="$t('createPredict.tabEvent')" />
                 <el-option value="battle" :label="$t('createPredict.tabBattle')" />
             </el-select>

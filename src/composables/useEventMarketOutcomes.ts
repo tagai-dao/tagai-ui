@@ -116,7 +116,13 @@ export const useEventMarketOutcomes = (market: MaybeRefOrGetter<EventPredictData
   const outcomePercents = computed(() => {
     const m = toValue(market)
     if (!m) return [] as number[]
-    return calcOutcomePercents(getOutcomeReserves(m))
+    const reserves = getOutcomeReserves(m)
+    // 多元市场储备未加载时（列表接口只回 reserveA/B），按均匀分布占位，避免缺段与 NaN%
+    const n = getOutcomeList(m).length
+    if (isMultiOutcomeMarket(m) && reserves.length !== n) {
+      return Array.from({ length: n }, () => 1 / n)
+    }
+    return calcOutcomePercents(reserves)
   })
   const winningOutcomeIndex = computed(() => {
     const m = toValue(market)
