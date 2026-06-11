@@ -800,5 +800,15 @@
     "step3": "交易 TagCoin，或与社区一起参与预测市场",
     "learnMore": "了解更多",
     "dismiss": "知道了"
+  },
+  "priceColor": {
+    "label": "涨跌颜色",
+    "redUp": "红涨绿跌",
+    "greenUp": "绿涨红跌"
+  },
+  "rightRail": {
+    "liveSpaces": "进行中的 Space",
+    "topTagCoin": "TagCoin 排行",
+    "topXCreators": "X 创作者排行"
   }
 }

@@ -146,7 +146,7 @@ function gotoDetail(community: Community) {
 
 <template>
   <div class="h-auto max-h-[50%] bg-white rounded-2xl flex flex-col">
-    <div class="font-bold text-h3 py-3 px-4">Top TagCoin</div>
+    <div class="font-bold text-h3 py-3 px-4">{{ $t('rightRail.topTagCoin') }}</div>
     <div class="flex-1 overflow-auto no-scroll-bar max-h-[400px]">
       <div v-if="topTagCoins.length === 0" class="flex justify-center py-5 w-full">
         <img class="my-8" src="~@/assets/images/empty-data.svg" alt="">

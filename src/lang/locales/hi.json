@@ -797,5 +797,15 @@
     "totalAmount": "सप्लाई",
     "holdAmount": "धारित",
     "stakedAmount": "स्टेक्ड"
+  },
+  "priceColor": {
+    "label": "कीमत के रंग",
+    "redUp": "बढ़त लाल",
+    "greenUp": "बढ़त हरा"
+  },
+  "rightRail": {
+    "liveSpaces": "लाइव स्पेस",
+    "topTagCoin": "टॉप TagCoin",
+    "topXCreators": "टॉप X क्रिएटर"
   }
 }

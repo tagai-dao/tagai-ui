@@ -68,7 +68,7 @@ onMounted(async () => {
 
 <template>
   <div class="h-auto max-h-[50%] bg-white rounded-2xl flex flex-col">
-    <div class="font-bold text-h3 py-3 px-4">Live Spaces</div>
+    <div class="font-bold text-h3 py-3 px-4">{{ $t('rightRail.liveSpaces') }}</div>
     <div class="flex-1 overflow-auto no-scroll-bar max-h-[400px]">
       <!-- 引导性空态：替代灰 logo + Empty -->
       <div v-if="onlineSpaces.length === 0" class="flex flex-col items-center gap-3 py-8 px-4 w-full text-center">

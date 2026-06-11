@@ -797,5 +797,15 @@
     "step3": "TagCoinを取引したり、コミュニティと予測マーケットに参加したり",
     "learnMore": "詳しく見る",
     "dismiss": "OK"
+  },
+  "priceColor": {
+    "label": "騰落色",
+    "redUp": "上昇＝赤",
+    "greenUp": "上昇＝緑"
+  },
+  "rightRail": {
+    "liveSpaces": "ライブスペース",
+    "topTagCoin": "TagCoinランキング",
+    "topXCreators": "Xクリエイターランキング"
   }
 }

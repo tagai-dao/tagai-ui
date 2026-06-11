@@ -797,5 +797,15 @@
     "step3": "Trade TagCoins or join prediction markets with your community",
     "learnMore": "Learn more",
     "dismiss": "Got it"
+  },
+  "priceColor": {
+    "label": "Price colors",
+    "redUp": "Red up",
+    "greenUp": "Green up"
+  },
+  "rightRail": {
+    "liveSpaces": "Live Spaces",
+    "topTagCoin": "Top TagCoin",
+    "topXCreators": "Top X Creators"
   }
 }

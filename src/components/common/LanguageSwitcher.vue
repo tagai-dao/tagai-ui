@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
+import { SUPPORTED_LOCALES, setLocale, getPriceColorScheme, setPriceColorScheme, getCurrentLocale, type LocaleCode } from '@/lang'
 
 const { locale } = useI18n()
+
+// 涨跌色偏好（默认跟随语言：zh/ko/ja 红涨；可手动覆盖并持久化）
+const colorScheme = ref(getPriceColorScheme(getCurrentLocale()))
+const onSchemeChange = (scheme: 'red-up' | 'green-up') => {
+  colorScheme.value = scheme
+  setPriceColorScheme(scheme)
+}
 
 const currentLabel = () =>
   SUPPORTED_LOCALES.find(l => l.code === locale.value)?.label ?? 'English'
@@ -35,6 +43,22 @@ const onSelect = (code: LocaleCode) => {
           <span>{{ l.label }}</span>
           <span v-if="locale === l.code">✓</span>
         </button>
+        <!-- 涨跌色偏好（交易所同款设置） -->
+        <div class="border-t border-grey-light mt-1 pt-2 px-3 pb-1">
+          <div class="text-xs text-grey-64 mb-1.5">{{ $t('priceColor.label') }}</div>
+          <div class="flex gap-1.5">
+            <button class="flex-1 h-7 rounded-lg text-xs border-[1px] transition-colors"
+                    :class="colorScheme === 'red-up' ? 'border-orange-normal text-orange-normal font-semibold' : 'border-grey-light-active text-grey-64'"
+                    @click="onSchemeChange('red-up')">
+              <span style="color:#E6374D">▲</span> {{ $t('priceColor.redUp') }}
+            </button>
+            <button class="flex-1 h-7 rounded-lg text-xs border-[1px] transition-colors"
+                    :class="colorScheme === 'green-up' ? 'border-orange-normal text-orange-normal font-semibold' : 'border-grey-light-active text-grey-64'"
+                    @click="onSchemeChange('green-up')">
+              <span style="color:#16A34A">▲</span> {{ $t('priceColor.greenUp') }}
+            </button>
+          </div>
+        </div>
       </div>
     </template>
   </el-popover>
