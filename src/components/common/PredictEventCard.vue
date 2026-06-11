@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, computed } from 'vue'
+import { ref, nextTick, watch, computed, onMounted } from 'vue'
 import { getUserPredictVP, newParticipation, voteEventPrediction, createPredictCommerce, tweet } from '@/apis/api';
 import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from '@/utils/twitterPost';
 import { useAccount } from '@/composables/useAccount';
@@ -13,6 +13,7 @@ import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
 import { useEventPredict } from '@/composables/usePredict';
 import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes';
+import { getOutcomeFlagUrl } from '@/composables/useWorldCupMarkets';
 import { buyToken, getBuyData, getMarketInfos, getEventMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
@@ -76,6 +77,13 @@ const refreshMarketReserves = async () => {
   props.market.reserveB = marketInfos[props.market.marketMaker + '-priceB'];
   props.market.fee = marketInfos[props.market.marketMaker + '-fee'];
 };
+
+// 列表接口只回二元 reserveA/B；多元市场进场即补拉各 outcome 真实储备，概率条/按钮百分比才与详情页一致
+onMounted(() => {
+  if (isMultiOutcome.value && !props.market.outcomeReserves?.length) {
+    refreshMarketReserves().catch(() => {})
+  }
+})
 
 const aAmount = computed(() => {
   return props.market.voteYes ?? 0
@@ -544,8 +552,10 @@ const selectedBuyColor = computed(() => {
               @click="buyOutcome(outcome.outcomeIndex)"
             >
               <span class="text-base sm:text-lg">{{ (outcomePercents[idx] * 100).toFixed(0) }}%</span>
-              <span class="text-[10px] sm:text-xs font-semibold opacity-90 line-clamp-2 text-center leading-tight px-0.5">
-                {{ outcome.label }}
+              <span class="text-[10px] sm:text-xs font-semibold opacity-90 text-center leading-tight px-0.5 flex items-center justify-center gap-1">
+                <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
+                  class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
+                <span class="line-clamp-2">{{ outcome.label }}</span>
               </span>
             </button>
           </div>
@@ -571,7 +581,11 @@ const selectedBuyColor = computed(() => {
                 :disabled="hasVoted"
                 @click="preVoteOutcome(outcome.outcomeIndex)"
               >
-                <span class="line-clamp-2 text-center leading-tight">{{ outcome.label }}</span>
+                <span class="text-center leading-tight flex items-center justify-center gap-1">
+                  <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
+                    class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
+                  <span class="line-clamp-2">{{ outcome.label }}</span>
+                </span>
                 <span class="text-[10px] opacity-90">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
               </button>
               <div
