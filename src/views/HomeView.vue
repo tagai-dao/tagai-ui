@@ -26,7 +26,6 @@ import {TweetListType, useTweetsStore} from "@/stores/tweets";
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
-const predictType = ref<PredictType>(PredictType.Event) // 'battle' or 'event', 默认显示事件预测
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
 const curationStore = useCurationStore();
@@ -399,25 +398,6 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- Prediction 菜单：Battle 和 Real World 标签 -->
-    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center">
-      <div class="flex gap-2">
-        <button
-          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="predictType === PredictType.Battle ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="predictType = PredictType.Battle"
-        >
-          {{ $t('createPredict.tabBattle') || 'Battle Prediction' }}
-        </button>
-        <button
-          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="predictType === PredictType.Event ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="predictType = PredictType.Event"
-        >
-          {{ $t('createPredict.tabEvent') || 'Real World Prediction' }}
-        </button>
-      </div>
-    </div>
     
     <HomePost v-if="activeMainMenu==='tag'"/>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
@@ -463,7 +443,7 @@ const onCreate = (type: GlobalModalType) => {
         </van-pull-refresh>
       </div>
     </template>
-    <Predict :type="0" :predict-type="predictType" v-if="activeMainMenu==='prediction' || (activeMainMenu==='tag' && tagSubMenu==='prediction')"/>
+    <Predict :type="0" v-if="activeMainMenu==='prediction' || (activeMainMenu==='tag' && tagSubMenu==='prediction')"/>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
     <div class="flex-1 overflow-auto" v-if="activeMainMenu==='coin' && coinSubMenu==='ip'">
       <IPList />
