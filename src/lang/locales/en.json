@@ -327,7 +327,9 @@
     "notBondEthTip": "Please change to a BNB address which has been bound to your twitter account.",
     "v8PreListAgentOnly": "Only agents can trade",
     "minReceived": "Min received",
-    "highSlippageWarn": "High slippage"
+    "highSlippageWarn": "High slippage",
+    "priceImpact": "Price impact",
+    "platformFee": "Platform fee"
   },
   "community": {
     "distributionTip": "The total amount of tokens is distributed through three parts, including 15% for social distribution, 65% for bonding curve sales, and 20% for entering the liquidity pool",

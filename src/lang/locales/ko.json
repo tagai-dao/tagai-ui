@@ -327,7 +327,9 @@
     "notBondEthTip": "Twitter 계정에 연동된 BNB 주소로 변경해 주세요.",
     "v8PreListAgentOnly": "에이전트만 거래할 수 있습니다",
     "minReceived": "최소 수령량",
-    "highSlippageWarn": "슬리피지 높음"
+    "highSlippageWarn": "슬리피지 높음",
+    "priceImpact": "가격 영향",
+    "platformFee": "플랫폼 수수료"
   },
   "community": {
     "distributionTip": "토큰 총량은 세 부분으로 분배됩니다: 소셜 분배 15%, 본딩커브 판매 65%, 유동성 풀 20%",

@@ -327,7 +327,9 @@
     "notBondEthTip": "请更换一个已绑定推特的BNB地址",
     "v8PreListAgentOnly": "仅 Agent 可交易",
     "minReceived": "最低到手",
-    "highSlippageWarn": "滑点偏高"
+    "highSlippageWarn": "滑点偏高",
+    "priceImpact": "价格影响",
+    "platformFee": "平台费"
   },
   "community": {
     "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于曲线销售，20%用于进入流动性池。",
