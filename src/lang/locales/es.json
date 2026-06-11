@@ -503,7 +503,8 @@
     "marketCreatorNotMatch": "El creador del mercado no coincide con el usuario actual",
     "tokenNotListed": "El token no está listado",
     "predictNotVoting": "La predicción no está en fase de votación",
-    "predictHasVoted": "Ya participaste en la votación de este mercado de predicción"
+    "predictHasVoted": "Ya participaste en la votación de este mercado de predicción",
+    "postOnTwitterRequired": "Publica tú mismo en X y pega el enlace del tweet para continuar."
   },
   "createPredict": {
     "title": "Crear batalla de predicción",
@@ -549,7 +550,8 @@
     "timeLeft": "Tiempo restante",
     "timeExpired": "Expirado",
     "tabBattleDesc": "Basado en la batalla entre tweets de dos comunidades; la predicción se basa en 2+1 días de curación por miembros. Al liquidarse, gana el lado con mayor peso de curación y los usuarios pueden canjear recompensas.",
-    "tabEventDesc": "La predicción se basa en el contenido descrito. Actualmente solo se admite predicción binaria. TagAI crea un mercado con resultados Sí y No para cada predicción. Al llegar la hora de fin, el trading se detiene automáticamente. En las 24 horas siguientes, los usuarios con crédito de predicción pueden votar el resultado. El resultado final lo determina el lado con mayor peso de voto y se publica on-chain. El lado ganador comparte parte de las comisiones."
+    "tabEventDesc": "La predicción se basa en el contenido descrito. Actualmente solo se admite predicción binaria. TagAI crea un mercado con resultados Sí y No para cada predicción. Al llegar la hora de fin, el trading se detiene automáticamente. En las 24 horas siguientes, los usuarios con crédito de predicción pueden votar el resultado. El resultado final lo determina el lado con mayor peso de voto y se publica on-chain. El lado ganador comparte parte de las comisiones.",
+    "tabWorldCup": "Mundial 2026"
   },
   "predictTrade": {
     "shareAmount": "Acciones a operar",
@@ -883,6 +885,25 @@
     "checking": "Verificando partido…",
     "checkFailed": "Error al verificar el partido",
     "selectBothTeams": "Selecciona dos equipos distintos del mismo grupo",
-    "fixtureVenue": "Sede: {venue}"
+    "fixtureVenue": "Sede: {venue}",
+    "tabDesc": "Basado en Real World, el modelo de predicción del Mundial permite crear eventos principales del torneo. Al llegar la hora límite, el trading se detiene y los usuarios con credit de predicción votan durante 24 horas. La liquidación sigue los resultados on-chain y los ganadores comparten parte de las comisiones.",
+    "tapToSelect": "Toca para elegir",
+    "selectLeftFirst": "Selecciona primero el equipo izquierdo",
+    "titleAutoPlaceholder": "Se genera al elegir ambos equipos",
+    "comingSoon": "Próximamente",
+    "pickerTitleLeft": "Elegir equipo",
+    "pickerTitleRight": "Elegir rival (mismo grupo)",
+    "eventType": {
+      "matchup": "Partido",
+      "groupChampion": "Campeón del grupo 🏆",
+      "worldChampion": "Campeón del Mundial 🏆"
+    },
+    "initialRatioTip": "Arrastra los dos controles para ajustar las probabilidades iniciales de victoria izquierda, empate y victoria derecha. Por defecto, tercios iguales.",
+    "tweetUrlLabel": "Enlace del tweet tras publicar en X",
+    "tweetUrlHint": "Publica primero en X (se abrirá al crear) y pega aquí la URL del tweet.",
+    "tweetUrlRequired": "Publica en X y pega el enlace del tweet",
+    "postOnTwitterFirst": "Publica primero en X, pega el enlace y vuelve a crear.",
+    "tweetSyncTimeout": "El tweet aún no se ha sincronizado. Espera un momento e inténtalo de nuevo.",
+    "postMetaGroup": "Copa Mundial 2026 · Grupo {group} · Fase de grupos"
   }
 }

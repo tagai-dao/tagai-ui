@@ -4,7 +4,6 @@ export enum GlobalModalType {
   CreateTweetSpace,
   CreateIPShare,
   CreatePredict,
-  CreateWorldCupPredict,
   Login,
   Register,
   BondEth,

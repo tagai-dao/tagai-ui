@@ -503,7 +503,8 @@
     "marketCreatorNotMatch": "Pembuat pasar tidak cocok dengan pengguna saat ini",
     "tokenNotListed": "Token belum terdaftar",
     "predictNotVoting": "Prediksi tidak dalam tahap voting",
-    "predictHasVoted": "Kamu sudah ikut voting pasar prediksi ini"
+    "predictHasVoted": "Kamu sudah ikut voting pasar prediksi ini",
+    "postOnTwitterRequired": "Posting sendiri di X, lalu tempel tautan tweet untuk melanjutkan."
   },
   "createPredict": {
     "title": "Buat Battle Prediksi",
@@ -549,7 +550,8 @@
     "timeLeft": "Sisa waktu",
     "timeExpired": "Kedaluwarsa",
     "tabBattleDesc": "Berdasarkan battle antara tweet dua komunitas; prediksi didasarkan pada kurasi anggota selama 2+1 hari. Saat diselesaikan, sisi dengan bobot kurasi lebih tinggi menang dan pengguna bisa menukar reward prediksi.",
-    "tabEventDesc": "Prediksi berdasarkan isi yang dideskripsikan. Saat ini hanya mendukung prediksi biner. TagAI membuat pasar dengan hasil Ya dan Tidak untuk tiap prediksi. Saat waktu berakhir tiba, trading otomatis berhenti. Dalam 24 jam berikutnya, pengguna dengan kredit prediksi komunitas bisa memilih hasil. Hasil akhir ditentukan sisi dengan bobot suara lebih tinggi dan dipublikasikan on-chain. Sisi pemenang berbagi sebagian biaya transaksi."
+    "tabEventDesc": "Prediksi berdasarkan isi yang dideskripsikan. Saat ini hanya mendukung prediksi biner. TagAI membuat pasar dengan hasil Ya dan Tidak untuk tiap prediksi. Saat waktu berakhir tiba, trading otomatis berhenti. Dalam 24 jam berikutnya, pengguna dengan kredit prediksi komunitas bisa memilih hasil. Hasil akhir ditentukan sisi dengan bobot suara lebih tinggi dan dipublikasikan on-chain. Sisi pemenang berbagi sebagian biaya transaksi.",
+    "tabWorldCup": "Piala Dunia 2026"
   },
   "predictTrade": {
     "shareAmount": "Saham untuk ditradingkan",
@@ -883,6 +885,25 @@
     "checking": "Memverifikasi jadwal…",
     "checkFailed": "Gagal memverifikasi pertandingan",
     "selectBothTeams": "Pilih dua tim berbeda dari grup yang sama",
-    "fixtureVenue": "Venue: {venue}"
+    "fixtureVenue": "Venue: {venue}",
+    "tabDesc": "Berdasarkan Real World, model prediksi Piala Dunia memungkinkan pembuatan event turnamen utama. Trading berhenti otomatis saat waktu habis, lalu pengguna dengan credit prediksi komunitas memilih selama 24 jam. Penyelesaian mengikuti hasil voting on-chain dan pemenang membagi sebagian biaya transaksi.",
+    "tapToSelect": "Ketuk untuk memilih",
+    "selectLeftFirst": "Pilih tim kiri terlebih dahulu",
+    "titleAutoPlaceholder": "Otomatis setelah memilih kedua tim",
+    "comingSoon": "Segera hadir",
+    "pickerTitleLeft": "Pilih tim",
+    "pickerTitleRight": "Pilih lawan (grup sama)",
+    "eventType": {
+      "matchup": "Pertandingan",
+      "groupChampion": "Juara grup 🏆",
+      "worldChampion": "Juara Piala Dunia 🏆"
+    },
+    "initialRatioTip": "Geser dua handle untuk mengatur probabilitas awal menang kiri, seri, dan menang kanan. Default: sepertiga sama.",
+    "tweetUrlLabel": "Tautan tweet setelah posting di X",
+    "tweetUrlHint": "Posting di X dulu (akan dibuka saat membuat), lalu tempel URL tweet di sini.",
+    "tweetUrlRequired": "Posting di X lalu tempel tautan tweet",
+    "postOnTwitterFirst": "Posting di X dulu, tempel tautan, lalu buat lagi.",
+    "tweetSyncTimeout": "Tweet belum tersinkron. Tunggu sebentar dan coba lagi.",
+    "postMetaGroup": "Piala Dunia 2026 · Grup {group} · Babak grup"
   }
 }

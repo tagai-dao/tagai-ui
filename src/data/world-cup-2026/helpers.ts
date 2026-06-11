@@ -35,20 +35,3 @@ export const getGroupMates = (teamCode: string): WcTeam[] => {
 }
 
 export const DEFAULT_WC_DISTRIBUTION_HINT = [34, 33, 33] as const
-
-/** 嵌入 tweet text 的世界杯元数据 JSON 字符串 */
-export const buildWorldCupMetaJson = (params: {
-  fixtureId: string
-  group: string
-  leftTeam: string
-  rightTeam: string
-}) =>
-  JSON.stringify({
-    type: 'wc2026_match',
-    fixtureId: params.fixtureId,
-    group: params.group,
-    teamA: params.leftTeam,
-    teamB: params.rightTeam,
-    leftTeam: params.leftTeam,
-    rightTeam: params.rightTeam,
-  })

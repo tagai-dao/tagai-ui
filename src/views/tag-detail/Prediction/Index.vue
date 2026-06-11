@@ -26,11 +26,6 @@ const createPredict = () => {
   if (!ensureAuth()) return
   modalStore.setModalVisible(true, GlobalModalType.CreatePredict)
 }
-
-const createWorldCupPredict = () => {
-  if (!ensureAuth()) return
-  modalStore.setModalVisible(true, GlobalModalType.CreateWorldCupPredict)
-}
 </script>
 
 <template>
@@ -53,23 +48,13 @@ const createWorldCupPredict = () => {
         </button>
       </div>
 
-      <div class="flex items-center gap-2 shrink-0">
-        <button
-          v-if="activeTab === 'event'"
-          class="flex gap-1.5 items-center cursor-pointer px-3 py-1.5 rounded-full border border-orange-normal text-orange-normal bg-white shadow-sm hover:bg-orange-50 transition-all active:scale-95"
-          @click="createWorldCupPredict"
-        >
-          <span class="text-lg -mt-0.5 font-bold leading-none">+</span>
-          <span class="whitespace-nowrap text-sm font-medium">{{ $t('worldCup2026.createShort') }}</span>
-        </button>
-        <button
-          class="flex gap-2 items-center cursor-pointer px-4 py-1.5 rounded-full bg-gradient-primary text-white shadow-md hover:shadow-lg transition-all active:scale-95"
-          @click="createPredict"
-        >
-          <span class="text-xl -mt-0.5 font-bold">+</span>
-          <span class="whitespace-nowrap text-sm font-medium">{{ $t('createPredictBattle') }}</span>
-        </button>
-      </div>
+      <button
+        class="flex gap-2 items-center cursor-pointer px-4 py-1.5 rounded-full bg-gradient-primary text-white shadow-md hover:shadow-lg transition-all active:scale-95 shrink-0"
+        @click="createPredict"
+      >
+        <span class="text-xl -mt-0.5 font-bold">+</span>
+        <span class="whitespace-nowrap text-sm font-medium">{{ $t('createPredictBattle') }}</span>
+      </button>
     </div>
 
     <div class="flex-1 min-h-0">
