@@ -402,23 +402,28 @@ const vote = async () => {
 
         <!-- 右侧：结果显示 -->
       </div>
+      <!-- Yes/No 占比双色条（Polymarket 习惯：概率即主信息） -->
+      <div v-if="!market.winner" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+        <div class="h-full bg-red-normal transition-all duration-300" :style="{ width: (percentA * 100).toFixed(1) + '%' }"></div>
+        <div class="h-full bg-blue-600 transition-all duration-300" :style="{ width: (percentB * 100).toFixed(1) + '%' }"></div>
+      </div>
       <!-- 底部：购买/投票按钮区域 -->
       <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
         <Transition name="buy-buttons" mode="out-in">
 
-          <!-- 默认状态：两个购买按钮 -->
+          <!-- 默认状态：两个购买按钮（概率大字为主视觉） -->
           <div v-if="!showBuyInput" key="buttons" class="flex gap-3 sm:gap-4 w-full">
             <button
-              class="flex-1 h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
+              class="flex-1 h-10 sm:h-12 bg-red-normal text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
               @click="buyYes()" :disabled="!!market.winner || isVoting">
-              {{ $t('predictTrade.buyYes') || '购买是' }}
-              ({{ percentA.toFixed(2) }})
+              <span class="text-base sm:text-lg">{{ (percentA * 100).toFixed(0) }}%</span>
+              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyYes') || '购买是' }}</span>
             </button>
             <button
-              class="flex-1 h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center"
+              class="flex-1 h-10 sm:h-12 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
               @click="buyNo()" :disabled="!!market.winner || isVoting">
-              {{ $t('predictTrade.buyNo') || '购买不是' }}
-              ({{ percentB.toFixed(2) }})
+              <span class="text-base sm:text-lg">{{ (percentB * 100).toFixed(0) }}%</span>
+              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyNo') || '购买不是' }}</span>
             </button>
             <!-- 投票状态：两个投票按钮 -->
             <button v-if="isVoting && !showBuyInput"
@@ -432,16 +437,16 @@ const vote = async () => {
                         </svg>
                       </span> -->
             </button>
+            <!-- 已结算：灰底结果徽章（与可点击 CTA 区分，避免误读为按钮），仍可点击查看详情 -->
             <div v-if="market.winner"
               @click="gotoDetail()"
-              class="flex-1 h-10 sm:h-12 bg-gradient-primary text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
-              :class="market.winner === 'yes' ? 'bg-[#293233] border-[#374244]' : 'bg-[#293233] border-[#374244]'">
+              class="flex-1 h-10 sm:h-12 bg-grey-light-active text-grey-normal text-sm sm:text-base font-bold rounded-lg cursor-pointer hover:bg-grey-light-hover transition-colors duration-200 flex items-center justify-center gap-2">
               <!-- 奖杯图标 -->
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C9.243 2 7 4.243 7 7v2H4a1 1 0 00-1 1v2c0 2.206 1.794 4 4 4h.535c.882 1.785 2.618 3.073 4.682 3.414.024.004.048.006.072.006h1.422c.024 0 .048-.002.072-.006 2.064-.341 3.8-1.629 4.682-3.414H18c2.206 0 4-1.794 4-4v-2a1 1 0 00-1-1h-3V7c0-2.757-2.243-5-5-5zm8 8v1c0 1.103-.897 2-2 2h-.535c.028-.329.035-.661.035-1v-2H20zm-16 0h2.5v2c0 .339.007.671.035 1H6c-1.103 0-2-.897-2-2v-1zm8 8h-2v-2h2v2z"/>
               </svg>
-              <span class="text-lg font-bold text-white">
-                {{ $t('predictTrade.winner') || 'Winner' }}: {{ market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no') }}
+              <span class="text-base font-bold">
+                ✓ {{ $t('predictTrade.winner') || 'Winner' }}: {{ market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no') }}
               </span>
             </div>
           </div>
@@ -566,13 +571,14 @@ const vote = async () => {
 }
 
 .battle-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
+  /* hover 不再位移/缩放：translateY+scale 会被滚动容器 overflow-hidden 裁切，
+     且与 backdrop-filter 组合在部分 GPU 上引发整卡闪烁（窄屏尤甚）。
+     仅保留阴影变化作为 hover 反馈。 */
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .battle-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* 玩家卡片样式 */

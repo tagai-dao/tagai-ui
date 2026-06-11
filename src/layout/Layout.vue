@@ -92,19 +92,27 @@ const setWallet = async () => {
         await sleep(3)
     } finally {
       if (newLogin.value) {
-        router.replace(localStorage.getItem('current-route') || '/')
+        // 登录完成后的统一回跳：优先回到登录前被守卫拦截的页面（login-redirect，
+        // 见 router beforeEach），否则回 current-route。在钱包流程收尾后做，
+        // 避免在 OAuth/Privy 处理中途导航引发 authError。
+        const guardRedirect = sessionStorage.getItem('login-redirect')
+        sessionStorage.removeItem('login-redirect')
+        router.replace(guardRedirect || localStorage.getItem('current-route') || '/')
       }
     }
   }
 }
 
-const handleReactLoginError = async () => {
+const handleReactLoginError = async (error?: any) => {
+  // 透出后端真实错误（auth.js 各拒绝分支均返回 {error} + 业务码 301），
+  // 否则只有写死的 Please try again，无法定位问题
+  const serverMsg = error?.data?.error || error?.data?.message || error?.message
   notify({
     title: 'Login failed',
-    message: 'Please try again',
+    message: serverMsg ? String(serverMsg) : 'Please try again',
     type: 'error'
   });
-  console.error('Failed to login tip')
+  console.error('Failed to login tip', error)
   await sleep(1)
   accStore.clear();
   router.replace(localStorage.getItem('current-route') || '/')
@@ -147,7 +155,7 @@ onMounted( () => {
           </div>
           <!-- PC 端顶部栏：搜索框和语言切换 - 根据路由 meta 控制显示 -->
           <div v-if="$route.meta.topBar !== false" class="hidden web:flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-            <div class="flex-1 max-w-2xl">
+            <div class="flex-1 max-w-[360px] focus-within:max-w-[480px] transition-all duration-200">
               <SearchBar />
             </div>
             <div class="ml-4">

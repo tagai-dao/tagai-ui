@@ -22,72 +22,49 @@ const isActive = (path: string | string[]) => {
   return route.path === path || route.path.startsWith(path + '/')
 }
 
-// 判断 Tag 是否激活
+// 主菜单已路由化（/、/coins、/predictions），激活态直接看路由
 const isTagActive = computed(() => {
-  if (!isActive('/')) {
-    return false
-  }
-  return stateStore.activeMainMenu === 'tag'
+  return route.name === 'home' || route.name === 'commerce'
 })
 
-// 判断 Coin 是否激活
 const isCoinActive = computed(() => {
-  if (!isActive('/')) {
-    return isActive(['/tag-detail', '/buy-sell'])
-  }
-  return stateStore.activeMainMenu === 'coin'
+  return route.name === 'coins' || isActive(['/tag-detail', '/buy-sell'])
 })
 
-// 判断 Prediction 是否激活
 const isPredictionActive = computed(() => {
-  if (!isActive('/')) {
-    return false
-  }
-  return stateStore.activeMainMenu === 'prediction'
+  return route.name === 'predictions' || isActive('/predict')
 })
 
-// 导航到 Tag 菜单
-const goToTag = (e?: Event) => {
-  e?.preventDefault()
-  stateStore.setActiveMainMenu('tag')
+const goToTag = () => {
   stateStore.setTagSubMenu('tweets')
-}
-
-// 导航到 Coin 菜单
-const goToCoin = (e?: Event) => {
-  e?.preventDefault()
-  stateStore.setActiveMainMenu('coin')
-  stateStore.setCoinSubMenu('tagCoin')
-}
-
-// 导航到 Prediction 菜单
-const goToPrediction = (e?: Event) => {
-  e?.preventDefault()
-  stateStore.setActiveMainMenu('prediction')
 }
 
 </script>
 
 <template>
   <div class="relative h-14 bg-white">
-    <div class="w-full h-full flex justify-between items-center px-8 relative z-10">
-      <router-link to="/" class="flex items-center justify-center cursor-pointer p-2" @click="goToTag">
+    <div class="w-full h-full flex justify-between items-center px-6 relative z-10">
+      <router-link to="/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]" @click="goToTag">
         <img v-if="isTagActive" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
+        <span class="text-[10px] leading-none" :class="isTagActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('home') }}</span>
       </router-link>
-      <router-link to="/" class="flex items-center justify-center cursor-pointer p-2" @click="goToCoin">
+      <router-link to="/coins" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="isCoinActive" class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="">
+        <span class="text-[10px] leading-none" :class="isCoinActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('coin') }}</span>
       </router-link>
-      <router-link to="/" class="flex items-center justify-center cursor-pointer p-2" @click="goToPrediction">
+      <router-link to="/predictions" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="isPredictionActive" class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
+        <span class="text-[10px] leading-none" :class="isPredictionActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('prediction') }}</span>
       </router-link>
-      <router-link to="/wallet/" class="flex items-center justify-center cursor-pointer p-2">
+      <router-link to="/wallet/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="$route.name==='wallet'" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-wallet.svg" alt="">
+        <span class="text-[10px] leading-none" :class="$route.name==='wallet' ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('wallet') }}</span>
       </router-link>
-      <ProfileBtn class="flex items-center justify-center cursor-pointer p-2" />
+      <ProfileBtn class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]" />
     </div>
   </div>
 </template>

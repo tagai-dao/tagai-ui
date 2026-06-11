@@ -70,8 +70,14 @@ onMounted(async () => {
   <div class="h-auto max-h-[50%] bg-white rounded-2xl flex flex-col">
     <div class="font-bold text-h3 py-3 px-4">Live Spaces</div>
     <div class="flex-1 overflow-auto no-scroll-bar max-h-[400px]">
-      <div v-if="onlineSpaces.length === 0" class="flex justify-center py-5 w-full">
-        <img class="my-8" src="~@/assets/images/empty-data.svg" alt="">
+      <!-- 引导性空态：替代灰 logo + Empty -->
+      <div v-if="onlineSpaces.length === 0" class="flex flex-col items-center gap-3 py-8 px-4 w-full text-center">
+        <img class="w-12 opacity-60" src="~@/assets/images/empty-data.svg" alt="">
+        <span class="text-sm text-grey-64">{{ $t('emptyStates.noLiveSpaces') }}</span>
+        <a class="text-sm text-orange-normal font-semibold hover:underline"
+           href="https://x.com/intent/tweet?text=%23TagAI" target="_blank" rel="noopener">
+          {{ $t('emptyStates.startSpaceTip') }} →
+        </a>
       </div>
       <div v-else class="flex flex-col">
         <div 

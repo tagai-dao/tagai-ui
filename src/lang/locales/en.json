@@ -233,7 +233,7 @@
     "invalidTickTip": "Please input 1-16 characters(a-z&A-Z&0-9)",
     "tagForbidden": "Can't create this tag",
     "descTooLong": "The description must within 1024 characters.",
-    "maxAmountTip" : "Please input less than 650000000",
+    "maxAmountTip": "Please input less than 650000000",
     "tickUsed": "This name has been registed, please change to another one",
     "pay": "Pay",
     "next": "Next",
@@ -325,7 +325,9 @@
     "fillInfoTip": "Please complete the amount",
     "noTradeData": "No trade data",
     "notBondEthTip": "Please change to a BNB address which has been bound to your twitter account.",
-    "v8PreListAgentOnly": "Only agents can trade"
+    "v8PreListAgentOnly": "Only agents can trade",
+    "minReceived": "Min received",
+    "highSlippageWarn": "High slippage"
   },
   "community": {
     "distributionTip": "The total amount of tokens is distributed through three parts, including 15% for social distribution, 65% for bonding curve sales, and 20% for entering the liquidity pool",
@@ -776,5 +778,22 @@
     "totalAmount": "supply",
     "holdAmount": "holding",
     "stakedAmount": "staking"
+  },
+  "login": "Log in",
+  "retweet": "Retweet",
+  "share": "Share",
+  "hideDust": "Hide dust",
+  "emptyStates": {
+    "noLiveSpaces": "No live Spaces right now",
+    "startSpaceTip": "Start one on X with #TagAI",
+    "beFirstComment": "Be the first to comment"
+  },
+  "onboard": {
+    "title": "New to TagAI?",
+    "step1": "Tweet with #TagAI + a community tag — your content goes on-chain",
+    "step2": "Curate good posts to earn TagCoin rewards",
+    "step3": "Trade TagCoins or join prediction markets with your community",
+    "learnMore": "Learn more",
+    "dismiss": "Got it"
   }
 }

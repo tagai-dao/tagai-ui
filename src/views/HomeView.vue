@@ -7,13 +7,14 @@ import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, 
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
 import {handleErrorTip} from '@/utils/notify'
-import {useRouter} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 import {getTokenInfo} from '@/utils/pump'
 import SearchBar from "@/components/common/SearchBar.vue";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher.vue";
 import emitter from "@/utils/emitter";
 import {useInterval, usePageScroll} from "@/composables/useTools";
 import {formatPrice} from "../utils/helper";
+import {formatUsdCompact} from "@/utils/format";
 import {useModalStore, useStateStore} from "@/stores/common";
 import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
@@ -114,7 +115,7 @@ async function loadMore() {
       if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length == 0) {
         return;
       }
-      let communities = await getCommunityByMarketCap((comStore.marketCapCommunities.length - 1) / 30 + 1) as Array<Community>;
+      let communities = await getCommunityByMarketCap(Math.floor((comStore.marketCapCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
       }
@@ -126,7 +127,7 @@ async function loadMore() {
         return;
       }
       if (finished[ListType.New]) return;
-      let communities = await getCommunitiesByNew((comStore.newCommunities.length - 1) / 30 + 1) as Array<Community>;
+      let communities = await getCommunitiesByNew(Math.floor((comStore.newCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.newCommunities = comStore.newCommunities.concat(await getTokenInfo(communities))
       }
@@ -138,7 +139,7 @@ async function loadMore() {
         return;
       }
       if (finished[ListType.Trending]) return;
-      let communities = await getCommunitiesByTrending((comStore.trendingCommunities.length - 1) / 30 + 1) as Array<Community>;
+      let communities = await getCommunitiesByTrending(Math.floor((comStore.trendingCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
       }
@@ -185,6 +186,34 @@ async function getNewCommunities() {
 function gotoDetail(com: Community) {
   comStore.currentSelectedCommunity = com
   router.push(`/tag-detail/${com.tick}`)
+}
+
+// 当前排序对应的列表（finished 文案据此判断，避免"加载完毕"被静默吞掉）
+const currentCoinList = computed(() => {
+  if (listType.value == ListType.MarketCap) return comStore.marketCapCommunities
+  if (listType.value == ListType.New) return comStore.newCommunities
+  return comStore.trendingCommunities
+})
+
+// 隐藏小市值（垃圾/测试币）：official / listed / 已导入 / 市值≥$4,200 的保留
+const HIDE_DUST_KEY = 'hide-dust-coins'
+const hideDust = ref(localStorage.getItem(HIDE_DUST_KEY) !== 'false')
+watch(hideDust, (v) => localStorage.setItem(HIDE_DUST_KEY, String(v)))
+function filterDust(list: Community[]) {
+  if (!hideDust.value) return list
+  return list.filter(c =>
+    c.official || c.listed || c.isImport ||
+    (parseFloat(c.marketCap as any) || 0) * stateStore.ethPrice >= 4200
+  )
+}
+
+// Coin 子 Tab 切换：状态 + URL query 双向同步（深链 ?tab=ip 由路由守卫恢复）
+const route = useRoute()
+function switchCoinTab(tab: 'tagCoin' | 'ip') {
+  stateStore.setCoinSubMenu(tab)
+  if (route.name === 'coins') {
+    router.replace({ query: tab === 'ip' ? { tab: 'ip' } : {} })
+  }
 }
 
 
@@ -262,7 +291,7 @@ const onCreate = (type: GlobalModalType) => {
 </script>
 
 <template>
-  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2">
+  <div class="h-full overflow-hidden pb-2 flex flex-col gap-3 pt-2 w-full">
     <!-- 新社区列表（TagCoin 滚动条）- 移动端显示在 Space 滚动条上方，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
     <div class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
       <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
@@ -278,8 +307,8 @@ const onCreate = (type: GlobalModalType) => {
                 </div>
               </div>
               <div class="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
-                <div class="text-[10px] web:text-xs font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
-                <span class="text-[10px] web:text-xs font-bold text-black truncate w-full">${{ formatPrice(Math.floor(parseFloat(community.marketCap as any) * stateStore.ethPrice)) }}</span>
+                <div class="text-sm font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
+                <span class="text-sm font-bold text-black truncate w-full">{{ formatUsdCompact(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}</span>
               </div>
             </div>
           </div>
@@ -314,17 +343,17 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Tag 菜单：Trending 和 New 按钮 -->
-    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 flex gap-2 items-center">
+    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center">
       <div class="flex gap-2">
         <button 
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="tweetsStore.homeTweetType === TweetListType.Trending ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="tweetsStore.homeTweetType = TweetListType.Trending"
         >
           {{ $t('trending') || 'Trending' }}
         </button>
         <button 
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="tweetsStore.homeTweetType === TweetListType.New ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="tweetsStore.homeTweetType = TweetListType.New"
         >
@@ -334,25 +363,29 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Coin 菜单：TagCoin 和 IPShare 按钮 -->
-    <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 flex gap-2 items-center justify-between">
-      <div class="w-1/4 web:w-1/3 max-w-[200px] flex gap-2">
-        <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
+    <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center justify-between">
+      <div class="flex gap-2">
+        <button
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="coinSubMenu==='tagCoin' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setCoinSubMenu('tagCoin')"
+          @click="switchCoinTab('tagCoin')"
         >
           {{ $t('tagCoin') || 'TagCoin' }}
         </button>
-        <button 
-          class="flex-1 h-8 web:h-9 rounded-full text-h3 whitespace-nowrap transition-colors"
+        <button
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="coinSubMenu==='ip' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="stateStore.setCoinSubMenu('ip')"
+          @click="switchCoinTab('ip')"
         >
           {{ $t('ip') || 'IPShare' }}
         </button>
       </div>
-      <!-- Trending 切换按钮 - 移到右侧，与 TagCoin 内容区域右边对齐 -->
-      <div class="flex-shrink-0">
+      <!-- 排序 + 隐藏小市值开关 -->
+      <div class="flex-shrink-0 flex items-center gap-3">
+        <label v-if="coinSubMenu==='tagCoin'" class="flex items-center gap-1.5 cursor-pointer text-sm text-grey-64 select-none" :title="$t('hideDust')">
+          <el-switch v-model="hideDust" size="small" style="--el-switch-on-color: #FE913F" />
+          <span class="hidden web:inline">{{ $t('hideDust') }}</span>
+        </label>
         <el-select
           v-if="coinSubMenu==='tagCoin'"
           v-model="listType"
@@ -367,17 +400,17 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Prediction 菜单：Battle 和 Real World 标签 -->
-    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 flex gap-2 items-center">
+    <div v-if="activeMainMenu==='prediction'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center">
       <div class="flex gap-2">
         <button
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="predictType === PredictType.Battle ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="predictType = PredictType.Battle"
         >
           {{ $t('createPredict.tabBattle') || 'Battle Prediction' }}
         </button>
         <button
-          class="h-8 web:h-9 px-4 rounded-full text-h3 whitespace-nowrap transition-colors"
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="predictType === PredictType.Event ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="predictType = PredictType.Event"
         >
@@ -390,14 +423,15 @@ const onCreate = (type: GlobalModalType) => {
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
       <div class="flex-1 px-3 overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh v-model="refreshing" @refresh="refresh"
-                          class="min-h-full"
+                          class="min-h-full web:max-w-[1240px] web:mx-auto"
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
           <van-list :loading="loading"
                     :finished="finished[listType]"
                     :immediate-check="false"
-                    :finished-text="comStore.marketCapCommunities.length==0?'':$t('noMore')"
+                    :loading-text="$t('loading')"
+                    :finished-text="currentCoinList.length==0?'':$t('noMore')"
                     :offset="50"
                     @load="loadMore">
 
@@ -407,7 +441,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.Trending"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of comStore.trendingCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterDust(comStore.trendingCommunities)" :community :key="community.tick" @click="gotoDetail(community)" />
             </div>
             <div v-if="comStore.newCommunities.length == 0 && !loading && listType == ListType.New"
                  class="flex justify-center py-6 w-full">
@@ -415,7 +449,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.New"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of comStore.newCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterDust(comStore.newCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
             <div v-if="comStore.marketCapCommunities.length == 0 && !loading && listType == ListType.MarketCap"
                  class="flex justify-center py-6 w-full">
@@ -423,7 +457,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.MarketCap"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of comStore.marketCapCommunities" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterDust(comStore.marketCapCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
           </van-list>
         </van-pull-refresh>

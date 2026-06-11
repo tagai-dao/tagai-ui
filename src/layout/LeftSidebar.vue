@@ -33,54 +33,18 @@ const isActive = (path: string | string[]) => {
   return route.path === path || route.path.startsWith(path + '/')
 }
 
-// 判断 Coin 是否激活（仅在 tag-detail 或 buy-sell 路由，或明确选择了 Coin 主菜单时）
+// 主菜单已路由化（/、/coins、/predictions），激活态直接看路由
 const isCoinActive = computed(() => {
-  // 如果不在首页，检查是否是 tag-detail 或 buy-sell 路由
-  if (!isActive('/')) {
-    return isActive(['/tag-detail', '/buy-sell'])
-  }
-  // 在首页时，只有当 activeMainMenu 是 coin 时才激活 Coin
-  return stateStore.activeMainMenu === 'coin'
+  return route.name === 'coins' || isActive(['/tag-detail', '/buy-sell'])
 })
 
-// 判断 Tag 是否激活（在首页且 activeMainMenu 是 tag）
 const isTagActive = computed(() => {
-  if (!isActive('/')) {
-    return false
-  }
-  // 在首页时，只有当 activeMainMenu 是 tag 时才激活 Tag
-  return stateStore.activeMainMenu === 'tag'
+  return route.name === 'home' || route.name === 'commerce'
 })
 
-// 导航到 Tag 菜单
-const goToTag = () => {
-  router.push('/')
-  // 切换到 Tag 主菜单，默认显示 tweets
-  stateStore.setActiveMainMenu('tag')
-  stateStore.setTagSubMenu('tweets')
-}
-
-// 导航到 Coin 菜单
-const goToCoin = () => {
-  router.push('/')
-  // 切换到 Coin 主菜单，默认显示 tagCoin
-  stateStore.setActiveMainMenu('coin')
-  stateStore.setCoinSubMenu('tagCoin')
-}
-
-// 判断 Prediction 是否激活
 const isPredictionActive = computed(() => {
-  if (!isActive('/')) {
-    return false
-  }
-  return stateStore.activeMainMenu === 'prediction'
+  return route.name === 'predictions' || isActive('/predict')
 })
-
-// 导航到 Prediction 菜单
-const goToPrediction = () => {
-  router.push('/')
-  stateStore.setActiveMainMenu('prediction')
-}
 
 // 创建 TagCoin
 const createTagCoin = () => {
@@ -117,12 +81,12 @@ const handleWalletClick = (e?: Event) => {
 </script>
 
 <template>
-  <div class="hidden web:flex flex-col h-full w-[260px] border-r border-gray-200 bg-white">
-    <!-- Logo -->
-    <div class="h-16 flex items-center px-4">
-      <img 
-        class="h-8 cursor-pointer" 
-        src="~@/assets/logo.png" 
+  <div class="hidden web:flex flex-col h-full w-[72px] desk:w-[240px] border-r border-gray-200 bg-white">
+    <!-- Logo（中间档缩小居中） -->
+    <div class="h-16 flex items-center justify-center desk:justify-start px-2 desk:px-4">
+      <img
+        class="h-5 desk:h-8 cursor-pointer"
+        src="~@/assets/logo.png"
         alt="TagAI"
         @click="router.push('/')"
       >
@@ -131,65 +95,66 @@ const handleWalletClick = (e?: Event) => {
     <!-- 菜单项 -->
     <nav class="flex-1 px-2 py-4 space-y-1">
       <!-- 1. Tag 菜单 -->
-      <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+      <router-link
+        to="/"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isTagActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="goToTag"
+        @click="stateStore.setTagSubMenu('tweets')"
       >
         <img 
           v-if="isTagActive" 
-          class="w-6 h-6 mr-3 transition-all" 
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all" 
           src="~@/assets/icons/icon-tabbar-home-active.svg" 
           alt=""
         >
         <img 
           v-else 
-          class="w-6 h-6 mr-3 transition-all" 
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all" 
           src="~@/assets/icons/icon-tabbar-home.svg" 
           alt=""
         >
-        <span class="text-h4 text-black">{{ $t('home') || 'Home' }}</span>
-      </div>
+        <span class="hidden desk:inline text-h4 text-black">{{ $t('home') || 'Home' }}</span>
+      </router-link>
 
       <!-- 2. Coin -->
-      <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+      <router-link
+        to="/coins"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isCoinActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="goToCoin"
       >
         <img 
-          class="w-6 h-6 mr-3 transition-all"
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
           :style="isCoinActive ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
           src="~@/assets/icons/icon-coin.svg" 
           alt="Coin"
         >
-        <span class="text-h4 text-black">{{ $t('coin') || 'Coin' }}</span>
-      </div>
+        <span class="hidden desk:inline text-h4 text-black">{{ $t('coin') || 'Coin' }}</span>
+      </router-link>
 
       <!-- 3. Prediction -->
-      <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+      <router-link
+        to="/predictions"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isPredictionActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="goToPrediction"
       >
         <img 
-          class="w-6 h-6 mr-3 transition-all"
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
           :style="isPredictionActive ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
           src="~@/assets/icons/icon-pie-chart.svg" 
           alt="Prediction"
         >
-        <span class="text-h4 text-black">{{ $t('prediction') || 'Prediction' }}</span>
-      </div>
+        <span class="hidden desk:inline text-h4 text-black">{{ $t('prediction') || 'Prediction' }}</span>
+      </router-link>
 
       <!-- 4. 通知 -->
-      <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2 relative"
+      <router-link
+        to="/notification"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2 relative"
         :class="isActive('/notification') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="router.push('/notification')"
       >
         <div class="relative">
           <img 
-            class="w-6 h-6 mr-3 transition-all"
+            class="w-6 h-6 mr-0 desk:mr-3 transition-all"
             :style="isActive('/notification') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
             src="~@/assets/icons/icon-notification.svg" 
             alt=""
@@ -201,37 +166,37 @@ const handleWalletClick = (e?: Event) => {
             {{ accStore.unreadMessageCount }}
           </div>
         </div>
-        <span class="text-h4 text-black">{{ $t('notification') || 'Notification' }}</span>
-      </div>
+        <span class="hidden desk:inline text-h4 text-black">{{ $t('notification') || 'Notification' }}</span>
+      </router-link>
 
       <!-- 5. 钱包 -->
       <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isActive('/wallet') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
         @click="handleWalletClick"
       >
         <img 
           v-if="isActive('/wallet')" 
-          class="w-6 h-6 mr-3 transition-all" 
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all" 
           src="~@/assets/icons/icon-tabbar-wallet-active.svg" 
           alt=""
         >
         <img 
           v-else 
-          class="w-6 h-6 mr-3 transition-all" 
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all" 
           src="~@/assets/icons/icon-wallet.svg" 
           alt=""
         >
-        <span class="text-h4 text-black">{{ $t('wallet') || 'Wallet' }}</span>
+        <span class="hidden desk:inline text-h4 text-black">{{ $t('wallet') || 'Wallet' }}</span>
       </div>
 
       <!-- 6. 我的主页 -->
       <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isActive('/profile') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
         @click="handleProfileClick"
       >
-        <div class="w-6 h-6 mr-3 flex items-center justify-center">
+        <div class="w-6 h-6 mr-0 desk:mr-3 flex items-center justify-center">
           <img 
             v-if="accStore.getAccountInfo?.profile" 
             class="w-6 h-6 rounded-full transition-all" 
@@ -251,23 +216,24 @@ const handleWalletClick = (e?: Event) => {
             alt=""
           >
         </div>
-        <span class="text-h4 text-black">{{ $t('profile') || 'Profile' }}</span>
+        <!-- 未登录时显示「登录」，点击进入原有 Twitter 授权流程 -->
+        <span class="hidden desk:inline text-h4 text-black">{{ accStore.getAccountInfo ? ($t('profile') || 'Profile') : ($t('login') || 'Log in') }}</span>
       </div>
 
       <!-- 7. About -->
-      <div 
-        class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+      <router-link
+        to="/about"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isActive('/about') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
-        @click="router.push('/about')"
       >
         <img 
-          class="w-6 h-6 mr-3 transition-all"
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
           :style="isActive('/about') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
           src="~@/assets/icons/icon-docs.svg" 
           alt=""
         >
-        <span class="text-h4 text-black">{{ $t('about') || 'About' }}</span>
-      </div>
+        <span class="hidden desk:inline text-h4 text-black">{{ $t('about') || 'About' }}</span>
+      </router-link>
 
       <!-- 8. More -->
       <el-popover 
@@ -283,11 +249,11 @@ const handleWalletClick = (e?: Event) => {
       >
         <template #reference>
           <div 
-            class="flex items-center px-4 py-3 rounded-lg cursor-pointer transition-colors"
+            class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors"
             :class="moreMenuVisible ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
           >
-            <span class="text-h4 mr-3">⋯</span>
-            <span class="text-h4">{{ $t('more') || 'More' }}</span>
+            <span class="text-h4 mr-0 desk:mr-3">⋯</span>
+            <span class="hidden desk:inline text-h4">{{ $t('more') || 'More' }}</span>
           </div>
         </template>
         <template #default>
@@ -340,14 +306,20 @@ const handleWalletClick = (e?: Event) => {
       </el-popover>
     </nav>
 
-    <!-- 8. Create TagCoin 按钮 -->
-    <div class="p-4">
-      <button 
-        class="w-full bg-gradient-primary text-white rounded-full py-3 px-4 font-bold text-h4 hover:opacity-90 transition-opacity"
+    <!-- 8. Create TagCoin 按钮（中间档显示圆形 + 图标） -->
+    <div class="p-2 desk:p-4 flex justify-center">
+      <button
+        class="hidden desk:block w-full bg-gradient-primary text-white rounded-full py-3 px-4 font-bold text-h4 hover:opacity-90 transition-opacity"
         @click="createTagCoin"
       >
         {{ $t('createTagCoin') || 'Create TagCoin' }}
       </button>
+      <button
+        class="desk:hidden w-11 h-11 bg-gradient-primary text-white rounded-full text-2xl font-bold leading-none hover:opacity-90 transition-opacity"
+        :title="$t('createTagCoin')"
+        :aria-label="$t('createTagCoin')"
+        @click="createTagCoin"
+      >+</button>
     </div>
   </div>
 </template>

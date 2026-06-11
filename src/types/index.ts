@@ -261,6 +261,10 @@ export type OnchainTokenInfo = {
   tick?: string,
   token: string,
   marketCap?: number;
+  /** 24h 涨跌百分比（来自 list 接口缓存）；null = 新币不足 24h，undefined = 后端未提供 */
+  priceChange24h?: number | null;
+  /** 24h 小时级收盘价数组（时间升序，≤25 点），供卡片 sparkline */
+  sparkline24h?: number[] | null;
   listed?: boolean;
   bondingCurveSupply?: number;
   totalSupply?: number;

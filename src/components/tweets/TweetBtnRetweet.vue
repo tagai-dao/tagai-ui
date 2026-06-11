@@ -52,7 +52,7 @@ async function retweet() {
 </script>
 
 <template>
-  <button class="flex justify-center items-center gap-2"
+  <button class="flex justify-center items-center gap-2 p-2 -m-2" :aria-label="$t('retweet')" :title="$t('retweet')"
           @click.stop="retweet">
     <i-ep-loading v-if="isRetweeting" class="animate-spin w-5 h-5 "/>
     <i v-else class="w-6 h-6 min-w-6"

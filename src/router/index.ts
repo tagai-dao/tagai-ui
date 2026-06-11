@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { useAccountStore } from '@/stores/web3'
-import { useModalStore } from '@/stores/common'
+import { useModalStore, useStateStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import HomeTagDetail from '@/views/tag-detail/HomeTagDetail.vue'
 import BuyAndSellView from '@/views/buy-sell/BuyAndSellView.vue'
@@ -27,13 +27,25 @@ const router = createRouter({
       path: '/:commerceid?',
       name: 'home',
       component: HomeView,
-      meta: { tabBar: true, topBar: true, keepAlive: true }
+      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'tag' }
+    },
+    {
+      path: '/coins',
+      name: 'coins',
+      component: HomeView,
+      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'coin' }
+    },
+    {
+      path: '/predictions',
+      name: 'predictions',
+      component: HomeView,
+      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'prediction' }
     },
     {
       path: '/commerce/:commerceid?',
       name: 'commerce',
       component: HomeView,
-      meta: { tabBar: true, topBar: true, keepAlive: true }
+      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'tag' }
     },
     {
       path: '/tag-detail/:id/:sellsman?',
@@ -131,11 +143,22 @@ router.beforeEach(async (to, from, next) => {
 
   const account = useAccountStore().getAccountInfo
   if (to.meta.gotoHome && !account?.twitterId) {
+    // 记录目标页，登录成功后回跳（App.vue 监听 login 事件处理）
+    sessionStorage.setItem('login-redirect', to.fullPath)
     useModalStore().setModalVisible(true, GlobalModalType.Login)
     next({
       path: from.fullPath
     })
     return
+  }
+
+  // 主菜单路由化：/、/coins、/predictions 共用 HomeView，由路由 meta 驱动菜单状态
+  if (to.meta.mainMenu) {
+    const stateStore = useStateStore()
+    stateStore.setActiveMainMenu(to.meta.mainMenu as 'tag' | 'coin' | 'prediction')
+    if (to.meta.mainMenu === 'coin') {
+      stateStore.setCoinSubMenu(to.query.tab === 'ip' ? 'ip' : 'tagCoin')
+    }
   }
   next();
 })

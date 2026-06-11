@@ -233,7 +233,7 @@
     "invalidTickTip": "请输入1-16个字符(可以是数字/大小写字母/中文汉字， 但不能是纯数字)",
     "tagForbidden": "不能创建这个标贴",
     "descTooLong": "描述信息在1024个字符内",
-    "maxAmountTip" : "请输入小于650000000",
+    "maxAmountTip": "请输入小于650000000",
     "tickUsed": "这个名称已经被注册，请更换",
     "pay": "支付",
     "next": "下一步",
@@ -325,7 +325,9 @@
     "fillInfoTip": "请填写数量",
     "noTradeData": "暂无交易数据",
     "notBondEthTip": "请更换一个已绑定推特的BNB地址",
-    "v8PreListAgentOnly": "仅 Agent 可交易"
+    "v8PreListAgentOnly": "仅 Agent 可交易",
+    "minReceived": "最低到手",
+    "highSlippageWarn": "滑点偏高"
   },
   "community": {
     "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于曲线销售，20%用于进入流动性池。",
@@ -481,7 +483,9 @@
     "marketCreatorNotMatch": "市场创建者不匹配当前用户",
     "tokenNotListed": "代币未上市",
     "predictNotVoting": "该预测未在投票阶段",
-    "predictHasVoted": "您已经参与过了该预测市场投票"
+    "predictHasVoted": "您已经参与过了该预测市场投票",
+    "tweetAIsIllegalForPredict": "推文A在另一个社区或已结算或是Space策展",
+    "tweetBIsIllegalForPredict": "推文B在另一个社区或已结算或是Space策展"
   },
   "createPredict": {
     "title": "创建预测对战",
@@ -776,5 +780,23 @@
     "totalAmount": "总量",
     "holdAmount": "持有",
     "stakedAmount": "已质押"
+  },
+  "login": "登录",
+  "amount": "数量",
+  "retweet": "转发",
+  "share": "分享",
+  "hideDust": "隐藏小市值",
+  "emptyStates": {
+    "noLiveSpaces": "当前没有进行中的 Space",
+    "startSpaceTip": "去 X 发起一个，带上 #TagAI",
+    "beFirstComment": "成为第一个评论的人"
+  },
+  "onboard": {
+    "title": "初来 TagAI？",
+    "step1": "发推带上 #TagAI + 社区标签，内容直接上链",
+    "step2": "策展优质帖子，赚取 TagCoin 奖励",
+    "step3": "交易 TagCoin，或与社区一起参与预测市场",
+    "learnMore": "了解更多",
+    "dismiss": "知道了"
   }
 }

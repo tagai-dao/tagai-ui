@@ -114,6 +114,9 @@ onMounted(async () => {
   emitter.on('login', updateVPOP);
   emitter.on('login', updateUnreadMessageCount);
   emitter.on('login', updateIPShare);
+  // 注意：登录回跳（login-redirect）不在这里处理——login 事件发生在 OAuth/钱包
+  // 流程中途，此时导航会与 Privy 后续步骤竞争导致 authError。
+  // 回跳统一放在 Layout.setWallet 的收尾（见 Layout.vue）。
 
   updateOgUrl();
 })

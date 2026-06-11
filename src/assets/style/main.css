@@ -11,6 +11,33 @@ html, body {
   background: white;
 }
 
+/* 涨跌语义色：默认绿涨红跌；setLocale 按 locale（zh/ko/ja 红涨）切换这两个变量 */
+:root {
+  --color-up: #16A34A;
+  --color-down: #E6374D;
+}
+
+/* === CJK 排版（v2 方案 3.3 / 5.3）===
+   字体栈按 <html lang> 切换：优先系统 CJK 字体，避免 web font 加载成本；
+   CJK 正文行高 ≥1.6，h2 的负字距对汉字/假名/谚文不适用 */
+html[lang="zh"] body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+}
+html[lang="ja"] body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic UI", Meiryo, "Noto Sans JP", sans-serif;
+}
+html[lang="ko"] body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+}
+html[lang="zh"] .text-h4, html[lang="ja"] .text-h4, html[lang="ko"] .text-h4,
+html[lang="zh"] .text-base, html[lang="ja"] .text-base, html[lang="ko"] .text-base {
+  line-height: 1.6;
+}
+html[lang="zh"] .text-h2, html[lang="ja"] .text-h2, html[lang="ko"] .text-h2,
+html[lang="zh"] .text-h3, html[lang="ja"] .text-h3, html[lang="ko"] .text-h3 {
+  letter-spacing: 0;
+}
+
 #app {
   position: absolute;
   top: 0;

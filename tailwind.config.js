@@ -36,6 +36,9 @@ export default {
         'green-2f': "#2fc08f",
         'green-b6': "#B6EBD2",
         'yellow-fa': "#faedaa",
+        // 涨跌语义色（CSS 变量驱动，便于 P1 按 locale 切换红涨/绿涨）
+        'up': 'var(--color-up)',
+        'down': 'var(--color-down)',
         'red-e6': "#E6374D",
         'red-ff': "#FFB7B7",
         'red-light': '#FFECEE',
@@ -96,6 +99,8 @@ export default {
     },
     screens: {
       'web': '804px',
+      // 中间档：804–1080 侧栏图标化、隐藏右栏；≥1080 完整三栏
+      'desk': '1080px',
       ...defaultTheme.screens,
     }
   },

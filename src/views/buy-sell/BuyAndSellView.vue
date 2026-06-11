@@ -130,6 +130,12 @@ const isV8PreListNoTrade = computed(
   () => comStore.currentSelectedCommunity?.version === 8 && !comStore.currentSelectedCommunity?.listed
 )
 
+// MAX：用全部 BNB 余额买入，预留 0.005 作 gas
+function setMaxBuy() {
+  const max = Math.max(ethBalance.value - 0.005, 0)
+  payEth.value = max > 0 ? parseFloat(max.toFixed(6)) : 0
+}
+
 const updateBuyAmount = debounce(async (val: any) => {
   if (!val) {
     trading.value = false
@@ -483,12 +489,12 @@ onMounted(async () => {
             <input
               v-model="payEth"
               type="number"
-              class="bg-transparent h-full flex-1 w-[120px] text-h3"
+              class="bg-transparent h-full flex-1 w-[120px] text-h3 tabular-nums"
               :disabled="isV8PreListNoTrade"
             />
             <span class="text-h5 whitespace-nowrap">$ BNB</span>
           </div>
-          <div class="grid grid-cols-4 gap-1 h-5 web:h-7 text-sm">
+          <div class="grid grid-cols-5 gap-1 h-8 text-sm">
             <button v-for="i of defaultAmount"
               class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active"
               @click="payEth=i"
@@ -496,6 +502,12 @@ onMounted(async () => {
               :class="payEth === i ? 'bg-gradient-primary' : ''">
               {{ i }}
               </button>
+            <button
+              class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active"
+              @click="setMaxBuy"
+              :disabled="isV8PreListNoTrade || ethBalance <= 0">
+              MAX
+            </button>
           </div>
           <div class="text-right text-sm">
             {{$t('balance')}}: {{ formatAmount(ethBalance) }}
@@ -506,7 +518,11 @@ onMounted(async () => {
             <span class="text-h5"
               >{{$t('receive')}} ${{ comStore.currentSelectedCommunity?.tick }}</span
             >
-            <span class="text-h3">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
+            <span class="text-h3 tabular-nums">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
+          </div>
+          <div v-if="receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
+            <span>{{ formatAmount((receiveAmount?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
         </template>
         <template v-else>
@@ -517,7 +533,7 @@ onMounted(async () => {
             <input
               v-model="sellAmount"
               type="number"
-              class="bg-transparent h-full flex-1 w-[120px] text-h3"
+              class="bg-transparent h-full flex-1 w-[120px] text-h3 tabular-nums"
               :disabled="isV8PreListNoTrade"
             />
             <span class="text-h5 whitespace-nowrap min-w">$ {{ comStore.currentSelectedCommunity?.tick }}</span>
@@ -530,23 +546,28 @@ onMounted(async () => {
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
           >
             <span class="text-h5">{{ $t('receive') }} $BNB</span>
-            <span class="text-h3">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
+            <span class="text-h3 tabular-nums">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
+          </div>
+          <div v-if="receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
+            <span>{{ formatAmount((receiveEth?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} $BNB</span>
           </div></template
         >
-        <div class="flex items-center justify-between">
-          <div class="font-light text-base">{{$t('buyAndSell.setMaxSlippage')}}</div>
-          <div class="w-[100px] flex items-center justify-between border-[1px] border-grey-light-active rounded-lg h-6 web:h-9 px-3">
-            <div class="flex-1 flex items-center gpa-1 h-full">
-              <input class="w-12 h-full overflow-hidden text-right text-orange-normal" type="number" v-model="maxSlippage">
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <div class="font-light text-base">{{$t('buyAndSell.setMaxSlippage')}}</div>
+            <span v-if="Number(maxSlippage) > 5" class="text-sm text-orange-normal">⚠ {{ $t('buyAndSell.highSlippageWarn') }}</span>
+          </div>
+          <div class="flex gap-1.5">
+            <button v-for="s of [1, 3, 5]" :key="s"
+              class="flex-1 h-8 rounded-lg text-sm border-[1px] transition-colors"
+              :class="Number(maxSlippage) === s ? 'bg-gradient-primary text-white border-transparent' : 'border-grey-light-active text-grey-64 hover:bg-gray-50'"
+              @click="maxSlippage = s">
+              {{ s }}%
+            </button>
+            <div class="flex-1 h-8 flex items-center border-[1px] border-grey-light-active rounded-lg px-2">
+              <input class="w-full h-full text-right text-orange-normal bg-transparent" type="number" min="0" v-model="maxSlippage">
               <span class="text-orange-normal">%</span>
-            </div>
-            <div class="flex flex-col gap-1 ml-4">
-              <button @click="maxSlippage+=1">
-                <img class="w-2" src="~@/assets/icons/icon-input-add.svg" alt="">
-              </button>
-              <button :disabled="maxSlippage<=0" @click="maxSlippage-=1">
-                <img class="w-2 transform rotate-180" src="~@/assets/icons/icon-input-add.svg" alt="">
-              </button>
             </div>
           </div>
         </div>

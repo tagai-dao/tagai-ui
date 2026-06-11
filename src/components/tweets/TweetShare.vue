@@ -21,7 +21,7 @@ function copyLink() {
 </script>
 
 <template>
-  <button class="flex justify-center items-center gap-2"
+  <button class="flex justify-center items-center gap-2 p-2 -m-2" :aria-label="$t('share')" :title="$t('share')"
           @click.stop="copyLink">
     <i class="w-5 h-5 min-w-5 btn-icon-share"></i>
   </button>

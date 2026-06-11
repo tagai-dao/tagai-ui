@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, type PropType, ref, watch} from 'vue'
 import { formatAmount, formatPrice, parseTimestamp } from '@/utils/helper';
+import { formatTokenAmount, formatUsd } from '@/utils/format';
 // import { buildAssetId } from '@/utils/eth/ipShare'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import LinkPreview from "@/components/tweets/LinkPreview.vue";
@@ -143,9 +144,10 @@ onUnmounted(() => {
         <el-popover v-if="tweet.amount && !tweet.isDeployTweet && showMarketCap" popper-class="c-arrow-popper rounded-sm" position="end"
                     trigger="click" :teleported="true" :persistent="false">
           <template #reference>
-            <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold"
+            <!-- 两段式：代币数量（紧凑）+ 美元估值，替代难读的 9,432.94($0.7451) 嵌套括号 -->
+            <button @click.stop class="h-6 rounded-full px-3 text-white text-sm font-semibold tabular-nums"
                     :class="tweet.isSettled?'bg-grey-light-active':'bg-gradient-primary'">
-              {{ formatAmount(tweet.amount) }}({{ formatPrice((tweet.price ?? 0) * useStateStore().ethPrice * (tweet.amount ?? 0)) }})
+              {{ formatTokenAmount(tweet.amount) }} ≈ {{ formatUsd((tweet.price ?? 0) * useStateStore().ethPrice * (tweet.amount ?? 0)) }}
             </button>
           </template>
           <template #default>

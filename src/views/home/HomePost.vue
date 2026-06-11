@@ -19,6 +19,14 @@ import {usePageScroll} from "@/composables/useTools";
 import emitter from "@/utils/emitter";
 import { IgnoreAuthor } from "@/config";
 
+// 新手引导卡：可关闭，关闭后持久记忆
+const ONBOARD_KEY = 'onboard-card-dismissed'
+const onboardDismissed = ref(localStorage.getItem(ONBOARD_KEY) === 'true')
+function dismissOnboard() {
+  onboardDismissed.value = true
+  localStorage.setItem(ONBOARD_KEY, 'true')
+}
+
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
 const tweetsStore = useTweetsStore();
@@ -108,8 +116,9 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="flex-1 overflow-hidden grid grid-cols-2 web:grid-cols-3 gap-3 px-3">
-    <div class="col-span-2 h-full overflow-hidden">
+  <!-- 内容列限宽 600px（阅读行长上限）；中间档（804-1080）单列居中，≥1080 右栏 340px -->
+  <div class="flex-1 overflow-hidden grid grid-cols-1 web:grid-cols-[minmax(0,600px)] desk:grid-cols-[minmax(0,600px)_minmax(280px,340px)] web:justify-center gap-3 px-3">
+    <div class="h-full overflow-hidden min-w-0">
       <div class="h-full overflow-auto no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh class="min-h-full"
                           v-model="refreshing"
@@ -117,6 +126,21 @@ onActivated(() => {
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
+          <!-- 新手三步引导卡（可关闭） -->
+          <div v-if="!onboardDismissed" class="bg-white rounded-2xl p-4 mb-2 border-[1px] border-orange-normal/20">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-h3">{{ $t('onboard.title') }}</span>
+              <button class="text-sm text-grey-64 px-2 py-1 hover:text-black" @click="dismissOnboard">✕ {{ $t('onboard.dismiss') }}</button>
+            </div>
+            <ol class="text-sm text-grey-5a flex flex-col gap-1.5 list-decimal list-inside">
+              <li>{{ $t('onboard.step1') }}</li>
+              <li>{{ $t('onboard.step2') }}</li>
+              <li>{{ $t('onboard.step3') }}</li>
+            </ol>
+            <router-link to="/about" class="inline-block mt-2 text-sm text-orange-normal font-semibold hover:underline">
+              {{ $t('onboard.learnMore') }} →
+            </router-link>
+          </div>
           <van-list
               :loading="loading"
               :finished="finished[tweetsStore.homeTweetType]"
@@ -165,7 +189,7 @@ onActivated(() => {
         </van-pull-refresh>
       </div>
     </div>
-    <div class="col-span-1 h-full overflow-hidden hidden web:block">
+    <div class="h-full overflow-hidden hidden desk:block">
       <div class="h-full flex flex-col gap-3 overflow-y-auto no-scroll-bar">
         <!-- Live Spaces -->
         <TopOnlineSpaces />
