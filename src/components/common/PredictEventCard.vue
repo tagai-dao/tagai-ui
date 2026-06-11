@@ -7,8 +7,10 @@ import { OP_CONSUME } from '@/config';
 import { notify } from '@/utils/notify';
 import type { BattleData, CommunityMember, EventPredictData, Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper';
-import { useModalStore } from '@/stores/common'
+import { useModalStore, useStateStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
+import { useCommunityTokenPrice } from '@/composables/useCommunityTokenPrice'
+import { formatUsdCompact } from '@/utils/format'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
 import { useEventPredict } from '@/composables/usePredict';
@@ -83,6 +85,16 @@ onMounted(() => {
   if (isMultiOutcome.value && !props.market.outcomeReserves?.length) {
     refreshMarketReserves().catch(() => {})
   }
+})
+
+// 参与资金（USD）：池内 outcome 代币 × 社区代币单价 × BNB 美元价，与 /predictions 标签条口径一致
+const stateStore = useStateStore()
+const { priceOfTick } = useCommunityTokenPrice()
+const volUsd = computed(() => {
+  const tokens = props.market.outcomeReserves?.length
+    ? props.market.outcomeReserves.reduce((sum, r) => sum + Number(r ?? 0), 0)
+    : Number(props.market.reserveA ?? 0) + Number(props.market.reserveB ?? 0)
+  return tokens * priceOfTick(props.market.tick) * stateStore.ethPrice
 })
 
 const aAmount = computed(() => {
@@ -454,26 +466,14 @@ const selectedBuyColor = computed(() => {
           (@<span class="text-blue-600 underline">{{ market.tick }}</span>)
         </span>
       </h3>
-      <!-- 倒计时/状态 -->
-      <div class="flex flex-col items-end gap-1">
-        <button
-          @click.stop="openShareModal()"
-          class="p-1 rounded-full hover:bg-gray-100 transition-colors"
-          :class="{ 'opacity-50 pointer-events-none': sharing }"
-          title="Share to Twitter"
-        >
-          <i-ep-promotion class="w-4 h-4 text-gray-400" />
-        </button>
-        <span 
-          class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
-          :class="{
-            'bg-green-light text-green-dark': !isResolved && now.getTime() < voteEndTime,
-            'bg-grey-light text-grey-normal': isResolved || now.getTime() >= voteEndTime
-          }"
-        >
-          {{ statusText }}
-        </span>
-      </div>
+      <button
+        @click.stop="openShareModal()"
+        class="p-1 rounded-full hover:bg-gray-100 transition-colors self-start"
+        :class="{ 'opacity-50 pointer-events-none': sharing }"
+        title="Share to Twitter"
+      >
+        <i-ep-promotion class="w-4 h-4 text-gray-400" />
+      </button>
     </div>
 
     <!-- 对战双方 - 上下布局 -->
@@ -685,6 +685,22 @@ const selectedBuyColor = computed(() => {
           </div>
         </Transition>
       </div>
+    </div>
+
+    <!-- 底部信息行：左 Vol（参与资金 USD），右 倒计时/状态 -->
+    <div class="flex justify-between items-center mt-2 gap-2">
+      <span v-if="volUsd >= 0.01" class="text-xs sm:text-sm font-semibold text-grey-normal tabular-nums">
+        Vol {{ formatUsdCompact(volUsd) }}
+      </span>
+      <span
+        class="ml-auto px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
+        :class="{
+          'bg-green-light text-green-dark': !isResolved && now.getTime() < voteEndTime,
+          'bg-grey-light text-grey-normal': isResolved || now.getTime() >= voteEndTime
+        }"
+      >
+        {{ statusText }}
+      </span>
     </div>
   </div>
 

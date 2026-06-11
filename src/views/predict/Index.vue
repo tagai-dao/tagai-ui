@@ -13,10 +13,9 @@ import { computed } from 'vue'
 import { useCommunityStore } from '@/stores/community'
 import { useStateStore } from '@/stores/common'
 import { getCommunitiesByTrending } from '@/apis/api'
-import { TotalSupply } from '@/config'
 import { formatUsdCompact } from '@/utils/format'
 import { isWorldCupMarket } from '@/composables/useWorldCupMarkets'
-import type { Community } from '@/types'
+import { useCommunityTokenPrice } from '@/composables/useCommunityTokenPrice'
 
 const props = defineProps<{
     type: number
@@ -101,15 +100,7 @@ const onTagWheel = (e: WheelEvent) => {
     if (tagScroller.value) tagScroller.value.scrollLeft += e.deltaY + e.deltaX
 }
 
-// 代币单价（BNB）：list 缓存的 marketCap / 总供应量，避免依赖链上字段
-const priceOfTick = (tick: string): number => {
-    const lists = [comStore.trendingCommunities, comStore.newCommunities, comStore.marketCapCommunities]
-    for (const list of lists) {
-        const hit = (list as Community[])?.find(c => c.tick === tick)
-        if (hit?.marketCap) return Number(hit.marketCap) / TotalSupply
-    }
-    return 0
-}
+const { priceOfTick } = useCommunityTokenPrice()
 
 // 事件类 tab 的全量数据：worldcup 是事件数据的子集；世界杯事件同时保留在 event tab 中
 const eventsForTab = computed<EventPredictData[]>(() => {
@@ -122,12 +113,15 @@ const currentItems = computed<Array<BattleData | EventPredictData>>(() =>
     activeTab.value === 'battle' ? (battles.value[props.type] ?? []) : eventsForTab.value
 )
 
-// tick -> Σ(reserveA+reserveB) × 价格 × BNB 美元价
+// tick -> Σ(各 outcome 储备) × 价格 × BNB 美元价（多元市场含全部 outcome，与卡片 Vol 同口径）
 const communityTags = computed(() => {
     const funds: Record<string, number> = {}
     for (const item of currentItems.value) {
         if (!item?.tick) continue
-        const tokens = Number(item.reserveA ?? 0) + Number(item.reserveB ?? 0)
+        const outcomeReserves = (item as EventPredictData).outcomeReserves
+        const tokens = outcomeReserves?.length
+            ? outcomeReserves.reduce((sum, r) => sum + Number(r ?? 0), 0)
+            : Number(item.reserveA ?? 0) + Number(item.reserveB ?? 0)
         funds[item.tick] = (funds[item.tick] ?? 0) + tokens * priceOfTick(item.tick) * stateStore.ethPrice
     }
     return Object.entries(funds)
@@ -313,7 +307,7 @@ onMounted(async () => {
             <el-select v-model="activeTab"
                        class="bg-white rounded-full overflow-hidden w-[190px] min-w-[120px] c-select h-9 flex items-center text-sm text-black flex-shrink-0"
                        popper-class="c-select-popper rounded-xl">
-                <el-option value="worldcup" :label="$t('createPredict.tabWorldCup')" />
+                <el-option value="worldcup" :label="$t('createPredict.tabWorldCup') + ' 🏆'" />
                 <el-option value="event" :label="$t('createPredict.tabEvent')" />
                 <el-option value="battle" :label="$t('createPredict.tabBattle')" />
             </el-select>
