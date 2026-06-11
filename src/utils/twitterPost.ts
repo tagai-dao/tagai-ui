@@ -64,6 +64,14 @@ export const buildPlatformPostText = (text: string, options?: { tick?: string; c
 export const isRealTwitterTweetId = (tweetId?: string | null) =>
   !!tweetId && /^\d{15,}$/.test(tweetId)
 
+const TWITTER_STATUS_URL_RE = /^https?:\/\/(www\.)?(twitter\.com|x\.com)\/\w+\/status\/(\d+)/
+
+/** 从 X/Twitter 推文链接解析 tweetId */
+export const extractTweetIdFromUrl = (url: string): string | null => {
+  const match = url.trim().match(TWITTER_STATUS_URL_RE)
+  return match?.[3] ?? null
+}
+
 /** 打开 Twitter 转推页 */
 export const openTwitterRetweetIntent = (tweetId: string) => {
   window.open(`https://x.com/intent/retweet?tweet_id=${tweetId}`, '_blank')

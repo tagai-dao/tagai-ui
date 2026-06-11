@@ -485,7 +485,8 @@
     "marketCreatorNotMatch": "The creator of the market does not match the current user",
     "tokenNotListed": "Token is not listed",
     "predictNotVoting": "The prediction is not in the voting stage",
-    "predictHasVoted": "You have already participated in this prediction market vote"
+    "predictHasVoted": "You have already participated in this prediction market vote",
+    "postOnTwitterRequired": "Please post on X yourself, then paste the tweet link to continue."
   },
   "createPredict": {
     "title": "Create Predict Battle",
@@ -531,7 +532,8 @@
     "timeLeft": "Time remaining",
     "timeExpired": "Expired",
     "tabBattleDesc": "Based on the battle between tweets from two communities, prediction is based on 2+1 days of curation by community members. When the post is settled, the side with higher curation weight wins, and users can redeem prediction rewards.",
-    "tabEventDesc": "Prediction is based on the content described in the prediction subject. Currently, only binary prediction is supported. Tagai will create a prediction market with Yes and No results for each prediction. After the set event end time arrives, trading will automatically stop. In the following 24 hours, users with community prediction credit can vote on the result. The final result will be determined by the side with higher voting weight and published on-chain. The winning side of the vote will share a portion of the transaction fees."
+    "tabEventDesc": "Prediction is based on the content described in the prediction subject. Currently, only binary prediction is supported. Tagai will create a prediction market with Yes and No results for each prediction. After the set event end time arrives, trading will automatically stop. In the following 24 hours, users with community prediction credit can vote on the result. The final result will be determined by the side with higher voting weight and published on-chain. The winning side of the vote will share a portion of the transaction fees.",
+    "tabWorldCup": "World Cup 2026"
   },
   "predictTrade": {
     "shareAmount": "Shares to Trade",
@@ -594,7 +596,8 @@
     "timeLeftVoting": "Time left to vote: ",
     "endStill": "Time left to trade: ",
     "voted": "voted",
-    "potentialReward": "Winners Share:"
+    "potentialReward": "Winners Share:",
+    "outcomeProbabilities": "Outcome probabilities"
   },
   "predictLiquidity": {
     "management": "Liquidity Management",
@@ -807,5 +810,100 @@
     "liveSpaces": "Live Spaces",
     "topTagCoin": "Top TagCoin",
     "topXCreators": "Top X Creators"
+  },
+  "worldCup2026": {
+    "title": "World Cup 2026 — Group Match",
+    "create": "Create World Cup Match",
+    "matchTitle": "{left} vs {right}",
+    "selectLeftTeam": "Select your team",
+    "selectOpponent": "Select opponent (same group)",
+    "groupLabel": "Group {group}",
+    "kickoffHint": "Default deadline is kickoff time; you can adjust it",
+    "outcome": {
+      "win": "{team} Win",
+      "draw": "Draw"
+    },
+    "reason": {
+      "INVALID_TEAM": "Invalid team selected",
+      "DIFFERENT_GROUP": "Teams must be in the same group",
+      "NO_FIXTURE": "No group-stage fixture found for this pair",
+      "ALREADY_EXISTS": "A market for this match already exists in this community"
+    },
+    "teams": {
+      "MEX": "Mexico",
+      "RSA": "South Africa",
+      "KOR": "Korea Republic",
+      "CZE": "Czechia",
+      "CAN": "Canada",
+      "BIH": "Bosnia and Herzegovina",
+      "QAT": "Qatar",
+      "SUI": "Switzerland",
+      "BRA": "Brazil",
+      "MAR": "Morocco",
+      "HAI": "Haiti",
+      "SCO": "Scotland",
+      "USA": "USA",
+      "PAR": "Paraguay",
+      "AUS": "Australia",
+      "TUR": "Türkiye",
+      "GER": "Germany",
+      "CUW": "Curaçao",
+      "CIV": "Côte d'Ivoire",
+      "ECU": "Ecuador",
+      "NED": "Netherlands",
+      "JPN": "Japan",
+      "SWE": "Sweden",
+      "TUN": "Tunisia",
+      "BEL": "Belgium",
+      "EGY": "Egypt",
+      "IRN": "IR Iran",
+      "NZL": "New Zealand",
+      "ESP": "Spain",
+      "CPV": "Cabo Verde",
+      "KSA": "Saudi Arabia",
+      "URU": "Uruguay",
+      "FRA": "France",
+      "SEN": "Senegal",
+      "IRQ": "Iraq",
+      "NOR": "Norway",
+      "ARG": "Argentina",
+      "ALG": "Algeria",
+      "AUT": "Austria",
+      "JOR": "Jordan",
+      "POR": "Portugal",
+      "COD": "DR Congo",
+      "UZB": "Uzbekistan",
+      "COL": "Colombia",
+      "ENG": "England",
+      "CRO": "Croatia",
+      "GHA": "Ghana",
+      "PAN": "Panama"
+    },
+    "subtitle": "Pick two teams from the same group. Win / Draw / Win (3 outcomes).",
+    "createShort": "World Cup",
+    "initialRatio": "Initial odds (equal split)",
+    "checking": "Checking fixture…",
+    "checkFailed": "Failed to verify match",
+    "selectBothTeams": "Select two different teams from the same group",
+    "fixtureVenue": "Venue: {venue}",
+    "tabDesc": "Built on Real World, our World Cup prediction model enables the creation of mainstream tournament events. Trading automatically stops at the designated expiry time, triggering a 24-hour voting window for users with community prediction points. Event settlement is executed according to the on-chain published voting outcomes, with the winning voters sharing a portion of the transaction fees.",
+    "tapToSelect": "Tap to select",
+    "selectLeftFirst": "Please select the left team first",
+    "titleAutoPlaceholder": "Auto-generated after selecting both teams",
+    "comingSoon": "Coming soon",
+    "pickerTitleLeft": "Select team",
+    "pickerTitleRight": "Select opponent (same group)",
+    "eventType": {
+      "matchup": "Matchup",
+      "groupChampion": "Group champion 🏆",
+      "worldChampion": "World Cup champion 🏆"
+    },
+    "initialRatioTip": "Drag the two handles to set initial probabilities for left win, draw, and right win. Default is equal thirds.",
+    "tweetUrlLabel": "Tweet link after posting on X",
+    "tweetUrlHint": "Post on X first (we will open it for you), then paste the tweet URL here.",
+    "tweetUrlRequired": "Please post on X and paste the tweet link here",
+    "postOnTwitterFirst": "Please post on X first, then paste the tweet link and create again.",
+    "tweetSyncTimeout": "Tweet not synced yet. Wait a moment and try again.",
+    "postMetaGroup": "2026 FIFA World Cup · Group {group} · Group stage"
   }
 }

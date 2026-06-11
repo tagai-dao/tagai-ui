@@ -12,7 +12,8 @@ import { GlobalModalType } from '@/types'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
 import { useEventPredict } from '@/composables/usePredict';
-import { buyToken, getBuyData, getMarketInfos } from '@/utils/fpmm';
+import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes';
+import { buyToken, getBuyData, getMarketInfos, getEventMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
 import { handleErrorTip } from '@/utils/notify';
@@ -30,12 +31,20 @@ const router = useRouter();
 const accStore = useAccountStore();
 const { updateUserOPLocal } = useAccount();
 const { percentA, percentB } = useEventPredict(props.market);
+const {
+  isMultiOutcome,
+  outcomeList,
+  outcomePercents,
+  winningOutcomeIndex,
+  getOutcomeLabel,
+} = useEventMarketOutcomes(() => props.market);
 const { t } = useI18n();
 const now = useNow();
 
 // 购买状态管理
 const showBuyInput = ref(false);
-const selectedColor = ref<'yes' | 'no' | null>(null);
+/** 选中的 outcome：二元 0=Yes/1=No，多元为 outcomeIndex */
+const selectedOutcomeIndex = ref<number | null>(null);
 const buyAmount = ref('');
 const willReceiveAmount = ref(0);
 const calculatingAmount = ref(false);
@@ -45,7 +54,28 @@ const voting = ref(false);
 const showVoteModal = ref(false);
 const currentVP = ref(0);
 const selectedVoteOption = ref<'yes' | 'no' | null>(null);
+const selectedVoteOutcomeIndex = ref<number | null>(null);
 const showPopover = ref(false);
+
+const isResolved = computed(() => props.market.status === 3 || !!props.market.winner);
+
+const getOutcomeColor = (idx: number) =>
+  OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length];
+
+const refreshMarketReserves = async () => {
+  if (isMultiOutcome.value) {
+    const infos = await getEventMarketInfos(props.market);
+    props.market.outcomeReserves = infos.reserves;
+    props.market.reserveA = infos.reserves[0] ?? 0;
+    props.market.reserveB = infos.reserves[1] ?? 0;
+    props.market.fee = infos.fee;
+    return;
+  }
+  const marketInfos = await getMarketInfos([props.market]);
+  props.market.reserveA = marketInfos[props.market.marketMaker + '-priceA'];
+  props.market.reserveB = marketInfos[props.market.marketMaker + '-priceB'];
+  props.market.fee = marketInfos[props.market.marketMaker + '-fee'];
+};
 
 const aAmount = computed(() => {
   return props.market.voteYes ?? 0
@@ -98,7 +128,7 @@ const formatDurationText = (ms: number) => {
 }
 
 const statusText = computed(() => {
-  if (props.market.winner) return t('ended')
+  if (isResolved.value) return t('ended')
   
   const current = now.value.getTime()
   
@@ -109,7 +139,7 @@ const statusText = computed(() => {
   }
   
   // 交易阶段 (未结束且未开始投票)
-  if (!props.market.winner && current < tradeEndTime.value) {
+  if (!isResolved.value && current < tradeEndTime.value) {
      const diff = tradeEndTime.value - current
      return `${t('predictTrade.endStill')}${formatDurationColon(diff)}`
   }
@@ -123,9 +153,30 @@ const statusText = computed(() => {
   return t('ended')
 })
 
-// 判断用户是否已投票（voteResult 不为空：不为 null、undefined 或 0）
+// 判断用户是否已投票
 const hasVoted = computed(() => {
+  if (isMultiOutcomeMarket(props.market)) {
+    return props.market.voteOutcomeIndex !== null && props.market.voteOutcomeIndex !== undefined
+  }
   return props.market.voteResult !== null && props.market.voteResult !== undefined && props.market.voteResult !== 0
+})
+
+const voteTotalMulti = computed(() =>
+  outcomeList.value.reduce((sum, o) => sum + (o.voteTotal ?? 0), 0)
+)
+
+const getVotePercent = (outcomeIndex: number) => {
+  const total = voteTotalMulti.value
+  if (total <= 0) return 0
+  const outcome = outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)
+  return Math.round(((outcome?.voteTotal ?? 0) / total) * 100)
+}
+
+const resolvedWinnerLabel = computed(() => {
+  if (isMultiOutcome.value && winningOutcomeIndex.value != null) {
+    return getOutcomeLabel(winningOutcomeIndex.value)
+  }
+  return props.market.winner === 'yes' ? t('predictTrade.yes') : t('predictTrade.no')
 })
 
 const gotoDetail = () => {
@@ -181,55 +232,50 @@ const confirmShare = async (text: string) => {
   }
 }
 
-// 购买Yes按钮
-const buyYes = () => {
-  if (props.market.status !== 1) return;
-
-  if (accStore.ethConnectState !== EthWalletState.Connected) {
-    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
-    return;
-  } else {
-    selectedColor.value = 'yes';
-    showBuyInput.value = true;
-    buyAmount.value = '';
-  }
-}
-
-// 购买No按钮
-const buyNo = () => {
+const openBuyInput = (outcomeIndex: number) => {
   if (props.market.status !== 1) return;
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
-  } else {
-    selectedColor.value = 'no';
-    showBuyInput.value = true;
-    buyAmount.value = '';
   }
+  selectedOutcomeIndex.value = outcomeIndex;
+  showBuyInput.value = true;
+  buyAmount.value = '';
 }
+
+// 购买 Yes（二元）
+const buyYes = () => openBuyInput(0)
+
+// 购买 No（二元）
+const buyNo = () => openBuyInput(1)
+
+// 购买指定 outcome（多元）
+const buyOutcome = (outcomeIndex: number) => openBuyInput(outcomeIndex)
 
 // 关闭购买输入
 const closeBuyInput = () => {
   showBuyInput.value = false;
-  selectedColor.value = null;
+  selectedOutcomeIndex.value = null;
   buyAmount.value = '';
   willReceiveAmount.value = 0;
 }
 
+const getBuyOutcomeArg = (): 'yes' | 'no' | number => {
+  if (selectedOutcomeIndex.value == null) return 'yes';
+  if (isMultiOutcome.value) return selectedOutcomeIndex.value;
+  return selectedOutcomeIndex.value === 0 ? 'yes' : 'no';
+}
+
 // 计算获得的代币数量
 const calculateReceiveAmount = debounce(async () => {
-  if (!buyAmount.value || parseFloat(buyAmount.value) <= 0 || !selectedColor.value) {
+  if (!buyAmount.value || parseFloat(buyAmount.value) <= 0 || selectedOutcomeIndex.value == null) {
     willReceiveAmount.value = 0;
     return;
   }
   try {
     calculatingAmount.value = true;
-    // 更新数据
-    const marketInfos = await getMarketInfos([props.market])
-    props.market.reserveA = marketInfos[props.market.marketMaker + '-priceA']
-    props.market.reserveB = marketInfos[props.market.marketMaker + '-priceB']
-    props.market.fee = marketInfos[props.market.marketMaker + '-fee']
-    const result = await getBuyData(props.market, parseFloat(buyAmount.value), selectedColor.value);
+    await refreshMarketReserves();
+    const result = await getBuyData(props.market, parseFloat(buyAmount.value), getBuyOutcomeArg());
     if (result && typeof result === 'object' && 'amount' in result) {
       willReceiveAmount.value = result.amount || 0;
       bnbFee.value = result.fee;
@@ -245,8 +291,8 @@ const calculateReceiveAmount = debounce(async () => {
 }, 500);
 
 // 监听购买金额变化，自动计算获得的代币数量
-watch([buyAmount, selectedColor], () => {
-  if (showBuyInput.value && selectedColor.value) {
+watch([buyAmount, selectedOutcomeIndex], () => {
+  if (showBuyInput.value && selectedOutcomeIndex.value != null) {
     calculateReceiveAmount();
   }
 });
@@ -255,18 +301,20 @@ watch([buyAmount, selectedColor], () => {
 const confirmBuy = async () => {
   if (trading.value) return;
   trading.value = true;
-  console.log(`购买 ${selectedColor.value}，数量: ${buyAmount.value}`);
   try {
-    const hash = await buyToken(props.market, props.market.token as `0x${string}`, parseUnits(parseFloat(buyAmount.value).toFixed(18), 18), willReceiveAmount.value * 0.95, selectedColor.value!, bnbFee.value)
+    const hash = await buyToken(
+      props.market,
+      props.market.token as `0x${string}`,
+      parseUnits(parseFloat(buyAmount.value).toFixed(18), 18),
+      willReceiveAmount.value * 0.95,
+      getBuyOutcomeArg(),
+      bnbFee.value
+    )
     console.log('buy hash', hash)
     if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
       await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.marketMaker as `0x${string}`, 'event')
     }
-    getMarketInfos([props.market]).then((infos: any) => {
-      props.market.reserveA = infos[props.market.marketMaker + '-priceA']
-      props.market.reserveB = infos[props.market.marketMaker + '-priceB']
-      props.market.fee = infos[props.market.marketMaker + '-fee']
-    })
+    refreshMarketReserves().catch(() => {})
   } catch (error) {
     handleErrorTip(error)
   } finally {
@@ -315,16 +363,75 @@ const preVote = async (yes: boolean) => {
   }
 }
 
-const vote = async () => {
+const preVoteOutcome = async (outcomeIndex: number) => {
+  if (hasVoted.value) return;
+  if (!accStore.getAccountInfo?.twitterId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Login)
+    return;
+  }
+  if (!accStore.getAccountInfo?.steemId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Register)
+    return;
+  }
+
   try {
-    voting.value = true
-    await voteEventPrediction(accStore.getAccountInfo?.twitterId, props.market.marketMaker, selectedVoteOption.value == 'yes' ? 1 : 2)
+    voting.value = true;
+    const vpInfo: CommunityMember | unknown = await getUserPredictVP(accStore.getAccountInfo?.twitterId, props.market.tick)
+    let vp = 200
+    if (vpInfo && typeof vpInfo === 'object' && 'lastUpdateVPStamp' in vpInfo && 'predictVP' in vpInfo) {
+      if (vpInfo.lastUpdateVPStamp == 0) {
+        vp = 200;
+      } else {
+        vp = ((vpInfo as CommunityMember).predictVP + (Date.now() - (vpInfo as CommunityMember).lastUpdateVPStamp) * MAX_VP / (86400000 * VP_RECOVER_DAY))
+        vp = vp > MAX_VP ? MAX_VP : vp
+      }
+    }
+    currentVP.value = Math.floor(vp);
+    selectedVoteOutcomeIndex.value = outcomeIndex;
+    selectedVoteOption.value = null;
+    showVoteModal.value = true;
   } catch (error) {
     handleErrorTip(error)
   } finally {
     voting.value = false;
   }
 }
+
+const vote = async () => {
+  try {
+    voting.value = true
+    if (isMultiOutcome.value && selectedVoteOutcomeIndex.value != null) {
+      await voteEventPrediction(
+        accStore.getAccountInfo?.twitterId,
+        props.market.marketMaker,
+        undefined,
+        undefined,
+        selectedVoteOutcomeIndex.value
+      )
+    } else {
+      await voteEventPrediction(
+        accStore.getAccountInfo?.twitterId,
+        props.market.marketMaker,
+        selectedVoteOption.value == 'yes' ? 1 : 2
+      )
+    }
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    voting.value = false;
+  }
+}
+
+const selectedBuyLabel = computed(() => {
+  if (selectedOutcomeIndex.value == null) return '';
+  if (isMultiOutcome.value) return getOutcomeLabel(selectedOutcomeIndex.value);
+  return selectedOutcomeIndex.value === 0 ? t('predictTrade.yes') : t('predictTrade.no');
+})
+
+const selectedBuyColor = computed(() => {
+  if (selectedOutcomeIndex.value == null) return OUTCOME_CHART_COLORS[0];
+  return getOutcomeColor(selectedOutcomeIndex.value);
+})
 
 </script>
 
@@ -352,8 +459,8 @@ const vote = async () => {
         <span 
           class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap"
           :class="{
-            'bg-green-light text-green-dark': !market.winner && now.getTime() < voteEndTime,
-            'bg-grey-light text-grey-normal': !!market.winner || now.getTime() >= voteEndTime
+            'bg-green-light text-green-dark': !isResolved && now.getTime() < voteEndTime,
+            'bg-grey-light text-grey-normal': isResolved || now.getTime() >= voteEndTime
           }"
         >
           {{ statusText }}
@@ -364,8 +471,8 @@ const vote = async () => {
     <!-- 对战双方 - 上下布局 -->
     <div class="flex flex-col gap-3 sm:gap-4 relative overflow-hidden rounded-xl sm:rounded-2xl border-2 p-3 sm:p-4"
       :class="{
-        'bg-gray-50 border-gray-200': !market.winner,
-        'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': !!market.winner
+        'bg-gray-50 border-gray-200': !isResolved,
+        'bg-gradient-to-br from-grey-light to-grey-light-hover border-grey-normal/20': isResolved
       }">
       <div class="flex items-stretch gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg border border-red-normal/20 bg-white/50">
         <!-- 左侧：头像和用户名 -->
@@ -402,26 +509,108 @@ const vote = async () => {
 
         <!-- 右侧：结果显示 -->
       </div>
-      <!-- Yes/No 占比双色条（Polymarket 习惯：概率即主信息） -->
-      <div v-if="!market.winner" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+      <!-- 二元 Yes/No 概率条 -->
+      <div v-if="!isResolved && !isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
         <div class="h-full bg-red-normal transition-all duration-300" :style="{ width: (percentA * 100).toFixed(1) + '%' }"></div>
         <div class="h-full bg-blue-600 transition-all duration-300" :style="{ width: (percentB * 100).toFixed(1) + '%' }"></div>
+      </div>
+      <!-- 多元 outcome 概率条（N 段） -->
+      <div v-if="!isResolved && isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+        <div
+          v-for="(pct, idx) in outcomePercents"
+          :key="idx"
+          class="h-full transition-all duration-300"
+          :style="{
+            width: (pct * 100).toFixed(1) + '%',
+            backgroundColor: getOutcomeColor(idx),
+          }"
+        />
       </div>
       <!-- 底部：购买/投票按钮区域 -->
       <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
         <Transition name="buy-buttons" mode="out-in">
 
-          <!-- 默认状态：两个购买按钮（概率大字为主视觉） -->
-          <div v-if="!showBuyInput" key="buttons" class="flex gap-3 sm:gap-4 w-full">
+          <!-- 多元市场：交易阶段 3 个购买按钮 -->
+          <div
+            v-if="!showBuyInput && isMultiOutcome && !isVoting && !isResolved"
+            key="multi-buttons"
+            class="grid grid-cols-3 gap-2 w-full"
+          >
+            <button
+              v-for="(outcome, idx) in outcomeList"
+              :key="outcome.outcomeIndex"
+              class="min-h-10 sm:min-h-12 px-1 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 disabled:opacity-40 tabular-nums"
+              :style="{ backgroundColor: getOutcomeColor(idx) }"
+              @click="buyOutcome(outcome.outcomeIndex)"
+            >
+              <span class="text-base sm:text-lg">{{ (outcomePercents[idx] * 100).toFixed(0) }}%</span>
+              <span class="text-[10px] sm:text-xs font-semibold opacity-90 line-clamp-2 text-center leading-tight px-0.5">
+                {{ outcome.label }}
+              </span>
+            </button>
+          </div>
+
+          <!-- 多元市场：投票阶段 3 个投票按钮 -->
+          <div
+            v-else-if="!showBuyInput && isMultiOutcome && isVoting"
+            key="multi-vote"
+            class="grid grid-cols-3 gap-2 w-full"
+          >
+            <div
+              v-for="(outcome, idx) in outcomeList"
+              :key="'vote-' + outcome.outcomeIndex"
+              class="relative"
+            >
+              <button
+                class="w-full min-h-10 sm:min-h-12 px-1 text-white text-xs font-bold rounded-lg shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-0.5"
+                :style="{ backgroundColor: getOutcomeColor(idx) }"
+                :class="{
+                  'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                  'opacity-50 cursor-not-allowed': hasVoted,
+                }"
+                :disabled="hasVoted"
+                @click="preVoteOutcome(outcome.outcomeIndex)"
+              >
+                <span class="line-clamp-2 text-center leading-tight">{{ outcome.label }}</span>
+                <span class="text-[10px] opacity-90">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
+              </button>
+              <div
+                v-if="market.voteOutcomeIndex === outcome.outcomeIndex"
+                class="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-sm z-10"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- 多元市场：已结算结果 -->
+          <div
+            v-else-if="!showBuyInput && isMultiOutcome && isResolved"
+            key="multi-winner"
+            @click="gotoDetail()"
+            class="w-full h-10 sm:h-12 bg-grey-light-active text-grey-normal text-sm sm:text-base font-bold rounded-lg cursor-pointer hover:bg-grey-light-hover transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C9.243 2 7 4.243 7 7v2H4a1 1 0 00-1 1v2c0 2.206 1.794 4 4 4h.535c.882 1.785 2.618 3.073 4.682 3.414.024.004.048.006.072.006h1.422c.024 0 .048-.002.072-.006 2.064-.341 3.8-1.629 4.682-3.414H18c2.206 0 4-1.794 4-4v-2a1 1 0 00-1-1h-3V7c0-2.757-2.243-5-5-5zm8 8v1c0 1.103-.897 2-2 2h-.535c.028-.329.035-.661.035-1v-2H20zm-16 0h2.5v2c0 .339.007.671.035 1H6c-1.103 0-2-.897-2-2v-1zm8 8h-2v-2h2v2z"/>
+            </svg>
+            <span class="text-sm sm:text-base font-bold truncate">
+              ✓ {{ $t('predictTrade.winner') || 'Winner' }}: {{ resolvedWinnerLabel }}
+            </span>
+          </div>
+
+          <!-- 二元市场：默认购买 / 投票 / 结算 -->
+          <div v-else-if="!showBuyInput && !isMultiOutcome" key="buttons" class="flex gap-3 sm:gap-4 w-full">
             <button
               class="flex-1 h-10 sm:h-12 bg-red-normal text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
-              @click="buyYes()" :disabled="!!market.winner || isVoting">
+              @click="buyYes()" :disabled="isResolved || isVoting">
               <span class="text-base sm:text-lg">{{ (percentA * 100).toFixed(0) }}%</span>
               <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyYes') || '购买是' }}</span>
             </button>
             <button
               class="flex-1 h-10 sm:h-12 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
-              @click="buyNo()" :disabled="!!market.winner || isVoting">
+              @click="buyNo()" :disabled="isResolved || isVoting">
               <span class="text-base sm:text-lg">{{ (percentB * 100).toFixed(0) }}%</span>
               <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyNo') || '购买不是' }}</span>
             </button>
@@ -438,7 +627,7 @@ const vote = async () => {
                       </span> -->
             </button>
             <!-- 已结算：灰底结果徽章（与可点击 CTA 区分，避免误读为按钮），仍可点击查看详情 -->
-            <div v-if="market.winner"
+            <div v-if="isResolved"
               @click="gotoDetail()"
               class="flex-1 h-10 sm:h-12 bg-grey-light-active text-grey-normal text-sm sm:text-base font-bold rounded-lg cursor-pointer hover:bg-grey-light-hover transition-colors duration-200 flex items-center justify-center gap-2">
               <!-- 奖杯图标 -->
@@ -446,7 +635,7 @@ const vote = async () => {
                 <path d="M12 2C9.243 2 7 4.243 7 7v2H4a1 1 0 00-1 1v2c0 2.206 1.794 4 4 4h.535c.882 1.785 2.618 3.073 4.682 3.414.024.004.048.006.072.006h1.422c.024 0 .048-.002.072-.006 2.064-.341 3.8-1.629 4.682-3.414H18c2.206 0 4-1.794 4-4v-2a1 1 0 00-1-1h-3V7c0-2.757-2.243-5-5-5zm8 8v1c0 1.103-.897 2-2 2h-.535c.028-.329.035-.661.035-1v-2H20zm-16 0h2.5v2c0 .339.007.671.035 1H6c-1.103 0-2-.897-2-2v-1zm8 8h-2v-2h2v2z"/>
               </svg>
               <span class="text-base font-bold">
-                ✓ {{ $t('predictTrade.winner') || 'Winner' }}: {{ market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no') }}
+                ✓ {{ $t('predictTrade.winner') || 'Winner' }}: {{ resolvedWinnerLabel }}
               </span>
             </div>
           </div>
@@ -456,18 +645,18 @@ const vote = async () => {
             <input v-model="buyAmount" type="number"
               :placeholder="$t('predictTrade.intputTokenAmount', { tick: market.tick })"
               class="flex-1 h-14 sm:h-16 px-3 sm:px-4 text-sm sm:text-base border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all"
-              :class="selectedColor === 'yes' ? 'border-red-normal focus:ring-red-normal' : 'border-blue-600 focus:ring-blue-600'"
+              :style="{ borderColor: selectedBuyColor }"
               @keyup.enter="confirmBuy" />
             <button @click="confirmBuy()"
               class="h-14 sm:h-16 px-4 sm:px-6 text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center text-white"
-              :class="selectedColor === 'no' ? 'bg-red-normal' : 'bg-blue-600'"
+              :style="{ backgroundColor: selectedBuyColor }"
               :disabled="!buyAmount || parseFloat(buyAmount) <= 0 || calculatingAmount || trading">
               <span>{{ $t('buy') || '购买' }}</span>
               <i-ep-loading v-if="trading" class="animate-spin" />
               <span v-if="willReceiveAmount > 0 && !trading" class="text-xs opacity-90 mt-0.5">
                 {{ $t('predictTrade.getResult', {
                   amount: formatAmount(willReceiveAmount),
-                  result: selectedColor === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no')
+                  result: selectedBuyLabel
                 }) }}
               </span>
               <span v-else-if="calculatingAmount" class="text-xs opacity-90 mt-0.5">
@@ -503,7 +692,11 @@ const vote = async () => {
       </p>
 
       <p class="text-center text-base font-medium text-blue-600 mb-8 bg-blue-50 py-2 rounded-lg">
-        {{ selectedVoteOption === 'yes' ? $t('predictTrade.voteForYes') : $t('predictTrade.voteForNo') }}
+        {{
+          isMultiOutcome && selectedVoteOutcomeIndex != null
+            ? getOutcomeLabel(selectedVoteOutcomeIndex)
+            : (selectedVoteOption === 'yes' ? $t('predictTrade.voteForYes') : $t('predictTrade.voteForNo'))
+        }}
       </p>
 
       <div class="flex flex-col gap-4 mb-8">

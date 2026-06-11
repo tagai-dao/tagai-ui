@@ -67,5 +67,8 @@ export default {
   POST_NOT_FOUND: 702,
   LIKE_FREQUENT: 703,
   RETWEET_FREQUENT: 704,
-  SPACE_NOT_FOUND: 705
+  SPACE_NOT_FOUND: 705,
+
+  /** 禁止 API 代发 Twitter，需用户自行在 X 发帖 */
+  POST_ON_TWITTER_REQUIRED: 722,
 };

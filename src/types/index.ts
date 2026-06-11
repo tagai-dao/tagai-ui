@@ -493,16 +493,27 @@ export type BattleData = {
   fee: number | undefined | null,  // 当前费率
 }
 
+export type EventPredictOutcome = {
+  outcomeIndex: number
+  label: string
+  positionId?: string
+  voteTotal?: number
+}
+
 export type EventPredictData = Tweet & {
   marketMaker: string,
   tick: string,
   token: string,
   reserveA: number | undefined | null,
   reserveB: number | undefined | null,
+  /** Event V2：各 outcome 池子储备（与 outcomes 顺序一致） */
+  outcomeReserves?: number[]
   voteYes: number | undefined | null,  // community members vote volume by prediction credit
   voteNo: number | undefined | null,
   solvedBalances: Array<number> | undefined | null,
   voteResult?: number | undefined | null,
+  /** Event V2 用户已投 outcome（0-based） */
+  voteOutcomeIndex?: number | null,
   title: string,
   winner: 'yes' | 'no' | null,
   questionId: string,
@@ -512,6 +523,9 @@ export type EventPredictData = Tweet & {
   positionBID: string,
   conditionID: string,
   fee: number | undefined | null,  // 当前费率
+  factoryVersion?: number,
+  outcomeCount?: number,
+  outcomes?: EventPredictOutcome[],
 }
 
 export type MarketData = {
@@ -562,5 +576,6 @@ export type KlineData = {
   low: number,
   open: number,
   close: number,
-  volume?: number
+  volume?: number,
+  outcomeIndex?: number,
 }

@@ -12,6 +12,7 @@ import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { handleErrorTip } from '@/utils/notify'
 import { useI18n } from 'vue-i18n'
 import { MAX_VP, VP_CONSUME, VP_RECOVER_DAY } from '@/config'
+import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes'
 
 const props = defineProps<{
   market: EventPredictData
@@ -28,7 +29,10 @@ const voting = ref(false)
 const showVoteModal = ref(false)
 const currentVP = ref(0)
 const selectedVoteOption = ref<'yes' | 'no' | null>(null)
+const selectedOutcomeIndex = ref<number | null>(null)
 const showPopover = ref(false)
+
+const { isMultiOutcome, outcomeList, outcomePercents, getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
 
 const voteEndTime = computed(() => props.market.endTime * 1000 + 86400000)
 const tradeEndTime = computed(() => props.market.endTime * 1000)
@@ -95,10 +99,24 @@ const statusText = computed(() => {
   return t('ended')
 })
 
-// 判断用户是否已投票（voteResult 不为空：不为 null、undefined 或 0）
+// 判断用户是否已投票
 const hasVoted = computed(() => {
+  if (isMultiOutcomeMarket(props.market)) {
+    return props.market.voteOutcomeIndex !== null && props.market.voteOutcomeIndex !== undefined
+  }
   return props.market.voteResult !== null && props.market.voteResult !== undefined && props.market.voteResult !== 0
 })
+
+const voteTotalMulti = computed(() =>
+  outcomeList.value.reduce((sum, o) => sum + (o.voteTotal ?? 0), 0)
+)
+
+const getVotePercent = (outcomeIndex: number) => {
+  const total = voteTotalMulti.value
+  if (total <= 0) return 0
+  const outcome = outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)
+  return Math.round(((outcome?.voteTotal ?? 0) / total) * 100)
+}
 
 const openTweet = () => {
   router.push(`/post-detail/${props.market.tweetId as string}`)
@@ -130,7 +148,7 @@ const voteNoPercent = computed(() => {
   return 100 - voteYesPercent.value
 })
 
-// 投票前准备
+// 投票前准备（二元）
 const preVote = async (yes: boolean) => {
   if (hasVoted.value) return;
   if (!accStore.getAccountInfo?.twitterId) {
@@ -148,7 +166,6 @@ const preVote = async (yes: boolean) => {
     const vpInfo: CommunityMember | unknown = await getUserPredictVP(accStore.getAccountInfo?.twitterId, props.market.tick)
 
     let vp = 200
-    // 如果没有社区成员记录，则默认给200vp
     if (vpInfo && typeof vpInfo === 'object' && 'lastUpdateVPStamp' in vpInfo && 'predictVP' in vpInfo) {
       if (vpInfo.lastUpdateVPStamp == 0) {
         vp = 200;
@@ -160,6 +177,7 @@ const preVote = async (yes: boolean) => {
 
     currentVP.value = Math.floor(vp);
     selectedVoteOption.value = yes ? 'yes' : 'no';
+    selectedOutcomeIndex.value = null;
     showVoteModal.value = true;
 
   } catch (error) {
@@ -169,14 +187,61 @@ const preVote = async (yes: boolean) => {
   }
 }
 
+/** Event V2 多元投票 */
+const preVoteOutcome = async (outcomeIndex: number) => {
+  if (hasVoted.value) return
+  if (!accStore.getAccountInfo?.twitterId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Login)
+    return
+  }
+  if (!accStore.getAccountInfo?.steemId) {
+    useModalStore().setModalVisible(true, GlobalModalType.Register)
+    return
+  }
+
+  try {
+    voting.value = true
+    const vpInfo: CommunityMember | unknown = await getUserPredictVP(accStore.getAccountInfo?.twitterId, props.market.tick)
+    let vp = 200
+    if (vpInfo && typeof vpInfo === 'object' && 'lastUpdateVPStamp' in vpInfo && 'predictVP' in vpInfo) {
+      if (vpInfo.lastUpdateVPStamp == 0) {
+        vp = 200
+      } else {
+        vp = ((vpInfo as CommunityMember).predictVP + (Date.now() - (vpInfo as CommunityMember).lastUpdateVPStamp) * MAX_VP / (86400000 * VP_RECOVER_DAY))
+        vp = vp > MAX_VP ? MAX_VP : vp
+      }
+    }
+    currentVP.value = Math.floor(vp)
+    selectedOutcomeIndex.value = outcomeIndex
+    selectedVoteOption.value = null
+    showVoteModal.value = true
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    voting.value = false
+  }
+}
+
 // 确认投票
 const vote = async () => {
   try {
     voting.value = true
-    await voteEventPrediction(accStore.getAccountInfo?.twitterId, props.market.marketMaker, selectedVoteOption.value == 'yes' ? 1 : 2)
+    if (isMultiOutcome.value && selectedOutcomeIndex.value != null) {
+      await voteEventPrediction(
+        accStore.getAccountInfo?.twitterId,
+        props.market.marketMaker,
+        undefined,
+        undefined,
+        selectedOutcomeIndex.value
+      )
+    } else {
+      await voteEventPrediction(
+        accStore.getAccountInfo?.twitterId,
+        props.market.marketMaker,
+        selectedVoteOption.value == 'yes' ? 1 : 2
+      )
+    }
     showVoteModal.value = false
-    // 投票成功后可以触发父组件刷新数据
-    // emit('voteSuccess')
   } catch (error) {
     handleErrorTip(error)
   } finally {
@@ -216,6 +281,29 @@ const vote = async () => {
       </div>
     </div>
 
+    <!-- 多元 outcome 概率条 -->
+    <div v-if="isMultiOutcome && !isVoting" class="mb-4 space-y-2">
+      <div
+        v-for="(outcome, idx) in outcomeList"
+        :key="outcome.outcomeIndex"
+        class="space-y-1"
+      >
+        <div class="flex justify-between text-xs text-gray-600">
+          <span class="font-medium truncate pr-2">{{ outcome.label }}</span>
+          <span class="font-mono font-bold">{{ (outcomePercents[idx] * 100).toFixed(1) }}%</span>
+        </div>
+        <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-300"
+            :style="{
+              width: `${Math.max(outcomePercents[idx] * 100, 2)}%`,
+              backgroundColor: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length],
+            }"
+          />
+        </div>
+      </div>
+    </div>
+
     <!-- Single Tweet Card -->
     <div class="flex flex-col gap-3 sm:gap-4 relative overflow-hidden">
       <div @click="openTweet()" class="flex items-stretch gap-3 sm:gap-4 cursor-pointer hover:opacity-90 transition-opacity">
@@ -246,8 +334,39 @@ const vote = async () => {
 
       <!-- 底部：投票按钮区域 -->
       <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
-        <!-- 投票状态：两个投票按钮 -->
-        <div v-if="isVoting" class="flex gap-3 sm:gap-4 w-full">
+        <!-- 多元 outcome 投票 -->
+        <div v-if="isVoting && isMultiOutcome" class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+          <div
+            v-for="(outcome, idx) in outcomeList"
+            :key="outcome.outcomeIndex"
+            class="relative"
+          >
+            <button
+              class="w-full min-h-10 sm:min-h-12 px-2 text-white text-xs sm:text-sm font-bold rounded-lg shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-0.5"
+              :style="{ backgroundColor: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length] }"
+              :class="{
+                'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                'opacity-50 cursor-not-allowed': hasVoted,
+              }"
+              :disabled="hasVoted"
+              @click="preVoteOutcome(outcome.outcomeIndex)"
+            >
+              <span class="line-clamp-2 text-center leading-tight">{{ outcome.label }}</span>
+              <span class="text-[10px] opacity-90">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
+            </button>
+            <div
+              v-if="market.voteOutcomeIndex === outcome.outcomeIndex"
+              class="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 二元 outcome 投票 -->
+        <div v-else-if="isVoting" class="flex gap-3 sm:gap-4 w-full">
           <!-- Vote Yes 按钮 -->
           <div class="relative flex-1">
             <button 
@@ -308,7 +427,11 @@ const vote = async () => {
         </p>
 
         <p class="text-center text-base font-medium text-blue-600 mb-8 bg-blue-50 py-2 rounded-lg">
-          {{ selectedVoteOption === 'yes' ? $t('predictTrade.voteForYes') : $t('predictTrade.voteForNo') }}
+          {{
+            isMultiOutcome && selectedOutcomeIndex != null
+              ? getOutcomeLabel(selectedOutcomeIndex)
+              : (selectedVoteOption === 'yes' ? $t('predictTrade.voteForYes') : $t('predictTrade.voteForNo'))
+          }}
         </p>
 
         <div class="flex flex-col gap-4 mb-8">

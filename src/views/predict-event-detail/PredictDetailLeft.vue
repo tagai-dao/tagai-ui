@@ -60,7 +60,12 @@ const scrollToTrade = () => {
     <PredictHeader :market="market" />
 
     <!-- Chart -->
-    <PredictChart v-if="market.marketMaker" :marketAddr="market.marketMaker" chartId="predict-chart" />
+    <PredictChart
+      v-if="market.marketMaker"
+      :marketAddr="market.marketMaker"
+      chartId="predict-chart"
+      :outcomes="market.outcomes"
+    />
 
     <!-- Mobile Trade Panel (Insert here, hidden on desktop) -->
     <div class="block lg:hidden scroll-mt-24" ref="tradePanelRef">

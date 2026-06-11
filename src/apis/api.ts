@@ -387,8 +387,20 @@ export const preCreateFPMMMarket = async (twitterId: string, tick: string, title
 export const createFPMMMarket = async (twitterId: string, questionId: string, txHash: string) =>
   post(BACKEND_API_URL + '/predict/createFPMMMarket', { twitterId, questionId, txHash })
 
-export const preCreateFPMMMarketEvent = async (twitterId: string, tick: string, title: string, text: string) =>
-  post(BACKEND_API_URL + '/predict/preCreateEventFPMMMarket', { twitterId, tick, title, text })
+export type PreCreateFPMMMarketEventParams = {
+  twitterId: string
+  tick: string
+  title: string
+  text: string
+  outcomes?: string[]
+  distributionHint?: number[]
+}
+
+export const preCreateFPMMMarketEvent = async (params: PreCreateFPMMMarketEventParams) =>
+  post(BACKEND_API_URL + '/predict/preCreateEventFPMMMarket', params)
+
+export const checkWorldCupMatchCreatable = async (tick: string, teamA: string, teamB: string) =>
+  get(BACKEND_API_URL + '/predict/checkWorldCupMatchCreatable', { tick, teamA, teamB })
 
 export const createFPMMMarketForEvent = async (twitterId: string, questionId: string, txHash: string) =>
   post(BACKEND_API_URL + '/predict/createEventFPMMMarket', { twitterId, questionId, txHash })
@@ -405,14 +417,25 @@ export const newParticipation = async (twitterId: string, ethAddr: string, marke
 export const getFPMMTradeList = async (marketAddr: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/getFPMMTrades', { marketAddr, pageIndex })
 
-export const getFPMMKlineData = async (fpmm: string, timestamp: number | undefined, isNew: boolean) =>
-  get(BACKEND_API_URL + '/predict/getFPMMTradeData', { fpmm, timestamp, isNew })
+export const getFPMMKlineData = async (
+  fpmm: string,
+  timestamp: number | undefined,
+  isNew: boolean,
+  outcomeIndex = 0
+) =>
+  get(BACKEND_API_URL + '/predict/getFPMMTradeData', { fpmm, timestamp, isNew, outcomeIndex })
 
 export const getFPMMUserHoldings = async (marketAddr: string, positionAID: string, positionBID: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/userHoldings', { marketAddr, positionAID, positionBID, pageIndex })
 
-export const voteEventPrediction = async (twitterId: string, marketAddr: string, voteResult: number, voteVp?: number) =>
-  post(BACKEND_API_URL + '/predict/voteEventPrediction', { twitterId, marketAddr, voteResult, voteVp })
+export const voteEventPrediction = async (
+  twitterId: string,
+  marketAddr: string,
+  voteResult?: number,
+  voteVp?: number,
+  outcomeIndex?: number
+) =>
+  post(BACKEND_API_URL + '/predict/voteEventPrediction', { twitterId, marketAddr, voteResult, voteVp, outcomeIndex })
 
 export const getMarketVoteList = async (marketAddr: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/getMarketVoteList', { marketAddr, pageIndex })

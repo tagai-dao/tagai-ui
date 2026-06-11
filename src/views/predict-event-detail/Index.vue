@@ -7,7 +7,7 @@ import { getEventMarket } from '@/apis/api'
 import type { EventPredictData } from '@/types'
 import { handleErrorTip } from '@/utils/notify'
 import { useAccountStore } from '@/stores/web3'
-import { getMarketInfos } from '@/utils/fpmm'
+import { getMarketInfos, getEventMarketInfos } from '@/utils/fpmm'
 
 const accStore = useAccountStore()
 const router = useRouter()
@@ -18,13 +18,14 @@ onMounted(async () => {
   const marketId = router.currentRoute.value.params.id as string
   try {
     const res: any = await getEventMarket(marketId, accStore.getAccountInfo?.twitterId) as unknown as EventPredictData
-    const marketInfos = await getMarketInfos([res] as EventPredictData[])
+    const infos = await getEventMarketInfos(res)
     market.value = {
         ...res,
-        reserveA: marketInfos[res.marketMaker + '-priceA'],
-        reserveB: marketInfos[res.marketMaker + '-priceB'],
-        fee: marketInfos[res.marketMaker + '-fee']
-    } 
+        outcomeReserves: infos.reserves,
+        reserveA: infos.reserves[0],
+        reserveB: infos.reserves[1],
+        fee: infos.fee,
+    }
   } catch (error) {
     console.log(1, error)
     handleErrorTip(error)

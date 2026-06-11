@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
@@ -15,6 +15,7 @@ import { formatAmount, sleep } from '@/utils/helper'
 import { parseUnits } from 'viem'
 import { approveToken, createEventMarket, createMarket } from '@/utils/fpmm'
 import { FPMMDeterministicFactoryEventV2 } from '@/config'
+import CreateWorldCupPredictForm from '@/components/common/CreateWorldCupPredictForm.vue'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
@@ -24,16 +25,24 @@ const comStore = useCommunityStore()
 const userBalance = ref(0)
 const { accountMismatch, op } = useAccount()
 
-// Tab状态
-const activeTab = ref<'event' | 'battle'>('event')
+// Tab状态 — 世界杯 Tab 放首位且默认选中
+const activeTab = ref<'worldCup' | 'event' | 'battle'>('worldCup')
+const wcFormRef = ref<InstanceType<typeof CreateWorldCupPredictForm> | null>(null)
 
 // 描述文字展开/收起状态
 const battleDescExpanded = ref(false)
 const eventDescExpanded = ref(false)
+const wcDescExpanded = ref(false)
 const battleDescRef = ref<HTMLElement | null>(null)
 const eventDescRef = ref<HTMLElement | null>(null)
+const wcDescRef = ref<HTMLElement | null>(null)
 const battleDescNeedMore = ref(false)
 const eventDescNeedMore = ref(false)
+const wcDescNeedMore = ref(false)
+
+const isFormBusy = computed(() =>
+  createLoading.value || !!wcFormRef.value?.createLoading
+)
 
 // 检查文字是否需要展开按钮
 const checkDescOverflow = async () => {
@@ -57,6 +66,24 @@ const checkDescOverflow = async () => {
     const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.5
     const expectedHeight = lineHeight * 2
     battleDescNeedMore.value = fullHeight > expectedHeight + 1
+  }
+  // 检查世界杯描述
+  if (wcDescRef.value) {
+    const element = wcDescRef.value
+    const clone = element.cloneNode(true) as HTMLElement
+    clone.style.position = 'absolute'
+    clone.style.visibility = 'hidden'
+    clone.style.height = 'auto'
+    clone.style.maxHeight = 'none'
+    clone.style.width = element.offsetWidth + 'px'
+    clone.classList.remove('line-clamp-2')
+    document.body.appendChild(clone)
+    const fullHeight = clone.scrollHeight
+    document.body.removeChild(clone)
+    const computedStyle = window.getComputedStyle(element)
+    const lineHeight = parseFloat(computedStyle.lineHeight) || parseFloat(computedStyle.fontSize) * 1.5
+    const expectedHeight = lineHeight * 2
+    wcDescNeedMore.value = fullHeight > expectedHeight + 1
   }
   // 检查 Event 描述
   if (eventDescRef.value) {
@@ -87,10 +114,15 @@ const toggleEventDesc = () => {
   eventDescExpanded.value = !eventDescExpanded.value
 }
 
+const toggleWcDesc = () => {
+  wcDescExpanded.value = !wcDescExpanded.value
+}
+
 // 监听 Tab 切换，重置展开状态
 watch(activeTab, () => {
   battleDescExpanded.value = false
   eventDescExpanded.value = false
+  wcDescExpanded.value = false
   nextTick(() => {
     checkDescOverflow()
   })
@@ -104,6 +136,12 @@ watch(() => t('createPredict.tabBattleDesc'), () => {
 })
 
 watch(() => t('createPredict.tabEventDesc'), () => {
+  nextTick(() => {
+    checkDescOverflow()
+  })
+})
+
+watch(() => t('worldCup2026.tabDesc'), () => {
   nextTick(() => {
     checkDescOverflow()
   })
@@ -385,7 +423,12 @@ const createPredict = async () => {
         await approveToken(FPMMDeterministicFactoryEventV2, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(realWorldFormData.initAmount.toString(), 18));
 
         // 预创建市场记录，并生成questionid
-        const preMarketData: any = await preCreateFPMMMarketEvent(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', realWorldFormData.title, realWorldFormData.body);
+        const preMarketData: any = await preCreateFPMMMarketEvent({
+          twitterId: accInfo?.twitterId,
+          tick: comStore.currentSelectedCommunity?.tick ?? '',
+          title: realWorldFormData.title,
+          text: realWorldFormData.body,
+        });
         console.log(633, preMarketData)
         let { questionId, needOP, feePath } = preMarketData;
 
@@ -462,9 +505,11 @@ let timer: ReturnType<typeof setInterval> | null = null
 
 // 关闭模态框
 const closeModal = () => {
-  if (createLoading.value) {
+  if (isFormBusy.value) {
     return;
   }
+  wcFormRef.value?.resetForm()
+  activeTab.value = 'worldCup'
   modalStore.setModalVisible(false)
   // 重置表单和错误
   formData.title = ''
@@ -521,25 +566,49 @@ onUnmounted(() => {
     
     <!-- Tabs -->
     <div class="flex p-1 bg-gray-100 rounded-lg mb-6">
-
+      <button
+        class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200"
+        :class="activeTab === 'worldCup' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
+        @click="isFormBusy ? null : (activeTab = 'worldCup')"
+      >
+        {{ $t('createPredict.tabWorldCup') }}
+      </button>
       <button 
-        class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200"
+        class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200"
         :class="activeTab === 'event' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
-        @click="createLoading ? null : (activeTab = 'event')"
+        @click="isFormBusy ? null : (activeTab = 'event')"
       >
         {{ $t('createPredict.tabEvent') }}
       </button>
       <button 
-        class="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200"
+        class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200"
         :class="activeTab === 'battle' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
-        @click="createLoading ? null : (activeTab = 'battle')"
+        @click="isFormBusy ? null : (activeTab = 'battle')"
       >
         {{ $t('createPredict.tabBattle') }}
       </button>
     </div>
 
     <!-- 标题 (通用) -->
-    <div class="text-left mb-6" v-if="activeTab === 'battle'">
+    <div class="text-left mb-6" v-if="activeTab === 'worldCup'">
+      <div class="relative">
+        <p
+          ref="wcDescRef"
+          class="text-grey-normal text-sm"
+          :class="!wcDescExpanded && wcDescNeedMore ? 'line-clamp-2' : ''"
+        >
+          {{ $t('worldCup2026.tabDesc') }}
+        </p>
+        <button
+          v-if="wcDescNeedMore"
+          @click="toggleWcDesc"
+          class="text-blue-500 underline text-sm mt-1 inline-block hover:text-blue-600 transition-colors"
+        >
+          {{ wcDescExpanded ? $t('less') : $t('more') }}
+        </button>
+      </div>
+    </div>
+    <div class="text-left mb-6" v-else-if="activeTab === 'battle'">
       <div class="relative">
         <p 
           ref="battleDescRef"
@@ -557,7 +626,7 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
-    <div class="text-left mb-6" v-else>
+    <div class="text-left mb-6" v-else-if="activeTab === 'event'">
       <div class="relative">
         <p 
           ref="eventDescRef"
@@ -576,8 +645,14 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- 世界杯小组赛表单 -->
+    <CreateWorldCupPredictForm
+      v-if="activeTab === 'worldCup'"
+      ref="wcFormRef"
+    />
+
     <!-- 预测对战表单 -->
-    <div class="space-y-4" v-if="activeTab === 'battle'">
+    <div class="space-y-4" v-else-if="activeTab === 'battle'">
       <!-- 预测标题 -->
       <div>
         <label class="block text-sm font-medium text-black mb-2">
@@ -879,8 +954,8 @@ onUnmounted(() => {
         </div>
     </div>
 
-    <!-- 按钮区域 -->
-    <div class="gap-3 mt-8">
+    <!-- 按钮区域（对战 / 事件预测） -->
+    <div v-if="activeTab !== 'worldCup'" class="gap-3 mt-8">
       <button
         @click="createPredict"
         :disabled="createLoading || accountMismatch"

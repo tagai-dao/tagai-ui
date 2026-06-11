@@ -312,6 +312,9 @@ export const handleServerError = (code: number) => {
     case errCode.USER_ALREADY_VOTED:
       notify({ message: t('errMessage.predictHasVoted'), type: 'error'});
       break;
+    case errCode.POST_ON_TWITTER_REQUIRED:
+      notify({ message: t('errMessage.postOnTwitterRequired'), type: 'info' });
+      break;
     default:
       break;
   }
