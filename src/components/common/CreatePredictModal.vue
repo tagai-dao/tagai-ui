@@ -14,7 +14,7 @@ import { getTokenBalance } from '@/utils/web3'
 import { formatAmount, sleep } from '@/utils/helper'
 import { parseUnits } from 'viem'
 import { approveToken, createEventMarket, createMarket } from '@/utils/fpmm'
-import { FPMMDeterministicFactoryEvent } from '@/config'
+import { FPMMDeterministicFactoryEventV2 } from '@/config'
 
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
@@ -382,7 +382,7 @@ const createPredict = async () => {
         
         modalStore.setModalCloseEnable(false)
         // 授权使用代币
-        await approveToken(FPMMDeterministicFactoryEvent, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(realWorldFormData.initAmount.toString(), 18));
+        await approveToken(FPMMDeterministicFactoryEventV2, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(realWorldFormData.initAmount.toString(), 18));
 
         // 预创建市场记录，并生成questionid
         const preMarketData: any = await preCreateFPMMMarketEvent(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', realWorldFormData.title, realWorldFormData.body);
