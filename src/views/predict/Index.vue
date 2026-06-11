@@ -9,6 +9,13 @@ import { useI18n } from 'vue-i18n'
 import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
 import PredictEventCard from '@/components/common/PredictEventCard.vue'
 import { getMarketInfos } from '@/utils/fpmm'
+import { computed } from 'vue'
+import { useCommunityStore } from '@/stores/community'
+import { useStateStore } from '@/stores/common'
+import { getCommunitiesByTrending } from '@/apis/api'
+import { TotalSupply } from '@/config'
+import { formatUsdCompact } from '@/utils/format'
+import type { Community } from '@/types'
 
 const props = defineProps<{
     type: number
@@ -79,6 +86,59 @@ const router = useRouter()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const i18n = useI18n()
+
+const comStore = useCommunityStore()
+const stateStore = useStateStore()
+
+// ===== 社区标签横滑条（按预测参与资金 USD 排序）+ 筛选 =====
+const selectedTick = ref<string>('')
+const tagScroller = ref<HTMLElement>()
+// 鼠标滚轮纵向滚动转为标签条横向滚动
+const onTagWheel = (e: WheelEvent) => {
+    if (tagScroller.value) tagScroller.value.scrollLeft += e.deltaY + e.deltaX
+}
+
+// 代币单价（BNB）：list 缓存的 marketCap / 总供应量，避免依赖链上字段
+const priceOfTick = (tick: string): number => {
+    const lists = [comStore.trendingCommunities, comStore.newCommunities, comStore.marketCapCommunities]
+    for (const list of lists) {
+        const hit = (list as Community[])?.find(c => c.tick === tick)
+        if (hit?.marketCap) return Number(hit.marketCap) / TotalSupply
+    }
+    return 0
+}
+
+// 当前 tab 全量数据（筛选与聚合的共同来源）
+const currentItems = computed<Array<BattleData | EventPredictData>>(() =>
+    activeTab.value === 'battle' ? (battles.value[props.type] ?? []) : (events.value[props.type] ?? [])
+)
+
+// tick -> Σ(reserveA+reserveB) × 价格 × BNB 美元价
+const communityTags = computed(() => {
+    const funds: Record<string, number> = {}
+    for (const item of currentItems.value) {
+        if (!item?.tick) continue
+        const tokens = Number(item.reserveA ?? 0) + Number(item.reserveB ?? 0)
+        funds[item.tick] = (funds[item.tick] ?? 0) + tokens * priceOfTick(item.tick) * stateStore.ethPrice
+    }
+    return Object.entries(funds)
+        .sort((a, b) => b[1] - a[1])
+        .map(([tick, usd]) => ({ tick, usd }))
+})
+
+const filteredBattles = computed(() =>
+    selectedTick.value ? (battles.value[props.type] ?? []).filter(b => b.tick === selectedTick.value) : (battles.value[props.type] ?? [])
+)
+const filteredEvents = computed(() =>
+    selectedTick.value ? (events.value[props.type] ?? []).filter(e => e.tick === selectedTick.value) : (events.value[props.type] ?? [])
+)
+
+// tab 切换时若选中的社区在新列表不存在，回到全部
+watch(currentItems, () => {
+    if (selectedTick.value && !currentItems.value.some(i => i.tick === selectedTick.value)) {
+        selectedTick.value = ''
+    }
+})
 
 // ========== 对战预测相关方法 ==========
 async function onBattleRefresh() {
@@ -204,6 +264,12 @@ const getEventWinner = (event: EventPredictData): 'yes' | 'no' | null => {
 }
 
 onMounted(async () => {
+    // 直入 /predictions 时 comStore 列表为空，拉一次 trending 供 USD 换算
+    if (!comStore.trendingCommunities?.length) {
+        getCommunitiesByTrending().then((list: any) => {
+            if (Array.isArray(list) && list.length) comStore.trendingCommunities = list
+        }).catch(() => {})
+    }
     // 根据默认的 activeTab 决定初始加载哪个数据
     if (activeTab.value === 'battle') {
         await onBattleRefresh()
@@ -216,6 +282,32 @@ onMounted(async () => {
 
 <template>
     <div class="predict-container rounded-t-2xl overflow-hidden flex flex-col h-full">
+
+        <!-- 顶栏：左侧社区标签横滑条（按参与资金 USD 排序），右侧预测类型下拉 -->
+        <div class="flex items-center gap-3 px-4 pt-2 pb-1">
+            <div ref="tagScroller" @wheel.prevent="onTagWheel"
+                 class="flex-1 flex items-center gap-2 overflow-x-auto no-scroll-bar whitespace-nowrap min-w-0">
+                <button class="h-8 px-4 rounded-full text-sm whitespace-nowrap transition-colors flex-shrink-0"
+                        :class="selectedTick === '' ? 'bg-gradient-primary text-white font-semibold' : 'bg-white text-black hover:bg-gray-50'"
+                        @click="selectedTick = ''">
+                    {{ $t('all') }}
+                </button>
+                <button v-for="tag of communityTags" :key="tag.tick"
+                        class="h-8 px-4 rounded-full text-sm whitespace-nowrap transition-colors flex-shrink-0 flex items-center gap-1.5"
+                        :class="selectedTick === tag.tick ? 'bg-gradient-primary text-white font-semibold' : 'bg-white text-black hover:bg-gray-50'"
+                        :title="formatUsdCompact(tag.usd)"
+                        @click="selectedTick = selectedTick === tag.tick ? '' : tag.tick">
+                    <span>#{{ tag.tick }}</span>
+                    <span v-if="tag.usd >= 0.01" class="text-xs opacity-70 tabular-nums">{{ formatUsdCompact(tag.usd) }}</span>
+                </button>
+            </div>
+            <el-select v-model="activeTab"
+                       class="bg-white rounded-full overflow-hidden w-[190px] min-w-[120px] c-select h-9 flex items-center text-sm text-black flex-shrink-0"
+                       popper-class="c-select-popper rounded-xl">
+                <el-option value="event" :label="$t('createPredict.tabEvent')" />
+                <el-option value="battle" :label="$t('createPredict.tabBattle')" />
+            </el-select>
+        </div>
 
         <!-- 对战预测 Tab -->
         <div v-if="activeTab === 'battle'" class="predict-battle-container rounded-t-2xl overflow-hidden flex flex-col h-full px-4">
@@ -234,11 +326,11 @@ onMounted(async () => {
                     :offset="50"
                     @load="onBattleLoad"
                 >
-                    <div v-if="battles[props.type]?.length === 0" class="w-full flex my-8 justify-center items-center">
+                    <div v-if="filteredBattles.length === 0" class="w-full flex my-8 justify-center items-center">
                         <img src="~@/assets/images/empty-data.svg" alt="">
                     </div>
                     <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <PredictBattleCard class="!mb-0" showCommunity :battle="battle" :tweets="tweets" v-for="battle in battles[props.type]" :key="battle.predictAID + battle.predictBID" />
+                        <PredictBattleCard class="!mb-0" showCommunity :battle="battle" :tweets="tweets" v-for="battle in filteredBattles" :key="battle.predictAID + battle.predictBID" />
                     </div>
                 </van-list>
             </van-pull-refresh>
@@ -261,11 +353,11 @@ onMounted(async () => {
                     :offset="50"
                     @load="onEventLoad"
                 >
-                    <div v-if="events[props.type]?.length === 0" class="w-full flex my-8 justify-center items-center">
+                    <div v-if="filteredEvents.length === 0" class="w-full flex my-8 justify-center items-center">
                         <img src="~@/assets/images/empty-data.svg" alt="">
                     </div>
                     <div v-else class="px-4">
-                        <PredictEventCard v-for="event in events[props.type]" :key="event.marketMaker" :market="event" :showCommunity="true" />
+                        <PredictEventCard v-for="event in filteredEvents" :key="event.marketMaker" :market="event" :showCommunity="true" />
                     </div>
                 </van-list>
             </van-pull-refresh>
