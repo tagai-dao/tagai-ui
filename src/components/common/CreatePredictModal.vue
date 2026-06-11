@@ -385,7 +385,12 @@ const createPredict = async () => {
         await approveToken(FPMMDeterministicFactoryEventV2, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(realWorldFormData.initAmount.toString(), 18));
 
         // 预创建市场记录，并生成questionid
-        const preMarketData: any = await preCreateFPMMMarketEvent(accInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', realWorldFormData.title, realWorldFormData.body);
+        const preMarketData: any = await preCreateFPMMMarketEvent({
+          twitterId: accInfo?.twitterId,
+          tick: comStore.currentSelectedCommunity?.tick ?? '',
+          title: realWorldFormData.title,
+          text: realWorldFormData.body,
+        });
         console.log(633, preMarketData)
         let { questionId, needOP, feePath } = preMarketData;
 

@@ -6,6 +6,7 @@ import type { EventPredictData } from '@/types'
 import { useAccountStore } from '@/stores/web3'
 import { getPotentialReward } from '@/utils/fpmm'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import { useEventMarketOutcomes, isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes'
 
 const props = defineProps<{
   market: EventPredictData
@@ -18,6 +19,7 @@ const finished = ref(false)
 const totalVoteRewards = ref(0)
 
 const accStore = useAccountStore()
+const { getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
 
 const loadData = async () => {
   if (loading.value || finished.value || refreshing.value) return
@@ -122,9 +124,13 @@ watch(() => props.market.marketMaker, () => {
                     <span class="text-gray-500 mx-1">{{ $t('predictTrade.voted') }}</span>
                     <span 
                       class="font-bold"
-                      :class="item.voteResult === 1 ? 'text-red-600' : 'text-blue-600'"
+                      :class="item.voteResult === 1 && !isMultiOutcomeMarket(market) ? 'text-red-600' : 'text-blue-600'"
                     >
-                       {{ item.voteResult === 1 ? $t('predictTrade.yes') : $t('predictTrade.no') }}
+                       {{
+                         isMultiOutcomeMarket(market)
+                           ? getOutcomeLabel(item.outcomeIndex ?? 0)
+                           : (item.voteResult === 1 ? $t('predictTrade.yes') : $t('predictTrade.no'))
+                       }}
                     </span>
                  </div>
                  <!-- <div class="flex items-center gap-2 text-xs text-gray-400">

@@ -14,6 +14,7 @@ import ChoseWallet from "@/components/login/ChoseWallet.vue";
 import RegisterSteem from "@/components/login/RegisterSteem.vue";
 import CreateIPShareModal from "@/components/common/CreateIPShareModal.vue";
 import CreatePredictModal from "@/components/common/CreatePredictModal.vue";
+import CreateWorldCupPredictModal from "@/components/common/CreateWorldCupPredictModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
 import PredictTradeModal from "@/components/common/PredictTradeModal.vue";
 import PredictLiquidityModal from "@/components/common/PredictLiquidityModal.vue";
@@ -186,6 +187,7 @@ onMounted( () => {
           <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
           <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
           <CreatePredictModal v-if="modalStore.modalType === GlobalModalType.CreatePredict" />
+          <CreateWorldCupPredictModal v-if="modalStore.modalType === GlobalModalType.CreateWorldCupPredict" />
           <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
           <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
           <PredictTradeModal v-if="modalStore.modalType === GlobalModalType.PredictTrade"/>
@@ -219,6 +221,7 @@ onMounted( () => {
           <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
           <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
           <CreatePredictModal v-if="modalStore.modalType === GlobalModalType.CreatePredict" />
+          <CreateWorldCupPredictModal v-if="modalStore.modalType === GlobalModalType.CreateWorldCupPredict" />
           <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
           <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
           <PredictTradeModal v-if="modalStore.modalType === GlobalModalType.PredictTrade"/>
