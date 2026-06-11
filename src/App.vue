@@ -114,14 +114,9 @@ onMounted(async () => {
   emitter.on('login', updateVPOP);
   emitter.on('login', updateUnreadMessageCount);
   emitter.on('login', updateIPShare);
-  // 登录前被守卫拦截的页面（见 router beforeEach），登录成功后回跳
-  emitter.on('login', () => {
-    const redirect = sessionStorage.getItem('login-redirect')
-    if (redirect) {
-      sessionStorage.removeItem('login-redirect')
-      router.push(redirect)
-    }
-  });
+  // 注意：登录回跳（login-redirect）不在这里处理——login 事件发生在 OAuth/钱包
+  // 流程中途，此时导航会与 Privy 后续步骤竞争导致 authError。
+  // 回跳统一放在 Layout.setWallet 的收尾（见 Layout.vue）。
 
   updateOgUrl();
 })

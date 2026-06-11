@@ -92,7 +92,12 @@ const setWallet = async () => {
         await sleep(3)
     } finally {
       if (newLogin.value) {
-        router.replace(localStorage.getItem('current-route') || '/')
+        // 登录完成后的统一回跳：优先回到登录前被守卫拦截的页面（login-redirect，
+        // 见 router beforeEach），否则回 current-route。在钱包流程收尾后做，
+        // 避免在 OAuth/Privy 处理中途导航引发 authError。
+        const guardRedirect = sessionStorage.getItem('login-redirect')
+        sessionStorage.removeItem('login-redirect')
+        router.replace(guardRedirect || localStorage.getItem('current-route') || '/')
       }
     }
   }
