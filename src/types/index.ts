@@ -265,6 +265,8 @@ export type OnchainTokenInfo = {
   priceChange24h?: number | null;
   /** 24h 小时级收盘价数组（时间升序，≤25 点），供卡片 sparkline */
   sparkline24h?: number[] | null;
+  /** 持有人数（NodeReal 聚合，5 分钟刷新）；null/undefined 时不显示 */
+  holderCount?: number | null;
   listed?: boolean;
   bondingCurveSupply?: number;
   totalSupply?: number;

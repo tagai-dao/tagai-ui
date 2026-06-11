@@ -130,6 +130,28 @@ const isV8PreListNoTrade = computed(
   () => comStore.currentSelectedCommunity?.version === 8 && !comStore.currentSelectedCommunity?.listed
 )
 
+// v9 费率（contracts/Pump.sol feeRatio=[30,30]/10000：平台 0.3% + 推荐人 0.3%；
+// 内盘与上市后（TipTagSwapHook，原生池 fee=0）同一口径）。仅对 v9 展示，其余版本费率未逐一确认不显示
+const V9_TOTAL_FEE = 0.006
+const isV9 = computed(() => comStore.currentSelectedCommunity?.version === 9)
+const spotPrice = computed(() => Number(comStore.currentSelectedCommunity?.price ?? 0))
+
+// 价格影响 = 剔除费率后的成交均价 vs 现价 的偏离（绝对值上限 99.99 防御）
+const buyPriceImpact = computed(() => {
+  const pay = parseFloat(payEth.value)
+  const recv = Number(receiveAmount.value?.toString() ?? 0) / 1e18
+  if (!isV9.value || !spotPrice.value || !isFinite(pay) || pay <= 0 || recv <= 0) return null
+  const avg = (pay * (1 - V9_TOTAL_FEE)) / recv
+  return Math.min((avg / spotPrice.value - 1) * 100, 99.99)
+})
+const sellPriceImpact = computed(() => {
+  const sellTokens = parseFloat(sellAmount.value)
+  const recvEthNet = Number(receiveEth.value?.toString() ?? 0) / 1e18
+  if (!isV9.value || !spotPrice.value || !isFinite(sellTokens) || sellTokens <= 0 || recvEthNet <= 0) return null
+  const avg = recvEthNet / (1 - V9_TOTAL_FEE) / sellTokens
+  return Math.max((avg / spotPrice.value - 1) * 100, -99.99)
+})
+
 // MAX：用全部 BNB 余额买入，预留 0.005 作 gas
 function setMaxBuy() {
   const max = Math.max(ethBalance.value - 0.005, 0)
@@ -524,6 +546,14 @@ onMounted(async () => {
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
             <span>{{ formatAmount((receiveAmount?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
+          <div v-if="buyPriceImpact !== null" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.priceImpact') }}</span>
+            <span class="tabular-nums" :class="buyPriceImpact > 5 ? 'text-orange-normal font-semibold' : ''">{{ buyPriceImpact.toFixed(2) }}%</span>
+          </div>
+          <div v-if="isV9 && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.platformFee') }}</span>
+            <span class="tabular-nums">0.6%</span>
+          </div>
         </template>
         <template v-else>
           <div
@@ -551,6 +581,14 @@ onMounted(async () => {
           <div v-if="receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
             <span>{{ formatAmount((receiveEth?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} $BNB</span>
+          </div>
+          <div v-if="sellPriceImpact !== null" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.priceImpact') }}</span>
+            <span class="tabular-nums" :class="sellPriceImpact < -5 ? 'text-orange-normal font-semibold' : ''">{{ sellPriceImpact.toFixed(2) }}%</span>
+          </div>
+          <div v-if="isV9 && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.platformFee') }}</span>
+            <span class="tabular-nums">0.6%</span>
           </div></template
         >
         <div class="flex flex-col gap-1.5">

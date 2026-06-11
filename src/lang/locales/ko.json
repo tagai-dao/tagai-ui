@@ -327,7 +327,9 @@
     "notBondEthTip": "Twitter 계정에 연동된 BNB 주소로 변경해 주세요.",
     "v8PreListAgentOnly": "에이전트만 거래할 수 있습니다",
     "minReceived": "최소 수령량",
-    "highSlippageWarn": "슬리피지 높음"
+    "highSlippageWarn": "슬리피지 높음",
+    "priceImpact": "가격 영향",
+    "platformFee": "플랫폼 수수료"
   },
   "community": {
     "distributionTip": "토큰 총량은 세 부분으로 분배됩니다: 소셜 분배 15%, 본딩커브 판매 65%, 유동성 풀 20%",
@@ -795,5 +797,15 @@
     "step3": "TagCoin을 거래하거나 커뮤니티와 함께 예측 마켓에 참여하세요",
     "learnMore": "더 알아보기",
     "dismiss": "알겠습니다"
+  },
+  "priceColor": {
+    "label": "가격 색상",
+    "redUp": "상승 빨강",
+    "greenUp": "상승 초록"
+  },
+  "rightRail": {
+    "liveSpaces": "라이브 스페이스",
+    "topTagCoin": "TagCoin 순위",
+    "topXCreators": "X 크리에이터 순위"
   }
 }

@@ -2,7 +2,7 @@
 import { type Community } from '@/types';
 import { computed } from 'vue'
 import { useCurationStore } from '@/stores/curation';
-import { formatShortDate, formatUsdCompact } from '@/utils/format';
+import { formatShortDate, formatTokenAmount, formatUsdCompact } from '@/utils/format';
 import { parseTimestamp } from '@/utils/helper';
 import { getCurrentLocale } from '@/lang';
 import { BondingCurveSupply } from '@/config';
@@ -98,6 +98,7 @@ const createTimeText = computed(() => {
               <span class="tabular-nums">{{ curveProgress.toFixed(0) }}%</span>
             </template>
             <Sparkline v-else-if="community.sparkline24h && community.sparkline24h.length > 1" :points="community.sparkline24h" />
+            <span v-if="typeof community.holderCount === 'number'" class="whitespace-nowrap tabular-nums">{{ formatTokenAmount(community.holderCount) }} 👥</span>
             <span v-if="createTimeText" class="ml-auto whitespace-nowrap">{{ createTimeText }}</span>
           </div>
         </div>
