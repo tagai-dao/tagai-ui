@@ -2,11 +2,17 @@ import { parseUnits } from "viem";
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
 
-export const BACKEND_API_URL = "https://bsc-api.tagai.fun";
+/**
+ * 后端 API 地址。本地调试登录时必须连本地 tiptag-api：
+ * .env 里的 Privy App 是 dev 配套，生产后端验证不了它签发的 token
+ * （否则 /auth/login 返回 301 "User not found"）。
+ * 在 .env.local 写 VITE_APP_BACKEND_API_URL=http://localhost:5001 覆盖，
+ * 不写则默认生产地址（生产构建行为不变）。
+ */
+export const BACKEND_API_URL = import.meta.env.VITE_APP_BACKEND_API_URL || "https://bsc-api.tagai.fun";
 /** 前端站点根 URL，用于 commerce blink 链接 */
 export const SITE_URL = "https://tagai.fun";
 export const COMMERCE_SITE_URL = `${SITE_URL}/commerce/`;
-// export const BACKEND_API_URL = "http://localhost:5001"
 const BSC_RPC_URL = 'https://bsc-dataseed.binance.org';
 // base main net
 export const ChainConfig = {
