@@ -1,8 +1,8 @@
 import type { BattleData, Community, CreateCommunity, EventPredictData, OnchainTokenInfo, Tweet } from "@/types";
-import { ChainConfig, WETH, Ether, USD_CONTRACTS, 
-    USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee, 
-    FPMMDeterministicFactoryEvent,
-    OracleDistributor} from "@/config";
+import { ChainConfig, WETH, Ether, USD_CONTRACTS,
+    USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee,
+    FPMMDeterministicFactoryEventV2,
+    OracleDistributorV2} from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
@@ -67,13 +67,13 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
 }
 
 export async function createEventMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, endTime: number, funding: bigint) {
-    await approveToken(FPMMDeterministicFactoryEvent, tokenAddress, funding);
+    await approveToken(FPMMDeterministicFactoryEventV2, tokenAddress, funding);
 
     const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
     distributionHint = Math.ceil(distributionHint)
     // 生成lmsrMarketMaker
     const hash = await writeContract({
-        contractName: 'FPMMDeterministicFactoryEvent',
+        contractName: 'FPMMDeterministicFactoryEventV2',
         functionName: 'create2FixedProductMarketMakerWithCondition',
         args: [tokenAddress, questionId, [100 - distributionHint, distributionHint], feePath, [nonce, 2, PredictionMinFee, PredictionMaxFee, endTime, funding]]
     });
@@ -215,7 +215,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
 
 export async function getPotentialReward(market: EventPredictData) {
     let calls = [{
-        target: OracleDistributor,
+        target: OracleDistributorV2,
         call: [
             'marketReward(address)(address,address,uint256)',
             market.marketMaker
@@ -465,7 +465,7 @@ const getCreateFPMMMarketMakerEventByHash = (tx: { logs: Log[] }) => {
   
     try {
       const events = parseEventLogs({
-        abi: abis.FPMMDeterministicFactory,
+        abi: abis.FPMMDeterministicFactoryEventV2,
         logs,
         // 如果你确定只关心某个合约地址：
         // strict: true,

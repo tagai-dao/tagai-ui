@@ -134,7 +134,9 @@ export const PredictionMinFee = parseUnits("1", 16);
 export const PredictionMaxFee = parseUnits("8", 16);
 export const FPMMDeterministicFactory = '0xDDF74905AD9ff90977154DF960E21517f7e11ACA'; // code in tagai-predict-market-maker: main
 export const FPMMDeterministicFactoryEvent = '0xB830cF8308eA73DF9dFAc01a6E3CcDd230A1e7Dd'; // code in tagai-predict-market-maker: event
+export const FPMMDeterministicFactoryEventV2 = '0x846a7319425471Efdc08dC8c3A7a6032c6b627Cd'; // code in tagai-predict-market-maker: event v2
 export const OracleDistributor = '0xe63B98dA0c8fbDfE94A08Fc6b5d8797374415F57';   // code in pump-contract: oracle-distribution
+export const OracleDistributorV2 = '0xF4c8B8CF5a21478b3bB43C892641C436A7052277';   // code in tagai-predict-market-maker: oracle-distribution v2
 
 export const USD_CONTRACTS: Record<`0x${string}`, string> = {
     '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d': 'USD1',
