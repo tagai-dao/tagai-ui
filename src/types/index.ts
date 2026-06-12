@@ -491,6 +491,8 @@ export type BattleData = {
   positionBID: string,
   conditionID: string,
   fee: number | undefined | null,  // 当前费率
+  /** 累计交易社区代币数量（swap+LP，由 graph 同步写入 DB） */
+  tradeVolume?: number | null,
 }
 
 export type EventPredictOutcome = {
@@ -530,6 +532,8 @@ export type EventPredictData = Tweet & {
   factoryVersion?: number,
   outcomeCount?: number,
   outcomes?: EventPredictOutcome[],
+  /** 累计交易社区代币数量（swap+LP，由 graph 同步写入 DB） */
+  tradeVolume?: number | null,
 }
 
 export type MarketData = {

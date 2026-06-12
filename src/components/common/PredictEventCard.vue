@@ -91,13 +91,12 @@ onMounted(() => {
   }
 })
 
-// 参与资金（USD）：池内 outcome 代币 × 社区代币单价 × BNB 美元价，与 /predictions 标签条口径一致
+// 交易量（USD）：DB 累计社区代币成交 × 当前单价 × BNB 美元价，与 /predictions 标签条口径一致
 const stateStore = useStateStore()
 const { priceOfTick } = useCommunityTokenPrice()
 const volUsd = computed(() => {
-  const tokens = props.market.outcomeReserves?.length
-    ? props.market.outcomeReserves.reduce((sum, r) => sum + Number(r ?? 0), 0)
-    : Number(props.market.reserveA ?? 0) + Number(props.market.reserveB ?? 0)
+  const tokens = Number(props.market.tradeVolume ?? 0)
+  if (!tokens) return 0
   return tokens * priceOfTick(props.market.tick) * stateStore.ethPrice
 })
 

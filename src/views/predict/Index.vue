@@ -92,7 +92,7 @@ const i18n = useI18n()
 const comStore = useCommunityStore()
 const stateStore = useStateStore()
 
-// ===== 社区标签横滑条（按预测参与资金 USD 排序）+ 筛选 =====
+// ===== 社区标签横滑条（按预测交易量 USD 排序）+ 筛选 =====
 const selectedTick = ref<string>('')
 const tagScroller = ref<HTMLElement>()
 // 鼠标滚轮纵向滚动转为标签条横向滚动
@@ -113,15 +113,13 @@ const currentItems = computed<Array<BattleData | EventPredictData>>(() =>
     activeTab.value === 'battle' ? (battles.value[props.type] ?? []) : eventsForTab.value
 )
 
-// tick -> Σ(各 outcome 储备) × 价格 × BNB 美元价（多元市场含全部 outcome，与卡片 Vol 同口径）
+// tick -> Σ(tradeVolume) × 社区币价 × BNB 美元价（与卡片 Vol 同口径）
 const communityTags = computed(() => {
     const funds: Record<string, number> = {}
     for (const item of currentItems.value) {
         if (!item?.tick) continue
-        const outcomeReserves = (item as EventPredictData).outcomeReserves
-        const tokens = outcomeReserves?.length
-            ? outcomeReserves.reduce((sum, r) => sum + Number(r ?? 0), 0)
-            : Number(item.reserveA ?? 0) + Number(item.reserveB ?? 0)
+        const tokens = Number(item.tradeVolume ?? 0)
+        if (!tokens) continue
         funds[item.tick] = (funds[item.tick] ?? 0) + tokens * priceOfTick(item.tick) * stateStore.ethPrice
     }
     return Object.entries(funds)
