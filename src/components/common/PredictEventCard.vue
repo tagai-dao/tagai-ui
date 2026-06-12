@@ -525,21 +525,27 @@ const selectedBuyColor = computed(() => {
         <!-- 右侧：结果显示 -->
       </div>
       <!-- 二元 Yes/No 概率条（结束后展示 end_time 快照） -->
-      <div v-if="!isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
-        <div class="h-full bg-red-normal transition-all duration-300" :style="{ width: (percentA * 100).toFixed(1) + '%' }"></div>
-        <div class="h-full bg-blue-600 transition-all duration-300" :style="{ width: (percentB * 100).toFixed(1) + '%' }"></div>
+      <div v-if="!isMultiOutcome" class="mt-2 h-5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+        <div class="h-full bg-red-normal transition-all duration-300 flex items-center justify-center" :style="{ width: (percentA * 100).toFixed(1) + '%' }">
+          <span v-if="percentA > 0.08" class="text-white text-[10px] font-bold leading-none truncate px-1">{{ (percentA * 100).toFixed(0) }}%</span>
+        </div>
+        <div class="h-full bg-blue-600 transition-all duration-300 flex items-center justify-center" :style="{ width: (percentB * 100).toFixed(1) + '%' }">
+          <span v-if="percentB > 0.08" class="text-white text-[10px] font-bold leading-none truncate px-1">{{ (percentB * 100).toFixed(0) }}%</span>
+        </div>
       </div>
       <!-- 多元 outcome 概率条（N 段；结束后展示 end_time 快照） -->
-      <div v-if="isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+      <div v-if="isMultiOutcome" class="mt-2 h-5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
         <div
           v-for="(pct, idx) in outcomePercents"
           :key="idx"
-          class="h-full transition-all duration-300"
+          class="h-full transition-all duration-300 flex items-center justify-center"
           :style="{
             width: (pct * 100).toFixed(1) + '%',
             backgroundColor: getOutcomeColor(idx),
           }"
-        />
+        >
+          <span v-if="pct > 0.08" class="text-white text-[10px] font-bold leading-none truncate px-1">{{ (pct * 100).toFixed(0) }}%</span>
+        </div>
       </div>
       <!-- 底部：购买/投票按钮区域 -->
       <div class="flex flex-col gap-1.5 mt-2" @click.stop>

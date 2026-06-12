@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import fixtures from './fixtures.json'
 import { getTeamByCode, WC_TEAMS, type WcTeam } from './teams'
 
@@ -6,9 +7,22 @@ export type WcFixture = {
   group: string
   home: string
   away: string
+  /** 球场所在地时间，仅数据参考；前端展示请用 kickoffUtc + formatKickoffUtcToLocal */
   kickoffLocal: string
   venue: string
   kickoffUtc: string
+}
+
+/** UTC 开球时间 → 用户浏览器本地时区（对手选择器等短格式） */
+export const formatKickoffUtcToLocal = (kickoffUtc: string): string => {
+  const d = dayjs(kickoffUtc)
+  return d.isValid() ? d.format('MM/DD HH:mm') : ''
+}
+
+/** UTC 开球时间 → el-date-picker 所需的本地时间字符串 */
+export const kickoffUtcToLocalDatePicker = (kickoffUtc: string): string => {
+  const d = dayjs(kickoffUtc)
+  return d.isValid() ? d.format('YYYY-MM-DD HH:mm:ss') : ''
 }
 
 /** 队伍 + 对阵赛程信息，用于右侧 Picker 展示 */

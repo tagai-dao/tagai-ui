@@ -23,8 +23,10 @@ import { targetPercentsToDistributionHint } from '@/composables/useEventMarketOu
 import { FPMMDeterministicFactoryEventV2 } from '@/config'
 import { WC_TEAMS } from '@/data/world-cup-2026/teams'
 import {
+  formatKickoffUtcToLocal,
   getGroupMates,
   getGroupMatesWithFixture,
+  kickoffUtcToLocalDatePicker,
   type WcTeamWithFixture,
 } from '@/data/world-cup-2026/helpers'
 import WorldCupTeamPicker from '@/components/common/WorldCupTeamPicker.vue'
@@ -140,13 +142,6 @@ const canSubmit = computed(() =>
   && !!form.initAmount
 )
 
-/** ISO → el-date-picker 本地时间字符串 */
-const kickoffUtcToLocalInput = (iso: string) => {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-}
-
 const resetMatchValidation = () => {
   creatable.value = null
   blockReason.value = ''
@@ -207,7 +202,7 @@ const checkMatchCreatable = async () => {
     }
     form.title = getMatchTitle(leftTeam.value, rightTeam.value)
     if (res.fixture?.kickoffUtc) {
-      form.announceDate = kickoffUtcToLocalInput(res.fixture.kickoffUtc)
+      form.announceDate = kickoffUtcToLocalDatePicker(res.fixture.kickoffUtc)
     }
   } catch (error) {
     handleErrorTip(error)
@@ -455,6 +450,7 @@ onMounted(async () => {
     <div v-else-if="errors.match" class="wc-status wc-status--error">{{ errors.match }}</div>
     <div v-else-if="fixtureInfo" class="wc-status wc-status--ok">
       {{ $t('worldCup2026.fixtureVenue', { venue: fixtureInfo.venue }) }}
+      · {{ formatKickoffUtcToLocal(fixtureInfo.kickoffUtc) }}
     </div>
 
     <!-- 自动标题（只读） -->

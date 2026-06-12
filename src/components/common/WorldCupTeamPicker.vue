@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useWorldCupTeam } from '@/composables/useWorldCupTeam'
 import { getTeamFlagUrl } from '@/data/world-cup-2026/flags'
 import type { WcTeam } from '@/data/world-cup-2026/teams'
-import type { WcTeamWithFixture } from '@/data/world-cup-2026/helpers'
+import { formatKickoffUtcToLocal, type WcTeamWithFixture } from '@/data/world-cup-2026/helpers'
 
 const props = defineProps<{
   visible: boolean
@@ -26,12 +26,6 @@ const dialogVisible = computed({
 
 const isWithFixture = (team: WcTeam | WcTeamWithFixture): team is WcTeamWithFixture =>
   'kickoffUtc' in team
-
-const formatKickoff = (iso: string) => {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 const onSelect = (team: WcTeam | WcTeamWithFixture) => {
   const disabled = isWithFixture(team) && team.kickoffStarted
@@ -70,7 +64,7 @@ const onSelect = (team: WcTeam | WcTeamWithFixture) => {
         />
         <span class="wc-team-grid__name">{{ getTeamName(team.code) }}</span>
         <span v-if="isWithFixture(team) && team.kickoffUtc" class="wc-team-grid__kickoff">
-          {{ formatKickoff(team.kickoffUtc) }}
+          {{ formatKickoffUtcToLocal(team.kickoffUtc) }}
         </span>
         <span v-else class="wc-team-grid__group">{{ $t('worldCup2026.groupLabel', { group: team.group }) }}</span>
       </button>

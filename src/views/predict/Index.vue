@@ -360,8 +360,8 @@ onMounted(async () => {
                     <div v-if="filteredEvents.length === 0" class="w-full flex my-8 justify-center items-center">
                         <img src="~@/assets/images/empty-data.svg" alt="">
                     </div>
-                    <div v-else class="px-4">
-                        <PredictEventCard v-for="event in filteredEvents" :key="event.marketMaker" :market="event" :showCommunity="true" />
+                    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+                        <PredictEventCard class="!mb-0" v-for="event in filteredEvents" :key="event.marketMaker" :market="event" :showCommunity="true" />
                     </div>
                 </van-list>
             </van-pull-refresh>
