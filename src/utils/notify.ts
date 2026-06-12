@@ -10,22 +10,49 @@ import { getWalletClient } from "./wallets";
 
 const t = i18n.global.t;
 
+const getFriendlyRevertMessage = (reason: string): string => {
+  if (reason.includes('maximum sell amount exceeded')) {
+    return '交易失败：卖出数量超过当前池子可承受上限，请减少卖出份额后重试。'
+  }
+  return reason
+}
+
+const showRevertNotify = (reason: string): string => {
+  notify({ message: getFriendlyRevertMessage(reason), type: 'error' })
+  return reason
+}
+
+const matchKnownRevertMessage = (msg: string): string | null => {
+  if (!msg) return null
+  if (msg.includes('maximum sell amount exceeded')) {
+    return showRevertNotify('maximum sell amount exceeded')
+  }
+  if (msg.includes('0x39996567') || msg.includes('InsufficientShares')) {
+    notify({ message: '交易失败：IPShare 余额不足。请检查您的持有量。', type: 'error' })
+    return 'InsufficientShares'
+  }
+  if (msg.includes('0x619f5d2e') || msg.includes('OutOfSlippage')) {
+    notify({ message: '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。', type: 'error' })
+    return 'OutOfSlippage'
+  }
+  return null
+}
+
 export function parseViemRevertReason(error: any): string {
   // 尝试从多个位置提取错误数据
   const hexData = error?.cause?.data || error?.cause?.cause?.data || error?.data;
   const errorMessage = error?.message || error?.shortMessage || '';
-  
-  // 首先检查错误消息中是否包含错误签名
-  if (typeof errorMessage === 'string') {
-    if (errorMessage.includes('0x39996567')) {
-      notify({ message: '交易失败：IPShare 余额不足。请检查您的持有量。', type: "error" });
-      return 'InsufficientShares';
-    }
-    if (errorMessage.includes('0x619f5d2e')) {
-      notify({ message: '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。', type: "error" });
-      return 'OutOfSlippage';
-    }
+
+  // viem 已将 revert 解码为对象（如 Error(string)）
+  if (hexData && typeof hexData === 'object' && hexData !== null && 'errorName' in hexData) {
+    const reason = hexData.errorName === 'Error' && Array.isArray(hexData.args) && hexData.args[0] != null
+      ? String(hexData.args[0])
+      : String(hexData.errorName)
+    return showRevertNotify(reason)
   }
+
+  const knownFromMessage = matchKnownRevertMessage(errorMessage)
+  if (knownFromMessage) return knownFromMessage
   
   let result = ''
   if (typeof hexData === 'string' && hexData.startsWith('0x08c379a0')) {
@@ -35,8 +62,7 @@ export function parseViemRevertReason(error: any): string {
       const encoded = `0x${hexData.slice(10)}`;
       // 使用 viem 解码 ABI 参数
       const [reason] = decodeAbiParameters([{ type: 'string' }], encoded as `0x${string}`);
-      notify({ message: reason, type: "error" });
-      return reason;
+      return showRevertNotify(String(reason));
     } catch (err) {
       console.warn('ABI decode error:', err);
     }
@@ -330,17 +356,15 @@ export const handleServerError = (code: number) => {
  */
 function extractRevertReasonFromError(errorString: string): string | null {
   if (!errorString) return null;
-  
-  // 尝试从错误消息中提取错误签名（例如：0x39996567）
-  const signatureMatch = errorString.match(/0x[a-fA-F0-9]{8}/);
-  if (signatureMatch) {
-    return signatureMatch[0];
-  }
+
+  // 优先提取 Error(string) 完整 revert data，避免误把钱包地址前 4 字节当成 error selector
+  const revertMatch = errorString.match(/0x08c379a0[a-fA-F0-9]+/);
+  if (revertMatch) return revertMatch[0];
+
   const errorMatch = errorString.match(/error=({.*}),\s*code=/s);
 
   try {
     const error = JSON.parse(errorMatch?.[1] || '{}')
-    console.log(5, error)
     return error.error?.data;
   } catch (error) {
     console.log(4, error)

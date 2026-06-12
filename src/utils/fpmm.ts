@@ -110,7 +110,7 @@ export async function createEventMarketV2(
     throw 'Invalid transaction'
 }
 
-import { getOutcomeList } from '@/composables/useEventMarketOutcomes'
+import { calcSellReturnFromReserves, getOutcomeList, getOutcomeReserves } from '@/composables/useEventMarketOutcomes'
 
 const resolveOutcomeIndex = (outcome: 'yes' | 'no' | 'red' | 'blue' | number) =>
     typeof outcome === 'number' ? outcome : ((outcome === 'red' || outcome === 'yes') ? 0 : 1)
@@ -387,31 +387,28 @@ export async function getSellData(battle: BattleData | EventPredictData, reserve
     const isMulti = eventMarket.factoryVersion === 2 && (eventMarket.outcomeCount ?? 0) > 2
 
     if (isMulti) {
-        const sellShares = Math.max(0, shares - 0.1)
-        const sharesBi = parseUnits(sellShares.toFixed(18), 18)
-        if (sharesBi === 0n) return { receive: 0, fee: 0 }
-        let calls = [{
-            target: battle.marketMaker,
-            call: [
-                'calcSellAmount(uint256,uint256)(uint256)',
-                sharesBi.toString(),
-                outcomeIndex
-            ],
-            returns: [
-                ['receive', (val: any) => val.toString() / 1e18]
-            ]
-        }, {
+        // shares = 用户要卖出的 outcome 数量（TradePanel 已减 0.1 缓冲）
+        const S = Math.max(0, shares)
+        if (S === 0) return { receive: 0, fee: 0 }
+
+        const reserves = getOutcomeReserves(eventMarket)
+        const feeRate = eventMarket.fee ?? 0
+        const stateReturnAmount = calcSellReturnFromReserves(reserves, outcomeIndex, S, feeRate)
+        if (stateReturnAmount === 0) return { receive: 0, fee: 0 }
+
+        const returnBi = parseUnits(stateReturnAmount.toFixed(18), 18)
+        const res: any = await aggregate([{
             target: battle.marketMaker,
             call: [
                 "getBNBFee(uint256)(uint256)",
-                sharesBi.toString()
+                returnBi.toString()
             ],
             returns: [
                 ['fee', (val: any) => val.toString() / 1e18]
             ]
-        }]
-        const res: any = await aggregate(calls, ChainConfig.multiConfig)
-        return res.results.transformed
+        }], ChainConfig.multiConfig)
+
+        return { receive: stateReturnAmount, fee: res.results.transformed.fee }
     }
 
     const S = shares;
@@ -473,6 +470,9 @@ export async function sellToken(battle: BattleData | EventPredictData, sharesBi:
     if (!isAddress(battle.marketMaker)) return;
     if (sharesBi === 0n) return;
     const outcomeIndex = resolveOutcomeIndex(outcome)
+    // 与买入 minOutcome * 0.95 对称：最低可接受抵押品留 5% 滑点
+    const minReturnAmount = (sharesBi as bigint) * 95n / 100n
+    if (minReturnAmount === 0n) return
 
     const bnbFeeBi = bnbFee > 0 ? parseUnits(bnbFee.toFixed(18), 18) + 1000000n : 0n;
 
@@ -490,7 +490,7 @@ export async function sellToken(battle: BattleData | EventPredictData, sharesBi:
     return await writeContract({
         contractName: 'FixedProductMarketMaker',
         functionName: 'sell',
-        args: [sharesBi, outcomeIndex, maxOutcomeTokensToSell],
+        args: [minReturnAmount, outcomeIndex, maxOutcomeTokensToSell],
         value: bnbFeeBi,
         address: battle.marketMaker
     })

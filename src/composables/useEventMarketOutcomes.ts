@@ -116,6 +116,55 @@ export const projectPoolAfterSell = (
   )
 }
 
+/**
+ * 根据当前池子储备，本地估算卖出 sharesSold 个 outcome 可拿回的最大抵押品。
+ * 恒定乘积：∏ r_j 在卖出前后不变（与 projectPoolAfterSell 一致）。
+ */
+export const calcSellReturnFromReserves = (
+  reserves: number[],
+  outcomeIndex: number,
+  sharesSold: number,
+  feeRate: number,
+): number => {
+  if (sharesSold <= 0 || !reserves.length) return 0
+
+  const product = reserves.reduce((acc, r) => acc * Math.max(r, 0), 1)
+  if (product <= 0) return 0
+
+  const fee = Math.max(0, Math.min(feeRate, 1 - 1e-9))
+  const toReturnPlusFees = (returnAmt: number) => (fee < 1 ? returnAmt / (1 - fee) : returnAmt)
+
+  const isValidReturn = (returnAmt: number) => {
+    if (returnAmt <= 0) return true
+    const R = toReturnPlusFees(returnAmt)
+    let afterProduct = 1
+    for (let j = 0; j < reserves.length; j++) {
+      const next = j === outcomeIndex ? reserves[j] + sharesSold - R : reserves[j] - R
+      if (next <= 0) return false
+      afterProduct *= next
+    }
+    return afterProduct >= product * (1 - 1e-12)
+  }
+
+  const otherReserves = reserves.filter((_, j) => j !== outcomeIndex)
+  const minOther = otherReserves.length ? Math.min(...otherReserves) : 0
+  let high = Math.min(
+    minOther * (1 - fee) * 0.99999,
+    (reserves[outcomeIndex] + sharesSold) * (1 - fee) * 0.99999,
+  )
+  if (high <= 0) return 0
+  while (high > 1e-18 && !isValidReturn(high)) high /= 2
+  if (high <= 0 || !isValidReturn(high)) return 0
+
+  let low = 0
+  for (let i = 0; i < 64; i++) {
+    const mid = (low + high) / 2
+    if (isValidReturn(mid)) low = mid
+    else high = mid
+  }
+  return low * 0.99999
+}
+
 /** 交易前后各 outcome 边际概率（0~1） */
 export const calcTradeOutcomePercents = (
   reservesBefore: number[],
