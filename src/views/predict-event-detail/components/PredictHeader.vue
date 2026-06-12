@@ -12,7 +12,8 @@ import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { handleErrorTip } from '@/utils/notify'
 import { useI18n } from 'vue-i18n'
 import { MAX_VP, VP_CONSUME, VP_RECOVER_DAY } from '@/config'
-import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes'
+import { useEventMarketOutcomes, OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes'
+import { usePredictVoteHighlight } from '@/composables/usePredictVoteHighlight'
 
 const props = defineProps<{
   market: EventPredictData
@@ -33,6 +34,7 @@ const selectedOutcomeIndex = ref<number | null>(null)
 const showPopover = ref(false)
 
 const { isMultiOutcome, outcomeList, outcomePercents, getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
+const { hasVoted, isVotedOutcome, applyLocalVote } = usePredictVoteHighlight(() => props.market)
 
 const voteEndTime = computed(() => props.market.endTime * 1000 + 86400000)
 const tradeEndTime = computed(() => props.market.endTime * 1000)
@@ -97,14 +99,6 @@ const statusText = computed(() => {
   
   // 处于交易结束到投票开始之间的短暂间隙（如果有）或者状态不对齐
   return t('ended')
-})
-
-// 判断用户是否已投票
-const hasVoted = computed(() => {
-  if (isMultiOutcomeMarket(props.market)) {
-    return props.market.voteOutcomeIndex !== null && props.market.voteOutcomeIndex !== undefined
-  }
-  return props.market.voteResult !== null && props.market.voteResult !== undefined && props.market.voteResult !== 0
 })
 
 const voteTotalMulti = computed(() =>
@@ -234,12 +228,15 @@ const vote = async () => {
         undefined,
         selectedOutcomeIndex.value
       )
+      applyLocalVote(props.market, selectedOutcomeIndex.value)
     } else {
+      const binaryIdx = selectedVoteOption.value === 'yes' ? 0 : 1
       await voteEventPrediction(
         accStore.getAccountInfo?.twitterId,
         props.market.marketMaker,
-        selectedVoteOption.value == 'yes' ? 1 : 2
+        binaryIdx === 0 ? 1 : 2
       )
+      applyLocalVote(props.market, binaryIdx)
     }
     showVoteModal.value = false
   } catch (error) {
@@ -332,78 +329,85 @@ const vote = async () => {
         </div>
       </div>
 
-      <!-- 底部：投票按钮区域 -->
-      <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
+      <!-- 底部：投票按钮区域（仅投票期展示） -->
+      <div v-if="isVoting" class="flex flex-col gap-2 mt-2" @click.stop>
+        <div class="flex items-center gap-2 px-0.5">
+          <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+            {{ $t('predictTrade.phaseVote') }}
+          </span>
+        </div>
+
         <!-- 多元 outcome 投票 -->
-        <div v-if="isVoting && isMultiOutcome" class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+        <div v-if="isMultiOutcome" class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full pt-1">
           <div
             v-for="(outcome, idx) in outcomeList"
             :key="outcome.outcomeIndex"
             class="relative"
           >
             <button
-              class="w-full min-h-10 sm:min-h-12 px-2 text-white text-xs sm:text-sm font-bold rounded-lg shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-0.5"
-              :style="{ backgroundColor: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length] }"
+              class="relative w-full h-10 sm:h-12 px-2 text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center bg-white border-2 vote-yes-btn"
+              :style="{
+                borderColor: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length],
+                color: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length],
+              }"
               :class="{
-                'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
-                'opacity-50 cursor-not-allowed': hasVoted,
+                'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                'ring-2 ring-green-500 ring-offset-1 shadow-md': isVotedOutcome(outcome.outcomeIndex),
+                'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(outcome.outcomeIndex),
               }"
               :disabled="hasVoted"
               @click="preVoteOutcome(outcome.outcomeIndex)"
             >
-              <span class="line-clamp-2 text-center leading-tight">{{ outcome.label }}</span>
-              <span class="text-[10px] opacity-90">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
+              <span
+                class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                :class="isVotedOutcome(outcome.outcomeIndex) ? 'bg-green-500' : ''"
+                :style="isVotedOutcome(outcome.outcomeIndex) ? undefined : { backgroundColor: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length] }"
+              >{{ isVotedOutcome(outcome.outcomeIndex) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+              <span class="line-clamp-2 text-center leading-tight px-1">
+                {{ outcome.label }}
+                <span class="text-xs font-semibold opacity-80">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
+              </span>
             </button>
-            <div
-              v-if="market.voteOutcomeIndex === outcome.outcomeIndex"
-              class="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-            </div>
           </div>
         </div>
 
         <!-- 二元 outcome 投票 -->
-        <div v-else-if="isVoting" class="flex gap-3 sm:gap-4 w-full">
-          <!-- Vote Yes 按钮 -->
+        <div v-else class="flex gap-3 sm:gap-4 w-full pt-1">
           <div class="relative flex-1">
-            <button 
-              class="w-full h-10 sm:h-12 bg-red-normal text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-yes-btn"
+            <button
+              class="relative w-full h-10 sm:h-12 px-2 bg-white border-2 border-red-normal text-red-normal text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center vote-yes-btn"
               :class="{
-                'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
-                'opacity-50 cursor-not-allowed': hasVoted
+                'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                'ring-2 ring-green-500 ring-offset-1': isVotedOutcome(0),
+                'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(0),
               }"
               :disabled="hasVoted"
               @click="preVote(true)"
             >
-              {{ $t('predictTrade.voteYes') || '投票Yes' }} <span class="ml-1 text-xs opacity-90">({{ voteYesPercent }}%)</span>
+              <span
+                class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                :class="isVotedOutcome(0) ? 'bg-green-500' : 'bg-red-normal'"
+              >{{ isVotedOutcome(0) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+              <span>{{ $t('predictTrade.voteYes') }} <span class="text-xs font-semibold opacity-80">({{ voteYesPercent }}%)</span></span>
             </button>
-            <div v-if="market.voteResult === 1" class="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-            </div>
           </div>
-          <!-- Vote No 按钮 -->
           <div class="relative flex-1">
-            <button 
-              class="w-full h-10 sm:h-12 bg-blue-600 text-white text-sm sm:text-base font-bold rounded-lg shadow-md transition-all duration-200 flex items-center justify-center vote-no-btn"
+            <button
+              class="relative w-full h-10 sm:h-12 px-2 bg-white border-2 border-blue-600 text-blue-600 text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center vote-no-btn"
               :class="{
-                'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
-                'opacity-50 cursor-not-allowed': hasVoted
+                'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                'ring-2 ring-green-500 ring-offset-1': isVotedOutcome(1),
+                'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(1),
               }"
               :disabled="hasVoted"
               @click="preVote(false)"
             >
-              {{ $t('predictTrade.voteNo') || '投票No' }} <span class="ml-1 text-xs opacity-90">({{ voteNoPercent }}%)</span>
+              <span
+                class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                :class="isVotedOutcome(1) ? 'bg-green-500' : 'bg-blue-600'"
+              >{{ isVotedOutcome(1) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+              <span>{{ $t('predictTrade.voteNo') }} <span class="text-xs font-semibold opacity-80">({{ voteNoPercent }}%)</span></span>
             </button>
-            <div v-if="market.voteResult === 2" class="absolute -top-2 -right-2 bg-white rounded-full p-0.5 shadow-sm z-10">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-              </svg>
-            </div>
           </div>
         </div>
       </div>

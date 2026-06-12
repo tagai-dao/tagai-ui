@@ -531,7 +531,7 @@ const tradeTimeLeftText = computed(() => {
                 disabled
                 class="w-full py-4 flex justify-center items-center rounded-full bg-gray-300 font-bold text-lg text-white cursor-not-allowed"
             >
-              {{ $t('predictTrade.tradeEnded') || '已结束交易' }}
+              {{ $t('predictTrade.tradeEnded') }}
             </button>
         </div>
         <div v-else class="w-full flex flex-col gap-2">

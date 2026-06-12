@@ -14,7 +14,8 @@ import { formatUsdCompact } from '@/utils/format'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
 import { useEventPredict } from '@/composables/usePredict';
-import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes';
+import { useEventMarketOutcomes, OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes';
+import { usePredictVoteHighlight } from '@/composables/usePredictVoteHighlight';
 import { getOutcomeFlagUrl } from '@/composables/useWorldCupMarkets';
 import { buyToken, getBuyData, getMarketInfos, getEventMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
@@ -41,6 +42,7 @@ const {
   winningOutcomeIndex,
   getOutcomeLabel,
 } = useEventMarketOutcomes(() => props.market);
+const { hasVoted, isVotedOutcome, applyLocalVote } = usePredictVoteHighlight(() => props.market);
 const { t } = useI18n();
 const now = useNow();
 
@@ -173,19 +175,18 @@ const statusText = computed(() => {
   return t('ended')
 })
 
-// 判断用户是否已投票
-const hasVoted = computed(() => {
-  if (isMultiOutcomeMarket(props.market)) {
-    return props.market.voteOutcomeIndex !== null && props.market.voteOutcomeIndex !== undefined
-  }
-  return props.market.voteResult !== null && props.market.voteResult !== undefined && props.market.voteResult !== 0
-})
-
 const voteTotalMulti = computed(() =>
   outcomeList.value.reduce((sum, o) => sum + (o.voteTotal ?? 0), 0)
 )
 
 const getVotePercent = (outcomeIndex: number) => {
+  if (!isMultiOutcome.value) {
+    const total = totalCuration.value
+    if (total <= 0) return 0
+    return outcomeIndex === 0
+      ? Math.round((aAmount.value / total) * 100)
+      : Math.round((bAmount.value / total) * 100)
+  }
   const total = voteTotalMulti.value
   if (total <= 0) return 0
   const outcome = outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)
@@ -428,13 +429,17 @@ const vote = async () => {
         undefined,
         selectedVoteOutcomeIndex.value
       )
+      applyLocalVote(props.market, selectedVoteOutcomeIndex.value)
     } else {
+      const binaryIdx = selectedVoteOption.value === 'yes' ? 0 : 1
       await voteEventPrediction(
         accStore.getAccountInfo?.twitterId,
         props.market.marketMaker,
-        selectedVoteOption.value == 'yes' ? 1 : 2
+        binaryIdx === 0 ? 1 : 2
       )
+      applyLocalVote(props.market, binaryIdx)
     }
+    showVoteModal.value = false
   } catch (error) {
     handleErrorTip(error)
   } finally {
@@ -535,7 +540,20 @@ const selectedBuyColor = computed(() => {
         />
       </div>
       <!-- 底部：购买/投票按钮区域 -->
-      <div class="flex gap-3 sm:gap-4 mt-2" @click.stop>
+      <div class="flex flex-col gap-1.5 mt-2" @click.stop>
+        <!-- 阶段标识：交易 vs 投票 -->
+        <div
+          v-if="!showBuyInput && !isResolved"
+          class="flex items-center gap-2 px-0.5"
+        >
+          <span
+            class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full"
+            :class="isVoting ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'"
+          >
+            {{ isVoting ? $t('predictTrade.phaseVote') : $t('predictTrade.phaseTrade') }}
+          </span>
+        </div>
+
         <Transition name="buy-buttons" mode="out-in">
 
           <!-- 多元市场：交易阶段 3 个购买按钮 -->
@@ -547,7 +565,7 @@ const selectedBuyColor = computed(() => {
             <button
               v-for="(outcome, idx) in outcomeList"
               :key="outcome.outcomeIndex"
-              class="min-h-10 sm:min-h-12 px-1 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 disabled:opacity-40 tabular-nums"
+              class="min-h-10 sm:min-h-12 px-1 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
               :style="{ backgroundColor: getOutcomeColor(idx) }"
               @click="buyOutcome(outcome.outcomeIndex)"
             >
@@ -564,7 +582,7 @@ const selectedBuyColor = computed(() => {
           <div
             v-else-if="!showBuyInput && isMultiOutcome && isVoting"
             key="multi-vote"
-            class="grid grid-cols-3 gap-2 w-full"
+            class="grid grid-cols-3 gap-2 w-full pt-1"
           >
             <div
               v-for="(outcome, idx) in outcomeList"
@@ -572,30 +590,31 @@ const selectedBuyColor = computed(() => {
               class="relative"
             >
               <button
-                class="w-full min-h-10 sm:min-h-12 px-1 text-white text-xs font-bold rounded-lg shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-0.5"
-                :style="{ backgroundColor: getOutcomeColor(idx) }"
+                class="relative w-full h-10 sm:h-12 px-2 text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center bg-white border-2"
+                :style="{
+                  borderColor: getOutcomeColor(idx),
+                  color: getOutcomeColor(idx),
+                }"
                 :class="{
-                  'hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
-                  'opacity-50 cursor-not-allowed': hasVoted,
+                  'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                  'ring-2 ring-green-500 ring-offset-1 shadow-md': isVotedOutcome(outcome.outcomeIndex),
+                  'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(outcome.outcomeIndex),
                 }"
                 :disabled="hasVoted"
                 @click="preVoteOutcome(outcome.outcomeIndex)"
               >
-                <span class="text-center leading-tight flex items-center justify-center gap-1">
+                <span
+                  class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                  :class="isVotedOutcome(outcome.outcomeIndex) ? 'bg-green-500' : ''"
+                  :style="isVotedOutcome(outcome.outcomeIndex) ? undefined : { backgroundColor: getOutcomeColor(idx) }"
+                >{{ isVotedOutcome(outcome.outcomeIndex) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+                <span class="text-center leading-tight flex items-center justify-center gap-1 px-1">
                   <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
                     class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
                   <span class="line-clamp-2">{{ outcome.label }}</span>
+                  <span class="text-xs font-semibold opacity-80 shrink-0">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
                 </span>
-                <span class="text-[10px] opacity-90">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
               </button>
-              <div
-                v-if="market.voteOutcomeIndex === outcome.outcomeIndex"
-                class="absolute -top-1.5 -right-1.5 bg-white rounded-full p-0.5 shadow-sm z-10"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                </svg>
-              </div>
             </div>
           </div>
 
@@ -614,44 +633,77 @@ const selectedBuyColor = computed(() => {
             </span>
           </div>
 
-          <!-- 二元市场：默认购买 / 投票 / 结算 -->
-          <div v-else-if="!showBuyInput && !isMultiOutcome" key="buttons" class="flex gap-3 sm:gap-4 w-full">
+          <!-- 二元市场：交易期购买 -->
+          <div v-else-if="!showBuyInput && !isMultiOutcome && !isVoting && !isResolved" key="binary-trade" class="flex gap-3 sm:gap-4 w-full">
             <button
-              class="flex-1 h-10 sm:h-12 bg-red-normal text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
-              @click="buyYes()" :disabled="isResolved || isVoting">
+              class="flex-1 h-10 sm:h-12 bg-red-normal text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
+              @click="buyYes()"
+            >
               <span class="text-base sm:text-lg">{{ (percentA * 100).toFixed(0) }}%</span>
-              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyYes') || '购买是' }}</span>
+              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyYes') }}</span>
             </button>
             <button
-              class="flex-1 h-10 sm:h-12 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-40 tabular-nums"
-              @click="buyNo()" :disabled="isResolved || isVoting">
+              class="flex-1 h-10 sm:h-12 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
+              @click="buyNo()"
+            >
               <span class="text-base sm:text-lg">{{ (percentB * 100).toFixed(0) }}%</span>
-              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyNo') || '购买不是' }}</span>
+              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyNo') }}</span>
             </button>
-            <!-- 投票状态：两个投票按钮 -->
-            <button v-if="isVoting && !showBuyInput"
-              class="flex-1 h-10 sm:h-12 bg-gradient-primary text-white text-sm sm:text-base font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2"
-              @click="gotoDetail()">
-              {{ $t('predictTrade.voteNow') }}
-              <!-- 如果已投票，显示勾选图标 -->
-              <!-- <span v-if="hasVoted" class="bg-white rounded-full p-0.5 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                        </svg>
-                      </span> -->
-            </button>
-            <!-- 已结算：灰底结果徽章（与可点击 CTA 区分，避免误读为按钮），仍可点击查看详情 -->
-            <div v-if="isResolved"
-              @click="gotoDetail()"
-              class="flex-1 h-10 sm:h-12 bg-grey-light-active text-grey-normal text-sm sm:text-base font-bold rounded-lg cursor-pointer hover:bg-grey-light-hover transition-colors duration-200 flex items-center justify-center gap-2">
-              <!-- 奖杯图标 -->
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C9.243 2 7 4.243 7 7v2H4a1 1 0 00-1 1v2c0 2.206 1.794 4 4 4h.535c.882 1.785 2.618 3.073 4.682 3.414.024.004.048.006.072.006h1.422c.024 0 .048-.002.072-.006 2.064-.341 3.8-1.629 4.682-3.414H18c2.206 0 4-1.794 4-4v-2a1 1 0 00-1-1h-3V7c0-2.757-2.243-5-5-5zm8 8v1c0 1.103-.897 2-2 2h-.535c.028-.329.035-.661.035-1v-2H20zm-16 0h2.5v2c0 .339.007.671.035 1H6c-1.103 0-2-.897-2-2v-1zm8 8h-2v-2h2v2z"/>
-              </svg>
-              <span class="text-base font-bold">
-                ✓ {{ $t('predictTrade.winner') || 'Winner' }}: {{ resolvedWinnerLabel }}
-              </span>
+          </div>
+
+          <!-- 二元市场：投票期 -->
+          <div v-else-if="!showBuyInput && !isMultiOutcome && isVoting" key="binary-vote" class="flex gap-3 sm:gap-4 w-full pt-1">
+            <div class="relative flex-1">
+              <button
+                class="relative w-full h-10 sm:h-12 px-2 bg-white border-2 border-red-normal text-red-normal text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center"
+                :class="{
+                  'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                  'ring-2 ring-green-500 ring-offset-1': isVotedOutcome(0),
+                  'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(0),
+                }"
+                :disabled="hasVoted"
+                @click="preVote(true)"
+              >
+                <span
+                  class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                  :class="isVotedOutcome(0) ? 'bg-green-500' : 'bg-red-normal'"
+                >{{ isVotedOutcome(0) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+                <span>{{ $t('predictTrade.voteYes') }} <span class="text-xs font-semibold opacity-80">({{ getVotePercent(0) }}%)</span></span>
+              </button>
             </div>
+            <div class="relative flex-1">
+              <button
+                class="relative w-full h-10 sm:h-12 px-2 bg-white border-2 border-blue-600 text-blue-600 text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center"
+                :class="{
+                  'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                  'ring-2 ring-green-500 ring-offset-1': isVotedOutcome(1),
+                  'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(1),
+                }"
+                :disabled="hasVoted"
+                @click="preVote(false)"
+              >
+                <span
+                  class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                  :class="isVotedOutcome(1) ? 'bg-green-500' : 'bg-blue-600'"
+                >{{ isVotedOutcome(1) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+                <span>{{ $t('predictTrade.voteNo') }} <span class="text-xs font-semibold opacity-80">({{ getVotePercent(1) }}%)</span></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 二元市场：已结算 -->
+          <div
+            v-else-if="!showBuyInput && !isMultiOutcome && isResolved"
+            key="binary-winner"
+            @click="gotoDetail()"
+            class="w-full h-10 sm:h-12 bg-grey-light-active text-grey-normal text-sm sm:text-base font-bold rounded-lg cursor-pointer hover:bg-grey-light-hover transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C9.243 2 7 4.243 7 7v2H4a1 1 0 00-1 1v2c0 2.206 1.794 4 4 4h.535c.882 1.785 2.618 3.073 4.682 3.414.024.004.048.006.072.006h1.422c.024 0 .048-.002.072-.006 2.064-.341 3.8-1.629 4.682-3.414H18c2.206 0 4-1.794 4-4v-2a1 1 0 00-1-1h-3V7c0-2.757-2.243-5-5-5zm8 8v1c0 1.103-.897 2-2 2h-.535c.028-.329.035-.661.035-1v-2H20zm-16 0h2.5v2c0 .339.007.671.035 1H6c-1.103 0-2-.897-2-2v-1zm8 8h-2v-2h2v2z"/>
+            </svg>
+            <span class="text-base font-bold truncate">
+              ✓ {{ $t('predictTrade.winner') }}: {{ resolvedWinnerLabel }}
+            </span>
           </div>
 
           <!-- 输入状态：输入框、购买按钮、关闭按钮 -->
