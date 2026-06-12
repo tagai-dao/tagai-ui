@@ -7,9 +7,9 @@ import { OP_CONSUME } from '@/config';
 import { notify } from '@/utils/notify';
 import type { BattleData, CommunityMember, EventPredictData, Tweet } from '@/types'
 import { formatAmount, parseTimestamp } from '@/utils/helper';
-import { useModalStore, useStateStore } from '@/stores/common'
+import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
-import { useCommunityTokenPrice } from '@/composables/useCommunityTokenPrice'
+import { usePredictVolUsd } from '@/composables/usePredictVolUsd'
 import { formatUsdCompact } from '@/utils/format'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
@@ -91,14 +91,8 @@ onMounted(() => {
   }
 })
 
-// 交易量（USD）：DB 累计社区代币成交 × 当前单价 × BNB 美元价，与 /predictions 标签条口径一致
-const stateStore = useStateStore()
-const { priceOfTick } = useCommunityTokenPrice()
-const volUsd = computed(() => {
-  const tokens = Number(props.market.tradeVolume ?? 0)
-  if (!tokens) return 0
-  return tokens * priceOfTick(props.market.tick) * stateStore.ethPrice
-})
+// 交易量（USD）：优先 tradeVolume，未回填时回退池内储备，与 /predictions 标签条口径一致
+const volUsd = usePredictVolUsd(() => props.market)
 
 const aAmount = computed(() => {
   return props.market.voteYes ?? 0
@@ -765,7 +759,7 @@ const selectedBuyColor = computed(() => {
       </div>
     </div>
 
-    <!-- 底部信息行：左 Vol（参与资金 USD），右 倒计时/状态 -->
+    <!-- 底部信息行：左 Vol（交易量 USD），右 倒计时/状态 -->
     <div class="flex justify-between items-center mt-2 gap-2">
       <span v-if="volUsd >= 0.01" class="text-xs sm:text-sm font-semibold text-grey-normal tabular-nums">
         Vol {{ formatUsdCompact(volUsd) }}

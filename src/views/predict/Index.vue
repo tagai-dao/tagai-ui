@@ -16,6 +16,7 @@ import { getCommunitiesByTrending } from '@/apis/api'
 import { formatUsdCompact } from '@/utils/format'
 import { isWorldCupMarket } from '@/composables/useWorldCupMarkets'
 import { useCommunityTokenPrice } from '@/composables/useCommunityTokenPrice'
+import { predictVolTokenAmount } from '@/utils/predictVol'
 
 const props = defineProps<{
     type: number
@@ -113,12 +114,12 @@ const currentItems = computed<Array<BattleData | EventPredictData>>(() =>
     activeTab.value === 'battle' ? (battles.value[props.type] ?? []) : eventsForTab.value
 )
 
-// tick -> Σ(tradeVolume) × 社区币价 × BNB 美元价（与卡片 Vol 同口径）
+// tick -> Σ(predictVolTokenAmount) × 社区币价 × BNB 美元价（与卡片 Vol 同口径）
 const communityTags = computed(() => {
     const funds: Record<string, number> = {}
     for (const item of currentItems.value) {
         if (!item?.tick) continue
-        const tokens = Number(item.tradeVolume ?? 0)
+        const tokens = predictVolTokenAmount(item)
         if (!tokens) continue
         funds[item.tick] = (funds[item.tick] ?? 0) + tokens * priceOfTick(item.tick) * stateStore.ethPrice
     }

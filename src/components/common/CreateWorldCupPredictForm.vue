@@ -336,6 +336,7 @@ const handleCreate = async () => {
     )
 
     await createFPMMMarketForEvent(accInfo.twitterId, questionId, hash)
+    resetForm()
     modalStore.setModalVisible(false)
     emitter.emit('createPredictSuccess')
   } catch (error) {

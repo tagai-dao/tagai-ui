@@ -401,7 +401,7 @@ const createPredict = async () => {
         console.log('创建预测:', formData, fpmmMaker, hash)
         // const res = await createPredictApi(accStore.getAccountInfo?.twitterId, comStore.currentSelectedCommunity?.tick ?? '', formData.title, formData.tweetAId, formData.tweetBId)
         modalStore.setModalCloseEnable(true);
-        modalStore.setModalVisible(false);
+        closeModal()
         emitter.emit('createPredictSuccess')
     } else {
         // Real World Predict Creation Logic
@@ -450,7 +450,7 @@ const createPredict = async () => {
         await createFPMMMarketForEvent(accInfo.twitterId, questionId, hash);
         console.log('创建预测:', realWorldFormData, fpmmMaker, hash)
         useModalStore().setModalCloseEnable(true);
-        modalStore.setModalVisible(false);
+        closeModal()
         emitter.emit('createPredictSuccess')
     }
 
