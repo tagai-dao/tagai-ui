@@ -39,8 +39,14 @@ export const getOutcomeFlagUrl = (label?: string | null, width = 40): string => 
   return code ? getTeamFlagUrl(code, width) : ''
 }
 
-/** 三元 [左胜, 平, 右胜] 且两个胜负 label 均能反查到球队 → 世界杯小组赛市场 */
-export const isWorldCupMarket = (market: EventPredictData): boolean => {
+/** 世界杯赛事标签前缀（小组赛/小组冠军/总冠军等都以此开头） */
+export const WC_EVENT_TAG_PREFIX = '2026FWC'
+
+/**
+ * 三元 [左胜, 平, 右胜] 且两个胜负 label 均能反查到球队 → 老数据世界杯小组赛市场
+ * 仅作为没有 event_tag 的存量数据兜底
+ */
+const isLegacyWorldCupMarket = (market: EventPredictData): boolean => {
   if (market.factoryVersion !== 2) return false
   const outcomes = getOutcomeList(market)
   if (outcomes.length !== 3) return false
@@ -48,4 +54,10 @@ export const isWorldCupMarket = (market: EventPredictData): boolean => {
   return getOutcomeTeamCode(outcomes[0].label) != null
     && drawLabels!.has((outcomes[1].label ?? '').trim())
     && getOutcomeTeamCode(outcomes[2].label) != null
+}
+
+/** event_tag 前缀匹配优先；老数据 fallback 到 outcome label 启发式 */
+export const isWorldCupMarket = (market: EventPredictData): boolean => {
+  if (market.eventTag?.startsWith(WC_EVENT_TAG_PREFIX)) return true
+  return isLegacyWorldCupMarket(market)
 }

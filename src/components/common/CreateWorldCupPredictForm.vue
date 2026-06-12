@@ -310,6 +310,7 @@ const handleCreate = async () => {
       text,
       outcomes,
       distributionHint,
+      eventTag: '2026FWC-GS',
     })
 
     let { questionId, needOP, feePath } = preMarketData

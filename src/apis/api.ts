@@ -394,6 +394,8 @@ export type PreCreateFPMMMarketEventParams = {
   text: string
   outcomes?: string[]
   distributionHint?: number[]
+  /** 赛事标签: 2026FWC-GS, 2026FWC-GS-Winner, 2026FWC-Champion 等 */
+  eventTag?: string
 }
 
 export const preCreateFPMMMarketEvent = async (params: PreCreateFPMMMarketEventParams) =>
