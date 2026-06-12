@@ -508,6 +508,10 @@ export type EventPredictData = Tweet & {
   reserveB: number | undefined | null,
   /** Event V2：各 outcome 池子储备（与 outcomes 顺序一致） */
   outcomeReserves?: number[]
+  /** 交易结束（end_time）时刻各 outcome FPMM 边际概率快照 */
+  endOutcomePercents?: number[]
+  /** 交易结束时刻各 outcome 池子储备快照（可选） */
+  endOutcomeReserves?: number[]
   voteYes: number | undefined | null,  // community members vote volume by prediction credit
   voteNo: number | undefined | null,
   solvedBalances: Array<number> | undefined | null,

@@ -9,6 +9,7 @@ import { notify } from "@/utils/notify";
 import i18n from "@/lang";
 import { isAddress } from "viem";
 import { computed } from "vue";
+import { parseEndOutcomePercents, shouldUseEndOutcomeSnapshot } from '@/composables/useEventMarketOutcomes'
 
 const t = i18n.global.t
 
@@ -71,6 +72,10 @@ export const useEventPredict = (market: EventPredictData) => {
     const isSettled = computed(() => market.status === 2)
 
     const percentA = computed(() => {
+        if (shouldUseEndOutcomeSnapshot(market)) {
+            const snap = parseEndOutcomePercents(market.endOutcomePercents)
+            if (snap && snap.length >= 2) return snap[0]
+        }
         if (market.solvedBalances) {
             if (typeof market.solvedBalances === 'string') {
                 try {
@@ -88,6 +93,10 @@ export const useEventPredict = (market: EventPredictData) => {
     })
     
     const percentB = computed(() => {
+        if (shouldUseEndOutcomeSnapshot(market)) {
+            const snap = parseEndOutcomePercents(market.endOutcomePercents)
+            if (snap && snap.length >= 2) return snap[1]
+        }
         if (market.solvedBalances) {
             if (typeof market.solvedBalances === 'string') {
                 try {

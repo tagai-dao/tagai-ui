@@ -32,8 +32,9 @@ const currentVP = ref(0)
 const selectedVoteOption = ref<'yes' | 'no' | null>(null)
 const selectedOutcomeIndex = ref<number | null>(null)
 const showPopover = ref(false)
+const showVotePhaseHelp = ref(false)
 
-const { isMultiOutcome, outcomeList, outcomePercents, getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
+const { isMultiOutcome, outcomeList, getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
 const { hasVoted, isVotedOutcome, applyLocalVote } = usePredictVoteHighlight(() => props.market)
 
 const voteEndTime = computed(() => props.market.endTime * 1000 + 86400000)
@@ -278,29 +279,6 @@ const vote = async () => {
       </div>
     </div>
 
-    <!-- 多元 outcome 概率条 -->
-    <div v-if="isMultiOutcome && !isVoting" class="mb-4 space-y-2">
-      <div
-        v-for="(outcome, idx) in outcomeList"
-        :key="outcome.outcomeIndex"
-        class="space-y-1"
-      >
-        <div class="flex justify-between text-xs text-gray-600">
-          <span class="font-medium truncate pr-2">{{ outcome.label }}</span>
-          <span class="font-mono font-bold">{{ (outcomePercents[idx] * 100).toFixed(1) }}%</span>
-        </div>
-        <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
-          <div
-            class="h-full rounded-full transition-all duration-300"
-            :style="{
-              width: `${Math.max(outcomePercents[idx] * 100, 2)}%`,
-              backgroundColor: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length],
-            }"
-          />
-        </div>
-      </div>
-    </div>
-
     <!-- Single Tweet Card -->
     <div class="flex flex-col gap-3 sm:gap-4 relative overflow-hidden">
       <div @click="openTweet()" class="flex items-stretch gap-3 sm:gap-4 cursor-pointer hover:opacity-90 transition-opacity">
@@ -331,10 +309,29 @@ const vote = async () => {
 
       <!-- 底部：投票按钮区域（仅投票期展示） -->
       <div v-if="isVoting" class="flex flex-col gap-2 mt-2" @click.stop>
-        <div class="flex items-center gap-2 px-0.5">
+        <div class="flex items-center gap-1.5 px-0.5">
           <span class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
             {{ $t('predictTrade.phaseVote') }}
           </span>
+          <van-popover v-model:show="showVotePhaseHelp" theme="dark" placement="top">
+            <div class="p-3 text-xs w-72 max-w-[85vw] leading-relaxed">
+              {{ $t('predictTrade.phaseVoteDesc') }}
+            </div>
+            <template #reference>
+              <button
+                type="button"
+                class="cursor-help flex items-center shrink-0 text-orange-600/80 hover:text-orange-700"
+                aria-label="?"
+                @click.stop="showVotePhaseHelp = !showVotePhaseHelp"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </template>
+          </van-popover>
         </div>
 
         <!-- 多元 outcome 投票 -->

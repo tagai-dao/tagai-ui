@@ -61,6 +61,7 @@ const currentVP = ref(0);
 const selectedVoteOption = ref<'yes' | 'no' | null>(null);
 const selectedVoteOutcomeIndex = ref<number | null>(null);
 const showPopover = ref(false);
+const showVotePhaseHelp = ref(false);
 
 const isResolved = computed(() => props.market.status === 3 || !!props.market.winner);
 
@@ -82,8 +83,9 @@ const refreshMarketReserves = async () => {
   props.market.fee = marketInfos[props.market.marketMaker + '-fee'];
 };
 
-// 列表接口只回二元 reserveA/B；多元市场进场即补拉各 outcome 真实储备，概率条/按钮百分比才与详情页一致
+// 列表接口只回二元 reserveA/B；多元市场进场即补拉各 outcome 真实储备（交易期）；结束后用 DB 快照
 onMounted(() => {
+  if (props.market.status >= 2 || Date.now() >= props.market.endTime * 1000) return
   if (isMultiOutcome.value && !props.market.outcomeReserves?.length) {
     refreshMarketReserves().catch(() => {})
   }
@@ -522,13 +524,13 @@ const selectedBuyColor = computed(() => {
 
         <!-- 右侧：结果显示 -->
       </div>
-      <!-- 二元 Yes/No 概率条 -->
-      <div v-if="!isResolved && !isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+      <!-- 二元 Yes/No 概率条（结束后展示 end_time 快照） -->
+      <div v-if="!isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
         <div class="h-full bg-red-normal transition-all duration-300" :style="{ width: (percentA * 100).toFixed(1) + '%' }"></div>
         <div class="h-full bg-blue-600 transition-all duration-300" :style="{ width: (percentB * 100).toFixed(1) + '%' }"></div>
       </div>
-      <!-- 多元 outcome 概率条（N 段） -->
-      <div v-if="!isResolved && isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+      <!-- 多元 outcome 概率条（N 段；结束后展示 end_time 快照） -->
+      <div v-if="isMultiOutcome" class="mt-2 h-1.5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
         <div
           v-for="(pct, idx) in outcomePercents"
           :key="idx"
@@ -544,7 +546,7 @@ const selectedBuyColor = computed(() => {
         <!-- 阶段标识：交易 vs 投票 -->
         <div
           v-if="!showBuyInput && !isResolved"
-          class="flex items-center gap-2 px-0.5"
+          class="flex items-center gap-1.5 px-0.5"
         >
           <span
             class="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full"
@@ -552,6 +554,25 @@ const selectedBuyColor = computed(() => {
           >
             {{ isVoting ? $t('predictTrade.phaseVote') : $t('predictTrade.phaseTrade') }}
           </span>
+          <van-popover v-if="isVoting" v-model:show="showVotePhaseHelp" theme="dark" placement="top">
+            <div class="p-3 text-xs w-72 max-w-[85vw] leading-relaxed">
+              {{ $t('predictTrade.phaseVoteDesc') }}
+            </div>
+            <template #reference>
+              <button
+                type="button"
+                class="cursor-help flex items-center shrink-0 text-orange-600/80 hover:text-orange-700"
+                aria-label="?"
+                @click.stop="showVotePhaseHelp = !showVotePhaseHelp"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </template>
+          </van-popover>
         </div>
 
         <Transition name="buy-buttons" mode="out-in">

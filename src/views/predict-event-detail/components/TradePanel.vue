@@ -341,10 +341,17 @@ watch(() => accStore.ethConnectAddress, (newVal) => {
 
 let interval: any;
 onMounted(async () => {
-  interval = setInterval(() => {
+  // 交易结束后不再刷链上储备，避免结算改变池子导致展示失真
+  if (!isTradeEnded.value) {
+    interval = setInterval(() => {
+      if (now.value.getTime() >= tradeEndTime.value) {
+        clearInterval(interval)
+        return
+      }
+      updateReserves()
+    }, 3000)
     updateReserves()
-  }, 3000)
-  updateReserves()
+  }
   updateBalances()
 })
 

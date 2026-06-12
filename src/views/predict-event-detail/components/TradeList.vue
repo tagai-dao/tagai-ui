@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onActivated } from 'vue'
-import { formatAddress, formatAmount, formatDate, formatPrice } from '@/utils/helper'
+import { ref, onActivated } from 'vue'
+import { formatAddress, formatAmount, formatPrice } from '@/utils/helper'
 import { getFPMMTradeList } from '@/apis/api'
-import type { EventPredictData, FPMMTrade, MarketData } from '@/types'
+import type { FPMMTrade, EventPredictData } from '@/types'
 import { handleErrorTip } from '@/utils/notify'
 import { useI18n } from 'vue-i18n'
 import { ChainConfig } from '@/config'
+import { useEventMarketOutcomes, OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes'
 
 const { t } = useI18n()
 
@@ -13,10 +14,13 @@ const props = defineProps<{
   market: EventPredictData
 }>()
 
+const { isMultiOutcome, getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
+
 const list = ref<FPMMTrade[]>([])
 const loading = ref(false)
 const finished = ref(false)
 const refreshing = ref(false)
+const scrollerRef = ref<HTMLElement | null>(null)
 
 const onLoad = async () => {
   try {
@@ -60,11 +64,10 @@ const formatTimestamp = (ts: number) => {
     return new Date(ts * 1000).toLocaleString()
 }
 
-const outcomeColors = ['text-red-500', 'text-blue-500'] as const
 const tradeTypeColors = ['text-green-500', 'text-red-500'] as const
 
-const getOutcomeColor = (index: number): string => outcomeColors[index] ?? 'text-gray-400'
-const getOutcomeName = (index: number): string => index === 0 ? t('predictTrade.yes') : t('predictTrade.no')
+const getOutcomeStyle = (index: number) => ({ color: OUTCOME_CHART_COLORS[index % OUTCOME_CHART_COLORS.length] })
+const getOutcomeName = (index: number): string => isMultiOutcome.value ? getOutcomeLabel(index) : (index === 0 ? t('predictTrade.yes') : t('predictTrade.no'))
 const getTradeTypeColor = (isBuy: number): string => isBuy === 1 ? tradeTypeColors[0] : tradeTypeColors[1]
 
 // Mock price logic (since mock data lacks price)
@@ -94,13 +97,14 @@ onActivated(() => {
     <!-- <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex justify-between items-center">
         <span>Recent Activity</span>
     </div> -->
-    
-    <div class="custom-scrollbar">
+
+    <div ref="scrollerRef" class="custom-scrollbar max-h-[60vh] overflow-y-auto">
       <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
         <van-list
           v-model:loading="loading"
           :finished="finished"
           finished-text="No more transactions"
+          :scroller="scrollerRef ?? undefined"
           @load="onLoad"
         >
           <div 
@@ -115,7 +119,7 @@ onActivated(() => {
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 1">
                 <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterName ? `@${item.twitterName}` : formatAddress(item.ethAddr) }}</span>
                 <span class="text-gray-500" :class="getTradeTypeColor(item.isBuy)">{{ item.isBuy ? $t('predictTrade.bought') : $t('predictTrade.sold') }}</span>
-                <span class="font-bold whitespace-nowrap" :class="getOutcomeColor(item.outcomeIndex)">
+                <span class="font-bold whitespace-nowrap" :style="getOutcomeStyle(item.outcomeIndex)">
                     {{ Math.floor(item.outcomeTokensAmount).toLocaleString() }} {{ getOutcomeName(item.outcomeIndex) }}
                 </span>
                 <span class="text-gray-500 whitespace-nowrap">
@@ -135,9 +139,9 @@ onActivated(() => {
                 <span>
                   {{ $t('predictLiquidity.get') }}
                 </span>
-                <span class="font-bold whitespace-nowrap" v-show="getAddSharedEarned(item) > 0" :class="getAddSharedEarnedIndex(item) == 0 ? 'text-red-500' : 'text-blue-500'">
-                  {{ formatAmount(getAddSharedEarned(item)) }} 
-                  {{ getAddSharedEarnedIndex(item) === 0 ? $t('predictTrade.yes') : $t('predictTrade.no') }}
+                <span class="font-bold whitespace-nowrap" v-show="getAddSharedEarned(item) > 0" :style="getOutcomeStyle(getAddSharedEarnedIndex(item))">
+                  {{ formatAmount(getAddSharedEarned(item)) }}
+                  {{ getOutcomeName(getAddSharedEarnedIndex(item)) }}
                 </span>
                 <span v-show="getAddSharedEarned(item) > 1">
                   {{ $t('predictLiquidity.and') }}
@@ -156,14 +160,14 @@ onActivated(() => {
                 <span>
                   {{ $t('predictLiquidity.get') }}
                 </span>
-                <span class="font-bold whitespace-nowrap text-red-500">
-                  {{ formatAmount(lpAmounts(item)[0]) }} {{ $t('predictTrade.yes') }}
+                <span class="font-bold whitespace-nowrap" :style="getOutcomeStyle(0)">
+                  {{ formatAmount(lpAmounts(item)[0]) }} {{ getOutcomeName(0) }}
                 </span>
                 <span>
                   {{ $t('predictLiquidity.and') }}
                 </span>
-                <span class="font-bold whitespace-nowrap text-blue-500">
-                  {{ formatAmount(lpAmounts(item)[1]) }} {{ $t('predictTrade.no') }}
+                <span class="font-bold whitespace-nowrap" :style="getOutcomeStyle(1)">
+                  {{ formatAmount(lpAmounts(item)[1]) }} {{ getOutcomeName(1) }}
                 </span>
             </div>
 

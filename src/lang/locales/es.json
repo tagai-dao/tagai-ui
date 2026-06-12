@@ -613,6 +613,7 @@
     "voteNow": "Votar ahora",
     "phaseTrade": "Fase de trading",
     "phaseVote": "Fase de votación",
+    "phaseVoteDesc": "Los usuarios con crédito de predicción de la comunidad pueden votar el resultado. Al finalizar la votación, el resultado se determina según el valor ponderado del crédito. Quienes votaron correctamente comparten parte de las comisiones de trading según su crédito de voto.",
     "actionBuy": "Comprar",
     "actionVote": "Votar",
     "yourVoteBadge": "Votado",

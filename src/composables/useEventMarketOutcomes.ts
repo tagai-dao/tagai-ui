@@ -23,6 +23,29 @@ export const getOutcomeList = (market: EventPredictData): EventPredictOutcome[] 
   ]
 }
 
+/** 解析 API 返回的 endOutcomePercents（可能是 JSON 字符串） */
+export const parseEndOutcomePercents = (raw: unknown): number[] | undefined => {
+  if (raw == null) return undefined
+  let arr: unknown = raw
+  if (typeof raw === 'string') {
+    try {
+      arr = JSON.parse(raw)
+    } catch {
+      return undefined
+    }
+  }
+  if (!Array.isArray(arr) || arr.length === 0) return undefined
+  const parsed = arr.map((v) => Number(v)).filter((n) => Number.isFinite(n))
+  return parsed.length === arr.length ? parsed : undefined
+}
+
+/** 是否应使用 DB 中的 end_time 概率快照（投票期及之后） */
+export const shouldUseEndOutcomeSnapshot = (market: EventPredictData) => {
+  const percents = parseEndOutcomePercents(market.endOutcomePercents)
+  if (!percents?.length) return false
+  return market.status >= 2 || Date.now() >= market.endTime * 1000
+}
+
 /** 从 market 读取各 outcome 池子储备 */
 export const getOutcomeReserves = (market: EventPredictData): number[] => {
   if (market.outcomeReserves?.length) {
@@ -116,6 +139,9 @@ export const useEventMarketOutcomes = (market: MaybeRefOrGetter<EventPredictData
   const outcomePercents = computed(() => {
     const m = toValue(market)
     if (!m) return [] as number[]
+    if (shouldUseEndOutcomeSnapshot(m)) {
+      return parseEndOutcomePercents(m.endOutcomePercents) ?? []
+    }
     const reserves = getOutcomeReserves(m)
     // 多元市场储备未加载时（列表接口只回 reserveA/B），按均匀分布占位，避免缺段与 NaN%
     const n = getOutcomeList(m).length
@@ -134,10 +160,16 @@ export const useEventMarketOutcomes = (market: MaybeRefOrGetter<EventPredictData
   const getOutcomeLabel = (outcomeIndex: number) =>
     outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)?.label ?? `#${outcomeIndex + 1}`
 
+  const usesEndSnapshot = computed(() => {
+    const m = toValue(market)
+    return m ? shouldUseEndOutcomeSnapshot(m) : false
+  })
+
   return {
     isMultiOutcome,
     outcomeList,
     outcomePercents,
+    usesEndSnapshot,
     winningOutcomeIndex,
     getPercent,
     getOutcomeLabel,

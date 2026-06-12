@@ -595,6 +595,7 @@
     "voteNow": "Vote Now",
     "phaseTrade": "Trading",
     "phaseVote": "Voting",
+    "phaseVoteDesc": "Users with community prediction credit can vote on the outcome. When voting ends, the result is determined by weighted vote values based on credit. Users who voted correctly share a portion of trading fees proportional to their voting credit.",
     "actionBuy": "Buy",
     "actionVote": "Vote",
     "yourVoteBadge": "Voted",

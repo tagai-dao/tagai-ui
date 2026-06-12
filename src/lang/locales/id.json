@@ -613,6 +613,7 @@
     "voteNow": "Pilih sekarang",
     "phaseTrade": "Fase trading",
     "phaseVote": "Fase voting",
+    "phaseVoteDesc": "Pengguna dengan prediction credit komunitas dapat memilih hasil. Saat waktu voting berakhir, hasil ditentukan berdasarkan nilai voting menurut credit. Semua pengguna yang memilih dengan benar dapat membagi sebagian biaya trading sesuai credit voting mereka.",
     "actionBuy": "Beli",
     "actionVote": "Pilih",
     "yourVoteBadge": "Sudah memilih",

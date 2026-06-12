@@ -597,6 +597,7 @@
     "voteNow": "立即投票",
     "phaseTrade": "交易期",
     "phaseVote": "投票期",
+    "phaseVoteDesc": "拥有社区预测 credit 的用户都可以对结果进行投票。投票时间结束时，按照 credit 的投票值来确定结果。所有投票正确的用户都可以根据投票的 credit 来瓜分部分交易的手续费。",
     "actionBuy": "购买",
     "actionVote": "投票",
     "yourVoteBadge": "已投票",

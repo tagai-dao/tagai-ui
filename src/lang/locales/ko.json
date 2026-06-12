@@ -595,6 +595,7 @@
     "voteNow": "지금 투표",
     "phaseTrade": "거래 기간",
     "phaseVote": "투표 기간",
+    "phaseVoteDesc": "커뮤니티 예측 credit을 보유한 사용자는 결과에 투표할 수 있습니다. 투표 시간이 종료되면 credit 기반 투표값으로 결과가 결정됩니다. 올바르게 투표한 사용자는 투표 credit 비율에 따라 거래 수수료의 일부를 분배받습니다.",
     "actionBuy": "구매",
     "actionVote": "투표",
     "yourVoteBadge": "투표 완료",
