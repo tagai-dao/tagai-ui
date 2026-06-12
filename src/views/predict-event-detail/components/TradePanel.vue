@@ -12,7 +12,13 @@ import { handleErrorTip } from '@/utils/notify'
 import { useModalStore } from '@/stores/common'
 import { useNow } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
-import { useEventMarketOutcomes, OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes'
+import {
+  useEventMarketOutcomes,
+  OUTCOME_CHART_COLORS,
+  calcTradeOutcomePercents,
+  projectPoolAfterBuy,
+  projectPoolAfterSell,
+} from '@/composables/useEventMarketOutcomes'
 
 const props = defineProps<{
     market: EventPredictData
@@ -47,7 +53,8 @@ const tradeYesBalanceBi = ref(0n);
 const outcomeBalances = ref<number[]>([])
 const outcomeBalancesBi = ref<bigint[]>([])
 const tradeWillReceiveAmount = ref(0);
-const tradePriceImpact = ref('')
+/** 输入金额后各 outcome 概率预览：from/to 为 0~1 */
+const tradeOutcomeImpact = ref<{ outcomeIndex: number; from: number; to: number }[]>([])
 const tradeCalculating = ref(false)
 const tradeLoading = ref(false)
 const reserveA = ref(0)
@@ -57,13 +64,6 @@ const isMax = ref(false);
 
 const tradeActiveTab = ref<'buy' | 'sell'>('buy')
 const tradeSelectedOutcomeIndex = ref(0)
-
-const totalPool = computed(() => {
-  if (props.market.outcomeReserves?.length) {
-    return props.market.outcomeReserves.reduce((sum, r) => sum + (r ?? 0), 0)
-  }
-  return reserveA.value + reserveB.value
-})
 
 const resolveLegacyOutcome = (index: number): 'yes' | 'no' => (index === 0 ? 'yes' : 'no')
 
@@ -82,16 +82,6 @@ const getSelectedOutcomeBalanceBi = () => {
 }
 
 
-const percentA = computed(() => {
-  if (totalPool.value === 0) return 50
-  return Math.round((reserveB.value / totalPool.value) * 1000) / 10
-})
-
-const percentB = computed(() => {
-  if (totalPool.value === 0) return 50
-  return Math.round((reserveA.value / totalPool.value) * 1000) / 10
-})
-
 const currentTradeType = computed(() => {
   const base = tradeSelectedOutcomeIndex.value
   if (tradeActiveTab.value === 'buy') {
@@ -105,7 +95,7 @@ const debouncedTradeCalculate = debounce(async () => {
     isMax.value = false
     if (!tradeShares.value) {
         tradeWillReceiveAmount.value = 0
-        tradePriceImpact.value = ''
+        tradeOutcomeImpact.value = []
         return
     }
 
@@ -123,20 +113,28 @@ const debouncedTradeCalculate = debounce(async () => {
       ? tradeSelectedOutcomeIndex.value
       : resolveLegacyOutcome(tradeSelectedOutcomeIndex.value)
 
+    const currentReserves = [...infos.reserves]
+    const feeRate = infos.fee ?? props.market.fee ?? 0
+    const shares = Number(tradeShares.value)
+
     if (tradeActiveTab.value === 'buy') {
       const { amount, fee } = await getBuyData(props.market, tradeShares.value, outcomeArg)
       
       bnbFee.value = fee;
       tradeWillReceiveAmount.value = amount
-      if (!isMultiOutcome.value && tradeSelectedOutcomeIndex.value === 0) {
-        const newPercentA = (reserveB.value + Number(tradeShares.value)) / (totalPool.value + Number(tradeShares.value) * 2 - tradeWillReceiveAmount.value)
-        tradePriceImpact.value = `${(percentA.value / 100).toFixed(2)} -> ${newPercentA.toFixed(2)}`
-      } else if (!isMultiOutcome.value) {
-        const newPercentB = (reserveA.value + Number(tradeShares.value)) / (totalPool.value + Number(tradeShares.value) * 2 - tradeWillReceiveAmount.value)
-        tradePriceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
-      } else {
-        tradePriceImpact.value = ''
-      }
+      const afterReserves = projectPoolAfterBuy(
+        currentReserves,
+        typeof outcomeArg === 'number' ? outcomeArg : (outcomeArg === 'yes' ? 0 : 1),
+        shares,
+        amount,
+        feeRate,
+      )
+      const { before, after } = calcTradeOutcomePercents(currentReserves, afterReserves)
+      tradeOutcomeImpact.value = outcomeList.value.map(o => ({
+        outcomeIndex: o.outcomeIndex,
+        from: before[o.outcomeIndex] ?? 0,
+        to: after[o.outcomeIndex] ?? 0,
+      }))
     } else {
       if (tradeShares.value <= 0.1) {
         tradeShares.value += 0.1;
@@ -150,15 +148,21 @@ const debouncedTradeCalculate = debounce(async () => {
       )
       bnbFee.value = sellData.fee;
       tradeWillReceiveAmount.value = sellData.receive;
-      if (!isMultiOutcome.value && tradeSelectedOutcomeIndex.value === 0) {
-        const newPercentA = (reserveB.value - sellData.receive) / (totalPool.value - sellData.receive * 2 + Number(tradeShares.value))
-        tradePriceImpact.value = `${(percentA.value / 100).toFixed(2)} -> ${newPercentA.toFixed(2)}`
-      } else if (!isMultiOutcome.value) {
-        const newPercentB = (reserveA.value - sellData.receive) / (totalPool.value - sellData.receive * 2 + Number(tradeShares.value))
-        tradePriceImpact.value = `${(percentB.value / 100).toFixed(2)} -> ${newPercentB.toFixed(2)}`
-      } else {
-        tradePriceImpact.value = ''
-      }
+      const outcomeIdx = typeof outcomeArg === 'number' ? outcomeArg : (outcomeArg === 'yes' ? 0 : 1)
+      const sharesSold = Math.max(0, Number(tradeShares.value) - 0.1)
+      const afterReserves = projectPoolAfterSell(
+        currentReserves,
+        outcomeIdx,
+        sellData.receive,
+        sharesSold,
+        feeRate,
+      )
+      const { before, after } = calcTradeOutcomePercents(currentReserves, afterReserves)
+      tradeOutcomeImpact.value = outcomeList.value.map(o => ({
+        outcomeIndex: o.outcomeIndex,
+        from: before[o.outcomeIndex] ?? 0,
+        to: after[o.outcomeIndex] ?? 0,
+      }))
     }
   } catch (error) {
     handleErrorTip(error)
@@ -517,9 +521,26 @@ const tradeTimeLeftText = computed(() => {
                     </span>
                     <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ props.market.tick }}</span>
                 </div>
-                <div class="flex justify-between items-center text-xs">
-                    <span class="text-gray-500">Price Impact</span>
-                    <span class="font-mono" :class="tradeActiveTab === 'buy' ? 'text-red-500' : 'text-green-500'">{{ tradePriceImpact }}</span>
+                <div v-if="tradeOutcomeImpact.length" class="space-y-1.5">
+                    <span class="text-gray-500 text-xs">{{ $t('predictTrade.oddsChange') }}</span>
+                    <div
+                      v-for="(item, idx) in tradeOutcomeImpact"
+                      :key="item.outcomeIndex"
+                      class="flex justify-between items-center text-xs gap-2"
+                    >
+                      <span
+                        class="truncate"
+                        :class="tradeSelectedOutcomeIndex === item.outcomeIndex ? 'text-gray-900 font-medium' : 'text-gray-500'"
+                      >
+                        {{ isMultiOutcome ? getOutcomeLabel(item.outcomeIndex) : (item.outcomeIndex === 0 ? $t('predictTrade.yes') : $t('predictTrade.no')) }}
+                      </span>
+                      <span
+                        class="font-mono shrink-0"
+                        :style="{ color: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length] }"
+                      >
+                        {{ (item.from * 100).toFixed(1) }}% → {{ (item.to * 100).toFixed(1) }}%
+                      </span>
+                    </div>
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-gray-500">{{ $t('predictTrade.fee') }}</span>

@@ -559,6 +559,7 @@
     "payReceive": "수령 예정",
     "receive": "수령 예정",
     "priceImpact": "가격 영향",
+    "oddsChange": "확률 변동",
     "sellRed": "레드 매도",
     "sellYes": "Yes 매도",
     "sellNo": "No 매도",
@@ -906,6 +907,10 @@
       "worldChampion": "월드컵 우승 🏆"
     },
     "initialRatioTip": "두 핸들을 드래그해 좌승·무·우승 초기 확률을 설정합니다. 기본값은 삼등분입니다.",
+    "postContentLabel": "Post content",
+    "postContentPlaceholder": "X에 게시할 본문을 입력하세요 (#TagAI는 추가되지 않으며, 커뮤니티 태그는 자동 추가됩니다)…",
+    "postContentRequired": "게시 내용을 입력해 주세요",
+    "postContentTooLong": "게시 내용은 300자를 초과할 수 없습니다",
     "tweetUrlLabel": "X 게시 후 트윗 링크",
     "tweetUrlHint": "먼저 X에 게시한 뒤(생성 시 게시 화면이 열립니다) 트윗 URL을 붙여넣으세요.",
     "tweetUrlRequired": "X에 게시한 후 트윗 링크를 붙여넣어 주세요",

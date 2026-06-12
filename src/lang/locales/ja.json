@@ -559,6 +559,7 @@
     "payReceive": "受取予定",
     "receive": "受取予定",
     "priceImpact": "価格インパクト",
+    "oddsChange": "確率の変動",
     "sellRed": "レッドを売る",
     "sellYes": "Yesを売る",
     "sellNo": "Noを売る",
@@ -906,6 +907,10 @@
       "worldChampion": "W杯優勝 🏆"
     },
     "initialRatioTip": "2つのハンドルをドラッグして左勝・分・右勝の初期確率を設定します。初期値は三等分です。",
+    "postContentLabel": "Post content",
+    "postContentPlaceholder": "Xに投稿する本文を入力（#TagAIは付与されません。コミュニティタグは自動付与）…",
+    "postContentRequired": "投稿内容を入力してください",
+    "postContentTooLong": "投稿内容は300文字以内にしてください",
     "tweetUrlLabel": "X投稿後のツイートURL",
     "tweetUrlHint": "先にXで投稿し（作成時に投稿画面を開きます）、URLを貼り付けてください。",
     "tweetUrlRequired": "Xで投稿後、ツイートURLを貼り付けてください",

@@ -24,9 +24,10 @@ import { FPMMDeterministicFactoryEventV2 } from '@/config'
 import { WC_TEAMS } from '@/data/world-cup-2026/teams'
 import {
   getGroupMates,
+  getGroupMatesWithFixture,
+  type WcTeamWithFixture,
 } from '@/data/world-cup-2026/helpers'
 import WorldCupTeamPicker from '@/components/common/WorldCupTeamPicker.vue'
-import { buildPlatformPostText } from '@/utils/twitterPost'
 
 type WcFixtureInfo = {
   fixtureId: string
@@ -64,11 +65,13 @@ const pickerSide = ref<PickerSide>('left')
 
 const form = reactive({
   title: '',
+  postContent: '',
   announceDate: '',
   initAmount: '',
 })
 
 const errors = reactive({
+  postContent: '',
   announceDate: '',
   initAmount: '',
   match: '',
@@ -105,16 +108,6 @@ const resetRatioDefaults = () => {
   ratioBoundary2.value = DEFAULT_RATIO_BOUNDARY2
 }
 
-const buildMarketPostText = (tick: string) => {
-  const title = form.title.trim()
-  if (!fixtureInfo.value) return buildPlatformPostText(title, { tick })
-  const metaLines = [
-    t('worldCup2026.postMetaGroup', { group: fixtureInfo.value.group }),
-    t('worldCup2026.fixtureVenue', { venue: fixtureInfo.value.venue }),
-  ].join('\n')
-  return buildPlatformPostText(`${title}\n${metaLines}`, { tick })
-}
-
 const outcomeLabels = computed(() => {
   if (!leftTeam.value || !rightTeam.value) return []
   return getOutcomeLabels(leftTeam.value, rightTeam.value)
@@ -128,7 +121,7 @@ const autoTitle = computed(() => {
 const pickerTeams = computed(() => {
   if (pickerSide.value === 'left') return WC_TEAMS
   if (!leftTeam.value) return []
-  return getGroupMates(leftTeam.value)
+  return getGroupMatesWithFixture(leftTeam.value)
 })
 
 const pickerTitle = computed(() =>
@@ -142,6 +135,7 @@ const canSubmit = computed(() =>
   && creatable.value === true
   && !!fixtureInfo.value
   && !!form.title.trim()
+  && !!form.postContent.trim()
   && !!form.announceDate
   && !!form.initAmount
 )
@@ -177,7 +171,8 @@ const openPicker = (side: PickerSide) => {
   pickerVisible.value = true
 }
 
-const onPickerSelect = (code: string) => {
+const onPickerSelect = (code: string, disabled?: boolean) => {
+  if (disabled) return
   if (pickerSide.value === 'left') {
     if (code === rightTeam.value) {
       rightTeam.value = ''
@@ -242,6 +237,7 @@ const onEventTypeClick = (type: EventType) => {
 }
 
 const validateForm = (): boolean => {
+  errors.postContent = ''
   errors.announceDate = ''
   errors.initAmount = ''
   errors.match = ''
@@ -252,6 +248,14 @@ const validateForm = (): boolean => {
   }
   if (creatable.value !== true || !form.title.trim()) {
     errors.match = errors.match || t('worldCup2026.selectBothTeams')
+    return false
+  }
+  if (!form.postContent.trim()) {
+    errors.postContent = t('worldCup2026.postContentRequired')
+    return false
+  }
+  if (form.postContent.trim().length > 300) {
+    errors.postContent = t('worldCup2026.postContentTooLong')
     return false
   }
   if (!form.announceDate) {
@@ -297,7 +301,8 @@ const handleCreate = async () => {
       return
     }
 
-    const text = buildMarketPostText(tick)
+    // 发推正文由用户填写；服务端仅补充社区 #tick，不再追加 #TagAI
+    const text = form.postContent.trim()
     const outcomes = getOutcomeLabels(leftTeam.value, rightTeam.value)
     // 滑杆展示的是目标边际概率；链上 hint 需按 FPMM 公式换算储备比例
     const distributionHint = targetPercentsToDistributionHint(ratioPercents.value)
@@ -466,6 +471,26 @@ onMounted(async () => {
         :placeholder="$t('worldCup2026.titleAutoPlaceholder')"
       />
       <div class="wc-field__hint">{{ form.title.length }}/100 {{ $t('createPredict.characters') }}</div>
+    </div>
+
+    <!-- 发推内容（用户自行填写，API 代发） -->
+    <div class="wc-field">
+      <label class="wc-field__label">
+        {{ $t('worldCup2026.postContentLabel') }}
+        <span class="text-red-500">*</span>
+      </label>
+      <textarea
+        v-model="form.postContent"
+        rows="4"
+        maxlength="300"
+        class="wc-field__input resize-none min-h-[96px]"
+        :class="{ 'border-red-500': errors.postContent }"
+        :placeholder="$t('worldCup2026.postContentPlaceholder')"
+      />
+      <div v-if="errors.postContent" class="wc-field__error">{{ errors.postContent }}</div>
+      <div v-else class="wc-field__hint text-grey-normal">
+        {{ form.postContent.length }}/300 {{ $t('createPredict.characters') }}
+      </div>
     </div>
 
     <!-- 截止时间 -->

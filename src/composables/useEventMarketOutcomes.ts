@@ -84,6 +84,48 @@ export const calcOutcomePercents = (reserves: number[]) => {
 }
 
 /**
+ * 买入 outcome i 后各池储备（与 Gnosis FPMM split + 转出一致；手续费按费率从投资额扣除）。
+ * split 使每个 outcome 储备 +investmentMinusFees；买方提走 outcomeTokens。
+ */
+export const projectPoolAfterBuy = (
+  reserves: number[],
+  outcomeIndex: number,
+  investment: number,
+  outcomeTokens: number,
+  feeRate: number,
+) => {
+  const invNet = investment * Math.max(0, 1 - feeRate)
+  return reserves.map((r, j) =>
+    j === outcomeIndex ? r + invNet - outcomeTokens : r + invNet,
+  )
+}
+
+/**
+ * 卖出 outcome i 后各池储备：卖方 outcome 代币回流池子，merge 从每个 outcome 扣减 returnPlusFees。
+ */
+export const projectPoolAfterSell = (
+  reserves: number[],
+  outcomeIndex: number,
+  returnAmount: number,
+  sharesSold: number,
+  feeRate: number,
+) => {
+  const returnPlusFees = feeRate < 1 ? returnAmount / (1 - feeRate) : returnAmount
+  return reserves.map((r, j) =>
+    j === outcomeIndex ? r + sharesSold - returnPlusFees : r - returnPlusFees,
+  )
+}
+
+/** 交易前后各 outcome 边际概率（0~1） */
+export const calcTradeOutcomePercents = (
+  reservesBefore: number[],
+  reservesAfter: number[],
+) => ({
+  before: calcOutcomePercents(reservesBefore),
+  after: calcOutcomePercents(reservesAfter),
+})
+
+/**
  * 将 UI 上的目标概率（整数 %，和为 100）转为链上 FPMM distributionHint。
  * 合约按 hint 比例分配初始池子储备；要使边际价格等于目标概率，需 r_i ∝ ∏_{j≠i} p_j。
  * 二元市场与 createMarket 的 [100-p, p] 约定一致。

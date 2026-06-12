@@ -577,6 +577,7 @@
     "payReceive": "Akan menerima",
     "receive": "Akan menerima",
     "priceImpact": "Dampak harga",
+    "oddsChange": "Perubahan peluang",
     "sellRed": "Jual Merah",
     "sellYes": "Jual Ya",
     "sellNo": "Jual Tidak",
@@ -906,6 +907,10 @@
       "worldChampion": "Juara Piala Dunia 🏆"
     },
     "initialRatioTip": "Geser dua handle untuk mengatur probabilitas awal menang kiri, seri, dan menang kanan. Default: sepertiga sama.",
+    "postContentLabel": "Post content",
+    "postContentPlaceholder": "Tulis isi tweet untuk X (#TagAI tidak ditambahkan; tag komunitas ditambahkan otomatis)…",
+    "postContentRequired": "Masukkan isi posting",
+    "postContentTooLong": "Isi posting tidak boleh lebih dari 300 karakter",
     "tweetUrlLabel": "Tautan tweet setelah posting di X",
     "tweetUrlHint": "Posting di X dulu (akan dibuka saat membuat), lalu tempel URL tweet di sini.",
     "tweetUrlRequired": "Posting di X lalu tempel tautan tweet",

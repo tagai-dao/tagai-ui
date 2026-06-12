@@ -3,17 +3,18 @@ import { computed } from 'vue'
 import { useWorldCupTeam } from '@/composables/useWorldCupTeam'
 import { getTeamFlagUrl } from '@/data/world-cup-2026/flags'
 import type { WcTeam } from '@/data/world-cup-2026/teams'
+import type { WcTeamWithFixture } from '@/data/world-cup-2026/helpers'
 
 const props = defineProps<{
   visible: boolean
   title: string
-  teams: WcTeam[]
+  teams: (WcTeam | WcTeamWithFixture)[]
   selectedCode?: string
 }>()
 
 const emit = defineEmits<{
   'update:visible': [value: boolean]
-  select: [code: string]
+  select: [code: string, disabled?: boolean]
 }>()
 
 const { getTeamName } = useWorldCupTeam()
@@ -23,9 +24,19 @@ const dialogVisible = computed({
   set: (value: boolean) => emit('update:visible', value),
 })
 
-const onSelect = (code: string) => {
-  emit('select', code)
-  emit('update:visible', false)
+const isWithFixture = (team: WcTeam | WcTeamWithFixture): team is WcTeamWithFixture =>
+  'kickoffUtc' in team
+
+const formatKickoff = (iso: string) => {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+const onSelect = (team: WcTeam | WcTeamWithFixture) => {
+  const disabled = isWithFixture(team) && team.kickoffStarted
+  emit('select', team.code, disabled)
+  if (!disabled) emit('update:visible', false)
 }
 </script>
 
@@ -44,8 +55,12 @@ const onSelect = (code: string) => {
         :key="team.code"
         type="button"
         class="wc-team-grid__item"
-        :class="{ 'wc-team-grid__item--active': selectedCode === team.code }"
-        @click="onSelect(team.code)"
+        :class="{
+          'wc-team-grid__item--active': selectedCode === team.code,
+          'wc-team-grid__item--disabled': isWithFixture(team) && team.kickoffStarted,
+        }"
+        :disabled="isWithFixture(team) && team.kickoffStarted"
+        @click="onSelect(team)"
       >
         <img
           :src="getTeamFlagUrl(team.code, 40)"
@@ -54,7 +69,10 @@ const onSelect = (code: string) => {
           loading="lazy"
         />
         <span class="wc-team-grid__name">{{ getTeamName(team.code) }}</span>
-        <span class="wc-team-grid__group">{{ $t('worldCup2026.groupLabel', { group: team.group }) }}</span>
+        <span v-if="isWithFixture(team) && team.kickoffUtc" class="wc-team-grid__kickoff">
+          {{ formatKickoff(team.kickoffUtc) }}
+        </span>
+        <span v-else class="wc-team-grid__group">{{ $t('worldCup2026.groupLabel', { group: team.group }) }}</span>
       </button>
     </div>
   </el-dialog>
@@ -82,7 +100,7 @@ const onSelect = (code: string) => {
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
-.wc-team-grid__item:hover {
+.wc-team-grid__item:hover:not(.wc-team-grid__item--disabled) {
   border-color: #fe913f;
   box-shadow: 0 2px 8px rgba(254, 145, 63, 0.15);
 }
@@ -90,6 +108,20 @@ const onSelect = (code: string) => {
 .wc-team-grid__item--active {
   border-color: #fe913f;
   background: #fff7f0;
+}
+
+.wc-team-grid__item--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: #f9fafb;
+}
+
+.wc-team-grid__item--disabled .wc-team-grid__flag {
+  filter: grayscale(0.6);
+}
+
+.wc-team-grid__item--disabled .wc-team-grid__name {
+  color: #9ca3af;
 }
 
 .wc-team-grid__flag {
@@ -112,6 +144,16 @@ const onSelect = (code: string) => {
 .wc-team-grid__group {
   font-size: 10px;
   color: #9ca3af;
+}
+
+.wc-team-grid__kickoff {
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.wc-team-grid__item--disabled .wc-team-grid__kickoff {
+  color: #d1d5db;
 }
 
 :deep(.wc-team-picker-dialog .el-dialog__body) {

@@ -577,6 +577,7 @@
     "payReceive": "Recibirás",
     "receive": "Recibirás",
     "priceImpact": "Impacto en el precio",
+    "oddsChange": "Cambio de probabilidades",
     "sellRed": "Vender Rojo",
     "sellYes": "Vender Sí",
     "sellNo": "Vender No",
@@ -906,6 +907,10 @@
       "worldChampion": "Campeón del Mundial 🏆"
     },
     "initialRatioTip": "Arrastra los dos controles para ajustar las probabilidades iniciales de victoria izquierda, empate y victoria derecha. Por defecto, tercios iguales.",
+    "postContentLabel": "Post content",
+    "postContentPlaceholder": "Escribe el texto del tweet para X (no se añade #TagAI; la etiqueta de la comunidad se añade automáticamente)…",
+    "postContentRequired": "Introduce el contenido del post",
+    "postContentTooLong": "El contenido no puede superar 300 caracteres",
     "tweetUrlLabel": "Enlace del tweet tras publicar en X",
     "tweetUrlHint": "Publica primero en X (se abrirá al crear) y pega aquí la URL del tweet.",
     "tweetUrlRequired": "Publica en X y pega el enlace del tweet",
