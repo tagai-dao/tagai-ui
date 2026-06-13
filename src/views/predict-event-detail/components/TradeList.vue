@@ -24,10 +24,11 @@ const scrollerRef = ref<HTMLElement | null>(null)
 
 const onLoad = async () => {
   try {
-    if (refreshing.value || loading.value || finished.value || list.value.length == 0) {
+    if (refreshing.value || finished.value) {
       return;
-    }   
-    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.marketMaker, Math.floor((list.value.length - 1) / 30) + 1)) as unknown as FPMMTrade[]
+    }
+    loading.value = true
+    const trades: FPMMTrade[] = (await getFPMMTradeList(props.market.marketMaker, Math.floor(list.value.length / 30) + 1)) as unknown as FPMMTrade[]
     list.value = list.value.concat(trades)
     if (trades.length < 30) {
       finished.value = true
@@ -92,13 +93,13 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl flex flex-col shadow-sm border border-gray-100 overflow-hidden">
+  <div class="bg-white rounded-2xl flex flex-col shadow-sm border border-gray-100">
     <!-- Header removed to match screenshot style closely, or keep simple -->
     <!-- <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex justify-between items-center">
         <span>Recent Activity</span>
     </div> -->
 
-    <div ref="scrollerRef" class="custom-scrollbar max-h-[60vh] overflow-y-auto">
+    <div ref="scrollerRef" class="custom-scrollbar max-h-[60vh] overflow-y-auto pb-20">
       <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
         <van-list
           v-model:loading="loading"
