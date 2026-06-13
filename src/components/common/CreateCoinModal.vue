@@ -260,12 +260,7 @@ const importTokenStepClick = async () => {
     } else if (importStep.value === 3) {
       // 链上部署 Nutbox Community + 后端入库
       useModalStore().setModalCloseEnable(false);
-      // const result = await deployNutboxCommunity(importForm.token as `0x${string}`)
-      const result = {
-        community: '0xde9bbb896f033edab164d69aa4341fa192be2f1b',
-        pool: '0xcf4528b70be4c03449459b4b432e1ce0bbf626b9',
-        txHash: '0x52cc39e5da190277312e34c2202f83aa66cb4586df1d5848bcc6c9f81ea3a508'
-      }
+      const result = await deployNutboxCommunity(importForm.token as `0x${string}`)
       communityAddress.value = result.community
       socialPoolAddress.value = result.pool
       importForm.createHash = result.txHash
@@ -782,6 +777,7 @@ onMounted(async () => {
 
 
       <div class="py-2 flex gap-2 justify-between mx-3">
+        importStep: {{ importStep }}
         <button v-if="importStep > 1 && importStep < 4"
           class="h-12 flex-1 border border-gray-300 bg-gray-50 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
           @click="importErrTip = '';importStep -= 1"
