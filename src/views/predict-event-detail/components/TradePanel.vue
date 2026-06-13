@@ -198,7 +198,7 @@ async function executeTrade() {
         shareAmount = tradeTokenBalanceBi.value;
       }
       await buyToken(props.market, props.market.token as `0x${string}`, shareAmount, tradeWillReceiveAmount.value * 0.95, outcomeArg, bnbFee.value)
-      updateReserves().catch()
+      updateReserves()
     } else {
       let shareAmount = parseUnits(tradeShares.value.toFixed(18), 18) * 105n / 100n;
       const selectedBi = getSelectedOutcomeBalanceBi()
@@ -206,7 +206,7 @@ async function executeTrade() {
         shareAmount = selectedBi;
       }
       await sellToken(props.market, parseUnits(tradeWillReceiveAmount.value.toFixed(18), 18), shareAmount, outcomeArg, bnbFee.value)
-      updateReserves().catch()
+      updateReserves()
     }
     if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
       await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.marketMaker as `0x${string}`, 'event')
@@ -215,6 +215,7 @@ async function executeTrade() {
     tradeShares.value = ''
     updateBalances()
   } catch (error) {
+    console.error('executeTrade error tab=', mainTab.value, tradeActiveTab.value, error)
     handleErrorTip(error)
   } finally {
     tradeLoading.value = false
@@ -240,9 +241,8 @@ const liquidityLoading = ref(false)
 const isResolved = computed(() => props.market.status === 3)
 
 const showLiquidityDot = computed(() => {
-  return accStore.ethConnectState === EthWalletState.Connected && 
-         isResolved.value && 
-         lpBalance.value > 1
+  // 已结算后 removeFunding 会 SafeMath revert，不引导用户操作
+  return false
 })
 
 const showRedeemDot = computed(() => {
@@ -293,10 +293,13 @@ const handleLiquidityAction = async () => {
         if (accStore.getAccountInfo?.twitterId && accStore.ethConnectAddress) {
             await newParticipation(accStore.getAccountInfo?.twitterId, accStore.ethConnectAddress as `0x${string}`, props.market.marketMaker as `0x${string}`)
         }
-        updateBalances().catch()
-        updateReserves().catch()
+        updateBalances().catch((err) => {
+          console.error('updateBalances error after redeem', err)
+        })
+        updateReserves()
         liquidityAmount.value = undefined
     } catch (e) {
+        console.error('handleLiquidityAction error tab=', mainTab.value, 'liquidityType=', liquidityType.value, e)
         handleErrorTip(e)
     } finally {
         liquidityLoading.value = false
@@ -332,6 +335,8 @@ const updateReserves = debounce(async () => {
     props.market.reserveA = reserveA.value
     props.market.reserveB = reserveB.value
     props.market.fee = infos.fee
+  }).catch((err) => {
+    console.error('updateReserves getEventMarketInfos error', err)
   })
 }, 500)
 
@@ -345,7 +350,9 @@ watch(() => accStore.ethConnectAddress, (newVal) => {
 
 let interval: any;
 onMounted(async () => {
-  // 交易结束后不再刷链上储备，避免结算改变池子导致展示失真
+  // 初始获取一次池子数据（reserve/lpSupply），即使已结束也需要 lpSupply 展示
+  updateReserves()
+  // 交易结束后不再定时刷链上储备，避免结算改变池子导致展示失真
   if (!isTradeEnded.value) {
     interval = setInterval(() => {
       if (now.value.getTime() >= tradeEndTime.value) {
@@ -354,7 +361,6 @@ onMounted(async () => {
       }
       updateReserves()
     }, 3000)
-    updateReserves()
   }
   updateBalances()
 })
@@ -636,7 +642,7 @@ const tradeTimeLeftText = computed(() => {
         <button v-else
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white shadow-lg transition-all transform active:scale-[0.99]"
             @click="handleLiquidityAction"
-            :disabled="liquidityLoading || !liquidityAmount || (props.market.status !== 1 && liquidityType === 'add')"
+            :disabled="liquidityLoading || !liquidityAmount || (props.market.status !== 1 && liquidityType === 'add') || (props.market.status === 3 && liquidityType === 'remove')"
         >
             {{ liquidityType === 'add' ? $t('predictLiquidity.addLiquidity') : $t('predictLiquidity.removeLiquidity') }}
             <i-ep-loading v-if="liquidityLoading" class="animate-spin ml-2" />
