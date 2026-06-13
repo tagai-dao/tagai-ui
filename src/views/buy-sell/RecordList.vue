@@ -8,6 +8,7 @@ import { handleErrorTip } from "@/utils/notify";
 import emitter from "@/utils/emitter";
 import { useTools } from "@/composables/useTools";
 import Kline from "@/views/buy-sell/Kline.vue";
+import { getDexScreenerEmbedPath } from '@/utils/pumpVersion'
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -68,7 +69,7 @@ onMounted(() => {
     <div v-if="comStore.currentSelectedCommunity?.tick"
          class="w-full web:hidden min-w-[320px] mb-2">
       <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart2"/>
-      <iframe v-else :src="`https://dexscreener.com/bsc/${(comStore.currentSelectedCommunity?.version === 7 || comStore.currentSelectedCommunity?.version === 8 || comStore.currentSelectedCommunity?.version === 9) ? comStore.currentSelectedCommunity?.token : comStore.currentSelectedCommunity?.pair}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`" 
+      <iframe v-else :src="`https://dexscreener.com/bsc/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`" 
         frameborder="0" class="w-full h-[24rem]"></iframe>
     </div>
     <div class="bg-white rounded-2xl p-3">

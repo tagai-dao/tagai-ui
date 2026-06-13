@@ -1,5 +1,5 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, PUMP9_VERSION, NutboxCommittee } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, PUMP9_VERSION, NutboxCommittee, usesThirdPartyMarketCap } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
@@ -659,6 +659,53 @@ const buildPairMap = (items: Array<{ token?: string; pair?: string | null | unde
     return pairMap;
 }
 
+/** GeckoTerminal 聚合 FDV（USD） */
+const getThirdPartyFdvUsd = async (token: string): Promise<number | undefined> => {
+    try {
+        const resp = await fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${token.toLowerCase()}`)
+        if (!resp.ok) return undefined
+        const json = await resp.json()
+        const fdv = parseFloat(json?.data?.attributes?.fdv_usd ?? '0')
+        return fdv > 0 ? fdv : undefined
+    } catch (e) {
+        console.error('getThirdPartyFdvUsd failed', token, e)
+        return undefined
+    }
+}
+
+/** 批量拉取第三方市值（BNB 计价，供 marketCap * ethPrice 展示） */
+const fetchThirdPartyMarketCapMap = async (items: Array<{ token?: string; tick?: string }>) => {
+    const tokens = _.union(items.filter(i => usesThirdPartyMarketCap(i.tick) && i.token).map(i => i.token!))
+    if (tokens.length === 0) return {} as Record<string, number>
+
+    const stateStore = useStateStore()
+    if (stateStore.ethPrice === 0) {
+        const price: any = await getEthPrice()
+        stateStore.ethPrice = parseFloat(price)
+    }
+    if (stateStore.ethPrice <= 0) return {}
+
+    const entries = await Promise.all(tokens.map(async (token) => {
+        const fdv = await getThirdPartyFdvUsd(token)
+        if (fdv === undefined) return null
+        return [token, fdv / stateStore.ethPrice] as const
+    }))
+    return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, number]>)
+}
+
+/** 用第三方 FDV 覆盖展示用 marketCap / price，不影响链上交易逻辑 */
+const applyThirdPartyMarketCap = (
+    item: { token?: string; tick?: string; marketCap?: number; price?: number; totalSupply?: number },
+    map: Record<string, number>
+) => {
+    if (!usesThirdPartyMarketCap(item.tick) || !item.token) return
+    const mc = map[item.token]
+    if (mc === undefined) return
+    item.marketCap = mc
+    const supply = item.totalSupply && item.totalSupply > 0 ? item.totalSupply : TotalSupply
+    item.price = mc / supply
+}
+
 export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
     let tokens = communities.filter(com => !com.isImport).map(com => com.token)
@@ -667,11 +714,16 @@ export const getTokenInfo = async (communities: Community[]) => {
         versions[com.token!] = com.version ?? 2;
     }
     const pairMap = buildPairMap(communities)
+    const thirdPartyMarketCapMap = await fetchThirdPartyMarketCapMap(communities)
     let result = await getTokenOnchainInfo(tokens, versions, pairMap)
 
     let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport), pairMap)
 
     for (let community of communities) {
+        // 导入币后端已确认上架，不依赖链上询价成功与否
+        if (community.isImport) {
+            community.listed = true
+        }
         const tokenInfo = result[community.token]
         if (tokenInfo) {
             community.listed = tokenInfo.listed;
@@ -683,17 +735,17 @@ export const getTokenInfo = async (communities: Community[]) => {
                 community.pair = tokenInfo.pair;
             }
             community.totalSupply = TotalSupply;
-        }else{
+        } else if (community.isImport) {
             const importInfo = importResult[community.token]
+            community.bondingCurveSupply = 0;
+            community.totalClaimedSocialRewards = 0;
             if (importInfo) {
-                community.listed = true;
-                community.bondingCurveSupply = 0;
-                community.totalClaimedSocialRewards = 0;
                 community.price = importInfo.price;
                 community.marketCap = (community.price ?? 0) * importInfo.totalSupply;
                 community.totalSupply = importInfo.totalSupply;
             }
         }
+        applyThirdPartyMarketCap(community, thirdPartyMarketCapMap)
         // const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
         // community.distributionEnded = checkDistributionEnd(distribution);
@@ -711,6 +763,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
             versions[tweet.token!] = tweet.version ?? 2;
         }
         const pairMap = buildPairMap(tweets)
+        const thirdPartyMarketCapMap = await fetchThirdPartyMarketCapMap(tweets)
         let result = await getTokenOnchainInfo(tokens, versions, pairMap)
         let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap)
 
@@ -724,11 +777,11 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
             if (!tweet.token) continue
             const tokenInfo = result[tweet.token]
             if (tweet.isImport) {
+                tweet.listed = true;
                 const importInfo = importResult[tweet.token]
+                tweet.bondingCurveSupply = 0;
+                tweet.totalClaimedSocialRewards = 0;
                 if (importInfo) {
-                    tweet.listed = true;
-                    tweet.bondingCurveSupply = 0;
-                    tweet.totalClaimedSocialRewards = 0;
                     tweet.price = importInfo.price;
                     tweet.marketCap = importInfo.price * importInfo.totalSupply;
                     tweet.totalSupply = importInfo.totalSupply;
@@ -743,6 +796,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                     tweet.pair = tokenInfo.pair;
                 }
             }
+            applyThirdPartyMarketCap(tweet, thirdPartyMarketCapMap)
         }
         return tweets;
     } catch (e) {

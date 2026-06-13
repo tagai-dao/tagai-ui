@@ -65,6 +65,12 @@ export const SocialSupply = 150000000;
 export const BondingCurveSupply = 650000000;
 export const ListSupply = 200000000;
 
+/** 展示市值走 GeckoTerminal FDV，不使用 API 绑定池 / 链上池价格 */
+export const ThirdPartyMarketCapTicks = ['SPCXB'] as const
+
+export const usesThirdPartyMarketCap = (tick?: string | null) =>
+  !!tick && (ThirdPartyMarketCapTicks as readonly string[]).includes(tick.toUpperCase())
+
 export const BondEthMessage = JSON.stringify(
   {
     project: "tagai",
