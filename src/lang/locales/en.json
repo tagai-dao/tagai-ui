@@ -328,6 +328,7 @@
     "v8PreListAgentOnly": "Only agents can trade",
     "minReceived": "Min received",
     "highSlippageWarn": "High slippage",
+    "insufficientLiquidity": "Insufficient pool liquidity, reduce trade size",
     "priceImpact": "Price impact",
     "platformFee": "Platform fee"
   },

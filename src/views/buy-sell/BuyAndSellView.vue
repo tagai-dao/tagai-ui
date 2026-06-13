@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import BackHeader from "@/layout/BackHeader.vue";
-import {computed, onActivated, onMounted, provide, ref, watch} from "vue";
+import {computed, nextTick, onActivated, onMounted, provide, ref, watch} from "vue";
 import { useI18n } from "vue-i18n";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
@@ -12,9 +12,11 @@ import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
   getBuyAmountUseEth, getSellAmountUseToken,
-  getBuyPriceAfterFee
+  getBuyPriceAfterFee,
+  getBondingCurveSpotPrice, getUniswapV2SpotPrice
  } from '@/utils/pump'
-import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, type PoolKey } from '@/utils/pcsV4Swap'
+import { readContract } from '@/utils/contract'
+import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -28,7 +30,7 @@ import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
-import { getDexScreenerEmbedPath } from '@/utils/pumpVersion'
+import { getDexScreenerEmbedPath, usesListedV4Quote } from '@/utils/pumpVersion'
 import { isAddress, parseEther } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 
@@ -54,8 +56,8 @@ let willListing = false;
 let updatedBuyValue = 0n;
 let updatedReveiveAmount = 0n;
 
-const payEth = ref()
-const sellAmount = ref()
+const payEth = ref('')
+const sellAmount = ref('')
 const {replaceEmptyProfile, updateUserOPLocal} = useAccount()
 
 const account = computed(() => {
@@ -68,6 +70,10 @@ watch(() => accStore.ethConnectAddress, (val) => {
 
 const receiveAmount = ref()
 const receiveEth = ref()
+/** 与当次询价同步快照的边际现价，避免 community.price 被后台刷新后导致滑点跳变 */
+const quoteSpotPrice = ref<number | null>(null)
+let buyQuoteSeq = 0
+let sellQuoteSeq = 0
 
 const maxSlippage = ref(5)
 const tokenBalance = ref(0)
@@ -96,15 +102,31 @@ const isPostTweet = ref(false)
 
 const percentage = ref(0)
 provide('percentage', percentage)
+// 进度条同步输入时跳过「手动编辑 → 重置 percentage」
+const sellAmountSyncingFromPercent = ref(false)
+
+const normalizeAmountStr = (val: unknown): string => {
+  if (val === null || val === undefined) return ''
+  return String(val).trim()
+}
+/** 用户正在输入小数（如 "0."）时暂不询价 */
+const isIncompleteAmountInput = (str: string) =>
+  str === '' || str === '.' || str.endsWith('.')
+
 watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value], () => {
-  if(tradeType.value==='buy') payEth.value = (ethBalance.value * percentage.value / 100).toFixed(8)
-  if(tradeType.value==='sell') {
+  // percentage=0 时不覆盖用户手动输入
+  if (percentage.value === 0) return
+  if (tradeType.value === 'buy') payEth.value = (ethBalance.value * percentage.value / 100).toFixed(8)
+  if (tradeType.value === 'sell') {
+    sellAmountSyncingFromPercent.value = true
     sellAmount.value = (tokenBalance.value * percentage.value / 100).toFixed(8)
+    nextTick(() => { sellAmountSyncingFromPercent.value = false })
   }
-}, {immediate: true})
+}, { immediate: true })
 
 watch(() => tradeType.value, () => {
   percentage.value = 0
+  quoteSpotPrice.value = null
 })
 
 watch(payEth, (val: any) => {
@@ -114,6 +136,10 @@ watch(payEth, (val: any) => {
 })
 
 watch(sellAmount, (val: any) => {
+  // 手动改数量后脱离进度条比例，避免余额刷新时覆盖输入
+  if (!sellAmountSyncingFromPercent.value && percentage.value > 0) {
+    percentage.value = 0
+  }
   calculating.value = true
   willListing = false
   updateSellAmount(val)
@@ -123,74 +149,154 @@ const invalidToken = computed(() => {
   return comStore.currentSelectedCommunity?.version === 1 && comStore.currentSelectedCommunity?.tick !== 'TTAI' && !comStore.currentSelectedCommunity?.listed
 })
 
-/** v7 / v8 上架后均走 PCS V4（与 pump.ts isPcsV4Listed 一致） */
-const isPcsV4Version = (v: number | undefined | null) => v === 7 || v === 8 || v === 9
-
 /** Pump8：曲线阶段不对普通用户开放买卖，仅 Agent 可走其他入口 */
 const isV8PreListNoTrade = computed(
   () => comStore.currentSelectedCommunity?.version === 8 && !comStore.currentSelectedCommunity?.listed
 )
 
-// v9 费率（contracts/Pump.sol feeRatio=[30,30]/10000：平台 0.3% + 推荐人 0.3%；
-// 内盘与上市后（TipTagSwapHook，原生池 fee=0）同一口径）。仅对 v9 展示，其余版本费率未逐一确认不显示
+// 各版本交易费率（用于从询价结果反推净成交均价）
 const V9_TOTAL_FEE = 0.006
-const isV9 = computed(() => comStore.currentSelectedCommunity?.version === 9)
-const spotPrice = computed(() => Number(comStore.currentSelectedCommunity?.price ?? 0))
+const BONDING_CURVE_FEE = 0.02   // 内盘 getBuyAmountByValue 使用 9800/10000
+const LISTED_V2_FEE = 0.02       // 上市后 Uniswap V2 路由 2% 手续费
 
-// 价格影响 = 剔除费率后的成交均价 vs 现价 的偏离（绝对值上限 99.99 防御）
+const isV9 = computed(() => comStore.currentSelectedCommunity?.version === 9)
+const tradeFeeRate = computed(() => {
+  const c = comStore.currentSelectedCommunity
+  if (!c) return BONDING_CURVE_FEE
+  // v9 内盘 0.6%；上市后走 V4，询价已扣 lpFee
+  if (c.version === 9 && !c.listed) return V9_TOTAL_FEE
+  if (usesListedV4Quote(c)) return 0
+  if (c.listed) return LISTED_V2_FEE
+  return BONDING_CURVE_FEE
+})
+
+// 价格影响 = 成交单价相对询价时刻现货的不利偏离（恒为正，上限 99.99%）
+const calcAdversePriceImpact = (executionBnbPerToken: number, spotBnbPerToken: number): number | null => {
+  if (!spotBnbPerToken || !isFinite(executionBnbPerToken) || executionBnbPerToken <= 0) return null
+  return Math.min(Math.abs(executionBnbPerToken / spotBnbPerToken - 1) * 100, 99.99)
+}
+
 const buyPriceImpact = computed(() => {
   const pay = parseFloat(payEth.value)
   const recv = Number(receiveAmount.value?.toString() ?? 0) / 1e18
-  if (!isV9.value || !spotPrice.value || !isFinite(pay) || pay <= 0 || recv <= 0) return null
-  const avg = (pay * (1 - V9_TOTAL_FEE)) / recv
-  return Math.min((avg / spotPrice.value - 1) * 100, 99.99)
+  const spot = quoteSpotPrice.value
+  if (!spot || !isFinite(pay) || pay <= 0 || recv <= 0) return null
+  const fee = tradeFeeRate.value
+  // 买入：净投入 BNB / 到手 Token = 实际买入单价
+  const execPrice = (pay * (1 - fee)) / recv
+  return calcAdversePriceImpact(execPrice, spot)
 })
 const sellPriceImpact = computed(() => {
   const sellTokens = parseFloat(sellAmount.value)
   const recvEthNet = Number(receiveEth.value?.toString() ?? 0) / 1e18
-  if (!isV9.value || !spotPrice.value || !isFinite(sellTokens) || sellTokens <= 0 || recvEthNet <= 0) return null
-  const avg = recvEthNet / (1 - V9_TOTAL_FEE) / sellTokens
-  return Math.max((avg / spotPrice.value - 1) * 100, -99.99)
+  const spot = quoteSpotPrice.value
+  if (!spot || !isFinite(sellTokens) || sellTokens <= 0 || recvEthNet <= 0) return null
+  const fee = tradeFeeRate.value
+  // 卖出：到手 BNB 为扣费后净值，先还原池内成交价再与现货比较
+  const execPrice = recvEthNet / (1 - fee) / sellTokens
+  return calcAdversePriceImpact(execPrice, spot)
+})
+
+// 预估价格影响超过用户设置的最大滑点容忍
+const isBuyImpactExceedsTolerance = computed(
+  () => buyPriceImpact.value !== null && buyPriceImpact.value > Number(maxSlippage.value)
+)
+const isSellImpactExceedsTolerance = computed(
+  () => sellPriceImpact.value !== null && sellPriceImpact.value > Number(maxSlippage.value)
+)
+
+// V4 薄池：CLQuoter 无法成交时返回 0，区别于未询价
+const isListedV4Quote = computed(() => usesListedV4Quote(comStore.currentSelectedCommunity))
+const toQuoteAmount = (v: unknown): number | null => {
+  if (v === '' || v === undefined || v === null) return null
+  if (typeof v === 'bigint') return Number(v)
+  return Number(v?.toString?.() ?? v)
+}
+const isBuyLiquidityInsufficient = computed(() => {
+  const pay = parseFloat(payEth.value)
+  if (!pay || pay <= 0 || calculating.value || !listed.value || !isListedV4Quote.value) return false
+  const recv = toQuoteAmount(receiveAmount.value)
+  return recv !== null && recv <= 0
+})
+const isSellLiquidityInsufficient = computed(() => {
+  const sell = parseFloat(sellAmount.value)
+  if (!sell || sell <= 0 || calculating.value || !listed.value || !isListedV4Quote.value) return false
+  const recv = toQuoteAmount(receiveEth.value)
+  return recv !== null && recv <= 0
 })
 
 // MAX：用全部 BNB 余额买入，预留 0.005 作 gas
 function setMaxBuy() {
   const max = Math.max(ethBalance.value - 0.005, 0)
-  payEth.value = max > 0 ? parseFloat(max.toFixed(6)) : 0
+  payEth.value = max > 0 ? max.toFixed(6) : ''
 }
 
 const updateBuyAmount = debounce(async (val: any) => {
-  if (!val) {
+  const seq = ++buyQuoteSeq
+  const str = normalizeAmountStr(val)
+  if (!comStore.currentSelectedCommunity) {
     trading.value = false
     calculating.value = false
     receiveAmount.value = ''
+    quoteSpotPrice.value = null
     return
-  };
-  val = parseFloat(val)
-  if (val == 0) {
+  }
+  if (isIncompleteAmountInput(str)) {
     trading.value = false
     calculating.value = false
     receiveAmount.value = ''
+    quoteSpotPrice.value = null
     return
-  };
+  }
+  const num = parseFloat(str)
+  if (!isFinite(num) || num <= 0) {
+    trading.value = false
+    calculating.value = false
+    receiveAmount.value = ''
+    quoteSpotPrice.value = null
+    return
+  }
   showFillInfo.value = false
-  const amount = parseEther(val.toString())
+  const amount = parseEther(str)
+  const community = comStore.currentSelectedCommunity
  try {
   if (isV8PreListNoTrade.value) {
     receiveAmount.value = ''
+    quoteSpotPrice.value = null
     calculating.value = false
     return
   }
+  let receive: bigint
+  let spot = 0
   if (listed.value) {
-    if (isPcsV4Version(comStore.currentSelectedCommunity?.version)) {
-      const receive = await getV4BuyQuote(comStore.currentSelectedCommunity!.pair as `0x${string}`, amount)
-      receiveAmount.value = receive
+    if (usesListedV4Quote(community)) {
+      const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
+      if (!poolKey) throw new Error('invalid V4 pool')
+      const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
+      const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
+      receive = await getV4BuyQuote(poolKey, amount, sellsman)
+      try {
+        spot = await getV4SpotPrice(poolId)
+      } catch (e) {
+        console.warn('getV4SpotPrice failed', e)
+      }
     } else {
-      const receive = await getBuyAmountUseEth(comStore.currentSelectedCommunity!.token, amount * 9800n / 10000n)
-      receiveAmount.value = receive
+      receive = await getBuyAmountUseEth(community!.token, amount * 9800n / 10000n)
+      try {
+        spot = await getUniswapV2SpotPrice(community!.token!, community!.pair!)
+      } catch (e) {
+        console.warn('getUniswapV2SpotPrice failed', e)
+      }
     }
-  }else {
-    const {receive, supply} = await getBuyAmountWithETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
+  } else {
+    const version = community?.version ?? 2
+    const {receive: quoted, supply} = await getBuyAmountWithETHAfterFee(community?.token, version, amount)
+    receive = quoted
+    try {
+      spot = await getBondingCurveSpotPrice(version, supply as bigint)
+    } catch (e) {
+      console.warn('getBondingCurveSpotPrice failed', e)
+    }
     if (receive > parseEther('650000000') * 9950n / 10000n - supply) {
       updatedReveiveAmount = parseEther('650000010') - supply
       updatedBuyValue = await getBuyPriceAfterFee(supply as bigint, updatedReveiveAmount as bigint) * 10000n / 9900n
@@ -199,47 +305,93 @@ const updateBuyAmount = debounce(async (val: any) => {
       updatedReveiveAmount = receive
       willListing = false
     }
-    receiveAmount.value = receive
   }
+  if (seq !== buyQuoteSeq) return
+  receiveAmount.value = receive
+  quoteSpotPrice.value = spot > 0 ? spot : null
  } catch (error) {
+    if (seq !== buyQuoteSeq) return
     console.log(33, error)
-    receiveAmount.value = '0.00'
+    receiveAmount.value = 0n
+    quoteSpotPrice.value = null
   }finally {
-  calculating.value = false
+  if (seq === buyQuoteSeq) calculating.value = false
  }
 }, 500)
 
 const updateSellAmount = debounce(async (val: any) => {
+  const seq = ++sellQuoteSeq
   try {
-    if (!val || !comStore.currentSelectedCommunity) {
+    const str = normalizeAmountStr(val)
+    if (!comStore.currentSelectedCommunity) {
       receiveEth.value = ''
-      sellAmount.value = ''
-      return;
+      quoteSpotPrice.value = null
+      return
     }
-    if (parseFloat(val) == 0) return;
-    showFillInfo.value = false
-    const amount = parseEther(val.toString())
-    if (isV8PreListNoTrade.value) {
+    // 不完整小数输入（如 "0."）仅清空询价结果，不改动输入框
+    if (isIncompleteAmountInput(str)) {
       receiveEth.value = ''
+      quoteSpotPrice.value = null
       calculating.value = false
       return
     }
-    if (listed.value) {
-      if (isPcsV4Version(comStore.currentSelectedCommunity?.version)) {
-        const receive = await getV4SellQuote(comStore.currentSelectedCommunity!.pair as `0x${string}`, amount)
-        receiveEth.value = receive
-      } else {
-        const receive = await getSellAmountUseToken(comStore.currentSelectedCommunity!.token, amount)
-        receiveEth.value = receive
-      }
-    }else {
-      const receive = await getReceivedAmountSellETHAfterFee(comStore.currentSelectedCommunity?.token, comStore.currentSelectedCommunity?.version ?? 2, amount)
-      receiveEth.value = receive
+    const num = parseFloat(str)
+    if (!isFinite(num) || num <= 0) {
+      receiveEth.value = ''
+      quoteSpotPrice.value = null
+      calculating.value = false
+      return
     }
+    showFillInfo.value = false
+    const amount = parseEther(str)
+    const community = comStore.currentSelectedCommunity
+    if (isV8PreListNoTrade.value) {
+      receiveEth.value = ''
+      quoteSpotPrice.value = null
+      calculating.value = false
+      return
+    }
+    let receive: bigint
+    let spot = 0
+    if (listed.value) {
+      if (usesListedV4Quote(community)) {
+        const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
+        if (!poolKey) throw new Error('invalid V4 pool')
+        const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
+        const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
+        receive = await getV4SellQuote(poolKey, amount, sellsman)
+        try {
+          spot = await getV4SpotPrice(poolId)
+        } catch (e) {
+          console.warn('getV4SpotPrice failed', e)
+        }
+      } else {
+        receive = await getSellAmountUseToken(community!.token, amount)
+        try {
+          spot = await getUniswapV2SpotPrice(community!.token!, community!.pair!)
+        } catch (e) {
+          console.warn('getUniswapV2SpotPrice failed', e)
+        }
+      }
+    } else {
+      const version = community?.version ?? 2
+      const supply = await readContract('Token1', 'bondingCurveSupply', [], community!.token! as `0x${string}`) as bigint
+      receive = await getReceivedAmountSellETHAfterFee(community?.token, version, amount)
+      try {
+        spot = await getBondingCurveSpotPrice(version, supply)
+      } catch (e) {
+        console.warn('getBondingCurveSpotPrice failed', e)
+      }
+    }
+    if (seq !== sellQuoteSeq) return
+    receiveEth.value = receive
+    quoteSpotPrice.value = spot > 0 ? spot : null
   } catch (error) {
-    receiveEth.value = '0.00'
+    if (seq !== sellQuoteSeq) return
+    receiveEth.value = 0n
+    quoteSpotPrice.value = null
   }finally {
-    calculating.value = false
+    if (seq === sellQuoteSeq) calculating.value = false
   }
 }, 500)
 
@@ -344,9 +496,10 @@ async function confirm() {
       if (!payEth.value) return
 
       let hash: string | undefined;
-      // v7/v8 上架后代币走 PCS V4 Universal Router
-      if (isPcsV4Version(token!.version) && listed.value) {
-        const poolKey = JSON.parse(token!.pair ?? '{}') as PoolKey;
+      // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
+      if (usesListedV4Quote(token) && listed.value) {
+        const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
+        if (!poolKey) throw new Error('invalid V4 pool')
         const ethAmount = parseEther(payEth.value.toString());
         hash = await buyTokenV4(
           poolKey,
@@ -360,7 +513,7 @@ async function confirm() {
         hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
       }
       if (hash) {
-        payEth.value = undefined
+        payEth.value = ''
         receiveAmount.value = undefined
         recordCommunityTrade(hash)
         emitter.emit('newTrade')
@@ -376,9 +529,10 @@ async function confirm() {
       }
 
       let hash: string | undefined;
-      // v7/v8 上架后代币走 PCS V4 Universal Router
-      if (isPcsV4Version(token!.version) && listed.value) {
-        const poolKey = JSON.parse(token!.pair ?? '{}') as PoolKey;
+      // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
+      if (usesListedV4Quote(token) && listed.value) {
+        const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
+        if (!poolKey) throw new Error('invalid V4 pool')
         hash = await sellTokenV4(
           poolKey,
           token!.token as `0x${string}`,
@@ -391,7 +545,7 @@ async function confirm() {
         hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
       }
       if (hash) {
-        sellAmount.value = undefined
+        sellAmount.value = ''
         receiveEth.value = undefined
         recordCommunityTrade(hash)
 
@@ -511,7 +665,8 @@ onMounted(async () => {
             <span class="text-h5">{{ $t('pay') }}</span>
             <input
               v-model="payEth"
-              type="number"
+              type="text"
+              inputmode="decimal"
               class="bg-transparent h-full flex-1 w-[120px] text-h3 tabular-nums"
               :disabled="isV8PreListNoTrade"
             />
@@ -520,9 +675,9 @@ onMounted(async () => {
           <div class="grid grid-cols-5 gap-1 h-8 text-sm">
             <button v-for="i of defaultAmount"
               class="col-span-1 p-1 rounded-full h-full flex-1 text-white bg-grey-light-active"
-              @click="payEth=i"
+              @click="payEth = String(i)"
               :disabled="isV8PreListNoTrade"
-              :class="payEth === i ? 'bg-gradient-primary' : ''">
+              :class="payEth === String(i) ? 'bg-gradient-primary' : ''">
               {{ i }}
               </button>
             <button
@@ -543,13 +698,19 @@ onMounted(async () => {
             >
             <span class="text-h3 tabular-nums">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
           </div>
+          <div v-if="isBuyLiquidityInsufficient" class="text-sm text-orange-normal px-1">
+            {{ $t('buyAndSell.insufficientLiquidity') }}
+          </div>
+          <div v-if="buyPriceImpact !== null && !calculating" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.priceImpact') }}</span>
+            <div class="flex items-center gap-1.5">
+              <span v-if="isBuyImpactExceedsTolerance" class="text-xs text-orange-normal">⚠ {{ $t('buyAndSell.highSlippageWarn') }}</span>
+              <span class="tabular-nums" :class="buyPriceImpact > 5 ? 'text-orange-normal font-semibold' : ''">{{ buyPriceImpact.toFixed(2) }}%</span>
+            </div>
+          </div>
           <div v-if="receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
             <span>{{ formatAmount((receiveAmount?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
-          </div>
-          <div v-if="buyPriceImpact !== null" class="flex justify-between text-sm text-grey-64 px-1">
-            <span>{{ $t('buyAndSell.priceImpact') }}</span>
-            <span class="tabular-nums" :class="buyPriceImpact > 5 ? 'text-orange-normal font-semibold' : ''">{{ buyPriceImpact.toFixed(2) }}%</span>
           </div>
           <div v-if="isV9 && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.platformFee') }}</span>
@@ -563,7 +724,8 @@ onMounted(async () => {
             <span class="text-h5">{{ $t('sell') }}</span>
             <input
               v-model="sellAmount"
-              type="number"
+              type="text"
+              inputmode="decimal"
               class="bg-transparent h-full flex-1 w-[120px] text-h3 tabular-nums"
               :disabled="isV8PreListNoTrade"
             />
@@ -579,13 +741,19 @@ onMounted(async () => {
             <span class="text-h5">{{ $t('receive') }} $BNB</span>
             <span class="text-h3 tabular-nums">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
           </div>
+          <div v-if="isSellLiquidityInsufficient" class="text-sm text-orange-normal px-1">
+            {{ $t('buyAndSell.insufficientLiquidity') }}
+          </div>
+          <div v-if="sellPriceImpact !== null && !calculating" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.priceImpact') }}</span>
+            <div class="flex items-center gap-1.5">
+              <span v-if="isSellImpactExceedsTolerance" class="text-xs text-orange-normal">⚠ {{ $t('buyAndSell.highSlippageWarn') }}</span>
+              <span class="tabular-nums" :class="sellPriceImpact > 5 ? 'text-orange-normal font-semibold' : ''">{{ sellPriceImpact.toFixed(2) }}%</span>
+            </div>
+          </div>
           <div v-if="receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
             <span>{{ formatAmount((receiveEth?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} $BNB</span>
-          </div>
-          <div v-if="sellPriceImpact !== null" class="flex justify-between text-sm text-grey-64 px-1">
-            <span>{{ $t('buyAndSell.priceImpact') }}</span>
-            <span class="tabular-nums" :class="sellPriceImpact < -5 ? 'text-orange-normal font-semibold' : ''">{{ sellPriceImpact.toFixed(2) }}%</span>
           </div>
           <div v-if="isV9 && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.platformFee') }}</span>
@@ -663,7 +831,7 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || accStore.ethConnectState == EthWalletState.Connecting || isV8PreListNoTrade"
+          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || accStore.ethConnectState == EthWalletState.Connecting || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
             !accStore.ethConnectAddress

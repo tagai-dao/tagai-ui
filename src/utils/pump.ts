@@ -10,10 +10,10 @@ import _ from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
-import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, encodeAbiParameters, keccak256, type Log } from "viem";
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, encodeAbiParameters, keccak256, parseEther, type Log } from "viem";
 import { writeContract, readContract } from "./contract";
 import { getReadOnlyClient } from "./wallets";
-import { buyTokenV4, sellTokenV4 } from "./pcsV4Swap";
+import { buyTokenV4, sellTokenV4, resolveV4PoolId, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
 import { findPump9DeploySalt, verifyPump9SaltVanity } from "./pump9Salt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
 
@@ -1029,7 +1029,7 @@ export const getTokenOnchainInfo = async (
             continue;
         }
         if (isPcsV4Listed) {
-            const poolId = pairMap[token];
+            const poolId = resolveV4PoolId(pairMap[token]);
             if (poolId) {
                 calls.push({
                     target: PCSCLPoolManager,
@@ -1099,11 +1099,8 @@ export const getTokenOnchainInfo = async (
                     result[key].price = undefined;
                     continue;
                 }
-                // Token.sol initializes V7/V8 pools as Native BNB(currency0) <-> Token(currency1)
-                // and uses the default ERC20 18 decimals, so sqrtPriceX96^2 / Q192 is
-                // the onchain BNB price of one token.
-                const scaledPrice = (sqrtPriceX96 * sqrtPriceX96 * (10n ** TOKEN_DECIMALS)) / Q192;
-                result[key].price = Number(scaledPrice) / 1e18;
+                // currency0=BNB, currency1=Token → sqrtPriceX96^2/Q192 = Token/BNB，取倒数得 BNB/Token
+                result[key].price = sqrtPriceX96ToBnbPerToken(sqrtPriceX96);
                 continue;
             }
             if (res[key + '-token0'] === key) {
@@ -1121,12 +1118,12 @@ export const getTokenOnchainInfo = async (
 const getImportTokenPrice = async (token: string, pair: string, dexVersion: number, pairMap: Record<string, string>, ethPrice: number): Promise<number | undefined> => {
     try {
         if (dexVersion === 4) {
-            const poolId = pairMap[token] || pair
+            const poolId = resolveV4PoolId(pairMap[token] || pair)
+            if (!poolId) return undefined
             const slot0 = await readContract('PCSCLPoolManager', 'getSlot0', [poolId])
             const sqrtPriceX96 = BigInt((slot0 as any)[0])
             if (sqrtPriceX96 === 0n) return undefined
-            const scaledPrice = (sqrtPriceX96 * sqrtPriceX96 * (10n ** TOKEN_DECIMALS)) / Q192;
-            return Number(scaledPrice) / 1e18
+            return sqrtPriceX96ToBnbPerToken(sqrtPriceX96)
         }
         if (dexVersion === 3) {
             const [slot0, token0] = await Promise.all([
@@ -1191,6 +1188,25 @@ export const getBuyAmountWithETHAfterFee = async (token: string | undefined, ver
     const supply: any = await  readContract('Token1', 'bondingCurveSupply', [], token)
     const receive: any = await readContract('Pump' + version, 'getBuyAmountByValue', [supply, amount * 9800n / 10000n])
     return {supply, receive}
+}
+
+/** 内盘曲线在当前 supply 处的边际 BNB/Token 价格（与询价同一时刻口径） */
+export const getBondingCurveSpotPrice = async (version: number, supply: bigint): Promise<number> => {
+    const price = await readContract('Pump' + version, 'getPrice', [supply, parseEther('1')]) as bigint
+    return Number(price) / 1e18
+}
+
+/** 上市后 Uniswap V2 池现货价格（BNB/Token）；pair 须为 20 字节合约地址 */
+export const getUniswapV2SpotPrice = async (token: string, pair: string): Promise<number> => {
+    const trimmed = pair?.trim() ?? ''
+    if (!trimmed.startsWith('0x') || trimmed.length !== 42) {
+        throw new Error('invalid Uniswap V2 pair address')
+    }
+    const reserves = await readContract('UniswapV2Pair', 'getReserves', [], pair as `0x${string}`) as [bigint, bigint, number]
+    const token0 = await readContract('UniswapV2Pair', 'token0', [], pair as `0x${string}`) as string
+    const r0 = Number(reserves[0]) / 1e18
+    const r1 = Number(reserves[1]) / 1e18
+    return token0.toLowerCase() === token.toLowerCase() ? r1 / r0 : r0 / r1
 }
 
 export const getBuyPriceAfterFee = async (supply: bigint, amount: bigint) => {

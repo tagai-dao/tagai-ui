@@ -328,6 +328,7 @@
     "v8PreListAgentOnly": "仅 Agent 可交易",
     "minReceived": "最低到手",
     "highSlippageWarn": "滑点偏高",
+    "insufficientLiquidity": "池子流动性不足，请减少交易数量",
     "priceImpact": "价格影响",
     "platformFee": "平台费"
   },

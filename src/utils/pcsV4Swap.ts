@@ -7,12 +7,13 @@
  * Sell flow (Token → BNB): approve Permit2 → PERMIT2_PERMIT + INFI_SWAP
  */
 
-import { PCSUniversalRouter, PCSPermit2, PCSCLPoolManager, WETH } from "@/config";
+import { PCSUniversalRouter, PCSPermit2, PCSCLPoolManager, PCSCLQuoter, WETH } from "@/config";
 import { useAccountStore } from "@/stores/web3";
 import { 
     encodeAbiParameters, 
     encodePacked,
     isAddress, 
+    keccak256,
     maxUint256, 
     zeroAddress,
     type Hex
@@ -53,6 +54,119 @@ export type PoolKey = {
     poolManager: `0x${string}`;
     fee: number;
     parameters: `0x${string}`;
+}
+
+const POOL_KEY_ENCODE_TYPES = [{
+    type: 'tuple',
+    components: [
+        { type: 'address', name: 'currency0' },
+        { type: 'address', name: 'currency1' },
+        { type: 'address', name: 'hooks' },
+        { type: 'address', name: 'poolManager' },
+        { type: 'uint24', name: 'fee' },
+        { type: 'bytes32', name: 'parameters' },
+    ],
+}] as const
+
+/** PCS V4 poolId = keccak256(abi.encode(PoolKey)) */
+export const poolKeyToPoolId = (poolKey: PoolKey): `0x${string}` => {
+    return keccak256(encodeAbiParameters(
+        POOL_KEY_ENCODE_TYPES,
+        [{
+            currency0: poolKey.currency0,
+            currency1: poolKey.currency1,
+            hooks: poolKey.hooks,
+            poolManager: poolKey.poolManager,
+            fee: poolKey.fee,
+            parameters: poolKey.parameters,
+        }]
+    ))
+}
+
+/**
+ * 解析后端 pair 字段为 V4 poolId。
+ * Pump v7-v9 上架代币为 PoolKey JSON；导入币 dexVersion=4 为 bytes32 poolId。
+ */
+export const resolveV4PoolId = (pair: string | null | undefined): `0x${string}` | null => {
+    if (!pair?.trim()) return null
+    const trimmed = pair.trim()
+    if (trimmed.startsWith('{')) {
+        try {
+            return poolKeyToPoolId(JSON.parse(trimmed) as PoolKey)
+        } catch {
+            return null
+        }
+    }
+    if (trimmed.startsWith('0x') && trimmed.length === 66) {
+        return trimmed as `0x${string}`
+    }
+    return null
+}
+
+/** 从 pair 字段解析 PoolKey（仅 JSON 格式） */
+export const resolveV4PoolKey = (pair: string | null | undefined): PoolKey | null => {
+    if (!pair?.trim().startsWith('{')) return null
+    try {
+        return JSON.parse(pair.trim()) as PoolKey
+    } catch {
+        return null
+    }
+}
+
+const poolIdToPoolKeyAbi = [{
+    inputs: [{ name: 'id', type: 'bytes32' }],
+    name: 'poolIdToPoolKey',
+    outputs: [{
+        type: 'tuple',
+        components: [
+            { type: 'address', name: 'currency0' },
+            { type: 'address', name: 'currency1' },
+            { type: 'address', name: 'hooks' },
+            { type: 'address', name: 'poolManager' },
+            { type: 'uint24', name: 'fee' },
+            { type: 'bytes32', name: 'parameters' },
+        ],
+    }],
+    stateMutability: 'view',
+    type: 'function',
+}] as const
+
+/** 由 poolId 反查 PoolKey（导入币 dexVersion=4 仅有 poolId 时使用） */
+export const getV4PoolKeyByPoolId = async (poolId: `0x${string}`): Promise<PoolKey> => {
+    const publicClient = getReadOnlyClient()
+    const result = await publicClient.readContract({
+        address: PCSCLPoolManager as `0x${string}`,
+        abi: poolIdToPoolKeyAbi,
+        functionName: 'poolIdToPoolKey',
+        args: [poolId],
+    }) as {
+        currency0: `0x${string}`
+        currency1: `0x${string}`
+        hooks: `0x${string}`
+        poolManager: `0x${string}`
+        fee: number
+        parameters: `0x${string}`
+    }
+    return {
+        currency0: result.currency0,
+        currency1: result.currency1,
+        hooks: result.hooks,
+        poolManager: result.poolManager,
+        fee: result.fee,
+        parameters: result.parameters,
+    }
+}
+
+/** 交易下单：pair 为 PoolKey JSON 或 poolId bytes32 均可解析 */
+export const resolveV4PoolKeyForTrade = async (pair: string | null | undefined): Promise<PoolKey | null> => {
+    const fromJson = resolveV4PoolKey(pair)
+    if (fromJson) return fromJson
+    const poolId = resolveV4PoolId(pair)
+    if (!poolId || pair?.trim().startsWith('{')) return null
+    if (pair!.trim().length === 66) {
+        return getV4PoolKeyByPoolId(poolId)
+    }
+    return null
 }
 
 // --- Core Functions ---
@@ -285,13 +399,13 @@ export const sellTokenV4 = async (
 export const ensurePermit2Approval = async (token: `0x${string}`, amount: bigint) => {
     const account = useAccountStore().ethConnectAddress as `0x${string}`;
     const allowance: any = await readContract(
-        'ERC20', 'allowance',
+        'Token1', 'allowance',
         [account, PCSPermit2],
         token
     );
     if (BigInt(allowance) < amount) {
         const hash = await writeContract({
-            contractName: 'ERC20',
+            contractName: 'Token1',
             functionName: 'approve',
             args: [PCSPermit2, maxUint256],
             address: token
@@ -329,6 +443,50 @@ const ensurePermit2AllowanceForRouter = async (token: `0x${string}`, amount: big
 
 // --- V4 Quote Functions ---
 
+const poolKeyTupleComponents = [
+    { type: 'address', name: 'currency0' },
+    { type: 'address', name: 'currency1' },
+    { type: 'address', name: 'hooks' },
+    { type: 'address', name: 'poolManager' },
+    { type: 'uint24', name: 'fee' },
+    { type: 'bytes32', name: 'parameters' },
+] as const
+
+const toQuoterPoolKey = (poolKey: PoolKey) => ({
+    currency0: poolKey.currency0,
+    currency1: poolKey.currency1,
+    hooks: poolKey.hooks,
+    poolManager: poolKey.poolManager,
+    fee: poolKey.fee,
+    parameters: poolKey.parameters,
+})
+
+const clQuoterAbi = [
+    {
+        inputs: [{
+            name: 'params',
+            type: 'tuple',
+            components: [
+                {
+                    name: 'poolKey',
+                    type: 'tuple',
+                    components: [...poolKeyTupleComponents],
+                },
+                { name: 'zeroForOne', type: 'bool' },
+                { name: 'exactAmount', type: 'uint128' },
+                { name: 'hookData', type: 'bytes' },
+            ],
+        }],
+        name: 'quoteExactInputSingle',
+        outputs: [
+            { name: 'amountOut', type: 'uint256' },
+            { name: 'gasEstimate', type: 'uint256' },
+        ],
+        stateMutability: 'nonpayable',
+        type: 'function',
+    },
+] as const
+
 const getSlot0Abi = [{
     inputs: [{ name: 'id', type: 'bytes32' }],
     name: 'getSlot0',
@@ -357,27 +515,99 @@ const getV4PoolState = async (poolId: `0x${string}`) => {
 }
 
 /**
- * Estimate token output for buying with BNB via PCS V4 CL pool (spot price)
- * BNB(currency0) → Token(currency1): tokenOut = ethAmount * sqrtPriceX96^2 / Q192
- * @param poolId - bytes32 pool id from backend pair field
+ * 通过 PCS CLQuoter 模拟成交，反映真实流动性（非现货线性估算）
  */
-export const getV4BuyQuote = async (poolId: `0x${string}`, ethAmount: bigint): Promise<bigint> => {
-    const { sqrtPriceX96, lpFee } = await getV4PoolState(poolId);
-    if (sqrtPriceX96 === 0n) return 0n;
-    const tokenOut = (ethAmount * sqrtPriceX96 * sqrtPriceX96) / Q192;
-    return tokenOut * BigInt(1000000 - lpFee) / 1000000n;
+const quoteV4ExactInputSingle = async (
+    poolKey: PoolKey,
+    zeroForOne: boolean,
+    exactAmount: bigint,
+    sellsman?: `0x${string}` | null | undefined,
+): Promise<bigint> => {
+    if (exactAmount <= 0n) return 0n
+    const publicClient = getReadOnlyClient()
+    const hookData = encodeHookData(sellsman)
+    const params = {
+        poolKey: toQuoterPoolKey(poolKey),
+        zeroForOne,
+        exactAmount,
+        hookData,
+    } as const
+
+    try {
+        const { result } = await publicClient.simulateContract({
+            address: PCSCLQuoter as `0x${string}`,
+            abi: clQuoterAbi,
+            functionName: 'quoteExactInputSingle',
+            args: [params],
+            account: '0x0000000000000000000000000000000000000001',
+        })
+        const amountOut = Array.isArray(result) ? result[0] : (result as { amountOut?: bigint }).amountOut
+        return amountOut ?? 0n
+    } catch (e) {
+        console.warn('CLQuoter quoteExactInputSingle failed', e)
+        return 0n
+    }
+}
+
+/** @deprecated 现货线性估算，薄池严重高估；仅保留供调试对比 */
+const getV4BuyQuoteSpot = (sqrtPriceX96: bigint, lpFee: number, ethAmount: bigint): bigint => {
+    if (sqrtPriceX96 === 0n) return 0n
+    const tokenOut = (ethAmount * sqrtPriceX96 * sqrtPriceX96) / Q192
+    return tokenOut * BigInt(1000000 - lpFee) / 1000000n
 }
 
 /**
- * Estimate BNB output for selling token via PCS V4 CL pool (spot price)
- * Token(currency1) → BNB(currency0): ethOut = tokenAmount * Q192 / sqrtPriceX96^2
- * @param poolId - bytes32 pool id from backend pair field
+ * 买入询价：BNB → Token，走 CLQuoter 模拟
  */
-export const getV4SellQuote = async (poolId: `0x${string}`, tokenAmount: bigint): Promise<bigint> => {
-    const { sqrtPriceX96, lpFee } = await getV4PoolState(poolId);
-    if (sqrtPriceX96 === 0n) return 0n;
-    const ethOut = (tokenAmount * Q192) / (sqrtPriceX96 * sqrtPriceX96);
-    return ethOut * BigInt(1000000 - lpFee) / 1000000n;
+export const getV4BuyQuote = async (
+    poolKey: PoolKey,
+    ethAmount: bigint,
+    sellsman?: `0x${string}` | null | undefined,
+): Promise<bigint> => {
+    return quoteV4ExactInputSingle(poolKey, true, ethAmount, sellsman)
+}
+
+/**
+ * 卖出询价：Token → BNB，走 CLQuoter 模拟
+ */
+export const getV4SellQuote = async (
+    poolKey: PoolKey,
+    tokenAmount: bigint,
+    sellsman?: `0x${string}` | null | undefined,
+): Promise<bigint> => {
+    return quoteV4ExactInputSingle(poolKey, false, tokenAmount, sellsman)
+}
+
+/** poolId 入口：先反查 PoolKey 再询价 */
+export const getV4BuyQuoteByPoolId = async (
+    poolId: `0x${string}`,
+    ethAmount: bigint,
+    sellsman?: `0x${string}` | null | undefined,
+) => {
+    const poolKey = await getV4PoolKeyByPoolId(poolId)
+    return getV4BuyQuote(poolKey, ethAmount, sellsman)
+}
+
+export const getV4SellQuoteByPoolId = async (
+    poolId: `0x${string}`,
+    tokenAmount: bigint,
+    sellsman?: `0x${string}` | null | undefined,
+) => {
+    const poolKey = await getV4PoolKeyByPoolId(poolId)
+    return getV4SellQuote(poolKey, tokenAmount, sellsman)
+}
+
+/** sqrtPriceX96 → BNB/Token（池子 currency0=BNB, currency1=Token） */
+export const sqrtPriceX96ToBnbPerToken = (sqrtPriceX96: bigint): number => {
+    if (sqrtPriceX96 === 0n) return 0
+    const priceSq = sqrtPriceX96 * sqrtPriceX96
+    return Number((Q192 * (10n ** 18n)) / priceSq) / 1e18
+}
+
+/** PCS V4 池当前现货价格（BNB/Token） */
+export const getV4SpotPrice = async (poolId: `0x${string}`): Promise<number> => {
+    const { sqrtPriceX96 } = await getV4PoolState(poolId);
+    return sqrtPriceX96ToBnbPerToken(sqrtPriceX96)
 }
 
 // --- ABI ---
