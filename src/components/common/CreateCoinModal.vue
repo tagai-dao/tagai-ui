@@ -777,7 +777,6 @@ onMounted(async () => {
 
 
       <div class="py-2 flex gap-2 justify-between mx-3">
-        importStep: {{ importStep }}
         <button v-if="importStep > 1 && importStep < 4"
           class="h-12 flex-1 border border-gray-300 bg-gray-50 rounded-full text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
           @click="importErrTip = '';importStep -= 1"
