@@ -4,6 +4,7 @@ import { useCurationStore } from '@/stores/curation'
 import { useRouter } from 'vue-router'
 import type { Space } from '@/types'
 import { getOnlineSpaces } from '@/apis/api'
+import { getCommunityLogoUrl } from '@/utils/communityLogo'
 
 const curationStore = useCurationStore()
 const router = useRouter()
@@ -91,8 +92,8 @@ onMounted(async () => {
             <div class="w-10 h-10 min-w-10 min-h-10 rounded-full bg-grey-normal-active flex items-center justify-center overflow-hidden border-2 border-red-500">
               <img 
                 v-if="space.logo"
-                class="w-full h-full object-center object-cover" 
-                :src="space.logo.startsWith('https://tiptag') ? space.logo + '?x-oss-process=image/resize,w_100' : space.logo" 
+                class="w-full h-full" 
+                :src="getCommunityLogoUrl(space.logo)" 
                 alt=""
                 @error="(e: any) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex' }"
               >

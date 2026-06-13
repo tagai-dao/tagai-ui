@@ -13,6 +13,7 @@ import { useStateStore } from '@/stores/common';
 import { getTagStyle, parseTagsJson } from '@/composables/useTags'
 import IconLinks from "@/components/home/IconLinks.vue";
 import Sparkline from "@/components/common/Sparkline.vue";
+import CommunityLogo from "@/components/common/CommunityLogo.vue";
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
@@ -54,11 +55,7 @@ const createTimeText = computed(() => {
 <template>
   <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 flex gap-3">
     <div class="relative w-20 h-20 min-w-20 min-h-20">
-      <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo
-                flex items-center justify-center relative overflow-hidden">
-        <img class="w-full h-full object-center object-cover" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
-        <img v-show="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
-      </div>
+      <CommunityLogo :logo="community.logo" :show-audio="onlineSpace" />
       <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
         <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">

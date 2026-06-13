@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
+import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
@@ -300,11 +301,12 @@ const onCreate = (type: GlobalModalType) => {
                v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
                :key="index">
             <div class="h-full pl-[10px] pr-[18px] rounded-lg shadow-sm bg-white w-full max-w-[138px] flex items-center gap-[18px]">
-              <div class="flex-shrink-0">
-                <div class="border-[1px] border-gray-200 rounded bg-gray-400 w-7 h-7 web:w-4 web:h-4 z-30">
-                  <img class="w-full h-full rounded" :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" alt="">
-                </div>
-              </div>
+              <CommunityLogo
+                :logo="community.logo"
+                size="sm"
+                :shadow="false"
+                class="z-30 web:!w-4 web:!h-4 web:!min-w-4 web:!min-h-4"
+              />
               <div class="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
                 <div class="text-sm font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
                 <span class="text-sm font-bold text-black truncate w-full">{{ formatUsdCompact(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}</span>

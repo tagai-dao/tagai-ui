@@ -13,6 +13,7 @@ import { ClaimFee } from '@/config';
 import { isAddress, parseEther } from 'viem';
 import errCode from '@/errCode';
 import { useRouter } from 'vue-router';
+import CommunityLogo from '@/components/common/CommunityLogo.vue';
 
 const props = defineProps<{reward: CurationReward, canClaim: Boolean, isProfile: Boolean}>()
 const claiming = ref(false)
@@ -83,8 +84,7 @@ function login() {
 <template>
   <div class="bg-white px-4 py-5 rounded-xl card w-[260px]">
     <div class="flex items-center gap-2">
-      <img class="w-8 h-8 min-w-8 rounded-full"
-           :src="reward.logo.startsWith('https://tiptag') ? reward.logo + '?x-oss-process=image/resize,w_100' : reward.logo" alt="">
+      <CommunityLogo :logo="reward.logo" size="xs" />
       <div class="flex flex-col gap-2">
         <div class="text-h3">#{{ reward.tick }}</div>
         <div class="text-h5">{{ formatAmount(reward.amount) }} ({{ formatPrice(reward.amount * reward.price) }})</div>

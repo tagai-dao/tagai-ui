@@ -13,6 +13,7 @@ import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import { formatPrice } from "@/utils/helper";
 import TweetItem from '@/components/tweets/TweetItem.vue';
+import CommunityLogo from '@/components/common/CommunityLogo.vue';
 import { useClankerStore } from "@/stores/clanker";
 import type { Tweet } from "@/types";
 
@@ -120,13 +121,7 @@ onMounted(async () => {
       </div>
       <div class="w-full web:w-[400px] border-[1px] border-white bg-grey-fa rounded-2xl pt-5 px-3.5">
         <div class="flex gap-3 overflow-hide">
-          <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-light-active shadow-tag-logo overflow-hidden">
-            <img
-                class="w-full h-full rounded-2xl"
-                :src="clankerStore.currentSelectedClanker?.logo"
-                alt=""
-            />
-          </div>
+          <CommunityLogo :logo="clankerStore.currentSelectedClanker?.logo" />
           <div class="flex-1 overflow-hidden flex flex-col min-h-20 justify-between gap-y-1">
             <div class="flex flex-wrap justify-between gap-x-4 items-center">
               <span class="text-black text-h2">{{clankerStore.currentSelectedClanker?.name}}</span>

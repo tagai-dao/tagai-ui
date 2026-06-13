@@ -10,6 +10,7 @@ import { useStateStore } from '@/stores/common';
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import { useTools } from '@/composables/useTools';
 import { formatAddress } from '@/utils/helper';
+import CommunityLogo from '@/components/common/CommunityLogo.vue';
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
@@ -26,15 +27,15 @@ const { onCopy } = useTools()
 
 <template>
   <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 flex gap-3">
-    <div class="w-20 h-20 min-w-20 min-h-20 rounded-2xl bg-grey-normal-active shadow-tag-logo
-                flex items-center justify-center relative overflow-hidden">
-      <img v-if="token.logo" class="w-full h-full object-center object-cover" :src="token.logo" alt="">
-      <div v-else class="baackground-color-black flex items-center justify-center">
+    <CommunityLogo :logo="token.logo">
+      <template #fallback>
+        <div class="w-full h-full flex items-center justify-center bg-black">
           <p class="text-white text-h1">
-          {{ token.tick?.slice(0, 1) }}
+            {{ token.tick?.slice(0, 1) }}
           </p>
-      </div>
-    </div>
+        </div>
+      </template>
+    </CommunityLogo>
     <div class="flex-1 flex flex-col justify-between truncate">
       <div class="flex gap-x-2 items-end flex-wrap">
         <span class="text-grey-normal text-h2 font-bold leading-6">{{ token.name }}</span>

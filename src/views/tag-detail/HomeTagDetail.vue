@@ -24,6 +24,7 @@ import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
 import IconLinks from "@/components/home/IconLinks.vue";
+import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
@@ -312,14 +313,15 @@ onBeforeRouteLeave((to, from, next) => {
         </TweetItem>
       </div>
       <div v-else class="col-span-1 web:col-span-2 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
-        <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-          <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
-          <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+        <CommunityLogo
+          :logo="comStore.currentSelectedCommunity?.logo"
+          :show-audio="!!onlineSpace"
+        >
           <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
                   {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
                 </div>
-        </div>
+        </CommunityLogo>
         <div class="flex-1 py-1">
           <div class="flex flex-wrap justify-between gap-x-4 items-center">
             <div class="flex items-center">
@@ -348,14 +350,16 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
       <div class="col-span-1 web:col-span-3 border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
         <div v-if="deployTweetList.length>0"  class="flex gap-3 overflow-hide">
-          <div class="w-10 h-10 rounded-xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-            <img class="w-full h-full rounded-xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
-            <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+          <CommunityLogo
+            :logo="comStore.currentSelectedCommunity?.logo"
+            size="md"
+            :show-audio="!!onlineSpace"
+          >
             <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-xs
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] scale-75">
               {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
             </div>
-          </div>
+          </CommunityLogo>
           <div class="flex-1 py-1">
             <div class="flex flex-wrap justify-between gap-x-4 items-center">
               <div class="flex items-center">
@@ -524,14 +528,15 @@ onBeforeRouteLeave((to, from, next) => {
               </TweetItem>
             </div>
             <div v-else class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
-              <div class="w-20 h-20 rounded-2xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-                <img class="w-full h-full rounded-2xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
-                <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+              <CommunityLogo
+                :logo="comStore.currentSelectedCommunity?.logo"
+                :show-audio="!!onlineSpace"
+              >
                 <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
                   {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
                 </div>
-              </div>
+              </CommunityLogo>
               <div class="flex-1 py-1">
                 <div class="flex flex-wrap justify-between gap-x-4 items-center">
                   <div class="flex items-center">
@@ -557,14 +562,16 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
             <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
               <div v-if="deployTweetList.length>0"  class="flex gap-3 overflow-hide">
-                <div class="w-10 h-10 rounded-xl bg-grey-light-active shadow-tag-logo flex items-center justify-center relative overflow-hidden">
-                  <img class="w-full h-full rounded-xl" :src="comStore.currentSelectedCommunity?.logo.startsWith('https://tiptag') ? comStore.currentSelectedCommunity?.logo + '?x-oss-process=image/resize,w_200' : comStore.currentSelectedCommunity?.logo" alt="">
-                  <img v-if="onlineSpace" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
+                <CommunityLogo
+                  :logo="comStore.currentSelectedCommunity?.logo"
+                  size="md"
+                  :show-audio="!!onlineSpace"
+                >
                   <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-xs
                   transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] scale-75">
                     {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
                   </div>
-                </div>
+                </CommunityLogo>
                 <div class="flex-1 py-1">
                   <div class="flex flex-wrap justify-between gap-x-4 items-center">
                     <div class="flex items-center">

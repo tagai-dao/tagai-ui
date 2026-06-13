@@ -8,6 +8,7 @@ import type { Community } from '@/types'
 import { getCommunityByMarketCap } from '@/apis/api'
 import { getTokenInfo } from '@/utils/pump'
 import { handleErrorTip } from '@/utils/notify'
+import CommunityLogo from '@/components/common/CommunityLogo.vue'
 
 const comStore = useCommunityStore()
 const stateStore = useStateStore()
@@ -160,13 +161,7 @@ function gotoDetail(community: Community) {
         >
           <!-- Logo -->
           <div class="flex-shrink-0">
-            <div class="w-10 h-10 min-w-10 min-h-10 rounded-xl bg-grey-normal-active flex items-center justify-center overflow-hidden">
-              <img 
-                class="w-full h-full object-center object-cover" 
-                :src="community.logo.startsWith('https://tiptag') ? community.logo + '?x-oss-process=image/resize,w_100' : community.logo" 
-                alt=""
-              >
-            </div>
+            <CommunityLogo :logo="community.logo" size="md" />
           </div>
           <!-- 名称 -->
           <div class="flex-1 min-w-0">
