@@ -442,7 +442,7 @@ const createPredict = async () => {
         }
 
         const dexConfig: EventMarketDexConfig = {
-          feeDexVersion: Number(feeDexVersion ?? 4),
+          feeDexVersion: Number(feeDexVersion ?? 2),
           feeQuoteTarget: (feeQuoteTarget ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
           feePoolId: (feePoolId ?? '0x0000000000000000000000000000000000000000000000000000000000000000') as `0x${string}`,
           feePath: (feePath ?? []) as `0x${string}`[],

@@ -4796,6 +4796,21 @@ export const abis = {
       },
       {
         "constant": false,
+        "inputs": [
+          { "name": "collateralToken", "type": "address" },
+          { "name": "questionId", "type": "bytes32" },
+          { "name": "distributionHint", "type": "uint256[]" },
+          { "name": "feeCheckPath", "type": "address[]" },
+          { "name": "uintParams", "type": "uint256[]" }
+        ],
+        "name": "create2FixedProductMarketMakerWithCondition",
+        "outputs": [{ "name": "", "type": "address" }],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": false,
         "inputs": [{ "name": "encodedParams", "type": "bytes" }],
         "name": "create2FixedProductMarketMakerWithDexFee",
         "outputs": [{ "name": "", "type": "address" }],

@@ -78,31 +78,51 @@ export type EventMarketDexConfig = {
 export const isMultiOutcomeEventFactory = (factoryVersion?: number | null) =>
     Number(factoryVersion ?? 1) >= 2
 
-export async function createEventMarket(
+/** dex v3/v4 池子走 DexFee；v2 池子走 WithCondition */
+const usesDexFeeCreation = (feeDexVersion: number) => feeDexVersion >= 3
+
+const verifyEventMarketCreation = async (
+    tx: { logs: Log[] },
+    questionId: string,
+    outcomeSlotCount: number,
+) => {
+    const event: any = getCreateFPMMMarketMakerEventByHash(tx)
+    const fpmmMaker = event?.fixedProductMarketMaker ?? event?.fixedProductMarketMaker2
+    if (event && event.creator === useAccountStore().ethConnectAddress && fpmmMaker) {
+        const onChainConditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, outcomeSlotCount])
+        if (onChainConditionId !== event.conditionIds[0]) {
+            throw 'Invalid transaction'
+        }
+        return { hash: '', fpmmMaker }
+    }
+    throw 'Invalid transaction'
+}
+
+/** Event V3 factory + WithCondition（dex v2 代币） */
+async function createEventMarketV3WithCondition(
     questionId: string,
     tokenAddress: `0x${string}`,
-    distributionHint: number | number[],
+    distributionHint: number[],
     outcomeSlotCount: number,
     endTime: number,
     funding: bigint,
-    dexConfig: EventMarketDexConfig,
+    feePath: `0x${string}`[],
 ) {
-    const hint = Array.isArray(distributionHint)
-        ? distributionHint.map(h => Math.ceil(h))
-        : [100 - Math.ceil(distributionHint), Math.ceil(distributionHint)]
-    return createEventMarketV3(
-        questionId,
-        tokenAddress,
-        hint,
-        outcomeSlotCount,
-        endTime,
-        funding,
-        dexConfig,
-    )
+    const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000
+    const hint = distributionHint.map(h => Math.ceil(h))
+    const hash = await writeContract({
+        contractName: 'FPMMDeterministicEventFactoryV3',
+        functionName: 'create2FixedProductMarketMakerWithCondition',
+        args: [tokenAddress, questionId, hint, feePath, [nonce, outcomeSlotCount, PredictionMinFee, PredictionMaxFee, endTime, funding]],
+    })
+
+    const tx = await getTransactionReceipt(hash as `0x${string}`)
+    const result = await verifyEventMarketCreation(tx, questionId, outcomeSlotCount)
+    return { hash, fpmmMaker: result.fpmmMaker }
 }
 
-/** Event V3 市场（按代币池版本走 DexFee 创建） */
-export async function createEventMarketV3(
+/** Event V3 factory + WithDexFee（dex v3/v4 代币） */
+async function createEventMarketV3WithDexFee(
     questionId: string,
     tokenAddress: `0x${string}`,
     distributionHint: number[],
@@ -111,8 +131,6 @@ export async function createEventMarketV3(
     funding: bigint,
     dexConfig: EventMarketDexConfig,
 ) {
-    await approveToken(FPMMDeterministicFactoryEventV3, tokenAddress, funding);
-
     const conditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, outcomeSlotCount]) as `0x${string}`
     const existingSlots: bigint = await readContract('ConditionalTokens', 'getOutcomeSlotCount', [conditionId]) as bigint
     if (existingSlots === 0n) {
@@ -123,7 +141,7 @@ export async function createEventMarketV3(
         })
     }
 
-    const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
+    const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000
     const feePath = (dexConfig.feePath ?? []).map(a => a as `0x${string}`)
     const encodedParams = encodeAbiParameters(
         parseAbiParameters('uint256[6], address, address, bytes32, bytes32[], uint256[], address[]'),
@@ -142,19 +160,70 @@ export async function createEventMarketV3(
         contractName: 'FPMMDeterministicEventFactoryV3',
         functionName: 'create2FixedProductMarketMakerWithDexFee',
         args: [encodedParams],
-    });
+    })
 
     const tx = await getTransactionReceipt(hash as `0x${string}`)
-    const event: any = getCreateFPMMMarketMakerEventByHash(tx);
-    const fpmmMaker = event?.fixedProductMarketMaker ?? event?.fixedProductMarketMaker2
-    if (event && event.creator === useAccountStore().ethConnectAddress && fpmmMaker) {
-        const onChainConditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, outcomeSlotCount])
-        if (onChainConditionId !== event.conditionIds[0]) {
-            throw 'Invalid transaction'
-        }
-        return { hash, fpmmMaker };
+    const result = await verifyEventMarketCreation(tx, questionId, outcomeSlotCount)
+    return { hash, fpmmMaker: result.fpmmMaker }
+}
+
+export async function createEventMarket(
+    questionId: string,
+    tokenAddress: `0x${string}`,
+    distributionHint: number | number[],
+    outcomeSlotCount: number,
+    endTime: number,
+    funding: bigint,
+    dexConfig: EventMarketDexConfig,
+) {
+    const hint = Array.isArray(distributionHint)
+        ? distributionHint.map(h => Math.ceil(h))
+        : [100 - Math.ceil(distributionHint), Math.ceil(distributionHint)]
+
+    await approveToken(FPMMDeterministicFactoryEventV3, tokenAddress, funding)
+
+    if (usesDexFeeCreation(dexConfig.feeDexVersion)) {
+        return createEventMarketV3WithDexFee(
+            questionId,
+            tokenAddress,
+            hint,
+            outcomeSlotCount,
+            endTime,
+            funding,
+            dexConfig,
+        )
     }
-    throw 'Invalid transaction'
+
+    return createEventMarketV3WithCondition(
+        questionId,
+        tokenAddress,
+        hint,
+        outcomeSlotCount,
+        endTime,
+        funding,
+        dexConfig.feePath ?? [],
+    )
+}
+
+/** @deprecated 请使用 createEventMarket，内部已按 dex 版本自动分支 */
+export async function createEventMarketV3(
+    questionId: string,
+    tokenAddress: `0x${string}`,
+    distributionHint: number[],
+    outcomeSlotCount: number,
+    endTime: number,
+    funding: bigint,
+    dexConfig: EventMarketDexConfig,
+) {
+    return createEventMarket(
+        questionId,
+        tokenAddress,
+        distributionHint,
+        outcomeSlotCount,
+        endTime,
+        funding,
+        dexConfig,
+    )
 }
 
 /** @deprecated 仅兼容旧代码引用，请使用 createEventMarketV3 */
