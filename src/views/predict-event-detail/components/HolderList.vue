@@ -21,6 +21,8 @@ const blueList = ref<FPMMUserHolding[]>([])
 const multiList = ref<FPMMUserHolding[]>([])
 const activeTab = ref<'red' | 'blue'>('red')
 const activeOutcomeIndex = ref(0)
+// 请求序号：快速切换 outcome 时，只采纳最新一次请求的结果，避免旧请求晚返回覆盖当前数据
+let requestSeq = 0
 
 const fetchHoldings = async (positionA: string, positionB: string, page?: number) => {
   return getFPMMUserHoldings(
@@ -32,9 +34,9 @@ const fetchHoldings = async (positionA: string, positionB: string, page?: number
 }
 
 const onLoad = async () => {
+  if (refreshing.value || loading.value || finished.value) return
+  const seq = ++requestSeq
   try {
-    if (refreshing.value || loading.value || finished.value) return
-
     if (isMulti.value) {
       const outcome = outcomeList.value.find(o => o.outcomeIndex === activeOutcomeIndex.value)
       if (!outcome?.positionId) {
@@ -43,6 +45,7 @@ const onLoad = async () => {
       }
       const page = Math.floor(multiList.value.length / 20) + 1
       const res: any = await fetchHoldings(outcome.positionId, outcome.positionId, page)
+      if (seq !== requestSeq) return
       const newItems = res?.b1 || []
       multiList.value = multiList.value.concat(newItems)
       if (newItems.length < 20) finished.value = true
@@ -52,6 +55,7 @@ const onLoad = async () => {
     const currentLen = Math.max(redList.value.length, blueList.value.length)
     const page = Math.floor(currentLen / 20) + 1
     const res: any = await fetchHoldings(props.market.positionAID, props.market.positionBID, page)
+    if (seq !== requestSeq) return
 
     if (res) {
       const newRed = res.listA || res.red || res.b1 || []
@@ -63,14 +67,16 @@ const onLoad = async () => {
       finished.value = true
     }
   } catch (error) {
+    if (seq !== requestSeq) return
     handleErrorTip(error)
     finished.value = true
   } finally {
-    loading.value = false
+    if (seq === requestSeq) loading.value = false
   }
 }
 
 const onRefresh = async () => {
+  const seq = ++requestSeq
   try {
     finished.value = false
     refreshing.value = true
@@ -82,6 +88,7 @@ const onRefresh = async () => {
       const outcome = outcomeList.value.find(o => o.outcomeIndex === activeOutcomeIndex.value)
       if (outcome?.positionId) {
         const res: any = await fetchHoldings(outcome.positionId, outcome.positionId)
+        if (seq !== requestSeq) return
         multiList.value = res?.b1 || []
         if (multiList.value.length < 30) finished.value = true
       } else {
@@ -91,16 +98,20 @@ const onRefresh = async () => {
     }
 
     const res: any = await fetchHoldings(props.market.positionAID, props.market.positionBID)
+    if (seq !== requestSeq) return
     if (res) {
       redList.value = res.b1 || []
       blueList.value = res.b2 || []
     }
     if (redList.value.length < 30 && blueList.value.length < 30) finished.value = true
   } catch (error) {
+    if (seq !== requestSeq) return
     handleErrorTip(error)
   } finally {
-    refreshing.value = false
-    loading.value = false
+    if (seq === requestSeq) {
+      refreshing.value = false
+      loading.value = false
+    }
   }
 }
 
@@ -115,7 +126,7 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl flex flex-col shadow-sm h-full">
+  <div class="bg-white rounded-2xl flex flex-col shadow-sm">
       <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex items-center justify-between gap-3">
         <span class="hidden md:block">Top Holders</span>
         <!-- 多元 outcome tabs -->
@@ -150,7 +161,7 @@ onActivated(() => {
         </div>
       </div>
       
-      <div class="custom-scrollbar flex-1 overflow-y-auto min-h-0">
+      <div class="custom-scrollbar max-h-[60vh] overflow-y-auto">
           <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
             <van-list
               v-model:loading="loading"

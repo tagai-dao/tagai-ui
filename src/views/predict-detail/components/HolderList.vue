@@ -100,7 +100,7 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl flex flex-col shadow-sm h-full">
+  <div class="bg-white rounded-2xl flex flex-col shadow-sm">
       <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex items-center justify-between">
         <span class="hidden md:block">Top Holders</span>
         <!-- Mobile Tab Switcher -->
@@ -122,7 +122,7 @@ onActivated(() => {
         </div>
       </div>
       
-      <div class="custom-scrollbar flex-1 overflow-y-auto min-h-0">
+      <div class="custom-scrollbar max-h-[60vh] overflow-y-auto">
           <van-pull-refresh v-model="refreshing" @refresh="onRefresh">
             <van-list
               v-model:loading="loading"
