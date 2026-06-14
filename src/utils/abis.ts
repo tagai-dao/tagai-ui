@@ -4778,6 +4778,32 @@ export const abis = {
         "type": "function"
       }
     ],
+    "FPMMDeterministicEventFactoryV3": [
+      {
+        "anonymous": false,
+        "inputs": [
+          { "indexed": true, "name": "creator", "type": "address" },
+          { "indexed": false, "name": "fixedProductMarketMaker2", "type": "address" },
+          { "indexed": false, "name": "conditionalTokens", "type": "address" },
+          { "indexed": false, "name": "collateralToken", "type": "address" },
+          { "indexed": false, "name": "conditionIds", "type": "bytes32[]" },
+          { "indexed": false, "name": "fee", "type": "uint256" },
+          { "indexed": false, "name": "maxFee", "type": "uint256" },
+          { "indexed": false, "name": "endTime", "type": "uint256" }
+        ],
+        "name": "FixedProductMarketMakerCreation",
+        "type": "event"
+      },
+      {
+        "constant": false,
+        "inputs": [{ "name": "encodedParams", "type": "bytes" }],
+        "name": "create2FixedProductMarketMakerWithDexFee",
+        "outputs": [{ "name": "", "type": "address" }],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      }
+    ],
     "FixedProductMarketMaker": [
       {
         "constant": false,
@@ -4950,6 +4976,29 @@ export const abis = {
       },
     ],
     "ConditionalTokens": [
+      {
+        "constant": false,
+        "inputs": [
+          { "name": "oracle", "type": "address" },
+          { "name": "questionId", "type": "bytes32" },
+          { "name": "outcomeSlotCount", "type": "uint256" },
+          { "name": "collateralToken", "type": "address" }
+        ],
+        "name": "prepareCondition",
+        "outputs": [],
+        "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "constant": true,
+        "inputs": [{ "name": "conditionId", "type": "bytes32" }],
+        "name": "getOutcomeSlotCount",
+        "outputs": [{ "name": "", "type": "uint256" }],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+      },
       {
         "constant": false,
         "inputs": [

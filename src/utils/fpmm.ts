@@ -2,14 +2,15 @@ import type { BattleData, Community, CreateCommunity, EventPredictData, OnchainT
 import { ChainConfig, WETH, Ether, USD_CONTRACTS,
     USD1, ConditionalTokens, Oracle, USDT, FPMMDeterministicFactory, PredictionMinFee, PredictionMaxFee,
     FPMMDeterministicFactoryEventV2,
-    OracleDistributorV2} from "@/config";
+    OracleDistributorV2,
+    FPMMDeterministicFactoryEventV3} from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
 import { aggregate } from '@makerdao/multicall'
 import _, { min } from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { useAccountStore } from "@/stores/web3";
-import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits } from "viem";
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, type Log, keccak256, toBytes, parseUnits, encodeAbiParameters, parseAbiParameters, zeroHash } from "viem";
 import { writeContract, readContract } from "./contract";
 
 export async function approveToken(spender: `0x${string}`, tokenAddress: `0x${string}`, amount: bigint | BigInt) {
@@ -66,19 +67,97 @@ export async function createMarket(questionId: string, tokenAddress: `0x${string
     }
 }
 
-export async function createEventMarket(questionId: string, tokenAddress: `0x${string}`, feePath: string[], distributionHint: number, endTime: number, funding: bigint) {
-    return createEventMarketV2(
+export type EventMarketDexConfig = {
+    feeDexVersion: number
+    feeQuoteTarget: `0x${string}`
+    feePoolId: `0x${string}`
+    feePath: `0x${string}`[]
+}
+
+/** factory_version >= 2 的多元 outcome 市场（含 V2/V3） */
+export const isMultiOutcomeEventFactory = (factoryVersion?: number | null) =>
+    Number(factoryVersion ?? 1) >= 2
+
+export async function createEventMarket(
+    questionId: string,
+    tokenAddress: `0x${string}`,
+    distributionHint: number | number[],
+    outcomeSlotCount: number,
+    endTime: number,
+    funding: bigint,
+    dexConfig: EventMarketDexConfig,
+) {
+    const hint = Array.isArray(distributionHint)
+        ? distributionHint.map(h => Math.ceil(h))
+        : [100 - Math.ceil(distributionHint), Math.ceil(distributionHint)]
+    return createEventMarketV3(
         questionId,
         tokenAddress,
-        feePath,
-        [100 - Math.ceil(distributionHint), Math.ceil(distributionHint)],
-        2,
+        hint,
+        outcomeSlotCount,
         endTime,
-        funding
+        funding,
+        dexConfig,
     )
 }
 
-/** Event V2 多元市场（N 个 outcome） */
+/** Event V3 市场（按代币池版本走 DexFee 创建） */
+export async function createEventMarketV3(
+    questionId: string,
+    tokenAddress: `0x${string}`,
+    distributionHint: number[],
+    outcomeSlotCount: number,
+    endTime: number,
+    funding: bigint,
+    dexConfig: EventMarketDexConfig,
+) {
+    await approveToken(FPMMDeterministicFactoryEventV3, tokenAddress, funding);
+
+    const conditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, outcomeSlotCount]) as `0x${string}`
+    const existingSlots: bigint = await readContract('ConditionalTokens', 'getOutcomeSlotCount', [conditionId]) as bigint
+    if (existingSlots === 0n) {
+        await writeContract({
+            contractName: 'ConditionalTokens',
+            functionName: 'prepareCondition',
+            args: [Oracle, questionId, outcomeSlotCount, tokenAddress],
+        })
+    }
+
+    const nonce = Date.now() + Math.floor(Math.random() * 1000000) * 100000000000;
+    const feePath = (dexConfig.feePath ?? []).map(a => a as `0x${string}`)
+    const encodedParams = encodeAbiParameters(
+        parseAbiParameters('uint256[6], address, address, bytes32, bytes32[], uint256[], address[]'),
+        [
+            [BigInt(nonce), PredictionMinFee, PredictionMaxFee, BigInt(endTime), funding, BigInt(dexConfig.feeDexVersion)],
+            tokenAddress,
+            dexConfig.feeQuoteTarget || zeroAddress,
+            dexConfig.feePoolId || zeroHash,
+            [conditionId],
+            distributionHint.map(h => BigInt(Math.ceil(h))),
+            feePath,
+        ]
+    )
+
+    const hash = await writeContract({
+        contractName: 'FPMMDeterministicEventFactoryV3',
+        functionName: 'create2FixedProductMarketMakerWithDexFee',
+        args: [encodedParams],
+    });
+
+    const tx = await getTransactionReceipt(hash as `0x${string}`)
+    const event: any = getCreateFPMMMarketMakerEventByHash(tx);
+    const fpmmMaker = event?.fixedProductMarketMaker ?? event?.fixedProductMarketMaker2
+    if (event && event.creator === useAccountStore().ethConnectAddress && fpmmMaker) {
+        const onChainConditionId = await readContract('ConditionalTokens', 'getConditionId', [Oracle, questionId, outcomeSlotCount])
+        if (onChainConditionId !== event.conditionIds[0]) {
+            throw 'Invalid transaction'
+        }
+        return { hash, fpmmMaker };
+    }
+    throw 'Invalid transaction'
+}
+
+/** @deprecated 仅兼容旧代码引用，请使用 createEventMarketV3 */
 export async function createEventMarketV2(
     questionId: string,
     tokenAddress: `0x${string}`,
@@ -124,7 +203,7 @@ export type EventMarketInfos = {
 /** 读取 event 市场各 outcome 池子储备 + 费率 */
 export const getEventMarketInfos = async (market: EventPredictData): Promise<EventMarketInfos> => {
     const outcomes = getOutcomeList(market).filter(o => o.positionId)
-    const useMulti = market.factoryVersion === 2 && outcomes.length > 0
+    const useMulti = isMultiOutcomeEventFactory(market.factoryVersion) && outcomes.length > 0
 
     const calls: any[] = []
     if (useMulti) {
@@ -238,7 +317,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
 
     const eventMarket = battle as EventPredictData
     const outcomes = getOutcomeList(eventMarket).filter(o => o.positionId)
-    if (eventMarket.factoryVersion === 2 && outcomes.length > 2) {
+    if (isMultiOutcomeEventFactory(eventMarket.factoryVersion) && outcomes.length > 2) {
         let calls: any[] = [
             {
                 target: tokenAddr,
@@ -384,7 +463,7 @@ export async function getSellData(battle: BattleData | EventPredictData, reserve
 
     const outcomeIndex = resolveOutcomeIndex(outcome)
     const eventMarket = battle as EventPredictData
-    const isMulti = eventMarket.factoryVersion === 2 && (eventMarket.outcomeCount ?? 0) > 2
+    const isMulti = isMultiOutcomeEventFactory(eventMarket.factoryVersion) && (eventMarket.outcomeCount ?? 0) > 2
 
     if (isMulti) {
         // shares = 用户要卖出的 outcome 数量（TradePanel 已减 0.1 缓冲）
@@ -617,14 +696,24 @@ const getCreateFPMMMarketMakerEventByHash = (tx: { logs: Log[] }) => {
   
     try {
       const events = parseEventLogs({
-        abi: abis.FPMMDeterministicFactoryEventV2,
+        abi: abis.FPMMDeterministicEventFactoryV3,
         logs,
-        // 如果你确定只关心某个合约地址：
-        // strict: true,
-        // args: [可选],
       });
 
       for (const event of events) {
+        if ('eventName' in event && event.eventName === 'FixedProductMarketMakerCreation') {
+            if ('args' in event) {
+                return event.args;
+            }
+        }
+      }
+
+      const legacyEvents = parseEventLogs({
+        abi: abis.FPMMDeterministicFactoryEventV2,
+        logs,
+      });
+
+      for (const event of legacyEvents) {
         if ('eventName' in event && event.eventName === 'FixedProductMarketMakerCreation') {
             if ('args' in event) {
                 return event.args; // Viem 会自动返回 args 为 typed object

@@ -47,7 +47,7 @@ export const WC_EVENT_TAG_PREFIX = '2026FWC'
  * 仅作为没有 event_tag 的存量数据兜底
  */
 const isLegacyWorldCupMarket = (market: EventPredictData): boolean => {
-  if (market.factoryVersion !== 2) return false
+  if (Number(market.factoryVersion ?? 1) < 2) return false
   const outcomes = getOutcomeList(market)
   if (outcomes.length !== 3) return false
   ensureLabelMaps()

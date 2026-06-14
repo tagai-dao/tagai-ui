@@ -398,8 +398,20 @@ export type PreCreateFPMMMarketEventParams = {
   eventTag?: string
 }
 
+export type PreCreateFPMMMarketEventResponse = {
+  questionId: string
+  needOP: number
+  feePath?: string[] | string
+  outcomeCount: number
+  distributionHint: number[]
+  feeDexVersion: number
+  feeQuoteTarget: `0x${string}`
+  feePoolId: `0x${string}`
+  factoryAddress: `0x${string}`
+}
+
 export const preCreateFPMMMarketEvent = async (params: PreCreateFPMMMarketEventParams) =>
-  post(BACKEND_API_URL + '/predict/preCreateEventFPMMMarket', params)
+  post(BACKEND_API_URL + '/predict/preCreateEventFPMMMarket', params) as Promise<PreCreateFPMMMarketEventResponse>
 
 export const checkWorldCupMatchCreatable = async (tick: string, teamA: string, teamB: string) =>
   get(BACKEND_API_URL + '/predict/checkWorldCupMatchCreatable', { tick, teamA, teamB })

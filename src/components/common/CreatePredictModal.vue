@@ -13,8 +13,8 @@ import emitter from '@/utils/emitter'
 import { getTokenBalance } from '@/utils/web3'
 import { formatAmount, sleep } from '@/utils/helper'
 import { parseUnits } from 'viem'
-import { approveToken, createEventMarket, createMarket } from '@/utils/fpmm'
-import { FPMMDeterministicFactoryEventV2 } from '@/config'
+import { approveToken, createEventMarket, createMarket, type EventMarketDexConfig } from '@/utils/fpmm'
+import { FPMMDeterministicFactoryEventV3 } from '@/config'
 import CreateWorldCupPredictForm from '@/components/common/CreateWorldCupPredictForm.vue'
 
 const { t } = useI18n()
@@ -26,6 +26,8 @@ const userBalance = ref(0)
 const { accountMismatch, op } = useAccount()
 
 // Tab状态 — 世界杯 Tab 放首位且默认选中
+/** 暂时隐藏「预测对战」创建入口，恢复时改为 true */
+const showBattleCreateTab = false
 const activeTab = ref<'worldCup' | 'event' | 'battle'>('worldCup')
 const wcFormRef = ref<InstanceType<typeof CreateWorldCupPredictForm> | null>(null)
 
@@ -120,6 +122,9 @@ const toggleWcDesc = () => {
 
 // 监听 Tab 切换，重置展开状态
 watch(activeTab, () => {
+  if (!showBattleCreateTab && activeTab.value === 'battle') {
+    activeTab.value = 'worldCup'
+  }
   battleDescExpanded.value = false
   eventDescExpanded.value = false
   wcDescExpanded.value = false
@@ -420,31 +425,43 @@ const createPredict = async () => {
         
         modalStore.setModalCloseEnable(false)
         // 授权使用代币
-        await approveToken(FPMMDeterministicFactoryEventV2, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(realWorldFormData.initAmount.toString(), 18));
+        await approveToken(FPMMDeterministicFactoryEventV3, comStore.currentSelectedCommunity?.token as `0x${string}`, parseUnits(realWorldFormData.initAmount.toString(), 18));
 
         // 预创建市场记录，并生成questionid
-        const preMarketData: any = await preCreateFPMMMarketEvent({
+        const preMarketData = await preCreateFPMMMarketEvent({
           twitterId: accInfo?.twitterId,
           tick: comStore.currentSelectedCommunity?.tick ?? '',
           title: realWorldFormData.title,
           text: realWorldFormData.body,
         });
         console.log(633, preMarketData)
-        let { questionId, needOP, feePath } = preMarketData;
+        let { questionId, needOP, feePath, outcomeCount, distributionHint, feeDexVersion, feeQuoteTarget, feePoolId } = preMarketData;
 
         if (feePath && typeof(feePath) === 'string') {
           feePath = JSON.parse(feePath)
         }
 
+        const dexConfig: EventMarketDexConfig = {
+          feeDexVersion: Number(feeDexVersion ?? 4),
+          feeQuoteTarget: (feeQuoteTarget ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
+          feePoolId: (feePoolId ?? '0x0000000000000000000000000000000000000000000000000000000000000000') as `0x${string}`,
+          feePath: (feePath ?? []) as `0x${string}`[],
+        }
+
         // 开始创建市场
         const endTime =  Math.floor(new Date(realWorldFormData.announceDate).getTime() / 1000)
+        const hint = distributionHint?.length
+          ? distributionHint
+          : [100 - Math.ceil(realWorldFormData.distributionHint), Math.ceil(realWorldFormData.distributionHint)]
         const { hash, fpmmMaker } = await createEventMarket(
           questionId, 
           comStore.currentSelectedCommunity?.token as `0x${string}`, 
-          feePath ?? [], 
-          realWorldFormData.distributionHint, 
+          hint,
+          outcomeCount ?? 2,
           endTime, 
-          parseUnits(realWorldFormData.initAmount.toString(), 18))
+          parseUnits(realWorldFormData.initAmount.toString(), 18),
+          dexConfig,
+        )
         console.log({hash, fpmmMaker})
         
         await createFPMMMarketForEvent(accInfo.twitterId, questionId, hash);
@@ -581,6 +598,7 @@ onUnmounted(() => {
         {{ $t('createPredict.tabEvent') }}
       </button>
       <button 
+        v-if="showBattleCreateTab"
         class="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200"
         :class="activeTab === 'battle' ? 'bg-white shadow text-black' : 'text-gray-500 hover:text-gray-700'"
         @click="isFormBusy ? null : (activeTab = 'battle')"
@@ -608,7 +626,7 @@ onUnmounted(() => {
         </button>
       </div>
     </div>
-    <div class="text-left mb-6" v-else-if="activeTab === 'battle'">
+    <div class="text-left mb-6" v-else-if="showBattleCreateTab && activeTab === 'battle'">
       <div class="relative">
         <p 
           ref="battleDescRef"
@@ -652,7 +670,7 @@ onUnmounted(() => {
     />
 
     <!-- 预测对战表单 -->
-    <div class="space-y-4" v-else-if="activeTab === 'battle'">
+    <div class="space-y-4" v-else-if="showBattleCreateTab && activeTab === 'battle'">
       <!-- 预测标题 -->
       <div>
         <label class="block text-sm font-medium text-black mb-2">

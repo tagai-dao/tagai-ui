@@ -18,9 +18,9 @@ import { useWorldCupTeam } from '@/composables/useWorldCupTeam'
 import emitter from '@/utils/emitter'
 import { getTokenBalance } from '@/utils/web3'
 import { formatAmount } from '@/utils/helper'
-import { approveToken, createEventMarketV2 } from '@/utils/fpmm'
+import { approveToken, createEventMarket, type EventMarketDexConfig } from '@/utils/fpmm'
 import { targetPercentsToDistributionHint } from '@/composables/useEventMarketOutcomes'
-import { FPMMDeterministicFactoryEventV2 } from '@/config'
+import { FPMMDeterministicFactoryEventV3 } from '@/config'
 import { WC_TEAMS } from '@/data/world-cup-2026/teams'
 import {
   formatKickoffUtcToLocal,
@@ -313,7 +313,7 @@ const handleCreate = async () => {
       eventTag: '2026FWC-GS',
     })
 
-    let { questionId, needOP, feePath } = preMarketData
+    let { questionId, needOP, feePath, outcomeCount, distributionHint: hintFromApi, feeDexVersion, feeQuoteTarget, feePoolId } = preMarketData
     if (feePath && typeof feePath === 'string') {
       feePath = JSON.parse(feePath)
     }
@@ -323,17 +323,24 @@ const handleCreate = async () => {
       return
     }
 
-    await approveToken(FPMMDeterministicFactoryEventV2, token, parseUnits(form.initAmount.toString(), 18))
+    const dexConfig: EventMarketDexConfig = {
+      feeDexVersion: Number(feeDexVersion ?? 2),
+      feeQuoteTarget: (feeQuoteTarget ?? '0x0000000000000000000000000000000000000000') as `0x${string}`,
+      feePoolId: (feePoolId ?? '0x0000000000000000000000000000000000000000000000000000000000000000') as `0x${string}`,
+      feePath: (feePath ?? []) as `0x${string}`[],
+    }
+
+    await approveToken(FPMMDeterministicFactoryEventV3, token, parseUnits(form.initAmount.toString(), 18))
 
     const endTime = Math.floor(new Date(form.announceDate).getTime() / 1000)
-    const { hash } = await createEventMarketV2(
+    const { hash } = await createEventMarket(
       questionId,
       token,
-      feePath ?? [],
-      distributionHint,
-      3,
+      hintFromApi ?? distributionHint,
+      outcomeCount ?? 3,
       endTime,
-      parseUnits(form.initAmount.toString(), 18)
+      parseUnits(form.initAmount.toString(), 18),
+      dexConfig,
     )
 
     await createFPMMMarketForEvent(accInfo.twitterId, questionId, hash)

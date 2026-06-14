@@ -6,7 +6,7 @@ export const OUTCOME_CHART_COLORS = ['#EF5350', '#6B7280', '#3B82F6', '#10B981',
 
 export const isMultiOutcomeMarket = (market?: EventPredictData | null) => {
   if (!market) return false
-  if (market.factoryVersion === 2) {
+  if (Number(market.factoryVersion ?? 1) >= 2) {
     return (market.outcomeCount ?? market.outcomes?.length ?? 0) > 2
   }
   return false
