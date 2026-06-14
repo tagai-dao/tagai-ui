@@ -520,6 +520,10 @@ watch(() => realWorldFormData.announceDate, () => {
 // 定时更新
 let timer: ReturnType<typeof setInterval> | null = null
 
+const onWorldCupCreated = () => {
+  closeModal()
+}
+
 // 关闭模态框
 const closeModal = () => {
   if (isFormBusy.value) {
@@ -527,6 +531,7 @@ const closeModal = () => {
   }
   wcFormRef.value?.resetForm()
   activeTab.value = 'worldCup'
+  modalStore.setModalCloseEnable(true)
   modalStore.setModalVisible(false)
   // 重置表单和错误
   formData.title = ''
@@ -667,6 +672,7 @@ onUnmounted(() => {
     <CreateWorldCupPredictForm
       v-if="activeTab === 'worldCup'"
       ref="wcFormRef"
+      @created="onWorldCupCreated"
     />
 
     <!-- 预测对战表单 -->

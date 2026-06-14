@@ -43,6 +43,8 @@ type WcFixtureInfo = {
 type EventType = 'matchup' | 'groupChampion' | 'worldChampion'
 type PickerSide = 'left' | 'right'
 
+const emit = defineEmits<{ created: [] }>()
+
 const { t } = useI18n()
 const { preCheckCuration } = useTweet()
 const { getTeamName, getMatchTitle, getOutcomeLabels, getTeamFlagUrl } = useWorldCupTeam()
@@ -344,8 +346,8 @@ const handleCreate = async () => {
     )
 
     await createFPMMMarketForEvent(accInfo.twitterId, questionId, hash)
-    resetForm()
-    modalStore.setModalVisible(false)
+    createLoading.value = false
+    emit('created')
     emitter.emit('createPredictSuccess')
   } catch (error) {
     handleErrorTip(error)
