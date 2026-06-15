@@ -25,7 +25,7 @@ import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from "@/utils/twitterPost";
-import { OP_CONSUME } from "@/config";
+import { OP_CONSUME, usesThirdPartyMarketCap } from "@/config";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
@@ -158,6 +158,9 @@ const isV8PreListNoTrade = computed(
 const V9_TOTAL_FEE = 0.006
 const BONDING_CURVE_FEE = 0.02   // 内盘 getBuyAmountByValue 使用 9800/10000
 const LISTED_V2_FEE = 0.02       // 上市后 Uniswap V2 路由 2% 手续费
+/** V4 Hook 抽成，仅用于价格影响展示（询价结果已含 Hook，需还原池内成交价） */
+const V4_HOOK_FEE = 0.006
+const SPCXB_HOOK_FEE = 0.01
 
 const isV9 = computed(() => comStore.currentSelectedCommunity?.version === 9)
 const tradeFeeRate = computed(() => {
@@ -168,6 +171,15 @@ const tradeFeeRate = computed(() => {
   if (usesListedV4Quote(c)) return 0
   if (c.listed) return LISTED_V2_FEE
   return BONDING_CURVE_FEE
+})
+
+/** 价格影响展示用费率：V4 剥离 Hook 固定费（SPCXB 1%，其余 V4 0.6%） */
+const priceImpactFeeRate = computed(() => {
+  const c = comStore.currentSelectedCommunity
+  if (c && usesListedV4Quote(c)) {
+    return usesThirdPartyMarketCap(c.tick) ? SPCXB_HOOK_FEE : V4_HOOK_FEE
+  }
+  return tradeFeeRate.value
 })
 
 // 价格影响 = 成交单价相对询价时刻现货的不利偏离（恒为正，上限 99.99%）
@@ -181,7 +193,7 @@ const buyPriceImpact = computed(() => {
   const recv = Number(receiveAmount.value?.toString() ?? 0) / 1e18
   const spot = quoteSpotPrice.value
   if (!spot || !isFinite(pay) || pay <= 0 || recv <= 0) return null
-  const fee = tradeFeeRate.value
+  const fee = priceImpactFeeRate.value
   // 买入：净投入 BNB / 到手 Token = 实际买入单价
   const execPrice = (pay * (1 - fee)) / recv
   return calcAdversePriceImpact(execPrice, spot)
@@ -191,7 +203,7 @@ const sellPriceImpact = computed(() => {
   const recvEthNet = Number(receiveEth.value?.toString() ?? 0) / 1e18
   const spot = quoteSpotPrice.value
   if (!spot || !isFinite(sellTokens) || sellTokens <= 0 || recvEthNet <= 0) return null
-  const fee = tradeFeeRate.value
+  const fee = priceImpactFeeRate.value
   // 卖出：到手 BNB 为扣费后净值，先还原池内成交价再与现货比较
   const execPrice = recvEthNet / (1 - fee) / sellTokens
   return calcAdversePriceImpact(execPrice, spot)
