@@ -918,5 +918,33 @@
     "postOnTwitterFirst": "Please post on X first, then paste the tweet link and create again.",
     "tweetSyncTimeout": "Tweet not synced yet. Wait a moment and try again.",
     "postMetaGroup": "2026 FIFA World Cup · Group {group} · Group stage"
+  },
+  "liquidity": {
+    "tab": "Liquidity",
+    "poolOverview": "Pool Overview",
+    "bnbReserve": "BNB Reserve",
+    "tokenReserve": "{tick} Reserve",
+    "poolMarketCap": "Pool TVL",
+    "lpFee": "LP Fee",
+    "add": "Add Liquidity",
+    "myPositions": "My Positions",
+    "selectRange": "Select Price Range",
+    "currentPrice": "Current Price",
+    "currentTick": "Current Tick",
+    "fullRange": "Full Range",
+    "manual": "Manual",
+    "minPrice": "Min Price",
+    "maxPrice": "Max Price",
+    "deposit": "Deposit",
+    "slippage": "Slippage Tolerance",
+    "addBtn": "Add Liquidity",
+    "connectToView": "Connect wallet to view positions",
+    "noPositions": "No liquidity positions",
+    "inRange": "In Range",
+    "outOfRange": "Out of Range",
+    "priceRange": "Price Range",
+    "remove": "Remove",
+    "insufficientBnb": "Insufficient BNB balance (including gas reserve)",
+    "insufficientToken": "Insufficient {tick} balance"
   }
 }

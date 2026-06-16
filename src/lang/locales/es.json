@@ -917,5 +917,33 @@
     "postOnTwitterFirst": "Publica primero en X, pega el enlace y vuelve a crear.",
     "tweetSyncTimeout": "El tweet aún no se ha sincronizado. Espera un momento e inténtalo de nuevo.",
     "postMetaGroup": "Copa Mundial 2026 · Grupo {group} · Fase de grupos"
+  },
+  "liquidity": {
+    "tab": "Liquidez",
+    "poolOverview": "Resumen del pool",
+    "bnbReserve": "Reserva BNB",
+    "tokenReserve": "Reserva {tick}",
+    "poolMarketCap": "Capitalización del pool",
+    "lpFee": "Comisión LP",
+    "add": "Añadir liquidez",
+    "myPositions": "Mis posiciones",
+    "selectRange": "Seleccionar rango de precio",
+    "currentPrice": "Precio actual",
+    "currentTick": "Tick actual",
+    "fullRange": "Rango completo",
+    "manual": "Manual",
+    "minPrice": "Precio mín.",
+    "maxPrice": "Precio máx.",
+    "deposit": "Depositar",
+    "slippage": "Tolerancia de slippage",
+    "addBtn": "Añadir liquidez",
+    "connectToView": "Conecta la wallet para ver posiciones",
+    "noPositions": "Sin posiciones de liquidez",
+    "inRange": "En rango",
+    "outOfRange": "Fuera de rango",
+    "priceRange": "Rango de precio",
+    "remove": "Retirar",
+    "insufficientBnb": "Saldo BNB insuficiente (incluye gas)",
+    "insufficientToken": "Saldo {tick} insuficiente"
   }
 }

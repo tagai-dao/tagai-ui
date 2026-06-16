@@ -917,5 +917,33 @@
     "postOnTwitterFirst": "Posting di X dulu, tempel tautan, lalu buat lagi.",
     "tweetSyncTimeout": "Tweet belum tersinkron. Tunggu sebentar dan coba lagi.",
     "postMetaGroup": "Piala Dunia 2026 · Grup {group} · Babak grup"
+  },
+  "liquidity": {
+    "tab": "Likuiditas",
+    "poolOverview": "Ringkasan Pool",
+    "bnbReserve": "Cadangan BNB",
+    "tokenReserve": "Cadangan {tick}",
+    "poolMarketCap": "Kapitalisasi Pool",
+    "lpFee": "Biaya LP",
+    "add": "Tambah Likuiditas",
+    "myPositions": "Posisi Saya",
+    "selectRange": "Pilih Rentang Harga",
+    "currentPrice": "Harga Saat Ini",
+    "currentTick": "Tick Saat Ini",
+    "fullRange": "Rentang Penuh",
+    "manual": "Manual",
+    "minPrice": "Harga Min",
+    "maxPrice": "Harga Maks",
+    "deposit": "Setor",
+    "slippage": "Toleransi Slippage",
+    "addBtn": "Tambah Likuiditas",
+    "connectToView": "Hubungkan dompet untuk melihat posisi",
+    "noPositions": "Belum ada posisi likuiditas",
+    "inRange": "Dalam rentang",
+    "outOfRange": "Di luar rentang",
+    "priceRange": "Rentang harga",
+    "remove": "Hapus",
+    "insufficientBnb": "Saldo BNB tidak cukup (termasuk gas)",
+    "insufficientToken": "Saldo {tick} tidak cukup"
   }
 }
