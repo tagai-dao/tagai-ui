@@ -8,7 +8,8 @@ import { GlobalModalType, type BattleData, type Tweet, type EventPredictData } f
 import { useI18n } from 'vue-i18n'
 import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
 import PredictEventCard from '@/components/common/PredictEventCard.vue'
-import { getMarketInfos } from '@/utils/fpmm'
+import { getMarketInfos, isMultiOutcomeEventFactory } from '@/utils/fpmm'
+import { getOutcomeList } from '@/composables/useEventMarketOutcomes'
 import { computed } from 'vue'
 import { useCommunityStore } from '@/stores/community'
 import { useStateStore } from '@/stores/common'
@@ -209,6 +210,14 @@ const getWinner = (battle: BattleData): 'left' | 'right' | null => {
 }
 
 // ========== 事件预测相关方法 ==========
+// 多元市场：从批量 multicall 结果取各 outcome 储备，列表直接算正确概率（避免每卡片单独取导致移动端退化为 33/33/33）
+function buildOutcomeReserves(event: EventPredictData, marketInfos: any): number[] | undefined {
+    if (!isMultiOutcomeEventFactory(event.factoryVersion)) return undefined
+    const outcomes = getOutcomeList(event)
+    const reserves = outcomes.map(o => marketInfos[`${event.marketMaker}-reserve-${o.outcomeIndex}`])
+    return reserves.every(r => r != null) ? reserves : undefined
+}
+
 async function onEventRefresh() {
     try {
         eventRefreshing.value = true
@@ -220,6 +229,7 @@ async function onEventRefresh() {
                 winner: getEventWinner(event),
                 reserveA: marketInfos[event.marketMaker + '-priceA'],
                 reserveB: marketInfos[event.marketMaker + '-priceB'],
+                outcomeReserves: buildOutcomeReserves(event, marketInfos),
                 fee: marketInfos[event.marketMaker + '-fee']
             }))
         } else {
@@ -244,6 +254,7 @@ async function onEventLoad() {
                 winner: getEventWinner(event),
                 reserveA: marketInfos[event.marketMaker + '-priceA'],
                 reserveB: marketInfos[event.marketMaker + '-priceB'],
+                outcomeReserves: buildOutcomeReserves(event, marketInfos),
                 fee: marketInfos[event.marketMaker + '-fee']
             })))
         }

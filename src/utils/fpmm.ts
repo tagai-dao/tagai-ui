@@ -374,6 +374,24 @@ export const getMarketInfos = async (markets: BattleData[] | EventPredictData[])
                 [market.marketMaker + '-totalSupply', (val: any) => val / 1e18]
             ]
         })
+        // 多元市场：在同一批 multicall 内补齐各 outcome 储备，列表即可算出正确概率，
+        // 不必再依赖每张卡片各自发一次 multicall（移动端 N 个并发易失败 → 退化成 33/33/33）
+        if (isMultiOutcomeEventFactory((market as EventPredictData).factoryVersion)) {
+            const outcomes = getOutcomeList(market as EventPredictData).filter(o => o.positionId)
+            for (const o of outcomes) {
+                calls.push({
+                    target: ConditionalTokens,
+                    call: [
+                        'balanceOf(address,uint256)(uint256)',
+                        market.marketMaker,
+                        o.positionId
+                    ],
+                    returns: [
+                        [`${market.marketMaker}-reserve-${o.outcomeIndex}`, (val: any) => val / 1e18]
+                    ]
+                })
+            }
+        }
     }
     const res = await aggregate(calls, ChainConfig.multiConfig)
     return res.results.transformed;
