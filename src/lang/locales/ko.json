@@ -942,6 +942,8 @@
     "inRange": "범위 내",
     "outOfRange": "범위 외",
     "priceRange": "가격 범위",
-    "remove": "제거"
+    "remove": "제거",
+    "insufficientBnb": "BNB 잔액 부족 (가스 포함)",
+    "insufficientToken": "{tick} 잔액 부족"
   }
 }

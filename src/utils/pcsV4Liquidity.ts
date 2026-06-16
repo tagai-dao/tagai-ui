@@ -3,17 +3,15 @@
  */
 import {
   PCSCLPositionManager,
-  PCSPermit2,
 } from '@/config'
 import { useAccountStore } from '@/stores/web3'
 import {
   getV4PoolKeyByPoolId,
   getV4PoolState,
   sqrtPriceX96ToBnbPerToken,
-  ensurePermit2Approval,
+  ensurePermit2AllowanceForSpender,
   type PoolKey as RawPoolKey,
 } from '@/utils/pcsV4Swap'
-import { writeContract, readContract } from '@/utils/contract'
 import { getReadOnlyClient, getWalletClient, setup, waitForTx } from '@/utils/wallets'
 import { customBsc } from '@/utils/privy'
 import { getClPositions } from '@/apis/api'
@@ -23,7 +21,7 @@ import {
   decodeCLPoolParameters,
   encodeCLPositionManagerMintCalldata,
   encodeCLPositionManagerDecreaseLiquidityCalldata,
-  encodeCLPositionManagerBurnCalldata,
+  encodeCLPositionModifyLiquidities,
   getPoolId,
   CLPositionManagerAbi,
   type PoolKey as SdkPoolKey,
@@ -36,15 +34,16 @@ import {
   PositionMath,
 } from '@pancakeswap/v3-sdk'
 import {
+  concat,
+  encodeAbiParameters,
+  parseAbiParameters,
+  toHex,
   zeroAddress,
   type Hex,
 } from 'viem'
 import type { ClPositionSummary } from '@/types/liquidity'
 
 const DEADLINE_SEC = 1200
-/** Permit2.approve amount 为 uint160，不能用 maxUint256 */
-const MAX_UINT160 = 2n ** 160n - 1n
-const MAX_UINT48 = 2n ** 48n - 1n
 
 export const toSdkPoolKey = (raw: RawPoolKey): SdkPoolKey<'CL'> => ({
   currency0: raw.currency0,
@@ -191,25 +190,6 @@ const applySlippageMax = (amount: bigint, slippageBps: number) =>
 const applySlippageMin = (amount: bigint, slippageBps: number) =>
   amount - (amount * BigInt(slippageBps)) / 10000n
 
-const ensurePermit2ForPositionManager = async (token: `0x${string}`, amount: bigint) => {
-  const account = useAccountStore().ethConnectAddress as `0x${string}`
-  const result: any = await readContract(
-    'Permit2', 'allowance',
-    [account, token, PCSCLPositionManager],
-    PCSPermit2 as `0x${string}`,
-  )
-  const currentAmount = BigInt(result[0] ?? result.amount ?? 0)
-  if (currentAmount < amount) {
-    const txHash = await writeContract({
-      contractName: 'Permit2',
-      functionName: 'approve',
-      args: [token, PCSCLPositionManager, MAX_UINT160, MAX_UINT48],
-      address: PCSPermit2 as `0x${string}`,
-    })
-    if (!txHash) throw errCode.TRANSACTION_INVALID
-  }
-}
-
 const sendPositionManagerTx = async (data: Hex, value: bigint) => {
   const account = useAccountStore().ethConnectAddress as `0x${string}`
   const client = getWalletClient()
@@ -250,18 +230,30 @@ export const addClLiquidity = async (params: {
   const poolId = getPoolId(poolKey)
   const { sqrtPriceX96 } = await getV4PoolState(poolId as `0x${string}`)
 
-  const { liquidity } = calcLiquidityAmounts(sqrtPriceX96, tickLower, tickUpper, amount0, amount1)
-  if (liquidity <= 0n) throw new Error('invalid liquidity')
-
-  const token = poolKey.currency1 as `0x${string}`
-  if (token !== zeroAddress) {
-    await ensurePermit2Approval(token, amount1)
-    await ensurePermit2ForPositionManager(token, amount1)
-  }
-
-  const positionConfig: CLPositionConfig = { poolKey, tickLower, tickUpper }
   const amount0Max = applySlippageMax(amount0, slippageBps)
   const amount1Max = applySlippageMax(amount1, slippageBps)
+
+  if (poolKey.currency0 !== zeroAddress && amount0Max > 0n) {
+    await ensurePermit2AllowanceForSpender(
+      poolKey.currency0 as `0x${string}`,
+      PCSCLPositionManager as `0x${string}`,
+      amount0Max,
+    )
+  }
+  if (poolKey.currency1 !== zeroAddress && amount1Max > 0n) {
+    await ensurePermit2AllowanceForSpender(
+      poolKey.currency1 as `0x${string}`,
+      PCSCLPositionManager as `0x${string}`,
+      amount1Max,
+    )
+  }
+
+  const { liquidity } = calcLiquidityAmounts(sqrtPriceX96, tickLower, tickUpper, amount0, amount1)
+  if (liquidity <= 0n) throw new Error('invalid liquidity')
+  const MAX_UINT128 = 2n ** 128n - 1n
+  if (liquidity > MAX_UINT128) throw new Error('liquidity too large')
+
+  const positionConfig: CLPositionConfig = { poolKey, tickLower, tickUpper }
   const deadline = BigInt(Math.floor(Date.now() / 1000) + DEADLINE_SEC)
 
   const data = encodeCLPositionManagerMintCalldata(
@@ -275,6 +267,59 @@ export const addClLiquidity = async (params: {
   ) as Hex
 
   return sendPositionManagerTx(data, amount0Max)
+}
+
+/** CL_BURN_POSITION action id */
+const CL_BURN_POSITION = 3
+const CLOSE_CURRENCY = 18
+const SWEEP = 20
+
+/**
+ * 构建 burn calldata。
+ * infinity-sdk@1.0.8 的 encodeCLPositionManagerBurnCalldata 多传了 PositionConfig，
+ * 与链上 decodeCLBurnParams(tokenId, amount0Min, amount1Min, hookData) 不一致，会触发 SliceOutOfBounds(0x3b99b53d)。
+ */
+const encodeClPositionBurnCalldata = (
+  tokenId: bigint,
+  poolKey: SdkPoolKey<'CL'>,
+  amount0Min: bigint,
+  amount1Min: bigint,
+  sweepRecipient: `0x${string}`,
+  deadline: bigint,
+  hookData: Hex = '0x',
+) => {
+  const burnParam = encodeAbiParameters(
+    parseAbiParameters('uint256 tokenId, uint128 amount0Min, uint128 amount1Min, bytes hookData'),
+    [tokenId, amount0Min, amount1Min, hookData],
+  )
+  const close0Param = encodeAbiParameters(parseAbiParameters('address currency'), [poolKey.currency0])
+  const close1Param = encodeAbiParameters(parseAbiParameters('address currency'), [poolKey.currency1])
+
+  const isNativePool = poolKey.currency0 === zeroAddress
+  const actionBytes = isNativePool
+    ? concat([
+      toHex(CL_BURN_POSITION, { size: 1 }),
+      toHex(CLOSE_CURRENCY, { size: 1 }),
+      toHex(CLOSE_CURRENCY, { size: 1 }),
+      toHex(SWEEP, { size: 1 }),
+    ])
+    : concat([
+      toHex(CL_BURN_POSITION, { size: 1 }),
+      toHex(CLOSE_CURRENCY, { size: 1 }),
+      toHex(CLOSE_CURRENCY, { size: 1 }),
+    ])
+
+  const params = isNativePool
+    ? [
+      burnParam,
+      close0Param,
+      close1Param,
+      encodeAbiParameters(parseAbiParameters('address currency, address to'), [poolKey.currency0, sweepRecipient]),
+    ]
+    : [burnParam, close0Param, close1Param]
+
+  const payload = encodeAbiParameters(parseAbiParameters('bytes, bytes[]'), [actionBytes, params])
+  return encodeCLPositionModifyLiquidities(payload, deadline) as Hex
 }
 
 /** 移除流动性；100% 时 burn NFT */
@@ -302,17 +347,18 @@ export const removeClLiquidity = async (params: {
   const amount0Min = applySlippageMin(amount0, slippageBps)
   const amount1Min = applySlippageMin(amount1, slippageBps)
 
+  const account = useAccountStore().ethConnectAddress as `0x${string}`
+
   let data: Hex
   if (percent >= 100) {
-    const positionConfig: CLPositionConfig = { poolKey, tickLower, tickUpper }
-    data = encodeCLPositionManagerBurnCalldata(
+    data = encodeClPositionBurnCalldata(
       tokenId,
-      positionConfig,
+      poolKey,
       amount0Min,
       amount1Min,
-      '0x',
+      account,
       deadline,
-    ) as Hex
+    )
   } else {
     data = encodeCLPositionManagerDecreaseLiquidityCalldata({
       tokenId,
@@ -328,49 +374,79 @@ export const removeClLiquidity = async (params: {
   return sendPositionManagerTx(data, 0n)
 }
 
-/** 通过 API（The Graph）获取 tokenId，再链上读取该 pool 的仓位详情 */
+type ClPositionOnChainResult = readonly [
+  {
+    currency0: `0x${string}`
+    currency1: `0x${string}`
+    hooks: `0x${string}`
+    poolManager: `0x${string}`
+    fee: number
+    parameters: Hex
+  },
+  number,
+  number,
+  bigint,
+  bigint,
+  bigint,
+  `0x${string}`,
+]
+
+const MULTICALL_BATCH_SIZE = 100
+
+/** 批量 multicall 读取 PositionManager.positions(tokenId) */
+const readClPositionsMulticall = async (tokenIds: bigint[]) => {
+  const client = getReadOnlyClient()
+  const resultMap = new Map<bigint, ClPositionOnChainResult | null>()
+
+  for (let i = 0; i < tokenIds.length; i += MULTICALL_BATCH_SIZE) {
+    const batch = tokenIds.slice(i, i + MULTICALL_BATCH_SIZE)
+    const contracts = batch.map((tokenId) => ({
+      address: PCSCLPositionManager as `0x${string}`,
+      abi: CLPositionManagerAbi,
+      functionName: 'positions' as const,
+      args: [tokenId] as const,
+    }))
+    const results = await client.multicall({ contracts, allowFailure: true })
+    batch.forEach((tokenId, idx) => {
+      const row = results[idx]
+      resultMap.set(
+        tokenId,
+        row?.status === 'success' ? (row.result as ClPositionOnChainResult) : null,
+      )
+    })
+  }
+
+  return resultMap
+}
+
+/** 通过 API（The Graph）获取 tokenId 列表，multicall 读链上仓位后按 poolId 过滤 */
 export const fetchUserClPositions = async (
   user: `0x${string}`,
   targetPoolId: `0x${string}`,
 ): Promise<ClPositionSummary[]> => {
-  const indexRes = await getClPositions(user)
+  const indexRes = await getClPositions(user.toLowerCase())
   const indexed = indexRes?.c === 0 ? indexRes.d?.positions ?? [] : []
-  // origin 为 poolId 时可预过滤，减少链上 reads
-  const candidateIds = indexed
-    .filter((p) => !p.origin || p.origin === targetPoolId.toLowerCase())
+  const tokenIds = indexed
     .map((p) => BigInt(p.tokenId))
     .filter((id) => id > 0n)
 
-  if (candidateIds.length === 0) return []
+  if (tokenIds.length === 0) return []
 
-  const client = getReadOnlyClient()
-  const { sqrtPriceX96, tick: tickCurrent } = await getV4PoolState(targetPoolId)
+  const targetPoolIdLower = targetPoolId.toLowerCase()
+  const [{ sqrtPriceX96, tick: tickCurrent }, onChainMap] = await Promise.all([
+    getV4PoolState(targetPoolId),
+    readClPositionsMulticall(tokenIds),
+  ])
+
   const positions: ClPositionSummary[] = []
 
-  await Promise.all(candidateIds.map(async (tokenId) => {
-    const result = await client.readContract({
-      address: PCSCLPositionManager as `0x${string}`,
-      abi: CLPositionManagerAbi,
-      functionName: 'positions',
-      args: [tokenId],
-    }) as readonly [
-      {
-        currency0: `0x${string}`
-        currency1: `0x${string}`
-        hooks: `0x${string}`
-        poolManager: `0x${string}`
-        fee: number
-        parameters: Hex
-      },
-      number,
-      number,
-      bigint,
-      bigint,
-      bigint,
-      `0x${string}`,
-    ]
+  for (const tokenId of tokenIds) {
+    const result = onChainMap.get(tokenId)
+    if (!result) continue
 
     const [poolKeyTuple, tickLower, tickUpper, liquidity] = result
+    if (liquidity === 0n) continue
+
     const poolKey: SdkPoolKey<'CL'> = {
       currency0: poolKeyTuple.currency0,
       currency1: poolKeyTuple.currency1,
@@ -379,8 +455,7 @@ export const fetchUserClPositions = async (
       fee: poolKeyTuple.fee,
       parameters: decodeCLPoolParameters(poolKeyTuple.parameters),
     }
-    const pid = getPoolId(poolKey)
-    if (pid.toLowerCase() !== targetPoolId.toLowerCase() || liquidity === 0n) return
+    if (getPoolId(poolKey).toLowerCase() !== targetPoolIdLower) continue
 
     const amount0 = PositionMath.getToken0Amount(tickCurrent, tickLower, tickUpper, sqrtPriceX96, liquidity)
     const amount1 = PositionMath.getToken1Amount(tickCurrent, tickLower, tickUpper, sqrtPriceX96, liquidity)
@@ -393,7 +468,7 @@ export const fetchUserClPositions = async (
       amount1,
       inRange: tickCurrent >= tickLower && tickCurrent < tickUpper,
     })
-  }))
+  }
 
   return positions
 }

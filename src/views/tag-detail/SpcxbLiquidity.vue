@@ -20,13 +20,18 @@ import {
 } from '@/utils/pcsV4Liquidity'
 import { formatAmount, formatPrice } from '@/utils/helper'
 import { getUserTokenInfo } from '@/utils/pump'
-import { handleErrorTip } from '@/utils/notify'
+import { handleErrorTip, notify } from '@/utils/notify'
 import { parseUnits, formatUnits, isAddress } from 'viem'
+import { useI18n } from 'vue-i18n'
 import type { ClPositionSummary, PriceRangePreset } from '@/types/liquidity'
 import type { PoolKey } from '@pancakeswap/infinity-sdk'
 
 type SubTab = 'add' | 'positions'
 
+/** 预留 BNB 作 gas，与交易页 MAX 逻辑一致 */
+const GAS_RESERVE_BNB = 0.005
+
+const { t } = useI18n()
 const comStore = useCommunityStore()
 const stateStore = useStateStore()
 const accStore = useAccountStore()
@@ -188,6 +193,48 @@ watch(tokenAmount, () => { if (lastEdited.value === 'token') recalcPairAmount('t
 watch([tickLower, tickUpper], () => recalcPairAmount(lastEdited.value))
 watch(rangePreset, () => recalcPairAmount(lastEdited.value))
 
+/** 含滑点的所需 BNB（msg.value = amount0Max，另需预留 gas） */
+const requiredBnbWithGas = computed(() => {
+  const a0 = Number(bnbAmount.value || 0)
+  if (a0 <= 0) return 0
+  const slip = 1 + slippageBps.value / 10000
+  return a0 * slip + GAS_RESERVE_BNB
+})
+
+/** 含滑点的所需代币数量 */
+const requiredTokenAmount = computed(() => {
+  const a1 = Number(tokenAmount.value || 0)
+  if (a1 <= 0) return 0
+  return a1 * (1 + slippageBps.value / 10000)
+})
+
+/** 余额不足类型：bnb / token */
+const depositBalanceIssue = computed((): 'bnb' | 'token' | null => {
+  if (!isWalletConnected.value) return null
+  const needBnb = Number(bnbAmount.value || 0) > 0
+  const needToken = Number(tokenAmount.value || 0) > 0
+  if (needBnb && ethBalance.value < requiredBnbWithGas.value) return 'bnb'
+  if (needToken && tokenBalance.value < requiredTokenAmount.value) return 'token'
+  return null
+})
+
+const canSubmitAdd = computed(() => {
+  const hasAmount = Number(bnbAmount.value || 0) > 0 || Number(tokenAmount.value || 0) > 0
+  return hasAmount && !depositBalanceIssue.value
+})
+
+const showDepositBalanceTip = (): boolean => {
+  if (depositBalanceIssue.value === 'bnb') {
+    notify({ message: t('liquidity.insufficientBnb'), type: 'warning' })
+    return false
+  }
+  if (depositBalanceIssue.value === 'token') {
+    notify({ message: t('liquidity.insufficientToken', { tick: tick.value }), type: 'warning' })
+    return false
+  }
+  return true
+}
+
 /** 拉取用户 BNB / 代币余额（与交易页一致） */
 const loadUserBalances = async () => {
   const addr = accStore.ethConnectAddress
@@ -280,6 +327,7 @@ const onAddLiquidity = async () => {
   const a0 = parseUnits(bnbAmount.value || '0', 18)
   const a1 = parseUnits(tokenAmount.value || '0', 18)
   if (a0 <= 0n && a1 <= 0n) return
+  if (!showDepositBalanceTip()) return
 
   submitting.value = true
   try {
@@ -471,6 +519,14 @@ onMounted(async () => {
         </div>
         <input v-model="tokenAmount" type="text" class="border border-grey-c9 rounded-xl h-11 px-3 text-h4" placeholder="0.0" @focus="lastEdited = 'token'" />
       </div>
+      <p
+        v-if="depositBalanceIssue === 'bnb'"
+        class="text-sm text-red-e6 leading-snug"
+      >{{ $t('liquidity.insufficientBnb') }}</p>
+      <p
+        v-else-if="depositBalanceIssue === 'token'"
+        class="text-sm text-red-e6 leading-snug"
+      >{{ $t('liquidity.insufficientToken', { tick }) }}</p>
       <div class="flex items-center justify-between">
         <span class="text-h5 text-grey-93">{{ $t('liquidity.slippage') }}</span>
         <div class="flex gap-2 items-center">
@@ -480,7 +536,7 @@ onMounted(async () => {
       </div>
       <button
         class="w-full h-11 rounded-full bg-gradient-primary text-white text-h3 disabled:opacity-50 flex items-center justify-center gap-2"
-        :disabled="submitting || loading || isWalletConnecting"
+        :disabled="submitting || loading || isWalletConnecting || (isWalletConnected && !canSubmitAdd)"
         @click="onAddLiquidity"
       >
         <span v-if="!accStore.ethConnectAddress">{{ $t('connect') }}</span>

@@ -942,6 +942,8 @@
     "inRange": "Dalam rentang",
     "outOfRange": "Di luar rentang",
     "priceRange": "Rentang harga",
-    "remove": "Hapus"
+    "remove": "Hapus",
+    "insufficientBnb": "Saldo BNB tidak cukup (termasuk gas)",
+    "insufficientToken": "Saldo {tick} tidak cukup"
   }
 }

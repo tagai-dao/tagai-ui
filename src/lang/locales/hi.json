@@ -942,6 +942,8 @@
     "inRange": "सीमा में",
     "outOfRange": "सीमा से बाहर",
     "priceRange": "मूल्य सीमा",
-    "remove": "हटाएँ"
+    "remove": "हटाएँ",
+    "insufficientBnb": "BNB बैलेंस अपर्याप्त (गैस सहित)",
+    "insufficientToken": "{tick} बैलेंस अपर्याप्त"
   }
 }

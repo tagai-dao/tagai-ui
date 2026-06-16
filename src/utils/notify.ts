@@ -35,6 +35,16 @@ const matchKnownRevertMessage = (msg: string): string | null => {
     notify({ message: '交易失败：滑点保护触发。实际价格可能已变化，请尝试减少卖出数量或稍后重试。', type: 'error' })
     return 'OutOfSlippage'
   }
+  if (
+    msg.includes('TransferFromFailed')
+    || msg.includes('TRANSFER_FROM_FAILED')
+    || msg.includes('0x7939f424')
+    || msg.includes('insufficient token balance')
+    || msg.includes('insufficient BNB balance')
+  ) {
+    notify({ message: t('tipError.insufficientBalance'), type: 'warning' })
+    return 'InsufficientBalance'
+  }
   return null
 }
 

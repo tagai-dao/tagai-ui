@@ -942,6 +942,8 @@
     "inRange": "範囲内",
     "outOfRange": "範囲外",
     "priceRange": "価格帯",
-    "remove": "削除"
+    "remove": "削除",
+    "insufficientBnb": "BNB残高不足（Gas分を含む）",
+    "insufficientToken": "{tick} 残高不足"
   }
 }

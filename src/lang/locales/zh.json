@@ -946,6 +946,8 @@
     "inRange": "区间内",
     "outOfRange": "区间外",
     "priceRange": "价格区间",
-    "remove": "移除"
+    "remove": "移除",
+    "insufficientBnb": "BNB 余额不足（已预留 Gas）",
+    "insufficientToken": "{tick} 余额不足"
   }
 }

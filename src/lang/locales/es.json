@@ -942,6 +942,8 @@
     "inRange": "En rango",
     "outOfRange": "Fuera de rango",
     "priceRange": "Rango de precio",
-    "remove": "Retirar"
+    "remove": "Retirar",
+    "insufficientBnb": "Saldo BNB insuficiente (incluye gas)",
+    "insufficientToken": "Saldo {tick} insuficiente"
   }
 }

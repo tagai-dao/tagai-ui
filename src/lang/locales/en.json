@@ -943,6 +943,8 @@
     "inRange": "In Range",
     "outOfRange": "Out of Range",
     "priceRange": "Price Range",
-    "remove": "Remove"
+    "remove": "Remove",
+    "insufficientBnb": "Insufficient BNB balance (including gas reserve)",
+    "insufficientToken": "Insufficient {tick} balance"
   }
 }

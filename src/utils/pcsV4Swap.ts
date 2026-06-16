@@ -403,42 +403,80 @@ export const ensurePermit2Approval = async (token: `0x${string}`, amount: bigint
         [account, PCSPermit2],
         token
     );
-    if (BigInt(allowance) < amount) {
-        const hash = await writeContract({
+    const current = BigInt(allowance)
+    if (current >= amount) return
+
+    // 部分 BEP20（如 USDT 类）须先清零 allowance 再重新 approve
+    if (current > 0n) {
+        const resetHash = await writeContract({
             contractName: 'Token1',
             functionName: 'approve',
-            args: [PCSPermit2, maxUint256],
-            address: token
-        });
-        if (!hash) throw errCode.TRANSACTION_INVALID;
+            args: [PCSPermit2, 0n],
+            address: token,
+        })
+        if (!resetHash) throw errCode.TRANSACTION_INVALID
     }
+
+    const hash = await writeContract({
+        contractName: 'Token1',
+        functionName: 'approve',
+        args: [PCSPermit2, maxUint256],
+        address: token
+    });
+    if (!hash) throw errCode.TRANSACTION_INVALID;
+}
+
+const PERMIT2_MAX_AMOUNT = 2n ** 160n - 1n
+const PERMIT2_MAX_EXPIRATION = 2n ** 48n - 1n
+
+/** 读取 Permit2 allowance（amount + expiration） */
+const readPermit2Allowance = async (
+    owner: `0x${string}`,
+    token: `0x${string}`,
+    spender: `0x${string}`,
+) => {
+    const result: any = await readContract(
+        'Permit2', 'allowance',
+        [owner, token, spender],
+        PCSPermit2 as `0x${string}`,
+    )
+    return {
+        amount: BigInt(result?.[0] ?? result?.amount ?? 0),
+        expiration: Number(result?.[1] ?? result?.expiration ?? 0),
+    }
+}
+
+/**
+ * 确保 ERC20 → Permit2 → spender 授权链完整。
+ * PositionManager / UniversalRouter 均通过 Permit2 transferFrom 拉代币。
+ */
+export const ensurePermit2AllowanceForSpender = async (
+    token: `0x${string}`,
+    spender: `0x${string}`,
+    requiredAmount: bigint,
+) => {
+    const account = useAccountStore().ethConnectAddress as `0x${string}`
+
+    await ensurePermit2Approval(token, requiredAmount)
+
+    const { amount, expiration } = await readPermit2Allowance(account, token, spender)
+    const now = Math.floor(Date.now() / 1000)
+    if (amount >= requiredAmount && expiration > now) return
+
+    const hash = await writeContract({
+        contractName: 'Permit2',
+        functionName: 'approve',
+        args: [token, spender, PERMIT2_MAX_AMOUNT, PERMIT2_MAX_EXPIRATION],
+        address: PCSPermit2 as `0x${string}`,
+    })
+    if (!hash) throw errCode.TRANSACTION_INVALID
 }
 
 /**
  * Ensure Permit2 has granted sufficient allowance to Universal Router via permit2.approve()
  */
 const ensurePermit2AllowanceForRouter = async (token: `0x${string}`, amount: bigint) => {
-    const account = useAccountStore().ethConnectAddress as `0x${string}`;
-    
-    // Check current allowance from Permit2 to Universal Router
-    const result: any = await readContract(
-        'Permit2', 'allowance',
-        [account, token, PCSUniversalRouter],
-        PCSPermit2 as `0x${string}`
-    );
-    
-    const currentAmount = BigInt(result[0] ?? result.amount ?? 0);
-    
-    if (currentAmount < amount) {
-        // Call permit2.approve(token, universalRouter, maxAmount, maxExpiration)
-        const hash = await writeContract({
-            contractName: 'Permit2',
-            functionName: 'approve',
-            args: [token, PCSUniversalRouter, BigInt('0xffffffffffffffffffffffffffffffffffffffff'), BigInt('0xffffffffffff')], // uint160 max, uint48 max
-            address: PCSPermit2 as `0x${string}`
-        });
-        if (!hash) throw errCode.TRANSACTION_INVALID;
-    }
+    await ensurePermit2AllowanceForSpender(token, PCSUniversalRouter as `0x${string}`, amount)
 }
 
 // --- V4 Quote Functions ---
