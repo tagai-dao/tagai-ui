@@ -659,18 +659,75 @@ const buildPairMap = (items: Array<{ token?: string; pair?: string | null | unde
     return pairMap;
 }
 
+/** GeckoTerminal token 接口缓存，避免频繁请求触发 429 */
+const GECKO_TOKEN_CACHE_TTL_MS = 10 * 60 * 1000
+const GECKO_RATE_LIMIT_BACKOFF_MS = 5 * 60 * 1000
+
+type GeckoTokenCacheEntry = {
+    attributes: Record<string, any> | null
+    fetchedAt: number
+}
+
+const geckoTokenCache = new Map<string, GeckoTokenCacheEntry>()
+const geckoTokenInflight = new Map<string, Promise<GeckoTokenCacheEntry | null>>()
+let geckoRateLimitedUntil = 0
+
+const fetchGeckoTokenAttributes = async (token: string): Promise<Record<string, any> | null> => {
+    const key = token.toLowerCase()
+    const now = Date.now()
+    const cached = geckoTokenCache.get(key)
+
+    if (cached && now - cached.fetchedAt < GECKO_TOKEN_CACHE_TTL_MS) {
+        return cached.attributes
+    }
+    if (now < geckoRateLimitedUntil && cached) {
+        return cached.attributes
+    }
+
+    const pending = geckoTokenInflight.get(key)
+    if (pending) {
+        const entry = await pending
+        return entry?.attributes ?? cached?.attributes ?? null
+    }
+
+    const task = (async (): Promise<GeckoTokenCacheEntry | null> => {
+        try {
+            if (Date.now() < geckoRateLimitedUntil) {
+                return cached ?? null
+            }
+            const resp = await fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${key}`)
+            if (resp.status === 429) {
+                geckoRateLimitedUntil = Date.now() + GECKO_RATE_LIMIT_BACKOFF_MS
+                console.warn('GeckoTerminal rate limited, using cached token data')
+                return cached ?? null
+            }
+            if (!resp.ok) return cached ?? null
+            const json = await resp.json()
+            const entry: GeckoTokenCacheEntry = {
+                attributes: json?.data?.attributes ?? null,
+                fetchedAt: Date.now(),
+            }
+            geckoTokenCache.set(key, entry)
+            return entry
+        } catch (e) {
+            console.warn('GeckoTerminal token fetch failed', key, e)
+            return cached ?? null
+        } finally {
+            geckoTokenInflight.delete(key)
+        }
+    })()
+
+    geckoTokenInflight.set(key, task)
+    const entry = await task
+    return entry?.attributes ?? cached?.attributes ?? null
+}
+
 /** GeckoTerminal 聚合 FDV（USD） */
 const getThirdPartyFdvUsd = async (token: string): Promise<number | undefined> => {
-    try {
-        const resp = await fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${token.toLowerCase()}`)
-        if (!resp.ok) return undefined
-        const json = await resp.json()
-        const fdv = parseFloat(json?.data?.attributes?.fdv_usd ?? '0')
-        return fdv > 0 ? fdv : undefined
-    } catch (e) {
-        console.error('getThirdPartyFdvUsd failed', token, e)
-        return undefined
-    }
+    const attrs = await fetchGeckoTokenAttributes(token)
+    if (!attrs) return undefined
+    const fdv = parseFloat(attrs.fdv_usd ?? '0')
+    return fdv > 0 ? fdv : undefined
 }
 
 /** 批量拉取第三方市值（BNB 计价，供 marketCap * ethPrice 展示） */
@@ -1352,15 +1409,16 @@ function parsePoolAttrs(p: any, bnbPrice: number): DexPoolInfo {
 
 export const getTokenDexPools = async (token: string): Promise<TokenDexResult | null> => {
     const tokenLower = token.toLowerCase()
-    let poolsJson: any, tokenJson: any
+    let poolsJson: any
+    let tokenJson: { data: { attributes: Record<string, any> } } | null = null
     try {
-        const [tokenResp, poolsResp] = await Promise.all([
-            fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${tokenLower}`),
+        const [tokenAttrs, poolsResp] = await Promise.all([
+            fetchGeckoTokenAttributes(tokenLower),
             fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${tokenLower}/pools?page=1`)
         ])
         if (!poolsResp.ok) return null
         poolsJson = await poolsResp.json()
-        if (tokenResp.ok) tokenJson = await tokenResp.json()
+        if (tokenAttrs) tokenJson = { data: { attributes: tokenAttrs } }
     } catch (e) {
         console.error('GeckoTerminal fetch error:', e)
         return null

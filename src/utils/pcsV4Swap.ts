@@ -501,17 +501,21 @@ const getSlot0Abi = [{
 }] as const;
 
 /**
- * Read sqrtPriceX96 and lpFee from PCS V4 CLPoolManager by poolId
+ * Read sqrtPriceX96, current tick and lpFee from PCS V4 CLPoolManager by poolId
  */
-const getV4PoolState = async (poolId: `0x${string}`) => {
+export const getV4PoolState = async (poolId: `0x${string}`) => {
     const publicClient = getReadOnlyClient();
-    const [sqrtPriceX96, , , lpFee] = await publicClient.readContract({
+    const [sqrtPriceX96, tick, , lpFee] = await publicClient.readContract({
         address: PCSCLPoolManager as `0x${string}`,
         abi: getSlot0Abi,
         functionName: 'getSlot0',
         args: [poolId]
     });
-    return { sqrtPriceX96: BigInt(sqrtPriceX96), lpFee: Number(lpFee) };
+    return {
+        sqrtPriceX96: BigInt(sqrtPriceX96),
+        tick: Number(tick),
+        lpFee: Number(lpFee),
+    };
 }
 
 /**

@@ -7,6 +7,7 @@ import TagContent from "@/views/tag-detail/TagContent.vue";
 import PredictIndex from '@/views/tag-detail/Prediction/Index.vue';
 import CreditIndex from "@/views/tag-detail/Credit/Index.vue";
 import TagToken from "@/views/tag-detail/TagToken.vue";
+import SpcxbLiquidity from "@/views/tag-detail/SpcxbLiquidity.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
 import { onBeforeRouteLeave, useRoute, useRouter } from "vue-router";
@@ -22,7 +23,7 @@ import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import CommunityMiniTagIndex from "@/views/tag-detail/communityMiniTags/Index.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatPrice } from "@/utils/helper";
-import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply } from '@/config'
+import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply, usesThirdPartyMarketCap } from '@/config'
 import IconLinks from "@/components/home/IconLinks.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
@@ -39,31 +40,36 @@ import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import { isAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 
-const tabOptions = computed(() => {
+const baseTabOptions = computed(() => {
   if (comStore.currentSelectedCommunity?.isImport) {
     return [
-      // {label: 'Group', key: 'group'},
       {label: 'Square', key: 'content'},
       {label: 'Predict', key: 'predict'},
-      // {label: 'Tipped', key: 'tipped'},
-      // {label: 'activity', key: 'activity'},
-      // {label: 'Trades', key: 'trade'},
       {label: 'Credit', key: 'credit'},
       {label: 'Token', key: 'token'},
       {label: 'AI', key: 'ai'},
     ]
   }
   return [
-    // {label: 'Group', key: 'group'},
     {label: 'Square', key: 'content'},
     {label: 'Predict', key: 'predict'},
-    // {label: 'Tipped', key: 'tipped'},
-    // {label: 'activity', key: 'activity'},
     {label: 'Trades', key: 'trade'},
     {label: 'Credit', key: 'credit'},
     {label: 'Token', key: 'token'},
     {label: 'AI', key: 'ai'},
   ]
+})
+
+/** SPCXB 等第三方市值代币：Token Tab 后插入「流动性」Tab */
+const tabOptions = computed(() => {
+  const tabs = [...baseTabOptions.value]
+  if (usesThirdPartyMarketCap(comStore.currentSelectedCommunity?.tick)) {
+    const tokenIdx = tabs.findIndex(t => t.key === 'token')
+    if (tokenIdx >= 0) {
+      tabs.splice(tokenIdx + 1, 0, { label: 'liquidity.tab', key: 'liquidity' })
+    }
+  }
+  return tabs
 })
 enum CurationType {
   TWEET,
@@ -510,6 +516,7 @@ onBeforeRouteLeave((to, from, next) => {
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
             <CreditIndex v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
+            <SpcxbLiquidity v-if="activeTab==='liquidity'"/>
             <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
             <CommunityMiniTagIndex  v-if="activeTab==='activity'"/>
           </div>

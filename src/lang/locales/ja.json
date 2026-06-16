@@ -917,5 +917,31 @@
     "postOnTwitterFirst": "先にXで投稿し、URLを貼り付けてから再度作成してください。",
     "tweetSyncTimeout": "ツイートがまだ同期されていません。少し待って再試行してください。",
     "postMetaGroup": "2026 FIFAワールドカップ · {group}組 · グループステージ"
+  },
+  "liquidity": {
+    "tab": "流動性",
+    "poolOverview": "プール概要",
+    "bnbReserve": "BNB 準備金",
+    "tokenReserve": "{tick} 準備金",
+    "poolMarketCap": "プール時価総額",
+    "lpFee": "LP 手数料",
+    "add": "流動性を追加",
+    "myPositions": "自分のポジション",
+    "selectRange": "価格帯を選択",
+    "currentPrice": "現在価格",
+    "currentTick": "現在の Tick",
+    "fullRange": "全範囲",
+    "manual": "手動",
+    "minPrice": "最低価格",
+    "maxPrice": "最高価格",
+    "deposit": "預入",
+    "slippage": "スリッページ許容",
+    "addBtn": "流動性を追加",
+    "connectToView": "ウォレットを接続してポジションを表示",
+    "noPositions": "流動性ポジションがありません",
+    "inRange": "範囲内",
+    "outOfRange": "範囲外",
+    "priceRange": "価格帯",
+    "remove": "削除"
   }
 }

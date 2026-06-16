@@ -921,5 +921,31 @@
     "postOnTwitterFirst": "请先在 X 完成发帖，再粘贴推文链接后重新创建。",
     "tweetSyncTimeout": "推文尚未同步到平台，请稍等片刻后重试。",
     "postMetaGroup": "2026 世界杯 · {group} 组 · 小组赛"
+  },
+  "liquidity": {
+    "tab": "流动性",
+    "poolOverview": "池子概览",
+    "bnbReserve": "BNB 储备",
+    "tokenReserve": "{tick} 储备",
+    "poolMarketCap": "池子市值",
+    "lpFee": "LP 费率",
+    "add": "添加流动性",
+    "myPositions": "我的仓位",
+    "selectRange": "选择价格区间",
+    "currentPrice": "当前价格",
+    "currentTick": "当前 Tick",
+    "fullRange": "全范围",
+    "manual": "手动",
+    "minPrice": "最低价",
+    "maxPrice": "最高价",
+    "deposit": "存入",
+    "slippage": "滑点容忍",
+    "addBtn": "添加流动性",
+    "connectToView": "连接钱包以查看仓位",
+    "noPositions": "暂无流动性仓位",
+    "inRange": "区间内",
+    "outOfRange": "区间外",
+    "priceRange": "价格区间",
+    "remove": "移除"
   }
 }

@@ -2,9 +2,23 @@ import { get, post, put } from "./axios"
 import { BACKEND_API_URL, VP_CONSUME } from '@/config'
 import type { Community, CreateCommunity } from '@/types'
 
+import type { PoolTvlResponse, ClPositionsIndexResponse } from '@/types/liquidity'
+
 /************************************ common **********************************/
 export const getEthPrice = async () =>
   get(BACKEND_API_URL + '/tiptag/getETHPrice')
+
+/** PCS Infinity 池储备（The Graph 代理，12s 缓存） */
+export const getPoolTvl = async (poolId: string) =>
+  get(BACKEND_API_URL + '/tiptag/pool-tvl', { poolId }) as Promise<PoolTvlResponse>
+
+/** 用户 CL 仓位 tokenId 列表（The Graph 代理，30min 缓存） */
+export const getClPositions = async (owner: string) =>
+  get(BACKEND_API_URL + '/tiptag/cl-positions', { owner }) as Promise<ClPositionsIndexResponse>
+
+/** 用户修改流动性后清除 cl-positions 缓存 */
+export const invalidateClPositionsCache = async (owner: string) =>
+  post(BACKEND_API_URL + '/tiptag/cl-positions/invalidate-cache', { owner })
 
 export const getUserBitip = async (btcAddress: string) =>
   get("https://api.bitip.social/inscription/listByHolder", {btcAddress})

@@ -917,5 +917,31 @@
     "postOnTwitterFirst": "먼저 X에 게시한 뒤 링크를 붙여넣고 다시 생성하세요.",
     "tweetSyncTimeout": "트윗이 아직 동기화되지 않았습니다. 잠시 후 다시 시도하세요.",
     "postMetaGroup": "2026 FIFA 월드컵 · {group}조 · 조별리그"
+  },
+  "liquidity": {
+    "tab": "유동성",
+    "poolOverview": "풀 개요",
+    "bnbReserve": "BNB 준비금",
+    "tokenReserve": "{tick} 준비금",
+    "poolMarketCap": "풀 시가총액",
+    "lpFee": "LP 수수료",
+    "add": "유동성 추가",
+    "myPositions": "내 포지션",
+    "selectRange": "가격 범위 선택",
+    "currentPrice": "현재 가격",
+    "currentTick": "현재 Tick",
+    "fullRange": "전체 범위",
+    "manual": "수동",
+    "minPrice": "최저가",
+    "maxPrice": "최고가",
+    "deposit": "예치",
+    "slippage": "슬리피지 허용",
+    "addBtn": "유동성 추가",
+    "connectToView": "포지션을 보려면 지갑을 연결하세요",
+    "noPositions": "유동성 포지션이 없습니다",
+    "inRange": "범위 내",
+    "outOfRange": "범위 외",
+    "priceRange": "가격 범위",
+    "remove": "제거"
   }
 }

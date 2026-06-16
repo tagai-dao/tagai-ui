@@ -917,5 +917,31 @@
     "postOnTwitterFirst": "पहले X पर पोस्ट करें, लिंक पेस्ट करें, फिर दोबारा बनाएँ।",
     "tweetSyncTimeout": "ट्वीट अभी सिंक नहीं हुआ। थोड़ा इंतज़ार करके फिर कोशिश करें।",
     "postMetaGroup": "2026 FIFA विश्व कप · समूह {group} · ग्रुप चरण"
+  },
+  "liquidity": {
+    "tab": "लिक्विडिटी",
+    "poolOverview": "पूल अवलोकन",
+    "bnbReserve": "BNB रिज़र्व",
+    "tokenReserve": "{tick} रिज़र्व",
+    "poolMarketCap": "पूल मार्केट कैप",
+    "lpFee": "LP शुल्क",
+    "add": "लिक्विडिटी जोड़ें",
+    "myPositions": "मेरे पोज़िशन",
+    "selectRange": "मूल्य सीमा चुनें",
+    "currentPrice": "वर्तमान मूल्य",
+    "currentTick": "वर्तमान Tick",
+    "fullRange": "पूर्ण सीमा",
+    "manual": "मैन्युअल",
+    "minPrice": "न्यूनतम मूल्य",
+    "maxPrice": "अधिकतम मूल्य",
+    "deposit": "जमा",
+    "slippage": "स्लिपेज सहनशीलता",
+    "addBtn": "लिक्विडिटी जोड़ें",
+    "connectToView": "पोज़िशन देखने के लिए वॉलेट कनेक्ट करें",
+    "noPositions": "कोई लिक्विडिटी पोज़िशन नहीं",
+    "inRange": "सीमा में",
+    "outOfRange": "सीमा से बाहर",
+    "priceRange": "मूल्य सीमा",
+    "remove": "हटाएँ"
   }
 }
