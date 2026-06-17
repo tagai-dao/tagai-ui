@@ -944,6 +944,9 @@
     "priceRange": "Rango de precio",
     "remove": "Retirar",
     "insufficientBnb": "Saldo BNB insuficiente (incluye gas)",
-    "insufficientToken": "Saldo {tick} insuficiente"
+    "insufficientToken": "Saldo {tick} insuficiente",
+    "customRange": "Personalizado",
+    "slippageRefundHint": "Los tokens no utilizados dentro de la tolerancia de deslizamiento se reembolsan en la misma transacción.",
+    "dragRangeHint": "Arrastra los controles para ajustar el rango de precios"
   }
 }

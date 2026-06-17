@@ -944,6 +944,9 @@
     "priceRange": "価格帯",
     "remove": "削除",
     "insufficientBnb": "BNB残高不足（Gas分を含む）",
-    "insufficientToken": "{tick} 残高不足"
+    "insufficientToken": "{tick} 残高不足",
+    "customRange": "カスタム",
+    "slippageRefundHint": "スリッページ許容範囲内で未使用のトークンは同一トランザクションで返金されます。",
+    "dragRangeHint": "ハンドルをドラッグして価格範囲を調整"
   }
 }

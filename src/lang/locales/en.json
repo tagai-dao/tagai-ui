@@ -945,6 +945,9 @@
     "priceRange": "Price Range",
     "remove": "Remove",
     "insufficientBnb": "Insufficient BNB balance (including gas reserve)",
-    "insufficientToken": "Insufficient {tick} balance"
+    "insufficientToken": "Insufficient {tick} balance",
+    "customRange": "Custom",
+    "slippageRefundHint": "Unused tokens within slippage tolerance are refunded in the same transaction.",
+    "dragRangeHint": "Drag handles to adjust the price range"
   }
 }

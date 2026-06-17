@@ -118,11 +118,19 @@ export const ticksFromPriceRange = (
   return { tickLower, tickUpper }
 }
 
+const presetToPct = (preset: '5' | '10' | '20', customPct?: number) => {
+  if (preset === '5') return 0.05
+  if (preset === '10') return 0.1
+  if (preset === '20') return 0.2
+  return Math.max(0, customPct ?? 10) / 100
+}
+
 export const ticksFromPreset = (
-  preset: 'full' | '5' | '10',
+  preset: 'full' | '5' | '10' | '20' | 'custom',
   spotBnbPerToken: number,
   tickSpacing: number,
   currentTick: number,
+  customPct?: number,
 ) => {
   if (preset === 'full') {
     return {
@@ -130,13 +138,26 @@ export const ticksFromPreset = (
       tickUpper: nearestUsableTick(TickMath.MAX_TICK, tickSpacing),
     }
   }
-  const pct = preset === '5' ? 0.05 : 0.1
+  const pct = preset === 'custom'
+    ? presetToPct('10', customPct)
+    : presetToPct(preset)
   return ticksFromPriceRange(
     spotBnbPerToken * (1 - pct),
     spotBnbPerToken * (1 + pct),
     tickSpacing,
     currentTick,
   )
+}
+
+/** 按 tick 步进调整 BNB/Token 价格（用于区间边界微调） */
+export const stepBnbPerToken = (
+  bnbPerToken: number,
+  tickDelta: number,
+  tickSpacing: number,
+): number => {
+  const tick = bnbPerTokenToTick(bnbPerToken, tickSpacing)
+  const newTick = nearestUsableTick(tick + tickDelta, tickSpacing)
+  return tickToBnbPerToken(newTick)
 }
 
 export const calcLiquidityAmounts = (

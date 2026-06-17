@@ -944,6 +944,9 @@
     "priceRange": "मूल्य सीमा",
     "remove": "हटाएँ",
     "insufficientBnb": "BNB बैलेंस अपर्याप्त (गैस सहित)",
-    "insufficientToken": "{tick} बैलेंस अपर्याप्त"
+    "insufficientToken": "{tick} बैलेंस अपर्याप्त",
+    "customRange": "कस्टम",
+    "slippageRefundHint": "स्लिपेज सहनशीलता के भीतर अप्रयुक्त टोकन उसी लेनदेन में वापस कर दिए जाते हैं।",
+    "dragRangeHint": "मूल्य सीमा समायोजित करने के लिए हैंडल खींचें"
   }
 }

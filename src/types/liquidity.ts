@@ -19,7 +19,7 @@ export type ClPositionSummary = {
   inRange: boolean
 }
 
-export type PriceRangePreset = 'full' | '5' | '10' | 'manual'
+export type PriceRangePreset = 'full' | '5' | '10' | '20' | 'custom' | 'manual'
 
 /** The Graph position 实体（/tiptag/cl-positions） */
 export type ClPositionIndexItem = {

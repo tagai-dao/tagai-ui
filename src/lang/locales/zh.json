@@ -948,6 +948,9 @@
     "priceRange": "价格区间",
     "remove": "移除",
     "insufficientBnb": "BNB 余额不足（已预留 Gas）",
-    "insufficientToken": "{tick} 余额不足"
+    "insufficientToken": "{tick} 余额不足",
+    "customRange": "自定义",
+    "slippageRefundHint": "滑点容忍范围内未使用的代币将在同一笔交易中退回。",
+    "dragRangeHint": "拖动手柄调整价格区间"
   }
 }

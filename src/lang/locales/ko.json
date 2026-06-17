@@ -944,6 +944,9 @@
     "priceRange": "가격 범위",
     "remove": "제거",
     "insufficientBnb": "BNB 잔액 부족 (가스 포함)",
-    "insufficientToken": "{tick} 잔액 부족"
+    "insufficientToken": "{tick} 잔액 부족",
+    "customRange": "사용자 지정",
+    "slippageRefundHint": "슬리피지 허용 범위 내 미사용 토큰은 동일 트랜잭션에서 환불됩니다.",
+    "dragRangeHint": "핸들을 드래그하여 가격 범위 조정"
   }
 }

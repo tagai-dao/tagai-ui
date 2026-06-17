@@ -944,6 +944,9 @@
     "priceRange": "Rentang harga",
     "remove": "Hapus",
     "insufficientBnb": "Saldo BNB tidak cukup (termasuk gas)",
-    "insufficientToken": "Saldo {tick} tidak cukup"
+    "insufficientToken": "Saldo {tick} tidak cukup",
+    "customRange": "Kustom",
+    "slippageRefundHint": "Token yang tidak terpakai dalam toleransi slippage dikembalikan dalam transaksi yang sama.",
+    "dragRangeHint": "Seret handle untuk menyesuaikan rentang harga"
   }
 }
