@@ -54,14 +54,50 @@ export const getOutcomeReserves = (market: EventPredictData): number[] => {
   return [market.reserveA ?? 0, market.reserveB ?? 0]
 }
 
-/** FPMM 边际价格权重：Π_{j≠i} r_j（与 Gnosis FPMM / Polymarket 一致） */
-const calcFpmmPriceWeight = (reserves: number[], outcomeIndex: number) => {
-  let weight = 1
-  for (let j = 0; j < reserves.length; j++) {
-    if (j === outcomeIndex) continue
-    weight *= reserves[j] ?? 0
+/** outcome 数量超过此阈值时用对数域计算，否则用直接乘法（二元/三元/四元更轻量） */
+const LOG_CALC_MIN_OUTCOMES = 5
+
+/** 储备抹除 18 位小数精度为整型 token 单位 */
+const reservesToIntUnits = (reserves: number[]): number[] =>
+  reserves.map((r) => Math.floor(Math.max(0, Number(r) || 0)))
+
+const noLiquidityPercents = (n: number) => Array.from({ length: n }, () => 0)
+
+/** 直接乘法：weight_i = P / r_i，适用于少量 outcome */
+const calcOutcomePercentsFromScaledDirect = (scaled: number[]): number[] => {
+  let product = 1
+  for (const r of scaled) {
+    product *= r
   }
-  return weight
+  const weights = scaled.map((r) => product / r)
+  const weightSum = weights.reduce((sum, w) => sum + w, 0)
+  if (weightSum <= 0) return noLiquidityPercents(scaled.length)
+  return weights.map((w) => w / weightSum)
+}
+
+/** 对数域：log(weight_i) = Σ log(r_j) - log(r_i)，归一化用 log-sum-exp */
+const calcOutcomePercentsFromScaledLog = (scaled: number[]): number[] => {
+  const logReserves = scaled.map((r) => Math.log(r))
+  const totalLog = logReserves.reduce((sum, logR) => sum + logR, 0)
+  const logWeights = logReserves.map((logR) => totalLog - logR)
+
+  const maxLog = Math.max(...logWeights)
+  const expWeights = logWeights.map((logW) => Math.exp(logW - maxLog))
+  const sumExp = expWeights.reduce((sum, w) => sum + w, 0)
+  if (sumExp <= 0) return noLiquidityPercents(scaled.length)
+  return expWeights.map((w) => w / sumExp)
+}
+
+const calcOutcomePercentsFromScaled = (scaled: number[]): number[] => {
+  const n = scaled.length
+  if (n === 0) return []
+  if (n === 1) return [1]
+  if (scaled.every((r) => r === 0)) return noLiquidityPercents(n)
+  if (scaled.some((r) => r <= 0)) return noLiquidityPercents(n)
+
+  return n >= LOG_CALC_MIN_OUTCOMES
+    ? calcOutcomePercentsFromScaledLog(scaled)
+    : calcOutcomePercentsFromScaledDirect(scaled)
 }
 
 /**
@@ -74,13 +110,7 @@ export const calcOutcomePercents = (reserves: number[]) => {
   const n = reserves.length
   if (n === 0) return [] as number[]
   if (n === 1) return [1]
-
-  const weights = reserves.map((_, i) => calcFpmmPriceWeight(reserves, i))
-  const weightSum = weights.reduce((sum, w) => sum + w, 0)
-  if (weightSum <= 0) {
-    return reserves.map(() => 1 / n)
-  }
-  return weights.map(w => w / weightSum)
+  return calcOutcomePercentsFromScaled(reservesToIntUnits(reserves))
 }
 
 /**
