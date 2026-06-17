@@ -241,8 +241,9 @@ const liquidityLoading = ref(false)
 const isResolved = computed(() => props.market.status === 3)
 
 const showLiquidityDot = computed(() => {
-  // 已结算后 removeFunding 会 SafeMath revert，不引导用户操作
-  return false
+  return accStore.ethConnectState === EthWalletState.Connected &&
+         isResolved.value &&
+         lpBalance.value > 1
 })
 
 const showRedeemDot = computed(() => {
@@ -642,7 +643,7 @@ const tradeTimeLeftText = computed(() => {
         <button v-else
             class="w-full py-4 flex justify-center items-center rounded-full bg-gradient-primary font-bold text-lg text-white shadow-lg transition-all transform active:scale-[0.99]"
             @click="handleLiquidityAction"
-            :disabled="liquidityLoading || !liquidityAmount || (props.market.status !== 1 && liquidityType === 'add') || (props.market.status === 3 && liquidityType === 'remove')"
+            :disabled="liquidityLoading || !liquidityAmount || (props.market.status !== 1 && liquidityType === 'add')"
         >
             {{ liquidityType === 'add' ? $t('predictLiquidity.addLiquidity') : $t('predictLiquidity.removeLiquidity') }}
             <i-ep-loading v-if="liquidityLoading" class="animate-spin ml-2" />
