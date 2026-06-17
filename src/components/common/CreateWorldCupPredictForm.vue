@@ -624,6 +624,7 @@ onMounted(async () => {
       :title="pickerTitle"
       :teams="pickerTeams"
       :selected-code="pickerSide === 'left' ? leftTeam : rightTeam"
+      :grouped="pickerSide === 'left'"
       @select="onPickerSelect"
     />
   </div>
