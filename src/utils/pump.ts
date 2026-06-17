@@ -4,7 +4,7 @@ import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
-import { aggregate } from '@makerdao/multicall'
+import { aggregateWithRpcFallback } from './multicall'
 import errCode from "@/errCode";
 import _ from 'lodash'
 import { useStateStore } from "@/stores/common";
@@ -633,7 +633,7 @@ export const getUserTokenInfo = async (token: string, ethAddr: string) => {
             returns: [['ethBalance', (val: any) => val / 10 ** 18]]
           }
     ]
-    const res = await aggregate(calls, ChainConfig.multiConfig);
+    const res = await aggregateWithRpcFallback(calls);
     return res.results.transformed;
 }
 
@@ -905,7 +905,7 @@ export const getTokenOnchainInfo = async (
                     pair
                 }] as const;
             } catch (error) {
-                console.error('load token base info failed', token, version, error);
+                console.warn('load token base info failed', token, version, error);
                 return [token, {
                     bondingCurveSupply: 0n,
                     listed: false,
@@ -978,10 +978,10 @@ export const getTokenOnchainInfo = async (
     }
     let infos: any = {}
     try {
-        const res = await aggregate(calls, ChainConfig.multiConfig)
+        const res = await aggregateWithRpcFallback(calls)
         infos = res.results.transformed
     } catch (error) {
-        console.error('getTokenOnchainInfo base multicall failed, fallback to single calls', error);
+        console.warn('getTokenOnchainInfo base multicall failed, fallback to single calls', error);
         infos = await loadBaseInfosByFallback();
     }
     let result: any = {}
@@ -1030,7 +1030,7 @@ export const getTokenOnchainInfo = async (
     }
     if (v8TotalClaimedCalls.length > 0) {
         try {
-            const v8Res = await aggregate(v8TotalClaimedCalls, ChainConfig.multiConfig)
+            const v8Res = await aggregateWithRpcFallback(v8TotalClaimedCalls)
             const transformed = v8Res.results.transformed as Record<string, bigint>
             for (const key of Object.keys(transformed)) {
                 const suffix = '-totalClaimedSocialRewards'
@@ -1136,7 +1136,7 @@ export const getTokenOnchainInfo = async (
         }
     }
     if (calls.length > 0) {
-        let res = await aggregate(calls, ChainConfig.multiConfig);
+        let res = await aggregateWithRpcFallback(calls);
         res = res.results.transformed;
         for (let [key, value] of Object.entries(result)) {
             const version = versions[key] ?? 4;
@@ -1343,7 +1343,7 @@ export const getAIBalance = async (tokens: string[]) => {
             ]
         })
     }
-    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const res = await aggregateWithRpcFallback(calls)
     return res.results.transformed
 }
 
@@ -1466,7 +1466,7 @@ export const getTokenERC20Info = async (token: string): Promise<{ totalSupply: n
         { target: token, call: ['symbol()(string)'], returns: [[token + '-symbol']] },
         { target: token, call: ['decimals()(uint8)'], returns: [[token + '-decimals']] }
     ]
-    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const res = await aggregateWithRpcFallback(calls)
     const data = res.results.transformed
     const decimals = data[token + '-decimals']
     const totalSupply = Number(data[token + '-totalSupply'].toString()) / (10 ** decimals)

@@ -52,6 +52,9 @@ Project-specific Guidelines (Vue 3 + Vite)
 - Global modals are managed via `useModalStore` in `src/stores/common.ts`.
 - React components (Privy auth) live in `src/react_app/` and are embedded via veaury.
 
+On-chain Data (Web3)
+- When reading on-chain data, prefer multicall batching to reduce RPC call frequency.
+
 Internationalization (i18n)
 - All user-facing text MUST use vue-i18n (`$t()` / `t()`); never hardcode strings in templates or components.
 - Locale files live in `src/lang/locales/`: `en.json`, `zh.json`, `ko.json`, `ja.json`, `es.json`, `hi.json`, `id.json`.

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, watch, ref, onUnmounted } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
+import { usePageVisibleInterval } from '@/composables/usePageVisibleInterval'
 import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
@@ -305,17 +306,14 @@ watch(() => accStore.ethConnectAddress, (newVal) => {
   updateBalances()
 }, { immediate: true })
 
-let interval: any;
-onMounted(async () => {
-  interval = setInterval(() => {
-    updateReserves()
-  }, 3000)
-  updateReserves()
-  updateBalances()
+usePageVisibleInterval(() => updateReserves(), {
+  intervalMs: 20_000,
+  immediate: false,
 })
 
-onUnmounted(() => {
-  clearInterval(interval)
+onMounted(() => {
+  updateReserves()
+  updateBalances()
 })
 
 function copyMarketAddress(address: `0x${string}`) {

@@ -6,7 +6,7 @@ import { ChainConfig, WETH, Ether, USD_CONTRACTS,
     FPMMDeterministicFactoryEventV3} from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { abis } from './abis'
-import { aggregate } from '@makerdao/multicall'
+import { aggregateWithRpcFallback } from './multicall'
 import _, { min } from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { useAccountStore } from "@/stores/web3";
@@ -312,7 +312,7 @@ export const getEventMarketInfos = async (market: EventPredictData): Promise<Eve
         returns: [[market.marketMaker + '-totalSupply', (val: any) => val / 1e18]]
     })
 
-    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const res = await aggregateWithRpcFallback(calls)
     const transformed = res.results.transformed as Record<string, number>
     const reserves = useMulti
         ? outcomes.map(o => transformed[`${market.marketMaker}-reserve-${o.outcomeIndex}`] ?? 0)
@@ -329,54 +329,93 @@ export const getEventMarketInfos = async (market: EventPredictData): Promise<Eve
 
 export const getMarketInfos = async (markets: BattleData[] | EventPredictData[]) => {
     if (markets.length === 0) {
-        return []
+        return {} as Record<string, number>
     }
-    // 获取价格
-    let calls = [];
-    for (let market of markets) {
+    const calls: any[] = []
+    for (const market of markets) {
+        const eventMarket = market as EventPredictData
+        const outcomes = getOutcomeList(eventMarket).filter(o => o.positionId)
+        const useMulti = isMultiOutcomeEventFactory(eventMarket.factoryVersion) && outcomes.length > 0
+
+        if (useMulti) {
+            for (const o of outcomes) {
+                calls.push({
+                    target: ConditionalTokens,
+                    call: [
+                        'balanceOf(address,uint256)(uint256)',
+                        market.marketMaker,
+                        o.positionId,
+                    ],
+                    returns: [
+                        [`${market.marketMaker}-reserve-${o.outcomeIndex}`, (val: any) => val / 1e18],
+                    ],
+                })
+            }
+        } else {
+            calls.push({
+                target: ConditionalTokens,
+                call: [
+                    'balanceOf(address,uint256)(uint256)',
+                    market.marketMaker,
+                    market.positionAID,
+                ],
+                returns: [
+                    [market.marketMaker + '-priceA', (val: any) => val / 1e18],
+                ],
+            })
+            calls.push({
+                target: ConditionalTokens,
+                call: [
+                    'balanceOf(address,uint256)(uint256)',
+                    market.marketMaker,
+                    market.positionBID,
+                ],
+                returns: [
+                    [market.marketMaker + '-priceB', (val: any) => val / 1e18],
+                ],
+            })
+        }
         calls.push({
-            target: ConditionalTokens,
-            call: [
-                'balanceOf(address,uint256)(uint256)',
-                market.marketMaker,
-                market.positionAID
-            ],
-            returns: [
-                [market.marketMaker + '-priceA', (val: any) => val / 1e18]
-            ]
-        })
-        calls.push({
-            target: ConditionalTokens,
-            call: [
-                'balanceOf(address,uint256)(uint256)',
-                market.marketMaker,
-                market.positionBID
-            ],
-            returns: [
-                [market.marketMaker + '-priceB', (val: any) => val / 1e18]
-            ]
+            target: market.marketMaker,
+            call: ['getFee()(uint256)'],
+            returns: [[market.marketMaker + '-fee', (val: any) => val / 1e18]],
         })
         calls.push({
             target: market.marketMaker,
-            call: [
-                'getFee()(uint256)'
-            ],
-            returns: [
-                [market.marketMaker + '-fee', (val: any) => val / 1e18]
-            ]
-        })
-        calls.push({
-            target: market.marketMaker,
-            call: [
-                'totalSupply()(uint256)'
-            ],
-            returns: [
-                [market.marketMaker + '-totalSupply', (val: any) => val / 1e18]
-            ]
+            call: ['totalSupply()(uint256)'],
+            returns: [[market.marketMaker + '-totalSupply', (val: any) => val / 1e18]],
         })
     }
-    const res = await aggregate(calls, ChainConfig.multiConfig)
-    return res.results.transformed;
+    const res = await aggregateWithRpcFallback(calls)
+    return res.results.transformed as Record<string, number>
+}
+
+/** 将批量 multicall 结果写回 event 市场对象（含多元 outcomeReserves） */
+export const applyMulticallInfosToEvent = (
+    event: EventPredictData,
+    infos: Record<string, number>,
+) => {
+    const mm = event.marketMaker
+    const fee = infos[`${mm}-fee`] ?? 0
+    const outcomes = getOutcomeList(event).filter(o => o.positionId)
+    const useMulti = isMultiOutcomeEventFactory(event.factoryVersion) && outcomes.length > 0
+
+    if (useMulti) {
+        const outcomeReserves = outcomes.map(
+            o => infos[`${mm}-reserve-${o.outcomeIndex}`] ?? 0,
+        )
+        return {
+            outcomeReserves,
+            reserveA: outcomeReserves[0] ?? 0,
+            reserveB: outcomeReserves[1] ?? 0,
+            fee,
+        }
+    }
+    return {
+        reserveA: infos[`${mm}-priceA`] ?? 0,
+        reserveB: infos[`${mm}-priceB`] ?? 0,
+        fee,
+    }
 }
 
 export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0x${string}`, battle: BattleData | EventPredictData) {
@@ -406,7 +445,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
                 returns: [[`outcome-${o.outcomeIndex}`, (val: any) => val]]
             })
         }
-        const res = await aggregate(calls, ChainConfig.multiConfig)
+        const res = await aggregateWithRpcFallback(calls)
         const transformed = res.results.transformed as Record<string, bigint>
         const outcomeBalances = outcomes.map(o => Number(transformed[`outcome-${o.outcomeIndex}`] ?? 0n) / 1e18)
         const outcomeBalancesBi = outcomes.map(o => transformed[`outcome-${o.outcomeIndex}`] ?? 0n)
@@ -469,7 +508,7 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
             ]
         }
     ]
-    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const res = await aggregateWithRpcFallback(calls)
     const transformed = res.results.transformed;
     let result: any = {};
     for (let [key, value] of Object.entries(transformed)) {
@@ -493,7 +532,7 @@ export async function getPotentialReward(market: EventPredictData) {
             ['rewardAmount', (val: any) => val.toString() / 1e18]
         ]
     }]
-    const res: any = await aggregate(calls, ChainConfig.multiConfig)
+    const res: any = await aggregateWithRpcFallback(calls)
     return res.results.transformed;
 }
 
@@ -522,7 +561,7 @@ export async function getBuyData(battle: BattleData | EventPredictData, shares: 
             ['fee', (val: any) => val.toString() / 1e18]
         ]
     }]
-    const res: any = await aggregate(calls, ChainConfig.multiConfig)
+    const res: any = await aggregateWithRpcFallback(calls)
     return res.results.transformed;
 }
 
@@ -545,7 +584,7 @@ export async function getSellData(battle: BattleData | EventPredictData, reserve
         if (stateReturnAmount === 0) return { receive: 0, fee: 0 }
 
         const returnBi = parseUnits(stateReturnAmount.toFixed(18), 18)
-        const res: any = await aggregate([{
+        const res: any = await aggregateWithRpcFallback([{
             target: battle.marketMaker,
             call: [
                 "getBNBFee(uint256)(uint256)",
@@ -554,7 +593,7 @@ export async function getSellData(battle: BattleData | EventPredictData, reserve
             returns: [
                 ['fee', (val: any) => val.toString() / 1e18]
             ]
-        }], ChainConfig.multiConfig)
+        }])
 
         return { receive: stateReturnAmount, fee: res.results.transformed.fee }
     }
@@ -589,7 +628,7 @@ export async function getSellData(battle: BattleData | EventPredictData, reserve
             ['fee', (val: any) => val.toString() / 1e18]
         ]
     }]
-    const res: any = await aggregate(calls, ChainConfig.multiConfig)
+    const res: any = await aggregateWithRpcFallback(calls)
     const fee = res.results.transformed.fee;
 
     return {receive: stateReturnAmount, fee};
@@ -681,7 +720,7 @@ export async function calculateMaxSellAmount(battle: BattleData, index: number) 
             ]
         }
     ]
-    const res = await aggregate(calls, ChainConfig.multiConfig)
+    const res = await aggregateWithRpcFallback(calls)
     const S = res.results.transformed['balance'];
     const poolBalanceA = res.results.transformed['poolBalanceA'];
     const poolBalanceB = res.results.transformed['poolBalanceB'];

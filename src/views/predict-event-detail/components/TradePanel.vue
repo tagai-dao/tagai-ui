@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, watch, ref, onUnmounted } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
+import { usePageVisibleInterval } from '@/composables/usePageVisibleInterval'
 import { formatAddress, formatAmount } from '@/utils/helper'
 import { useTools } from '@/composables/useTools'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
@@ -349,25 +350,10 @@ watch(() => accStore.ethConnectAddress, (newVal) => {
   updateBalances()
 }, { immediate: true })
 
-let interval: any;
-onMounted(async () => {
-  // 初始获取一次池子数据（reserve/lpSupply），即使已结束也需要 lpSupply 展示
+onMounted(() => {
+  // 已结束市场仍需一次 lpSupply；交易期由下方轮询刷新
   updateReserves()
-  // 交易结束后不再定时刷链上储备，避免结算改变池子导致展示失真
-  if (!isTradeEnded.value) {
-    interval = setInterval(() => {
-      if (now.value.getTime() >= tradeEndTime.value) {
-        clearInterval(interval)
-        return
-      }
-      updateReserves()
-    }, 3000)
-  }
   updateBalances()
-})
-
-onUnmounted(() => {
-  clearInterval(interval)
 })
 
 function copyMarketAddress(address: `0x${string}`) {
@@ -378,6 +364,12 @@ function copyMarketAddress(address: `0x${string}`) {
 const tradeEndTime = computed(() => props.market.endTime * 1000)
 const isTradeEnded = computed(() => {
   return now.value.getTime() >= tradeEndTime.value
+})
+
+usePageVisibleInterval(() => updateReserves(), {
+  intervalMs: 20_000,
+  enabled: () => !isTradeEnded.value,
+  immediate: false,
 })
 
 const pad = (n: number) => n.toString().padStart(2, '0')

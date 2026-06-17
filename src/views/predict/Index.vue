@@ -8,7 +8,7 @@ import { GlobalModalType, type BattleData, type Tweet, type EventPredictData } f
 import { useI18n } from 'vue-i18n'
 import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
 import PredictEventCard from '@/components/common/PredictEventCard.vue'
-import { getMarketInfos } from '@/utils/fpmm'
+import { getMarketInfos, applyMulticallInfosToEvent } from '@/utils/fpmm'
 import { computed } from 'vue'
 import { useCommunityStore } from '@/stores/community'
 import { useStateStore } from '@/stores/common'
@@ -214,14 +214,11 @@ async function onEventRefresh() {
         eventRefreshing.value = true
         const data: any = await getAggPredictEventData(props.type, 0)
         if (data && data.length > 0) {
-            const marketInfos = await getMarketInfos(data as EventPredictData[])
-            events.value[props.type] = (data as EventPredictData[]).map(event => ({
-                ...event,
-                winner: getEventWinner(event),
-                reserveA: marketInfos[event.marketMaker + '-priceA'],
-                reserveB: marketInfos[event.marketMaker + '-priceB'],
-                fee: marketInfos[event.marketMaker + '-fee']
-            }))
+            const list = data as EventPredictData[]
+            const marketInfos = list.length
+                ? await getMarketInfos(eventsNeedingChainReserves(list))
+                : {}
+            events.value[props.type] = list.map(event => mapEventWithMarketInfos(event, marketInfos))
         } else {
             events.value[props.type] = []
         }
@@ -238,14 +235,13 @@ async function onEventLoad() {
         eventLoading.value = true
         const data: any = await getAggPredictEventData(props.type, Math.floor((events.value[props.type]?.length - 1) / 16) + 1)
         if (data && data.length > 0) {
-            const marketInfos = await getMarketInfos(data as EventPredictData[])
-            events.value[props.type] = events.value[props.type].concat((data as EventPredictData[]).map(event => ({
-                ...event,
-                winner: getEventWinner(event),
-                reserveA: marketInfos[event.marketMaker + '-priceA'],
-                reserveB: marketInfos[event.marketMaker + '-priceB'],
-                fee: marketInfos[event.marketMaker + '-fee']
-            })))
+            const list = data as EventPredictData[]
+            const marketInfos = list.length
+                ? await getMarketInfos(eventsNeedingChainReserves(list))
+                : {}
+            events.value[props.type] = events.value[props.type].concat(
+                list.map(event => mapEventWithMarketInfos(event, marketInfos)),
+            )
         }
         if (!data || data.length < 30) {
             eventFinishedMap.value[props.type] = true
@@ -256,6 +252,16 @@ async function onEventLoad() {
         eventLoading.value = false
     }
 }
+
+const mapEventWithMarketInfos = (event: EventPredictData, marketInfos: Record<string, number>) => ({
+    ...event,
+    winner: getEventWinner(event),
+    ...applyMulticallInfosToEvent(event, marketInfos),
+})
+
+/** 交易期内市场才批量拉链上储备（已结束用 DB 快照） */
+const eventsNeedingChainReserves = (list: EventPredictData[]) =>
+    list.filter(e => e.status < 2 && Date.now() < e.endTime * 1000)
 
 // 判断事件预测胜利者
 const getEventWinner = (event: EventPredictData): 'yes' | 'no' | null => {

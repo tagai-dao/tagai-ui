@@ -15,12 +15,7 @@ export const customBsc = {
   ...bsc,
   rpcUrls: {
     default: {
-      http: [
-        ChainConfig.rpc,
-        'https://rpc.ankr.com/bsc',
-        'https://bsc.rpc.blxrbdn.com',
-        'https://56.rpc.thirdweb.com',
-      ]
+      http: ChainConfig.rpcUrls,
     }
   }
 }

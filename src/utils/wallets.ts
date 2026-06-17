@@ -6,7 +6,7 @@ import { MetaMaskSDK } from '@metamask/sdk';
 import { getProvider as getBNProvider } from "@binance/w3w-ethereum-provider";
 import { ChainConfig } from "@/config"
 import { usePrivyStore } from '@/stores/privy';
-import { createWalletClient, createPublicClient, custom, http } from 'viem';
+import { createWalletClient, createPublicClient, custom, http, fallback } from 'viem';
 import { customBsc } from './privy';
 import { useModalStore } from '@/stores/common';
 import { GlobalModalType } from '@/types';
@@ -59,9 +59,13 @@ export const getReadOnlyClient = () => {
     if (readOnlyClient) {
         return readOnlyClient;
     }
+    const rpcUrls = ChainConfig.rpcUrls?.length ? ChainConfig.rpcUrls : [ChainConfig.rpc]
     readOnlyClient = createPublicClient({
         chain: customBsc,
-        transport: http()
+        transport: fallback(
+            rpcUrls.map((url) => http(url, { timeout: 15_000 })),
+            { rank: false },
+        ),
     });
     return readOnlyClient;
 }

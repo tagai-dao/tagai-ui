@@ -222,7 +222,7 @@ onMounted(async () => {
   getSpaces();
   setInter(getSpaces, 20000);
   getNewCommunities();
-  newCommunitiesInterval = setInterval(getNewCommunities, 30000);
+  newCommunitiesInterval = setInterval(getNewCommunities, 60000);
   emitter.on('newCommunity', refresh);
 })
 

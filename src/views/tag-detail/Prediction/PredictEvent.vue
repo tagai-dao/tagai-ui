@@ -7,7 +7,7 @@ import { handleErrorTip } from '@/utils/notify'
 import { useAccountStore } from '@/stores/web3'
 import emitter from '@/utils/emitter'
 import PredictEventCard from '@/components/common/PredictEventCard.vue'
-import { getMarketInfos } from '@/utils/fpmm'
+import { getMarketInfos, applyMulticallInfosToEvent } from '@/utils/fpmm'
 
 // Event 组件暂时复用 Battle 的逻辑和数据源
 const comStore = useCommunityStore()
@@ -18,6 +18,22 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 
+const getWinner = (market: EventPredictData): 'yes' | 'no' | null => {
+  if (market.status == 3 || market.endTime * 1000 + 86400000 < Date.now()) {
+    return (market.voteYes ?? 0) > (market.voteNo ?? 0) ? 'yes' : 'no'
+  }
+  return null
+}
+
+const eventsNeedingChainReserves = (list: EventPredictData[]) =>
+    list.filter(e => e.status < 2 && Date.now() < e.endTime * 1000)
+
+const mapEventWithMarketInfos = (market: EventPredictData, marketInfos: Record<string, number>) => ({
+    ...market,
+    winner: getWinner(market),
+    ...applyMulticallInfosToEvent(market, marketInfos),
+})
+
 const onRefresh = async () => {
     try {
         if (refreshing.value) return
@@ -25,14 +41,11 @@ const onRefresh = async () => {
         const data: any = await getPredictEventData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId)
 
         if (data && data.length > 0) {
-          const marketInfos = await getMarketInfos(data as EventPredictData[])
-            markets.value = (data as EventPredictData[]).map(market => ({
-                ...market,
-                winner: getWinner(market),
-                reserveA: marketInfos[market.marketMaker + '-priceA'],
-                reserveB: marketInfos[market.marketMaker + '-priceB'],
-                fee: marketInfos[market.marketMaker + '-fee']
-            }))
+          const list = data as EventPredictData[]
+          const marketInfos = list.length
+            ? await getMarketInfos(eventsNeedingChainReserves(list))
+            : {}
+            markets.value = list.map(market => mapEventWithMarketInfos(market, marketInfos))
         }else {
             markets.value = []
         }
@@ -54,14 +67,13 @@ const onLoad = async () => {
         // TODO: 这里后续替换为 Event 的数据源接口
         const data: any = await getPredictEventData(comStore.currentSelectedCommunity!.tick, accStore.getAccountInfo?.twitterId, Math.floor((markets.value.length - 1) / 16) + 1) as EventPredictData[]
         if (data && data.length > 0) {
-          const marketInfos = await getMarketInfos(data as EventPredictData[])
-          markets.value = markets.value.concat((data as EventPredictData[]).map(market => ({
-              ...market,
-              winner: getWinner(market),
-              reserveA: marketInfos[market.marketMaker + '-priceA'],
-              reserveB: marketInfos[market.marketMaker + '-priceB'],
-              fee: marketInfos[market.marketMaker + '-fee']
-          })))
+          const list = data as EventPredictData[]
+          const marketInfos = list.length
+            ? await getMarketInfos(eventsNeedingChainReserves(list))
+            : {}
+          markets.value = markets.value.concat(
+            list.map(market => mapEventWithMarketInfos(market, marketInfos)),
+          )
         }
         if (!data || data.length < 16) {
             finished.value = true
@@ -73,15 +85,7 @@ const onLoad = async () => {
     }
 }
 
-// 判断胜利者
-const getWinner = (market: EventPredictData): 'yes' | 'no' | null => {
-  if (market.status == 3 || market.endTime * 1000 + 86400000 < Date.now()) {
-    return (market.voteYes ?? 0) > (market.voteNo ?? 0) ? 'yes' : 'no'
-  }
-  return null
-}
-
-// 对外暴露刷新方法，供父组件调用（如果需要）
+// 判断胜利者（见上方 getWinner）
 defineExpose({
   onRefresh
 })

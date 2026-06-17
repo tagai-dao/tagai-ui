@@ -2,7 +2,7 @@ import axios from "axios";
 import axiosRetry from "axios-retry";
 import { useAccountStore } from '@/stores/web3';
 
-axiosRetry(axios, { retries: 3 });
+axiosRetry(axios, { retries: 2 });
 
 axios.defaults.timeout = 30000;
 axios.defaults.headers.common['Cache-Control'] = 'no-cache';

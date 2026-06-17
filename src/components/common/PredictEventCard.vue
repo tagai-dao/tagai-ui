@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, watch, computed, onMounted } from 'vue'
+import { ref, nextTick, watch, computed } from 'vue'
 import { getUserPredictVP, newParticipation, voteEventPrediction, createPredictCommerce, tweet } from '@/apis/api';
 import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from '@/utils/twitterPost';
 import { useAccount } from '@/composables/useAccount';
@@ -31,6 +31,8 @@ const props = defineProps<{
   market: EventPredictData,
   showCommunity?: boolean
 }>()
+
+defineOptions({ inheritAttrs: false })
 const router = useRouter();
 const accStore = useAccountStore();
 const { updateUserOPLocal } = useAccount();
@@ -83,13 +85,7 @@ const refreshMarketReserves = async () => {
   props.market.fee = marketInfos[props.market.marketMaker + '-fee'];
 };
 
-// 列表接口只回二元 reserveA/B；多元市场进场即补拉各 outcome 真实储备（交易期）；结束后用 DB 快照
-onMounted(() => {
-  if (props.market.status >= 2 || Date.now() >= props.market.endTime * 1000) return
-  if (isMultiOutcome.value && !props.market.outcomeReserves?.length) {
-    refreshMarketReserves().catch(() => {})
-  }
-})
+// 列表页由父级批量 multicall 注入 outcomeReserves，此处不再逐卡请求
 
 // 交易量（USD）：优先 tradeVolume，未回填时回退池内储备，与 /predictions 标签条口径一致
 const volUsd = usePredictVolUsd(() => props.market)
@@ -456,7 +452,9 @@ const selectedBuyColor = computed(() => {
 </script>
 
 <template>
-  <div @click="gotoDetail()"
+  <div
+    v-bind="$attrs"
+    @click="gotoDetail()"
     class="battle-card bg-white rounded-2xl p-2 sm:p-4 shadow-sm border mb-3 border-grey-light">
     <!-- 卡片头部 -->
     <div class="flex justify-between items-start">
