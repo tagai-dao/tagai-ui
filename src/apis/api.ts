@@ -453,6 +453,19 @@ export const getFPMMKlineData = async (
 ) =>
   get(BACKEND_API_URL + '/predict/getFPMMTradeData', { fpmm, timestamp, isNew, outcomeIndex })
 
+export const getFPMMKlineDataBatch = async (
+  fpmm: string,
+  timestamp: number | undefined,
+  isNew: boolean,
+  outcomeIndexes: number[]
+) =>
+  get(BACKEND_API_URL + '/predict/getFPMMTradeData', {
+    fpmm,
+    timestamp,
+    isNew,
+    outcomeIndexes: outcomeIndexes.join(','),
+  })
+
 export const getFPMMUserHoldings = async (marketAddr: string, positionAID: string, positionBID: string, pageIndex?: number) =>
   get(BACKEND_API_URL + '/predict/userHoldings', { marketAddr, positionAID, positionBID, pageIndex })
 

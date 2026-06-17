@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import VueApexCharts from 'vue3-apexcharts'
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
-import { getFPMMKlineData } from '@/apis/api'
+import { getFPMMKlineDataBatch } from '@/apis/api'
 import type { ApexOptions } from 'apexcharts'
 import type { EventPredictOutcome, KlineData } from '@/types'
 import { OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes'
@@ -33,6 +33,7 @@ const isMultiSeries = computed(() => chartOutcomes.value.length > 1)
 
 const timeframes = ['1MIN', '5MIN', '1H']
 const activeTimeframe = ref('1MIN')
+const isLoading = ref(false)
 
 const series = ref<{ name: string; data: [number, number][] }[]>([])
 const currentPrices = ref<Record<number, number | null>>({})
@@ -137,39 +138,48 @@ function updateChartData() {
   currentPrices.value = nextPrices
 }
 
-async function fetchOutcomeData(outcomeIndex: number, isUpdate = false) {
+function getUpdateTimestamp() {
+  let minTimestamp = Number.MAX_SAFE_INTEGER
+  for (const outcome of chartOutcomes.value) {
+    const ts = lastTimestampByOutcome.get(outcome.outcomeIndex)
+    if (!ts || ts <= 0) continue
+    minTimestamp = Math.min(minTimestamp, ts)
+  }
+  return minTimestamp === Number.MAX_SAFE_INTEGER ? undefined : minTimestamp
+}
+
+function mergeOutcomeData(outcomeIndex: number, newItems: KlineData[], isUpdate: boolean) {
   const lastTs = lastTimestampByOutcome.get(outcomeIndex) ?? 0
-  const res: any = await getFPMMKlineData(
-    props.marketAddr,
-    isUpdate ? lastTs : undefined,
-    true,
-    outcomeIndex
-  )
-
-  if (!res?.length) return
-
-  const newItems = res as KlineData[]
   const existing = allDataByOutcome.get(outcomeIndex) ?? []
-
   if (isUpdate && existing.length > 0) {
     const uniqueNewItems = newItems.filter(item => item.timestamp > lastTs)
     allDataByOutcome.set(outcomeIndex, existing.concat(uniqueNewItems).sort((a, b) => a.timestamp - b.timestamp))
   } else {
     allDataByOutcome.set(outcomeIndex, [...newItems].sort((a, b) => a.timestamp - b.timestamp))
   }
-
   const merged = allDataByOutcome.get(outcomeIndex) ?? []
-  if (merged.length > 0) {
-    lastTimestampByOutcome.set(outcomeIndex, merged[merged.length - 1].timestamp)
-  }
+  if (merged.length > 0) lastTimestampByOutcome.set(outcomeIndex, merged[merged.length - 1].timestamp)
 }
 
 async function fetchData(isUpdate = false) {
+  if (!props.marketAddr) return
+  const outcomeIndexes = chartOutcomes.value.map(o => o.outcomeIndex)
+  if (outcomeIndexes.length === 0) return
+
   try {
-    await Promise.all(chartOutcomes.value.map(o => fetchOutcomeData(o.outcomeIndex, isUpdate)))
+    isLoading.value = true
+    const timestamp = isUpdate ? getUpdateTimestamp() : undefined
+    const res: any = await getFPMMKlineDataBatch(props.marketAddr, timestamp, true, outcomeIndexes)
+    for (const outcomeIndex of outcomeIndexes) {
+      const list = Array.isArray(res?.[outcomeIndex]) ? res[outcomeIndex] : []
+      if (!list.length) continue
+      mergeOutcomeData(outcomeIndex, list as KlineData[], isUpdate)
+    }
     updateChartData()
   } catch (e) {
     console.error('Error fetching chart data', e)
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -182,12 +192,47 @@ function resetCaches() {
 
 watch(activeTimeframe, () => updateChartData())
 
+const FETCH_DEBOUNCE_MS = 120
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let inFlightPromise: Promise<void> | null = null
+let queuedMode: 'refresh' | 'update' | null = null
+
+function enqueueFetch(mode: 'refresh' | 'update') {
+  if (queuedMode === 'refresh' || mode === 'refresh') {
+    queuedMode = 'refresh'
+  } else {
+    queuedMode = 'update'
+  }
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null
+    void runQueuedFetch()
+  }, FETCH_DEBOUNCE_MS)
+}
+
+async function runQueuedFetch() {
+  if (!queuedMode) return
+  if (inFlightPromise) return
+
+  const mode = queuedMode
+  queuedMode = null
+  inFlightPromise = fetchData(mode === 'update')
+  await inFlightPromise
+  inFlightPromise = null
+
+  // 若请求执行期间又排队了新任务，继续串行执行，避免并发重复请求
+  if (queuedMode) {
+    void runQueuedFetch()
+  }
+}
+
 watch(
   () => [props.marketAddr, props.outcomes?.map(o => o.outcomeIndex).join(',')],
   async () => {
     resetCaches()
-    await fetchData()
-  }
+    enqueueFetch('refresh')
+  },
+  { immediate: true }
 )
 
 const chartOptions = computed<ApexOptions>(() => ({
@@ -255,18 +300,21 @@ const chartOptions = computed<ApexOptions>(() => ({
 
 let timer: ReturnType<typeof setInterval> | null = null
 
-onMounted(async () => {
-  await fetchData()
-  timer = setInterval(() => fetchData(true), 60 * 1000)
+onMounted(() => {
+  timer = setInterval(() => enqueueFetch('update'), 60 * 1000)
 })
 
 onUnmounted(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
   if (timer) clearInterval(timer)
 })
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col min-h-[450px]">
+  <div
+    class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col min-h-[450px] transition-opacity"
+    :class="isLoading ? 'opacity-85' : 'opacity-100'"
+  >
     <div class="mb-4">
       <h2 class="text-sm font-bold text-gray-500 mb-3">
         {{ isMultiSeries ? $t('predictTrade.outcomeProbabilities') : 'Predict probability (Yes)' }}
