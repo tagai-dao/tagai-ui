@@ -779,10 +779,22 @@ export async function removeLiquidity(battle: BattleData | EventPredictData, sha
     })
 }
 
+/** Gnosis CT indexSets：outcome i 对应 1 << i；二元 [1,2]，三元 [1,2,4] */
+const buildRedeemIndexSets = (battle: BattleData | EventPredictData): number[] => {
+    const eventMarket = battle as EventPredictData
+    let outcomeSlotCount = 2
+    if (isMultiOutcomeEventFactory(eventMarket.factoryVersion)) {
+        outcomeSlotCount = Math.max(
+            2,
+            eventMarket.outcomeCount ?? getOutcomeList(eventMarket).length ?? 2,
+        )
+    }
+    return Array.from({ length: outcomeSlotCount }, (_, i) => 1 << i)
+}
+
 export async function redeemPositions(battle: BattleData | EventPredictData, collateralToken: string) {
      if (!isAddress(ConditionalTokens)) return;
-     // indexSets: [1, 2] for binary
-     const indexSets = [1, 2];
+     const indexSets = buildRedeemIndexSets(battle);
      const parentCollectionId = '0x0000000000000000000000000000000000000000000000000000000000000000';
      
      return await writeContract({
