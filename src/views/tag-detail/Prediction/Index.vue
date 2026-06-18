@@ -1,29 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { GlobalModalType } from '@/types'
-import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import PredictBattle from './PredictBattle.vue'
 import PredictEvent from './PredictEvent.vue'
 
-const accStore = useAccountStore()
 const modalStore = useModalStore()
 const activeTab = ref<'event' | 'battle'>('event')
 
-const ensureAuth = () => {
-  if (!accStore.getAccountInfo?.twitterId) {
-    modalStore.setModalVisible(true, GlobalModalType.Login)
-    return false
-  }
-  if (accStore.ethConnectState !== EthWalletState.Connected) {
-    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
-    return false
-  }
-  return true
-}
-
+/** 预览用：未登录也可打开创建弹窗；恢复鉴权时取消下行注释并恢复 ensureAuth */
 const createPredict = () => {
-  if (!ensureAuth()) return
   modalStore.setModalVisible(true, GlobalModalType.CreatePredict)
 }
 </script>

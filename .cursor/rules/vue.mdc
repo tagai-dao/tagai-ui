@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description: Vue 3 + TipTag UI conventions
+globs:
 alwaysApply: true
 ---
 
@@ -44,6 +44,14 @@ Key Conventions
 - Use Pinia for state management.
 - Path aliases: `@` and `~@` both resolve to `src/`.
 - Auto-imports via unplugin-auto-import and unplugin-vue-components (Element Plus, Vant, Iconify).
+
+Component Modularity
+- Prefer modular components over monolithic files; do not put all UI and logic in a single file.
+- Split by feature and responsibility: extract distinct UI sections into child components and reusable business logic into composables.
+- Page/view components orchestrate layout and data flow; keep them thin — delegate rendering and logic to dedicated files.
+- Co-locate feature-specific sub-components under `views/<feature>/components/`; put cross-feature UI in `src/components/`.
+- One composable = one concern (e.g. form state, API calls, Web3 interactions); avoid mixing unrelated logic in one file.
+- Presentational components receive props and emit events; use provide/inject or composables for shared feature state instead of deep prop drilling.
 
 Project-specific Guidelines (Vue 3 + Vite)
 - Follow the project directory structure: `src/views/` (pages), `src/components/`, `src/composables/`, `src/stores/`, `src/utils/`.
