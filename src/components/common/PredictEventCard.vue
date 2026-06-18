@@ -14,7 +14,7 @@ import { formatUsdCompact } from '@/utils/format'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
 import { useEventPredict } from '@/composables/usePredict';
-import { useEventMarketOutcomes, OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes';
+import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, getWinningOutcomeIndexFromVotes } from '@/composables/useEventMarketOutcomes';
 import { usePredictVoteHighlight } from '@/composables/usePredictVoteHighlight';
 import { getOutcomeFlagUrl } from '@/composables/useWorldCupMarkets';
 import { buyToken, getBuyData, getMarketInfos, getEventMarketInfos } from '@/utils/fpmm';
@@ -43,6 +43,8 @@ const {
   outcomePercents,
   winningOutcomeIndex,
   getOutcomeLabel,
+  getOutcomeDisplayLabel,
+  getVotePercent: getOutcomeVotePercent,
 } = useEventMarketOutcomes(() => props.market);
 const { hasVoted, isVotedOutcome, applyLocalVote } = usePredictVoteHighlight(() => props.market);
 const { t } = useI18n();
@@ -65,7 +67,11 @@ const selectedVoteOutcomeIndex = ref<number | null>(null);
 const showPopover = ref(false);
 const showVotePhaseHelp = ref(false);
 
-const isResolved = computed(() => props.market.status === 3 || !!props.market.winner);
+const isResolved = computed(() =>
+  props.market.status === 3
+  || !!props.market.winner
+  || now.value.getTime() >= voteEndTime.value,
+)
 
 const getOutcomeColor = (idx: number) =>
   OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length];
@@ -166,29 +172,13 @@ const statusText = computed(() => {
   return t('ended')
 })
 
-const voteTotalMulti = computed(() =>
-  outcomeList.value.reduce((sum, o) => sum + (o.voteTotal ?? 0), 0)
-)
-
-const getVotePercent = (outcomeIndex: number) => {
-  if (!isMultiOutcome.value) {
-    const total = totalCuration.value
-    if (total <= 0) return 0
-    return outcomeIndex === 0
-      ? Math.round((aAmount.value / total) * 100)
-      : Math.round((bAmount.value / total) * 100)
-  }
-  const total = voteTotalMulti.value
-  if (total <= 0) return 0
-  const outcome = outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)
-  return Math.round(((outcome?.voteTotal ?? 0) / total) * 100)
-}
+const getVotePercent = (outcomeIndex: number) =>
+  getOutcomeVotePercent(outcomeIndex, aAmount.value, bAmount.value)
 
 const resolvedWinnerLabel = computed(() => {
-  if (isMultiOutcome.value && winningOutcomeIndex.value != null) {
-    return getOutcomeLabel(winningOutcomeIndex.value)
-  }
-  return props.market.winner === 'yes' ? t('predictTrade.yes') : t('predictTrade.no')
+  const idx = winningOutcomeIndex.value ?? getWinningOutcomeIndexFromVotes(props.market)
+  if (idx != null) return getOutcomeDisplayLabel(idx)
+  return getOutcomeDisplayLabel(0)
 })
 
 const gotoDetail = () => {
@@ -440,8 +430,7 @@ const vote = async () => {
 
 const selectedBuyLabel = computed(() => {
   if (selectedOutcomeIndex.value == null) return '';
-  if (isMultiOutcome.value) return getOutcomeLabel(selectedOutcomeIndex.value);
-  return selectedOutcomeIndex.value === 0 ? t('predictTrade.yes') : t('predictTrade.no');
+  return getOutcomeDisplayLabel(selectedOutcomeIndex.value);
 })
 
 const selectedBuyColor = computed(() => {
@@ -658,14 +647,14 @@ const selectedBuyColor = computed(() => {
               @click="buyYes()"
             >
               <span class="text-base sm:text-lg">{{ (percentA * 100).toFixed(0) }}%</span>
-              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyYes') }}</span>
+              <span class="text-xs sm:text-sm font-semibold opacity-90 line-clamp-2 text-center px-0.5">{{ getOutcomeDisplayLabel(0) }}</span>
             </button>
             <button
               class="flex-1 h-10 sm:h-12 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
               @click="buyNo()"
             >
               <span class="text-base sm:text-lg">{{ (percentB * 100).toFixed(0) }}%</span>
-              <span class="text-xs sm:text-sm font-semibold opacity-90">{{ $t('predictTrade.buyNo') }}</span>
+              <span class="text-xs sm:text-sm font-semibold opacity-90 line-clamp-2 text-center px-0.5">{{ getOutcomeDisplayLabel(1) }}</span>
             </button>
           </div>
 
@@ -686,7 +675,7 @@ const selectedBuyColor = computed(() => {
                   class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
                   :class="isVotedOutcome(0) ? 'bg-green-500' : 'bg-red-normal'"
                 >{{ isVotedOutcome(0) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
-                <span>{{ $t('predictTrade.voteYes') }} <span class="text-xs font-semibold opacity-80">({{ getVotePercent(0) }}%)</span></span>
+                <span class="line-clamp-2 text-center">{{ getOutcomeDisplayLabel(0) }} <span class="text-xs font-semibold opacity-80">({{ getVotePercent(0) }}%)</span></span>
               </button>
             </div>
             <div class="relative flex-1">
@@ -704,7 +693,7 @@ const selectedBuyColor = computed(() => {
                   class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
                   :class="isVotedOutcome(1) ? 'bg-green-500' : 'bg-blue-600'"
                 >{{ isVotedOutcome(1) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
-                <span>{{ $t('predictTrade.voteNo') }} <span class="text-xs font-semibold opacity-80">({{ getVotePercent(1) }}%)</span></span>
+                <span class="line-clamp-2 text-center">{{ getOutcomeDisplayLabel(1) }} <span class="text-xs font-semibold opacity-80">({{ getVotePercent(1) }}%)</span></span>
               </button>
             </div>
           </div>

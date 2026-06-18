@@ -27,7 +27,7 @@ const props = defineProps<{
 
 const accStore = useAccountStore()
 const { onCopy } = useTools()
-const { isMultiOutcome, outcomeList, getPercent, getOutcomeLabel, winningOutcomeIndex } = useEventMarketOutcomes(() => props.market)
+const { isMultiOutcome, outcomeList, getPercent, getOutcomeLabel, getOutcomeDisplayLabel, winningOutcomeIndex } = useEventMarketOutcomes(() => props.market)
 const now = useNow()
 const { t } = useI18n()
 
@@ -457,7 +457,7 @@ const tradeTimeLeftText = computed(() => {
                 @click="tradeSelectedOutcomeIndex = outcome.outcomeIndex; debouncedTradeCalculate()"
             >
                 <span class="text-xs sm:text-sm font-bold z-10 text-center line-clamp-2 leading-tight">
-                  {{ isMultiOutcome ? outcome.label : (outcome.outcomeIndex === 0 ? $t('predictTrade.yes') : $t('predictTrade.no')) }}
+                  {{ getOutcomeDisplayLabel(outcome.outcomeIndex) }}
                 </span>
                 <span class="text-xs font-mono mt-1 z-10">
                   {{ (getPercent(outcome.outcomeIndex) * 100).toFixed(1) }}% · {{ getPercent(outcome.outcomeIndex).toFixed(2) }} ${{ props.market.tick }}
@@ -479,7 +479,7 @@ const tradeTimeLeftText = computed(() => {
                 <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-gray-800">{{ formatAmount(tradeTokenBalance) }} {{ props.market.tick }}</span>
                 <span v-else class="font-mono font-bold text-gray-800">
                   {{ formatAmount(getSelectedOutcomeBalance()) }}
-                  {{ isMultiOutcome ? getOutcomeLabel(tradeSelectedOutcomeIndex) : (tradeSelectedOutcomeIndex === 0 ? 'Yes' : 'No') }}
+                  {{ getOutcomeDisplayLabel(tradeSelectedOutcomeIndex) }}
                 </span>
                 </div>
             </div>
@@ -516,7 +516,7 @@ const tradeTimeLeftText = computed(() => {
                     <span class="text-gray-600 text-sm">{{ $t('predictTrade.payReceive') }}</span>
                     <span v-if="tradeActiveTab === 'buy'" class="font-mono font-bold text-lg text-gray-900">
                       {{ formatAmount(tradeWillReceiveAmount) }}
-                      {{ isMultiOutcome ? getOutcomeLabel(tradeSelectedOutcomeIndex) : (tradeSelectedOutcomeIndex === 0 ? $t('predictTrade.yesShare') : $t('predictTrade.noShare')) }}
+                      {{ getOutcomeDisplayLabel(tradeSelectedOutcomeIndex) }}
                     </span>
                     <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ props.market.tick }}</span>
                 </div>
@@ -531,7 +531,7 @@ const tradeTimeLeftText = computed(() => {
                         class="truncate"
                         :class="tradeSelectedOutcomeIndex === item.outcomeIndex ? 'text-gray-900 font-medium' : 'text-gray-500'"
                       >
-                        {{ isMultiOutcome ? getOutcomeLabel(item.outcomeIndex) : (item.outcomeIndex === 0 ? $t('predictTrade.yes') : $t('predictTrade.no')) }}
+                        {{ getOutcomeDisplayLabel(item.outcomeIndex) }}
                       </span>
                       <span
                         class="font-mono shrink-0"
@@ -568,7 +568,7 @@ const tradeTimeLeftText = computed(() => {
                 :disabled="tradeCalculating || tradeLoading || !tradeShares"
             >
                 {{ tradeActiveTab === 'buy' ? $t("buy") : $t("sell") }}
-                {{ isMultiOutcome ? getOutcomeLabel(tradeSelectedOutcomeIndex) : (tradeSelectedOutcomeIndex === 0 ? $t("predictTrade.yes") : $t("predictTrade.no")) }}
+                {{ getOutcomeDisplayLabel(tradeSelectedOutcomeIndex) }}
                 <i-ep-loading v-if="tradeCalculating || tradeLoading" class="animate-spin ml-2" />
             </button>
             <div class="text-center text-xs text-red-500 font-medium">
@@ -662,11 +662,11 @@ const tradeTimeLeftText = computed(() => {
              </template>
              <template v-else>
              <div class="flex justify-between items-center">
-                 <span class="text-gray-500">Your Yes Positions</span>
+                 <span class="text-gray-500">{{ getOutcomeDisplayLabel(0) }}</span>
                  <span class="font-mono font-bold text-red-600">{{ formatAmount(tradeYesBalance) }}</span>
              </div>
              <div class="flex justify-between items-center">
-                 <span class="text-gray-500">Your No Positions</span>
+                 <span class="text-gray-500">{{ getOutcomeDisplayLabel(1) }}</span>
                  <span class="font-mono font-bold text-blue-600">{{ formatAmount(tradeNoBalance) }}</span>
              </div>
              </template>
@@ -682,9 +682,9 @@ const tradeTimeLeftText = computed(() => {
              <div class="bg-green-50 text-green-700 p-4 rounded-xl border border-green-200">
                  <p class="font-bold text-lg">{{ $t('predictRedeem.eventResolved') }}</p>
                  <p>{{ $t('predictRedeem.winner', {
-                   winner: isMultiOutcome && winningOutcomeIndex != null
-                     ? getOutcomeLabel(winningOutcomeIndex)
-                     : (props.market.winner === 'yes' ? $t('predictTrade.yes') : $t('predictTrade.no'))
+                   winner: winningOutcomeIndex != null
+                     ? getOutcomeDisplayLabel(winningOutcomeIndex)
+                     : getOutcomeDisplayLabel(0)
                  }) }}</p>
              </div>
              

@@ -19,7 +19,7 @@ const finished = ref(false)
 const totalVoteRewards = ref(0)
 
 const accStore = useAccountStore()
-const { getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
+const { getOutcomeLabel, getOutcomeDisplayLabel } = useEventMarketOutcomes(() => props.market)
 
 const loadData = async () => {
   if (loading.value || finished.value || refreshing.value) return
@@ -126,11 +126,7 @@ watch(() => props.market.marketMaker, () => {
                       class="font-bold"
                       :class="item.voteResult === 1 && !isMultiOutcomeMarket(market) ? 'text-red-600' : 'text-blue-600'"
                     >
-                       {{
-                         isMultiOutcomeMarket(market)
-                           ? getOutcomeLabel(item.outcomeIndex ?? 0)
-                           : (item.voteResult === 1 ? $t('predictTrade.yes') : $t('predictTrade.no'))
-                       }}
+                       {{ getOutcomeDisplayLabel(item.outcomeIndex ?? (item.voteResult === 1 ? 0 : 1)) }}
                     </span>
                  </div>
                  <!-- <div class="flex items-center gap-2 text-xs text-gray-400">

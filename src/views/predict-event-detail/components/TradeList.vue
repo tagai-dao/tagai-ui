@@ -14,7 +14,7 @@ const props = defineProps<{
   market: EventPredictData
 }>()
 
-const { isMultiOutcome, getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
+const { isMultiOutcome, getOutcomeLabel, getOutcomeDisplayLabel } = useEventMarketOutcomes(() => props.market)
 
 const list = ref<FPMMTrade[]>([])
 const loading = ref(false)
@@ -68,7 +68,7 @@ const formatTimestamp = (ts: number) => {
 const tradeTypeColors = ['text-green-500', 'text-red-500'] as const
 
 const getOutcomeStyle = (index: number) => ({ color: OUTCOME_CHART_COLORS[index % OUTCOME_CHART_COLORS.length] })
-const getOutcomeName = (index: number): string => isMultiOutcome.value ? getOutcomeLabel(index) : (index === 0 ? t('predictTrade.yes') : t('predictTrade.no'))
+const getOutcomeName = (index: number): string => getOutcomeDisplayLabel(index)
 const getTradeTypeColor = (isBuy: number): string => isBuy === 1 ? tradeTypeColors[0] : tradeTypeColors[1]
 
 // Mock price logic (since mock data lacks price)

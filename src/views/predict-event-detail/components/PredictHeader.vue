@@ -34,7 +34,7 @@ const selectedOutcomeIndex = ref<number | null>(null)
 const showPopover = ref(false)
 const showVotePhaseHelp = ref(false)
 
-const { isMultiOutcome, outcomeList, getOutcomeLabel } = useEventMarketOutcomes(() => props.market)
+const { isMultiOutcome, outcomeList, getOutcomeLabel, getOutcomeDisplayLabel, getVotePercent } = useEventMarketOutcomes(() => props.market)
 const { hasVoted, isVotedOutcome, applyLocalVote } = usePredictVoteHighlight(() => props.market)
 
 const voteEndTime = computed(() => props.market.endTime * 1000 + 86400000)
@@ -102,17 +102,6 @@ const statusText = computed(() => {
   return t('ended')
 })
 
-const voteTotalMulti = computed(() =>
-  outcomeList.value.reduce((sum, o) => sum + (o.voteTotal ?? 0), 0)
-)
-
-const getVotePercent = (outcomeIndex: number) => {
-  const total = voteTotalMulti.value
-  if (total <= 0) return 0
-  const outcome = outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)
-  return Math.round(((outcome?.voteTotal ?? 0) / total) * 100)
-}
-
 const openTweet = () => {
   router.push(`/post-detail/${props.market.tweetId as string}`)
 }
@@ -129,19 +118,13 @@ const totalCuration = computed(() => {
   return voteYesAmount.value + voteNoAmount.value
 })
 
-const voteTotal = computed(() => {
-  return (props.market.voteYes ?? 0) + (props.market.voteNo ?? 0)
-})
+const voteYesPercent = computed(() =>
+  getVotePercent(0, voteYesAmount.value, voteNoAmount.value),
+)
 
-const voteYesPercent = computed(() => {
-  if (voteTotal.value === 0) return 0
-  return Math.round((props.market.voteYes ?? 0) / voteTotal.value * 100)
-})
-
-const voteNoPercent = computed(() => {
-  if (voteTotal.value === 0) return 0
-  return 100 - voteYesPercent.value
-})
+const voteNoPercent = computed(() =>
+  getVotePercent(1, voteYesAmount.value, voteNoAmount.value),
+)
 
 // 投票前准备（二元）
 const preVote = async (yes: boolean) => {
@@ -385,7 +368,7 @@ const vote = async () => {
                 class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
                 :class="isVotedOutcome(0) ? 'bg-green-500' : 'bg-red-normal'"
               >{{ isVotedOutcome(0) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
-              <span>{{ $t('predictTrade.voteYes') }} <span class="text-xs font-semibold opacity-80">({{ voteYesPercent }}%)</span></span>
+              <span>{{ getOutcomeDisplayLabel(0) }} <span class="text-xs font-semibold opacity-80">({{ voteYesPercent }}%)</span></span>
             </button>
           </div>
           <div class="relative flex-1">
@@ -403,7 +386,7 @@ const vote = async () => {
                 class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
                 :class="isVotedOutcome(1) ? 'bg-green-500' : 'bg-blue-600'"
               >{{ isVotedOutcome(1) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
-              <span>{{ $t('predictTrade.voteNo') }} <span class="text-xs font-semibold opacity-80">({{ voteNoPercent }}%)</span></span>
+              <span>{{ getOutcomeDisplayLabel(1) }} <span class="text-xs font-semibold opacity-80">({{ voteNoPercent }}%)</span></span>
             </button>
           </div>
         </div>

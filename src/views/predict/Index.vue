@@ -9,6 +9,7 @@ import { useI18n } from 'vue-i18n'
 import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
 import PredictEventCard from '@/components/common/PredictEventCard.vue'
 import { getMarketInfos, applyMulticallInfosToEvent } from '@/utils/fpmm'
+import { getResolvedWinningOutcomeIndex } from '@/composables/useEventMarketOutcomes'
 import { computed } from 'vue'
 import { useCommunityStore } from '@/stores/community'
 import { useStateStore } from '@/stores/common'
@@ -265,9 +266,9 @@ const eventsNeedingChainReserves = (list: EventPredictData[]) =>
 
 // 判断事件预测胜利者
 const getEventWinner = (event: EventPredictData): 'yes' | 'no' | null => {
-    if (event.status == 3 || event.endTime * 1000 + 86400000 < Date.now()) {
-        return (event.voteYes ?? 0) > (event.voteNo ?? 0) ? 'yes' : 'no'
-    }
+    const idx = getResolvedWinningOutcomeIndex(event)
+    if (idx === 0) return 'yes'
+    if (idx === 1) return 'no'
     return null
 }
 

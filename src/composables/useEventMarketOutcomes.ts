@@ -1,4 +1,5 @@
 import { computed, type MaybeRefOrGetter, toValue } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { EventPredictData, EventPredictOutcome } from '@/types'
 
 /** K 线 / outcome 按钮配色 */
@@ -12,7 +13,7 @@ export const isMultiOutcomeMarket = (market?: EventPredictData | null) => {
   return false
 }
 
-/** 归一化 outcome 列表；二元市场 fallback 为 Yes/No */
+/** 归一化 outcome 列表；无 DB 记录时 fallback 为 Yes/No（仅作占位，展示请用 getOutcomeDisplayLabel） */
 export const getOutcomeList = (market: EventPredictData): EventPredictOutcome[] => {
   if (market.outcomes?.length) {
     return [...market.outcomes].sort((a, b) => a.outcomeIndex - b.outcomeIndex)
@@ -21,6 +22,59 @@ export const getOutcomeList = (market: EventPredictData): EventPredictOutcome[] 
     { outcomeIndex: 0, label: 'Yes' },
     { outcomeIndex: 1, label: 'No' },
   ]
+}
+
+/** API 是否返回了用户自定义的 outcome 文案（V2+ 市场） */
+export const hasStoredOutcomeLabels = (market?: EventPredictData | null) =>
+  Boolean(market?.outcomes?.length)
+
+/** 市场是否已结束（含投票期结束待结算） */
+export const isEventMarketResolved = (market: EventPredictData) =>
+  market.status === 3
+  || !!market.winner
+  || Date.now() >= market.endTime * 1000 + 86400000
+
+/** 按实际投票得票选出 winning outcomeIndex；无票数据时回退 voteYes/voteNo */
+export const getWinningOutcomeIndexFromVotes = (market: EventPredictData): number | null => {
+  const outcomes = getOutcomeList(market)
+
+  if (hasStoredOutcomeLabels(market) && outcomes.some(o => o.voteTotal != null)) {
+    let best = outcomes[0]
+    for (const o of outcomes) {
+      if ((o.voteTotal ?? 0) > (best.voteTotal ?? 0)) best = o
+    }
+    return best.outcomeIndex
+  }
+
+  if (market.winner === 'yes') return 0
+  if (market.winner === 'no') return 1
+  const yes = market.voteYes ?? 0
+  const no = market.voteNo ?? 0
+  if (yes === 0 && no === 0) return null
+  return yes >= no ? 0 : 1
+}
+
+/** 列表/卡片：已结束市场返回胜方 outcomeIndex */
+export const getResolvedWinningOutcomeIndex = (market: EventPredictData): number | null => {
+  if (!isEventMarketResolved(market)) return null
+  return getWinningOutcomeIndexFromVotes(market)
+}
+
+/** 展示用 label：有 DB 文案用用户填写值，旧二元市场用 i18n Yes/No */
+export const resolveOutcomeDisplayLabel = (
+  market: EventPredictData | null | undefined,
+  outcomeIndex: number,
+  yesLabel: string,
+  noLabel: string,
+): string => {
+  if (!market) return `#${outcomeIndex + 1}`
+  if (hasStoredOutcomeLabels(market)) {
+    const label = getOutcomeList(market).find(o => o.outcomeIndex === outcomeIndex)?.label?.trim()
+    if (label) return label
+  }
+  if (outcomeIndex === 0) return yesLabel
+  if (outcomeIndex === 1) return noLabel
+  return `#${outcomeIndex + 1}`
 }
 
 /** 解析 API 返回的 endOutcomePercents（可能是 JSON 字符串） */
@@ -233,26 +287,16 @@ export const targetPercentsToDistributionHint = (percents: number[]): number[] =
   return weights.map(w => Math.max(1, Math.ceil((w / maxW) * 100)))
 }
 
-/** Event V2 结算后得票最高的 outcome */
+/** 结算后得票最高的 outcome（用于卡片/详情展示胜方） */
 export const getWinningOutcomeIndex = (market: EventPredictData): number | null => {
-  if (market.status !== 3) return null
-  const outcomes = getOutcomeList(market)
-  if (isMultiOutcomeMarket(market) && outcomes.some(o => o.voteTotal != null)) {
-    let best = outcomes[0]
-    for (const o of outcomes) {
-      if ((o.voteTotal ?? 0) > (best.voteTotal ?? 0)) best = o
-    }
-    return best.outcomeIndex
-  }
-  if (market.winner === 'yes') return 0
-  if (market.winner === 'no') return 1
-  const yes = market.voteYes ?? 0
-  const no = market.voteNo ?? 0
-  return yes >= no ? 0 : 1
+  if (!isEventMarketResolved(market)) return null
+  return getWinningOutcomeIndexFromVotes(market)
 }
 
 export const useEventMarketOutcomes = (market: MaybeRefOrGetter<EventPredictData | null | undefined>) => {
+  const { t } = useI18n()
   const isMultiOutcome = computed(() => isMultiOutcomeMarket(toValue(market)))
+  const hasCustomOutcomeLabels = computed(() => hasStoredOutcomeLabels(toValue(market)))
   const outcomeList = computed(() => {
     const m = toValue(market)
     return m ? getOutcomeList(m) : []
@@ -281,6 +325,33 @@ export const useEventMarketOutcomes = (market: MaybeRefOrGetter<EventPredictData
   const getOutcomeLabel = (outcomeIndex: number) =>
     outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)?.label ?? `#${outcomeIndex + 1}`
 
+  /** 展示文案：自定义 outcome 或 i18n Yes/No */
+  const getOutcomeDisplayLabel = (outcomeIndex: number) => {
+    const m = toValue(market)
+    return resolveOutcomeDisplayLabel(
+      m,
+      outcomeIndex,
+      t('predictTrade.yes'),
+      t('predictTrade.no'),
+    )
+  }
+
+  const getVotePercent = (outcomeIndex: number, legacyYes = 0, legacyNo = 0) => {
+    const m = toValue(market)
+    if (!m) return 0
+    if (hasStoredOutcomeLabels(m) || isMultiOutcomeMarket(m)) {
+      const total = outcomeList.value.reduce((sum, o) => sum + (o.voteTotal ?? 0), 0)
+      if (total <= 0) return 0
+      const outcome = outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)
+      return Math.round(((outcome?.voteTotal ?? 0) / total) * 100)
+    }
+    const total = legacyYes + legacyNo
+    if (total <= 0) return 0
+    return outcomeIndex === 0
+      ? Math.round((legacyYes / total) * 100)
+      : Math.round((legacyNo / total) * 100)
+  }
+
   const usesEndSnapshot = computed(() => {
     const m = toValue(market)
     return m ? shouldUseEndOutcomeSnapshot(m) : false
@@ -288,11 +359,14 @@ export const useEventMarketOutcomes = (market: MaybeRefOrGetter<EventPredictData
 
   return {
     isMultiOutcome,
+    hasCustomOutcomeLabels,
     outcomeList,
     outcomePercents,
     usesEndSnapshot,
     winningOutcomeIndex,
     getPercent,
     getOutcomeLabel,
+    getOutcomeDisplayLabel,
+    getVotePercent,
   }
 }

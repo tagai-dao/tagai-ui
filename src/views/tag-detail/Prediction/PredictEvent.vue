@@ -8,6 +8,7 @@ import { useAccountStore } from '@/stores/web3'
 import emitter from '@/utils/emitter'
 import PredictEventCard from '@/components/common/PredictEventCard.vue'
 import { getMarketInfos, applyMulticallInfosToEvent } from '@/utils/fpmm'
+import { getResolvedWinningOutcomeIndex } from '@/composables/useEventMarketOutcomes'
 
 // Event 组件暂时复用 Battle 的逻辑和数据源
 const comStore = useCommunityStore()
@@ -19,9 +20,9 @@ const loading = ref(false)
 const finished = ref(false)
 
 const getWinner = (market: EventPredictData): 'yes' | 'no' | null => {
-  if (market.status == 3 || market.endTime * 1000 + 86400000 < Date.now()) {
-    return (market.voteYes ?? 0) > (market.voteNo ?? 0) ? 'yes' : 'no'
-  }
+  const idx = getResolvedWinningOutcomeIndex(market)
+  if (idx === 0) return 'yes'
+  if (idx === 1) return 'no'
   return null
 }
 
