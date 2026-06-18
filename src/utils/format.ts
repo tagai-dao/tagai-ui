@@ -60,12 +60,13 @@ export function formatShortDate(value: string | number | Date, locale = 'en-US')
   return new Intl.DateTimeFormat(locale, opts).format(d)
 }
 
-/** 代币数量，紧凑缩写（不带货币符号）：9.4K / 1.2M */
+/** 代币数量，紧凑缩写（不带货币符号）：9.4K / 1.2M；小于 0.01 时最多 4 位小数 */
 export function formatTokenAmount(value: number | string | undefined): string {
   const n = Number(value)
   if (!isFinite(n) || n === 0) return '0'
   if (Math.abs(n) < 1000) {
-    return new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 }).format(n)
+    const fractionDigits = Math.abs(n) < 0.01 ? 4 : 2
+    return new Intl.NumberFormat(LOCALE, { maximumFractionDigits: fractionDigits }).format(n)
   }
   return numberCompact.format(n)
 }
