@@ -830,6 +830,11 @@
     "redUp": "Red up",
     "greenUp": "Green up"
   },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark"
+  },
   "rightRail": {
     "liveSpaces": "Live Spaces",
     "topTagCoin": "Top TagCoin",

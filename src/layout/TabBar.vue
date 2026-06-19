@@ -42,7 +42,7 @@ const goToTag = () => {
 </script>
 
 <template>
-  <div class="relative h-14 bg-white">
+  <div class="relative h-14 bg-surface">
     <div class="w-full h-full flex justify-between items-center px-6 relative z-10">
       <router-link to="/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]" @click="goToTag">
         <img v-if="isTagActive" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">

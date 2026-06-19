@@ -1,4 +1,6 @@
 import "element-plus/dist/index.css"
+import "element-plus/theme-chalk/dark/css-vars.css"
+import "element-plus/theme-chalk/dark/css-vars.css"
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
@@ -9,6 +11,10 @@ import App from './App.vue'
 import router from './router'
 import './assets/style/main.css'
 import { VueQrcodeReader } from 'vue-qrcode-reader';
+import { initTheme } from '@/composables/useTheme'
+
+// 在挂载前应用主题，避免暗/亮闪烁
+initTheme()
 
 import { createRoot } from 'react-dom/client'
 import { setVeauryOptions } from 'veaury'

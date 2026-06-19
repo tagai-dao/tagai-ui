@@ -8,13 +8,96 @@
 }
 
 html, body {
-  background: white;
+  background: var(--app-bg);
+  color: var(--text-base);
 }
 
 /* 涨跌语义色：默认绿涨红跌；setLocale 按 locale（zh/ko/ja 红涨）切换这两个变量 */
 :root {
   --color-up: #16A34A;
   --color-down: #E6374D;
+}
+
+/* === 主题 token（v3 暗色模式）：亮色为默认，html.dark 翻转为暗色。
+   亮色值与原 tailwind 写死 hex 一致 → 光模式零变化；暗色按页迁移推进 === */
+:root {
+  --grey-light: #ebebeb;
+  --grey-light-hover: #e2e2e2;
+  --grey-light-active: #c2c2c2;
+  --grey-normal: #3b3b3b;
+  --grey-normal-hover: #353535;
+  --grey-normal-active: #2f2f2f;
+  --grey-fa: #FAFAFA;
+  --grey-64: #646464;
+  --grey-e6: #E6E8EC;
+  --grey-3f: #3F3F3F;
+  --grey-bd: #BDBDBD;
+  --grey-6f: #6F6F6F;
+  --grey-e7: #E7E7E7;
+  --grey-93: #9395A4;
+  --grey-c9: #C9C9C9;
+  --grey-f0: #F0F0F0;
+  --grey-8d: #8D8D8D;
+  --grey-d1: #D1D1D1;
+  --grey-8e: #8E8E93;
+  --grey-5a: #5A5A5A;
+  --grey-f4: #F4F4F4;
+  --black-19: #191C32;
+  --app-bg: #ffffff;
+  --surface: #FAFAFA;
+  --surface-2: #F0F0F0;
+  --border-base: #E6E8EC;
+  --text-base: #191C32;
+  --text-muted: #646464;
+  --text-faint: #9395A4;
+}
+html.dark {
+  --grey-light: #262A31;
+  --grey-light-hover: #2D323A;
+  --grey-light-active: #3A3F4A;
+  --grey-normal: #2A2D34;
+  --grey-normal-hover: #30343C;
+  --grey-normal-active: #363B44;
+  --grey-fa: #16181D;
+  --grey-64: #9AA0AD;
+  --grey-e6: #262A31;
+  --grey-3f: #E6E8EC;
+  --grey-bd: #5B606B;
+  --grey-6f: #9AA0AD;
+  --grey-e7: #262A31;
+  --grey-93: #8B90A0;
+  --grey-c9: #3A3F4A;
+  --grey-f0: #1E2127;
+  --grey-8d: #8B90A0;
+  --grey-d1: #3A3F4A;
+  --grey-8e: #8B90A0;
+  --grey-5a: #B6BCC7;
+  --grey-f4: #1E2127;
+  --black-19: #E6E8EC;
+  --app-bg: #0B0D10;
+  --surface: #16181D;
+  --surface-2: #1E2127;
+  --border-base: #262A31;
+  --text-base: #E6E8EC;
+  --text-muted: #9AA0AD;
+  --text-faint: #6B7280;
+  color-scheme: dark;
+  /* 让 element-plus 暗色主题用本项目调色板，保持全站一致 */
+  --el-bg-color: var(--surface);
+  --el-bg-color-page: var(--app-bg);
+  --el-bg-color-overlay: var(--surface);
+  --el-fill-color-blank: var(--surface);
+  --el-fill-color: var(--surface-2);
+  --el-fill-color-light: var(--surface-2);
+  --el-fill-color-lighter: var(--surface);
+  --el-text-color-primary: var(--text-base);
+  --el-text-color-regular: var(--text-base);
+  --el-text-color-secondary: var(--text-muted);
+  --el-text-color-placeholder: var(--text-faint);
+  --el-border-color: var(--border-base);
+  --el-border-color-light: var(--border-base);
+  --el-border-color-lighter: var(--border-base);
+  --el-border-color-extra-light: var(--border-base);
 }
 
 /* === CJK 排版（v2 方案 3.3 / 5.3）===
@@ -44,13 +127,67 @@ html[lang="zh"] .text-h3, html[lang="ja"] .text-h3, html[lang="ko"] .text-h3 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #FCFCFD;
+  background-color: var(--app-bg);
   /*background-image: url("@/assets/images/main-bg.svg");*/
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
   overflow: hidden;
 }
+
+/* === 暗色兜底覆盖（过渡方案，仅 html.dark 生效）：按页迁移完成前，
+   把仍硬编码 white/black 的元素与 element-plus 白底统一翻成暗色，消除半深半白。
+   text-white（彩色按钮上的白字）不在此列，保持白色。光模式完全不受影响。=== */
+html.dark #app { background-image: none !important; background-color: var(--app-bg); }
+
+html.dark .bg-white,
+html.dark [class*="bg-white/"] { background-color: var(--surface) !important; }
+html.dark .border-white { border-color: var(--border-base) !important; }
+/* 所有灰/白系边框统一为暗色描边，消除暗色下的浅灰/白分隔线（侧栏-内容、搜索栏-内容、帖子内容-互动栏等） */
+html.dark [class*="border-grey-"],
+html.dark [class*="border-gray-"] { border-color: var(--border-base) !important; }
+html.dark .text-black { color: var(--text-base) !important; }
+/* grey-normal 双用途：bg-grey-normal 作深色药丸背景（保持深色），text-grey-normal 作强调正文（暗色下反相为浅色，
+   否则深字深底看不清——预测卡内容、Vol、预测详情等大量使用） */
+html.dark .text-grey-normal,
+html.dark .text-grey-normal-hover,
+html.dark .text-grey-normal-active { color: var(--text-base) !important; }
+html.dark .bg-gray-50,
+html.dark .bg-gray-100 { background-color: var(--surface-2) !important; }
+/* Tailwind 内置灰阶「文字」色未主题化：深色字(gray-700~900)在暗背景上看不见（预测详情 Tab 选中态、
+   Trade/Liquidity/Redeem、VoteList 等）。按属性子串匹配，连 hover:text-gray-* 一并覆盖 */
+html.dark [class*="text-gray-90"],
+html.dark [class*="text-gray-80"],
+html.dark [class*="text-gray-70"] { color: var(--text-base) !important; }
+html.dark [class*="text-gray-60"],
+html.dark [class*="text-gray-50"],
+html.dark [class*="text-gray-40"] { color: var(--text-muted) !important; }
+html.dark [class*="text-gray-30"] { color: var(--text-faint) !important; }
+/* 零散使用的 slate 中性色 + divide 分隔线 */
+html.dark [class*="bg-slate-"] { background-color: var(--surface-2) !important; }
+html.dark [class*="text-slate-"] { color: var(--text-muted) !important; }
+html.dark [class*="divide-gray-"] > :not([hidden]) ~ :not([hidden]),
+html.dark [class*="divide-grey-"] > :not([hidden]) ~ :not([hidden]) { border-color: var(--border-base) !important; }
+
+/* element-plus 弹层 / 下拉 / 对话框 / 输入：默认白底 → 暗色面板 */
+html.dark .el-popper:not(.is-dark),
+html.dark .el-popover.el-popper:not(.is-dark),
+html.dark .el-select-dropdown,
+html.dark .el-dropdown-menu,
+html.dark .el-dialog,
+html.dark .el-message-box,
+html.dark .el-input__wrapper,
+html.dark .el-textarea__inner {
+  background-color: var(--surface) !important;
+  color: var(--text-base) !important;
+}
+html.dark .el-popper:not(.is-dark) .el-popper__arrow::before { background: var(--surface) !important; border-color: var(--border-base) !important; }
+html.dark .el-dialog__title,
+html.dark .el-dialog__body,
+html.dark .el-input__inner,
+html.dark .el-select-dropdown__item,
+html.dark .el-dropdown-menu__item { color: var(--text-base) !important; }
+html.dark .el-overlay { background-color: rgba(0,0,0,0.6) !important; }
 .no-scroll-bar::-webkit-scrollbar {
   display: none;
 }

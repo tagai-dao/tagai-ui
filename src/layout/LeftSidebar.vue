@@ -81,7 +81,7 @@ const handleWalletClick = (e?: Event) => {
 </script>
 
 <template>
-  <div class="hidden web:flex flex-col h-full w-[72px] desk:w-[240px] border-r border-gray-200 bg-white">
+  <div class="hidden web:flex flex-col h-full w-[72px] desk:w-[240px] border-r border-gray-200 bg-surface">
     <!-- Logo（中间档缩小居中） -->
     <div class="h-16 flex items-center justify-center desk:justify-start px-2 desk:px-4">
       <img
@@ -98,7 +98,7 @@ const handleWalletClick = (e?: Event) => {
       <router-link
         to="/"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isTagActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        :class="isTagActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
         @click="stateStore.setTagSubMenu('tweets')"
       >
         <img 
@@ -113,14 +113,14 @@ const handleWalletClick = (e?: Event) => {
           src="~@/assets/icons/icon-tabbar-home.svg" 
           alt=""
         >
-        <span class="hidden desk:inline text-h4 text-black">{{ $t('home') || 'Home' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">{{ $t('home') || 'Home' }}</span>
       </router-link>
 
       <!-- 2. Coin -->
       <router-link
         to="/coins"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isCoinActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        :class="isCoinActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
       >
         <img 
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
@@ -128,14 +128,14 @@ const handleWalletClick = (e?: Event) => {
           src="~@/assets/icons/icon-coin.svg" 
           alt="Coin"
         >
-        <span class="hidden desk:inline text-h4 text-black">{{ $t('coin') || 'Coin' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">{{ $t('coin') || 'Coin' }}</span>
       </router-link>
 
       <!-- 3. Prediction -->
       <router-link
         to="/predictions"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isPredictionActive ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        :class="isPredictionActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
       >
         <img 
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
@@ -143,14 +143,14 @@ const handleWalletClick = (e?: Event) => {
           src="~@/assets/icons/icon-pie-chart.svg" 
           alt="Prediction"
         >
-        <span class="hidden desk:inline text-h4 text-black">{{ $t('prediction') || 'Prediction' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">{{ $t('prediction') || 'Prediction' }}</span>
       </router-link>
 
       <!-- 4. 通知 -->
       <router-link
         to="/notification"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2 relative"
-        :class="isActive('/notification') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        :class="isActive('/notification') ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
       >
         <div class="relative">
           <img 
@@ -166,13 +166,13 @@ const handleWalletClick = (e?: Event) => {
             {{ accStore.unreadMessageCount }}
           </div>
         </div>
-        <span class="hidden desk:inline text-h4 text-black">{{ $t('notification') || 'Notification' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">{{ $t('notification') || 'Notification' }}</span>
       </router-link>
 
       <!-- 5. 钱包 -->
       <div 
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isActive('/wallet') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        :class="isActive('/wallet') ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
         @click="handleWalletClick"
       >
         <img 
@@ -187,13 +187,13 @@ const handleWalletClick = (e?: Event) => {
           src="~@/assets/icons/icon-wallet.svg" 
           alt=""
         >
-        <span class="hidden desk:inline text-h4 text-black">{{ $t('wallet') || 'Wallet' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">{{ $t('wallet') || 'Wallet' }}</span>
       </div>
 
       <!-- 6. 我的主页 -->
       <div 
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isActive('/profile') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        :class="isActive('/profile') ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
         @click="handleProfileClick"
       >
         <div class="w-6 h-6 mr-0 desk:mr-3 flex items-center justify-center">
@@ -217,14 +217,14 @@ const handleWalletClick = (e?: Event) => {
           >
         </div>
         <!-- 未登录时显示「登录」，点击进入原有 Twitter 授权流程 -->
-        <span class="hidden desk:inline text-h4 text-black">{{ accStore.getAccountInfo ? ($t('profile') || 'Profile') : ($t('login') || 'Log in') }}</span>
+        <span class="hidden desk:inline text-h4 text-content">{{ accStore.getAccountInfo ? ($t('profile') || 'Profile') : ($t('login') || 'Log in') }}</span>
       </div>
 
       <!-- 7. About -->
       <router-link
         to="/about"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isActive('/about') ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+        :class="isActive('/about') ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
       >
         <img 
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
@@ -232,7 +232,7 @@ const handleWalletClick = (e?: Event) => {
           src="~@/assets/icons/icon-docs.svg" 
           alt=""
         >
-        <span class="hidden desk:inline text-h4 text-black">{{ $t('about') || 'About' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">{{ $t('about') || 'About' }}</span>
       </router-link>
 
       <!-- 8. More -->
@@ -250,7 +250,7 @@ const handleWalletClick = (e?: Event) => {
         <template #reference>
           <div 
             class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors"
-            :class="moreMenuVisible ? 'bg-gray-100 font-semibold' : 'hover:bg-gray-50'"
+            :class="moreMenuVisible ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
           >
             <span class="text-h4 mr-0 desk:mr-3">⋯</span>
             <span class="hidden desk:inline text-h4">{{ $t('more') || 'More' }}</span>
@@ -260,7 +260,7 @@ const handleWalletClick = (e?: Event) => {
           <div class="p-2 flex flex-col gap-2">
             <!-- Docs -->
             <a 
-              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-gray-50"
+              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-surface-2"
               @click="moreMenuRef.hide()"
               href="https://coincidence-labs.gitbook.io/tagai/" 
               target="_blank"
@@ -271,7 +271,7 @@ const handleWalletClick = (e?: Event) => {
             
             <!-- Audit Report -->
             <a 
-              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-gray-50"
+              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-surface-2"
               @click="moreMenuRef.hide()"
               href="https://scalebit.xyz/reports/TagAI-Audit-Report.pdf" 
               target="_blank"
@@ -282,7 +282,7 @@ const handleWalletClick = (e?: Event) => {
             
             <!-- Twitter -->
             <a 
-              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-gray-50"
+              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-surface-2"
               @click="moreMenuRef.hide()"
               href="https://x.com/tagaidao" 
               target="_blank"
@@ -293,7 +293,7 @@ const handleWalletClick = (e?: Event) => {
             
             <!-- Telegram -->
             <a 
-              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-gray-50"
+              class="flex gap-2 items-center cursor-pointer px-3 py-2 rounded hover:bg-surface-2"
               @click="moreMenuRef.hide()"
               href="https://t.me/tagaidotfun" 
               target="_blank"
