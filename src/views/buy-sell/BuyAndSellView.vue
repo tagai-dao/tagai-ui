@@ -75,7 +75,7 @@ const quoteSpotPrice = ref<number | null>(null)
 let buyQuoteSeq = 0
 let sellQuoteSeq = 0
 
-const maxSlippage = ref(5)
+const maxSlippage = ref(1)
 const tokenBalance = ref(0)
 const tokenOriginalBalance = ref(0n)
 const ethBalance = ref(0)
