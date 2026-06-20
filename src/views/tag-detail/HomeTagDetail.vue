@@ -339,7 +339,7 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
             <div class="text-base flex gap-1">
               <span class="font-semibold text-grey-64">{{$t('marketCap')}}</span>
-              <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
+              <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
             </div>
           </div>
           <div class="flex justify-between items-end gap-3 mt-1">
@@ -374,7 +374,7 @@ onBeforeRouteLeave((to, from, next) => {
               </div>
               <div class="text-base flex gap-1">
                 <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
-                <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
+                <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
               </div>
             </div>
           </div>
@@ -456,25 +456,25 @@ onBeforeRouteLeave((to, from, next) => {
             </template>
           </el-popover> -->
         </div>
-        <div class="flex justify-center text-white space-x-4">
-          <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+        <div class="flex justify-center space-x-4">
+          <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-white border border-orange-normal text-orange-normal flex justify-center items-center text-h5 rounded-full h-11 transition-colors">
             Blinks
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
-          <button class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 gap-1 rounded-full h-11"
+          <button class="w-1/3 bg-gradient-primary text-white flex justify-center items-center text-h5 gap-1 rounded-full h-11"
                   @click="showTradeBox=!showTradeBox">
             <span>{{$t('trade')}}</span>
             <i-ep-caret-bottom  class="transition-transform duration-300"
                                 :class="{ 'rotate-180': showTradeBox }"></i-ep-caret-bottom>
           </button>
-          <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-gradient-primary flex justify-center items-center text-h5 rounded-full h-11">
+          <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-white border border-orange-normal text-orange-normal flex justify-center items-center text-h5 rounded-full h-11 transition-colors">
             {{$t('tip')}} ${{ comStore.currentSelectedCommunity?.tick }}
             <i-ep-loading v-show="checkingTweet" class="animate-spin" />
           </button>
 
           <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
             <template #reference>
-              <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post</button>
+              <button class="w-1/3 bg-white border border-orange-normal text-orange-normal text-h5 rounded-full h-11 transition-colors">Post</button>
             </template>
             <template #default>
               <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
@@ -503,8 +503,8 @@ onBeforeRouteLeave((to, from, next) => {
         <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
-                    class="px-3 rounded-full h-8 text-h3 whitespace-nowrap"
-                    :class="[tab.key===activeTab?'bg-grey-normal text-white':'text-grey-3f', tab.key==='ai'?'web:hidden':'']"
+                    class="px-3.5 rounded-full h-8 text-h3 font-medium whitespace-nowrap transition-colors"
+                    :class="[tab.key===activeTab?'bg-grey-normal text-white shadow-sm':'text-grey-3f hover:text-black hover:bg-gray-100', tab.key==='ai'?'web:hidden':'']"
                     @click="activeTab=tab.key">{{$t(tab.label)}}</button>
           </div>
           <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
@@ -523,18 +523,8 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
           <div class="flex flex-col gap-2">
-            <div v-if="deployTweetList.length>0"
-                 class="border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide">
-              <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">
-                <template #tweet-action-bar>
-                  <PostButtonGroup :tweet="deployTweetList[0]"/>
-                </template>
-                <template #tweet-trade>
-                  <CommerceBtn :tweet="deployTweetList[0]"/>
-                </template>
-              </TweetItem>
-            </div>
-            <div v-else class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
+            <!-- 社区身份卡：始终置于部署推文卡上方，凸显社区身份 -->
+            <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
               <CommunityLogo
                 :logo="comStore.currentSelectedCommunity?.logo"
                 :show-audio="!!onlineSpace"
@@ -552,7 +542,7 @@ onBeforeRouteLeave((to, from, next) => {
                   </div>
                   <div class="text-base flex gap-1">
                     <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
-                    <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
+                    <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
                   </div>
                 </div>
                 <div class="flex justify-between items-end gap-3 mt-1">
@@ -567,31 +557,19 @@ onBeforeRouteLeave((to, from, next) => {
                 </div>
               </div>
             </div>
+            <!-- 部署推文卡：置于社区身份卡下方 -->
+            <div v-if="deployTweetList.length>0"
+                 class="border-[1px] border-white bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide">
+              <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">
+                <template #tweet-action-bar>
+                  <PostButtonGroup :tweet="deployTweetList[0]"/>
+                </template>
+                <template #tweet-trade>
+                  <CommerceBtn :tweet="deployTweetList[0]"/>
+                </template>
+              </TweetItem>
+            </div>
             <div class="border-[1px] border-white bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
-              <div v-if="deployTweetList.length>0"  class="flex gap-3 overflow-hide">
-                <CommunityLogo
-                  :logo="comStore.currentSelectedCommunity?.logo"
-                  size="md"
-                  :show-audio="!!onlineSpace"
-                >
-                  <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-xs
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] scale-75">
-                    {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
-                  </div>
-                </CommunityLogo>
-                <div class="flex-1 py-1">
-                  <div class="flex flex-wrap justify-between gap-x-4 items-center">
-                    <div class="flex items-center">
-                      <span class="text-black text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
-                      <IconLinks :community="comStore.currentSelectedCommunity"/>
-                    </div>
-                    <div class="text-base flex gap-1">
-                      <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
-                      <span class="text-gradient bg-gradient-primary font-semibold">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
               <div class="flex items-center gap-2 ">
                 <span class="text-sm font-semibold whitespace-nowrap">CA</span>
                 <div class="bg-white text-grey-light-active text-sm h-4 flex items-center rounded-[3px] flex-1 truncate">
