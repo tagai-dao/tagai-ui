@@ -2,8 +2,10 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, setLocale, getPriceColorScheme, setPriceColorScheme, getCurrentLocale, type LocaleCode } from '@/lang'
+import { useTheme } from '@/composables/useTheme'
 
 const { locale } = useI18n()
+const { isDark, setTheme } = useTheme()
 
 // 涨跌色偏好（默认跟随语言：zh/ko/ja 红涨；可手动覆盖并持久化）
 const colorScheme = ref(getPriceColorScheme(getCurrentLocale()))
@@ -24,7 +26,7 @@ const onSelect = (code: LocaleCode) => {
   <el-popover popper-class="c-select-popper" trigger="click" width="140" :persistent="false" placement="bottom-end">
     <template #reference>
       <button
-        class="flex items-center gap-1.5 px-3 h-8 web:h-9 rounded-full bg-white text-black hover:bg-gray-50 transition-colors text-xs web:text-sm"
+        class="flex items-center gap-1.5 px-3 h-8 web:h-9 rounded-full bg-surface text-content hover:bg-surface-2 transition-colors text-xs web:text-sm"
         :aria-label="$t('language')"
       >
         <img class="w-4 h-4" src="~@/assets/icons/icon-lang-en.svg" alt="">
@@ -36,8 +38,8 @@ const onSelect = (code: LocaleCode) => {
         <button
           v-for="l of SUPPORTED_LOCALES"
           :key="l.code"
-          class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-left hover:bg-gray-50"
-          :class="locale === l.code ? 'font-semibold text-orange-normal' : 'text-black'"
+          class="flex items-center justify-between px-3 py-2 rounded-lg text-sm text-left hover:bg-surface-2"
+          :class="locale === l.code ? 'font-semibold text-orange-normal' : 'text-content'"
           @click="onSelect(l.code)"
         >
           <span>{{ l.label }}</span>
@@ -57,6 +59,18 @@ const onSelect = (code: LocaleCode) => {
                     @click="onSchemeChange('green-up')">
               <span style="color:#16A34A">▲</span> {{ $t('priceColor.greenUp') }}
             </button>
+          </div>
+        </div>
+        <!-- 暗色模式 -->
+        <div class="border-t border-grey-light mt-1 pt-2 px-3 pb-1">
+          <div class="text-xs text-grey-64 mb-1.5">{{ $t('theme.label') }}</div>
+          <div class="flex gap-1.5">
+            <button class="flex-1 h-7 rounded-lg text-xs border-[1px] transition-colors"
+                    :class="!isDark ? 'border-orange-normal text-orange-normal font-semibold' : 'border-grey-light-active text-grey-64'"
+                    @click="setTheme('light')">☀ {{ $t('theme.light') }}</button>
+            <button class="flex-1 h-7 rounded-lg text-xs border-[1px] transition-colors"
+                    :class="isDark ? 'border-orange-normal text-orange-normal font-semibold' : 'border-grey-light-active text-grey-64'"
+                    @click="setTheme('dark')">🌙 {{ $t('theme.dark') }}</button>
           </div>
         </div>
       </div>

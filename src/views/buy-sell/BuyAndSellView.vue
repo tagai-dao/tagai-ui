@@ -636,7 +636,7 @@ onMounted(async () => {
         </div>
       </template>
       <template #right>
-        <button @click="$router.push('/tag-detail/' + comStore.currentSelectedCommunity?.tick)" class="absolute top-4 right-3 h-8 w-8 min-w-8 bg-white rounded-full flex items-center justify-center">
+        <button @click="$router.push('/tag-detail/' + comStore.currentSelectedCommunity?.tick)" class="absolute top-4 right-3 h-8 w-8 min-w-8 bg-surface rounded-full flex items-center justify-center">
           <img class="rounded-full" :src="comStore.currentSelectedCommunity?.logo" alt="" srcset="">
         </button>
       </template>
@@ -651,7 +651,7 @@ onMounted(async () => {
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>
-      <div v-if="comStore.currentSelectedCommunity?.tick && comStore.currentSelectedCommunity?.tick !== '币安小说'" class="bg-white py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full" :class="props.tick?'':'web:w-[340px]'">
+      <div v-if="comStore.currentSelectedCommunity?.tick && comStore.currentSelectedCommunity?.tick !== '币安小说'" class="bg-surface py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full" :class="props.tick?'':'web:w-[340px]'">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >
@@ -672,7 +672,7 @@ onMounted(async () => {
         </div>
         <template v-if="tradeType === 'buy'">
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-content flex items-center"
           >
             <span class="text-h5">{{ $t('pay') }}</span>
             <input
@@ -703,7 +703,7 @@ onMounted(async () => {
             {{$t('balance')}}: {{ formatAmount(ethBalance) }}
           </div>
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-content flex items-center justify-between"
           >
             <span class="text-h5"
               >{{$t('receive')}} ${{ comStore.currentSelectedCommunity?.tick }}</span
@@ -731,7 +731,7 @@ onMounted(async () => {
         </template>
         <template v-else>
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-content flex items-center"
           >
             <span class="text-h5">{{ $t('sell') }}</span>
             <input
@@ -748,7 +748,7 @@ onMounted(async () => {
             {{ $t('balance') }}: {{ formatAmount(tokenBalance) }}
           </div>
           <div
-            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-black flex items-center justify-between"
+            class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-content flex items-center justify-between"
           >
             <span class="text-h5">{{ $t('receive') }} $BNB</span>
             <span class="text-h3 tabular-nums">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
@@ -780,7 +780,7 @@ onMounted(async () => {
           <div class="flex gap-1.5">
             <button v-for="s of [1, 3, 5]" :key="s"
               class="flex-1 h-8 rounded-lg text-sm border-[1px] transition-colors"
-              :class="Number(maxSlippage) === s ? 'bg-gradient-primary text-white border-transparent' : 'border-grey-light-active text-grey-64 hover:bg-gray-50'"
+              :class="Number(maxSlippage) === s ? 'bg-gradient-primary text-white border-transparent' : 'border-grey-light-active text-grey-64 hover:bg-surface-2'"
               @click="maxSlippage = s">
               {{ s }}%
             </button>

@@ -833,6 +833,11 @@
     "redUp": "红涨绿跌",
     "greenUp": "绿涨红跌"
   },
+  "theme": {
+    "label": "主题",
+    "light": "浅色",
+    "dark": "深色"
+  },
   "rightRail": {
     "liveSpaces": "进行中的 Space",
     "topTagCoin": "TagCoin 排行",

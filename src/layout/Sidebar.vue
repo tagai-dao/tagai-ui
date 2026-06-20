@@ -13,7 +13,7 @@ function gotoChain(chain: string){
 </script>
 
 <template>
-  <div class="min-w-[120px] h-full pt-24 px-4 pb-4 bg-white">
+  <div class="min-w-[120px] h-full pt-24 px-4 pb-4 bg-surface">
     <div class="flex flex-col">
       <button v-for="tab of tabOptions" :key="tab"
               class="px-3 rounded-full h-8 text-h3"
