@@ -844,13 +844,15 @@
     "kickoffHint": "La fecha límite predeterminada es el inicio del partido; puedes cambiarla",
     "outcome": {
       "win": "Victoria {team}",
-      "draw": "Empate"
+      "draw": "Empate",
+      "champion": "{team} campeón"
     },
     "reason": {
       "INVALID_TEAM": "Equipo no válido",
       "DIFFERENT_GROUP": "Los equipos deben estar en el mismo grupo",
       "NO_FIXTURE": "No hay partido de fase de grupos para este par",
-      "ALREADY_EXISTS": "Ya existe un mercado para este partido en esta comunidad"
+      "ALREADY_EXISTS": "Ya existe un mercado para este partido en esta comunidad",
+      "CHAMPION_EXISTS": "Ya existe un mercado de campeón en esta comunidad"
     },
     "teams": {
       "MEX": "México",
@@ -921,6 +923,12 @@
       "groupChampion": "Campeón del grupo 🏆",
       "worldChampion": "Campeón del Mundial 🏆"
     },
+    "championTitle": "Campeón de la Copa Mundial FIFA 2026",
+    "championDeadlineHint": "Establece la fecha límite del mercado (p. ej., antes de la final).",
+    "championRatioTip": "Establece la probabilidad inicial de cada equipo (%, suma 100). El último equipo se rellena automáticamente con el resto.",
+    "oddsEqual": "Igual",
+    "oddsFavorites": "Favoritos",
+    "oddsClear": "Limpiar",
     "initialRatioTip": "Arrastra los dos controles para ajustar las probabilidades iniciales de victoria izquierda, empate y victoria derecha. Por defecto, tercios iguales.",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "Escribe el texto del tweet para X (no se añade #TagAI; la etiqueta de la comunidad se añade automáticamente)…",

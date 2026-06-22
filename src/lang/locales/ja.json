@@ -844,13 +844,15 @@
     "kickoffHint": "デフォルトの締切はキックオフ時刻です（変更可）",
     "outcome": {
       "win": "{team}勝",
-      "draw": "引き分け"
+      "draw": "引き分け",
+      "champion": "{team}優勝"
     },
     "reason": {
       "INVALID_TEAM": "無効なチームです",
       "DIFFERENT_GROUP": "同じグループのチームを選んでください",
       "NO_FIXTURE": "この対戦のグループステージ日程がありません",
-      "ALREADY_EXISTS": "このコミュニティには既に同試合のマーケットがあります"
+      "ALREADY_EXISTS": "このコミュニティには既に同試合のマーケットがあります",
+      "CHAMPION_EXISTS": "このコミュニティには既に優勝マーケットがあります"
     },
     "teams": {
       "MEX": "メキシコ",
@@ -921,6 +923,12 @@
       "groupChampion": "グループ優勝 🏆",
       "worldChampion": "W杯優勝 🏆"
     },
+    "championTitle": "2026 FIFAワールドカップ優勝",
+    "championDeadlineHint": "マーケットの締切を設定してください（例：決勝前）。",
+    "championRatioTip": "各チームの初期確率（%、合計100）を設定します。最後のチームは残りで自動入力されます。",
+    "oddsEqual": "均等",
+    "oddsFavorites": "人気チームプリセット",
+    "oddsClear": "クリア",
     "initialRatioTip": "2つのハンドルをドラッグして左勝・分・右勝の初期確率を設定します。初期値は三等分です。",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "Xに投稿する本文を入力（#TagAIは付与されません。コミュニティタグは自動付与）…",

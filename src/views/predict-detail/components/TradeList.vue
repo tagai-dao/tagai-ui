@@ -6,6 +6,12 @@ import type { FPMMTrade, MarketData } from '@/types'
 import { handleErrorTip } from '@/utils/notify'
 import { useI18n } from 'vue-i18n'
 import { ChainConfig } from '@/config'
+import {
+  getLpAddCollateral,
+  getLpAddDisplaySendBack,
+  getLpRemoveOutcomes,
+  parseLpPoolAmounts,
+} from '@/composables/useFpmmLpTradeDisplay'
 
 const { t } = useI18n()
 
@@ -69,19 +75,9 @@ const getTradeTypeColor = (isBuy: number): string => isBuy === 1 ? tradeTypeColo
 
 // Mock price logic (since mock data lacks price)
 const getPrice = (item: FPMMTrade): string => formatPrice(item.amount / item.outcomeTokensAmount)
-const getValue = (item: FPMMTrade): number => Math.floor(item.amount * 0.5)
-const lpAmounts = (item: FPMMTrade): Array<number> => {
-  if (item.opType === 1) return [] as Array<number>;
-  if (typeof item.amounts === 'string') {
-    item.amounts = JSON.parse(item.amounts) as Array<number>
-  }
-  return item.amounts as Array<number>
-}
-
-const getAddShares = (item: FPMMTrade): number => Math.max(lpAmounts(item)[0], lpAmounts(item)[1])
-const getAddSharedEarned = (item: FPMMTrade): number => Math.abs(lpAmounts(item)[0] - lpAmounts(item)[1]) - 0.00001
-const getAddSharedEarnedIndex = (item: FPMMTrade): number => lpAmounts(item)[0] > lpAmounts(item)[1] ? 1 : 0
-const getRemoveLpReceived = (item: FPMMTrade): number => item.collateralRemoved
+const lpAddCollateral = (item: FPMMTrade): number => getLpAddCollateral(item)
+const lpAddSendBack = (item: FPMMTrade) => getLpAddDisplaySendBack(item, 2)
+const lpRemoveOutcomes = (item: FPMMTrade) => getLpRemoveOutcomes(item)
 
 onActivated(() => {
   onRefresh()
@@ -89,7 +85,7 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl flex flex-col shadow-sm border border-gray-100 overflow-hidden">
+  <div class="flex flex-col min-w-0">
     <!-- Header removed to match screenshot style closely, or keep simple -->
     <!-- <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex justify-between items-center">
         <span>Recent Activity</span>
@@ -130,18 +126,20 @@ onActivated(() => {
                 <span class="font-bold text-gray-900 truncate max-w-[100px]">{{ item.twitterName ? `@${item.twitterName}` : formatAddress(item.ethAddr) }}</span>
                 <span class="text-green-500">{{ $t('predictLiquidity.add') }}</span>
                 <span class="font-bold whitespace-nowrap" :class="getTradeTypeColor(item.isBuy)">
-                    {{ formatAmount(getAddShares(item)) }} {{ market.battle.tick }}
+                    {{ formatAmount(lpAddCollateral(item)) }} {{ market.battle.tick }}
                 </span> 
                 <span>
                   {{ $t('predictLiquidity.get') }}
                 </span>
-                <span class="font-bold whitespace-nowrap" v-show="getAddSharedEarned(item) > 0" :class="getAddSharedEarnedIndex(item) == 0 ? 'text-red-500' : 'text-blue-500'">
-                  {{ formatAmount(getAddSharedEarned(item)) }} 
-                  {{ getAddSharedEarnedIndex(item) === 0 ? $t('predictTrade.red') : $t('predictTrade.blue') }}
-                </span>
-                <span v-show="getAddSharedEarned(item) > 1">
-                  {{ $t('predictLiquidity.and') }}
-                </span>
+                <template v-if="lpAddSendBack(item)">
+                  <span class="font-bold whitespace-nowrap" :class="lpAddSendBack(item)!.outcomeIndex === 0 ? 'text-red-500' : 'text-blue-500'">
+                    {{ formatAmount(lpAddSendBack(item)!.amount) }}
+                    {{ lpAddSendBack(item)!.outcomeIndex === 0 ? $t('predictTrade.red') : $t('predictTrade.blue') }}
+                  </span>
+                  <span>
+                    {{ $t('predictLiquidity.and') }}
+                  </span>
+                </template>
                 <span>
                   {{ formatAmount(item.amount) }} LP
                 </span>
@@ -156,15 +154,14 @@ onActivated(() => {
                 <span>
                   {{ $t('predictLiquidity.get') }}
                 </span>
-                <span class="font-bold whitespace-nowrap text-red-500">
-                  {{ formatAmount(lpAmounts(item)[0]) }} {{ $t('predictTrade.red') }}
-                </span>
-                <span>
-                  {{ $t('predictLiquidity.and') }}
-                </span>
-                <span class="font-bold whitespace-nowrap text-blue-500">
-                  {{ formatAmount(lpAmounts(item)[1]) }} {{ $t('predictTrade.blue') }}
-                </span>
+                <template v-for="(outcome, oi) in lpRemoveOutcomes(item)" :key="outcome.outcomeIndex">
+                  <span v-if="oi > 0">
+                    {{ $t('predictLiquidity.and') }}
+                  </span>
+                  <span class="font-bold whitespace-nowrap" :class="outcome.outcomeIndex === 0 ? 'text-red-500' : 'text-blue-500'">
+                    {{ formatAmount(outcome.amount) }} {{ outcome.outcomeIndex === 0 ? $t('predictTrade.red') : $t('predictTrade.blue') }}
+                  </span>
+                </template>
             </div>
 
             <!-- Right Side: Time & Link -->
@@ -193,5 +190,11 @@ onActivated(() => {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #eee;
   border-radius: 2px;
+}
+
+:deep(.van-pull-refresh),
+:deep(.van-pull-refresh__track),
+:deep(.van-list) {
+  background-color: transparent;
 }
 </style>

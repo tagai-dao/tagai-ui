@@ -853,13 +853,15 @@
     "kickoffHint": "默认截止时间为开球时间，可自行调整",
     "outcome": {
       "win": "{team}胜",
-      "draw": "平"
+      "draw": "平",
+      "champion": "{team}夺冠"
     },
     "reason": {
       "INVALID_TEAM": "所选球队无效",
       "DIFFERENT_GROUP": "两队必须在同一小组",
       "NO_FIXTURE": "未找到该对阵的小组赛赛程",
-      "ALREADY_EXISTS": "该社区已存在此对阵的预测市场"
+      "ALREADY_EXISTS": "该社区已存在此对阵的预测市场",
+      "CHAMPION_EXISTS": "该社区已存在世界杯冠军预测市场"
     },
     "teams": {
       "MEX": "墨西哥",
@@ -930,6 +932,12 @@
       "groupChampion": "小组冠军 🏆",
       "worldChampion": "世界杯冠军 🏆"
     },
+    "championTitle": "2026 FIFA 世界杯冠军",
+    "championDeadlineHint": "自定义市场截止时间（如决赛开赛前）。",
+    "championRatioTip": "逐队设置初始概率（%，总和为 100）。最后一队自动填充为剩余比例。",
+    "oddsEqual": "均势",
+    "oddsFavorites": "热门预设",
+    "oddsClear": "清零",
     "initialRatioTip": "拖动两个滑块调整左胜、平局、右胜的初始概率，默认为三等分。",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "填写将发布到 X 的推文正文（不含 #TagAI，社区标签由系统自动补充）…",

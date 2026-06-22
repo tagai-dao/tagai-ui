@@ -844,13 +844,15 @@
     "kickoffHint": "기본 마감은 킥오프 시간이며 변경할 수 있습니다",
     "outcome": {
       "win": "{team} 승",
-      "draw": "무승부"
+      "draw": "무승부",
+      "champion": "{team} 우승"
     },
     "reason": {
       "INVALID_TEAM": "유효하지 않은 팀입니다",
       "DIFFERENT_GROUP": "같은 조 팀만 선택할 수 있습니다",
       "NO_FIXTURE": "해당 대전의 조별리그 일정이 없습니다",
-      "ALREADY_EXISTS": "이 커뮤니티에 동일 경기 마켓이 이미 있습니다"
+      "ALREADY_EXISTS": "이 커뮤니티에 동일 경기 마켓이 이미 있습니다",
+      "CHAMPION_EXISTS": "이 커뮤니티에 이미 우승 시장이 있습니다"
     },
     "teams": {
       "MEX": "멕시코",
@@ -921,6 +923,12 @@
       "groupChampion": "조별 우승 🏆",
       "worldChampion": "월드컵 우승 🏆"
     },
+    "championTitle": "2026 FIFA 월드컵 우승",
+    "championDeadlineHint": "시장 마감 시간을 설정하세요 (예: 결승 전).",
+    "championRatioTip": "각 팀의 초기 확률(%, 합 100)을 설정합니다. 마지막 팀은 나머지로 자동 채워집니다.",
+    "oddsEqual": "균등",
+    "oddsFavorites": "인기팀 프리셋",
+    "oddsClear": "초기화",
     "initialRatioTip": "두 핸들을 드래그해 좌승·무·우승 초기 확률을 설정합니다. 기본값은 삼등분입니다.",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "X에 게시할 본문을 입력하세요 (#TagAI는 추가되지 않으며, 커뮤니티 태그는 자동 추가됩니다)…",

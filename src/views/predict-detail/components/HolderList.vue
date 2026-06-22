@@ -100,7 +100,7 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl flex flex-col shadow-sm">
+  <div class="flex flex-col min-w-0">
       <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex items-center justify-between">
         <span class="hidden md:block">Top Holders</span>
         <!-- Mobile Tab Switcher -->
@@ -195,6 +195,12 @@ onActivated(() => {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #eee;
   border-radius: 2px;
+}
+
+:deep(.van-pull-refresh),
+:deep(.van-pull-refresh__track),
+:deep(.van-list) {
+  background-color: transparent;
 }
 </style>
 

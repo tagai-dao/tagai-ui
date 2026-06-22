@@ -10,11 +10,13 @@ import type { EventPredictData } from '@/types'
  * 这里用全部 7 语模板 × 48 队预生成反查表，识别与语言无关。
  */
 let winLabelToCode: Map<string, string> | null = null
+let championLabelToCode: Map<string, string> | null = null
 let drawLabels: Set<string> | null = null
 
 const ensureLabelMaps = () => {
-  if (winLabelToCode && drawLabels) return
+  if (winLabelToCode && championLabelToCode && drawLabels) return
   winLabelToCode = new Map()
+  championLabelToCode = new Map()
   drawLabels = new Set()
   const t = i18n.global.t as (key: string, named?: Record<string, unknown>, options?: { locale: string }) => string
   for (const { code: locale } of SUPPORTED_LOCALES) {
@@ -22,15 +24,17 @@ const ensureLabelMaps = () => {
     for (const team of WC_TEAMS) {
       const name = t(`worldCup2026.teams.${team.code}`, {}, { locale })
       winLabelToCode.set(t('worldCup2026.outcome.win', { team: name }, { locale }).trim(), team.code)
+      championLabelToCode.set(t('worldCup2026.outcome.champion', { team: name }, { locale }).trim(), team.code)
     }
   }
 }
 
-/** "{队名}胜" 类 label → FIFA 三字母代码；非世界杯胜负 label 返回 null */
+/** "{队名}胜"/"{队名}夺冠" 类 label → FIFA 三字母代码；非世界杯球队 label 返回 null */
 export const getOutcomeTeamCode = (label?: string | null): string | null => {
   if (!label) return null
   ensureLabelMaps()
-  return winLabelToCode!.get(label.trim()) ?? null
+  const trimmed = label.trim()
+  return winLabelToCode!.get(trimmed) ?? championLabelToCode!.get(trimmed) ?? null
 }
 
 /** outcome label 对应的国旗 URL；非球队 outcome（如"平局"）返回空串 */

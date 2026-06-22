@@ -53,7 +53,7 @@ const getWinner = (market: MarketData): 'left' | 'right' | null => {
 </script>
 
 <template>
-  <div class="h-full overflow-y-auto bg-gray-50 pb-20 sm:pb-0">
+  <div class="h-full overflow-y-auto bg-app-bg pb-20 sm:pb-0">
     <!-- Back Button / Header for Mobile -->
     <div class="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 sm:hidden flex items-center gap-2">
        <button @click="router.back()" class="text-gray-600 font-bold">← {{ $t('back') }}</button>

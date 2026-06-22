@@ -334,11 +334,16 @@ export const getMarketInfos = async (markets: BattleData[] | EventPredictData[])
     const calls: any[] = []
     for (const market of markets) {
         const eventMarket = market as EventPredictData
-        const outcomes = getOutcomeList(eventMarket).filter(o => o.positionId)
-        const useMulti = isMultiOutcomeEventFactory(eventMarket.factoryVersion) && outcomes.length > 0
+        const { withPosition, slotCount, isMulti } = resolveMultiOutcomePositions(eventMarket)
+
+        if (isMulti && withPosition.length < slotCount) {
+            warnIncompleteMultiOutcomePositions(market.marketMaker, withPosition.length, slotCount)
+        }
+
+        const useMulti = isMulti && withPosition.length > 0
 
         if (useMulti) {
-            for (const o of outcomes) {
+            for (const o of withPosition) {
                 calls.push({
                     target: ConditionalTokens,
                     call: [
@@ -351,7 +356,7 @@ export const getMarketInfos = async (markets: BattleData[] | EventPredictData[])
                     ],
                 })
             }
-        } else {
+        } else if (!isMulti) {
             calls.push({
                 target: ConditionalTokens,
                 call: [
@@ -390,6 +395,34 @@ export const getMarketInfos = async (markets: BattleData[] | EventPredictData[])
     return res.results.transformed as Record<string, number>
 }
 
+/** 多元 event 市场：按 factory + outcome 数判断，并收集带 positionId 的 outcome */
+const resolveMultiOutcomePositions = (event: EventPredictData) => {
+    const allOutcomes = getOutcomeList(event)
+    const withPosition = allOutcomes.filter(o => o.positionId)
+    const slotCount = event.outcomeCount ?? allOutcomes.length
+    const isMulti = isMultiOutcomeEventFactory(event.factoryVersion) && slotCount > 2
+    return { allOutcomes, withPosition, slotCount, isMulti }
+}
+
+/** 多元市场 positionId 未齐时打日志，避免静默走二元储备路径 */
+const warnIncompleteMultiOutcomePositions = (
+    marketMaker: string,
+    withPositionCount: number,
+    slotCount: number,
+) => {
+    if (withPositionCount === 0) {
+        console.warn(
+            `[fpmm] multi-outcome market ${marketMaker}: missing positionId on all ${slotCount} outcomes`,
+        )
+        return
+    }
+    if (withPositionCount < slotCount) {
+        console.warn(
+            `[fpmm] multi-outcome market ${marketMaker}: only ${withPositionCount}/${slotCount} outcomes have positionId`,
+        )
+    }
+}
+
 /** 将批量 multicall 结果写回 event 市场对象（含多元 outcomeReserves） */
 export const applyMulticallInfosToEvent = (
     event: EventPredictData,
@@ -397,11 +430,16 @@ export const applyMulticallInfosToEvent = (
 ) => {
     const mm = event.marketMaker
     const fee = infos[`${mm}-fee`] ?? 0
-    const outcomes = getOutcomeList(event).filter(o => o.positionId)
-    const useMulti = isMultiOutcomeEventFactory(event.factoryVersion) && outcomes.length > 0
+    const { withPosition, slotCount, isMulti } = resolveMultiOutcomePositions(event)
+
+    if (isMulti && withPosition.length < slotCount) {
+        warnIncompleteMultiOutcomePositions(mm, withPosition.length, slotCount)
+    }
+
+    const useMulti = isMulti && withPosition.length > 0
 
     if (useMulti) {
-        const outcomeReserves = outcomes.map(
+        const outcomeReserves = withPosition.map(
             o => infos[`${mm}-reserve-${o.outcomeIndex}`] ?? 0,
         )
         return {
@@ -411,6 +449,12 @@ export const applyMulticallInfosToEvent = (
             fee,
         }
     }
+
+    // 多元市场 positionId 未齐时不回退 reserveA/B，避免列表误判为二元储备
+    if (isMulti) {
+        return { fee }
+    }
+
     return {
         reserveA: infos[`${mm}-priceA`] ?? 0,
         reserveB: infos[`${mm}-priceB`] ?? 0,
@@ -424,7 +468,9 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
     }
 
     const eventMarket = battle as EventPredictData
-    const outcomes = getOutcomeList(eventMarket).filter(o => o.positionId)
+    const allOutcomes = getOutcomeList(eventMarket)
+    const outcomes = allOutcomes.filter(o => o.positionId)
+    const slotCount = eventMarket.outcomeCount ?? allOutcomes.length
     if (isMultiOutcomeEventFactory(eventMarket.factoryVersion) && outcomes.length > 2) {
         let calls: any[] = [
             {
@@ -447,8 +493,13 @@ export async function getUserTokenBalances(tokenAddr: `0x${string}`, accAddr: `0
         }
         const res = await aggregateWithRpcFallback(calls)
         const transformed = res.results.transformed as Record<string, bigint>
-        const outcomeBalances = outcomes.map(o => Number(transformed[`outcome-${o.outcomeIndex}`] ?? 0n) / 1e18)
-        const outcomeBalancesBi = outcomes.map(o => transformed[`outcome-${o.outcomeIndex}`] ?? 0n)
+        const outcomeBalances = Array.from({ length: slotCount }, () => 0)
+        const outcomeBalancesBi = Array.from({ length: slotCount }, () => 0n)
+        for (const o of outcomes) {
+            const bi = transformed[`outcome-${o.outcomeIndex}`] ?? 0n
+            outcomeBalances[o.outcomeIndex] = Number(bi) / 1e18
+            outcomeBalancesBi[o.outcomeIndex] = bi
+        }
         return {
             balance: Number(transformed.balance ?? 0n) / 1e18,
             balanceBi: transformed.balance ?? 0n,

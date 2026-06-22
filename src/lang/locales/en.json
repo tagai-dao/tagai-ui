@@ -850,13 +850,15 @@
     "kickoffHint": "Default deadline is kickoff time; you can adjust it",
     "outcome": {
       "win": "{team} Win",
-      "draw": "Draw"
+      "draw": "Draw",
+      "champion": "{team} Champion"
     },
     "reason": {
       "INVALID_TEAM": "Invalid team selected",
       "DIFFERENT_GROUP": "Teams must be in the same group",
       "NO_FIXTURE": "No group-stage fixture found for this pair",
-      "ALREADY_EXISTS": "A market for this match already exists in this community"
+      "ALREADY_EXISTS": "A market for this match already exists in this community",
+      "CHAMPION_EXISTS": "A champion market already exists in this community"
     },
     "teams": {
       "MEX": "Mexico",
@@ -927,6 +929,12 @@
       "groupChampion": "Group champion 🏆",
       "worldChampion": "World Cup champion 🏆"
     },
+    "championTitle": "2026 FIFA World Cup Champion",
+    "championDeadlineHint": "Set the market deadline (e.g. before the final).",
+    "championRatioTip": "Set each team's initial probability (%, sums to 100). The last team is auto-filled with the remainder.",
+    "oddsEqual": "Equal",
+    "oddsFavorites": "Favorites",
+    "oddsClear": "Clear",
     "initialRatioTip": "Drag the two handles to set initial probabilities for left win, draw, and right win. Default is equal thirds.",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "Write the tweet body for X (#TagAI is not added; community tag is appended automatically)…",

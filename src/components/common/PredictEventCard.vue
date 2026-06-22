@@ -14,7 +14,7 @@ import { formatUsdCompact } from '@/utils/format'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useRouter } from 'vue-router';
 import { useEventPredict } from '@/composables/usePredict';
-import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, getWinningOutcomeIndexFromVotes } from '@/composables/useEventMarketOutcomes';
+import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, getWinningOutcomeIndexFromVotes, isManyOutcomeMarket } from '@/composables/useEventMarketOutcomes';
 import { usePredictVoteHighlight } from '@/composables/usePredictVoteHighlight';
 import { getOutcomeFlagUrl } from '@/composables/useWorldCupMarkets';
 import { buyToken, getBuyData, getMarketInfos, getEventMarketInfos } from '@/utils/fpmm';
@@ -46,6 +46,19 @@ const {
   getOutcomeDisplayLabel,
   getVotePercent: getOutcomeVotePercent,
 } = useEventMarketOutcomes(() => props.market);
+const isManyOutcome = computed(() => isManyOutcomeMarket(props.market));
+/** many 模式下按概率降序取前 3 个 outcome（列表卡片只展示排名靠前的，其余进详情页查看） */
+const TOP_SHOW_COUNT = 3
+const topOutcomes = computed(() => {
+  if (!isManyOutcome.value) return []
+  return outcomeList.value
+    .map((outcome, idx) => ({ outcome, idx, percent: outcomePercents.value[idx] ?? 0 }))
+    .sort((a, b) => b.percent - a.percent)
+    .slice(0, TOP_SHOW_COUNT)
+})
+const remainingCount = computed(() =>
+  isManyOutcome.value ? Math.max(0, outcomeList.value.length - TOP_SHOW_COUNT) : 0,
+)
 const { hasVoted, isVotedOutcome, applyLocalVote } = usePredictVoteHighlight(() => props.market);
 const { t } = useI18n();
 const now = useNow();
@@ -513,8 +526,8 @@ const selectedBuyColor = computed(() => {
           <span v-if="percentB > 0.08" class="text-white text-[10px] font-bold leading-none truncate px-1">{{ (percentB * 100).toFixed(0) }}%</span>
         </div>
       </div>
-      <!-- 多元 outcome 概率条（N 段；结束后展示 end_time 快照） -->
-      <div v-if="isMultiOutcome" class="mt-2 h-5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
+      <!-- 多元 outcome 概率条（many 模式如总冠军不展示进度条） -->
+      <div v-if="isMultiOutcome && !isManyOutcome" class="mt-2 h-5 rounded-full overflow-hidden flex bg-grey-light-active" @click.stop>
         <div
           v-for="(pct, idx) in outcomePercents"
           :key="idx"
@@ -563,66 +576,141 @@ const selectedBuyColor = computed(() => {
 
         <Transition name="buy-buttons" mode="out-in">
 
-          <!-- 多元市场：交易阶段 3 个购买按钮 -->
+          <!-- 多元市场：交易阶段购买按钮 -->
           <div
             v-if="!showBuyInput && isMultiOutcome && !isVoting && !isResolved"
             key="multi-buttons"
             class="grid grid-cols-3 gap-2 w-full"
           >
-            <button
-              v-for="(outcome, idx) in outcomeList"
-              :key="outcome.outcomeIndex"
-              class="min-h-10 sm:min-h-12 px-1 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
-              :style="{ backgroundColor: getOutcomeColor(idx) }"
-              @click="buyOutcome(outcome.outcomeIndex)"
-            >
-              <span class="text-base sm:text-lg">{{ (outcomePercents[idx] * 100).toFixed(0) }}%</span>
-              <span class="text-[10px] sm:text-xs font-semibold opacity-90 text-center leading-tight px-0.5 flex items-center justify-center gap-1">
-                <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
-                  class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
-                <span class="line-clamp-2">{{ outcome.label }}</span>
-              </span>
-            </button>
+            <template v-if="!isManyOutcome">
+              <button
+                v-for="(outcome, idx) in outcomeList"
+                :key="outcome.outcomeIndex"
+                class="min-h-10 sm:min-h-12 px-1 text-white font-bold rounded-lg shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
+                :style="{ backgroundColor: getOutcomeColor(idx) }"
+                @click="buyOutcome(outcome.outcomeIndex)"
+              >
+                <span class="text-base sm:text-lg">{{ (outcomePercents[idx] * 100).toFixed(0) }}%</span>
+                <span class="text-[10px] sm:text-xs font-semibold opacity-90 text-center leading-tight px-0.5 flex items-center justify-center gap-1">
+                  <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
+                    class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
+                  <span class="line-clamp-2">{{ outcome.label }}</span>
+                </span>
+              </button>
+            </template>
+            <template v-else>
+              <button
+                v-for="item in topOutcomes"
+                :key="item.outcome.outcomeIndex"
+                class="min-h-10 sm:min-h-12 px-2 text-grey-normal font-bold rounded-lg border border-grey-light-active bg-white hover:bg-grey-light-hover hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-1.5 tabular-nums"
+                @click="buyOutcome(item.outcome.outcomeIndex)"
+              >
+                <img v-if="getOutcomeFlagUrl(item.outcome.label)" :src="getOutcomeFlagUrl(item.outcome.label)"
+                  class="w-5 h-3.5 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
+                <span class="text-[10px] sm:text-xs font-semibold text-center leading-tight line-clamp-2 flex-1 min-w-0">
+                  {{ item.outcome.label }}
+                </span>
+                <span class="text-sm sm:text-base font-bold text-black shrink-0">{{ (item.percent * 100).toFixed(0) }}%</span>
+              </button>
+              <!-- 更多：点击跳详情页查看全部 -->
+              <button
+                type="button"
+                class="min-h-10 sm:min-h-12 px-1 text-grey-normal font-bold rounded-lg border border-grey-light-active hover:bg-grey-light-hover transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
+                @click="gotoDetail()"
+              >
+                <span class="text-base sm:text-lg">+{{ remainingCount }}</span>
+                <span class="text-[10px] sm:text-xs font-semibold opacity-90 text-center leading-tight">
+                  {{ $t('more') }}
+                </span>
+              </button>
+            </template>
           </div>
 
-          <!-- 多元市场：投票阶段 3 个投票按钮 -->
+          <!-- 多元市场：投票阶段投票按钮 -->
           <div
             v-else-if="!showBuyInput && isMultiOutcome && isVoting"
             key="multi-vote"
             class="grid grid-cols-3 gap-2 w-full pt-1"
           >
-            <div
-              v-for="(outcome, idx) in outcomeList"
-              :key="'vote-' + outcome.outcomeIndex"
-              class="relative"
-            >
-              <button
-                class="relative w-full h-10 sm:h-12 px-2 text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center bg-white border-2"
-                :style="{
-                  borderColor: getOutcomeColor(idx),
-                  color: getOutcomeColor(idx),
-                }"
-                :class="{
-                  'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
-                  'ring-2 ring-green-500 ring-offset-1 shadow-md': isVotedOutcome(outcome.outcomeIndex),
-                  'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(outcome.outcomeIndex),
-                }"
-                :disabled="hasVoted"
-                @click="preVoteOutcome(outcome.outcomeIndex)"
+            <template v-if="!isManyOutcome">
+              <div
+                v-for="(outcome, idx) in outcomeList"
+                :key="'vote-' + outcome.outcomeIndex"
+                class="relative"
               >
-                <span
-                  class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
-                  :class="isVotedOutcome(outcome.outcomeIndex) ? 'bg-green-500' : ''"
-                  :style="isVotedOutcome(outcome.outcomeIndex) ? undefined : { backgroundColor: getOutcomeColor(idx) }"
-                >{{ isVotedOutcome(outcome.outcomeIndex) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
-                <span class="text-center leading-tight flex items-center justify-center gap-1 px-1">
-                  <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
-                    class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
-                  <span class="line-clamp-2">{{ outcome.label }}</span>
-                  <span class="text-xs font-semibold opacity-80 shrink-0">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
+                <button
+                  class="relative w-full h-10 sm:h-12 px-2 text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center bg-white border-2"
+                  :style="{
+                    borderColor: getOutcomeColor(idx),
+                    color: getOutcomeColor(idx),
+                  }"
+                  :class="{
+                    'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                    'ring-2 ring-green-500 ring-offset-1 shadow-md': isVotedOutcome(outcome.outcomeIndex),
+                    'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(outcome.outcomeIndex),
+                  }"
+                  :disabled="hasVoted"
+                  @click="preVoteOutcome(outcome.outcomeIndex)"
+                >
+                  <span
+                    class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                    :class="isVotedOutcome(outcome.outcomeIndex) ? 'bg-green-500' : ''"
+                    :style="isVotedOutcome(outcome.outcomeIndex) ? undefined : { backgroundColor: getOutcomeColor(idx) }"
+                  >{{ isVotedOutcome(outcome.outcomeIndex) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+                  <span class="text-center leading-tight flex items-center justify-center gap-1 px-1">
+                    <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
+                      class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
+                    <span class="line-clamp-2">{{ outcome.label }}</span>
+                    <span class="text-xs font-semibold opacity-80 shrink-0">({{ getVotePercent(outcome.outcomeIndex) }}%)</span>
+                  </span>
+                </button>
+              </div>
+            </template>
+            <template v-else>
+              <div
+                v-for="item in topOutcomes"
+                :key="'vote-' + item.outcome.outcomeIndex"
+                class="relative"
+              >
+                <button
+                  class="relative w-full h-10 sm:h-12 px-2 text-sm sm:text-base font-bold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center bg-white border-2"
+                  :style="{
+                    borderColor: getOutcomeColor(item.outcome.outcomeIndex),
+                    color: getOutcomeColor(item.outcome.outcomeIndex),
+                  }"
+                  :class="{
+                    'hover:shadow-md hover:scale-[1.02] active:scale-[0.98]': !hasVoted,
+                    'ring-2 ring-green-500 ring-offset-1 shadow-md': isVotedOutcome(item.outcome.outcomeIndex),
+                    'opacity-40 cursor-not-allowed': hasVoted && !isVotedOutcome(item.outcome.outcomeIndex),
+                  }"
+                  :disabled="hasVoted"
+                  @click="preVoteOutcome(item.outcome.outcomeIndex)"
+                >
+                  <span
+                    class="absolute -top-1.5 right-1 z-10 text-[8px] leading-none font-bold px-1 py-0.5 rounded shadow-sm text-white"
+                    :class="isVotedOutcome(item.outcome.outcomeIndex) ? 'bg-green-500' : ''"
+                    :style="isVotedOutcome(item.outcome.outcomeIndex) ? undefined : { backgroundColor: getOutcomeColor(item.outcome.outcomeIndex) }"
+                  >{{ isVotedOutcome(item.outcome.outcomeIndex) ? $t('predictTrade.yourVoteBadge') : $t('predictTrade.actionVote') }}</span>
+                  <span class="text-center leading-tight flex items-center justify-center gap-1 px-1">
+                    <img v-if="getOutcomeFlagUrl(item.outcome.label)" :src="getOutcomeFlagUrl(item.outcome.label)"
+                      class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
+                    <span class="line-clamp-2">{{ item.outcome.label }}</span>
+                    <span class="text-xs font-semibold opacity-80 shrink-0">({{ getVotePercent(item.outcome.outcomeIndex) }}%)</span>
+                  </span>
+                </button>
+              </div>
+              <!-- 更多：点击跳详情页投票 -->
+              <button
+                type="button"
+                class="w-full h-10 sm:h-12 px-2 text-grey-normal font-bold rounded-lg border border-grey-light-active hover:bg-grey-light-hover transition-all duration-200 flex flex-col items-center justify-center gap-0.5 tabular-nums"
+                @click="gotoDetail()"
+              >
+                <span class="text-base sm:text-lg">+{{ remainingCount }}</span>
+                <span class="text-[10px] sm:text-xs font-semibold opacity-90 text-center leading-tight">
+                  {{ $t('more') }}
                 </span>
               </button>
-            </div>
+            </template>
           </div>
 
           <!-- 多元市场：已结算结果 -->

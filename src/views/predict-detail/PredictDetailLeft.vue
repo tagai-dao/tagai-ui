@@ -55,7 +55,7 @@ const scrollToTrade = () => {
     </div>
 
     <!-- Data Tabs Section -->
-    <div class="bg-white rounded-2xl shadow-sm flex flex-col">
+    <div class="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden">
        <!-- Tab Headers -->
        <div class="flex border-b border-gray-100">
            <button 
@@ -71,7 +71,7 @@ const scrollToTrade = () => {
        </div>
 
        <!-- Tab Content -->
-       <div class="bg-gray-50/50">
+       <div>
            <KeepAlive>
                <TradeList v-if="activeTab === 0" :market="market" />
                <HolderList v-else :market="market" />

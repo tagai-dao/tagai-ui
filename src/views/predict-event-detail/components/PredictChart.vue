@@ -3,17 +3,23 @@ import VueApexCharts from 'vue3-apexcharts'
 import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import { getFPMMKlineDataBatch } from '@/apis/api'
 import type { ApexOptions } from 'apexcharts'
-import type { EventPredictOutcome, KlineData } from '@/types'
-import { OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes'
+import type { EventPredictData, EventPredictOutcome, KlineData } from '@/types'
+import { OUTCOME_CHART_COLORS, isManyOutcomeMarket } from '@/composables/useEventMarketOutcomes'
+import ManyOutcomeOddsList from '@/components/common/ManyOutcomeOddsList.vue'
 
 const ApexCharts = VueApexCharts as any
 
 const props = defineProps<{
   marketAddr: string
   chartId: string
+  /** 用于池子边际概率回退（K 线未覆盖的 outcome 不显示 --） */
+  market?: EventPredictData
   /** 不传则只展示 outcome 0（Yes） */
   outcomes?: EventPredictOutcome[]
 }>()
+
+/** 总冠军等多 outcome 市场：列表展示概率，不画多线 K 线 */
+const isManyOutcome = computed(() => isManyOutcomeMarket(props.market))
 
 /** 接口 close 为 0~1 概率 */
 function normalizeProbability(value: unknown): number | null {
@@ -162,7 +168,7 @@ function mergeOutcomeData(outcomeIndex: number, newItems: KlineData[], isUpdate:
 }
 
 async function fetchData(isUpdate = false) {
-  if (!props.marketAddr) return
+  if (!props.marketAddr || isManyOutcome.value) return
   const outcomeIndexes = chartOutcomes.value.map(o => o.outcomeIndex)
   if (outcomeIndexes.length === 0) return
 
@@ -312,14 +318,28 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col min-h-[450px] transition-opacity"
-    :class="isLoading ? 'opacity-85' : 'opacity-100'"
+    class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col transition-opacity"
+    :class="[
+      isLoading && !isManyOutcome ? 'opacity-85' : 'opacity-100',
+      isManyOutcome ? 'min-h-0' : 'min-h-[450px]',
+    ]"
   >
     <div class="mb-4">
       <h2 class="text-sm font-bold text-gray-500 mb-3">
         {{ isMultiSeries ? $t('predictTrade.outcomeProbabilities') : 'Predict probability (Yes)' }}
       </h2>
+
+      <!-- 多 outcome（如总冠军 32 队）：国旗 + 队名 + 比例，默认 3 行可展开 -->
+      <ManyOutcomeOddsList
+        v-if="isManyOutcome && market"
+        :market="market"
+        :price-by-index="currentPrices"
+        :default-visible="3"
+      />
+
+      <!-- 二元 / 少量 outcome：卡片展示当前价（K 线末点） -->
       <div
+        v-else
         class="gap-3"
         :class="isMultiSeries ? 'grid grid-cols-1 sm:grid-cols-3' : 'flex items-baseline gap-2'"
       >
@@ -345,7 +365,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div class="flex-1 min-h-[280px] w-full">
+    <div v-if="!isManyOutcome" class="flex-1 min-h-[280px] w-full">
       <component
         :is="ApexCharts"
         height="100%"
@@ -355,7 +375,10 @@ onUnmounted(() => {
       />
     </div>
 
-    <div class="flex justify-start gap-1 mt-4 border-t border-gray-100 pt-4">
+    <div
+      v-if="!isManyOutcome"
+      class="flex justify-start gap-1 mt-4 border-t border-gray-100 pt-4"
+    >
       <button
         v-for="tf in timeframes"
         :key="tf"

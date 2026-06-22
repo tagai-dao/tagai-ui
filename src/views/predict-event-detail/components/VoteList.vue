@@ -148,3 +148,11 @@ watch(() => props.market.marketMaker, () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(.van-pull-refresh),
+:deep(.van-pull-refresh__track),
+:deep(.van-list) {
+  background-color: transparent;
+}
+</style>

@@ -24,9 +24,10 @@ const activeOutcomeIndex = ref(0)
 // 请求序号：快速切换 outcome 时，只采纳最新一次请求的结果，避免旧请求晚返回覆盖当前数据
 let requestSeq = 0
 
+/** marketAddr 仅参与后端 Redis 分桶；须含 positionId，否则多元市场切换 outcome 会命中同一缓存 */
 const fetchHoldings = async (positionA: string, positionB: string, page?: number) => {
   return getFPMMUserHoldings(
-    props.market.marketMaker,
+    `${props.market.marketMaker}:${positionA}:${positionB}`,
     positionA,
     positionB,
     page
@@ -126,7 +127,7 @@ onActivated(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-2xl flex flex-col shadow-sm">
+  <div class="flex flex-col min-w-0">
       <div class="p-4 border-b border-gray-100 font-bold text-gray-800 flex items-center justify-between gap-3">
         <span class="hidden md:block">Top Holders</span>
         <!-- 多元 outcome tabs -->
@@ -254,6 +255,12 @@ onActivated(() => {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #eee;
   border-radius: 2px;
+}
+
+:deep(.van-pull-refresh),
+:deep(.van-pull-refresh__track),
+:deep(.van-list) {
+  background-color: transparent;
 }
 </style>
 

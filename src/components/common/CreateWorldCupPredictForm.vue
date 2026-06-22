@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { parseUnits } from 'viem'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
@@ -9,12 +9,14 @@ import { handleErrorTip, notify } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
 import {
   checkWorldCupMatchCreatable,
+  checkWorldCupChampionCreatable,
   createFPMMMarketForEvent,
   preCreateFPMMMarketEvent,
 } from '@/apis/api'
 import { OperateType, useTweet } from '@/composables/useTweet'
 import { useAccount } from '@/composables/useAccount'
 import { useWorldCupTeam } from '@/composables/useWorldCupTeam'
+import { useChampionOddsEditor } from '@/composables/useChampionOddsEditor'
 import emitter from '@/utils/emitter'
 import { getTokenBalance } from '@/utils/web3'
 import { formatAmount } from '@/utils/helper'
@@ -22,6 +24,7 @@ import { approveToken, createEventMarket, type EventMarketDexConfig } from '@/ut
 import { targetPercentsToDistributionHint } from '@/composables/useEventMarketOutcomes'
 import { FPMMDeterministicFactoryEventV3 } from '@/config'
 import { WC_TEAMS } from '@/data/world-cup-2026/teams'
+import { WC_TOP_TEAM_CODES, WC_CHAMPION_OUTCOME_COUNT } from '@/data/world-cup-2026/top-teams'
 import {
   formatKickoffUtcToLocal,
   getGroupMates,
@@ -30,6 +33,7 @@ import {
   type WcTeamWithFixture,
 } from '@/data/world-cup-2026/helpers'
 import WorldCupTeamPicker from '@/components/common/WorldCupTeamPicker.vue'
+import WorldCupChampionOddsEditor from '@/components/common/WorldCupChampionOddsEditor.vue'
 
 type WcFixtureInfo = {
   fixtureId: string
@@ -61,8 +65,11 @@ const eventType = ref<EventType>('matchup')
 const leftTeam = ref('')
 const rightTeam = ref('')
 const creatable = ref<boolean | null>(null)
+const championCreatable = ref<boolean | null>(null)
 const blockReason = ref('')
 const fixtureInfo = ref<WcFixtureInfo | null>(null)
+const championEditor = useChampionOddsEditor()
+const { percents: championPercents, lastPercent: championLastPercent } = championEditor
 
 const pickerVisible = ref(false)
 const pickerSide = ref<PickerSide>('left')
@@ -118,6 +125,7 @@ const outcomeLabels = computed(() => {
 })
 
 const autoTitle = computed(() => {
+  if (eventType.value === 'worldChampion') return t('worldCup2026.championTitle')
   if (!leftTeam.value || !rightTeam.value) return ''
   return getMatchTitle(leftTeam.value, rightTeam.value)
 })
@@ -134,15 +142,23 @@ const pickerTitle = computed(() =>
     : t('worldCup2026.pickerTitleRight')
 )
 
-const canSubmit = computed(() =>
-  eventType.value === 'matchup'
-  && creatable.value === true
-  && !!fixtureInfo.value
-  && !!form.title.trim()
-  && !!form.postContent.trim()
-  && !!form.announceDate
-  && !!form.initAmount
-)
+const canSubmit = computed(() => {
+  if (eventType.value === 'worldChampion') {
+    return championCreatable.value === true
+      && !!form.title.trim()
+      && !!form.postContent.trim()
+      && !!form.announceDate
+      && !!form.initAmount
+      && championEditor.valid.value
+  }
+  return eventType.value === 'matchup'
+    && creatable.value === true
+    && !!fixtureInfo.value
+    && !!form.title.trim()
+    && !!form.postContent.trim()
+    && !!form.announceDate
+    && !!form.initAmount
+})
 
 const resetMatchValidation = () => {
   creatable.value = null
@@ -219,14 +235,59 @@ watch(rightTeam, (code) => {
   checkMatchCreatable()
 })
 
+const checkChampionCreatable = async () => {
+  const tick = comStore.currentSelectedCommunity?.tick
+  if (!tick) return
+
+  checkLoading.value = true
+  errors.match = ''
+
+  try {
+    const res: any = await checkWorldCupChampionCreatable(tick)
+    championCreatable.value = !!res.creatable
+    if (!res.creatable) {
+      blockReason.value = res.reason || 'CHAMPION_EXISTS'
+      errors.match = t(`worldCup2026.reason.${blockReason.value}`)
+      return
+    }
+    form.title = t('worldCup2026.championTitle')
+  } catch (error) {
+    handleErrorTip(error)
+    errors.match = t('worldCup2026.checkFailed')
+  } finally {
+    checkLoading.value = false
+  }
+}
+
 watch(autoTitle, (title) => {
-  if (title && creatable.value) {
+  if (!title) return
+  if (eventType.value === 'worldChampion') {
+    form.title = title
+  } else if (creatable.value) {
     form.title = title
   }
 })
 
+watch(eventType, (type) => {
+  errors.match = ''
+  blockReason.value = ''
+  if (type === 'worldChampion') {
+    championCreatable.value = null
+    form.title = t('worldCup2026.championTitle')
+    checkChampionCreatable()
+  } else {
+    championCreatable.value = null
+  }
+})
+
+watch(() => comStore.currentSelectedCommunity?.tick, () => {
+  if (eventType.value === 'worldChampion') {
+    checkChampionCreatable()
+  }
+})
+
 const onEventTypeClick = (type: EventType) => {
-  if (type !== 'matchup') {
+  if (type === 'groupChampion') {
     notify({ message: t('worldCup2026.comingSoon'), type: 'info' })
     return
   }
@@ -239,13 +300,24 @@ const validateForm = (): boolean => {
   errors.initAmount = ''
   errors.match = ''
 
-  if (!leftTeam.value || !rightTeam.value) {
-    errors.match = t('worldCup2026.selectBothTeams')
-    return false
-  }
-  if (creatable.value !== true || !form.title.trim()) {
-    errors.match = errors.match || t('worldCup2026.selectBothTeams')
-    return false
+  if (eventType.value === 'worldChampion') {
+    if (championCreatable.value !== true || !form.title.trim()) {
+      errors.match = errors.match || t('worldCup2026.reason.CHAMPION_EXISTS')
+      return false
+    }
+    if (!championEditor.valid.value) {
+      errors.match = t('worldCup2026.initialRatio')
+      return false
+    }
+  } else {
+    if (!leftTeam.value || !rightTeam.value) {
+      errors.match = t('worldCup2026.selectBothTeams')
+      return false
+    }
+    if (creatable.value !== true || !form.title.trim()) {
+      errors.match = errors.match || t('worldCup2026.selectBothTeams')
+      return false
+    }
   }
   if (!form.postContent.trim()) {
     errors.postContent = t('worldCup2026.postContentRequired')
@@ -284,7 +356,8 @@ const handleCreate = async () => {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return
   }
-  if (!validateForm() || !fixtureInfo.value) return
+  if (!validateForm()) return
+  if (eventType.value === 'matchup' && !fixtureInfo.value) return
 
   const accInfo = accStore.getAccountInfo
   const token = comStore.currentSelectedCommunity?.token as `0x${string}`
@@ -300,9 +373,27 @@ const handleCreate = async () => {
 
     // 发推正文由用户填写；服务端仅补充社区 #tick，不再追加 #TagAI
     const text = form.postContent.trim()
-    const outcomes = getOutcomeLabels(leftTeam.value, rightTeam.value)
-    // 滑杆展示的是目标边际概率；链上 hint 需按 FPMM 公式换算储备比例
-    const distributionHint = targetPercentsToDistributionHint(ratioPercents.value)
+
+    // 按赛事类型构建 outcomes / 链上 distributionHint / eventTag / 默认 outcome 数
+    let outcomes: string[]
+    let distributionHint: number[]
+    let eventTag: string
+    let defaultOutcomeCount: number
+
+    if (eventType.value === 'worldChampion') {
+      outcomes = WC_TOP_TEAM_CODES.map(code =>
+        t('worldCup2026.outcome.champion', { team: getTeamName(code) }),
+      )
+      distributionHint = championEditor.distributionHint.value
+      eventTag = '2026FWC-Champion'
+      defaultOutcomeCount = WC_CHAMPION_OUTCOME_COUNT
+    } else {
+      outcomes = getOutcomeLabels(leftTeam.value, rightTeam.value)
+      // 滑杆展示的是目标边际概率；链上 hint 需按 FPMM 公式换算储备比例
+      distributionHint = targetPercentsToDistributionHint(ratioPercents.value)
+      eventTag = '2026FWC-GS'
+      defaultOutcomeCount = 3
+    }
 
     modalStore.setModalCloseEnable(false)
     const preMarketData: any = await preCreateFPMMMarketEvent({
@@ -312,7 +403,7 @@ const handleCreate = async () => {
       text,
       outcomes,
       distributionHint,
-      eventTag: '2026FWC-GS',
+      eventTag,
     })
 
     let { questionId, needOP, feePath, outcomeCount, distributionHint: hintFromApi, feeDexVersion, feeQuoteTarget, feePoolId } = preMarketData
@@ -339,7 +430,7 @@ const handleCreate = async () => {
       questionId,
       token,
       hintFromApi ?? distributionHint,
-      outcomeCount ?? 3,
+      outcomeCount ?? defaultOutcomeCount,
       endTime,
       parseUnits(form.initAmount.toString(), 18),
       dexConfig,
@@ -347,6 +438,7 @@ const handleCreate = async () => {
 
     await createFPMMMarketForEvent(accInfo.twitterId, questionId, hash)
     createLoading.value = false
+    clearDraft()
     emit('created')
     emitter.emit('createPredictSuccess')
   } catch (error) {
@@ -367,6 +459,9 @@ const resetForm = () => {
   errors.initAmount = ''
   pickerVisible.value = false
   resetRatioDefaults()
+  championCreatable.value = null
+  championEditor.clearAll()
+  clearDraft()
 }
 
 defineExpose({
@@ -374,11 +469,109 @@ defineExpose({
   createLoading,
 })
 
+// === 草稿缓存：填写中自动保存，再次打开自动回填，创建成功/重置时清除 ===
+const DRAFT_KEY_PREFIX = 'wcPredictDraft:'
+
+const draftKey = computed(() => {
+  const tid = accStore.getAccountInfo?.twitterId
+  return tid ? `${DRAFT_KEY_PREFIX}${tid}` : ''
+})
+
+type WcDraft = {
+  eventType: EventType
+  leftTeam: string
+  rightTeam: string
+  ratioBoundary1: number
+  ratioBoundary2: number
+  championPercents: number[]
+  postContent: string
+  announceDate: string
+  initAmount: string
+}
+
+const saveDraft = () => {
+  const key = draftKey.value
+  if (!key) return
+  const draft: WcDraft = {
+    eventType: eventType.value,
+    leftTeam: leftTeam.value,
+    rightTeam: rightTeam.value,
+    ratioBoundary1: ratioBoundary1.value,
+    ratioBoundary2: ratioBoundary2.value,
+    championPercents: [...championEditor.percents.value],
+    postContent: form.postContent,
+    announceDate: form.announceDate,
+    initAmount: form.initAmount,
+  }
+  try {
+    localStorage.setItem(key, JSON.stringify(draft))
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+const clearDraft = () => {
+  const key = draftKey.value
+  if (!key) return
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    /* ignore */
+  }
+}
+
+const restoreDraft = () => {
+  const key = draftKey.value
+  if (!key) return
+  let raw: string | null = null
+  try {
+    raw = localStorage.getItem(key)
+  } catch {
+    return
+  }
+  if (!raw) return
+  let draft: WcDraft
+  try {
+    draft = JSON.parse(raw) as WcDraft
+  } catch {
+    clearDraft()
+    return
+  }
+  // championPercents 长度需与当前 top-32 一致，否则丢弃（队伍清单变更兜底）
+  if (!Array.isArray(draft.championPercents) || draft.championPercents.length !== championEditor.percents.value.length) {
+    draft.championPercents = championEditor.percents.value
+  }
+  eventType.value = draft.eventType
+  leftTeam.value = draft.leftTeam
+  rightTeam.value = draft.rightTeam
+  ratioBoundary1.value = draft.ratioBoundary1
+  ratioBoundary2.value = draft.ratioBoundary2
+  championEditor.percents.value = [...draft.championPercents]
+  form.postContent = draft.postContent
+  form.announceDate = draft.announceDate
+  form.initAmount = draft.initAmount
+  // matchup 恢复后需重新校验 fixture（checkMatchCreatable 由 watch(rightTeam) 触发，
+  // 但若 rightTeam 已就位，手动补一次校验以回填 fixtureInfo）
+  if (draft.eventType === 'matchup' && leftTeam.value && rightTeam.value) {
+    nextTick(() => checkMatchCreatable())
+  } else if (draft.eventType === 'worldChampion') {
+    nextTick(() => checkChampionCreatable())
+  }
+}
+
+// 表单状态变化时自动保存草稿（深度监听）
+watch(
+  [eventType, leftTeam, rightTeam, ratioBoundary1, ratioBoundary2, () => championEditor.percents.value, () => form.postContent, () => form.announceDate, () => form.initAmount],
+  saveDraft,
+  { deep: true },
+)
+
 onMounted(async () => {
   if (comStore.currentSelectedCommunity?.token) {
     userBalance.value =
       Number(await getTokenBalance(comStore.currentSelectedCommunity.token as `0x${string}`)) / 1e18
   }
+  restoreDraft()
 })
 </script>
 
@@ -388,7 +581,8 @@ onMounted(async () => {
     <div class="wc-event-types">
       <button
         type="button"
-        class="wc-event-types__item wc-event-types__item--active"
+        class="wc-event-types__item"
+        :class="{ 'wc-event-types__item--active': eventType === 'matchup' }"
         @click="onEventTypeClick('matchup')"
       >
         {{ $t('worldCup2026.eventType.matchup') }}
@@ -402,7 +596,8 @@ onMounted(async () => {
       </button>
       <button
         type="button"
-        class="wc-event-types__item wc-event-types__item--disabled"
+        class="wc-event-types__item"
+        :class="{ 'wc-event-types__item--active': eventType === 'worldChampion' }"
         @click="onEventTypeClick('worldChampion')"
       >
         {{ $t('worldCup2026.eventType.worldChampion') }}
@@ -410,7 +605,7 @@ onMounted(async () => {
     </div>
 
     <!-- 对阵选择：左 | VS | 右 -->
-    <div class="wc-matchup">
+    <div v-if="eventType === 'matchup'" class="wc-matchup">
       <button
         type="button"
         class="wc-matchup__side"
@@ -459,7 +654,7 @@ onMounted(async () => {
       {{ $t('worldCup2026.checking') }}
     </div>
     <div v-else-if="errors.match" class="wc-status wc-status--error">{{ errors.match }}</div>
-    <div v-else-if="fixtureInfo" class="wc-status wc-status--ok">
+    <div v-else-if="eventType === 'matchup' && fixtureInfo" class="wc-status wc-status--ok">
       {{ $t('worldCup2026.fixtureVenue', { venue: fixtureInfo.venue }) }}
       · {{ formatKickoffUtcToLocal(fixtureInfo.kickoffUtc) }}
     </div>
@@ -513,15 +708,17 @@ onMounted(async () => {
         class="w-full !w-full"
         format="YYYY-MM-DD HH:mm:ss"
         value-format="YYYY-MM-DD HH:mm:ss"
-        :disabled="!canSubmit && !form.announceDate"
+        :disabled="eventType === 'matchup' && !canSubmit && !form.announceDate"
         :class="{ 'border-red-500': errors.announceDate }"
       />
       <div v-if="errors.announceDate" class="wc-field__error">{{ errors.announceDate }}</div>
-      <div v-else class="wc-field__hint text-grey-normal">{{ $t('worldCup2026.kickoffHint') }}</div>
+      <div v-else class="wc-field__hint text-grey-normal">
+        {{ eventType === 'worldChampion' ? $t('worldCup2026.championDeadlineHint') : $t('worldCup2026.kickoffHint') }}
+      </div>
     </div>
 
-    <!-- 初始概率（双滑块拖动调整三等分） -->
-    <div class="wc-field">
+    <!-- 初始概率（双滑块拖动调整三等分，仅 matchup） -->
+    <div v-if="eventType === 'matchup'" class="wc-field">
       <div class="flex items-center justify-between mb-2">
         <label class="wc-field__label mb-0 flex items-center gap-1">
           {{ $t('worldCup2026.initialRatio') }}
@@ -573,6 +770,17 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- 初始赔率（冠军市场：逐队权重编辑） -->
+    <div v-if="eventType === 'worldChampion'" class="wc-field">
+      <WorldCupChampionOddsEditor
+        :percents="championPercents"
+        :last-percent="championLastPercent"
+        @clear="championEditor.clearAll"
+        @equal="championEditor.equalSplit"
+        @favorites="championEditor.applyFavoritesPreset"
+      />
+    </div>
+
     <!-- 注入资金 -->
     <div class="wc-field">
       <label class="wc-field__label">
@@ -620,6 +828,7 @@ onMounted(async () => {
     </div>
 
     <WorldCupTeamPicker
+      v-if="eventType === 'matchup'"
       v-model:visible="pickerVisible"
       :title="pickerTitle"
       :teams="pickerTeams"
@@ -643,21 +852,21 @@ onMounted(async () => {
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
-  border: 1.5px solid #111;
-  background: #fff;
-  color: #111;
+  border: 1.5px solid var(--text-base);
+  background: var(--surface);
+  color: var(--text-base);
   transition: opacity 0.15s;
 }
 
 .wc-event-types__item--active {
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .wc-event-types__item--disabled {
   border-style: dashed;
-  border-color: #d1d5db;
-  color: #9ca3af;
+  border-color: var(--border-base);
+  color: var(--text-faint);
 }
 
 .wc-matchup {
@@ -674,22 +883,22 @@ onMounted(async () => {
   align-items: center;
   gap: 10px;
   padding: 16px 8px;
-  border: 1.5px dashed #d1d5db;
+  border: 1.5px dashed var(--border-base);
   border-radius: 16px;
-  background: #fafafa;
+  background: var(--surface-2);
   min-height: 120px;
   transition: border-color 0.15s, background 0.15s;
 }
 
 .wc-matchup__side:hover:not(.wc-matchup__side--muted) {
   border-color: #fe913f;
-  background: #fffaf5;
+  background: var(--surface);
 }
 
 .wc-matchup__side--filled {
   border-style: solid;
-  border-color: #e5e7eb;
-  background: #fff;
+  border-color: var(--border-base);
+  background: var(--surface);
 }
 
 .wc-matchup__side--muted {
@@ -709,7 +918,7 @@ onMounted(async () => {
   width: 56px;
   height: 40px;
   border-radius: 6px;
-  background: #f3f4f6;
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -717,14 +926,14 @@ onMounted(async () => {
 
 .wc-matchup__plus {
   font-size: 22px;
-  color: #9ca3af;
+  color: var(--text-faint);
   line-height: 1;
 }
 
 .wc-matchup__name {
   font-size: 13px;
   font-weight: 600;
-  color: #111;
+  color: var(--text-base);
   text-align: center;
   line-height: 1.3;
   word-break: break-word;
@@ -733,7 +942,7 @@ onMounted(async () => {
 .wc-matchup__vs {
   font-size: 22px;
   font-weight: 800;
-  color: #111;
+  color: var(--text-base);
   letter-spacing: 0.02em;
 }
 
@@ -745,21 +954,21 @@ onMounted(async () => {
 }
 
 .wc-status--loading {
-  color: #6b7280;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f9fafb;
+  background: var(--surface-2);
 }
 
 .wc-status--error {
   color: #ef4444;
-  background: #fef2f2;
+  background: var(--surface-2);
 }
 
 .wc-status--ok {
-  color: #6b7280;
-  background: #f9fafb;
+  color: var(--text-muted);
+  background: var(--surface-2);
 }
 
 .wc-field {
@@ -770,18 +979,24 @@ onMounted(async () => {
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #111;
+  color: var(--text-base);
   margin-bottom: 8px;
 }
 
 .wc-field__input {
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-base);
   border-radius: 12px;
   font-size: 14px;
+  color: var(--text-base);
+  background-color: var(--surface);
   outline: none;
   transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.wc-field__input::placeholder {
+  color: var(--text-faint);
 }
 
 .wc-field__input:focus {
@@ -790,14 +1005,14 @@ onMounted(async () => {
 }
 
 .wc-field__input--readonly {
-  background: #f9fafb;
-  color: #374151;
+  background: var(--surface-2);
+  color: var(--text-muted);
   cursor: default;
 }
 
 .wc-field__hint {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--text-faint);
   margin-top: 6px;
 }
 
@@ -823,7 +1038,7 @@ onMounted(async () => {
   height: 10px;
   border-radius: 999px;
   overflow: hidden;
-  background: #f3f4f6;
+  background: var(--surface-2);
   pointer-events: none;
 }
 
@@ -910,8 +1125,8 @@ onMounted(async () => {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: #e5e7eb;
-  color: #6b7280;
+  background: var(--surface-2);
+  color: var(--text-faint);
   font-size: 11px;
   line-height: 16px;
   text-align: center;
@@ -943,7 +1158,7 @@ onMounted(async () => {
 
 .wc-ratio-labels__item {
   font-size: 10px;
-  color: #6b7280;
+  color: var(--text-muted);
   text-align: center;
   line-height: 1.3;
   word-break: break-word;
@@ -973,10 +1188,19 @@ onMounted(async () => {
 :deep(.el-input__wrapper) {
   padding: 11px 16px;
   border-radius: 12px;
-  box-shadow: 0 0 0 1px #e5e7eb inset;
+  box-shadow: 0 0 0 1px var(--border-base) inset;
+  background-color: var(--surface);
 }
 
 :deep(.el-input__wrapper.is-focus) {
   box-shadow: 0 0 0 1px #3b82f6 inset !important;
+}
+
+:deep(.el-input__inner) {
+  color: var(--text-base) !important;
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: var(--text-faint) !important;
 }
 </style>

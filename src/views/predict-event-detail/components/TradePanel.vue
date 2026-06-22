@@ -19,6 +19,7 @@ import {
   calcTradeOutcomePercents,
   projectPoolAfterBuy,
   projectPoolAfterSell,
+  isManyOutcomeMarket,
 } from '@/composables/useEventMarketOutcomes'
 
 const props = defineProps<{
@@ -28,6 +29,7 @@ const props = defineProps<{
 const accStore = useAccountStore()
 const { onCopy } = useTools()
 const { isMultiOutcome, outcomeList, getPercent, getOutcomeLabel, getOutcomeDisplayLabel, winningOutcomeIndex } = useEventMarketOutcomes(() => props.market)
+const isManyOutcome = computed(() => isManyOutcomeMarket(props.market))
 const now = useNow()
 const { t } = useI18n()
 
@@ -171,6 +173,11 @@ const debouncedTradeCalculate = debounce(async () => {
     tradeCalculating.value = false
   }
 }, 500)
+
+const onSelectTradeOutcome = (outcomeIndex: number) => {
+  tradeSelectedOutcomeIndex.value = outcomeIndex
+  debouncedTradeCalculate()
+}
 
 async function getTradeMaxInfo() {
   isMax.value = true
@@ -445,7 +452,10 @@ const tradeTimeLeftText = computed(() => {
         <!-- Outcome Selection -->
         <div
           class="gap-3 mb-6"
-          :class="isMultiOutcome ? 'grid grid-cols-1 sm:grid-cols-3' : 'grid grid-cols-2 gap-4'"
+          :class="[
+            isMultiOutcome ? 'grid grid-cols-1 sm:grid-cols-3' : 'grid grid-cols-2 gap-4',
+            { 'max-h-[300px] overflow-y-auto': isManyOutcome }
+          ]"
         >
             <button
                 v-for="(outcome, idx) in outcomeList"
@@ -454,7 +464,7 @@ const tradeTimeLeftText = computed(() => {
                 :class="tradeSelectedOutcomeIndex === outcome.outcomeIndex
                   ? 'border-orange-normal bg-orange-50 text-orange-700 shadow-sm'
                   : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-orange-200'"
-                @click="tradeSelectedOutcomeIndex = outcome.outcomeIndex; debouncedTradeCalculate()"
+                @click="onSelectTradeOutcome(outcome.outcomeIndex)"
             >
                 <span class="text-xs sm:text-sm font-bold z-10 text-center line-clamp-2 leading-tight">
                   {{ getOutcomeDisplayLabel(outcome.outcomeIndex) }}
@@ -520,7 +530,7 @@ const tradeTimeLeftText = computed(() => {
                     </span>
                     <span v-else class="font-mono font-bold text-lg text-gray-900">{{ formatAmount(tradeWillReceiveAmount) }} {{ props.market.tick }}</span>
                 </div>
-                <div v-if="tradeOutcomeImpact.length" class="space-y-1.5">
+                <div v-if="tradeOutcomeImpact.length" class="space-y-1.5" :class="{ 'max-h-[200px] overflow-y-auto': isManyOutcome }">
                     <span class="text-gray-500 text-xs">{{ $t('predictTrade.oddsChange') }}</span>
                     <div
                       v-for="(item, idx) in tradeOutcomeImpact"

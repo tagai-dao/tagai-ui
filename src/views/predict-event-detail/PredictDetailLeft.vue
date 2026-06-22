@@ -62,6 +62,7 @@ const scrollToTrade = () => {
     <!-- Chart -->
     <PredictChart
       v-if="market.marketMaker"
+      :market="market"
       :marketAddr="market.marketMaker"
       chartId="predict-chart"
       :outcomes="market.outcomes"
@@ -72,8 +73,8 @@ const scrollToTrade = () => {
        <TradePanel :market="market" />
     </div>
 
-    <!-- Data Tabs Section -->
-    <div class="bg-white rounded-2xl shadow-sm flex flex-col">
+    <!-- Data Tabs Section：单层圆角卡片，overflow-hidden 避免子组件在圆角处露出底色 -->
+    <div class="bg-white rounded-2xl shadow-sm flex flex-col overflow-hidden">
        <!-- Tab Headers -->
        <div class="flex border-b border-gray-100">
            <button 
@@ -89,7 +90,7 @@ const scrollToTrade = () => {
        </div>
 
        <!-- Tab Content -->
-       <div class="bg-gray-50/50">
+       <div>
            <KeepAlive>
                <component :is="isTradeEnded ? (activeTab === 0 ? VoteList : (activeTab === 1 ? TradeList : HolderList)) : (activeTab === 0 ? TradeList : HolderList)" :market="market" />
            </KeepAlive>

@@ -430,6 +430,9 @@ export const preCreateFPMMMarketEvent = async (params: PreCreateFPMMMarketEventP
 export const checkWorldCupMatchCreatable = async (tick: string, teamA: string, teamB: string) =>
   get(BACKEND_API_URL + '/predict/checkWorldCupMatchCreatable', { tick, teamA, teamB })
 
+export const checkWorldCupChampionCreatable = async (tick: string) =>
+  get(BACKEND_API_URL + '/predict/checkWorldCupChampionCreatable', { tick })
+
 export const createFPMMMarketForEvent = async (twitterId: string, questionId: string, txHash: string) =>
   post(BACKEND_API_URL + '/predict/createEventFPMMMarket', { twitterId, questionId, txHash })
 

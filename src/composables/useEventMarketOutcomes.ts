@@ -13,6 +13,15 @@ export const isMultiOutcomeMarket = (market?: EventPredictData | null) => {
   return false
 }
 
+/** outcome 数量超过此阈值时启用折叠/列表式展示（冠军市场 32 触发） */
+export const MANY_OUTCOMES_THRESHOLD = 8
+
+export const isManyOutcomeMarket = (market?: EventPredictData | null) => {
+  if (!market) return false
+  const n = market.outcomeCount ?? market.outcomes?.length ?? 0
+  return isMultiOutcomeMarket(market) && n > MANY_OUTCOMES_THRESHOLD
+}
+
 /** 归一化 outcome 列表；无 DB 记录时 fallback 为 Yes/No（仅作占位，展示请用 getOutcomeDisplayLabel） */
 export const getOutcomeList = (market: EventPredictData): EventPredictOutcome[] => {
   if (market.outcomes?.length) {
@@ -258,33 +267,114 @@ export const calcTradeOutcomePercents = (
   after: calcOutcomePercents(reservesAfter),
 })
 
+/** 链上 hint 正整数下限 */
+const HINT_MIN = 1
+
+/** log 公式初值缩放；仅影响取整粒度，最终由迭代拟合修正 */
+const HINT_INITIAL_SCALE = 10_000
+
+/** 拟合目标：边际概率与 UI 目标的最大偏差（0~1 尺度，0.0005 ≈ 0.05%） */
+const HINT_FIT_TOLERANCE = 0.0005
+
+/** 拟合边际误差：各 outcome 目标概率与反算边际概率的最大绝对差（0~1 尺度） */
+const maxMarginalProbError = (target: number[], marginal: number[]) =>
+  Math.max(...target.map((t, i) => Math.abs(marginal[i] - t)))
+
+/**
+ * 将 UI 百分比转为 hint 计算用的权重。
+ * 合法分布（非负、总和>0）保留真值，0 用极小 ε 避免 log(0)；非法输入回退均分。
+ */
+const percentsForHintMath = (percents: number[]): number[] => {
+  const raw = percents.map(p => Math.max(0, Number(p) || 0))
+  const sum = raw.reduce((a, b) => a + b, 0)
+  if (sum <= 0 || !raw.every(p => Number.isFinite(p))) {
+    return Array.from({ length: Math.max(percents.length, 1) }, () => 1)
+  }
+  return raw.map(p => (p > 0 ? p : 1e-8))
+}
+
+/** 由归一化概率 p 经 log 域求 FPMM 储备比初值（round + 较大 scale 减少取整误差） */
+const hintsFromLogProbabilities = (p: number[], scale: number): number[] => {
+  const n = p.length
+  const logWeights = p.map((_, i) => {
+    let sumLog = 0
+    for (let j = 0; j < n; j++) {
+      if (j !== i) sumLog += Math.log(Math.max(p[j], 1e-15))
+    }
+    return sumLog
+  })
+  const maxLog = Math.max(...logWeights)
+  return logWeights.map(logW =>
+    Math.max(HINT_MIN, Math.round(Math.exp(logW - maxLog) * scale)),
+  )
+}
+
+/**
+ * 坐标下降微调整数 hint，使 calcOutcomePercents(hint) 逼近目标边际概率。
+ * 储备 ∝ hint 时：hint_i↑ → 边际 p_i↓（FPMM 恒定乘积）。
+ */
+const fitDistributionHints = (target: number[], initial: number[]): number[] => {
+  const n = target.length
+  if (n <= 1) return initial
+
+  let hint = initial.map(h => Math.max(HINT_MIN, Math.round(h)))
+  let bestErr = maxMarginalProbError(target, calcOutcomePercents(hint))
+
+  for (let iter = 0; iter < 400; iter++) {
+    const marginal = calcOutcomePercents(hint)
+    const err = maxMarginalProbError(target, marginal)
+    if (err <= HINT_FIT_TOLERANCE) break
+
+    let improved = false
+    for (let i = 0; i < n; i++) {
+      const delta = marginal[i] - target[i]
+      if (Math.abs(delta) <= HINT_FIT_TOLERANCE) continue
+
+      const dir = delta > 0 ? 1 : -1
+      const next = hint[i] + dir
+      if (next < HINT_MIN) continue
+
+      const trial = [...hint]
+      trial[i] = next
+      const trialErr = maxMarginalProbError(target, calcOutcomePercents(trial))
+      if (trialErr < err) {
+        hint = trial
+        bestErr = trialErr
+        improved = true
+      }
+    }
+    if (!improved) break
+    if (bestErr <= HINT_FIT_TOLERANCE) break
+  }
+
+  return hint
+}
+
 /**
  * 将 UI 上的目标概率（整数 %，和为 100）转为链上 FPMM distributionHint。
  * 合约按 hint 比例分配初始池子储备；要使边际价格等于目标概率，需 r_i ∝ ∏_{j≠i} p_j。
  * 二元市场与 createMarket 的 [100-p, p] 约定一致。
+ * N≥3 时在 log 域求初值，再迭代拟合整数 hint，缩小 32 元市场的创建误差。
  */
 export const targetPercentsToDistributionHint = (percents: number[]): number[] => {
   const n = percents.length
   if (n === 0) return []
   if (n === 1) return [100]
 
-  const probs = percents.map(p => Math.max(Number(p) || 0, 1))
-  const sum = probs.reduce((a, b) => a + b, 0)
-  const p = probs.map(x => x / sum)
+  const weights = percentsForHintMath(percents)
+  const sum = weights.reduce((a, b) => a + b, 0)
+  const p = weights.map(x => x / sum)
 
   if (n === 2) {
-    return [Math.ceil((1 - p[0]) * 100), Math.ceil(p[0] * 100)]
+    const initial = [
+      Math.max(HINT_MIN, Math.round((1 - p[0]) * 100)),
+      Math.max(HINT_MIN, Math.round(p[0] * 100)),
+    ]
+    return fitDistributionHints(p, initial)
   }
 
-  const weights = p.map((_, i) => {
-    let prod = 1
-    for (let j = 0; j < n; j++) {
-      if (j !== i) prod *= p[j]
-    }
-    return prod
-  })
-  const maxW = Math.max(...weights, 1e-12)
-  return weights.map(w => Math.max(1, Math.ceil((w / maxW) * 100)))
+  const initial = hintsFromLogProbabilities(p, HINT_INITIAL_SCALE)
+  return fitDistributionHints(p, initial)
 }
 
 /** 结算后得票最高的 outcome（用于卡片/详情展示胜方） */
