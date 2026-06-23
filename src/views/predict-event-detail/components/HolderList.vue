@@ -5,7 +5,6 @@ import { getFPMMUserHoldings } from '@/apis/api'
 import { handleErrorTip } from '@/utils/notify'
 import { formatAddress } from '@/utils/helper'
 import { useEventMarketOutcomes, isMultiOutcomeMarket, OUTCOME_CHART_COLORS } from '@/composables/useEventMarketOutcomes'
-
 const props = defineProps<{
   market: EventPredictData
 }>()
@@ -24,6 +23,9 @@ const activeOutcomeIndex = ref(0)
 // 请求序号：快速切换 outcome 时，只采纳最新一次请求的结果，避免旧请求晚返回覆盖当前数据
 let requestSeq = 0
 
+const resolvePositionId = (outcomeIndex: number): string | undefined =>
+  outcomeList.value.find(o => o.outcomeIndex === outcomeIndex)?.positionId?.trim() || undefined
+
 /** marketAddr 仅参与后端 Redis 分桶；须含 positionId，否则多元市场切换 outcome 会命中同一缓存 */
 const fetchHoldings = async (positionA: string, positionB: string, page?: number) => {
   return getFPMMUserHoldings(
@@ -39,13 +41,13 @@ const onLoad = async () => {
   const seq = ++requestSeq
   try {
     if (isMulti.value) {
-      const outcome = outcomeList.value.find(o => o.outcomeIndex === activeOutcomeIndex.value)
-      if (!outcome?.positionId) {
+      const positionId = resolvePositionId(activeOutcomeIndex.value)
+      if (!positionId) {
         finished.value = true
         return
       }
       const page = Math.floor(multiList.value.length / 20) + 1
-      const res: any = await fetchHoldings(outcome.positionId, outcome.positionId, page)
+      const res: any = await fetchHoldings(positionId, positionId, page)
       if (seq !== requestSeq) return
       const newItems = res?.b1 || []
       multiList.value = multiList.value.concat(newItems)
@@ -86,9 +88,9 @@ const onRefresh = async () => {
     blueList.value = []
 
     if (isMulti.value) {
-      const outcome = outcomeList.value.find(o => o.outcomeIndex === activeOutcomeIndex.value)
-      if (outcome?.positionId) {
-        const res: any = await fetchHoldings(outcome.positionId, outcome.positionId)
+      const positionId = resolvePositionId(activeOutcomeIndex.value)
+      if (positionId) {
+        const res: any = await fetchHoldings(positionId, positionId)
         if (seq !== requestSeq) return
         multiList.value = res?.b1 || []
         if (multiList.value.length < 30) finished.value = true

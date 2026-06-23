@@ -109,10 +109,26 @@ export const shouldUseEndOutcomeSnapshot = (market: EventPredictData) => {
   return market.status >= 2 || Date.now() >= market.endTime * 1000
 }
 
-/** 从 market 读取各 outcome 池子储备 */
+/** 从 market 读取各 outcome 池子储备（按 outcomeIndex 对齐） */
 export const getOutcomeReserves = (market: EventPredictData): number[] => {
+  const n = market.outcomeCount ?? getOutcomeList(market).length
   if (market.outcomeReserves?.length) {
-    return market.outcomeReserves
+    const src = market.outcomeReserves
+    if (src.length === n) return src
+    // 兼容旧版紧凑数组：按 withPosition 顺序写入
+    const padded = Array.from({ length: n }, () => 0)
+    const outcomes = getOutcomeList(market)
+    if (src.length === outcomes.filter(o => o.positionId).length) {
+      let j = 0
+      for (const o of outcomes) {
+        if (o.positionId) {
+          padded[o.outcomeIndex] = src[j] ?? 0
+          j++
+        }
+      }
+      return padded
+    }
+    return src
   }
   return [market.reserveA ?? 0, market.reserveB ?? 0]
 }
@@ -120,9 +136,17 @@ export const getOutcomeReserves = (market: EventPredictData): number[] => {
 /** outcome 数量超过此阈值时用对数域计算，否则用直接乘法（二元/三元/四元更轻量） */
 const LOG_CALC_MIN_OUTCOMES = 5
 
-/** 储备抹除 18 位小数精度为整型 token 单位 */
+/**
+ * 储备抹除 18 位小数精度为整型 token 单位。
+ * 粉尘储备（0 < r < 1）若直接 floor 会变成 0，触发整盘边际概率归零。
+ */
 const reservesToIntUnits = (reserves: number[]): number[] =>
-  reserves.map((r) => Math.floor(Math.max(0, Number(r) || 0)))
+  reserves.map((r) => {
+    const v = Math.max(0, Number(r) || 0)
+    if (v === 0) return 0
+    const floored = Math.floor(v)
+    return floored > 0 ? floored : 1
+  })
 
 const noLiquidityPercents = (n: number) => Array.from({ length: n }, () => 0)
 
@@ -398,10 +422,16 @@ export const useEventMarketOutcomes = (market: MaybeRefOrGetter<EventPredictData
       return parseEndOutcomePercents(m.endOutcomePercents) ?? []
     }
     const reserves = getOutcomeReserves(m)
-    // 多元市场储备未加载时（列表接口只回 reserveA/B），按均匀分布占位，避免缺段与 NaN%
     const n = getOutcomeList(m).length
-    if (isMultiOutcomeMarket(m) && reserves.length !== n) {
-      return Array.from({ length: n }, () => 1 / n)
+    if (isMultiOutcomeMarket(m)) {
+      if (reserves.length !== n) {
+        return Array.from({ length: n }, () => 1 / n)
+      }
+      const filled = reserves.filter(r => r > 0).length
+      // multicall 未齐（部分槽位仍为 0）时均匀占位，避免 NaN%
+      if (filled < n) {
+        return Array.from({ length: n }, () => 1 / n)
+      }
     }
     return calcOutcomePercents(reserves)
   })

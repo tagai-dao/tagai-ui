@@ -52,7 +52,7 @@ const TOP_SHOW_COUNT = 3
 const topOutcomes = computed(() => {
   if (!isManyOutcome.value) return []
   return outcomeList.value
-    .map((outcome, idx) => ({ outcome, idx, percent: outcomePercents.value[idx] ?? 0 }))
+    .map((outcome) => ({ outcome, percent: outcomePercents.value[outcome.outcomeIndex] ?? 0 }))
     .sort((a, b) => b.percent - a.percent)
     .slice(0, TOP_SHOW_COUNT)
 })
@@ -590,7 +590,7 @@ const selectedBuyColor = computed(() => {
                 :style="{ backgroundColor: getOutcomeColor(idx) }"
                 @click="buyOutcome(outcome.outcomeIndex)"
               >
-                <span class="text-base sm:text-lg">{{ (outcomePercents[idx] * 100).toFixed(0) }}%</span>
+                <span class="text-base sm:text-lg">{{ (outcomePercents[outcome.outcomeIndex] * 100).toFixed(0) }}%</span>
                 <span class="text-[10px] sm:text-xs font-semibold opacity-90 text-center leading-tight px-0.5 flex items-center justify-center gap-1">
                   <img v-if="getOutcomeFlagUrl(outcome.label)" :src="getOutcomeFlagUrl(outcome.label)"
                     class="w-4 h-3 rounded-[2px] object-cover shrink-0" alt="" loading="lazy" />
