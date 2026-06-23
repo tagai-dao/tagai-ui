@@ -187,7 +187,8 @@ export type CurationReward = {
   token: string,
   amount: number,
   price: number,
-  version?: number | null | undefined
+  version?: number | null | undefined,
+  socialPoolAddress?: string,
 }
 
 export type Commerce = Account & {

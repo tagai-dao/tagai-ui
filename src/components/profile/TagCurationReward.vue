@@ -5,8 +5,9 @@ import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { GlobalModalType, type CurationReward } from '@/types';
 import { formatAmount, formatPrice, sleep } from '@/utils/helper';
 import { handleErrorTip, notify } from '@/utils/notify';
-import { getClaimSignature, setOrderClaimed } from '@/apis/api'
+import { getClaimSignature, setOrderClaimed, getCommunityDetail } from '@/apis/api'
 import { claimReward, claimRewardV8 } from '@/utils/pump'
+import { usesNutboxSocialPool, normalizePumpVersion } from '@/utils/pumpVersion'
 import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ClaimFee } from '@/config';
@@ -14,14 +15,55 @@ import { isAddress, parseEther } from 'viem';
 import errCode from '@/errCode';
 import { useRouter } from 'vue-router';
 import CommunityLogo from '@/components/common/CommunityLogo.vue';
+import { getReadOnlyClient } from '@/utils/wallets';
+import { useI18n } from 'vue-i18n';
+
+const CLAIM_GAS_RESERVE_BNB = 0.00015
 
 const props = defineProps<{reward: CurationReward, canClaim: Boolean, isProfile: Boolean}>()
 const claiming = ref(false)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const router = useRouter()
+const { t } = useI18n()
 
 const { accountMismatch, updateBalance } = useAccount();
+
+async function getConnectedBnbBalance(): Promise<number> {
+  const addr = accStore.ethConnectAddress
+  if (!addr || !isAddress(addr)) return 0
+  try {
+    const wei = await getReadOnlyClient().getBalance({ address: addr as `0x${string}` })
+    return Number(wei) / 1e18
+  } catch {
+    return accStore.ethBalance ?? 0
+  }
+}
+
+function isClaimedRevert(e: unknown): boolean {
+  const msg = JSON.stringify(e) + String((e as { message?: string; shortMessage?: string })?.message || '')
+    + String((e as { shortMessage?: string })?.shortMessage || '')
+  return msg.includes('Claimed')
+}
+
+async function resolveSocialPoolForClaim(
+  token: string,
+  version: number,
+  fromApi?: string,
+  fromReward?: string,
+): Promise<string | undefined> {
+  if (fromApi && isAddress(fromApi)) return fromApi
+  if (fromReward && isAddress(fromReward)) return fromReward
+  if (version !== 10) return undefined
+  try {
+    const detail: any = await getCommunityDetail(props.reward.tick)
+    const pool = detail?.socialPoolAddress
+    return pool && isAddress(pool) ? pool : undefined
+  } catch (e) {
+    console.warn('resolveSocialPoolForClaim failed', e)
+    return undefined
+  }
+}
 
 async function claim() {
   if (accStore.ethConnectState != EthWalletState.Connected) {
@@ -37,31 +79,73 @@ async function claim() {
     return;
   }
   
-  // check eth balance
-  // @ts-ignore
-  if (accStore.ethBalance < (ClaimFee / 1e18)) {
-    notify({message: 'Insufficient BNB balance'})
+  // 领取走当前连接钱包，需检查连接地址 BNB（含 ClaimFee + gas 预留）
+  const claimFeeBnb = Number(ClaimFee) / 1e18
+  const connectedBnb = await getConnectedBnbBalance()
+  if (connectedBnb < claimFeeBnb + CLAIM_GAS_RESERVE_BNB) {
+    notify({ message: t('errMessage.insufficientBalance') })
     return
   }
-  try{
+  let lastOrderId: string | undefined
+  try {
     claiming.value = true
+    const rewardVersion = normalizePumpVersion(props.reward.version)
     const res: any = await getClaimSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
-    if (res) {
-      const {signature, orderId, amount, deadline} = res;
-      if (props.reward.version === 8 || props.reward.version === 9) {
-        const hash = await claimRewardV8(props.reward.token, BigInt(orderId), parseEther(amount.toString()), BigInt(deadline), signature, props.reward.version ?? 8);
-        setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, props.reward.version ?? 2).catch(console.error);
-        await sleep(1)
-        emitter.emit('claimedReward')
-        return;
+    if (!res || res.error) {
+      console.warn('getClaimSignature empty or error', res)
+      return
+    }
+    const { signature, orderId, amount, deadline, socialPoolAddress: apiPool } = res
+    lastOrderId = String(orderId)
+    if (usesNutboxSocialPool(rewardVersion)) {
+      if (deadline == null) {
+        console.warn('claim signature missing deadline', res)
+        notify({ message: t('errMessage.paramsError'), type: 'error' })
+        return
       }
-      const hash = await claimReward(props.reward.token, props.reward.version ?? 2, BigInt(orderId), parseEther(amount.toString()), signature);
-      setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, props.reward.version ?? 2).catch(console.error);
+      const socialPoolAddress = await resolveSocialPoolForClaim(
+        props.reward.token,
+        rewardVersion,
+        apiPool,
+        props.reward.socialPoolAddress,
+      )
+      if (rewardVersion === 10 && !socialPoolAddress) {
+        console.warn('v10 claim missing socialPoolAddress', props.reward.tick)
+        notify({ message: t('errMessage.paramsError'), type: 'error' })
+        return
+      }
+      const hash = await claimRewardV8(
+        props.reward.token,
+        BigInt(orderId),
+        parseEther(amount.toString()),
+        BigInt(deadline),
+        signature,
+        rewardVersion,
+        socialPoolAddress,
+      )
+      setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, rewardVersion).catch(console.error)
       await sleep(1)
       emitter.emit('claimedReward')
+      return
     }
+    const hash = await claimReward(props.reward.token, rewardVersion || 2, BigInt(orderId), parseEther(amount.toString()), signature)
+    setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, rewardVersion || 2).catch(console.error)
+    await sleep(1)
+    emitter.emit('claimedReward')
   } catch (e) {
     console.log(53, e)
+    if (isClaimedRevert(e) && lastOrderId) {
+      // 链上已领取但 DB 未同步：通知后端按用户地址校验并落库
+      await setOrderClaimed(
+        accStore.getAccountInfo.twitterId,
+        lastOrderId,
+        'on-chain-verified',
+        normalizePumpVersion(props.reward.version) || 8,
+      ).catch(console.error)
+      notify({ message: t('errMessage.noRewardToClaim'), type: 'info' })
+      emitter.emit('claimedReward')
+      return
+    }
     handleErrorTip(e)
     if (e === errCode.NO_REWARD_TO_CLAIM) {
       emitter.emit('claimedReward')

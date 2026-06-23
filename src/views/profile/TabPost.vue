@@ -100,6 +100,15 @@ function updateReward() {
     }
     return pairs
   }
+  const buildSocialPoolMap = (list: any[]) => {
+    const pools: Record<string, string> = {}
+    for (const item of list) {
+      if (item.token && item.socialPoolAddress && item.version === 10) {
+        pools[item.token] = item.socialPoolAddress
+      }
+    }
+    return pools
+  }
   if (rewardType.value === 'Claimable') {
     getMyCurationRewards(acc.twitterId).then(async (list: any) => {
       if (list && list.length > 0) {
@@ -108,10 +117,12 @@ function updateReward() {
           versions[t.token] = t.version ?? 2
         }
         const listedTokens = list.filter((l: any) => !l.isImport)
+        const socialPoolMap = buildSocialPoolMap(list)
         const list1 = await getTokenOnchainInfo(
           listedTokens.map((l: any) => l.token),
           versions,
-          buildPairMap(listedTokens)
+          buildPairMap(listedTokens),
+          socialPoolMap,
         )
         const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
 
@@ -132,10 +143,12 @@ function updateReward() {
           versions[t.token] = t.version ?? 2
         }
         const listedTokens = list.filter((l: any) => !l.isImport)
+        const socialPoolMap = buildSocialPoolMap(list)
         const list1 = await getTokenOnchainInfo(
           listedTokens.map((l: any) => l.token),
           versions,
-          buildPairMap(listedTokens)
+          buildPairMap(listedTokens),
+          socialPoolMap,
         )
         const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
 

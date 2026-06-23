@@ -560,16 +560,31 @@ export const claimReward = async (token: string, version: number, orderId: BigIn
     return hash
 }
 
-export const claimRewardV8 = async (token: string, orderId: BigInt, amount: BigInt, deadline: BigInt, signature: string, version = 8) => {
+export const claimRewardV8 = async (
+    token: string,
+    orderId: BigInt,
+    amount: BigInt,
+    deadline: BigInt,
+    signature: string,
+    version = 8,
+    socialPoolAddress?: string,
+) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
-    // V9/V10 使用 Token9 ABI（V10 导入代币本身不是 Pump 创建，但 nutboxSocialPool 接口相同）
-    const tokenAbi = version >= 9 ? 'Token9' : 'Token8';
-    const socialPool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`)
+    const v = Number(version)
+    let pool: string
+    if (socialPoolAddress && isAddress(socialPoolAddress)) {
+        pool = socialPoolAddress
+    } else if (v === 10) {
+        throw errCode.PARAMS_ERROR
+    } else {
+        const tokenAbi = v >= 9 ? 'Token9' : 'Token8';
+        pool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`) as string
+    }
     const hash = await writeContract({
         contractName: 'NutboxSocialCurationPool',
         functionName: 'claim',
         args: [orderId, amount, deadline, signature],
-        address: socialPool as `0x${string}`,
+        address: pool as `0x${string}`,
         value: ClaimFee
     })
     if (!hash) {
@@ -771,8 +786,14 @@ export const getTokenInfo = async (communities: Community[]) => {
         versions[com.token!] = com.version ?? 2;
     }
     const pairMap = buildPairMap(communities)
+    const socialPoolMap: Record<string, string> = {}
+    for (const com of communities) {
+        if (com.version === 10 && com.token && com.socialPoolAddress) {
+            socialPoolMap[com.token] = com.socialPoolAddress
+        }
+    }
     const thirdPartyMarketCapMap = await fetchThirdPartyMarketCapMap(communities)
-    let result = await getTokenOnchainInfo(tokens, versions, pairMap)
+    let result = await getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap)
 
     let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport), pairMap)
 
@@ -820,8 +841,15 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
             versions[tweet.token!] = tweet.version ?? 2;
         }
         const pairMap = buildPairMap(tweets)
+        const socialPoolMap: Record<string, string> = {}
+        for (const tweet of tweets) {
+            const pool = (tweet as { socialPoolAddress?: string }).socialPoolAddress
+            if (tweet.token && tweet.version === 10 && pool) {
+                socialPoolMap[tweet.token] = pool
+            }
+        }
         const thirdPartyMarketCapMap = await fetchThirdPartyMarketCapMap(tweets)
-        let result = await getTokenOnchainInfo(tokens, versions, pairMap)
+        let result = await getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap)
         let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap)
 
         const stateStore = useStateStore();
@@ -865,7 +893,8 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
 export const getTokenOnchainInfo = async (
     tokens: string[],
     versions: Record<string, number>,
-    pairMap: Record<string, string> = {}
+    pairMap: Record<string, string> = {},
+    socialPoolMap: Record<string, string> = {},
 ) => {
     if (tokens.length === 0) return []
     tokens = _.union(tokens)
@@ -874,14 +903,36 @@ export const getTokenOnchainInfo = async (
         const entries = await Promise.all(tokens.map(async token => {
             if (!isAddress(token)) return null;
             const version = versions[token] ?? 4;
+            if (version === 10) {
+                const pool = socialPoolMap[token]
+                let totalClaimedSocialRewards = 0n
+                if (pool && isAddress(pool)) {
+                    try {
+                        totalClaimedSocialRewards = BigInt(await readContract(
+                            'NutboxSocialCurationPool', 'totalClaimed', [], pool as `0x${string}`
+                        ) as bigint)
+                    } catch { /* ignore */ }
+                }
+                return [token, {
+                    bondingCurveSupply: 0n,
+                    listed: true,
+                    totalClaimedSocialRewards,
+                    nutboxSocialPool: pool,
+                }] as const;
+            }
             const pumpAddress = pumpContract[version - 1];
             if (!pumpAddress) return null;
             try {
                 const loadTotalClaimed = async (): Promise<bigint> => {
                     if (usesNutboxSocialPool(version)) {
-                        const tokenAbi = version === 9 ? 'Token9' : 'Token8';
-                        const socialPool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`);
-                        if (!socialPool || socialPool === zeroAddress) return 0n;
+                        let socialPool: string | undefined
+                        if (version === 10) {
+                            socialPool = socialPoolMap[token]
+                        } else {
+                            const tokenAbi = version === 9 ? 'Token9' : 'Token8';
+                            socialPool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`) as string
+                        }
+                        if (!socialPool || socialPool === zeroAddress || !isAddress(socialPool)) return 0n;
                         return readContract('NutboxSocialCurationPool', 'totalClaimed', [], socialPool as `0x${string}`) as Promise<bigint>;
                     }
                     if (hasPumpTotalClaimedSocialRewards(version)) {
@@ -918,6 +969,8 @@ export const getTokenOnchainInfo = async (
     for (let token of tokens) {
         if (!isAddress(token)) continue;
         const version = versions[token] ?? 4;
+        // v10 导入代币无 Pump / bonding curve 接口，单独在后面查矿池 totalClaimed
+        if (version === 10) continue;
         const pumpAddress = pumpContract[version - 1];
         if (!pumpAddress) continue;
         calls = calls.concat([
@@ -938,7 +991,7 @@ export const getTokenOnchainInfo = async (
                     [token + '-listed']
                 ]
             },
-            ...(usesNutboxSocialPool(version)
+            ...(usesNutboxSocialPool(version) && version !== 10
                 ? [{
                     target: token,
                     call: [
@@ -1017,8 +1070,11 @@ export const getTokenOnchainInfo = async (
         if (!info) continue
         // fallback 已写入 totalClaimed，且不会带 nutboxSocialPool
         if (info.nutboxSocialPool === undefined && info.totalClaimedSocialRewards !== undefined) continue
-        const pool = info.nutboxSocialPool as `0x${string}` | undefined
-        if (!pool || pool === zeroAddress) {
+        const version = versions[token] ?? 4
+        const pool = (version === 10
+            ? socialPoolMap[token]
+            : info.nutboxSocialPool) as `0x${string}` | undefined
+        if (!pool || pool === zeroAddress || !isAddress(pool)) {
             info.totalClaimedSocialRewards = 0n
             continue
         }
@@ -1043,7 +1099,11 @@ export const getTokenOnchainInfo = async (
             for (const token of tokens) {
                 if (!usesNutboxSocialPool(versions[token] ?? 4)) continue
                 const info = result[token]
-                if (!info?.nutboxSocialPool || info.nutboxSocialPool === zeroAddress) {
+                const version = versions[token] ?? 4
+                const pool = (version === 10
+                    ? socialPoolMap[token]
+                    : info?.nutboxSocialPool) as `0x${string}` | undefined
+                if (!pool || pool === zeroAddress || !isAddress(pool)) {
                     if (info) info.totalClaimedSocialRewards = 0n
                     continue
                 }
@@ -1052,13 +1112,36 @@ export const getTokenOnchainInfo = async (
                         'NutboxSocialCurationPool',
                         'totalClaimed',
                         [],
-                        info.nutboxSocialPool as `0x${string}`
+                        pool
                     )
-                    info.totalClaimedSocialRewards = BigInt(v as bigint)
+                    if (!info) result[token] = { listed: version === 10, bondingCurveSupply: 0n }
+                    result[token].totalClaimedSocialRewards = BigInt(v as bigint)
                 } catch {
-                    info.totalClaimedSocialRewards = 0n
+                    if (info) info.totalClaimedSocialRewards = 0n
                 }
             }
+        }
+    }
+
+    // v10 导入代币：仅有 socialPoolMap，无首轮 multicall 数据
+    for (const token of tokens) {
+        if (!isAddress(token) || (versions[token] ?? 4) !== 10) continue
+        if (result[token]?.totalClaimedSocialRewards !== undefined) continue
+        const pool = socialPoolMap[token]
+        if (!pool || !isAddress(pool)) {
+            result[token] = { listed: true, bondingCurveSupply: 0n, totalClaimedSocialRewards: 0n }
+            continue
+        }
+        try {
+            const v = await readContract('NutboxSocialCurationPool', 'totalClaimed', [], pool as `0x${string}`)
+            result[token] = {
+                listed: true,
+                bondingCurveSupply: 0n,
+                totalClaimedSocialRewards: BigInt(v as bigint),
+                nutboxSocialPool: pool,
+            }
+        } catch {
+            result[token] = { listed: true, bondingCurveSupply: 0n, totalClaimedSocialRewards: 0n }
         }
     }
 
