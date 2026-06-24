@@ -1,7 +1,7 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, PUMP9_VERSION, NutboxCommittee, usesThirdPartyMarketCap } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor, OracleDistributorV2, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregateWithRpcFallback } from './multicall'
@@ -593,15 +593,16 @@ export const claimRewardV8 = async (
     return hash
 }
 
-// 领取预测奖励，使用 OracleDistributor 合约
+// 领取预测奖励，使用 OracleDistributorV2 合约
+// V1 领取通道已作废，投票奖励统一从 V2 合约领取（V2/V3 市场奖励池注资在 OracleDistributorV2）
 export const claimPredictReward = async (token: string, orderId: BigInt, amount: BigInt, signature: string) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
-    // 使用 Pump4 的 ABI（userClaim 函数签名相同），但直接指定 OracleDistributor 地址
+    // 使用 Pump4 的 ABI（userClaim 函数签名相同），指定 OracleDistributorV2 地址
     const hash = await writeContract({
         contractName: 'Pump4',
         functionName: 'userClaim',
         args: [token, orderId, amount, signature],
-        address: OracleDistributor as `0x${string}`,
+        address: OracleDistributorV2 as `0x${string}`,
         value: ClaimFee
     })
     if (!hash) {
