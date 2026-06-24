@@ -10,7 +10,7 @@
     import PredictBattleCard from '@/components/common/PredictBattleCard.vue'
     import PredictEventCard from '@/components/common/PredictEventCard.vue'
     import PredictReward from '@/components/profile/PredictReward.vue'
-    import { getMarketInfos } from '@/utils/fpmm'
+    import { getMarketInfos, applyMulticallInfosToEvent } from '@/utils/fpmm'
     import { getTokenOnchainInfo } from '@/utils/pump'
     import { useStateStore } from '@/stores/common'
     import { useI18n } from 'vue-i18n'
@@ -69,9 +69,7 @@
                      const marketInfos = await getMarketInfos(data as EventPredictData[])
                     events.value = (data as EventPredictData[]).map(event => ({
                         ...event,
-                        reserveA: marketInfos[event.marketMaker + '-priceA'],
-                        reserveB: marketInfos[event.marketMaker + '-priceB'],
-                        fee: marketInfos[event.marketMaker + '-fee']
+                        ...applyMulticallInfosToEvent(event, marketInfos)
                     }))
                 } else {
                     events.value = []
@@ -121,9 +119,7 @@
                      const marketInfos = await getMarketInfos(data.battle as EventPredictData[])
                      events.value = events.value.concat((data.battle as EventPredictData[]).map(event => ({
                         ...event,
-                        reserveA: marketInfos[event.marketMaker + '-priceA'],
-                        reserveB: marketInfos[event.marketMaker + '-priceB'],
-                         fee: marketInfos[event.marketMaker + '-fee']
+                        ...applyMulticallInfosToEvent(event, marketInfos)
                     })))
                  }
                  if (!data.battle || data.battle.length < 16) {
