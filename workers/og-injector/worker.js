@@ -2,7 +2,7 @@
  * TagAI OG 注入 Worker（crawler-only）
  *
  * 部署到 tagai.fun 的 Cloudflare 路由上（zone worker route: tagai.fun/*）。
- * 普通用户请求原样透传；社交爬虫访问 /tag-detail/:id 或 /post-detail/:id 时，
+ * 普通用户请求原样透传；社交爬虫访问 /tag-detail/:id、/post-detail/:id 或 /commerce/:id 时，
  * 向后端 /meta/og 取动态摘要，把 OG/Twitter meta 注入 index.html，
  * 让分享到 X / Telegram / Discord 的链接带预览卡。
  *
@@ -17,6 +17,7 @@ const CRAWLER_UA = /twitterbot|facebookexternalhit|telegrambot|discordbot|slackb
 const ROUTE_PATTERNS = [
   { regex: /^\/tag-detail\/([^/]+)/, type: 'tag' },
   { regex: /^\/post-detail\/([^/]+)/, type: 'post' },
+  { regex: /^\/commerce\/([^/]+)/, type: 'commerce' },
 ]
 
 function escapeHtml(str) {
