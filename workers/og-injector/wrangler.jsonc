@@ -5,7 +5,8 @@
   "compatibility_date": "2025-06-01",
   "routes": [
     { "pattern": "tagai.fun/tag-detail/*", "zone_name": "tagai.fun" },
-    { "pattern": "tagai.fun/post-detail/*", "zone_name": "tagai.fun" }
+    { "pattern": "tagai.fun/post-detail/*", "zone_name": "tagai.fun" },
+    { "pattern": "tagai.fun/commerce/*", "zone_name": "tagai.fun" }
   ],
   "observability": { "enabled": true }
 }
