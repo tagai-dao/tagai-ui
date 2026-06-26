@@ -53,7 +53,7 @@ const createPredict = () => {
 
 <style scoped>
 .prediction-index-container {
-  background-color: #f8f9fa;
+  background-color: var(--app-bg);
   min-height: 100vh;
 }
 

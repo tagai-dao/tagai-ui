@@ -1231,11 +1231,6 @@ const selectedBuyColor = computed(() => {
   }
 }
 
-/* 确保背景始终为白色 */
-.predict-battle-container {
-  background-color: #f8f9fa !important;
-}
-
 /* 文本截断样式 */
 .line-clamp-3 {
   display: -webkit-box;

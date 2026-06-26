@@ -130,7 +130,7 @@ onMounted(async () => {
 <style scoped>
 .predict-event-container {
   height: 100%;
-  background-color: #f8f9fa;
+  background-color: var(--app-bg);
 }
 
 /* 复用 BattleCard 的相关样式 */
@@ -142,11 +142,6 @@ onMounted(async () => {
 .battle-card:hover {
   transform: translateY(-4px) scale(1.02);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-}
-
-/* 确保背景始终为白色 */
-.predict-event-container {
-  background-color: #f8f9fa !important;
 }
 
 /* 自定义滚动条 */

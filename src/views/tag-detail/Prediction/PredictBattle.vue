@@ -130,7 +130,7 @@ onMounted(async () => {
 <style scoped>
 .predict-battle-container {
   height: 100%;
-  background-color: #f8f9fa;
+  background-color: var(--app-bg);
 }
 
 .battle-card {
@@ -390,11 +390,6 @@ onMounted(async () => {
   .player-card p {
     font-size: 0.75rem;
   }
-}
-
-/* 确保背景始终为白色 */
-.predict-battle-container {
-  background-color: #f8f9fa !important;
 }
 
 /* 文本截断样式 */
