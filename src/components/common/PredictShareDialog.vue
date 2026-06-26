@@ -2,21 +2,25 @@
 import { watch } from 'vue'
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { useCreateTweet } from '@/composables/useCreateTweet'
+import { useUploadImg } from '@/composables/useUploadImg'
+import { notify } from '@/utils/notify'
 import {
   getCommerceShareTextMaxLength,
   type PredictShareType,
 } from '@/utils/predictShare'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   show: boolean
   type: PredictShareType
   marketAddress: string
   sharing?: boolean
-}>()
+  /** 是否展示 Blink 封面图上传（世界杯事件预测走硬编码图标，无需上传） */
+  allowBlinkLogo?: boolean
+}>(), { allowBlinkLogo: true })
 
 const emit = defineEmits<{
   'update:show': [value: boolean]
-  confirm: [text: string]
+  confirm: [text: string, blinkLogo: string]
 }>()
 
 const {
@@ -32,10 +36,13 @@ const {
   formatElToTextContent,
 } = useCreateTweet(getCommerceShareTextMaxLength())
 
+const { uploading, completedImgUrl, addUploadImg, compressImage } = useUploadImg()
+
 const resetEditor = () => {
   contentEl.value = ''
   showClear.value = false
   tweetLength.value = 0
+  completedImgUrl.value = ''
   if (contentRef.value) {
     contentRef.value.innerHTML = ''
   }
@@ -47,10 +54,32 @@ watch(() => props.show, (visible) => {
 
 const close = () => emit('update:show', false)
 
+// 上传用户选择的图片（不裁剪，仅等比压缩以控制体积），复用创建代币的上传服务
+const onUpload = async (options: any) => {
+  const file = options.file as File
+  if (!file.type.startsWith('image/')) {
+    notify({ message: 'Please select an image', type: 'error' })
+    return
+  }
+  uploading.value = true
+  try {
+    const compressed = await compressImage(file, 0.5, 600)
+    completedImgUrl.value = await addUploadImg(compressed)
+  } catch (e) {
+    notify({ message: 'Upload fail, please retry', type: 'error' })
+  } finally {
+    uploading.value = false
+  }
+}
+
+const removeImg = () => {
+  completedImgUrl.value = ''
+}
+
 const onConfirm = () => {
   if (leftWordsLength.value < 0 || props.sharing) return
   const text = contentRef.value ? formatElToTextContent(contentRef.value).trim() : ''
-  emit('confirm', text)
+  emit('confirm', text, completedImgUrl.value)
 }
 </script>
 
@@ -112,6 +141,32 @@ const onConfirm = () => {
         </div>
       </div>
 
+      <!-- Blink 封面图（可选） -->
+      <div v-if="allowBlinkLogo" class="px-2">
+        <div class="text-sm text-gray-600 mb-1">Blink cover image (optional)</div>
+        <div class="flex items-center gap-3">
+          <el-upload
+            action="#"
+            :http-request="onUpload"
+            :show-file-list="false"
+            accept="image/*"
+          >
+            <div
+              class="w-16 h-16 rounded-xl border border-dashed border-grey-e6 flex items-center justify-center cursor-pointer hover:border-orange-normal transition-colors overflow-hidden"
+            >
+              <img v-if="completedImgUrl" :src="completedImgUrl" class="w-full h-full object-cover" alt="" />
+              <i-ep-loading v-else-if="uploading" class="animate-spin text-gray-400 text-xl" />
+              <i-ep-plus v-else class="text-gray-400 text-xl" />
+            </div>
+          </el-upload>
+          <div v-if="completedImgUrl" class="flex flex-col gap-1">
+            <span class="text-xs text-gray-500">Cover uploaded</span>
+            <button class="text-xs text-red-e6 w-fit" @click="removeImg">Remove</button>
+          </div>
+          <span v-else-if="!uploading" class="text-xs text-gray-400">Defaults to the community logo</span>
+        </div>
+      </div>
+
       <div class="flex justify-center gap-3">
         <button
           class="h-10 px-5 rounded-full text-gray-600 font-medium border border-grey-e6"
@@ -122,7 +177,7 @@ const onConfirm = () => {
         </button>
         <button
           class="h-10 px-5 bg-gradient-primary rounded-full flex justify-center items-center gap-2 disabled:opacity-30"
-          :disabled="sharing || leftWordsLength < 0"
+          :disabled="sharing || uploading || leftWordsLength < 0"
           @click="onConfirm"
         >
           <span class="text-white font-bold text-lg">{{ sharing ? 'Posting...' : 'Post' }}</span>

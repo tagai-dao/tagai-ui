@@ -69,6 +69,7 @@ export const useUploadImg = () => {
           resolve((res?.data??''));
         })
         .catch((err) => {
+          console.error('upload image fail:', err)
           reject(errCode.SERVER_ERROR);
         });
     })
@@ -128,6 +129,7 @@ export const useUploadImg = () => {
     showPicSizeLimit,
     showOnlyPic,
     addUploadImg,
+    compressImage,
     cropperModalVisible,
     cropperImgSrc,
     openImageCropper,

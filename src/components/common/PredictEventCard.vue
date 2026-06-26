@@ -16,7 +16,7 @@ import { useRouter } from 'vue-router';
 import { useEventPredict } from '@/composables/usePredict';
 import { useEventMarketOutcomes, OUTCOME_CHART_COLORS, getWinningOutcomeIndexFromVotes, isManyOutcomeMarket } from '@/composables/useEventMarketOutcomes';
 import { usePredictVoteHighlight } from '@/composables/usePredictVoteHighlight';
-import { getOutcomeFlagUrl } from '@/composables/useWorldCupMarkets';
+import { getOutcomeFlagUrl, isWorldCupMarket } from '@/composables/useWorldCupMarkets';
 import { buyToken, getBuyData, getMarketInfos, getEventMarketInfos } from '@/utils/fpmm';
 import debounce from 'lodash.debounce';
 import { parseUnits } from 'viem';
@@ -204,11 +204,13 @@ const openCommunity = (tick: string) => {
 
 const sharing = ref(false);
 const showShareModal = ref(false);
+// 世界杯事件预测走硬编码 FIFA 图标，无需用户上传封面
+const allowBlinkLogo = computed(() => !isWorldCupMarket(props.market));
 const openShareModal = async () => {
   if (!(await ensureUserIPShare())) return
   showShareModal.value = true;
 }
-const confirmShare = async (text: string) => {
+const confirmShare = async (text: string, blinkLogo = '') => {
   if (sharing.value) return;
   sharing.value = true;
   try {
@@ -217,6 +219,7 @@ const confirmShare = async (text: string) => {
       twitterId,
       props.market.marketMaker,
       'event',
+      blinkLogo || undefined,
     );
     if (res?.c !== 0 || !res?.d?.commerceUrl) {
       handleErrorTip(res);
@@ -925,6 +928,7 @@ const selectedBuyColor = computed(() => {
     type="event"
     :market-address="market.marketMaker"
     :sharing="sharing"
+    :allow-blink-logo="allowBlinkLogo"
     @confirm="confirmShare"
   />
 </template>

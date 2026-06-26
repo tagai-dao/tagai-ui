@@ -259,8 +259,9 @@ export const createTokenCommerce = async (twitterId: string, tick: string, token
 export const createPredictCommerce = async (
   twitterId: string,
   marketAddress: string,
-  type: 'battle' | 'event'
-) => post(BACKEND_API_URL + '/commerce/newPredictCommerce', { twitterId, marketAddress, type })
+  type: 'battle' | 'event',
+  blinkLogo?: string,
+) => post(BACKEND_API_URL + '/commerce/newPredictCommerce', { twitterId, marketAddress, type, blinkLogo })
 
 /** 解析 commerce 类型，用于前端路由跳转 */
 export const resolveCommerce = async (commerceId: string) =>

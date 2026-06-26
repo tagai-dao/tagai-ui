@@ -82,7 +82,7 @@ const openShareModal = async () => {
   if (!(await ensureUserIPShare())) return
   showShareModal.value = true;
 }
-const confirmShare = async (text: string) => {
+const confirmShare = async (text: string, blinkLogo = '') => {
   if (sharing.value) return;
   sharing.value = true;
   try {
@@ -91,6 +91,7 @@ const confirmShare = async (text: string) => {
       twitterId,
       props.battle.marketMaker,
       'battle',
+      blinkLogo || undefined,
     );
     if (res?.c !== 0 || !res?.d?.commerceUrl) {
       handleErrorTip(res);
