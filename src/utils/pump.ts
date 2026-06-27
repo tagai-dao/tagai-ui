@@ -1256,7 +1256,7 @@ export const getTokenOnchainInfo = async (
 }
 
 /** 根据 dexVersion 获取导入代币价格 */
-const getImportTokenPrice = async (token: string, pair: string, dexVersion: number, pairMap: Record<string, string>, ethPrice: number): Promise<number | undefined> => {
+export const getImportTokenPrice = async (token: string, pair: string, dexVersion: number, pairMap: Record<string, string>, ethPrice: number): Promise<number | undefined> => {
     try {
         if (dexVersion === 4) {
             const poolId = resolveV4PoolId(pairMap[token] || pair)

@@ -204,7 +204,7 @@ onBeforeUnmount(() => {
   <!-- <div class="flex justify-end mb-2 mr-2">
     <img class="w-6 h-6 cursor-pointer" @click="showCreditChart = true" src="~@/assets/icons/icon-pie-chart.svg" alt="">
   </div> -->
-  <div class="bg-white rounded-2xl p-3 h-full flex flex-col overflow-hidden" v-if="comStore.currentSelectedCommunity?.tick">
+  <div class="bg-white rounded-2xl p-3 flex flex-col" v-if="comStore.currentSelectedCommunity?.tick">
     <div class="grid grid-cols-8 gap-x-2 web:grid-cols-9 text-h5 h-10 items-center flex-shrink-0">
       <span class="col-span-3 web:col-span-3 pl-8">{{ $t('account') }}</span>
       <span class="col-span-3 web:col-span-3">{{ $t('address') }}</span>
@@ -221,7 +221,7 @@ onBeforeUnmount(() => {
       :loading-text="$t('loading')"
       :lpulling-text="$t('pullToRefreshData')"
       :loosing-text="$t('releaseToRefresh')"
-      class="flex-1 overflow-y-auto min-h-0"
+      class="min-h-full"
     >
       <van-list
         :loading="loading"
