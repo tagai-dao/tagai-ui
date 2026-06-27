@@ -14,7 +14,7 @@ const tabs = [
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 h-full">
+  <div class="flex flex-col gap-2">
     <div class="flex items-center justify-start gap-2 ">
       <button v-for="(tab, index) in tabs" :key="index" class="text-h3 text-black h-8 rounded-full px-3 text-white" 
         :class="(activeTab == tab) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
@@ -23,7 +23,7 @@ const tabs = [
       </button>
     </div>
     
-    <div class="flex-1 overflow-hidden"> 
+    <div>
        <TagCredit v-if="activeTab === 'communityCredit'" />
        <PredictionCredit v-if="activeTab === 'predictionCredit'" />
     </div>
