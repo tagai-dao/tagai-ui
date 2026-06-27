@@ -5,7 +5,7 @@ import { useCommunityStore } from '@/stores/community';
 import { type CommunityCredit } from '@/types';
 import { formatAddress, formatAmount, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
-import {onBeforeUnmount, onMounted, ref} from 'vue';
+import {nextTick, onBeforeUnmount, onMounted, ref} from 'vue';
 import { useAccount } from '@/composables/useAccount';
 import VueApexCharts from 'vue3-apexcharts';
 import i18n from '@/lang';
@@ -22,6 +22,8 @@ const loading = ref(false);
 const finished = ref(false);
 const showCreditChart = ref(false);
 const holdingList = ref<CommunityCredit[]>([]);
+const sentinelRef = ref<HTMLElement>();
+let observer: IntersectionObserver | null = null;
 const { onCopy } = useTools()
 const colors = ['#4E79A7',
 '#F28E2B',
@@ -83,7 +85,7 @@ async function onRefresh() {
 }
 
 async function onLoad() {
-  if (refreshing.value || finished.value || holdingList.value.length == 0) return;
+  if (loading.value || refreshing.value || finished.value || holdingList.value.length == 0) return;
   loading.value = true;
   try{
     let list: any = await getCommunityPredictionCredits(comStore.currentSelectedCommunity!.tick, Math.floor((holdingList.value.length - 1) / 30) + 1);
@@ -98,6 +100,12 @@ async function onLoad() {
     handleErrorTip(e)
   } finally {
     loading.value = false
+  }
+  // 加载后若哨兵仍在视口内（内容未填满滚动容器），继续加载下一页
+  await nextTick();
+  if (!finished.value && sentinelRef.value) {
+    const rect = sentinelRef.value.getBoundingClientRect();
+    if (rect.top <= window.innerHeight + 50) onLoad();
   }
 }
 
@@ -194,11 +202,21 @@ onMounted(async () => {
       }]
     }
   }
-  onRefresh()
+  await onRefresh()
+
+  // 用 IntersectionObserver 触底加载，避免 van-list 滚动容器探测失效（@load 不触发）
+  await nextTick()
+  if (sentinelRef.value && 'IntersectionObserver' in window) {
+    observer = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) onLoad()
+    }, { rootMargin: '100px' })
+    observer.observe(sentinelRef.value)
+  }
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onLegendTest)
+  observer?.disconnect()
 })
 </script>
 
@@ -274,6 +292,7 @@ onBeforeUnmount(() => {
           <span @click.stop="onCopy(holder.ethAddr ?? '')" class="col-span-3 cursor-pointer">{{ formatAddress(holder.ethAddr) }}</span>
           <span class="col-span-2 web:col-span-3 text-right">{{ formatAmount(holder.credit) }}</span>
         </div>
+        <div ref="sentinelRef" class="h-px w-full"></div>
       </van-list>
     </van-pull-refresh>
     <el-dialog v-model="showCreditChart"
