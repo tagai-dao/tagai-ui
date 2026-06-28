@@ -137,16 +137,21 @@ export const getOutcomeReserves = (market: EventPredictData): number[] => {
 const LOG_CALC_MIN_OUTCOMES = 5
 
 /**
- * 储备抹除 18 位小数精度为整型 token 单位。
- * 粉尘储备（0 < r < 1）若直接 floor 会变成 0，触发整盘边际概率归零。
+ * 归一化储备量级：每个正储备除以最大正储备，保留比例与零值。
+ * 边际概率只依赖储备之间的比值（等比缩放 p_i 不变），除以最大值可同时：
+ *  - 避免大储备（冠军市场数十万）直接连乘溢出；
+ *  - 避免粉尘储备（0<r<1，如小币种池）被取整抹平成 1，导致整盘均分（33/33/33）。
+ * 旧实现 Math.floor 会把所有 <1 的储备压成 1，是 SPCXB 等小储备市场比例失真的根因。
  */
-const reservesToIntUnits = (reserves: number[]): number[] =>
-  reserves.map((r) => {
-    const v = Math.max(0, Number(r) || 0)
-    if (v === 0) return 0
-    const floored = Math.floor(v)
-    return floored > 0 ? floored : 1
+const reservesToIntUnits = (reserves: number[]): number[] => {
+  const vals = reserves.map((r) => {
+    const v = Number(r)
+    return Number.isFinite(v) && v > 0 ? v : 0
   })
+  const max = Math.max(...vals, 0)
+  if (max <= 0) return vals
+  return vals.map((v) => (v > 0 ? v / max : 0))
+}
 
 const noLiquidityPercents = (n: number) => Array.from({ length: n }, () => 0)
 
