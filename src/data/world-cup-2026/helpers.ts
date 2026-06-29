@@ -1,19 +1,7 @@
 import dayjs from 'dayjs'
-import fixtures from './fixtures.json'
-import { getTeamByCode, WC_TEAMS, type WcTeam } from './teams'
+import knockoutFixtures from './knockout-fixtures.json'
 
-export type WcFixture = {
-  fixtureId: string
-  group: string
-  home: string
-  away: string
-  /** 球场所在地时间，仅数据参考；前端展示请用 kickoffUtc + formatKickoffUtcToLocal */
-  kickoffLocal: string
-  venue: string
-  kickoffUtc: string
-}
-
-/** UTC 开球时间 → 用户浏览器本地时区（对手选择器等短格式） */
+/** UTC 开球时间 → 用户浏览器本地时区（短格式） */
 export const formatKickoffUtcToLocal = (kickoffUtc: string): string => {
   const d = dayjs(kickoffUtc)
   return d.isValid() ? d.format('MM/DD HH:mm') : ''
@@ -25,48 +13,42 @@ export const kickoffUtcToLocalDatePicker = (kickoffUtc: string): string => {
   return d.isValid() ? d.format('YYYY-MM-DD HH:mm:ss') : ''
 }
 
-/** 队伍 + 对阵赛程信息，用于右侧 Picker 展示 */
-export type WcTeamWithFixture = WcTeam & {
-  kickoffUtc: string | null
-  kickoffStarted: boolean
+// ===== 淘汰赛（32强→决赛）赛程访问 =====
+
+export type WcKnockoutRound = 'R32' | 'R16' | 'QF' | 'SF' | 'F'
+
+export type WcKnockoutFixture = {
+  fixtureId: string
+  round: WcKnockoutRound
+  teamA: string
+  teamB: string
+  kickoffUtc: string
+  venue: string
 }
 
-const WC_FIXTURES = fixtures as WcFixture[]
-
-/** fixtureId = {group}-{code1}-{code2}，两 code 字典序 */
-export const buildFixtureId = (group: string, codeA: string, codeB: string): string => {
-  const [c1, c2] = [codeA, codeB].sort()
-  return `${group}-${c1}-${c2}`
+const KNOCKOUT_DATA = knockoutFixtures as {
+  rounds: Array<{ round: WcKnockoutRound; fixtures: Array<Omit<WcKnockoutFixture, 'round'>> }>
 }
 
-/** 无序查找小组赛赛程 */
-export const getFixtureByPair = (teamA: string, teamB: string): WcFixture | undefined => {
-  const team1 = getTeamByCode(teamA)
-  const team2 = getTeamByCode(teamB)
-  if (!team1 || !team2 || team1.group !== team2.group || teamA === teamB) return undefined
-  const fixtureId = buildFixtureId(team1.group, teamA, teamB)
-  return WC_FIXTURES.find(f => f.fixtureId === fixtureId)
-}
+/** 扁平化所有淘汰赛 fixture，注入 round 字段 */
+const ALL_KNOCKOUT_FIXTURES: WcKnockoutFixture[] = KNOCKOUT_DATA.rounds.flatMap(r =>
+  r.fixtures.map(f => ({ ...f, round: r.round })),
+)
 
-export const getGroupMates = (teamCode: string): WcTeam[] => {
-  const team = getTeamByCode(teamCode)
-  if (!team) return []
-  return WC_TEAMS.filter(t => t.group === team.group && t.code !== teamCode)
-}
+/** 按 round 获取淘汰赛对阵列表 */
+export const getKnockoutFixturesByRound = (round: WcKnockoutRound): WcKnockoutFixture[] =>
+  ALL_KNOCKOUT_FIXTURES.filter(f => f.round === round)
 
-/** 获取同组对手，附带与指定队伍的赛程信息及是否已开赛 */
-export const getGroupMatesWithFixture = (teamCode: string): WcTeamWithFixture[] => {
-  const team = getTeamByCode(teamCode)
-  if (!team) return []
-  const now = Date.now()
-  return WC_TEAMS
-    .filter(t => t.group === team.group && t.code !== teamCode)
-    .map(t => {
-      const fixture = getFixtureByPair(teamCode, t.code)
-      const kickoffUtc = fixture?.kickoffUtc ?? null
-      const kickoffStarted = kickoffUtc ? new Date(kickoffUtc).getTime() <= now : false
-      return { ...t, kickoffUtc, kickoffStarted }
-    })
-}
+/** 已配置赛程的轮次列表（用于轮次选择器，仅返回有对阵数据的轮次） */
+export const getAvailableKnockoutRounds = (): WcKnockoutRound[] =>
+  KNOCKOUT_DATA.rounds.filter(r => r.fixtures.length > 0).map(r => r.round)
 
-export const DEFAULT_WC_DISTRIBUTION_HINT = [34, 33, 33] as const
+/** 按 fixtureId 反查淘汰赛对阵（round 由 fixtureId 反查得出） */
+export const getKnockoutFixtureById = (fixtureId: string): WcKnockoutFixture | undefined =>
+  ALL_KNOCKOUT_FIXTURES.find(f => f.fixtureId === fixtureId)
+
+/** 构造淘汰赛市场 event_tag：2026FWC-KO-{round}-{code1}-{code2}（两 code 字典序，语言无关，用作去重键） */
+export const buildKnockoutEventTag = (round: WcKnockoutRound, teamA: string, teamB: string): string => {
+  const [c1, c2] = [teamA, teamB].sort()
+  return `2026FWC-KO-${round}-${c1}-${c2}`
+}

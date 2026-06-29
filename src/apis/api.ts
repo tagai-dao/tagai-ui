@@ -409,7 +409,7 @@ export type PreCreateFPMMMarketEventParams = {
   text: string
   outcomes?: string[]
   distributionHint?: number[]
-  /** 赛事标签: 2026FWC-GS, 2026FWC-GS-Winner, 2026FWC-Champion 等 */
+  /** 赛事标签: 2026FWC-KO-R32-CODE1-CODE2, 2026FWC-Champion 等 */
   eventTag?: string
 }
 
@@ -430,6 +430,9 @@ export const preCreateFPMMMarketEvent = async (params: PreCreateFPMMMarketEventP
 
 export const checkWorldCupMatchCreatable = async (tick: string, teamA: string, teamB: string) =>
   get(BACKEND_API_URL + '/predict/checkWorldCupMatchCreatable', { tick, teamA, teamB })
+
+export const checkKnockoutMatchCreatable = async (tick: string, fixtureId: string) =>
+  get(BACKEND_API_URL + '/predict/checkKnockoutMatchCreatable', { tick, fixtureId })
 
 export const checkWorldCupChampionCreatable = async (tick: string) =>
   get(BACKEND_API_URL + '/predict/checkWorldCupChampionCreatable', { tick })

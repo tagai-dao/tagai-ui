@@ -839,7 +839,6 @@
     "create": "Buat prediksi grup Piala Dunia",
     "matchTitle": "{left} vs {right}",
     "selectLeftTeam": "Pilih tim Anda",
-    "selectOpponent": "Pilih lawan satu grup",
     "groupLabel": "Grup {group}",
     "kickoffHint": "Batas default adalah waktu kickoff; bisa diubah",
     "outcome": {
@@ -849,8 +848,7 @@
     },
     "reason": {
       "INVALID_TEAM": "Tim tidak valid",
-      "DIFFERENT_GROUP": "Tim harus satu grup",
-      "NO_FIXTURE": "Tidak ada jadwal grup untuk pasangan ini",
+      "NO_FIXTURE": "Pertandingan tidak ditemukan",
       "ALREADY_EXISTS": "Pasar untuk pertandingan ini sudah ada di komunitas ini",
       "CHAMPION_EXISTS": "Pasar juara sudah ada di komunitas ini"
     },
@@ -904,24 +902,15 @@
       "GHA": "Ghana",
       "PAN": "Panama"
     },
-    "subtitle": "Pilih dua tim dari grup yang sama: menang / seri / menang.",
     "createShort": "Piala Dunia",
-    "initialRatio": "Odds awal (bagi rata)",
     "checking": "Memverifikasi jadwal…",
     "checkFailed": "Gagal memverifikasi pertandingan",
-    "selectBothTeams": "Pilih dua tim berbeda dari grup yang sama",
     "fixtureVenue": "Venue: {venue}",
     "tabDesc": "Berdasarkan Real World, model prediksi Piala Dunia memungkinkan pembuatan event turnamen utama. Trading berhenti otomatis saat waktu habis, lalu pengguna dengan credit prediksi komunitas memilih selama 24 jam. Penyelesaian mengikuti hasil voting on-chain dan pemenang membagi sebagian biaya transaksi.",
-    "tapToSelect": "Ketuk untuk memilih",
-    "selectLeftFirst": "Pilih tim kiri terlebih dahulu",
     "titleAutoPlaceholder": "Otomatis setelah memilih kedua tim",
-    "comingSoon": "Segera hadir",
-    "pickerTitleLeft": "Pilih tim",
-    "pickerTitleRight": "Pilih lawan (grup sama)",
     "eventType": {
-      "matchup": "Pertandingan",
-      "groupChampion": "Juara grup 🏆",
-      "worldChampion": "Juara Piala Dunia 🏆"
+      "worldChampion": "Juara Piala Dunia 🏆",
+      "knockout": "Laga gugur"
     },
     "championTitle": "Juara Piala Dunia FIFA 2026",
     "championDeadlineHint": "Atur batas waktu pasar (mis. sebelum final).",
@@ -929,7 +918,6 @@
     "oddsEqual": "Rata",
     "oddsFavorites": "Favorit",
     "oddsClear": "Hapus",
-    "initialRatioTip": "Geser dua handle untuk mengatur probabilitas awal menang kiri, seri, dan menang kanan. Default: sepertiga sama.",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "Tulis isi tweet untuk X (#TagAI tidak ditambahkan; tag komunitas ditambahkan otomatis)…",
     "postContentRequired": "Masukkan isi posting",
@@ -939,7 +927,20 @@
     "tweetUrlRequired": "Posting di X lalu tempel tautan tweet",
     "postOnTwitterFirst": "Posting di X dulu, tempel tautan, lalu buat lagi.",
     "tweetSyncTimeout": "Tweet belum tersinkron. Tunggu sebentar dan coba lagi.",
-    "postMetaGroup": "Piala Dunia 2026 · Grup {group} · Babak grup"
+    "postMetaGroup": "Piala Dunia 2026 · Grup {group} · Babak grup",
+    "knockout": {
+      "round": {
+        "R32": "32 besar",
+        "R16": "16 besar",
+        "QF": "8 besar",
+        "SF": "Semifinal",
+        "F": "Final"
+      },
+      "leftWinProb": "Probabilitas menang tim kiri",
+      "selectRound": "Pilih ronde",
+      "selectFixture": "Pilih pertandingan"
+    },
+    "initialRatio": "Odds awal (bagi rata)"
   },
   "liquidity": {
     "tab": "Likuiditas",

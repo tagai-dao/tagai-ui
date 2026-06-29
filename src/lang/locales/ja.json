@@ -839,7 +839,6 @@
     "create": "W杯グループ戦予測を作成",
     "matchTitle": "{left} vs {right}",
     "selectLeftTeam": "チームを選択",
-    "selectOpponent": "同グループの対戦相手を選択",
     "groupLabel": "グループ {group}",
     "kickoffHint": "デフォルトの締切はキックオフ時刻です（変更可）",
     "outcome": {
@@ -849,8 +848,7 @@
     },
     "reason": {
       "INVALID_TEAM": "無効なチームです",
-      "DIFFERENT_GROUP": "同じグループのチームを選んでください",
-      "NO_FIXTURE": "この対戦のグループステージ日程がありません",
+      "NO_FIXTURE": "対戦が見つかりません",
       "ALREADY_EXISTS": "このコミュニティには既に同試合のマーケットがあります",
       "CHAMPION_EXISTS": "このコミュニティには既に優勝マーケットがあります"
     },
@@ -904,24 +902,15 @@
       "GHA": "ガーナ",
       "PAN": "パナマ"
     },
-    "subtitle": "同グループから2チームを選び、勝/分/勝の3択市場を作成します。",
     "createShort": "W杯",
-    "initialRatio": "初期オッズ（均等）",
     "checking": "日程を確認中…",
     "checkFailed": "試合の確認に失敗しました",
-    "selectBothTeams": "同グループの2チームを選択してください",
     "fixtureVenue": "会場：{venue}",
     "tabDesc": "Real World をベースに、W杯予測では主要トーナメントイベントの作成が可能です。指定の期限に達すると取引は自動停止し、コミュニティ予測 credit を持つユーザーは24時間の投票期間に参加できます。結果はオンチェーンで公開された投票結果に基づき決定され、勝者は取引手数料の一部を分配します。",
-    "tapToSelect": "タップして選択",
-    "selectLeftFirst": "先に左側のチームを選んでください",
     "titleAutoPlaceholder": "両チーム選択後に自動生成",
-    "comingSoon": "近日公開",
-    "pickerTitleLeft": "チームを選択",
-    "pickerTitleRight": "同組の対戦相手を選択",
     "eventType": {
-      "matchup": "対戦",
-      "groupChampion": "グループ優勝 🏆",
-      "worldChampion": "W杯優勝 🏆"
+      "worldChampion": "W杯優勝 🏆",
+      "knockout": "ノックアウト戦"
     },
     "championTitle": "2026 FIFAワールドカップ優勝",
     "championDeadlineHint": "マーケットの締切を設定してください（例：決勝前）。",
@@ -929,7 +918,6 @@
     "oddsEqual": "均等",
     "oddsFavorites": "人気チームプリセット",
     "oddsClear": "クリア",
-    "initialRatioTip": "2つのハンドルをドラッグして左勝・分・右勝の初期確率を設定します。初期値は三等分です。",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "Xに投稿する本文を入力（#TagAIは付与されません。コミュニティタグは自動付与）…",
     "postContentRequired": "投稿内容を入力してください",
@@ -939,7 +927,20 @@
     "tweetUrlRequired": "Xで投稿後、ツイートURLを貼り付けてください",
     "postOnTwitterFirst": "先にXで投稿し、URLを貼り付けてから再度作成してください。",
     "tweetSyncTimeout": "ツイートがまだ同期されていません。少し待って再試行してください。",
-    "postMetaGroup": "2026 FIFAワールドカップ · {group}組 · グループステージ"
+    "postMetaGroup": "2026 FIFAワールドカップ · {group}組 · グループステージ",
+    "knockout": {
+      "round": {
+        "R32": "32強",
+        "R16": "16強",
+        "QF": "準々決勝",
+        "SF": "準決勝",
+        "F": "決勝"
+      },
+      "leftWinProb": "左チームの勝率",
+      "selectRound": "ラウンドを選択",
+      "selectFixture": "対戦を選択してください"
+    },
+    "initialRatio": "初期オッズ（均等）"
   },
   "liquidity": {
     "tab": "流動性",

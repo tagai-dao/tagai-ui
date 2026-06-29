@@ -8,7 +8,7 @@ import { useCommunityStore } from '@/stores/community'
 import { handleErrorTip, notify } from '@/utils/notify'
 import { GlobalModalType } from '@/types'
 import {
-  checkWorldCupMatchCreatable,
+  checkKnockoutMatchCreatable,
   checkWorldCupChampionCreatable,
   createFPMMMarketForEvent,
   preCreateFPMMMarketEvent,
@@ -23,29 +23,20 @@ import { formatAmount } from '@/utils/helper'
 import { approveToken, createEventMarket, type EventMarketDexConfig } from '@/utils/fpmm'
 import { targetPercentsToDistributionHint } from '@/composables/useEventMarketOutcomes'
 import { FPMMDeterministicFactoryEventV3 } from '@/config'
-import { WC_TEAMS } from '@/data/world-cup-2026/teams'
 import { WC_TOP_TEAM_CODES, WC_CHAMPION_OUTCOME_COUNT } from '@/data/world-cup-2026/top-teams'
 import {
   formatKickoffUtcToLocal,
-  getGroupMates,
-  getGroupMatesWithFixture,
   kickoffUtcToLocalDatePicker,
-  type WcTeamWithFixture,
+  getAvailableKnockoutRounds,
+  getKnockoutFixturesByRound,
+  getKnockoutFixtureById,
+  buildKnockoutEventTag,
+  type WcKnockoutRound,
+  type WcKnockoutFixture,
 } from '@/data/world-cup-2026/helpers'
-import WorldCupTeamPicker from '@/components/common/WorldCupTeamPicker.vue'
 import WorldCupChampionOddsEditor from '@/components/common/WorldCupChampionOddsEditor.vue'
 
-type WcFixtureInfo = {
-  fixtureId: string
-  group: string
-  teamA: string
-  teamB: string
-  kickoffUtc: string
-  venue: string
-}
-
-type EventType = 'matchup' | 'groupChampion' | 'worldChampion'
-type PickerSide = 'left' | 'right'
+type EventType = 'knockout' | 'worldChampion'
 
 const emit = defineEmits<{ created: [] }>()
 
@@ -61,18 +52,26 @@ const userBalance = ref(0)
 const createLoading = ref(false)
 const checkLoading = ref(false)
 
-const eventType = ref<EventType>('matchup')
-const leftTeam = ref('')
-const rightTeam = ref('')
+const eventType = ref<EventType>('knockout')
+const availableRounds = computed(() => getAvailableKnockoutRounds())
+const selectedRound = ref<WcKnockoutRound>(availableRounds.value[0] ?? 'R32')
+/** 该轮所有对阵 */
+const allRoundFixtures = computed(() => getKnockoutFixturesByRound(selectedRound.value))
+/** 仅展示尚未开赛的对阵（已结束的不显示，无法创建） */
+const roundFixtures = computed(() => {
+  const now = Date.now()
+  return allRoundFixtures.value.filter(f => new Date(f.kickoffUtc).getTime() > now)
+})
+const selectedFixture = ref<WcKnockoutFixture | null>(null)
+const leftTeam = computed(() => selectedFixture.value?.teamA ?? '')
+const rightTeam = computed(() => selectedFixture.value?.teamB ?? '')
+const leftWinProb = ref(50)
+const ratioPercents = computed(() => [leftWinProb.value, 100 - leftWinProb.value])
 const creatable = ref<boolean | null>(null)
 const championCreatable = ref<boolean | null>(null)
 const blockReason = ref('')
-const fixtureInfo = ref<WcFixtureInfo | null>(null)
 const championEditor = useChampionOddsEditor()
 const { percents: championPercents, lastPercent: championLastPercent } = championEditor
-
-const pickerVisible = ref(false)
-const pickerSide = ref<PickerSide>('left')
 
 const form = reactive({
   title: '',
@@ -88,37 +87,6 @@ const errors = reactive({
   match: '',
 })
 
-/** 默认近似三等分：左 34% | 平 33% | 右 33%（整数 % 无法精确 33/33/33） */
-const DEFAULT_RATIO_BOUNDARY1 = 34
-const DEFAULT_RATIO_BOUNDARY2 = 67
-
-/** 第一条分界线 = 左队胜率；第二条 = 左+平累计占比 */
-const ratioBoundary1 = ref(DEFAULT_RATIO_BOUNDARY1)
-const ratioBoundary2 = ref(DEFAULT_RATIO_BOUNDARY2)
-
-const ratioPercents = computed(() => {
-  const left = ratioBoundary1.value
-  const draw = ratioBoundary2.value - ratioBoundary1.value
-  const right = 100 - ratioBoundary2.value
-  return [left, draw, right]
-})
-
-// 两滑块固定 min=0 max=100，拇指位置才与色条百分比一致；边界在 handler 里约束
-const onRatioBoundary1Input = (event: Event) => {
-  const value = Number((event.target as HTMLInputElement).value)
-  ratioBoundary1.value = Math.min(Math.max(1, value), ratioBoundary2.value - 1)
-}
-
-const onRatioBoundary2Input = (event: Event) => {
-  const value = Number((event.target as HTMLInputElement).value)
-  ratioBoundary2.value = Math.max(Math.min(99, value), ratioBoundary1.value + 1)
-}
-
-const resetRatioDefaults = () => {
-  ratioBoundary1.value = DEFAULT_RATIO_BOUNDARY1
-  ratioBoundary2.value = DEFAULT_RATIO_BOUNDARY2
-}
-
 const outcomeLabels = computed(() => {
   if (!leftTeam.value || !rightTeam.value) return []
   return getOutcomeLabels(leftTeam.value, rightTeam.value)
@@ -127,20 +95,8 @@ const outcomeLabels = computed(() => {
 const autoTitle = computed(() => {
   if (eventType.value === 'worldChampion') return t('worldCup2026.championTitle')
   if (!leftTeam.value || !rightTeam.value) return ''
-  return getMatchTitle(leftTeam.value, rightTeam.value)
+  return getMatchTitle(leftTeam.value, rightTeam.value, selectedRound.value)
 })
-
-const pickerTeams = computed(() => {
-  if (pickerSide.value === 'left') return WC_TEAMS
-  if (!leftTeam.value) return []
-  return getGroupMatesWithFixture(leftTeam.value)
-})
-
-const pickerTitle = computed(() =>
-  pickerSide.value === 'left'
-    ? t('worldCup2026.pickerTitleLeft')
-    : t('worldCup2026.pickerTitleRight')
-)
 
 const canSubmit = computed(() => {
   if (eventType.value === 'worldChampion') {
@@ -151,9 +107,9 @@ const canSubmit = computed(() => {
       && !!form.initAmount
       && championEditor.valid.value
   }
-  return eventType.value === 'matchup'
+  return eventType.value === 'knockout'
     && creatable.value === true
-    && !!fixtureInfo.value
+    && !!selectedFixture.value
     && !!form.title.trim()
     && !!form.postContent.trim()
     && !!form.announceDate
@@ -163,65 +119,33 @@ const canSubmit = computed(() => {
 const resetMatchValidation = () => {
   creatable.value = null
   blockReason.value = ''
-  fixtureInfo.value = null
+  selectedFixture.value = null
   errors.match = ''
   form.announceDate = ''
 }
 
 const resetMatchState = () => {
-  rightTeam.value = ''
   form.title = ''
   resetMatchValidation()
 }
 
-const openPicker = (side: PickerSide) => {
+const onSelectFixture = async (f: WcKnockoutFixture) => {
   if (createLoading.value) return
-  if (side === 'right' && !leftTeam.value) {
-    notify({ message: t('worldCup2026.selectLeftFirst'), type: 'info' })
-    return
-  }
-  pickerSide.value = side
-  pickerVisible.value = true
-}
-
-const onPickerSelect = (code: string, disabled?: boolean) => {
-  if (disabled) return
-  if (pickerSide.value === 'left') {
-    if (code === rightTeam.value) {
-      rightTeam.value = ''
-    }
-    leftTeam.value = code
-    resetMatchState()
-    return
-  }
-  if (code === leftTeam.value) return
-  rightTeam.value = code
-}
-
-const checkMatchCreatable = async () => {
-  if (!leftTeam.value || !rightTeam.value) return
+  selectedFixture.value = f
   const tick = comStore.currentSelectedCommunity?.tick
   if (!tick) return
-
   checkLoading.value = true
   errors.match = ''
-  resetMatchValidation()
-
   try {
-    const res: any = await checkWorldCupMatchCreatable(tick, leftTeam.value, rightTeam.value)
+    const res: any = await checkKnockoutMatchCreatable(tick, f.fixtureId)
     creatable.value = !!res.creatable
-    if (res.fixture) {
-      fixtureInfo.value = res.fixture
-    }
     if (!res.creatable) {
       blockReason.value = res.reason || 'NO_FIXTURE'
       errors.match = t(`worldCup2026.reason.${blockReason.value}`)
       return
     }
-    form.title = getMatchTitle(leftTeam.value, rightTeam.value)
-    if (res.fixture?.kickoffUtc) {
-      form.announceDate = kickoffUtcToLocalDatePicker(res.fixture.kickoffUtc)
-    }
+    form.title = getMatchTitle(leftTeam.value, rightTeam.value, selectedRound.value)
+    if (f.kickoffUtc) form.announceDate = kickoffUtcToLocalDatePicker(f.kickoffUtc)
   } catch (error) {
     handleErrorTip(error)
     errors.match = t('worldCup2026.checkFailed')
@@ -230,10 +154,11 @@ const checkMatchCreatable = async () => {
   }
 }
 
-watch(rightTeam, (code) => {
-  if (!code) return
-  checkMatchCreatable()
-})
+const onSelectRound = (round: WcKnockoutRound) => {
+  if (createLoading.value) return
+  selectedRound.value = round
+  resetMatchState()
+}
 
 const checkChampionCreatable = async () => {
   const tick = comStore.currentSelectedCommunity?.tick
@@ -287,10 +212,6 @@ watch(() => comStore.currentSelectedCommunity?.tick, () => {
 })
 
 const onEventTypeClick = (type: EventType) => {
-  if (type === 'groupChampion') {
-    notify({ message: t('worldCup2026.comingSoon'), type: 'info' })
-    return
-  }
   eventType.value = type
 }
 
@@ -310,12 +231,12 @@ const validateForm = (): boolean => {
       return false
     }
   } else {
-    if (!leftTeam.value || !rightTeam.value) {
-      errors.match = t('worldCup2026.selectBothTeams')
+    if (!selectedFixture.value) {
+      errors.match = t('worldCup2026.knockout.selectFixture')
       return false
     }
     if (creatable.value !== true || !form.title.trim()) {
-      errors.match = errors.match || t('worldCup2026.selectBothTeams')
+      errors.match = errors.match || t('worldCup2026.knockout.selectFixture')
       return false
     }
   }
@@ -357,7 +278,7 @@ const handleCreate = async () => {
     return
   }
   if (!validateForm()) return
-  if (eventType.value === 'matchup' && !fixtureInfo.value) return
+  if (eventType.value === 'knockout' && !selectedFixture.value) return
 
   const accInfo = accStore.getAccountInfo
   const token = comStore.currentSelectedCommunity?.token as `0x${string}`
@@ -389,10 +310,10 @@ const handleCreate = async () => {
       defaultOutcomeCount = WC_CHAMPION_OUTCOME_COUNT
     } else {
       outcomes = getOutcomeLabels(leftTeam.value, rightTeam.value)
-      // 滑杆展示的是目标边际概率；链上 hint 需按 FPMM 公式换算储备比例
       distributionHint = targetPercentsToDistributionHint(ratioPercents.value)
-      eventTag = '2026FWC-GS'
-      defaultOutcomeCount = 3
+      // event_tag 编码轮次+两队（字典序），语言无关，同时作去重键
+      eventTag = buildKnockoutEventTag(selectedRound.value, leftTeam.value, rightTeam.value)
+      defaultOutcomeCount = 2
     }
 
     modalStore.setModalCloseEnable(false)
@@ -451,14 +372,11 @@ const handleCreate = async () => {
 
 /** 供 CreatePredictModal 关闭时重置表单 */
 const resetForm = () => {
-  eventType.value = 'matchup'
-  leftTeam.value = ''
+  eventType.value = 'knockout'
   resetMatchState()
   form.initAmount = ''
   errors.announceDate = ''
   errors.initAmount = ''
-  pickerVisible.value = false
-  resetRatioDefaults()
   championCreatable.value = null
   championEditor.clearAll()
   clearDraft()
@@ -470,7 +388,7 @@ defineExpose({
 })
 
 // === 草稿缓存：填写中自动保存，再次打开自动回填，创建成功/重置时清除 ===
-const DRAFT_KEY_PREFIX = 'wcPredictDraft:'
+const DRAFT_KEY_PREFIX = 'wcPredictKO:'
 
 const draftKey = computed(() => {
   const tid = accStore.getAccountInfo?.twitterId
@@ -479,10 +397,9 @@ const draftKey = computed(() => {
 
 type WcDraft = {
   eventType: EventType
-  leftTeam: string
-  rightTeam: string
-  ratioBoundary1: number
-  ratioBoundary2: number
+  round: WcKnockoutRound
+  fixtureId: string
+  leftWinProb: number
   championPercents: number[]
   postContent: string
   announceDate: string
@@ -494,10 +411,9 @@ const saveDraft = () => {
   if (!key) return
   const draft: WcDraft = {
     eventType: eventType.value,
-    leftTeam: leftTeam.value,
-    rightTeam: rightTeam.value,
-    ratioBoundary1: ratioBoundary1.value,
-    ratioBoundary2: ratioBoundary2.value,
+    round: selectedRound.value,
+    fixtureId: selectedFixture.value?.fixtureId ?? '',
+    leftWinProb: leftWinProb.value,
     championPercents: [...championEditor.percents.value],
     postContent: form.postContent,
     announceDate: form.announceDate,
@@ -542,26 +458,27 @@ const restoreDraft = () => {
     draft.championPercents = championEditor.percents.value
   }
   eventType.value = draft.eventType
-  leftTeam.value = draft.leftTeam
-  rightTeam.value = draft.rightTeam
-  ratioBoundary1.value = draft.ratioBoundary1
-  ratioBoundary2.value = draft.ratioBoundary2
-  championEditor.percents.value = [...draft.championPercents]
+  if (draft.eventType === 'knockout') {
+    selectedRound.value = draft.round
+    const f = getKnockoutFixtureById(draft.fixtureId) ?? null
+    selectedFixture.value = f
+    leftWinProb.value = draft.leftWinProb
+    // 重新校验该对阵，回填 title / announceDate / creatable
+    if (f) {
+      nextTick(() => onSelectFixture(f))
+    }
+  } else if (draft.eventType === 'worldChampion') {
+    championEditor.percents.value = [...draft.championPercents]
+    nextTick(() => checkChampionCreatable())
+  }
   form.postContent = draft.postContent
   form.announceDate = draft.announceDate
   form.initAmount = draft.initAmount
-  // matchup 恢复后需重新校验 fixture（checkMatchCreatable 由 watch(rightTeam) 触发，
-  // 但若 rightTeam 已就位，手动补一次校验以回填 fixtureInfo）
-  if (draft.eventType === 'matchup' && leftTeam.value && rightTeam.value) {
-    nextTick(() => checkMatchCreatable())
-  } else if (draft.eventType === 'worldChampion') {
-    nextTick(() => checkChampionCreatable())
-  }
 }
 
 // 表单状态变化时自动保存草稿（深度监听）
 watch(
-  [eventType, leftTeam, rightTeam, ratioBoundary1, ratioBoundary2, () => championEditor.percents.value, () => form.postContent, () => form.announceDate, () => form.initAmount],
+  [eventType, selectedRound, selectedFixture, leftWinProb, () => championEditor.percents.value, () => form.postContent, () => form.announceDate, () => form.initAmount],
   saveDraft,
   { deep: true },
 )
@@ -570,6 +487,15 @@ onMounted(async () => {
   if (comStore.currentSelectedCommunity?.token) {
     userBalance.value =
       Number(await getTokenBalance(comStore.currentSelectedCommunity.token as `0x${string}`)) / 1e18
+  }
+  // 清理旧版（小组赛）草稿 key，避免残留
+  const tid = accStore.getAccountInfo?.twitterId
+  if (tid) {
+    try {
+      localStorage.removeItem(`wcPredictDraft:${tid}`)
+    } catch {
+      /* ignore */
+    }
   }
   restoreDraft()
 })
@@ -582,17 +508,10 @@ onMounted(async () => {
       <button
         type="button"
         class="wc-event-types__item"
-        :class="{ 'wc-event-types__item--active': eventType === 'matchup' }"
-        @click="onEventTypeClick('matchup')"
+        :class="{ 'wc-event-types__item--active': eventType === 'knockout' }"
+        @click="onEventTypeClick('knockout')"
       >
-        {{ $t('worldCup2026.eventType.matchup') }}
-      </button>
-      <button
-        type="button"
-        class="wc-event-types__item wc-event-types__item--disabled"
-        @click="onEventTypeClick('groupChampion')"
-      >
-        {{ $t('worldCup2026.eventType.groupChampion') }}
+        {{ $t('worldCup2026.eventType.knockout') }}
       </button>
       <button
         type="button"
@@ -604,49 +523,41 @@ onMounted(async () => {
       </button>
     </div>
 
-    <!-- 对阵选择：左 | VS | 右 -->
-    <div v-if="eventType === 'matchup'" class="wc-matchup">
-      <button
-        type="button"
-        class="wc-matchup__side"
-        :class="{ 'wc-matchup__side--filled': leftTeam }"
-        @click="openPicker('left')"
-      >
-        <img
-          v-if="leftTeam"
-          :src="getTeamFlagUrl(leftTeam, 80)"
-          :alt="getTeamName(leftTeam)"
-          class="wc-matchup__flag"
-        />
-        <div v-else class="wc-matchup__placeholder">
-          <span class="wc-matchup__plus">+</span>
-        </div>
-        <span class="wc-matchup__name">
-          {{ leftTeam ? getTeamName(leftTeam) : $t('worldCup2026.tapToSelect') }}
-        </span>
-      </button>
+    <!-- 淘汰赛对阵选择：轮次 → 对阵列表 -->
+    <div v-if="eventType === 'knockout'" class="wc-knockout">
+      <div class="wc-knockout__rounds">
+        <button
+          v-for="round in availableRounds"
+          :key="round"
+          type="button"
+          class="wc-knockout__round"
+          :class="{ 'wc-knockout__round--active': selectedRound === round }"
+          @click="onSelectRound(round)"
+        >
+          {{ $t('worldCup2026.knockout.round.' + round) }}
+        </button>
+      </div>
 
-      <div class="wc-matchup__vs">VS</div>
-
-      <button
-        type="button"
-        class="wc-matchup__side"
-        :class="{ 'wc-matchup__side--filled': rightTeam, 'wc-matchup__side--muted': !leftTeam }"
-        @click="openPicker('right')"
-      >
-        <img
-          v-if="rightTeam"
-          :src="getTeamFlagUrl(rightTeam, 80)"
-          :alt="getTeamName(rightTeam)"
-          class="wc-matchup__flag"
-        />
-        <div v-else class="wc-matchup__placeholder">
-          <span class="wc-matchup__plus">+</span>
-        </div>
-        <span class="wc-matchup__name">
-          {{ rightTeam ? getTeamName(rightTeam) : $t('worldCup2026.tapToSelect') }}
-        </span>
-      </button>
+      <div v-if="roundFixtures.length" class="wc-knockout__list">
+        <button
+          v-for="f in roundFixtures"
+          :key="f.fixtureId"
+          type="button"
+          class="wc-knockout__fixture"
+          :class="{ 'wc-knockout__fixture--active': selectedFixture?.fixtureId === f.fixtureId }"
+          @click="onSelectFixture(f)"
+        >
+          <img :src="getTeamFlagUrl(f.teamA, 80)" :alt="getTeamName(f.teamA)" class="wc-knockout__flag" />
+          <span class="wc-knockout__name">{{ getTeamName(f.teamA) }}</span>
+          <span class="wc-knockout__vs">VS</span>
+          <span class="wc-knockout__name">{{ getTeamName(f.teamB) }}</span>
+          <img :src="getTeamFlagUrl(f.teamB, 80)" :alt="getTeamName(f.teamB)" class="wc-knockout__flag" />
+          <span v-if="f.kickoffUtc" class="wc-knockout__kickoff">{{ formatKickoffUtcToLocal(f.kickoffUtc) }}</span>
+        </button>
+      </div>
+      <div v-else class="wc-knockout__empty">
+        {{ $t('worldCup2026.knockout.selectFixture') }}
+      </div>
     </div>
 
     <div v-if="checkLoading" class="wc-status wc-status--loading">
@@ -654,9 +565,9 @@ onMounted(async () => {
       {{ $t('worldCup2026.checking') }}
     </div>
     <div v-else-if="errors.match" class="wc-status wc-status--error">{{ errors.match }}</div>
-    <div v-else-if="eventType === 'matchup' && fixtureInfo" class="wc-status wc-status--ok">
-      {{ $t('worldCup2026.fixtureVenue', { venue: fixtureInfo.venue }) }}
-      · {{ formatKickoffUtcToLocal(fixtureInfo.kickoffUtc) }}
+    <div v-else-if="eventType === 'knockout' && selectedFixture" class="wc-status wc-status--ok">
+      {{ $t('worldCup2026.fixtureVenue', { venue: selectedFixture.venue }) }}
+      · {{ formatKickoffUtcToLocal(selectedFixture.kickoffUtc) }}
     </div>
 
     <!-- 自动标题（只读） -->
@@ -708,7 +619,7 @@ onMounted(async () => {
         class="w-full !w-full"
         format="YYYY-MM-DD HH:mm:ss"
         value-format="YYYY-MM-DD HH:mm:ss"
-        :disabled="eventType === 'matchup' && !canSubmit && !form.announceDate"
+        :disabled="eventType === 'knockout' && !canSubmit && !form.announceDate"
         :class="{ 'border-red-500': errors.announceDate }"
       />
       <div v-if="errors.announceDate" class="wc-field__error">{{ errors.announceDate }}</div>
@@ -717,53 +628,23 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- 初始概率（双滑块拖动调整三等分，仅 matchup） -->
-    <div v-if="eventType === 'matchup'" class="wc-field">
+    <!-- 初始概率（单滑块：左队胜 / 右队胜，仅 knockout） -->
+    <div v-if="eventType === 'knockout'" class="wc-field">
       <div class="flex items-center justify-between mb-2">
-        <label class="wc-field__label mb-0 flex items-center gap-1">
-          {{ $t('worldCup2026.initialRatio') }}
+        <label class="wc-field__label mb-0">
+          {{ $t('worldCup2026.knockout.leftWinProb') }}
           <span class="text-red-500">*</span>
-          <el-tooltip effect="dark" :content="$t('worldCup2026.initialRatioTip')" placement="top">
-            <button type="button" class="wc-ratio-tip">?</button>
-          </el-tooltip>
         </label>
         <span class="text-sm font-medium text-black">
-          <span class="text-red-500">{{ ratioPercents[0] }}%</span>
+          <span class="text-red-500">{{ leftWinProb }}%</span>
           /
-          <span class="text-gray-500">{{ ratioPercents[1] }}%</span>
-          /
-          <span class="text-blue-500">{{ ratioPercents[2] }}%</span>
+          <span class="text-blue-500">{{ 100 - leftWinProb }}%</span>
         </span>
       </div>
 
-      <!-- 色条与滑块同容器叠加，避免拖动点与分段边界错位 -->
-      <div class="wc-ratio-track">
-        <div class="wc-ratio-bar" aria-hidden="true">
-          <div class="wc-ratio-bar__seg wc-ratio-bar__seg--left" :style="{ width: `${ratioPercents[0]}%` }" />
-          <div class="wc-ratio-bar__seg wc-ratio-bar__seg--draw" :style="{ width: `${ratioPercents[1]}%` }" />
-          <div class="wc-ratio-bar__seg wc-ratio-bar__seg--right" :style="{ width: `${ratioPercents[2]}%` }" />
-        </div>
-        <div class="wc-ratio-slider">
-          <input
-            type="range"
-            class="wc-ratio-slider__input wc-ratio-slider__input--first"
-            min="0"
-            max="100"
-            :value="ratioBoundary1"
-            @input="onRatioBoundary1Input"
-          />
-          <input
-            type="range"
-            class="wc-ratio-slider__input wc-ratio-slider__input--second"
-            min="0"
-            max="100"
-            :value="ratioBoundary2"
-            @input="onRatioBoundary2Input"
-          />
-        </div>
-      </div>
+      <el-slider v-model="leftWinProb" :min="0" :max="100" />
 
-      <div v-if="outcomeLabels.length" class="wc-ratio-labels">
+      <div v-if="outcomeLabels.length" class="wc-ratio-labels wc-ratio-labels--2">
         <span v-for="(label, idx) in outcomeLabels" :key="idx" class="wc-ratio-labels__item">
           {{ label }}
         </span>
@@ -826,16 +707,6 @@ onMounted(async () => {
         {{ $t('createPredict.creatingTip') }}
       </span>
     </div>
-
-    <WorldCupTeamPicker
-      v-if="eventType === 'matchup'"
-      v-model:visible="pickerVisible"
-      :title="pickerTitle"
-      :teams="pickerTeams"
-      :selected-code="pickerSide === 'left' ? leftTeam : rightTeam"
-      :grouped="pickerSide === 'left'"
-      @select="onPickerSelect"
-    />
   </div>
 </template>
 
@@ -944,6 +815,107 @@ onMounted(async () => {
   font-weight: 800;
   color: var(--text-base);
   letter-spacing: 0.02em;
+}
+
+.wc-knockout {
+  margin-bottom: 16px;
+}
+
+.wc-knockout__rounds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.wc-knockout__round {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid var(--border-base);
+  background: var(--surface);
+  color: var(--text-base);
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.wc-knockout__round--active {
+  border-color: #fe913f;
+  color: #fe913f;
+  background: var(--surface-2);
+}
+
+.wc-knockout__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+  /* 移动端略矮 */
+  scrollbar-width: thin;
+}
+.wc-knockout__list::-webkit-scrollbar {
+  width: 5px;
+}
+.wc-knockout__list::-webkit-scrollbar-thumb {
+  background: var(--border-base);
+  border-radius: 999px;
+}
+
+.wc-knockout__fixture {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border-base);
+  border-radius: 12px;
+  background: var(--surface-2);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.wc-knockout__fixture:hover {
+  border-color: #fe913f;
+  background: var(--surface);
+}
+
+.wc-knockout__fixture--active {
+  border-color: #fe913f;
+  background: var(--surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.wc-knockout__flag {
+  width: 32px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.wc-knockout__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-base);
+}
+
+.wc-knockout__vs {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.wc-knockout__kickoff {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.wc-knockout__empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 12px;
+  text-align: center;
 }
 
 .wc-status {
@@ -1154,6 +1126,10 @@ onMounted(async () => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   margin-top: 8px;
+}
+
+.wc-ratio-labels--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .wc-ratio-labels__item {

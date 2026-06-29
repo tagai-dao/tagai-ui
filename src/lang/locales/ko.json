@@ -839,7 +839,6 @@
     "create": "월드컵 조별리그 예측 생성",
     "matchTitle": "{left} vs {right}",
     "selectLeftTeam": "팀 선택",
-    "selectOpponent": "같은 조 상대 선택",
     "groupLabel": "{group}조",
     "kickoffHint": "기본 마감은 킥오프 시간이며 변경할 수 있습니다",
     "outcome": {
@@ -849,8 +848,7 @@
     },
     "reason": {
       "INVALID_TEAM": "유효하지 않은 팀입니다",
-      "DIFFERENT_GROUP": "같은 조 팀만 선택할 수 있습니다",
-      "NO_FIXTURE": "해당 대전의 조별리그 일정이 없습니다",
+      "NO_FIXTURE": "경기를 찾을 수 없습니다",
       "ALREADY_EXISTS": "이 커뮤니티에 동일 경기 마켓이 이미 있습니다",
       "CHAMPION_EXISTS": "이 커뮤니티에 이미 우승 시장이 있습니다"
     },
@@ -904,24 +902,15 @@
       "GHA": "가나",
       "PAN": "파나마"
     },
-    "subtitle": "같은 조에서 두 팀을 선택해 승/무/승 3지선다 시장을 만듭니다.",
     "createShort": "월드컵",
-    "initialRatio": "초기 배당 (균등)",
     "checking": "일정 확인 중…",
     "checkFailed": "경기 확인 실패",
-    "selectBothTeams": "같은 조의 서로 다른 두 팀을 선택하세요",
     "fixtureVenue": "경기장: {venue}",
     "tabDesc": "Real World 기반 W杯 예측 모델로 주요 토너먼트 이벤트를 생성할 수 있습니다. 지정된 만료 시간에 거래가 자동 중단되며, 커뮤니티 예측 credit 보유 사용자는 24시간 투표 기간에 참여합니다. 결과는 온체인 투표 결과에 따라 정산되며, 승리 측이 일부 거래 수수료를 분배받습니다.",
-    "tapToSelect": "탭하여 선택",
-    "selectLeftFirst": "먼저 왼쪽 팀을 선택하세요",
     "titleAutoPlaceholder": "양 팀 선택 후 자동 생성",
-    "comingSoon": "곧 출시",
-    "pickerTitleLeft": "팀 선택",
-    "pickerTitleRight": "같은 조 상대 선택",
     "eventType": {
-      "matchup": "대결",
-      "groupChampion": "조별 우승 🏆",
-      "worldChampion": "월드컵 우승 🏆"
+      "worldChampion": "월드컵 우승 🏆",
+      "knockout": "토너먼트 대결"
     },
     "championTitle": "2026 FIFA 월드컵 우승",
     "championDeadlineHint": "시장 마감 시간을 설정하세요 (예: 결승 전).",
@@ -929,7 +918,6 @@
     "oddsEqual": "균등",
     "oddsFavorites": "인기팀 프리셋",
     "oddsClear": "초기화",
-    "initialRatioTip": "두 핸들을 드래그해 좌승·무·우승 초기 확률을 설정합니다. 기본값은 삼등분입니다.",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "X에 게시할 본문을 입력하세요 (#TagAI는 추가되지 않으며, 커뮤니티 태그는 자동 추가됩니다)…",
     "postContentRequired": "게시 내용을 입력해 주세요",
@@ -939,7 +927,20 @@
     "tweetUrlRequired": "X에 게시한 후 트윗 링크를 붙여넣어 주세요",
     "postOnTwitterFirst": "먼저 X에 게시한 뒤 링크를 붙여넣고 다시 생성하세요.",
     "tweetSyncTimeout": "트윗이 아직 동기화되지 않았습니다. 잠시 후 다시 시도하세요.",
-    "postMetaGroup": "2026 FIFA 월드컵 · {group}조 · 조별리그"
+    "postMetaGroup": "2026 FIFA 월드컵 · {group}조 · 조별리그",
+    "knockout": {
+      "round": {
+        "R32": "32강",
+        "R16": "16강",
+        "QF": "8강",
+        "SF": "4강",
+        "F": "결승"
+      },
+      "leftWinProb": "왼쪽 팀 승리 확률",
+      "selectRound": "라운드 선택",
+      "selectFixture": "경기를 선택하세요"
+    },
+    "initialRatio": "초기 배당 (균등)"
   },
   "liquidity": {
     "tab": "유동성",

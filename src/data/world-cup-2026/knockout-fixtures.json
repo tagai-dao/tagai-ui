@@ -1,0 +1,137 @@
+{
+  "rounds": [
+    {
+      "round": "R32",
+      "fixtures": [
+        {
+          "fixtureId": "KO-R32-CAN-RSA",
+          "teamA": "RSA",
+          "teamB": "CAN",
+          "kickoffUtc": "2026-06-28T19:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-BRA-JPN",
+          "teamA": "BRA",
+          "teamB": "JPN",
+          "kickoffUtc": "2026-06-29T17:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-GER-PAR",
+          "teamA": "GER",
+          "teamB": "PAR",
+          "kickoffUtc": "2026-06-29T20:30:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-MAR-NED",
+          "teamA": "NED",
+          "teamB": "MAR",
+          "kickoffUtc": "2026-06-30T01:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-CIV-NOR",
+          "teamA": "CIV",
+          "teamB": "NOR",
+          "kickoffUtc": "2026-06-30T17:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-FRA-SWE",
+          "teamA": "FRA",
+          "teamB": "SWE",
+          "kickoffUtc": "2026-06-30T21:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-ECU-MEX",
+          "teamA": "MEX",
+          "teamB": "ECU",
+          "kickoffUtc": "2026-07-01T01:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-COD-ENG",
+          "teamA": "ENG",
+          "teamB": "COD",
+          "kickoffUtc": "2026-07-01T16:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-BEL-SEN",
+          "teamA": "BEL",
+          "teamB": "SEN",
+          "kickoffUtc": "2026-07-01T20:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-BIH-USA",
+          "teamA": "USA",
+          "teamB": "BIH",
+          "kickoffUtc": "2026-07-02T00:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-AUT-ESP",
+          "teamA": "ESP",
+          "teamB": "AUT",
+          "kickoffUtc": "2026-07-02T19:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-CRO-POR",
+          "teamA": "POR",
+          "teamB": "CRO",
+          "kickoffUtc": "2026-07-02T23:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-ALG-SUI",
+          "teamA": "SUI",
+          "teamB": "ALG",
+          "kickoffUtc": "2026-07-03T03:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-AUS-EGY",
+          "teamA": "AUS",
+          "teamB": "EGY",
+          "kickoffUtc": "2026-07-03T18:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-ARG-CPV",
+          "teamA": "ARG",
+          "teamB": "CPV",
+          "kickoffUtc": "2026-07-03T22:00:00.000Z",
+          "venue": "TBD"
+        },
+        {
+          "fixtureId": "KO-R32-COL-GHA",
+          "teamA": "COL",
+          "teamB": "GHA",
+          "kickoffUtc": "2026-07-04T01:30:00.000Z",
+          "venue": "TBD"
+        }
+      ]
+    },
+    {
+      "round": "R16",
+      "fixtures": []
+    },
+    {
+      "round": "QF",
+      "fixtures": []
+    },
+    {
+      "round": "SF",
+      "fixtures": []
+    },
+    {
+      "round": "F",
+      "fixtures": []
+    }
+  ]
+}

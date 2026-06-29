@@ -533,7 +533,7 @@ export type EventPredictData = Tweet & {
   factoryVersion?: number,
   outcomeCount?: number,
   outcomes?: EventPredictOutcome[],
-  /** 赛事标签: 2026FWC-GS, 2026FWC-GS-Winner, 2026FWC-Champion 等 */
+  /** 赛事标签: 2026FWC-KO-R32, 2026FWC-Champion 等 */
   eventTag?: string | null,
   /** 累计交易社区代币数量（swap+LP，由 graph 同步写入 DB） */
   tradeVolume?: number | null,

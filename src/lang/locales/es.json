@@ -839,7 +839,6 @@
     "create": "Crear predicción de grupo",
     "matchTitle": "{left} vs {right}",
     "selectLeftTeam": "Elige tu equipo",
-    "selectOpponent": "Elige rival del mismo grupo",
     "groupLabel": "Grupo {group}",
     "kickoffHint": "La fecha límite predeterminada es el inicio del partido; puedes cambiarla",
     "outcome": {
@@ -849,8 +848,7 @@
     },
     "reason": {
       "INVALID_TEAM": "Equipo no válido",
-      "DIFFERENT_GROUP": "Los equipos deben estar en el mismo grupo",
-      "NO_FIXTURE": "No hay partido de fase de grupos para este par",
+      "NO_FIXTURE": "Partido no encontrado",
       "ALREADY_EXISTS": "Ya existe un mercado para este partido en esta comunidad",
       "CHAMPION_EXISTS": "Ya existe un mercado de campeón en esta comunidad"
     },
@@ -904,24 +902,15 @@
       "GHA": "Ghana",
       "PAN": "Panamá"
     },
-    "subtitle": "Elige dos equipos del mismo grupo: victoria / empate / victoria.",
     "createShort": "Mundial",
-    "initialRatio": "Cuotas iniciales (partes iguales)",
     "checking": "Verificando partido…",
     "checkFailed": "Error al verificar el partido",
-    "selectBothTeams": "Selecciona dos equipos distintos del mismo grupo",
     "fixtureVenue": "Sede: {venue}",
     "tabDesc": "Basado en Real World, el modelo de predicción del Mundial permite crear eventos principales del torneo. Al llegar la hora límite, el trading se detiene y los usuarios con credit de predicción votan durante 24 horas. La liquidación sigue los resultados on-chain y los ganadores comparten parte de las comisiones.",
-    "tapToSelect": "Toca para elegir",
-    "selectLeftFirst": "Selecciona primero el equipo izquierdo",
     "titleAutoPlaceholder": "Se genera al elegir ambos equipos",
-    "comingSoon": "Próximamente",
-    "pickerTitleLeft": "Elegir equipo",
-    "pickerTitleRight": "Elegir rival (mismo grupo)",
     "eventType": {
-      "matchup": "Partido",
-      "groupChampion": "Campeón del grupo 🏆",
-      "worldChampion": "Campeón del Mundial 🏆"
+      "worldChampion": "Campeón del Mundial 🏆",
+      "knockout": "Partido de eliminación"
     },
     "championTitle": "Campeón de la Copa Mundial FIFA 2026",
     "championDeadlineHint": "Establece la fecha límite del mercado (p. ej., antes de la final).",
@@ -929,7 +918,6 @@
     "oddsEqual": "Igual",
     "oddsFavorites": "Favoritos",
     "oddsClear": "Limpiar",
-    "initialRatioTip": "Arrastra los dos controles para ajustar las probabilidades iniciales de victoria izquierda, empate y victoria derecha. Por defecto, tercios iguales.",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "Escribe el texto del tweet para X (no se añade #TagAI; la etiqueta de la comunidad se añade automáticamente)…",
     "postContentRequired": "Introduce el contenido del post",
@@ -939,7 +927,20 @@
     "tweetUrlRequired": "Publica en X y pega el enlace del tweet",
     "postOnTwitterFirst": "Publica primero en X, pega el enlace y vuelve a crear.",
     "tweetSyncTimeout": "El tweet aún no se ha sincronizado. Espera un momento e inténtalo de nuevo.",
-    "postMetaGroup": "Copa Mundial 2026 · Grupo {group} · Fase de grupos"
+    "postMetaGroup": "Copa Mundial 2026 · Grupo {group} · Fase de grupos",
+    "knockout": {
+      "round": {
+        "R32": "Dieciseisavos",
+        "R16": "Octavos de final",
+        "QF": "Cuartos de final",
+        "SF": "Semifinal",
+        "F": "Final"
+      },
+      "leftWinProb": "Probabilidad de victoria del equipo izquierdo",
+      "selectRound": "Selecciona ronda",
+      "selectFixture": "Selecciona un partido"
+    },
+    "initialRatio": "Cuotas iniciales (partes iguales)"
   },
   "liquidity": {
     "tab": "Liquidez",

@@ -848,7 +848,6 @@
     "create": "创建世界杯小组赛预测",
     "matchTitle": "{left} vs {right}",
     "selectLeftTeam": "选择你的球队",
-    "selectOpponent": "选择同组对手",
     "groupLabel": "{group} 组",
     "kickoffHint": "默认截止时间为开球时间，可自行调整",
     "outcome": {
@@ -858,8 +857,7 @@
     },
     "reason": {
       "INVALID_TEAM": "所选球队无效",
-      "DIFFERENT_GROUP": "两队必须在同一小组",
-      "NO_FIXTURE": "未找到该对阵的小组赛赛程",
+      "NO_FIXTURE": "未找到该对阵",
       "ALREADY_EXISTS": "该社区已存在此对阵的预测市场",
       "CHAMPION_EXISTS": "该社区已存在世界杯冠军预测市场"
     },
@@ -913,24 +911,15 @@
       "GHA": "加纳",
       "PAN": "巴拿马"
     },
-    "subtitle": "从同一小组选择两支球队，创建胜/平/负三元预测市场。",
     "createShort": "世界杯",
-    "initialRatio": "初始比例",
     "checking": "正在校验赛程…",
     "checkFailed": "校验失败，请重试",
-    "selectBothTeams": "请选择同组的两支不同球队",
     "fixtureVenue": "场馆：{venue}",
     "tabDesc": "基于 Real World 预测模型，世界杯预测支持创建主流赛事。到达设定截止时间后交易自动停止，拥有社区预测 credit 的用户可在随后 24 小时内投票。事件结果按链上公布的投票结果结算，获胜方将瓜分部分交易手续费。",
-    "tapToSelect": "点击选择",
-    "selectLeftFirst": "请先选择左侧球队",
     "titleAutoPlaceholder": "选择双方球队后自动生成",
-    "comingSoon": "即将上线",
-    "pickerTitleLeft": "选择球队",
-    "pickerTitleRight": "选择同组对手",
     "eventType": {
-      "matchup": "对阵",
-      "groupChampion": "小组冠军 🏆",
-      "worldChampion": "世界杯冠军 🏆"
+      "worldChampion": "世界杯冠军 🏆",
+      "knockout": "淘汰赛对阵"
     },
     "championTitle": "2026 FIFA 世界杯冠军",
     "championDeadlineHint": "自定义市场截止时间（如决赛开赛前）。",
@@ -938,7 +927,6 @@
     "oddsEqual": "均势",
     "oddsFavorites": "热门预设",
     "oddsClear": "清零",
-    "initialRatioTip": "拖动两个滑块调整左胜、平局、右胜的初始概率，默认为三等分。",
     "postContentLabel": "Post content",
     "postContentPlaceholder": "填写将发布到 X 的推文正文（不含 #TagAI，社区标签由系统自动补充）…",
     "postContentRequired": "请填写发推内容",
@@ -948,7 +936,20 @@
     "tweetUrlRequired": "请先在 X 发帖，并粘贴推文链接",
     "postOnTwitterFirst": "请先在 X 完成发帖，再粘贴推文链接后重新创建。",
     "tweetSyncTimeout": "推文尚未同步到平台，请稍等片刻后重试。",
-    "postMetaGroup": "2026 世界杯 · {group} 组 · 小组赛"
+    "postMetaGroup": "2026 世界杯 · {group} 组 · 小组赛",
+    "knockout": {
+      "round": {
+        "R32": "32强",
+        "R16": "16强",
+        "QF": "8强",
+        "SF": "半决赛",
+        "F": "决赛"
+      },
+      "leftWinProb": "左队胜概率",
+      "selectRound": "选择轮次",
+      "selectFixture": "请选择一场对阵"
+    },
+    "initialRatio": "初始比例"
   },
   "liquidity": {
     "tab": "流动性",
