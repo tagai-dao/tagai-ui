@@ -6,6 +6,8 @@ import BuyAndSellView from '@/views/buy-sell/BuyAndSellView.vue';
 import PredictEventCard from '@/components/common/PredictEventCard.vue';
 import PredictBattleCard from '@/components/common/PredictBattleCard.vue';
 import { resolveCommerce, getEventMarket, getMarket } from '@/apis/api';
+import { getEventMarketInfos, getMarketInfos } from '@/utils/fpmm';
+import { isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes';
 import { useAccountStore } from '@/stores/web3';
 import { onUnmounted, ref, watch } from 'vue';
 
@@ -33,13 +35,54 @@ async function resolveCommerceType(commerceId?: string) {
         commerceType.value = r?.commerceType ?? 1
         const fpmm = r?.fpmm
         if (commerceType.value === 3 && fpmm) {
-            eventMarket.value = await getEventMarket(fpmm, accStore.getAccountInfo?.twitterId) as any
+            const m = await getEventMarket(fpmm, accStore.getAccountInfo?.twitterId) as any
+            await injectEventReserves(m)
+            eventMarket.value = m
         } else if (commerceType.value === 2 && fpmm) {
-            battleMarket.value = await getMarket(fpmm, accStore.getAccountInfo?.twitterId) as any
+            const m = await getMarket(fpmm, accStore.getAccountInfo?.twitterId) as any
+            await injectBattleReserves(m)
+            battleMarket.value = m
         }
     } catch (e) {
         // 解析失败时退回代币销售(Trade)展示
         commerceType.value = 1
+    }
+}
+
+/**
+ * 帖子下独立渲染的预测卡没有列表父级批量注入储备，需自行链上拉取，
+ * 否则二元市场 totalPool=0 会固定显示 50%/50%。
+ * 仅交易中(status 1)需要现货储备；投票/结算(status>=2)用 endOutcomePercents 快照。
+ */
+async function injectEventReserves(m: any) {
+    if (!m || m.status !== 1) return
+    try {
+        if (isMultiOutcomeMarket(m)) {
+            const infos = await getEventMarketInfos(m)
+            m.outcomeReserves = infos.reserves
+            m.reserveA = infos.reserves[0] ?? 0
+            m.reserveB = infos.reserves[1] ?? 0
+            m.fee = infos.fee
+        } else {
+            const infos: any = await getMarketInfos([m])
+            m.reserveA = infos[m.marketMaker + '-priceA']
+            m.reserveB = infos[m.marketMaker + '-priceB']
+            m.fee = infos[m.marketMaker + '-fee']
+        }
+    } catch {
+        // 拉取失败时维持原状（快照或占位），不阻断卡片渲染
+    }
+}
+
+async function injectBattleReserves(m: any) {
+    if (!m || m.status !== 1) return
+    try {
+        const infos: any = await getMarketInfos([m])
+        m.reserveA = infos[m.marketMaker + '-priceA']
+        m.reserveB = infos[m.marketMaker + '-priceB']
+        m.fee = infos[m.marketMaker + '-fee']
+    } catch {
+        // 同上
     }
 }
 
