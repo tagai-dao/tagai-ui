@@ -3,7 +3,7 @@ import { useAccount } from '@/composables/useAccount';
 import { useModalStore } from '@/stores/common';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { GlobalModalType, type CurationReward } from '@/types';
-import { formatAmount, formatPrice, sleep } from '@/utils/helper';
+import { formatAmount, formatPrice, parseEtherAmount, sleep } from '@/utils/helper';
 import { handleErrorTip, notify } from '@/utils/notify';
 import { getClaimSignature, setOrderClaimed, getCommunityDetail } from '@/apis/api'
 import { claimReward, claimRewardV8 } from '@/utils/pump'
@@ -11,7 +11,7 @@ import { usesNutboxSocialPool, normalizePumpVersion } from '@/utils/pumpVersion'
 import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ClaimFee } from '@/config';
-import { isAddress, parseEther } from 'viem';
+import { isAddress } from 'viem';
 import errCode from '@/errCode';
 import { useRouter } from 'vue-router';
 import CommunityLogo from '@/components/common/CommunityLogo.vue';
@@ -117,7 +117,7 @@ async function claim() {
       const hash = await claimRewardV8(
         props.reward.token,
         BigInt(orderId),
-        parseEther(amount.toString()),
+        parseEtherAmount(amount),
         BigInt(deadline),
         signature,
         rewardVersion,
@@ -128,7 +128,7 @@ async function claim() {
       emitter.emit('claimedReward')
       return
     }
-    const hash = await claimReward(props.reward.token, rewardVersion || 2, BigInt(orderId), parseEther(amount.toString()), signature)
+    const hash = await claimReward(props.reward.token, rewardVersion || 2, BigInt(orderId), parseEtherAmount(amount), signature)
     setOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash, rewardVersion || 2).catch(console.error)
     await sleep(1)
     emitter.emit('claimedReward')

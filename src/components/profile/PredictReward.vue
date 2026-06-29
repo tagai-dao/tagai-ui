@@ -3,14 +3,14 @@ import { useAccount } from '@/composables/useAccount';
 import { useModalStore } from '@/stores/common';
 import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { GlobalModalType, type CurationReward } from '@/types';
-import { formatAmount, formatPrice, sleep } from '@/utils/helper';
+import { formatAmount, formatPrice, parseEtherAmount, sleep } from '@/utils/helper';
 import { handleErrorTip, notify } from '@/utils/notify';
 import { getUserClaimPredictRewardSignature, setPredictOrderClaimed } from '@/apis/api'
 import { claimPredictReward } from '@/utils/pump'
 import { ref } from 'vue'
 import emitter from '@/utils/emitter';
 import { ClaimFee } from '@/config';
-import { isAddress, parseEther } from 'viem';
+import { isAddress } from 'viem';
 import errCode from '@/errCode';
 import { useRouter } from 'vue-router';
 import CommunityLogo from '@/components/common/CommunityLogo.vue';
@@ -48,7 +48,7 @@ async function claim() {
     const res: any = await getUserClaimPredictRewardSignature(accStore.getAccountInfo.twitterId, props.reward.tick)
     if (res) {
       const {signature, orderId, amount} = res;
-      const hash = await claimPredictReward(props.reward.token, BigInt(orderId), parseEther(amount.toString()), signature);
+      const hash = await claimPredictReward(props.reward.token, BigInt(orderId), parseEtherAmount(amount), signature);
       setPredictOrderClaimed(accStore.getAccountInfo.twitterId, orderId, hash).catch(console.error);
       await sleep(1)
       emitter.emit('claimedPredictReward')

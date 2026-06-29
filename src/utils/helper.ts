@@ -2,6 +2,7 @@ import type { Space } from '@/types';
 // import { dayjs } from 'element-plus';
 import utc from 'dayjs/plugin/utc';
 import dayjs from 'dayjs';
+import { parseEther } from 'viem';
 import { BACKEND_API_URL } from '@/config';
 import { reportLog as reportLogApi } from '@/apis/api';
 import { getCurrentLocale } from '@/lang';
@@ -166,6 +167,16 @@ export const formatBalance = function (value: number | string | undefined) {
     }
   }
   return integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + fraction;
+}
+
+/** 与后端 parseEtherAmount 一致：MySQL 浮点 SUM 可能产生超长小数，统一 toFixed(18) 再转 wei */
+export function parseEtherAmount(amount: bigint | number | string): bigint {
+  if (typeof amount === 'bigint') return amount
+  const n = Number(amount)
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error(`invalid token amount: ${amount}`)
+  }
+  return parseEther(n.toFixed(18))
 }
 
 export const formatAmount = function (value: number | string | undefined | bigint) {
