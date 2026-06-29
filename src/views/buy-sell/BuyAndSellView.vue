@@ -33,6 +33,10 @@ import Kline from "@/views/buy-sell/Kline.vue";
 import { getDexScreenerEmbedPath, usesListedV4Quote } from '@/utils/pumpVersion'
 import { isAddress, parseEther } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
+import { useTheme } from "@/composables/useTheme";
+
+const { isDark } = useTheme()
+const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
 
 const props = defineProps({
   tick: {type: String, required: false, default: null},
@@ -647,7 +651,7 @@ onMounted(async () => {
       <div v-if="comStore.currentSelectedCommunity?.tick && !props.tick"
            class="w-full h-[360px] hidden web:flex min-w-[320px] flex-1 gap-3">
         <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
-        <iframe v-else :src="`https://dexscreener.com/bsc/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=15`"
+        <iframe v-else :src="`https://dexscreener.com/bsc/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>
