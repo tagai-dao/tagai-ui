@@ -311,7 +311,7 @@ onMounted(async () => {
                 </button>
             </div>
             <el-select v-model="activeTab"
-                       class="bg-white rounded-full overflow-hidden w-[190px] min-w-[120px] c-select h-9 flex items-center text-sm text-black flex-shrink-0"
+                       class="bg-white rounded-full overflow-hidden w-[140px] min-w-[120px] c-select h-9 flex items-center text-sm text-black flex-shrink-0"
                        popper-class="c-select-popper rounded-xl">
                 <el-option value="worldcup" :label="$t('createPredict.tabWorldCup') + ' 🏆'" />
                 <el-option value="event" :label="$t('createPredict.tabEvent')" />

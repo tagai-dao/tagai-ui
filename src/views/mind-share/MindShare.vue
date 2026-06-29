@@ -195,11 +195,11 @@ onMounted(() => {
 }
 :deep(.c-select .el-input__inner) {
   font-weight: 600;
-  color: #000000 !important;
+  color: var(--text-base) !important;
   text-align: right;
-  -webkit-text-fill-color: #000000;
+  -webkit-text-fill-color: var(--text-base);
 }
 :deep(.c-select .el-select__caret) {
-    color: #000;
+    color: var(--text-muted);
 }
 </style>

@@ -154,6 +154,11 @@ html.dark .text-grey-normal-hover,
 html.dark .text-grey-normal-active { color: var(--text-base) !important; }
 html.dark .bg-gray-50,
 html.dark .bg-gray-100 { background-color: var(--surface-2) !important; }
+/* gray-200~400 用作中性按钮/进度条背景（Max 按钮、+/- 按钮、滑块槽等），暗色下需翻成暗面板色，否则浅底浅字看不清 */
+html.dark .bg-gray-200,
+html.dark .bg-gray-300 { background-color: var(--surface-2) !important; }
+html.dark .bg-gray-400 { background-color: var(--border-base) !important; }
+html.dark [class*="hover:bg-gray-300"]:hover { background-color: var(--border-base) !important; }
 /* Tailwind 内置灰阶「文字」色未主题化：深色字(gray-700~900)在暗背景上看不见（预测详情 Tab 选中态、
    Trade/Liquidity/Redeem、VoteList 等）。按属性子串匹配，连 hover:text-gray-* 一并覆盖 */
 html.dark [class*="text-gray-90"],
@@ -182,6 +187,16 @@ html.dark .el-textarea__inner {
   color: var(--text-base) !important;
 }
 html.dark .el-popper:not(.is-dark) .el-popper__arrow::before { background: var(--surface) !important; border-color: var(--border-base) !important; }
+/* c-select（广场页右上角圆角筛选下拉）标题与箭头：组件内 :deep 硬编码 #000 !important，
+   暗色下黑字看不清。全局覆盖 color 与 -webkit-text-fill-color（后者优先级高于 color） */
+html.dark .c-select .el-input__inner,
+html.dark .c-select .el-select__selected-item,
+html.dark .c-select .el-select__placeholder {
+  color: var(--text-base) !important;
+  -webkit-text-fill-color: var(--text-base) !important;
+}
+html.dark .c-select .el-select__caret,
+html.dark .c-select .el-select__prefix { color: var(--text-muted) !important; }
 html.dark .el-dialog__title,
 html.dark .el-dialog__body,
 html.dark .el-input__inner,

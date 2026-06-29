@@ -4,7 +4,7 @@ import { computed, onMounted, ref, watch, onUnmounted } from 'vue'
 import { getFPMMKlineDataBatch } from '@/apis/api'
 import type { ApexOptions } from 'apexcharts'
 import type { EventPredictData, EventPredictOutcome, KlineData } from '@/types'
-import { OUTCOME_CHART_COLORS, isManyOutcomeMarket } from '@/composables/useEventMarketOutcomes'
+import { OUTCOME_CHART_COLORS, isManyOutcomeMarket, useEventMarketOutcomes } from '@/composables/useEventMarketOutcomes'
 import ManyOutcomeOddsList from '@/components/common/ManyOutcomeOddsList.vue'
 
 const ApexCharts = VueApexCharts as any
@@ -20,6 +20,17 @@ const props = defineProps<{
 
 /** 总冠军等多 outcome 市场：列表展示概率，不画多线 K 线 */
 const isManyOutcome = computed(() => isManyOutcomeMarket(props.market))
+
+/** 顶部概率直接取自链上储备（与交易区/ManyOutcomeOddsList 一致），不从 K 线历史末点推算 */
+const { getPercent } = useEventMarketOutcomes(() => props.market)
+/** 顶部展示概率：优先链上储备实时概率；market 缺失时回退 K 线末点 */
+const displayPercent = (outcomeIndex: number): number | null => {
+  if (props.market) {
+    const p = getPercent(outcomeIndex)
+    return Number.isFinite(p) ? p : null
+  }
+  return currentPrices.value[outcomeIndex] ?? null
+}
 
 /** 接口 close 为 0~1 概率 */
 function normalizeProbability(value: unknown): number | null {
@@ -356,8 +367,8 @@ onUnmounted(() => {
             :style="{ color: OUTCOME_CHART_COLORS[idx % OUTCOME_CHART_COLORS.length] }"
           >
             {{
-              currentPrices[outcome.outcomeIndex] != null
-                ? `${(currentPrices[outcome.outcomeIndex]! * 100).toFixed(1)}%`
+              displayPercent(outcome.outcomeIndex) != null
+                ? `${(displayPercent(outcome.outcomeIndex)! * 100).toFixed(1)}%`
                 : '--'
             }}
           </span>
