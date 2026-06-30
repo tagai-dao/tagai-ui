@@ -286,6 +286,24 @@ const handleCreate = async () => {
 
   createLoading.value = true
   try {
+    // 提交前再刷新一次可创建状态：选中 fixture 后到提交之间若已被他人创建，在此提前拦截，
+    // 避免继续走 approve/上链后才发现重复（后端 preCreate 亦有同源兜底校验）。
+    if (eventType.value === 'knockout' && selectedFixture.value) {
+      const r: any = await checkKnockoutMatchCreatable(tick, selectedFixture.value.fixtureId)
+      if (!r.creatable) {
+        blockReason.value = r.reason || 'ALREADY_EXISTS'
+        errors.match = t(`worldCup2026.reason.${blockReason.value}`)
+        return
+      }
+    } else if (eventType.value === 'worldChampion') {
+      const r: any = await checkWorldCupChampionCreatable(tick)
+      if (!r.creatable) {
+        blockReason.value = r.reason || 'CHAMPION_EXISTS'
+        errors.match = t(`worldCup2026.reason.${blockReason.value}`)
+        return
+      }
+    }
+
     const balance = await getTokenBalance(token)
     if (balance < parseUnits(form.initAmount.toString(), 18)) {
       notify({ message: t('errMessage.insufficientBalance'), type: 'info' })
