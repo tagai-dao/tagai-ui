@@ -418,15 +418,23 @@ const preVoteOutcome = async (outcomeIndex: number) => {
 const vote = async () => {
   try {
     voting.value = true
-    if (isMultiOutcome.value && selectedVoteOutcomeIndex.value != null) {
+    // 后端按 factoryVersion 决定记票方式：>=2(含二元)用 outcomeIndex，旧版二元用 voteResult。
+    // 不能用 isMultiOutcome(outcomeCount>2) 判定，否则 V2 二元市场(如世界杯淘汰赛)会漏传
+    // outcomeIndex 触发 PARAMS_ERROR("Invalid params")。
+    const isV2Factory = Number(props.market.factoryVersion ?? 1) >= 2
+    if (isV2Factory) {
+      const idx = isMultiOutcome.value
+        ? selectedVoteOutcomeIndex.value
+        : (selectedVoteOption.value === 'yes' ? 0 : 1)
+      if (idx == null) return
       await voteEventPrediction(
         accStore.getAccountInfo?.twitterId,
         props.market.marketMaker,
         undefined,
         undefined,
-        selectedVoteOutcomeIndex.value
+        idx
       )
-      applyLocalVote(props.market, selectedVoteOutcomeIndex.value)
+      applyLocalVote(props.market, idx)
     } else {
       const binaryIdx = selectedVoteOption.value === 'yes' ? 0 : 1
       await voteEventPrediction(
