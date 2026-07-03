@@ -120,6 +120,9 @@ onMounted(() => {
       creditJO.value = comStore.currentSelectedCommunity.creditPolicy
     }
     creditType.value = creditJO.value.map((item: any) => {
+      if (item.showingName && item.showingName.length > 0) {
+        return item.showingName
+      }
       switch (item.type) {
         case 1:
           return comStore.currentSelectedCommunity!.tick + " Balance"
