@@ -10,6 +10,8 @@
 html, body {
   background: var(--app-bg);
   color: var(--text-base);
+  /* 移动端：去掉双击缩放手势（点 ∨ 等可交互图标连点会触发页面放大），保留滚动与捏合 */
+  touch-action: manipulation;
 }
 
 /* 涨跌语义色：默认绿涨红跌；setLocale 按 locale（zh/ko/ja 红涨）切换这两个变量 */
