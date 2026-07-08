@@ -55,7 +55,7 @@ export const getProvider = () => {
     return window.ethereum
 }
 
-export const getReadOnlyClient = () => {
+export const getReadOnlyClient = (): PublicClient => {
     if (readOnlyClient) {
         return readOnlyClient;
     }
@@ -66,11 +66,11 @@ export const getReadOnlyClient = () => {
             rpcUrls.map((url) => http(url, { timeout: 15_000 })),
             { rank: false },
         ),
-    });
+    }) as PublicClient;
     return readOnlyClient;
 }
 
-export const getWalletClient = () => {
+export const getWalletClient = (): WalletClient | null | undefined => {
     const accStore = useAccountStore();
     const accInfo = accStore.getAccountInfo;
     if (accInfo?.twitterId && (accInfo?.walletType === 1 || !accInfo?.ethAddr)) {
