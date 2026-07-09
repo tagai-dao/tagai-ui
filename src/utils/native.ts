@@ -5,6 +5,15 @@ export const NATIVE_AUTH_CALLBACK_URL = 'tagai://auth-callback'
 
 export const isNativePlatform = () => Capacitor.isNativePlatform()
 
+function isNativeAuthCallbackUrl(url: string) {
+  try {
+    const callbackUrl = new URL(url)
+    return callbackUrl.protocol === 'tagai:' && callbackUrl.host === 'auth-callback'
+  } catch {
+    return false
+  }
+}
+
 export async function initNativeApp(router: Router) {
   if (!isNativePlatform()) return
 
@@ -16,7 +25,7 @@ export async function initNativeApp(router: Router) {
   ])
 
   await App.addListener('appUrlOpen', async ({ url }) => {
-    if (!url.startsWith(NATIVE_AUTH_CALLBACK_URL)) return
+    if (!isNativeAuthCallbackUrl(url)) return
 
     const { Browser } = await import('@capacitor/browser')
     await Browser.close().catch(() => {})
