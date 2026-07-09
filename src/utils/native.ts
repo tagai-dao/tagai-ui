@@ -24,8 +24,12 @@ export async function initNativeApp(router: Router) {
     import('@capacitor/splash-screen'),
   ])
 
-  await App.addListener('appUrlOpen', async ({ url }) => {
+  let handledAuthCallbackUrl: string | undefined
+
+  const handleAuthCallbackUrl = async (url: string) => {
     if (!isNativeAuthCallbackUrl(url)) return
+    if (handledAuthCallbackUrl === url) return
+    handledAuthCallbackUrl = url
 
     const { Browser } = await import('@capacitor/browser')
     await Browser.close().catch(() => {})
@@ -38,7 +42,16 @@ export async function initNativeApp(router: Router) {
     loginUrl.hash = callbackUrl.hash
 
     window.location.assign(loginUrl.toString())
+  }
+
+  await App.addListener('appUrlOpen', async ({ url }) => {
+    await handleAuthCallbackUrl(url)
   })
+
+  const launchUrl = await App.getLaunchUrl()
+  if (launchUrl?.url) {
+    await handleAuthCallbackUrl(launchUrl.url)
+  }
 
   await SplashScreen.hide()
 
