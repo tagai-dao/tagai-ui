@@ -47,7 +47,7 @@ async function createTagCoin() {
 </script>
 
 <template>
-  <div class="w-full h-14 web:h-20 flex justify-between items-center px-4
+  <div class="w-full h-14 web:h-20 native-safe-topbar flex justify-between items-center px-4
               web:border-b-[1px] border-line">
     <div class="flex items-center gap-2 mt-2">
       <img class="h-8 cursor-pointer"
