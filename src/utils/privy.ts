@@ -8,32 +8,54 @@ import {
   sepolia,
   type Chain
 } from 'viem/chains'
-import { ChainConfig } from '@/config'
+import { defineChain } from 'viem'
+import { BSC_CHAIN, ROBINHOOD_CHAIN, getChainDeployment } from '@/config/chains'
 
-// Custom BSC configuration with multiple RPC endpoints
+/** BSC：多 RPC fallback */
 export const customBsc = {
   ...bsc,
   rpcUrls: {
     default: {
-      http: ChainConfig.rpcUrls,
+      http: BSC_CHAIN.rpcUrls,
     }
   }
-}
+} as Chain
 
-// Supported chains configuration for DeFi Actions
+/** Robinhood Chain（Arbitrum Orbit L2） */
+export const customRobinhood = defineChain({
+  id: ROBINHOOD_CHAIN.chainId,
+  name: ROBINHOOD_CHAIN.name,
+  nativeCurrency: {
+    name: ROBINHOOD_CHAIN.nativeCurrency.name,
+    symbol: ROBINHOOD_CHAIN.nativeCurrency.symbol,
+    decimals: ROBINHOOD_CHAIN.nativeCurrency.decimals,
+  },
+  rpcUrls: {
+    default: {
+      http: ROBINHOOD_CHAIN.rpcUrls,
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Blockscout',
+      url: ROBINHOOD_CHAIN.browser.replace(/\/$/, ''),
+    },
+  },
+})
+
+/** Privy / 钱包：产品链 + 少量测试网 */
 export const supportedChains: Record<number, Chain> = {
-  // Mainnets
-  56: customBsc,      // BSC
-  1: mainnet,         // Ethereum Mainnet
-  8453: base,         // Base
-  10: optimism,       // Optimism
-  42161: arbitrum,    // Arbitrum
-  // Testnets
-  97: bscTestnet,     // BSC Testnet
-  11155111: sepolia,  // Sepolia
+  56: customBsc,
+  4663: customRobinhood,
+  // 其它主网保留给未来 / DeFi 工具
+  1: mainnet,
+  8453: base,
+  10: optimism,
+  42161: arbitrum,
+  97: bscTestnet,
+  11155111: sepolia,
 }
 
-// Get chain configuration by chain ID
 export function getChainById(chainId: number): Chain {
   const chain = supportedChains[chainId]
   if (!chain) {
@@ -42,23 +64,24 @@ export function getChainById(chainId: number): Chain {
   return chain
 }
 
-// Get chain name by chain ID
 export function getChainName(chainId: number): string {
-  const names: Record<number, string> = {
-    // Mainnets
-    56: 'BSC',
-    1: 'Ethereum',
-    8453: 'Base',
-    10: 'Optimism',
-    42161: 'Arbitrum',
-    // Testnets
-    97: 'BSC Testnet',
-    11155111: 'Sepolia',
+  try {
+    return getChainDeployment(chainId).name
+  } catch {
+    const names: Record<number, string> = {
+      56: 'BSC',
+      4663: 'Robinhood',
+      1: 'Ethereum',
+      8453: 'Base',
+      10: 'Optimism',
+      42161: 'Arbitrum',
+      97: 'BSC Testnet',
+      11155111: 'Sepolia',
+    }
+    return names[chainId] || `Chain ${chainId}`
   }
-  return names[chainId] || `Chain ${chainId}`
 }
 
-// Check if chain is supported
 export function isChainSupported(chainId: number): boolean {
   return chainId in supportedChains
 }

@@ -5,8 +5,7 @@ import { twitterRefreshAccessToken, getVPOP, needLogin,
     getNewMessageCount, getMessages as gm, readAllMessage,
     bondEth
  } from '@/apis/api'
-import { BondEthMessage, CoinPurse, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY, WETH } from '@/config'
-import { ChainConfig } from '@/config'
+import { BondEthMessage, MAX_OP, MAX_VP, OP_RECOVER_DAY, VP_RECOVER_DAY, WETH } from '@/config'
 import errCode from "@/errCode";
 import { formatDate } from '@/utils/helper'
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -17,6 +16,8 @@ import { usePrivyStore } from "@/stores/privy";
 import { signMessage } from "@/utils/wallets";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenOnchainInfo } from "@/utils/pump";
+import { useChainStore } from "@/stores/chain";
+import { getChainDeployment } from "@/config/chains";
 
 export enum AccountAuthType {
     TWITTER,
@@ -286,44 +287,57 @@ export const useAccount = () => {
     const updateBalance = () => {
         if (isAddress(useAccountStore().getAccountInfo?.ethAddr ?? '')) {
             const ethAddr = useAccountStore().getAccountInfo?.ethAddr;
-            let calls = [{
+            const deployment = getChainDeployment(useChainStore().activeChainId)
+            const coinPurse = deployment.contracts.coinPurse
+            const isZero = !coinPurse || coinPurse === zeroAddress
+
+            // 原生币余额：走当前链 multicall
+            const calls: any[] = [{
                 call: [
-                    'getEthBalance(address)(uint256)', 
-                    ethAddr
-                  ],
-                  returns: [['ethBalance', (val: any) => val / 10 ** 18]]
-            }, {
-                target: CoinPurse,
-                call: [
-                    'userBalances(address)(uint256)',
+                    'getEthBalance(address)(uint256)',
                     ethAddr
                 ],
-                returns: [['socialBalance', (val: any) => val / 10 ** 18]]
-            }, {
-                target: CoinPurse,
-                call: [
-                    'userLimits(address,address)(uint256,uint256)',
-                    ethAddr,
-                    zeroAddress
-                ],
-                returns: [
-                    ['transactionLimit', (val: any) => val / 10 ** 18], 
-                    ['dailyLimit', (val: any) => val / 10 ** 18]
-                ]
-            }];
+                returns: [['ethBalance', (val: any) => val / 10 ** 18]]
+            }]
 
-           aggregate(calls, ChainConfig.multiConfig).then((res: any) => {
-            useAccountStore().ethBalance = res.results.transformed.ethBalance;
-            useAccountStore().socialBalance = res.results.transformed.socialBalance;
-            useAccountStore().transactionLimit = res.results.transformed.transactionLimit;
-            useAccountStore().dailyLimit = res.results.transformed.dailyLimit;
-           }).catch()
-            
+            // CoinPurse 仅在已部署的链上查询（目前仅 BSC）
+            if (!isZero) {
+                calls.push({
+                    target: coinPurse,
+                    call: [
+                        'userBalances(address)(uint256)',
+                        ethAddr
+                    ],
+                    returns: [['socialBalance', (val: any) => val / 10 ** 18]]
+                }, {
+                    target: coinPurse,
+                    call: [
+                        'userLimits(address,address)(uint256,uint256)',
+                        ethAddr,
+                        zeroAddress
+                    ],
+                    returns: [
+                        ['transactionLimit', (val: any) => val / 10 ** 18],
+                        ['dailyLimit', (val: any) => val / 10 ** 18]
+                    ]
+                })
+            } else {
+                useAccountStore().socialBalance = 0
+                useAccountStore().transactionLimit = 0
+                useAccountStore().dailyLimit = 0
+            }
 
-            // getBalance(useAccountStore().getAccountInfo.ethAddr!).then(balance => {
-            //     // @ts-ignore
-            //     useAccountStore().ethBalance = balance.toString() / 1e18
-            // }).catch()
+           aggregate(calls, deployment.multiConfig).then((res: any) => {
+            useAccountStore().ethBalance = res.results.transformed.ethBalance ?? 0;
+            if (!isZero) {
+                useAccountStore().socialBalance = res.results.transformed.socialBalance ?? 0;
+                useAccountStore().transactionLimit = res.results.transformed.transactionLimit ?? 0;
+                useAccountStore().dailyLimit = res.results.transformed.dailyLimit ?? 0;
+            }
+           }).catch((e) => {
+            console.warn('[updateBalance] failed on', deployment.name, e)
+            useAccountStore().ethBalance = 0
+           })
         }
     }
 

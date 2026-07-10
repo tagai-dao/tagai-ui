@@ -62,6 +62,8 @@ export default {
 
   WRONG_ERC20: 601,
   TICK_HAS_EXISTS: 602,
+  /** 当前链尚未部署 TagAI 合约（如 RH Phase 1 前） */
+  CHAIN_CONTRACTS_NOT_READY: 603,
 
   TWEET_NOT_FOUND: 701,
   POST_NOT_FOUND: 702,

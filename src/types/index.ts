@@ -289,6 +289,8 @@ export type Community = OnchainTokenInfo & {
   tags?: string | string[];
   version?: number | null | undefined,
   tick: string,
+  /** EVM chainId；后端 community.chain_id，缺省按 56（BSC）处理 */
+  chainId?: number | null;
   twitter?: string | undefined | null;
   telegram?: string | undefined | null;
   official?: string | undefined | null;

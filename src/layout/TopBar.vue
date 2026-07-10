@@ -9,6 +9,7 @@ import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
+import ChainSwitcher from '@/components/common/ChainSwitcher.vue'
 
 const modalVisible = ref(false)
 const ruleModalVisible = ref(false)
@@ -57,8 +58,9 @@ async function createTagCoin() {
               @click="ruleModalVisible = true">{{ $t('rule') }}</button>
     </div>
     <div class="flex items-center gap-3 web:gap-6">
-      <!-- 移动端：搜索、通知、创建 TagCoin 图标 -->
+      <!-- 移动端：链切换 + 搜索、通知 -->
       <div class="flex items-center gap-3 web:hidden">
+        <ChainSwitcher variant="compact" />
         <img class="w-6 cursor-pointer"
              src="~@/assets/icons/icon-search.svg" alt=""
              @click="modalVisible=true">
@@ -71,7 +73,6 @@ async function createTagCoin() {
             {{ useAccountStore().unreadMessageCount }}
           </div>
         </div>
-        <!-- 创建入口统一为页面右下角 FAB，顶栏不再重复放置 + 按钮 -->
       </div>
       <ProfileBtn class="hidden web:flex"/>
       <router-link to="/wallet/">

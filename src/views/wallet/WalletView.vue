@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, onUnmounted} from "vue";
+import {onMounted, ref, computed} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import TabPrediction from "@/views/profile/TabPrediction.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -14,16 +14,21 @@ import Wallet from "@/react_app/Wallet.jsx";
 import { isAddress } from "viem";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
+import { useChainStore } from "@/stores/chain";
 
 const ReactWallet = applyPureReactInVue(Wallet);
 
 const accStore = useAccountStore()
+const chainStore = useChainStore()
 const privyStore = usePrivyStore()
 const tabOptions = ['holding', 'ipshare', 'prediction', 'socialAccount']
 const activeTab = ref('holding')
 const showPrivyModal = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
+
+const chainName = computed(() => chainStore.deployment.name)
+const nativeSymbol = computed(() => chainStore.symbol)
 
 async function disconnect() {
   accStore.ethConnectState = EthWalletState.Disconnect;
@@ -35,11 +40,12 @@ async function showPrivy() {
   // 显示PrivyModal弹窗
   showPrivyModal.value = true
 }
+
 onMounted(() => {
+  // 切链走整页 reload，此处按当前链拉余额即可
   if (!accStore.getAccountInfo?.ethAddr || !isAddress(accStore.getAccountInfo?.ethAddr)) {
-    // show bond address
     useAccount().bondEthAddress()
-    return;
+    return
   }
   updateBalance()
 })
@@ -65,17 +71,17 @@ onMounted(() => {
       </div>
       <div class="pl-12 flex justify-start items-center mt-2 gap-3">
         <div class="flex items-center flex-wrap gap-4 cursor-pointer" @click="onCopy(useAccountStore().getAccountInfo?.ethAddr ?? '')">
-            <span>BSC {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
+            <span>{{ chainName }} {{ $t('address') }}: {{ formatAddress(useAccountStore().getAccountInfo?.ethAddr ?? '') }}</span>
         </div>
         <ReactWallet v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected" />
       </div>
       <div class="pl-12 flex justify-start items-center mt-2 gap-1">
-        {{ $t('balance') }}: 
+        {{ $t('balance') }}:
         <span class="font-bold">
-          {{ formatBalance(accStore.ethBalance) }} 
+          {{ formatBalance(accStore.ethBalance) }}
         </span>
-        BNB
-        <button v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected" 
+        {{ nativeSymbol }}
+        <button v-if="accStore.getAccountInfo?.walletType == 1 && accStore.ethConnectState === EthWalletState.Connected"
           class="h-8 ml-3 bg-gradient-primary rounded-full px-3 text-white text-h5 hover:opacity-90 transition-all duration-200"
           @click="showPrivy">
           {{ $t('web3.recharge') }}

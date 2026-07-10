@@ -1,5 +1,7 @@
-import { ChainConfig, MainToken, SendPubKey, uniswapV2Factory, WETH, uniswapV2InitCode } from "@/config";
+import { SendPubKey, uniswapV2Factory, WETH, uniswapV2InitCode } from "@/config";
+import { getChainDeployment } from "@/config/chains";
 import { useAccountStore } from "@/stores/web3";
+import { useChainStore } from "@/stores/chain";
 import nacl from "tweetnacl";
 import { hexTou8array, stringToHex, u8arryToHex } from "./helper";
 import { sha256 } from "js-sha256";
@@ -15,18 +17,20 @@ import {
   isAddress} from "viem";
 import { readContract } from "./contract";
 
+/** 将钱包切到当前产品链（BSC / Robinhood） */
 export const setupNetwork = async (ethereum: any) => {
   const accStore = useAccountStore();
+  const target = getChainDeployment(useChainStore().activeChainId);
   if (accStore.getWalletType === 'privy') {
-    accStore.chainId = ChainConfig.chainId;
+    accStore.chainId = target.chainId;
     return;
   }
   try {
     const chainInfo = await ethereum.request({
       method: "eth_chainId",
     });
-    if (parseInt(chainInfo) == ChainConfig.chainId) {
-      accStore.chainId = ChainConfig.chainId;
+    if (parseInt(chainInfo) == target.chainId) {
+      accStore.chainId = target.chainId;
       return true;
     }
 
@@ -34,11 +38,11 @@ export const setupNetwork = async (ethereum: any) => {
       method: "wallet_switchEthereumChain",
       params: [
         {
-          chainId: `0x${ChainConfig.chainId.toString(16)}`,
+          chainId: `0x${target.chainId.toString(16)}`,
         },
       ],
     });
-    accStore.chainId = ChainConfig.chainId;
+    accStore.chainId = target.chainId;
   } catch (error: any) {
     if (error.code === 4001) return;
     if (error.code === -32002) return;
@@ -48,15 +52,19 @@ export const setupNetwork = async (ethereum: any) => {
         method: "wallet_addEthereumChain",
         params: [
           {
-            chainId: `0x${ChainConfig.chainId.toString(16)}`,
-            chainName: ChainConfig.name,
-            rpcUrls: [ChainConfig.rpc],
-            nativeCurrency: MainToken,
-            blockExplorerUrls: [ChainConfig.browser],
+            chainId: `0x${target.chainId.toString(16)}`,
+            chainName: target.name,
+            rpcUrls: [target.rpc],
+            nativeCurrency: {
+              name: target.nativeCurrency.name,
+              symbol: target.nativeCurrency.symbol,
+              decimals: target.nativeCurrency.decimals,
+            },
+            blockExplorerUrls: [target.browser],
           },
         ],
       });
-      accStore.chainId = ChainConfig.chainId;
+      accStore.chainId = target.chainId;
       return true;
     } catch (error) {
       console.log("setup chain fail", error);
@@ -199,19 +207,26 @@ export const getTokenBalances = async (tokenAddrs: `0x${string}`[]) => {
   tokenAddrs = tokenAddrs.filter(addr => isAddress(addr));
   if (tokenAddrs.length === 0) return {};
 
-  let calls: any[] = [];
-  for (let token of tokenAddrs) {
-    calls.push({
-      target: token,
-      call: [
-        'balanceOf(address)(uint256)',
-        useAccountStore().getAccountInfo.ethAddr as `0x${string}`
-      ],
-      returns: [
-        [checksumAddress(token), (val: any) => val.toString()]
-      ]
-    })  
+  // 当前链尚无合约 / 地址属于其它链时，multicall 会解出 0x，不应打崩钱包页
+  try {
+    let calls: any[] = [];
+    for (let token of tokenAddrs) {
+      calls.push({
+        target: token,
+        call: [
+          'balanceOf(address)(uint256)',
+          useAccountStore().getAccountInfo.ethAddr as `0x${string}`
+        ],
+        returns: [
+          [checksumAddress(token), (val: any) => val.toString()]
+        ]
+      })
+    }
+    const multiConfig = getChainDeployment(useChainStore().activeChainId).multiConfig
+    const res = await aggregate(calls, multiConfig);
+    return res.results.transformed;
+  } catch (e) {
+    console.warn('[getTokenBalances] skipped (wrong chain or empty contracts)', e)
+    return {}
   }
-  const res = await aggregate(calls, ChainConfig.multiConfig);
-  return res.results.transformed;
 }

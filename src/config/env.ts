@@ -23,6 +23,7 @@ interface EnvConfig {
   // RPC 节点
   readonly rpcUrls: {
     readonly bsc: string | undefined;
+    readonly robinhood: string | undefined;
     readonly ethereum: string | undefined;
     readonly base: string | undefined;
     readonly optimism: string | undefined;
@@ -60,6 +61,7 @@ function parseEnvConfig(): EnvConfig {
     // RPC 节点
     rpcUrls: {
       bsc: import.meta.env.VITE_BSC_RPC_URL || undefined,
+      robinhood: import.meta.env.VITE_ROBINHOOD_RPC_URL || undefined,
       ethereum: import.meta.env.VITE_ETHEREUM_RPC_URL || undefined,
       base: import.meta.env.VITE_BASE_RPC_URL || undefined,
       optimism: import.meta.env.VITE_OPTIMISM_RPC_URL || undefined,

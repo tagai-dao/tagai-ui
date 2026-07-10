@@ -781,6 +781,10 @@ const applyThirdPartyMarketCap = (
 
 export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
+    // 只处理当前产品链上的社区，避免 BSC 地址打到 RH RPC
+    const { filterByActiveChain } = await import('@/utils/chainFilter')
+    communities = filterByActiveChain(communities)
+    if (communities.length === 0) return communities;
     let tokens = communities.filter(com => !com.isImport).map(com => com.token)
     let versions: Record<string, number> = {}
     for (let com of communities) {

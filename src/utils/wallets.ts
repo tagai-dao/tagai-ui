@@ -4,13 +4,14 @@ import { EthWalletState, useAccountStore } from '@/stores/web3';
 import { uiLog } from '@/apis/api';
 import { MetaMaskSDK } from '@metamask/sdk';
 import { getProvider as getBNProvider } from "@binance/w3w-ethereum-provider";
-import { ChainConfig } from "@/config"
+import { getChainDeployment, DEFAULT_CHAIN_ID } from "@/config/chains"
 import { usePrivyStore } from '@/stores/privy';
 import { createWalletClient, createPublicClient, custom, http, fallback } from 'viem';
-import { customBsc } from './privy';
+import { getChainById } from './privy';
 import { useModalStore } from '@/stores/common';
 import { GlobalModalType } from '@/types';
 import { reportLog } from './helper';
+import { useChainStore } from '@/stores/chain';
 
 
 // this.ethWalletType = 'none' // metamask, okx, none
@@ -23,7 +24,8 @@ let provider: any;
 let providerInfo: any;
 let accounts: any = []
 let initialized = false
-let readOnlyClient: PublicClient | undefined;
+/** 按 chainId 缓存 PublicClient，切链后由 clearPublicClientCache 清空 */
+const readOnlyClients: Partial<Record<number, PublicClient>> = {};
 
 export const isMetaMaskInstalled = () => provider && (provider.isMetaMask || provider.isOkxWallet || provider.isOKExWallet || provider.isOKx || provider.isCoinbaseWallet || provider.isTokenPocket || provider.isBinanceWallet);
 export const isMetaMaskConnected = () => accounts && accounts.length > 0;
@@ -55,19 +57,40 @@ export const getProvider = () => {
     return window.ethereum
 }
 
-export const getReadOnlyClient = (): PublicClient => {
-    if (readOnlyClient) {
-        return readOnlyClient;
+/** 解析当前产品链：优先 chain store，否则默认链 */
+const resolveChainId = (chainId?: number): number => {
+    if (typeof chainId === 'number') return chainId
+    try {
+        return useChainStore().activeChainId
+    } catch {
+        return DEFAULT_CHAIN_ID
     }
-    const rpcUrls = ChainConfig.rpcUrls?.length ? ChainConfig.rpcUrls : [ChainConfig.rpc]
-    readOnlyClient = createPublicClient({
-        chain: customBsc,
+}
+
+export const getReadOnlyClient = (chainId?: number): PublicClient => {
+    const id = resolveChainId(chainId)
+    const cached = readOnlyClients[id]
+    if (cached) return cached
+
+    const deployment = getChainDeployment(id)
+    const chain = getChainById(id)
+    const rpcUrls = deployment.rpcUrls?.length ? deployment.rpcUrls : [deployment.rpc]
+    const client = createPublicClient({
+        chain,
         transport: fallback(
             rpcUrls.map((url) => http(url, { timeout: 15_000 })),
             { rank: false },
         ),
-    }) as PublicClient;
-    return readOnlyClient;
+    }) as PublicClient
+    readOnlyClients[id] = client
+    return client
+}
+
+/** 切链时清空 RPC 客户端缓存 */
+export const clearPublicClientCache = () => {
+    for (const key of Object.keys(readOnlyClients)) {
+        delete readOnlyClients[Number(key)]
+    }
 }
 
 export const getWalletClient = (): WalletClient | null | undefined => {
@@ -88,9 +111,11 @@ export const getWalletClient = (): WalletClient | null | undefined => {
     const provider = getProvider();
     console.log(provider)
     if (provider) {
+        // 插件钱包：chain 跟随当前产品链
+        const chain = getChainById(resolveChainId())
         const walletClient = createWalletClient({
-            chain: customBsc,
-            transport: custom(provider) // 使用插件钱包（如 MetaMask）
+            chain,
+            transport: custom(provider)
         }) as WalletClient;
         return walletClient;
     }
@@ -168,8 +193,9 @@ export const setActiveProviderDetail = (providerDetail: any) => {
 export const initializeProvider = async () => {
     if (isMetaMaskInstalled()) {
         if (provider.isBinanceWallet) {
+            const deployment = getChainDeployment(resolveChainId())
             const rpc: { [chainId: number]: string } = {}
-            rpc[ChainConfig.chainId] = ChainConfig.rpc
+            rpc[deployment.chainId] = deployment.rpc
             provider = Object.assign(getBNProvider({
                 rpc: rpc
             }), { isBinanceWallet: true })
@@ -293,7 +319,7 @@ export const transferEthTo = async (to: string, value: bigint) => {
         account: useAccountStore().ethConnectAddress as `0x${string}`,
         to: to as `0x${string}`,
         value: value,
-        chain: customBsc
+        chain: getChainById(resolveChainId())
     })
     return await waitForTx(hash);
 }

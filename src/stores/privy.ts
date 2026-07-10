@@ -6,36 +6,55 @@ import type { WalletClient, Chain } from "viem";
 import { createWalletClient, custom } from "viem";
 import { useAccountStore } from "./web3";
 import { EthWalletState } from "./web3";
-import { useAccount } from "@/composables/useAccount";
-import { sleep } from "@/utils/helper";
-import { isAddress } from "viem";
+import { useChainStore } from "./chain";
+import { getChainDeployment } from "@/config/chains";
 
 export const usePrivyStore = defineStore("privy", () => {
   const viemWalletClient = ref<WalletClient | null>(null);
   const ethersProvider = ref<any>(null);
   const currentChain = ref<Chain>(customBsc);
-  const accStore = useAccountStore();
 
   async function logout() {
     viemWalletClient.value = null;
     ethersProvider.value = null;
-    currentChain.value = customBsc;
+    currentChain.value = getChainById(useChainStore().activeChainId);
   }
 
-  // Switch to a different chain
+  // Switch to a different chain（同步产品 activeChain）
   async function switchChain(chainId: number): Promise<void> {
     try {
       const chain = getChainById(chainId);
 
-      // Request chain switch through provider
       if (ethersProvider.value) {
-        await ethersProvider.value.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: `0x${chainId.toString(16)}` }],
-        });
+        try {
+          await ethersProvider.value.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: `0x${chainId.toString(16)}` }],
+          });
+        } catch (switchError: any) {
+          // 4902: 链未添加 → wallet_addEthereumChain
+          if (switchError?.code === 4902 || switchError?.code === -32603) {
+            const deployment = getChainDeployment(chainId)
+            await ethersProvider.value.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: `0x${chainId.toString(16)}`,
+                chainName: deployment.name,
+                rpcUrls: [deployment.rpc],
+                nativeCurrency: {
+                  name: deployment.nativeCurrency.name,
+                  symbol: deployment.nativeCurrency.symbol,
+                  decimals: deployment.nativeCurrency.decimals,
+                },
+                blockExplorerUrls: [deployment.browser],
+              }],
+            })
+          } else {
+            throw switchError
+          }
+        }
       }
 
-      // Update wallet client with new chain
       if (ethersProvider.value) {
         viemWalletClient.value = createWalletClient({
           chain,
@@ -43,6 +62,9 @@ export const usePrivyStore = defineStore("privy", () => {
         });
         currentChain.value = chain;
       }
+
+      // 产品链由 ChainSwitcher 负责持久化 + reload；此处只同步钱包侧 chainId
+      useAccountStore().chainId = chainId
     } catch (error: any) {
       console.error('Error switching chain:', error);
       throw error;
@@ -59,16 +81,20 @@ export const usePrivyStore = defineStore("privy", () => {
       if (!ethersProvider.value) {
         throw new Error('Ethers provider is not initialized');
       }
+      // 跟随产品当前链（默认 BSC，可切到 Robinhood）
+      const chain = getChainById(useChainStore().activeChainId)
       viemWalletClient.value = createWalletClient({
-        chain: customBsc,
+        chain,
         transport: custom(ethersProvider.value)
       })
+      currentChain.value = chain
 
       const accStore = useAccountStore();
       accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
       console.log('privy address inited', accStore.ethConnectAddress)
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy';
+      accStore.chainId = chain.id
     } catch (error) {
       // logout
       useAccountStore().clear();

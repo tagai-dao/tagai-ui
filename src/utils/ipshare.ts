@@ -1,32 +1,22 @@
-import { ChainConfig } from "@/config";
-import { IPShareContract1, IPShareContract2, IPShareContract3 } from "@/config";
 import { aggregate } from '@makerdao/multicall'
-import _ from 'lodash'
 import { isAddress } from "viem";
 import { readContract, writeContract } from "./contract";
 import errCode from "@/errCode";
 import { useAccountStore } from "@/stores/web3";
+import { useChainStore } from "@/stores/chain";
+import { getChainDeployment } from "@/config/chains";
 
-// ethAddr?: string;
-//   shareSupply?: bigint | string | number;
-//   created?: boolean,
-//   price?: number;
-//   formatPrice?: string;
-//   holdersCount?: number;
-//   holdingsCount?: number;
-//   stakedCount?: number,
-//   feeAmount?: number | bigint | string,
-//   totalCaptured?: string | bigint | number,
-//   totalStaked?: string | bigint | number,
-//   createTime?: number;
-//   holders?: Array<IPShareHolder>;
+/** 当前链 IPShare 合约地址（部署后填入 chains.ts） */
+const getIpshareAddress = () =>
+    getChainDeployment(useChainStore().activeChainId).contracts.ipshare3
 
 export const create = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) return;
     const hash = await writeContract({
         contractName: 'IPShare3',
         functionName: 'createShare',
-        args: [ethAddr]
+        args: [ethAddr],
+        address: getIpshareAddress(),
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
@@ -34,26 +24,14 @@ export const create = async (ethAddr: string) => {
     return hash;
 }
 
-// ethAddr?: string;
-// shareSupply?: bigint | string | number;
-// created?: boolean,
-// price?: number;
-// formatPrice?: string;
-// holdersCount?: number;
-// holdingsCount?: number;
-// stakedCount?: number,
-// feeAmount?: number | bigint | string,
-// totalCaptured?: string | bigint | number,
-// totalStaked?: string | bigint | number,
-// createTime?: number;
-// holders?: Array<IPShareHolder>;
 export const getIPShareSupply = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) {
         return {}
     }
+    const deployment = getChainDeployment(useChainStore().activeChainId)
 
     let calls = [{
-        target: IPShareContract3,
+        target: deployment.contracts.ipshare3,
         call: [
             'ipshareSupply(address)(uint256)',
             ethAddr
@@ -62,7 +40,7 @@ export const getIPShareSupply = async (ethAddr: string) => {
             ['supply', (val: any) => val / 1e18]
         ]
     }]
-    const res = await aggregate(calls, ChainConfig.multiConfig);
+    const res = await aggregate(calls, deployment.multiConfig);
     return res.results.transformed.supply;
 }
 
@@ -70,8 +48,10 @@ export const ipshareCreated = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) {
         return {}
     }
+    const deployment = getChainDeployment(useChainStore().activeChainId)
+
     let calls = [{
-        target: IPShareContract3,
+        target: deployment.contracts.ipshare3,
         call: [
                 'ipshareCreated(address)(bool)',
                 ethAddr
@@ -80,7 +60,7 @@ export const ipshareCreated = async (ethAddr: string) => {
                 ['created']
             ]
         }]
-        const res = await aggregate(calls, ChainConfig.multiConfig);
+        const res = await aggregate(calls, deployment.multiConfig);
     return res.results.transformed.created;
 }
 
@@ -116,7 +96,8 @@ export const buyShares = async (
             contractName: 'IPShare3',
             functionName: 'buyShares',
             args: [subject, buyer, BigInt(Math.floor(amountWithSlippage * 1e18))],
-            value: BigInt(Math.floor(ethAmount * 1e18))
+            value: BigInt(Math.floor(ethAmount * 1e18)),
+            address: getIpshareAddress(),
         });
 
         if (!hash) {
@@ -152,7 +133,8 @@ export const sellShares = async (
         const hash = await writeContract({
             contractName: 'IPShare3',
             functionName: 'sellShares',
-            args: [subject, amountBigInt, expectReceiveBigInt]
+            args: [subject, amountBigInt, expectReceiveBigInt],
+            address: getIpshareAddress(),
         });
 
         if (!hash) {
@@ -182,6 +164,7 @@ export const stake = async (
     if (!isAddress(subject)) {
         throw new Error('Invalid subject address');
     }
+    const ipshare = getIpshareAddress()
 
     try {
         let amountBigInt = BigInt(Math.floor(parseFloat(amount.toString()) * 1e18));
@@ -192,13 +175,14 @@ export const stake = async (
                 subject,
                 // @ts-ignore - 从 store 获取用户地址
                 useAccountStore().ethConnectAddress
-            ]) as bigint;
+            ], ipshare) as bigint;
         }
 
         const hash = await writeContract({
             contractName: 'IPShare3',
             functionName: 'stake',
-            args: [subject, amountBigInt]
+            args: [subject, amountBigInt],
+            address: ipshare,
         });
 
         if (!hash) {
@@ -226,6 +210,7 @@ export const unstake = async (
     if (!isAddress(subject)) {
         throw new Error('Invalid subject address');
     }
+    const ipshare = getIpshareAddress()
 
     try {
         let amountBigInt = BigInt(Math.floor(parseFloat(amount.toString()) * 1e18));
@@ -236,14 +221,15 @@ export const unstake = async (
                 subject,
                 // @ts-ignore
                 useAccountStore().ethConnectAddress
-            ]) as any[];
+            ], ipshare) as any[];
             amountBigInt = stakeInfo[1]; // stakeInfo[1] 是质押数量
         }
 
         const hash = await writeContract({
             contractName: 'IPShare3',
             functionName: 'unstake',
-            args: [subject, amountBigInt]
+            args: [subject, amountBigInt],
+            address: ipshare,
         });
 
         if (!hash) {
@@ -270,7 +256,8 @@ export const redeem = async (subject: string): Promise<string> => {
         const hash = await writeContract({
             contractName: 'IPShare3',
             functionName: 'redeem',
-            args: [subject]
+            args: [subject],
+            address: getIpshareAddress(),
         });
 
         if (!hash) {
@@ -297,7 +284,8 @@ export const claim = async (subject: string): Promise<string> => {
         const hash = await writeContract({
             contractName: 'IPShare3',
             functionName: 'claim',
-            args: [subject]
+            args: [subject],
+            address: getIpshareAddress(),
         });
 
         if (!hash) {
