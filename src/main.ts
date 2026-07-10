@@ -12,6 +12,7 @@ import router from './router'
 import './assets/style/main.css'
 import { VueQrcodeReader } from 'vue-qrcode-reader';
 import { initTheme } from '@/composables/useTheme'
+import { initNativeApp } from '@/utils/native'
 
 // 在挂载前应用主题，避免暗/亮闪烁
 initTheme()
@@ -34,3 +35,7 @@ app.use(VueApexCharts as any)
 app.use(VueQrcodeReader)
 
 app.mount('#app')
+
+initNativeApp(router).catch((error) => {
+    console.error('Failed to initialize native app handlers:', error)
+})
