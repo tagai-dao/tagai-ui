@@ -47,15 +47,30 @@ npm run type-check
 npm run build-only
 ```
 
-## OAuth Redirect URI
+## OAuth Redirect（Privy Dashboard 配置）
 
-Native Twitter OAuth uses the system browser via Capacitor Browser and returns through this custom scheme:
+Privy 的 redirect URL 与 Allowed origins 只接受 http(s)，自定义 scheme 会被 Dashboard 拒绝
+（"Invalid protocol"）。原生 OAuth 链路为：
 
 ```text
-tagai://auth-callback
+系统浏览器完成 OAuth
+  → https://tagai.fun/native-oauth-redirect.html   （托管跳板页，随 Web 站点部署）
+  → tagai://auth-callback?<原样参数>               （跳板页深链唤起 App）
+  → App 内 native.ts 严格校验 scheme/host 后转发到 /login，由 Privy SDK 消费
 ```
 
-Add the exact URI above to the Privy Dashboard allowed redirect URLs for the TagAI app. Do not commit Privy secrets, signing keys, provisioning profiles, keystores, or certificates.
+Privy Dashboard 需配置（按官方 Capacitor 配方 docs.privy.io/recipes/capacitor-oauth）：
+
+1. **Allowed origins**（App Settings → Domains）追加两个 WebView 源：
+   - `capacitor://localhost`（iOS）
+   - `https://localhost`（Android）
+   - 现有 https 生产域名保留；
+2. **Allowed redirect URLs**（App Settings → Advanced）添加：
+   - `https://tagai.fun/native-oauth-redirect.html`
+
+注意：跳板页 `public/native-oauth-redirect.html` 必须先随 Web 站点部署到生产，
+真机 OAuth 才能走通。Do not commit Privy secrets, signing keys, provisioning
+profiles, keystores, or certificates.
 
 ## Deep Link Testing
 

@@ -3,6 +3,13 @@ import { Capacitor } from '@capacitor/core'
 
 export const NATIVE_AUTH_CALLBACK_URL = 'tagai://auth-callback'
 
+/**
+ * Privy 的 redirect URL 只接受 http(s)（Dashboard 校验拒绝自定义 scheme），
+ * 故 OAuth 回跳先落到这个托管跳板页，由它把参数原样转发到 tagai://auth-callback 唤起 App。
+ * 跳板页源码在 public/native-oauth-redirect.html，随 Web 站点部署；域名必须在 Privy Allowed origins 内。
+ */
+export const NATIVE_OAUTH_REDIRECT_URL = 'https://tagai.fun/native-oauth-redirect.html'
+
 export const isNativePlatform = () => Capacitor.isNativePlatform()
 
 function isNativeAuthCallbackUrl(url: string) {
