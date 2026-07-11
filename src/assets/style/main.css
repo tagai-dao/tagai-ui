@@ -16,8 +16,34 @@ html, body {
 
 /* 涨跌语义色：默认绿涨红跌；setLocale 按 locale（zh/ko/ja 红涨）切换这两个变量 */
 :root {
+  --safe-area-top: 0px;
+  --safe-area-right: 0px;
+  --safe-area-bottom: 0px;
+  --safe-area-left: 0px;
   --color-up: #16A34A;
   --color-down: #E6374D;
+}
+
+html.is-native {
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-right: env(safe-area-inset-right);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  --safe-area-left: env(safe-area-inset-left);
+}
+
+.native-safe-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.native-safe-topbar {
+  padding-top: var(--safe-area-top);
+  padding-left: calc(1rem + var(--safe-area-left));
+  padding-right: calc(1rem + var(--safe-area-right));
+}
+
+.native-safe-tabbar-content {
+  padding-left: calc(1.5rem + var(--safe-area-left));
+  padding-right: calc(1.5rem + var(--safe-area-right));
 }
 
 /* === 主题 token（v3 暗色模式）：亮色为默认，html.dark 翻转为暗色。

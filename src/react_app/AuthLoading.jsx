@@ -1,16 +1,18 @@
-import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy} from "@privy-io/react-auth";
+import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy, useSignMessage} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
 import {useEffect, useRef, useState} from "react";
 import { bondEthByPrivyAccToken } from '@/apis/api.ts';
 import { sleep } from "@/utils/helper";
 import { useAccountStore } from "@/stores/web3";
+import {isNativePlatform} from "@/utils/native.ts";
 
 /** PrivyProvider 已配置 createOnLogin: 'all-users'，嵌入式钱包由 SDK 创建；此处仅在后端仍需绑定时调用 bond API */
 export default function AuthLoading() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
     const {wallets, ready} = useWallets()
     const { getAccessToken } = usePrivy();
+    const { signMessage } = useSignMessage();
     const accStore = useAccountStore();
     const [ bondingAddress, setBondingAddress ] = useState(false);
 
@@ -18,6 +20,7 @@ export default function AuthLoading() {
     const oauthTwitterSessionRef = useRef(null);
     /** 本会话是否已处理过「钱包就绪后的绑定点」（避免 StrictMode / 重复 effect 二次提交） */
     const oauthTwitterBondConsumedRef = useRef(false);
+    const nativeWalletSmokeConsumedRef = useRef(false);
 
     const findEmbeddedEthWallet = () =>
         wallets.find((w) =>
@@ -122,12 +125,36 @@ export default function AuthLoading() {
                 const provider = await wallet.getEthereumProvider()
                 emitter.emit('walletProvider', provider)
 
+                if (isNativePlatform() && !nativeWalletSmokeConsumedRef.current) {
+                    nativeWalletSmokeConsumedRef.current = true;
+                    try {
+                        const chainId = await provider.request({ method: 'eth_chainId' });
+                        const { signature } = await signMessage(
+                            { message: `TagAI embedded wallet smoke: ${wallet.address}` },
+                            { address: wallet.address }
+                        );
+                        emitter.emit('walletSmoke', {
+                            address: wallet.address,
+                            chainId,
+                            signature
+                        });
+                        console.log('Native embedded wallet smoke passed', {
+                            address: wallet.address,
+                            chainId,
+                            signature
+                        });
+                    } catch (error) {
+                        nativeWalletSmokeConsumedRef.current = false;
+                        console.error('Native embedded wallet smoke failed:', error);
+                    }
+                }
+
                 console.log(provider)
             }
 
         }
         getWalletProvider()
-    }, [ready, wallets, bondingAddress]);
+    }, [ready, wallets, bondingAddress, signMessage]);
 
     useEffect(() => {
         console.log('state', state.status)

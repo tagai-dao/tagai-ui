@@ -1,6 +1,7 @@
 import {useLoginWithOAuth, useOAuthTokens, usePrivy } from '@privy-io/react-auth';
 import {useEffect, useState} from "react";
 import emitter from "@/utils/emitter.ts";
+import {runNativeBrowserOAuth} from "@/utils/native.ts";
 
 export default function LoginWithOAuth() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
@@ -13,7 +14,7 @@ export default function LoginWithOAuth() {
             setIsLoading(true);
             window.localStorage.setItem('lastLoginTime', '0');
             await logout();
-            await initOAuth({ provider: 'twitter' });
+            await runNativeBrowserOAuth(() => initOAuth({ provider: 'twitter' }));
         } catch (err) {
             console.error(err);
             setIsLoading(false);
