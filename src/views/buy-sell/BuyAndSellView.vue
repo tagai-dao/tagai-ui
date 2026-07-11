@@ -12,9 +12,9 @@ import { getCommunityDetail, trade, createTokenCommerce, tweet } from '@/apis/ap
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
-  getBuyAmountUseEth, getSellAmountUseToken,
+  getBuyAmountUseEth, getSellAmountUseToken, getV3BuyAmountUseEth, getV3SellAmountUseToken,
   getBuyPriceAfterFee,
-  getBondingCurveSpotPrice, getUniswapV2SpotPrice
+  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
@@ -47,6 +47,7 @@ const props = defineProps({
 const { t } = useI18n()
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
+const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 const showDesktopChart = computed(() =>
   !!comStore.currentSelectedCommunity?.tick && !props.tick &&
@@ -310,6 +311,9 @@ const updateBuyAmount = debounce(async (val: any) => {
         receive = await getV4BuyQuote(poolKey, amount, sellsman)
         try { spot = await getV4SpotPrice(poolId) } catch (e) { console.warn('getV4SpotPrice failed', e) }
       }
+    } else if (community?.isImport && community.dexVersion === 3) {
+      receive = await getV3BuyAmountUseEth(community.token!, community.pair!, amount * 9800n / 10000n)
+      spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
     } else {
       receive = await getBuyAmountUseEth(community!.token, amount * 9800n / 10000n)
       try {
@@ -398,6 +402,9 @@ const updateSellAmount = debounce(async (val: any) => {
           receive = await getV4SellQuote(poolKey, amount, sellsman)
           try { spot = await getV4SpotPrice(poolId) } catch (e) { console.warn('getV4SpotPrice failed', e) }
         }
+      } else if (community?.isImport && community.dexVersion === 3) {
+        receive = await getV3SellAmountUseToken(community.token!, community.pair!, amount)
+        spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
       } else {
         receive = await getSellAmountUseToken(community!.token, amount)
         try {
@@ -545,7 +552,7 @@ async function confirm() {
         }
       } else {
         // check list
-        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2);
+        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, token!.pair);
       }
       if (hash) {
         payEth.value = ''
@@ -579,7 +586,7 @@ async function confirm() {
             Math.ceil(maxSlippage.value * 100));
         }
       } else {
-        hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2);
+        hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, token!.pair);
       }
       if (hash) {
         sellAmount.value = ''
@@ -673,7 +680,7 @@ onMounted(async () => {
       <div v-if="showDesktopChart"
            class="w-full h-[360px] hidden web:flex min-w-[320px] flex-1 gap-3">
         <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
-        <iframe v-else :src="`https://dexscreener.com/bsc/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
+        <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>

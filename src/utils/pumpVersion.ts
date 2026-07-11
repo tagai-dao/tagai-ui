@@ -26,7 +26,7 @@ export const isHourlyDistributionVersion = (version?: number | string | null) =>
     return v === 9 || v === 10
 }
 
-/** DexScreener embed 路径：v7-v9 与 v10 导入币用 token 地址，v2/v3 导入币用 pair 合约地址 */
+/** DexScreener embed 路径：导入币统一用 token，让 DexScreener 选择当前链已索引的主池。 */
 export const getDexScreenerEmbedPath = (community?: {
     version?: number | null
     isImport?: boolean | number | null
@@ -36,10 +36,7 @@ export const getDexScreenerEmbedPath = (community?: {
 } | null) => {
     if (!community) return ''
     if (community.isImport) {
-        // dexVersion=4 时 pair 为 PCS poolId（bytes32），DexScreener 无法识别
-        return community.dexVersion === 4 || isPcsV4Version(community.version)
-            ? community.token
-            : community.pair
+        return community.token
     }
     return isPcsV4Version(community.version) ? community.token : community.pair
 }

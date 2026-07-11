@@ -395,7 +395,7 @@ async function getV9DailyRewardsByCommunity(community: `0x${string}`, socialPool
     return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio, hourlyRewards }
 }
 
-export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0, dexVersion = 2) => {
+export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0, dexVersion = 2, pair?: string) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
@@ -412,9 +412,12 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
                 const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
                 if (router === zeroAddress) throw new Error(`Uniswap V${dexVersion} router is not configured on ${deployment.name}`)
                 if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
+                const poolFee = dexVersion === 3
+                    ? await getUniswapV3PoolFee(pair)
+                    : 0
                 const functionName = dexVersion === 3 ? 'buyTokenV3' : 'buyToken'
                 const args = dexVersion === 3
-                    ? [sellsman, amount * BigInt(10000 - slippage) / 10000n, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router, 3000]
+                    ? [sellsman, amount * BigInt(10000 - slippage) / 10000n, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router, poolFee]
                     : [sellsman, amount * BigInt(10000 - slippage) / 10000n, [deployment.wrappedNative, token], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router]
                 return writeContract({ contractName: 'TagAISwapWrapper', functionName, args, value: ethAmount })
             }
@@ -495,7 +498,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
     }
 }
 
-export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0, dexVersion = 2) => {
+export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0, dexVersion = 2, pair?: string) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
@@ -512,6 +515,9 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                 const wrapper = resolveContractAddress('TagAISwapWrapper')
                 if (!wrapper || router === zeroAddress) throw new Error(`Uniswap V${dexVersion} trading is not configured on ${deployment.name}`)
                 if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
+                const poolFee = dexVersion === 3
+                    ? await getUniswapV3PoolFee(pair)
+                    : 0
                 const allowance = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrapper], token) as bigint
                 if (allowance < amount) {
                     await writeContract({ contractName: 'Token1', functionName: 'approve', args: [wrapper, amount], address: token })
@@ -519,7 +525,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                 const minOut = receiveEth * BigInt(10000 - slippage) / 10000n
                 const functionName = dexVersion === 3 ? 'sellTokenV3' : 'sellToken'
                 const args = dexVersion === 3
-                    ? [amount, minOut, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router, 3000]
+                    ? [amount, minOut, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router, poolFee]
                     : [amount, minOut, [token, deployment.wrappedNative], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router]
                 return writeContract({ contractName: 'TagAISwapWrapper', functionName, args })
             }
@@ -1488,6 +1494,41 @@ export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) 
     const amount: any = await readContract('UniswapRouter', 'getAmountsOut', [tokenAmount, [token, WETH]]);
     return amount[amount.length - 1] * 9800n / 10000n;
 }
+
+const getUniswapV3PoolFee = async (pair?: string): Promise<number> => {
+    if (!pair || !isAddress(pair)) throw new Error('Valid Uniswap V3 pool address is required')
+    return Number(await readContract('UniswapV3Pool', 'fee', [], pair as `0x${string}`))
+}
+
+const getUniswapV3AmountOut = async (
+    token: string,
+    pair: string,
+    amountIn: bigint,
+    inputIsToken: boolean
+): Promise<bigint> => {
+    const [slot0, token0, fee] = await Promise.all([
+        readContract('UniswapV3Pool', 'slot0', [], pair as `0x${string}`),
+        readContract('UniswapV3Pool', 'token0', [], pair as `0x${string}`),
+        readContract('UniswapV3Pool', 'fee', [], pair as `0x${string}`),
+    ])
+    const sqrtPriceX96 = BigInt((slot0 as any)[0])
+    const sqrtPriceSquared = sqrtPriceX96 * sqrtPriceX96
+    if (sqrtPriceSquared === 0n) return 0n
+
+    const amountAfterPoolFee = amountIn * (1_000_000n - BigInt(fee as number)) / 1_000_000n
+    const tokenIsToken0 = (token0 as string).toLowerCase() === token.toLowerCase()
+    const inputIsToken0 = inputIsToken === tokenIsToken0
+    return inputIsToken0
+        ? amountAfterPoolFee * sqrtPriceSquared / Q192
+        : amountAfterPoolFee * Q192 / sqrtPriceSquared
+}
+
+/** Uniswap V3 导入币报价；避免把 V3 池错误发送到 V2 Router.getAmountsOut。 */
+export const getV3BuyAmountUseEth = async (token: string, pair: string, ethAmount: bigint) =>
+    getUniswapV3AmountOut(token, pair, ethAmount, false)
+
+export const getV3SellAmountUseToken = async (token: string, pair: string, tokenAmount: bigint) =>
+    (await getUniswapV3AmountOut(token, pair, tokenAmount, true)) * 9800n / 10000n
 
 export const getAIBalance = async (tokens: string[]) => {
     let calls: any[] = []

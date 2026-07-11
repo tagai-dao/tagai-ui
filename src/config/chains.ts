@@ -167,7 +167,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     pump9: '0x6C75E165E52E9c1661a75041650be2D919eE02A1',
     tokenImplementation9: '0x95c62F6A3AC1A3b7D08d866eeBDc74700aB954D6',
     importHelper: '0xEC774DB6800B00BA1e87f0799cb29dEc21ACB4A9',
-    tagAiSwapWrapper: '0x9C280cCF30D1cB31562D8dBEB472521388Cb1d39',
+    tagAiSwapWrapper: '0xa12d998bff956c1034f863a4cd30f4403b6b2b4f',
     tipTagSwapHook9: '0x5e8e2D77ce0d2e04BA058bbcECC13C7C8aDB20Cc',
     hourlyTickCalculator: '0x3DC52C69C3C8be568372E16d50E9F3FEc796610c',
     nutboxCommittee: '0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0',

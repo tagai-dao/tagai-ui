@@ -52,6 +52,7 @@ html, body {
   --text-base: #191C32;
   --text-muted: #646464;
   --text-faint: #9395A4;
+  --pool-selected-bg: #FFF7ED;
 }
 html.dark {
   --grey-light: #262A31;
@@ -83,6 +84,7 @@ html.dark {
   --text-base: #E6E8EC;
   --text-muted: #9AA0AD;
   --text-faint: #6B7280;
+  --pool-selected-bg: #332218;
   color-scheme: dark;
   /* 让 element-plus 暗色主题用本项目调色板，保持全站一致 */
   --el-bg-color: var(--surface);
