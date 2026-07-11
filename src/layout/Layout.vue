@@ -70,10 +70,10 @@ const setWallet = async () => {
       const accounts = await privyStore.ethersProvider.request({
         method: 'eth_requestAccounts'
       });
-      const connectedAddr = accounts[0]; 
+      const connectedAddr = accounts[0];
       // check wallet type
       if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
-        // user connect wallet plugin by manual
+        // 插件钱包由用户手动连接；Privy provider 就绪时不要抢连接态
         accStore.ethConnectState = EthWalletState.Disconnect;
       } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
         await useAccount().bondEthAddress()
@@ -84,7 +84,9 @@ const setWallet = async () => {
         await privyStore.initWallet()
       }
 
-      if (modalStore.modalType !== GlobalModalType.CreateUserInfo) {
+      // 仅登录流程收尾时关掉登录弹窗。
+      // walletProvider 会因多链/wallets 更新反复触发，若无差别关窗会把用户刚打开的 ChoseWallet/BondEth 闪退掉。
+      if (newLogin.value && modalStore.modalType === GlobalModalType.Login) {
         modalStore.setModalVisible(false);
       }
     } catch (error) {
@@ -93,6 +95,8 @@ const setWallet = async () => {
         await sleep(3)
     } finally {
       if (newLogin.value) {
+        // 消费掉 newLogin，避免后续 walletProvider 再次走登录收尾跳转
+        newLogin.value = false;
         // 登录完成后的统一回跳：优先回到登录前被守卫拦截的页面（login-redirect，
         // 见 router beforeEach），否则回 current-route。在钱包流程收尾后做，
         // 避免在 OAuth/Privy 处理中途导航引发 authError。
@@ -172,27 +176,6 @@ onMounted( () => {
             </router-view>
           </div>
         </div>
-        <!-- PC 端模态框 -->
-        <el-dialog v-model="modalStore.modalVisible"
-                   :close-on-click-modal="modalStore.modalCloseEnable"
-                   :close-on-press-escape="modalStore.modalCloseEnable"
-                   :modal-class="`overlay-white ${modalStore.modalType===GlobalModalType.Login?'modal-gradient-bg':''}`"
-                   :class="modalStore.modalType===GlobalModalType.PredictTrade ? 'max-w-[900px] rounded-[20px]' : 'max-w-[500px] rounded-[20px]'"
-                   width="90%" :show-close="false" align-center destroy-on-close>
-          <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
-          <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
-          <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace" :default-tick="false"/>
-          <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
-          <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
-          <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
-          <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
-          <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
-          <CreatePredictModal v-if="modalStore.modalType === GlobalModalType.CreatePredict" />
-          <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
-          <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
-          <PredictTradeModal v-if="modalStore.modalType === GlobalModalType.PredictTrade"/>
-          <PredictLiquidityModal v-if="modalStore.modalType === GlobalModalType.PredictLiquidity"/>
-        </el-dialog>
       </div>
 
       <!-- 移动端布局：保持原有布局 -->
@@ -206,27 +189,29 @@ onMounted( () => {
           </router-view>
         </div>
         <TabBar v-if="$route.meta.tabBar"/>
-        <el-dialog v-model="modalStore.modalVisible"
-                   :close-on-click-modal="modalStore.modalCloseEnable"
-                   :close-on-press-escape="modalStore.modalCloseEnable"
-                   :modal-class="`overlay-white ${modalStore.modalType===GlobalModalType.Login?'modal-gradient-bg':''}`"
-                   :class="modalStore.modalType===GlobalModalType.PredictTrade ? 'max-w-[900px] rounded-[20px]' : 'max-w-[500px] rounded-[20px]'"
-                   width="90%" :show-close="false" align-center destroy-on-close>
-          <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
-          <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
-          <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace" :default-tick="false"/>
-          <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
-          <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
-          <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
-          <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
-          <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
-          <CreatePredictModal v-if="modalStore.modalType === GlobalModalType.CreatePredict" />
-          <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
-          <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
-          <PredictTradeModal v-if="modalStore.modalType === GlobalModalType.PredictTrade"/>
-          <PredictLiquidityModal v-if="modalStore.modalType === GlobalModalType.PredictLiquidity"/>
-        </el-dialog>
       </main>
+
+      <!-- 全局只挂载一个 Dialog。Element Plus 默认 teleport 到 body，重复实例会争用同一个 v-model。 -->
+      <el-dialog v-model="modalStore.modalVisible"
+                 :close-on-click-modal="modalStore.modalCloseEnable"
+                 :close-on-press-escape="modalStore.modalCloseEnable"
+                 :modal-class="`overlay-white ${modalStore.modalType===GlobalModalType.Login?'modal-gradient-bg':''}`"
+                 :class="modalStore.modalType===GlobalModalType.PredictTrade ? 'max-w-[900px] rounded-[20px]' : 'max-w-[500px] rounded-[20px]'"
+                 width="90%" :show-close="false" align-center destroy-on-close>
+        <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
+        <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
+        <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace" :default-tick="false"/>
+        <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
+        <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
+        <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet" />
+        <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register" />
+        <CreateIPShareModal v-if="modalStore.modalType === GlobalModalType.CreateIPShare" />
+        <CreatePredictModal v-if="modalStore.modalType === GlobalModalType.CreatePredict" />
+        <ModifyCoinModal v-if="modalStore.modalType === GlobalModalType.ModifyCoin" />
+        <CreateUserInfo v-if="modalStore.modalType === GlobalModalType.CreateUserInfo"/>
+        <PredictTradeModal v-if="modalStore.modalType === GlobalModalType.PredictTrade"/>
+        <PredictLiquidityModal v-if="modalStore.modalType === GlobalModalType.PredictLiquidity"/>
+      </el-dialog>
     </main>
   </WrappedReactComponent>
 </template>
