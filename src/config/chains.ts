@@ -176,42 +176,13 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
   },
 }
 
-const RH_TESTNET_RPC_URLS = [
-  'https://rpc.testnet.chain.robinhood.com',
-]
-
-/** RH 测试网部署地址来源：TagAI-contract-V2/deployments/46630/addresses.json */
-export const ROBINHOOD_TESTNET_CHAIN: ChainDeployment = {
-  key: 'rh', name: 'Robinhood Testnet', chainId: 46630, symbol: 'ETH', decimals: 18,
-  browser: 'https://explorer.testnet.chain.robinhood.com/',
-  rpc: RH_TESTNET_RPC_URLS[0] ?? 'https://rpc.testnet.chain.robinhood.com',
-  rpcUrls: RH_TESTNET_RPC_URLS,
-  nativeCurrency: { name: 'ETH', symbol: 'ETH', icon: 'https://assets-cdn.trustwallet.com/blockchains/ethereum/info/logo.png', decimals: 18 },
-  multiConfig: { rpcUrl: RH_TESTNET_RPC_URLS[0] ?? 'https://rpc.testnet.chain.robinhood.com', multicallAddress: MULTICALL3, interval: 3000 },
-  features: { prediction: false },
-  wrappedNative: '0x37E402B8081eFcE1D82A09a066512278006e4691',
-  dex: { kind: 'uniswap', v2Router: ZERO, v2Factory: ZERO, v3Router: ZERO, permit2: ZERO, universalRouter: ZERO, v4PoolManager: '0x552815eF68E6eb418A3d65D0AA1043d93204F612', v4PositionManager: ZERO, v4Quoter: ZERO },
-  contracts: {
-    pump9: '0x8c701E56A178A9cEd02D731e057Af6E709A66A9e',
-    tokenImplementation9: '0x5Aa71794E2Fe52a0c554f5da7249Cc55B39B2b93',
-    importHelper: '0xc1aEE3069a98A5fcDbD8fCaeB55C7F36E9820752',
-    tagAiSwapWrapper: '0x0359ab6B24608e18F0655fF7ebDB2c9D74d9F4aa',
-    tipTagSwapHook9: '0x644dD54B13Bdf38AFF947cA2a46EE4b9144E60cC',
-    hourlyTickCalculator: '0xf5D8d9402A4603bD67400500E62880eee91cF12C',
-    nutboxCommittee: '0xa77253Ac630502A35A6FcD210A01f613D33ba7cD',
-    ipshare3: '0x33a1F7760f48c53E811aFaCa931B27124cafdC19',
-    coinPurse: ZERO,
-  },
-}
-
 export const CHAINS: Record<number, ChainDeployment> = {
   [BSC_CHAIN.chainId]: BSC_CHAIN,
   [ROBINHOOD_CHAIN.chainId]: ROBINHOOD_CHAIN,
-  [ROBINHOOD_TESTNET_CHAIN.chainId]: ROBINHOOD_TESTNET_CHAIN,
 }
 
 /** TagAI 产品支持的链（钱包 / Privy / 切链 UI） */
-export const PRODUCT_CHAIN_IDS = [56, 4663, 46630] as const
+export const PRODUCT_CHAIN_IDS = [56, 4663] as const
 
 export type ProductChainId = (typeof PRODUCT_CHAIN_IDS)[number]
 

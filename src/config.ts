@@ -3,7 +3,6 @@ import { API_BASE_URL } from "./config/api";
 import {
   BSC_CHAIN,
   ROBINHOOD_CHAIN,
-  ROBINHOOD_TESTNET_CHAIN,
   CHAINS,
   DEFAULT_CHAIN_ID,
   PRODUCT_CHAIN_IDS,
@@ -20,7 +19,6 @@ export const network: "livenet" | "testnet" | "regtest" = "livenet";
 export {
   BSC_CHAIN,
   ROBINHOOD_CHAIN,
-  ROBINHOOD_TESTNET_CHAIN,
   CHAINS,
   DEFAULT_CHAIN_ID,
   PRODUCT_CHAIN_IDS,
