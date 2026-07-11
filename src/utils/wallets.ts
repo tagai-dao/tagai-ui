@@ -176,6 +176,10 @@ export const setMetaMaskSDK = async () => {
     const accStore = useAccountStore();
     accStore.ethWalletType = 'metamask';
     handleNewAccounts(accounts);
+    // 连上后切到当前产品链（BSC / RH），否则交易会因链不对失败
+    if (accStore.ethConnectState === EthWalletState.Connected && provider) {
+        await setupNetwork(provider)
+    }
     return accStore.ethConnectState === EthWalletState.Connected;
 }
 
@@ -211,6 +215,10 @@ export const initializeProvider = async (): Promise<boolean> => {
                 console.error('read wallet accoutn fail', newAccounts)
             }
             handleNewAccounts(newAccounts);
+            // 连上后切到当前产品链（BSC / RH），否则交易会因链不对失败
+            if (useAccountStore().ethConnectState === EthWalletState.Connected) {
+                await setupNetwork(provider)
+            }
             return useAccountStore().ethConnectState === EthWalletState.Connected;
         } catch (e: any) {
             console.error('Error on init when getting accounts', e);

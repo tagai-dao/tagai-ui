@@ -61,50 +61,77 @@ const handleReactLoginSuccess = async (accInfo: any) => {
   
 }
 
+/** 用户已用 MetaMask 等插件连上（非 Privy） */
+const isPluginWalletConnected = () => {
+  const walletType = accStore.ethWalletType
+  return (
+    accStore.ethConnectState === EthWalletState.Connected &&
+    !!accStore.ethConnectAddress &&
+    !!walletType &&
+    walletType !== 'privy' &&
+    walletType !== 'none'
+  )
+}
+
+/** 登录流程收尾：关登录窗 + 回跳；只应调用一次 */
+const finishNewLoginIfNeeded = () => {
+  if (!newLogin.value) return
+  if (modalStore.modalType === GlobalModalType.Login) {
+    modalStore.setModalVisible(false)
+  }
+  // 消费掉 newLogin，避免后续 walletProvider 再次走登录收尾跳转
+  newLogin.value = false
+  const guardRedirect = sessionStorage.getItem('login-redirect')
+  sessionStorage.removeItem('login-redirect')
+  router.replace(guardRedirect || localStorage.getItem('current-route') || '/')
+}
+
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
 const setWallet = async () => {
-  if (accStore.getAccountInfo?.twitterId && privyStore.ethersProvider) {
-    try {
-      accStore.ethConnectState = EthWalletState.Connecting;
-      walletReady.value = true;
-      const accounts = await privyStore.ethersProvider.request({
-        method: 'eth_requestAccounts'
-      });
-      const connectedAddr = accounts[0];
-      // check wallet type
-      if (accStore.getAccountInfo.walletType === 0 && accStore.getAccountInfo.ethAddr && isAddress(accStore.getAccountInfo.ethAddr)) {
-        // 插件钱包由用户手动连接；Privy provider 就绪时不要抢连接态
-        accStore.ethConnectState = EthWalletState.Disconnect;
-      } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
-        await useAccount().bondEthAddress()
-      } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr !== connectedAddr) {
-        // update ethAddr
-        await useAccount().bondEthAddress();
-      } else {
-        await privyStore.initWallet()
-      }
+  if (!accStore.getAccountInfo?.twitterId || !privyStore.ethersProvider) return
 
-      // 仅登录流程收尾时关掉登录弹窗。
-      // walletProvider 会因多链/wallets 更新反复触发，若无差别关窗会把用户刚打开的 ChoseWallet/BondEth 闪退掉。
-      if (newLogin.value && modalStore.modalType === GlobalModalType.Login) {
-        modalStore.setModalVisible(false);
-      }
-    } catch (error) {
-        console.error('Failed to set wallet:', error)
-        handleErrorTip(error)
-        await sleep(3)
-    } finally {
-      if (newLogin.value) {
-        // 消费掉 newLogin，避免后续 walletProvider 再次走登录收尾跳转
-        newLogin.value = false;
-        // 登录完成后的统一回跳：优先回到登录前被守卫拦截的页面（login-redirect，
-        // 见 router beforeEach），否则回 current-route。在钱包流程收尾后做，
-        // 避免在 OAuth/Privy 处理中途导航引发 authError。
-        const guardRedirect = sessionStorage.getItem('login-redirect')
-        sessionStorage.removeItem('login-redirect')
-        router.replace(guardRedirect || localStorage.getItem('current-route') || '/')
-      }
+  // 插件已连上：Privy walletProvider 回调绝不能改连接态，否则交易又弹 ChoseWallet
+  if (isPluginWalletConnected()) {
+    finishNewLoginIfNeeded()
+    return
+  }
+
+  // 账户绑定的是插件钱包地址：只由 ChoseWallet 管理连接，不要 initWallet / 强制 Disconnect 已连状态
+  const isManualPluginAccount =
+    accStore.getAccountInfo.walletType === 0 &&
+    !!accStore.getAccountInfo.ethAddr &&
+    isAddress(accStore.getAccountInfo.ethAddr)
+
+  if (isManualPluginAccount) {
+    // 未连插件时标 Disconnect，便于 UI 提示去连；已连则上面已 return
+    accStore.ethConnectState = EthWalletState.Disconnect
+    finishNewLoginIfNeeded()
+    return
+  }
+
+  try {
+    accStore.ethConnectState = EthWalletState.Connecting;
+    walletReady.value = true;
+    const accounts = await privyStore.ethersProvider.request({
+      method: 'eth_requestAccounts'
+    });
+    // await 期间用户可能已用插件连上，再次保护
+    if (isPluginWalletConnected()) return
+
+    const connectedAddr = accounts[0];
+    if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
+      await useAccount().bondEthAddress()
+    } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr !== connectedAddr) {
+      await useAccount().bondEthAddress();
+    } else {
+      await privyStore.initWallet()
     }
+  } catch (error) {
+      console.error('Failed to set wallet:', error)
+      handleErrorTip(error)
+      await sleep(3)
+  } finally {
+    finishNewLoginIfNeeded()
   }
 }
 
