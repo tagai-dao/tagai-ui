@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed} from "vue";
+import {onMounted, ref, computed, watch} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import TabPrediction from "@/views/profile/TabPrediction.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -21,8 +21,16 @@ const ReactWallet = applyPureReactInVue(Wallet);
 const accStore = useAccountStore()
 const chainStore = useChainStore()
 const privyStore = usePrivyStore()
-const tabOptions = ['holding', 'ipshare', 'prediction', 'socialAccount']
+const tabOptions = computed(() => [
+  'holding',
+  'ipshare',
+  ...(chainStore.deployment.features.prediction ? ['prediction'] : []),
+  'socialAccount',
+])
 const activeTab = ref('holding')
+watch(() => chainStore.deployment.features.prediction, enabled => {
+  if (!enabled && activeTab.value === 'prediction') activeTab.value = 'holding'
+})
 const showPrivyModal = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()

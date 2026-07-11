@@ -82,7 +82,7 @@ const onRefresh = async () => {
     refreshing.value = true
     finished.value = false;
     // 仅当前链导入币，避免 BSC pair 打到 RH RPC
-    let importedCommunities: any = filterByActiveChain(await getImportedCommunityInfo() || []);
+    let importedCommunities: any[] = filterByActiveChain((await getImportedCommunityInfo() || []) as any[]);
     let importedBalanceList: any = importedCommunities.length
       ? await getTokenBalances(importedCommunities.map((item: any) => item.token))
       : {};
@@ -100,8 +100,8 @@ const onRefresh = async () => {
     }))
 
 
-    let list: any = filterHoldingsForActiveChain(
-      await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!) || []
+    let list: any[] = filterHoldingsForActiveChain(
+      (await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!) || []) as any[]
     )
     if (list && list.length > 0) {
       const priceList = await getTokenOnchainInfo(

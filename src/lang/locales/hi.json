@@ -348,7 +348,8 @@
     "minReceived": "न्यूनतम प्राप्ति",
     "highSlippageWarn": "स्लिपेज अधिक है",
     "priceImpact": "मूल्य प्रभाव",
-    "platformFee": "प्लेटफ़ॉर्म फ़ीस"
+    "platformFee": "प्लेटफ़ॉर्म फ़ीस",
+    "ipShareFee": "IPShare फ़ीस"
   },
   "community": {
     "distributionTip": "कुल टोकन तीन भागों में बँटते हैं: 15% सोशल वितरण, 65% बॉन्डिंग कर्व बिक्री, 20% लिक्विडिटी पूल",

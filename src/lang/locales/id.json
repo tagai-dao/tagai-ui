@@ -348,7 +348,8 @@
     "minReceived": "Minimum diterima",
     "highSlippageWarn": "Slippage tinggi",
     "priceImpact": "Dampak harga",
-    "platformFee": "Biaya platform"
+    "platformFee": "Biaya platform",
+    "ipShareFee": "Biaya IPShare"
   },
   "community": {
     "distributionTip": "Total suplai token didistribusikan dalam tiga bagian: 15% distribusi sosial, 65% penjualan bonding curve, dan 20% masuk pool likuiditas",

@@ -331,7 +331,8 @@
     "highSlippageWarn": "High slippage",
     "insufficientLiquidity": "Insufficient pool liquidity, reduce trade size",
     "priceImpact": "Price impact",
-    "platformFee": "Platform fee"
+    "platformFee": "Platform fee",
+    "ipShareFee": "IPShare fee"
   },
   "community": {
     "distributionTip": "The total amount of tokens is distributed through three parts, including 15% for social distribution, 65% for bonding curve sales, and 20% for entering the liquidity pool",

@@ -330,7 +330,8 @@
     "minReceived": "最低受取量",
     "highSlippageWarn": "スリッページが高い",
     "priceImpact": "価格インパクト",
-    "platformFee": "プラットフォーム手数料"
+    "platformFee": "プラットフォーム手数料",
+    "ipShareFee": "IPShare手数料"
   },
   "community": {
     "distributionTip": "トークン総量は3つの部分で分配されます：ソーシャル分配15%、ボンディングカーブ販売65%、流動性プール20%",

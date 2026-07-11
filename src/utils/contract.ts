@@ -37,6 +37,7 @@ const ContractAddress = {
     UniswapFactory: uniswapV2Factory,
     WrapSwaper: wrappedUniswapV2ForTagAI,
     WrapSwaper2: wrappedUniswapV2ForTagAI2,
+    TagAISwapWrapper: wrappedUniswapV2ForTagAI2,
     CoinPurse: CoinPurse,
     WETH: WETH,
     FPMMDeterministicFactory: FPMMDeterministicFactory,
@@ -51,8 +52,8 @@ const ContractAddress = {
 
 /** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
 const CHAIN_SCOPED_CONTRACTS = new Set([
-    'Pump9', 'IPShare3', 'ImportHelper', 'HourlyTickCalculator',
-    'NutboxCommittee', 'CoinPurse', 'WETH', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
+    'Pump9', 'IPShare3', 'ImportHelper', 'TagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
 ])
 
 /** 按当前产品链解析合约地址（RH 用 chains.ts 部署表） */
@@ -65,10 +66,14 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
         Pump9: c.pump9,
         IPShare3: c.ipshare3,
         ImportHelper: c.importHelper,
+        TagAISwapWrapper: c.tagAiSwapWrapper,
+        WrapSwaper: c.tagAiSwapWrapper,
+        WrapSwaper2: c.tagAiSwapWrapper,
         HourlyTickCalculator: c.hourlyTickCalculator,
         NutboxCommittee: c.nutboxCommittee,
         CoinPurse: c.coinPurse,
         WETH: deployment.wrappedNative,
+        UniswapRouter: dex.v2Router,
         UniversalRouter: dex.universalRouter,
         Permit2: dex.permit2,
         PCSCLPoolManager: dex.v4PoolManager,

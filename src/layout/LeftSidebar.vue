@@ -5,6 +5,7 @@ import { useAccountStore } from '@/stores/web3'
 import { useModalStore, useStateStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { useLoginStore, LoginStepType } from '@/stores/login'
+import { useChainStore } from '@/stores/chain'
 
 const router = useRouter()
 const route = useRoute()
@@ -12,6 +13,8 @@ const accStore = useAccountStore()
 const modalStore = useModalStore()
 const stateStore = useStateStore()
 const loginStore = useLoginStore()
+const chainStore = useChainStore()
+const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 
 const moreMenuVisible = ref(false)
 const moreMenuRef = ref()
@@ -133,6 +136,7 @@ const handleWalletClick = (e?: Event) => {
 
       <!-- 3. Prediction -->
       <router-link
+        v-if="predictionEnabled"
         to="/predictions"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isPredictionActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"

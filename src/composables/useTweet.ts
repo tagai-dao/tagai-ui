@@ -27,7 +27,7 @@ export enum OperateType {
 const TweetRex = /https:\/\/(twitter|x)\.com\/[0-9a-zA-Z]+\/status\/([0-9]+)(\/\w)?/
 
 export const useTweet = () => {
-  const { updateUserVpLocal, updateUserOPLocal, vp, op, addBackOp, addBackVp } =
+  const { updateVPOP, updateUserVpLocal, updateUserOPLocal, vp, op, addBackOp, addBackVp } =
     useAccount();
   // Agent 生成的内容常带原始 Markdown 标记（**bold**、## 标题、`code`），
   // 展示层不渲染 Markdown，统一剥离标记，避免 ** 裸奔
@@ -84,6 +84,8 @@ export const useTweet = () => {
     if (!accessToken) {
       throw errCode.InvalidAccessToken;
     }
+    // OP/VP 是全局账户余额，策展会在 API 写库原子扣减；提交前刷新，避免读副本延迟留下旧余额。
+    await updateVPOP()
     if ([OperateType.TWEET, OperateType.BLINK, OperateType.RETWEET, OperateType.QUOTE, OperateType.REPLY].includes(opType)) {
       if (!account.authPost) {
         notify({

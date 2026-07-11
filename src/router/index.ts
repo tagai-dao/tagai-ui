@@ -18,6 +18,7 @@ import PredictDetail from '@/views/predict-detail/Index.vue'
 import PredictEventDetail from '@/views/predict-event-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
 import AboutView from '@/views/about/AboutView.vue'
+import { useChainStore } from '@/stores/chain'
 
 const router = createRouter({
   // @ts-ignore
@@ -135,6 +136,11 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  const predictionRoutes = new Set(['predictions', 'predict-battle', 'predict-event'])
+  if (predictionRoutes.has(String(to.name)) && !useChainStore().deployment.features.prediction) {
+    next({ path: '/' })
+    return
+  }
   // 隐藏 MindShare 页面：任何访问都重定向回首页
   if (to.path === '/mindshare' || to.name === 'mindshare') {
     next({ path: '/' })

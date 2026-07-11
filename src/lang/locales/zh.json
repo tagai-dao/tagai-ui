@@ -331,7 +331,8 @@
     "highSlippageWarn": "滑点偏高",
     "insufficientLiquidity": "池子流动性不足，请减少交易数量",
     "priceImpact": "价格影响",
-    "platformFee": "平台费"
+    "platformFee": "平台费",
+    "ipShareFee": "IPShare 费用"
   },
   "community": {
     "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于曲线销售，20%用于进入流动性池。",

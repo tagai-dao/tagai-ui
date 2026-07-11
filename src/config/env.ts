@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './api';
+
 /**
  * 环境变量配置管理
  * 统一管理所有 Vite 环境变量，提供类型安全和验证
@@ -20,16 +22,6 @@ interface EnvConfig {
   // Privy
   readonly privyAppId: string | undefined;
 
-  // RPC 节点
-  readonly rpcUrls: {
-    readonly bsc: string | undefined;
-    readonly robinhood: string | undefined;
-    readonly ethereum: string | undefined;
-    readonly base: string | undefined;
-    readonly optimism: string | undefined;
-    readonly arbitrum: string | undefined;
-  };
-
   // 调试
   readonly debug: boolean;
 }
@@ -48,7 +40,7 @@ function parseEnvConfig(): EnvConfig {
     mode,
 
     // API 配置
-    apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:9901',
+    apiBaseUrl: API_BASE_URL,
     wsBaseUrl: import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:3100',
 
     // 1inch DEX
@@ -57,16 +49,6 @@ function parseEnvConfig(): EnvConfig {
 
     // Privy
     privyAppId: import.meta.env.VITE_PRIVY_APP_ID || undefined,
-
-    // RPC 节点
-    rpcUrls: {
-      bsc: import.meta.env.VITE_BSC_RPC_URL || undefined,
-      robinhood: import.meta.env.VITE_ROBINHOOD_RPC_URL || undefined,
-      ethereum: import.meta.env.VITE_ETHEREUM_RPC_URL || undefined,
-      base: import.meta.env.VITE_BASE_RPC_URL || undefined,
-      optimism: import.meta.env.VITE_OPTIMISM_RPC_URL || undefined,
-      arbitrum: import.meta.env.VITE_ARBITRUM_RPC_URL || undefined,
-    },
 
     // 调试
     debug: import.meta.env.VITE_DEBUG === 'true' || isDev,

@@ -22,11 +22,13 @@ import VueApexCharts from "vue3-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { useI18n } from "vue-i18n";
 import { useTools } from "@/composables/useTools";
+import { useChainStore } from "@/stores/chain";
 
 const ApexCharts = VueApexCharts as any;
 const { t } = useI18n();
 const { onCopy } = useTools();
 const comStore = useCommunityStore()
+const chainStore = useChainStore()
 const modalStore = useModalStore()
 const accountStore = useAccountStore()
 const isWalletConnected = computed(() => accountStore.ethConnectState === EthWalletState.Connected && isAddress(accountStore.ethConnectAddress as `0x${string}`))
@@ -49,6 +51,15 @@ const v10Loading = ref(false)
 const v10Loaded = ref(false)
 
 const isV9 = computed(() => comStore.currentSelectedCommunity?.version === PUMP9_VERSION)
+const marketCapText = computed(() => {
+  const nativeMarketCap = Number(comStore.currentSelectedCommunity?.marketCap ?? 0)
+  const nativeUsdPrice = Number(useStateStore().ethPrice ?? 0)
+  if (!Number.isFinite(nativeMarketCap) || nativeMarketCap <= 0) return formatPrice(0)
+  if (Number.isFinite(nativeUsdPrice) && nativeUsdPrice > 0) {
+    return formatPrice(Math.round(nativeMarketCap * nativeUsdPrice))
+  }
+  return `${formatAmount(nativeMarketCap)} ${chainStore.nativeCurrency.symbol}`
+})
 
 /** v9 或 v10 + HourlyTickCalculator → 柱状图展示 */
 const isHourly = computed(() => {
@@ -715,7 +726,7 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
       </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.cap')}}</span>
-        <span class="text-h5 text-black-19">{{ formatPrice(Math.round((comStore.currentSelectedCommunity.marketCap ?? 0) * useStateStore().ethPrice)) }}</span>
+        <span class="text-h5 text-black-19">{{ marketCapText }}</span>
       </div>
       <template v-if="showNutboxInfo">
         <div class="flex justify-between items-center h-6">

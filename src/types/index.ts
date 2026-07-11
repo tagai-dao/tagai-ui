@@ -261,6 +261,10 @@ export type Reply = {
 export type OnchainTokenInfo = {
   tick?: string,
   token: string,
+  /** EVM chain ID returned by chain-scoped API instances. */
+  chainId?: number | null;
+  /** Legacy database-shaped chain ID. */
+  chain_id?: number | null;
   marketCap?: number;
   /** 24h 涨跌百分比（来自 list 接口缓存）；null = 新币不足 24h，undefined = 后端未提供 */
   priceChange24h?: number | null;
@@ -289,8 +293,6 @@ export type Community = OnchainTokenInfo & {
   tags?: string | string[];
   version?: number | null | undefined,
   tick: string,
-  /** EVM chainId；后端 community.chain_id，缺省按 56（BSC）处理 */
-  chainId?: number | null;
   twitter?: string | undefined | null;
   telegram?: string | undefined | null;
   official?: string | undefined | null;
@@ -476,6 +478,7 @@ export type MindShare = Account & {
 }
 
 export type BattleData = {
+  chainId?: number | null,
   marketMaker: string,
   tick: string,
   token: string,

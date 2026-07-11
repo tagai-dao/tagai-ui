@@ -1,26 +1,34 @@
 /**
  * 按当前产品链过滤社区 / 持仓，避免把 BSC 合约地址拿到 RH RPC 上读。
- * 后端未返回 chainId 时默认视为 BSC（56），与 community.chain_id DEFAULT 一致。
+ * 有效旧数据未返回 chainId 时视为当前激活链；空项始终丢弃。
  */
 import { DEFAULT_CHAIN_ID } from '@/config/chains'
 import { useChainStore } from '@/stores/chain'
 
-export const resolveItemChainId = (item: {
+type ChainScopedItem = {
   chainId?: number | null
   chain_id?: number | null
   community?: { chainId?: number | null; chain_id?: number | null } | null
-}): number => {
+}
+
+export const resolveItemChainId = (item: ChainScopedItem | null | undefined): number => {
+  if (!item || typeof item !== 'object') return DEFAULT_CHAIN_ID
   const raw =
     item.chainId ??
     item.chain_id ??
     item.community?.chainId ??
     item.community?.chain_id
   if (typeof raw === 'number' && !Number.isNaN(raw)) return raw
-  return 56
+  try {
+    return useChainStore().activeChainId
+  } catch {
+    return DEFAULT_CHAIN_ID
+  }
 }
 
 /** 是否属于当前产品链 */
-export const isOnActiveChain = (item: Parameters<typeof resolveItemChainId>[0]): boolean => {
+export const isOnActiveChain = (item: ChainScopedItem | null | undefined): boolean => {
+  if (!item || typeof item !== 'object') return false
   try {
     return resolveItemChainId(item) === useChainStore().activeChainId
   } catch {
@@ -28,9 +36,9 @@ export const isOnActiveChain = (item: Parameters<typeof resolveItemChainId>[0]):
   }
 }
 
-export const filterByActiveChain = <T extends Parameters<typeof resolveItemChainId>[0]>(
-  items: T[] | null | undefined
+export const filterByActiveChain = <T extends ChainScopedItem>(
+  items: Array<T | null | undefined> | null | undefined
 ): T[] => {
   if (!items?.length) return []
-  return items.filter(isOnActiveChain)
+  return items.filter((item): item is T => isOnActiveChain(item))
 }

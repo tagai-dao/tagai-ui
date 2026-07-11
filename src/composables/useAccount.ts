@@ -98,16 +98,18 @@ export const useAccount = () => {
     const updateVPOP = async () => {
         const account = useAccountStore().getAccountInfo
         if (account && account.twitterId) {
-            getVPOP(account.twitterId).then((vpop: any) => {
+            try {
+                const vpop: any = await getVPOP(account.twitterId)
                 useAccountStore().setAccount({
                     ...account,
                     ...vpop
                 })
-            }).catch((e: any) => {
+            } catch (e: any) {
                 if (e === errCode.InvalidAccessToken) {
                     logout()
                 }
-            })
+                throw e
+            }
         }else if (account) {
             logout();
         }
@@ -334,7 +336,7 @@ export const useAccount = () => {
                 useAccountStore().transactionLimit = res.results.transformed.transactionLimit ?? 0;
                 useAccountStore().dailyLimit = res.results.transformed.dailyLimit ?? 0;
             }
-           }).catch((e) => {
+           }).catch((e: unknown) => {
             console.warn('[updateBalance] failed on', deployment.name, e)
             useAccountStore().ethBalance = 0
            })

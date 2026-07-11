@@ -29,22 +29,29 @@ const route = useRoute()
 const timeOptions = ['5min', '1h', '1d']
 const activeTab = ref('5min')
 let originalData: ChartData[] = []
-const data1min = reactive<FormData>({categoryData: [''], values: [[3]]})
-const data5min = reactive<FormData>({categoryData: [''], values: [[3]]})
-const data1h = reactive<FormData>({categoryData: [''], values: [[3]]})
-const data1day = reactive<FormData>({categoryData: [''], values: [[3]]})
+const data1min = reactive<FormData>({categoryData: [], values: []})
+const data5min = reactive<FormData>({categoryData: [], values: []})
+const data1h = reactive<FormData>({categoryData: [], values: []})
+const data1day = reactive<FormData>({categoryData: [], values: []})
 
 function getInterval(timestamp: number, interval: number) {
   return Math.floor(timestamp / interval);
 }
 
 function splitData(rawData: (ChartData)[], interval = 60) {
+  rawData = rawData.filter(data =>
+    Number.isFinite(Number(data?.timestamp)) &&
+    Number.isFinite(Number(data?.open)) &&
+    Number.isFinite(Number(data?.close)) &&
+    Number.isFinite(Number(data?.low)) &&
+    Number.isFinite(Number(data?.high))
+  )
+  if (rawData.length === 0) return {categoryData: [], values: []};
   let categoryData = [];
   let values = [];
   let lastData: any;
   let lastInterval = getInterval(rawData[0].timestamp, interval);
   const price = useStateStore().ethPrice;
-  if (rawData.length === 0) return {categoryData: [''], values: [[3]]};
   for (let data of rawData) {
     const thisInterval = getInterval(data.timestamp, interval)
     if(values.length === 0){

@@ -348,7 +348,8 @@
     "minReceived": "Mínimo a recibir",
     "highSlippageWarn": "Deslizamiento alto",
     "priceImpact": "Impacto en el precio",
-    "platformFee": "Comisión de la plataforma"
+    "platformFee": "Comisión de la plataforma",
+    "ipShareFee": "Comisión de IPShare"
   },
   "community": {
     "distributionTip": "El suministro total se distribuye en tres partes: 15% distribución social, 65% venta por bonding curve y 20% al pool de liquidez",

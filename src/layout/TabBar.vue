@@ -6,11 +6,14 @@ import ProfileBtn from "@/layout/ProfileBtn.vue";
 import CreateBtn from "@/layout/CreateBtn.vue";
 import { useRoute } from "vue-router";
 import { computed } from "vue";
+import { useChainStore } from '@/stores/chain'
 
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const stateStore = useStateStore()
 const route = useRoute()
+const chainStore = useChainStore()
+const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 
 const { vp, op } = useAccount()
 
@@ -54,7 +57,7 @@ const goToTag = () => {
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="">
         <span class="text-[10px] leading-none" :class="isCoinActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('coin') }}</span>
       </router-link>
-      <router-link to="/predictions" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
+      <router-link v-if="predictionEnabled" to="/predictions" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="isPredictionActive" class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
         <span class="text-[10px] leading-none" :class="isPredictionActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('prediction') }}</span>

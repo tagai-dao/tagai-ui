@@ -18,6 +18,8 @@ import { formatUsdCompact } from '@/utils/format'
 import { isWorldCupMarket } from '@/composables/useWorldCupMarkets'
 import { useCommunityTokenPrice } from '@/composables/useCommunityTokenPrice'
 import { predictVolTokenAmount } from '@/utils/predictVol'
+import { useChainStore } from '@/stores/chain'
+import { filterByActiveChain } from '@/utils/chainFilter'
 
 const props = defineProps<{
     type: number
@@ -93,6 +95,21 @@ const i18n = useI18n()
 
 const comStore = useCommunityStore()
 const stateStore = useStateStore()
+const chainStore = useChainStore()
+
+watch(() => chainStore.activeChainId, async () => {
+    battles.value = {}
+    events.value = {}
+    battleFinishedMap.value = {}
+    eventFinishedMap.value = {}
+    Object.keys(tweets).forEach(key => delete tweets[key])
+    selectedTick.value = ''
+    if (activeTab.value === 'battle') {
+        await onBattleRefresh()
+    } else {
+        await onEventRefresh()
+    }
+})
 
 // ===== 社区标签横滑条（按预测交易量 USD 排序）+ 筛选 =====
 const selectedTick = ref<string>('')
@@ -148,10 +165,11 @@ async function onBattleRefresh() {
     try {
         battleRefreshing.value = true
         const data: any = await getAggPredictBattleData(props.type, 0)
-        if (data.battle && data.battle.length > 0) {
-          const marketInfos = await getMarketInfos(data.battle as BattleData[])
+        const battleList = filterByActiveChain((data?.battle ?? []) as BattleData[])
+        if (battleList.length > 0) {
+          const marketInfos = await getMarketInfos(battleList)
             tweets = Object.assign({}, data.tweets)
-            battles.value[props.type] = (data.battle as BattleData[]).map(battle => ({
+            battles.value[props.type] = battleList.map(battle => ({
                 ...battle,
                 winner: getWinner(battle),
                 reserveA: marketInfos[battle.marketMaker + '-priceA'],
@@ -175,10 +193,11 @@ async function onBattleLoad() {
         if (battleLoading.value || battleFinishedMap.value[props.type] || battles.value[props.type]?.length === 0) return
         battleLoading.value = true
         const data: any = await getAggPredictBattleData(props.type, Math.floor((battles.value[props.type]?.length - 1) / 16) + 1)
-        if (data.battle && data.battle.length > 0) {
-            const marketInfos = await getMarketInfos(data.battle as BattleData[])
+        const battleList = filterByActiveChain((data?.battle ?? []) as BattleData[])
+        if (battleList.length > 0) {
+            const marketInfos = await getMarketInfos(battleList)
             tweets = Object.assign(tweets, data.tweets)
-            battles.value[props.type] = battles.value[props.type].concat((data.battle as BattleData[]).map(battle => ({
+            battles.value[props.type] = battles.value[props.type].concat(battleList.map(battle => ({
                 ...battle,
                 winner: getWinner(battle),
                 reserveA: marketInfos[battle.marketMaker + '-priceA'],
@@ -214,8 +233,8 @@ async function onEventRefresh() {
     try {
         eventRefreshing.value = true
         const data: any = await getAggPredictEventData(props.type, 0)
-        if (data && data.length > 0) {
-            const list = data as EventPredictData[]
+        const list = filterByActiveChain((data ?? []) as EventPredictData[])
+        if (list.length > 0) {
             const marketInfos = list.length
                 ? await getMarketInfos(eventsNeedingChainReserves(list))
                 : {}
@@ -235,8 +254,8 @@ async function onEventLoad() {
         if (eventLoading.value || eventFinishedMap.value[props.type] || events.value[props.type]?.length === 0) return
         eventLoading.value = true
         const data: any = await getAggPredictEventData(props.type, Math.floor((events.value[props.type]?.length - 1) / 16) + 1)
-        if (data && data.length > 0) {
-            const list = data as EventPredictData[]
+        const list = filterByActiveChain((data ?? []) as EventPredictData[])
+        if (list.length > 0) {
             const marketInfos = list.length
                 ? await getMarketInfos(eventsNeedingChainReserves(list))
                 : {}

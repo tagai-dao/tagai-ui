@@ -22,7 +22,7 @@ import CreateTweetModal from "@/components/common/CreateTweetModal.vue";
 import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import CommunityMiniTagIndex from "@/views/tag-detail/communityMiniTags/Index.vue";
 import { useCurationStore } from "@/stores/curation";
-import { formatPrice } from "@/utils/helper";
+import { formatAmount, formatPrice } from "@/utils/helper";
 import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply, usesThirdPartyMarketCap } from '@/config'
 import IconLinks from "@/components/home/IconLinks.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
@@ -39,12 +39,16 @@ import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import { isAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
+import { useChainStore } from '@/stores/chain'
 
 const baseTabOptions = computed(() => {
+  const predictTab = predictionEnabled.value
+    ? [{label: 'Predict', key: 'predict'}]
+    : []
   if (comStore.currentSelectedCommunity?.isImport) {
     return [
       {label: 'Square', key: 'content'},
-      {label: 'Predict', key: 'predict'},
+      ...predictTab,
       {label: 'Credit', key: 'credit'},
       {label: 'Token', key: 'token'},
       {label: 'AI', key: 'ai'},
@@ -52,7 +56,7 @@ const baseTabOptions = computed(() => {
   }
   return [
     {label: 'Square', key: 'content'},
-    {label: 'Predict', key: 'predict'},
+    ...predictTab,
     {label: 'Trades', key: 'trade'},
     {label: 'Credit', key: 'credit'},
     {label: 'Token', key: 'token'},
@@ -91,6 +95,11 @@ const pageScroll = (ref: any, type: string) => {
   }
 }
 const activeTab = ref('content')
+const chainStore = useChainStore()
+const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
+watch(predictionEnabled, enabled => {
+  if (!enabled && activeTab.value === 'predict') activeTab.value = 'content'
+})
 const modalStore = useModalStore()
 const comStore = useCommunityStore()
 const tweetTypeRef = ref()
@@ -102,6 +111,17 @@ const checkingTweet = ref(false);
 const showModal = ref(false);
 const curationType = ref(CurationType.TWEET);
 const accStore = useAccountStore();
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
+/** USD 参考价不可用时，保留链上计算出的原生币市值，避免错误显示为 $0.00。 */
+const marketCapText = computed(() => {
+  const nativeMarketCap = Number(comStore.currentSelectedCommunity?.marketCap ?? 0)
+  const nativeUsdPrice = Number(useStateStore().ethPrice ?? 0)
+  if (!Number.isFinite(nativeMarketCap) || nativeMarketCap <= 0) return formatPrice(0)
+  if (Number.isFinite(nativeUsdPrice) && nativeUsdPrice > 0) {
+    return formatPrice(Math.round(nativeMarketCap * nativeUsdPrice))
+  }
+  return `${formatAmount(nativeMarketCap)} ${nativeSymbol.value}`
+})
 const { setInter } = useInterval()
 const {onCopy} = useTools()
 const { preCheckCuration } = useTweet()
@@ -109,6 +129,16 @@ const deployTweetList = ref([])
 
 const showTradeBox = ref(false)
 const {width} = useWindowSize()
+const inlineSidebarTarget = ref<HTMLElement | null>(null)
+const normalSidebarTarget = ref<HTMLElement | null>(null)
+/** 仅 RH 未上架时隐藏市场 K 线；BSC 保持原有 K 线与页面布局。 */
+const inlineUnlistedTradeLayout = computed(() =>
+  width.value > 800 && chainStore.deployment.key === 'rh' &&
+  !!comStore.currentSelectedCommunity && !comStore.currentSelectedCommunity.listed
+)
+const communitySidebarTarget = computed(() =>
+  inlineUnlistedTradeLayout.value ? inlineSidebarTarget.value : normalSidebarTarget.value
+)
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
   if (!spaces || spaces.length == 0) return false;
@@ -141,9 +171,12 @@ const progressData = ref([
 ])
 
 async function updateProgress() {
-  getTokenInfo([comStore.currentSelectedCommunity!]).then((coms: any) => {
+  const selectedCommunity = comStore.currentSelectedCommunity
+  if (!selectedCommunity) return
+  getTokenInfo([selectedCommunity]).then((coms: any) => {
     const com = coms[0]
-    comStore.currentSelectedCommunity = coms[0]
+    if (!com) return
+    comStore.currentSelectedCommunity = com
     let bondingCurveProgress =  (com.bondingCurveSupply / BondingCurveSupply * 100);
     if (!com.listed && bondingCurveProgress >= 99.99){
       bondingCurveProgress = 99.99
@@ -339,7 +372,7 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
             <div class="text-base flex gap-1">
               <span class="font-semibold text-grey-64">{{$t('marketCap')}}</span>
-              <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
+              <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ marketCapText }}</span>
             </div>
           </div>
           <div class="flex justify-between items-end gap-3 mt-1">
@@ -374,7 +407,7 @@ onBeforeRouteLeave((to, from, next) => {
               </div>
               <div class="text-base flex gap-1">
                 <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
-                <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
+                <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ marketCapText }}</span>
               </div>
             </div>
           </div>
@@ -497,10 +530,20 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
     </div>
-    <BuyAndSellView v-if="(showTradeBox || width>800)"/>
-    <div class="min-h-full h-full sticky top-[0px]" ref="tabContainerRef">
-      <div class="h-full flex gap-2">
-        <div class="h-full w-full flex flex-col gap-2  overflow-hidden">
+    <div :class="inlineUnlistedTradeLayout ? 'web:flex web:flex-wrap web:items-start web:gap-2' : ''">
+      <div v-show="inlineUnlistedTradeLayout" class="web:order-2 web:w-[340px] web:min-w-[340px] web:shrink-0">
+        <BuyAndSellView v-if="(showTradeBox || width>800)" />
+        <div ref="inlineSidebarTarget"></div>
+      </div>
+      <BuyAndSellView
+        v-if="(showTradeBox || width>800) && !inlineUnlistedTradeLayout"
+      />
+      <div class="min-h-full h-full sticky top-[0px]"
+           :class="inlineUnlistedTradeLayout ? 'web:contents' : ''"
+           ref="tabContainerRef">
+      <div class="h-full flex gap-2" :class="inlineUnlistedTradeLayout ? 'web:contents' : ''">
+        <div class="h-full w-full flex flex-col gap-2 overflow-hidden"
+             :class="inlineUnlistedTradeLayout ? 'web:order-1 web:w-auto web:min-w-0 web:flex-1' : ''">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-surface h-12 min-h-12 px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
                     class="px-3.5 rounded-full h-8 text-h3 font-medium whitespace-nowrap transition-colors"
@@ -521,6 +564,10 @@ onBeforeRouteLeave((to, from, next) => {
             <CommunityMiniTagIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
+        <!-- 两个 Teleport 目标都保持挂载，避免社区数据异步到达时丢失信息栏。 -->
+        <div ref="normalSidebarTarget" v-show="!inlineUnlistedTradeLayout"
+             class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar"></div>
+        <Teleport v-if="communitySidebarTarget" :to="communitySidebarTarget">
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
           <div class="flex flex-col gap-2">
             <!-- 社区身份卡：始终置于部署推文卡上方，凸显社区身份 -->
@@ -542,7 +589,7 @@ onBeforeRouteLeave((to, from, next) => {
                   </div>
                   <div class="text-base flex gap-1">
                     <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
-                    <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ formatPrice(Math.round(parseFloat(comStore.currentSelectedCommunity?.marketCap as any) * useStateStore().ethPrice)) }}</span>
+                    <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ marketCapText }}</span>
                   </div>
                 </div>
                 <div class="flex justify-between items-end gap-3 mt-1">
@@ -687,10 +734,12 @@ onBeforeRouteLeave((to, from, next) => {
               </el-popover> -->
             </div>
           </div>
-          <div class="h-full sticky top-[0px]">
+          <div v-if="!inlineUnlistedTradeLayout" class="h-full sticky top-[0px]">
             <PostAI/>
           </div>
         </div>
+        </Teleport>
+      </div>
       </div>
     </div>
   </div>

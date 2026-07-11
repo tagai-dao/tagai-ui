@@ -9,7 +9,7 @@ import {
   type Chain
 } from 'viem/chains'
 import { defineChain } from 'viem'
-import { BSC_CHAIN, ROBINHOOD_CHAIN, getChainDeployment } from '@/config/chains'
+import { BSC_CHAIN, ROBINHOOD_CHAIN, ROBINHOOD_TESTNET_CHAIN, getChainDeployment } from '@/config/chains'
 
 /** BSC：多 RPC fallback */
 export const customBsc = {
@@ -43,10 +43,22 @@ export const customRobinhood = defineChain({
   },
 })
 
+export const customRobinhoodTestnet = defineChain({
+  id: ROBINHOOD_TESTNET_CHAIN.chainId,
+  name: ROBINHOOD_TESTNET_CHAIN.name,
+  nativeCurrency: ROBINHOOD_TESTNET_CHAIN.nativeCurrency,
+  rpcUrls: { default: { http: ROBINHOOD_TESTNET_CHAIN.rpcUrls } },
+  blockExplorers: {
+    default: { name: 'Blockscout', url: ROBINHOOD_TESTNET_CHAIN.browser.replace(/\/$/, '') },
+  },
+  testnet: true,
+})
+
 /** Privy / 钱包：产品链 + 少量测试网 */
 export const supportedChains: Record<number, Chain> = {
   56: customBsc,
   4663: customRobinhood,
+  46630: customRobinhoodTestnet,
   // 其它主网保留给未来 / DeFi 工具
   1: mainnet,
   8453: base,
@@ -71,6 +83,7 @@ export function getChainName(chainId: number): string {
     const names: Record<number, string> = {
       56: 'BSC',
       4663: 'Robinhood',
+      46630: 'Robinhood Testnet',
       1: 'Ethereum',
       8453: 'Base',
       10: 'Optimism',
