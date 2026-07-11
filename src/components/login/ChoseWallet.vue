@@ -12,13 +12,27 @@ const providers = computed(() => {
 const emits = defineEmits(['chosedWallet'])
 
 async function onSelectWalletMeta(wallet: any) {
-  setActiveProviderDetail(wallet);
-  emits('chosedWallet')
+  if (loading.value) return
+  loading.value = true
+  try {
+    const connected = await setActiveProviderDetail(wallet)
+    if (connected) emits('chosedWallet')
+  } finally {
+    loading.value = false
+  }
 }
 
 async function connectMetaMask() {
-  setMetaMaskSDK();
-  emits('chosedWallet')
+  if (loading.value) return
+  loading.value = true
+  try {
+    const connected = await setMetaMaskSDK()
+    if (connected) emits('chosedWallet')
+  } catch (error) {
+    console.error('MetaMask connection failed', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 // 移除onMounted中的iframe初始化，因为现在在App.vue中全局初始化
@@ -54,6 +68,7 @@ async function connectMetaMask() {
           <span class="min-w-[100px] ml-3 text-center flex justify-center items-center gap-1 text-lg font-semibold">
             {{ wallet.info.name }}
           </span>
+          <i-ep-loading v-if="loading" class="animate-spin" />
         </button>
 
         <button

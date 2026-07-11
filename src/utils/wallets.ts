@@ -176,21 +176,23 @@ export const setMetaMaskSDK = async () => {
     const accStore = useAccountStore();
     accStore.ethWalletType = 'metamask';
     handleNewAccounts(accounts);
+    return accStore.ethConnectState === EthWalletState.Connected;
 }
 
-export const setActiveProviderDetail = (providerDetail: any) => {
+export const setActiveProviderDetail = async (providerDetail: any): Promise<boolean> => {
     try {
         provider = providerDetail.provider;
         providerInfo = providerDetail.info;
         const accStore = useAccountStore();
         accStore.ethWalletType = providerInfo.name
-        initializeProvider();
+        return await initializeProvider();
     } catch (error) {
         console.error(error)
+        return false;
     }
 };
 
-export const initializeProvider = async () => {
+export const initializeProvider = async (): Promise<boolean> => {
     if (isMetaMaskInstalled()) {
         if (provider.isBinanceWallet) {
             const deployment = getChainDeployment(resolveChainId())
@@ -209,14 +211,17 @@ export const initializeProvider = async () => {
                 console.error('read wallet accoutn fail', newAccounts)
             }
             handleNewAccounts(newAccounts);
+            return useAccountStore().ethConnectState === EthWalletState.Connected;
         } catch (e: any) {
             console.error('Error on init when getting accounts', e);
-            if (e.message.includes("User closed modal")) {
+            if (e?.message?.includes("User closed modal")) {
                 provider.disconnect()
             }
+            return false;
         }
     } else {
         console.error('not plugin installed')
+        return false;
     }
 }
 
