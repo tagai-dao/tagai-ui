@@ -73,10 +73,14 @@ export function post(url: string, params?: object, config?: any) {
       })
       .catch(err => {
         if (err.response) {
-          reject(err.response.status);
+          reject({
+            status: err.response.status,
+            data: err.response.data,
+            message: err.response.data?.message || err.response.data?.error || err.response.data?.m || err.message || 'Network error'
+          });
           return;
         }
-        reject(500);
+        reject({ status: 500, message: err.message || 'Network error' });
       });
   });
 }
