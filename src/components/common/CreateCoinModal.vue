@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useModalStore } from "@/stores/common";
-import { reactive, ref, watch, onMounted } from "vue";
+import { computed, reactive, ref, watch, onMounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
 import { BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -18,6 +18,7 @@ import { useTools } from "@/composables/useTools";
 import debounce from "lodash.debounce";
 import { parseEther, isAddress, checksumAddress, parseUnits } from "viem";
 import { useI18n } from "vue-i18n";
+import { useChainStore } from '@/stores/chain'
 
 const { t } = useI18n();
 const modalStore = useModalStore();
@@ -68,6 +69,12 @@ const showMaxAmount = ref(false);
 const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
 const activeTab = ref('token');
+const chainStore = useChainStore();
+const showAiDeployTab = computed(() => chainStore.deployment.key !== 'rh');
+
+watch(showAiDeployTab, (visible) => {
+  if (!visible && activeTab.value === 'tweet') activeTab.value = 'token';
+}, { immediate: true });
 
 // V10 导入代币相关
 const communityAddress = ref('');
@@ -443,6 +450,7 @@ onMounted(async () => {
       </div>
 
       <div
+        v-if="showAiDeployTab"
         class="px-4 py-2 cursor-pointer text-lg bold"
         :class="{'border-b-2 border-orange-light-active': activeTab === 'tweet'}"
         @click="activeTab = 'tweet'"
@@ -678,10 +686,9 @@ onMounted(async () => {
             v-for="(pool, index) in tokenDexResult.pools"
             :key="pool.pairAddress"
             @click="selectedPoolIndex = index"
-            class="border-2 rounded-lg p-3 cursor-pointer transition-all duration-200"
+            class="import-pool-card border-2 rounded-lg p-3 cursor-pointer transition-all duration-200"
             :class="{
-              'border-orange-light-active bg-orange-50': selectedPoolIndex === index,
-              'border-grey-e6 bg-white': selectedPoolIndex !== index
+              'import-pool-card--selected': selectedPoolIndex === index
             }"
           >
             <div class="flex justify-between items-center mb-2">
@@ -732,7 +739,7 @@ onMounted(async () => {
         </div>
 
         <!-- Selected pool info -->
-        <div class="bg-grey-f0 rounded-lg p-3" v-if="tokenDexResult && selectedPoolIndex >= 0">
+        <div class="selected-pool-summary rounded-lg p-3" v-if="tokenDexResult && selectedPoolIndex >= 0">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-sm text-grey-normal">Selected Pool:</span>
             <span class="px-2 py-0.5 rounded text-xs font-bold text-white"
@@ -899,4 +906,29 @@ onMounted(async () => {
 button:hover {
   transform: translateY(-1px);
 }
+
+.import-pool-card {
+  background-color: var(--surface);
+  border-color: var(--border-base);
+  color: var(--text-base);
+}
+
+.import-pool-card--selected {
+  background-color: var(--pool-selected-bg);
+  border-color: #fe913f;
+}
+
+.import-pool-card--selected .text-black {
+  color: var(--text-base) !important;
+}
+
+.import-pool-card--selected .text-grey-normal {
+  color: var(--text-muted) !important;
+}
+
+.selected-pool-summary {
+  background-color: var(--surface-2);
+  color: var(--text-base);
+}
+
 </style>

@@ -211,6 +211,9 @@ export const handleServerError = (code: number) => {
     case errCode.PARAMS_ERROR:
       notify({ message: t("errMessage.paramsError"), type: "info" });
       break;
+    case errCode.CHAIN_CONTRACTS_NOT_READY:
+      notify({ message: t("errMessage.chainContractsNotReady"), type: "info" });
+      break;
     case errCode.IPSHARE_NOT_CREATED:
       notify({ message: t("errMessage.ipshareNotCreated"), type: "info" });
       break;

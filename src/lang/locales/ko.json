@@ -64,6 +64,7 @@
   "releaseToRefresh": "놓으면 새로고침",
   "wallet": "지갑",
   "language": "언어",
+  "chain.network": "네트워크",
   "notification": "알림",
   "docs": "문서",
   "auditReport": "감사 보고서",
@@ -329,7 +330,8 @@
     "minReceived": "최소 수령량",
     "highSlippageWarn": "슬리피지 높음",
     "priceImpact": "가격 영향",
-    "platformFee": "플랫폼 수수료"
+    "platformFee": "플랫폼 수수료",
+    "ipShareFee": "IPShare 수수료"
   },
   "community": {
     "distributionTip": "토큰 총량은 세 부분으로 분배됩니다: 소셜 분배 15%, 본딩커브 판매 65%, 유동성 풀 20%",
@@ -437,6 +439,7 @@
     "transInvalid": "유효하지 않은 트랜잭션",
     "noBondEth": "BNB 주소가 연동되지 않았습니다",
     "paramsError": "유효하지 않은 매개변수",
+    "chainContractsNotReady": "Contracts are not deployed on this network yet. Please switch to BSC or wait for Robinhood launch.",
     "curationNotExsist": "큐레이션이 존재하지 않습니다",
     "insufficientFee": "수수료 부족",
     "insufficientBalance": "잔액 부족",

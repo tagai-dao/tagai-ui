@@ -64,6 +64,7 @@
   "releaseToRefresh": "रिफ्रेश के लिए छोड़ें",
   "wallet": "वॉलेट",
   "language": "भाषा",
+  "chain.network": "नेटवर्क",
   "notification": "सूचनाएँ",
   "docs": "डॉक्स",
   "auditReport": "ऑडिट रिपोर्ट",
@@ -347,7 +348,8 @@
     "minReceived": "न्यूनतम प्राप्ति",
     "highSlippageWarn": "स्लिपेज अधिक है",
     "priceImpact": "मूल्य प्रभाव",
-    "platformFee": "प्लेटफ़ॉर्म फ़ीस"
+    "platformFee": "प्लेटफ़ॉर्म फ़ीस",
+    "ipShareFee": "IPShare फ़ीस"
   },
   "community": {
     "distributionTip": "कुल टोकन तीन भागों में बँटते हैं: 15% सोशल वितरण, 65% बॉन्डिंग कर्व बिक्री, 20% लिक्विडिटी पूल",
@@ -455,6 +457,7 @@
     "transInvalid": "अमान्य लेनदेन",
     "noBondEth": "BNB पता लिंक नहीं है",
     "paramsError": "अमान्य पैरामीटर",
+    "chainContractsNotReady": "Contracts are not deployed on this network yet. Please switch to BSC or wait for Robinhood launch.",
     "curationNotExsist": "क्यूरेशन मौजूद नहीं",
     "insufficientFee": "फ़ीस अपर्याप्त",
     "insufficientBalance": "बैलेंस अपर्याप्त",

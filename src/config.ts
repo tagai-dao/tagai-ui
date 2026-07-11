@@ -1,43 +1,60 @@
 import { parseUnits } from "viem";
+import { API_BASE_URL } from "./config/api";
+import {
+  BSC_CHAIN,
+  ROBINHOOD_CHAIN,
+  CHAINS,
+  DEFAULT_CHAIN_ID,
+  PRODUCT_CHAIN_IDS,
+  getChainDeployment,
+  hasTagAiContracts,
+  isProductChain,
+  type ChainDeployment,
+  type ProductChainId,
+} from "./config/chains";
+
 export const network: "livenet" | "testnet" | "regtest" = "livenet";
 
+// 多链元数据（Phase 0）；业务读写请优先 getChainDeployment / useChainStore
+export {
+  BSC_CHAIN,
+  ROBINHOOD_CHAIN,
+  CHAINS,
+  DEFAULT_CHAIN_ID,
+  PRODUCT_CHAIN_IDS,
+  getChainDeployment,
+  hasTagAiContracts,
+  isProductChain,
+};
+export type { ChainDeployment, ProductChainId };
 
-/**
- * 后端 API 地址。本地调试登录时必须连本地 tiptag-api：
- * .env 里的 Privy App 是 dev 配套，生产后端验证不了它签发的 token
- * （否则 /auth/login 返回 301 "User not found"）。
- * 在 .env.local 写 VITE_APP_BACKEND_API_URL=http://localhost:5001 覆盖，
- * 不写则默认生产地址（生产构建行为不变）。
- */
-export const BACKEND_API_URL = import.meta.env.VITE_APP_BACKEND_API_URL || "https://bsc-api.tagai.fun";
+/** 所有链共用统一 API 入口；chainId 由请求显式携带并由网关路由。 */
+export const BACKEND_API_URL = API_BASE_URL;
+
+/** 统一 API 域名；保留函数签名以兼容现有调用方。 */
+export const getBackendApiUrl = (chainId: number = DEFAULT_CHAIN_ID): string => {
+  void chainId;
+  return BACKEND_API_URL;
+};
+
 /** 前端站点根 URL，用于 commerce blink 链接 */
 export const SITE_URL = "https://tagai.fun";
 export const COMMERCE_SITE_URL = `${SITE_URL}/commerce/`;
-/** BSC RPC 列表：优先 .env，公共节点作 fallback */
-const BSC_RPC_URLS = [
-  import.meta.env.VITE_BSC_RPC_URL,
-  'https://bsc-dataseed.binance.org',
-  'https://rpc.ankr.com/bsc',
-  'https://bsc.rpc.blxrbdn.com',
-  'https://56.rpc.thirdweb.com',
-].filter((url): url is string => Boolean(url))
 
-const BSC_RPC_URL = BSC_RPC_URLS[0] ?? 'https://bsc-dataseed.binance.org';
-// base main net
+/**
+ * 兼容旧代码的「当前默认链」静态配置。
+ * 运行时切链后的元数据请用 useChainStore().deployment，不要依赖本对象随切链变化。
+ */
 export const ChainConfig = {
-    name: "BSC",
-    rpc: BSC_RPC_URL,
-    rpcUrls: BSC_RPC_URLS,
-    chainId: 56,
-    symbol: 'BNB',
-    browser: 'https://bscscan.com/',
-    decimals: 18,
+    name: BSC_CHAIN.name,
+    rpc: BSC_CHAIN.rpc,
+    rpcUrls: BSC_CHAIN.rpcUrls,
+    chainId: BSC_CHAIN.chainId,
+    symbol: BSC_CHAIN.symbol,
+    browser: BSC_CHAIN.browser,
+    decimals: BSC_CHAIN.decimals,
     swapUrl: 'https://pancakeswap.finance/v2/add/BNB/0x32ef878D527d860339818571E8DA17005110f04E?chain=bsc&persistChain=1',
-    multiConfig: {
-        rpcUrl: BSC_RPC_URL,
-        multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
-        interval: 3000
-    }
+    multiConfig: BSC_CHAIN.multiConfig,
 }
 
 export const PrivyConfig = {
@@ -57,12 +74,8 @@ export const SPACE_STATE = {
   4: 'canceled'
 }
 
-export const MainToken = {
-  name: "BNB",
-  symbol: "BNB",
-  icon: "https://assets-cdn.trustwallet.com/blockchains/smartchain/info/logo.png",
-  decimals: 18,
-};
+/** BSC 原生币展示（兼容旧代码）；切链后请用 useChainStore().nativeCurrency */
+export const MainToken = { ...BSC_CHAIN.nativeCurrency };
 
 // also create coin or create social account will cost 0.00005 ETH
 export const FeeAddress = "0x06Deb72b2e156Ddd383651aC3d2dAb5892d9c048";

@@ -9,8 +9,12 @@ import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PCSUniversalRouter, PCSPermit2, PCSCLPoolManager, ImportHelper,
     LinearCalculator, LinearTimeCalculator} from '@/config'
 import { useAccountStore } from "@/stores/web3";
-import { customBsc } from "./privy";
+import { getChainById } from "./privy";
+import { useChainStore } from "@/stores/chain";
+import { getChainDeployment } from "@/config/chains";
+import { zeroAddress } from "viem";
 
+/** BSC 默认地址表；多链时由 resolveContractAddress 覆盖关键合约 */
 const ContractAddress = {
     Pump1: PumpContract1,
     Pump2: PumpContract2,
@@ -33,6 +37,7 @@ const ContractAddress = {
     UniswapFactory: uniswapV2Factory,
     WrapSwaper: wrappedUniswapV2ForTagAI,
     WrapSwaper2: wrappedUniswapV2ForTagAI2,
+    TagAISwapWrapper: wrappedUniswapV2ForTagAI2,
     CoinPurse: CoinPurse,
     WETH: WETH,
     FPMMDeterministicFactory: FPMMDeterministicFactory,
@@ -45,11 +50,59 @@ const ContractAddress = {
     PCSCLPoolManager,
 }
 
+/** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
+const CHAIN_SCOPED_CONTRACTS = new Set([
+    'Pump9', 'IPShare3', 'ImportHelper', 'TagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
+])
+
+/** 按当前产品链解析合约地址（RH 用 chains.ts 部署表） */
+export const resolveContractAddress = (contractName: string): `0x${string}` | undefined => {
+    const chainId = useChainStore().activeChainId
+    const deployment = getChainDeployment(chainId)
+    const c = deployment.contracts
+    const dex = deployment.dex
+    const byName: Record<string, `0x${string}` | undefined> = {
+        Pump9: c.pump9,
+        IPShare3: c.ipshare3,
+        ImportHelper: c.importHelper,
+        TagAISwapWrapper: c.tagAiSwapWrapper,
+        WrapSwaper: c.tagAiSwapWrapper,
+        WrapSwaper2: c.tagAiSwapWrapper,
+        HourlyTickCalculator: c.hourlyTickCalculator,
+        NutboxCommittee: c.nutboxCommittee,
+        CoinPurse: c.coinPurse,
+        WETH: deployment.wrappedNative,
+        UniswapRouter: dex.v2Router,
+        UniversalRouter: dex.universalRouter,
+        Permit2: dex.permit2,
+        PCSCLPoolManager: dex.v4PoolManager,
+    }
+
+    if (contractName in byName) {
+        const addr = byName[contractName]
+        // 零地址 = 本链未部署，绝不回退到 BSC
+        if (!addr || addr === zeroAddress) return undefined
+        return addr
+    }
+
+    // 非链作用域合约：仅 BSC 允许用历史常量表
+    if (chainId === 56) {
+        // @ts-ignore
+        return ContractAddress[contractName] as `0x${string}` | undefined
+    }
+    if (CHAIN_SCOPED_CONTRACTS.has(contractName)) return undefined
+    // @ts-ignore
+    return ContractAddress[contractName] as `0x${string}` | undefined
+}
+
 export const readContract = async (contractName: string, functionName: string, args: any, address?: `0x${string}`) => {
     const client = getReadOnlyClient();
     if (!address) {
-        // @ts-ignore
-        address = ContractAddress[contractName] as `0x${string}`
+        address = resolveContractAddress(contractName)
+    }
+    if (!address || address === zeroAddress) {
+        throw new Error(`Contract ${contractName} not deployed on current chain`)
     }
     const abi = abis[contractName as keyof typeof abis]
     const result = await client.readContract({
@@ -164,10 +217,14 @@ export const writeContract = async ({
         await setup()
     }
     if (!address) {
-        // @ts-ignore
-        address = ContractAddress[contractName] as `0x${string}`
+        address = resolveContractAddress(contractName)
+    }
+    if (!address || address === zeroAddress) {
+        throw new Error(`Contract ${contractName} not deployed on current chain`)
     }
     const abi = abis[contractName as keyof typeof abis]
+    // 交易目标链必须与产品当前链一致（Privy 钱包 chain 也要对齐）
+    const chain = getChainById(useChainStore().activeChainId)
 
     console.log({
         account: useAccountStore().ethConnectAddress as `0x${string}`,
@@ -175,7 +232,7 @@ export const writeContract = async ({
         abi,
         functionName,
         args,
-        chain: customBsc,
+        chain: chain.id,
         value: typeof value === 'string' ? BigInt(value) : value
     })
     
@@ -185,7 +242,7 @@ export const writeContract = async ({
         abi,
         functionName,
         args,
-        chain: customBsc,
+        chain,
         value: typeof value === 'string' ? BigInt(value) : value
     });
 

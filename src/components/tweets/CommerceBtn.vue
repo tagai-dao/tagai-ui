@@ -9,13 +9,16 @@ import { resolveCommerce, getEventMarket, getMarket } from '@/apis/api';
 import { getEventMarketInfos, getMarketInfos } from '@/utils/fpmm';
 import { isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes';
 import { useAccountStore } from '@/stores/web3';
-import { onUnmounted, ref, watch } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
+import { useChainStore } from '@/stores/chain';
 
 const props = defineProps<{
     tweet: Tweet
 }>()
 const stateStore = useStateStore()
 const accStore = useAccountStore()
+const chainStore = useChainStore()
+const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 const showTradeModal = ref(false)
 
 // commerce 类型：1=代币销售(社交交易)，2=对战预测，3=事件预测
@@ -34,6 +37,7 @@ async function resolveCommerceType(commerceId?: string) {
         const r = res?.d ?? res
         commerceType.value = r?.commerceType ?? 1
         const fpmm = r?.fpmm
+        if (!predictionEnabled.value && (commerceType.value === 2 || commerceType.value === 3)) return
         if (commerceType.value === 3 && fpmm) {
             const m = await getEventMarket(fpmm, accStore.getAccountInfo?.twitterId) as any
             await injectEventReserves(m)
@@ -141,11 +145,11 @@ onUnmounted(() => {
 
 <template>
     <!-- 事件预测分享：渲染事件预测卡 -->
-    <div v-if="tweet.commerceId && commerceType === 3 && eventMarket" class="my-3" @click.stop>
+    <div v-if="predictionEnabled && tweet.commerceId && commerceType === 3 && eventMarket" class="my-3" @click.stop>
         <PredictEventCard :market="eventMarket" :showCommunity="false" />
     </div>
     <!-- 对战预测分享：渲染对战预测卡 -->
-    <div v-else-if="tweet.commerceId && commerceType === 2 && battleMarket" class="my-3" @click.stop>
+    <div v-else-if="predictionEnabled && tweet.commerceId && commerceType === 2 && battleMarket" class="my-3" @click.stop>
         <PredictBattleCard :battle="battleMarket" :tweets="{}" :showCommunity="false" />
     </div>
     <!-- 代币销售分享：Trade 按钮（保持原行为）。预测类解析完成前不显示按钮，避免错误闪现 Trade -->

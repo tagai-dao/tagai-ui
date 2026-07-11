@@ -64,6 +64,7 @@
   "releaseToRefresh": "Suelta para actualizar",
   "wallet": "Billetera",
   "language": "Idioma",
+  "chain.network": "Red",
   "notification": "Notificaciones",
   "docs": "Documentación",
   "auditReport": "Informe de auditoría",
@@ -347,7 +348,8 @@
     "minReceived": "Mínimo a recibir",
     "highSlippageWarn": "Deslizamiento alto",
     "priceImpact": "Impacto en el precio",
-    "platformFee": "Comisión de la plataforma"
+    "platformFee": "Comisión de la plataforma",
+    "ipShareFee": "Comisión de IPShare"
   },
   "community": {
     "distributionTip": "El suministro total se distribuye en tres partes: 15% distribución social, 65% venta por bonding curve y 20% al pool de liquidez",
@@ -455,6 +457,7 @@
     "transInvalid": "Transacción inválida",
     "noBondEth": "Dirección BNB no vinculada",
     "paramsError": "Parámetros inválidos",
+    "chainContractsNotReady": "Contracts are not deployed on this network yet. Please switch to BSC or wait for Robinhood launch.",
     "curationNotExsist": "La curación no existe",
     "insufficientFee": "Comisión insuficiente",
     "insufficientBalance": "Saldo insuficiente",

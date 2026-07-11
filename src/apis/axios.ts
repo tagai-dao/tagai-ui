@@ -1,6 +1,7 @@
 import axios from "axios";
 import axiosRetry from "axios-retry";
 import { useAccountStore } from '@/stores/web3';
+import { useChainStore } from '@/stores/chain';
 
 axiosRetry(axios, { retries: 2 });
 
@@ -14,7 +15,10 @@ axios.interceptors.request.use(
     const accountInfo = accStore.getAccountInfo;
     if (accountInfo && accountInfo.accessToken) {
       config.headers['AccessToken'] = accountInfo.accessToken;
+      config.headers['Authorization'] = `Bearer ${accountInfo.accessToken}`;
     }
+    // 登录身份与链无关；网关仅用显式 chainId 将业务请求路由到对应实例。
+    config.headers['X-Chain-Id'] = String(useChainStore().activeChainId);
     return config;
   },
   error => {

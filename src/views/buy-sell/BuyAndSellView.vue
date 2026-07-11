@@ -5,18 +5,20 @@ import { useI18n } from "vue-i18n";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
 import { useCommunityStore } from "@/stores/community";
+import { useChainStore } from '@/stores/chain';
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useRoute } from "vue-router";
 import { getCommunityDetail, trade, createTokenCommerce, tweet } from '@/apis/api'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
-  getBuyAmountUseEth, getSellAmountUseToken,
+  getBuyAmountUseEth, getSellAmountUseToken, getV3BuyAmountUseEth, getV3SellAmountUseToken,
   getBuyPriceAfterFee,
-  getBondingCurveSpotPrice, getUniswapV2SpotPrice
+  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
+import { buyTokenV4Rh, sellTokenV4Rh, resolveRhV4PoolKeyForTrade, quoteRhV4 } from '@/utils/rhV4Swap'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -31,7 +33,7 @@ import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
 import { getDexScreenerEmbedPath, usesListedV4Quote } from '@/utils/pumpVersion'
-import { isAddress, parseEther } from "viem";
+import { isAddress, parseEther, zeroAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useTheme } from "@/composables/useTheme";
 
@@ -44,6 +46,13 @@ const props = defineProps({
 })
 const { t } = useI18n()
 const comStore = useCommunityStore()
+const chainStore = useChainStore()
+const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
+const showDesktopChart = computed(() =>
+  !!comStore.currentSelectedCommunity?.tick && !props.tick &&
+  (!!comStore.currentSelectedCommunity.listed || chainStore.deployment.key === 'bsc')
+)
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const tradeType = ref('buy')
@@ -159,7 +168,10 @@ const isV8PreListNoTrade = computed(
 )
 
 // 各版本交易费率（用于从询价结果反推净成交均价）
-const V9_TOTAL_FEE = 0.006
+const V9_PLATFORM_FEE = 0.003
+const V9_IPSHARE_FEE = 0.003
+// 成交报价会同时扣除平台费和 IPShare 费用；价格影响计算必须使用总费率。
+const V9_TOTAL_FEE = V9_PLATFORM_FEE + V9_IPSHARE_FEE
 const BONDING_CURVE_FEE = 0.02   // 内盘 getBuyAmountByValue 使用 9800/10000
 const LISTED_V2_FEE = 0.02       // 上市后 Uniswap V2 路由 2% 手续费
 /** V4 Hook 抽成，仅用于价格影响展示（询价结果已含 Hook，需还原池内成交价） */
@@ -286,16 +298,22 @@ const updateBuyAmount = debounce(async (val: any) => {
   let spot = 0
   if (listed.value) {
     if (usesListedV4Quote(community)) {
-      const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
-      if (!poolKey) throw new Error('invalid V4 pool')
-      const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
-      const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
-      receive = await getV4BuyQuote(poolKey, amount, sellsman)
-      try {
-        spot = await getV4SpotPrice(poolId)
-      } catch (e) {
-        console.warn('getV4SpotPrice failed', e)
+      if (chainStore.deployment.dex.kind !== 'pancake') {
+        const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
+        if (!poolKey) throw new Error('invalid RH V4 PoolKey')
+        receive = await quoteRhV4(poolKey, amount, true)
+        spot = 0
+      } else {
+        const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
+        if (!poolKey) throw new Error('invalid V4 pool')
+        const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
+        const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
+        receive = await getV4BuyQuote(poolKey, amount, sellsman)
+        try { spot = await getV4SpotPrice(poolId) } catch (e) { console.warn('getV4SpotPrice failed', e) }
       }
+    } else if (community?.isImport && community.dexVersion === 3) {
+      receive = await getV3BuyAmountUseEth(community.token!, community.pair!, amount * 9800n / 10000n)
+      spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
     } else {
       receive = await getBuyAmountUseEth(community!.token, amount * 9800n / 10000n)
       try {
@@ -371,16 +389,22 @@ const updateSellAmount = debounce(async (val: any) => {
     let spot = 0
     if (listed.value) {
       if (usesListedV4Quote(community)) {
-        const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
-        if (!poolKey) throw new Error('invalid V4 pool')
-        const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
-        const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
-        receive = await getV4SellQuote(poolKey, amount, sellsman)
-        try {
-          spot = await getV4SpotPrice(poolId)
-        } catch (e) {
-          console.warn('getV4SpotPrice failed', e)
+        if (chainStore.deployment.dex.kind !== 'pancake') {
+          const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
+          if (!poolKey) throw new Error('invalid RH V4 PoolKey')
+          receive = await quoteRhV4(poolKey, amount, false)
+          spot = 0
+        } else {
+          const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
+          if (!poolKey) throw new Error('invalid V4 pool')
+          const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
+          const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
+          receive = await getV4SellQuote(poolKey, amount, sellsman)
+          try { spot = await getV4SpotPrice(poolId) } catch (e) { console.warn('getV4SpotPrice failed', e) }
         }
+      } else if (community?.isImport && community.dexVersion === 3) {
+        receive = await getV3SellAmountUseToken(community.token!, community.pair!, amount)
+        spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
       } else {
         receive = await getSellAmountUseToken(community!.token, amount)
         try {
@@ -514,19 +538,21 @@ async function confirm() {
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
       if (usesListedV4Quote(token) && listed.value) {
-        const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
-        if (!poolKey) throw new Error('invalid V4 pool')
         const ethAmount = parseEther(payEth.value.toString());
-        hash = await buyTokenV4(
-          poolKey,
-          ethAmount,
-          receiveAmount.value ?? 0n,
-          (stateStore.sellsman ?? token.ipshare) as `0x${string}`,
-          Math.ceil(maxSlippage.value * 100)
-        );
+        if (chainStore.deployment.dex.kind === 'uniswap') {
+          const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
+          if (!poolKey || !receiveAmount.value) throw new Error('RH V4 PoolKey or quote is unavailable')
+          hash = await buyTokenV4Rh(poolKey, ethAmount, receiveAmount.value,
+            (stateStore.sellsman ?? token.ipshare ?? zeroAddress) as `0x${string}`)
+        } else {
+          const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
+          if (!poolKey) throw new Error('invalid V4 pool')
+          hash = await buyTokenV4(poolKey, ethAmount, receiveAmount.value ?? 0n,
+            (stateStore.sellsman ?? token.ipshare) as `0x${string}`, Math.ceil(maxSlippage.value * 100));
+        }
       } else {
         // check list
-        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
+        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, token!.pair);
       }
       if (hash) {
         payEth.value = ''
@@ -547,18 +573,20 @@ async function confirm() {
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
       if (usesListedV4Quote(token) && listed.value) {
-        const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
-        if (!poolKey) throw new Error('invalid V4 pool')
-        hash = await sellTokenV4(
-          poolKey,
-          token!.token as `0x${string}`,
-          finalSellAmount,
-          receiveEth.value ?? 0n,
-          (stateStore.sellsman ?? token.ipshare) as `0x${string}`,
-          Math.ceil(maxSlippage.value * 100)
-        );
+        if (chainStore.deployment.dex.kind === 'uniswap') {
+          const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
+          if (!poolKey || !receiveEth.value) throw new Error('RH V4 PoolKey or quote is unavailable')
+          hash = await sellTokenV4Rh(poolKey, token.token as `0x${string}`, finalSellAmount,
+            receiveEth.value, (stateStore.sellsman ?? token.ipshare ?? zeroAddress) as `0x${string}`)
+        } else {
+          const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
+          if (!poolKey) throw new Error('invalid V4 pool')
+          hash = await sellTokenV4(poolKey, token!.token as `0x${string}`, finalSellAmount,
+            receiveEth.value ?? 0n, (stateStore.sellsman ?? token.ipshare) as `0x${string}`,
+            Math.ceil(maxSlippage.value * 100));
+        }
       } else {
-        hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100));
+        hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, token!.pair);
       }
       if (hash) {
         sellAmount.value = ''
@@ -647,11 +675,12 @@ onMounted(async () => {
     </BackHeader> -->
     <div
       class="flex-1 overflow-auto flex gap-2"
+      :class="showDesktopChart ? '' : 'web:justify-end'"
     >
-      <div v-if="comStore.currentSelectedCommunity?.tick && !props.tick"
+      <div v-if="showDesktopChart"
            class="w-full h-[360px] hidden web:flex min-w-[320px] flex-1 gap-3">
         <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
-        <iframe v-else :src="`https://dexscreener.com/bsc/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
+        <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>
@@ -686,7 +715,7 @@ onMounted(async () => {
               class="bg-transparent h-full flex-1 w-[120px] text-h3 tabular-nums"
               :disabled="isV8PreListNoTrade"
             />
-            <span class="text-h5 whitespace-nowrap">$ BNB</span>
+            <span class="text-h5 whitespace-nowrap">$ {{ nativeSymbol }}</span>
           </div>
           <div class="grid grid-cols-5 gap-1 h-8 text-sm">
             <button v-for="i of defaultAmount"
@@ -730,7 +759,11 @@ onMounted(async () => {
           </div>
           <div v-if="isV9 && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.platformFee') }}</span>
-            <span class="tabular-nums">0.6%</span>
+            <span class="tabular-nums">{{ (V9_PLATFORM_FEE * 100).toFixed(1) }}%</span>
+          </div>
+          <div v-if="isV9 && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.ipShareFee') }}</span>
+            <span class="tabular-nums">{{ (V9_IPSHARE_FEE * 100).toFixed(1) }}%</span>
           </div>
         </template>
         <template v-else>
@@ -754,7 +787,7 @@ onMounted(async () => {
           <div
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-content flex items-center justify-between"
           >
-            <span class="text-h5">{{ $t('receive') }} $BNB</span>
+            <span class="text-h5">{{ $t('receive') }} ${{ nativeSymbol }}</span>
             <span class="text-h3 tabular-nums">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
           </div>
           <div v-if="isSellLiquidityInsufficient" class="text-sm text-orange-normal px-1">
@@ -769,11 +802,15 @@ onMounted(async () => {
           </div>
           <div v-if="receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
-            <span>{{ formatAmount((receiveEth?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} $BNB</span>
+            <span>{{ formatAmount((receiveEth?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} ${{ nativeSymbol }}</span>
           </div>
           <div v-if="isV9 && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.platformFee') }}</span>
-            <span class="tabular-nums">0.6%</span>
+            <span class="tabular-nums">{{ (V9_PLATFORM_FEE * 100).toFixed(1) }}%</span>
+          </div>
+          <div v-if="isV9 && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+            <span>{{ $t('buyAndSell.ipShareFee') }}</span>
+            <span class="tabular-nums">{{ (V9_IPSHARE_FEE * 100).toFixed(1) }}%</span>
           </div></template
         >
         <div class="flex flex-col gap-1.5">

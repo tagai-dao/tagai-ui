@@ -10,9 +10,13 @@ import { useTools } from "@/composables/useTools";
 import Kline from "@/views/buy-sell/Kline.vue";
 import { getDexScreenerEmbedPath } from '@/utils/pumpVersion'
 import { useTheme } from "@/composables/useTheme";
+import { useChainStore } from '@/stores/chain'
 
 const { isDark } = useTheme()
 const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
+const chainStore = useChainStore()
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
+const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -70,10 +74,10 @@ onMounted(() => {
 
 <template>
   <div>
-    <div v-if="comStore.currentSelectedCommunity?.tick"
+    <div v-if="comStore.currentSelectedCommunity?.tick && (comStore.currentSelectedCommunity?.listed || chainStore.deployment.key === 'bsc')"
          class="w-full web:hidden min-w-[320px] mb-2">
       <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart2"/>
-      <iframe v-else :src="`https://dexscreener.com/bsc/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
+      <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
         frameborder="0" class="w-full h-[24rem]"></iframe>
     </div>
     <div class="bg-white rounded-2xl p-3">
@@ -81,7 +85,7 @@ onMounted(() => {
         <span class="col-span-1 text-left">{{$t('address')}}</span>
         <span class="col-span-1 text-center">{{ $t('buy') }}/{{$t('sell')}}</span>
         <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
-        <span class="col-span-1 text-right">$BNB</span>
+        <span class="col-span-1 text-right">${{ nativeSymbol }}</span>
       </div>
       <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
                         :loading-text="$t('loading')"

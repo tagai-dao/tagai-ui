@@ -64,6 +64,7 @@
   "releaseToRefresh": "释放以刷新",
   "wallet": "钱包",
   "language": "语言",
+  "chain.network": "网络",
   "notification": "通知",
   "docs": "文档",
   "auditReport": "审计报告",
@@ -330,7 +331,8 @@
     "highSlippageWarn": "滑点偏高",
     "insufficientLiquidity": "池子流动性不足，请减少交易数量",
     "priceImpact": "价格影响",
-    "platformFee": "平台费"
+    "platformFee": "平台费",
+    "ipShareFee": "IPShare 费用"
   },
   "community": {
     "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于曲线销售，20%用于进入流动性池。",
@@ -438,6 +440,7 @@
     "transInvalid": "无效的交易",
     "noBondEth": "BNB 地址未绑定",
     "paramsError": "无效的参数。",
+    "chainContractsNotReady": "当前网络尚未部署合约，请切换到 BSC，或等待 Robinhood 上线后再试。",
     "curationNotExsist": "策展不存在",
     "insufficientFee": "手续费用不足",
     "insufficientBalance": "余额不足",

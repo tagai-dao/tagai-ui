@@ -13,6 +13,7 @@ import TransferTokenModal from "@/components/common/TransferTokenModal.vue";
 import BuyAndSellView from "@/views/buy-sell/BuyAndSellView.vue";
 import { useAccount } from "@/composables/useAccount";
 import { getTokenBalances } from "@/utils/web3";
+import { filterByActiveChain } from "@/utils/chainFilter";
 
 enum ModalType {
   transfer,
@@ -35,11 +36,26 @@ let currentLenth = 0
 const { updateHoldingValue } = useAccount()
 
 const scroller = document.querySelector('#profile-tab-scroller')
+
+/** 持仓项：community / 顶层 chainId；缺省按 BSC */
+const filterHoldingsForActiveChain = (list: any[]) =>
+  filterByActiveChain(
+    (list || []).map((item) => ({
+      ...item,
+      chainId: item.chainId ?? item.chain_id ?? item.community?.chainId ?? item.community?.chain_id,
+    }))
+  )
+
 const onLoad = async () => {
   if(finished.value || refreshing.value || currentLenth == 0 || showingNoEth.value) return
   try{
     loading.value = true
     let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!, Math.floor((currentLenth - 1) / 30) + 1)
+    list = filterHoldingsForActiveChain(list)
+    if (!list.length) {
+      finished.value = true
+      return
+    }
     const priceList = await getTokenOnchainInfo(
       list.map((item: any) => item.token),
       generateTokenVersions(list),
@@ -65,21 +81,28 @@ const onRefresh = async () => {
   try{
     refreshing.value = true
     finished.value = false;
-    // 获取外部导入代币的余额
-    let importedCommunities: any = await getImportedCommunityInfo();
-    let importedBalanceList: any = await getTokenBalances(importedCommunities.map((item: any) => item.token));
-    let importedPriceList: any =(importedCommunities && importedCommunities.length > 0) ? (await getImportTokenOnchainInfo(importedCommunities)) : []
+    // 仅当前链导入币，避免 BSC pair 打到 RH RPC
+    let importedCommunities: any[] = filterByActiveChain((await getImportedCommunityInfo() || []) as any[]);
+    let importedBalanceList: any = importedCommunities.length
+      ? await getTokenBalances(importedCommunities.map((item: any) => item.token))
+      : {};
+    let importedPriceList: any = importedCommunities.length
+      ? await getImportTokenOnchainInfo(importedCommunities)
+      : {};
 
     importedCommunities = importedCommunities.map((item: any) => ({
       community: item,
       account: accStore.getAccountInfo.ethAddr,
       amount: importedBalanceList[item.token],
       token: item.token,
-      tick: item.tick
+      tick: item.tick,
+      chainId: item.chainId ?? item.chain_id,
     }))
 
 
-    let list: any = await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!)
+    let list: any[] = filterHoldingsForActiveChain(
+      (await getHoldingList(accStore.getAccountInfo.twitterId, accStore.getAccountInfo.ethAddr!) || []) as any[]
+    )
     if (list && list.length > 0) {
       const priceList = await getTokenOnchainInfo(
         list.map((item: any) => item.token),
@@ -95,6 +118,13 @@ const onRefresh = async () => {
       }))).sort((a: any, b: any) => (b.amount?.toString() as any) * b.price - (a.amount?.toString() as any) * a.price)
     
       updateHoldingValue(accStore.tokenHoldingList);
+    } else {
+      accStore.tokenHoldingList = importedCommunities.map((item: any) => ({
+        ...item,
+        price: importedPriceList[item.token]?.price
+      }))
+      updateHoldingValue(accStore.tokenHoldingList);
+      finished.value = true
     }
     if (list.length === 0) {
       finished.value = true
@@ -155,6 +185,7 @@ function close(confirmed: boolean) {
 }
 
 onMounted(async () => {
+  // 切链整页 reload 后会重新走这里
   onRefresh()
 })
 

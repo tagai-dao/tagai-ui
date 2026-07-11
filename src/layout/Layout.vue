@@ -31,6 +31,7 @@ import CreateUserInfo from "@/components/login/CreateUserInfo.vue";
 import {getUserProfile} from "@/apis/api";
 import SearchBar from "@/components/common/SearchBar.vue";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher.vue";
+import ChainSwitcher from "@/components/common/ChainSwitcher.vue";
 
 const router = useRouter();
 const accStore = useAccountStore();
@@ -158,7 +159,8 @@ onMounted( () => {
             <div class="flex-1 max-w-[360px] focus-within:max-w-[480px] transition-all duration-200">
               <SearchBar />
             </div>
-            <div class="ml-4">
+            <div class="ml-4 flex items-center gap-2">
+              <ChainSwitcher variant="compact" />
               <LanguageSwitcher />
             </div>
           </div>

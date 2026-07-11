@@ -11,7 +11,8 @@ import { useStateStore } from "@/stores/common";
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, encodeAbiParameters, keccak256, parseEther, type Log } from "viem";
-import { writeContract, readContract } from "./contract";
+import { writeContract, readContract, resolveContractAddress } from "./contract";
+import { useChainStore } from '@/stores/chain';
 import { getReadOnlyClient } from "./wallets";
 import { buyTokenV4, sellTokenV4, resolveV4PoolId, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
 import { findPump9DeploySalt, verifyPump9SaltVanity } from "./pump9Salt";
@@ -28,6 +29,14 @@ const pumpContract = [
     PumpContract8,
     PumpContract9
 ]
+
+/** 旧版本仅部署在 BSC；v9 从当前链部署配置读取。 */
+const getActivePumpAddress = (version: number): string | undefined => {
+    const deployment = useChainStore().deployment
+    if (version === 9) return deployment.contracts.pump9
+    if (deployment.key !== 'bsc') return undefined
+    return pumpContract[version - 1]
+}
 
 const Q192 = 2n ** 192n;
 const TOKEN_DECIMALS = 18n;
@@ -78,33 +87,50 @@ export const getPump9CreateFee = async (userAddress: `0x${string}`): Promise<big
 
 // ==================== ImportHelper (V10 导入代币) ====================
 
-/** ImportHelper 部署费用：Committee.getCreateCommunityFee + Committee.getCommunitySettingsFee */
-export const getDeployNutboxFee = async (): Promise<bigint> => {
-    const [createFee, settingsFee] = await Promise.all([
+export type ImportCommunityFee = { createFee: bigint; settingsFee: bigint; ipshareCreateFee: bigint; total: bigint; createsIPShare: boolean }
+
+/** 与 ImportHelper 的链上费用算法保持一致；tick 仍由 API/DB 保证全局唯一。 */
+export const getImportCommunityFee = async (importer: `0x${string}`): Promise<ImportCommunityFee> => {
+    const [createFee, settingsFee, hasIPShare] = await Promise.all([
         readContract('NutboxCommittee', 'getCreateCommunityFee', []) as Promise<bigint>,
         readContract('NutboxCommittee', 'getCommunitySettingsFee', []) as Promise<bigint>,
+        readContract('IPShare3', 'ipshareCreated', [importer]) as Promise<boolean>,
     ]);
-    return createFee + settingsFee;
+    const ipshareCreateFee = hasIPShare ? 0n : await readContract('IPShare3', 'createFee', []) as bigint;
+    return { createFee, settingsFee, ipshareCreateFee, total: createFee + settingsFee + ipshareCreateFee, createsIPShare: !hasIPShare };
 }
 
 /** 调用 ImportHelper.createCommunityAndPool 链上创建 Nutbox Community + SocialCuration Pool */
 export const deployNutboxCommunity = async (
     token: `0x${string}`,
-    calculator: `0x${string}` = HourlyTickCalculator as `0x${string}`,
+    // ImportHelper validates that the calculator belongs to its own deployment.
+    // Do not use the historical BSC constant when the active chain is Robinhood.
+    calculator: `0x${string}` = useChainStore().deployment.contracts.hourlyTickCalculator,
     distributionPolicy: `0x${string}` = '0x'
 ): Promise<{ community: string; pool: string; txHash: string }> => {
-    const fee = await getDeployNutboxFee();
+    const importer = useAccountStore().ethConnectAddress as `0x${string}`;
+    const fee = await getImportCommunityFee(importer);
     const hash = await writeContract({
         contractName: 'ImportHelper',
         functionName: 'createCommunityAndPool',
         args: [token, calculator, distributionPolicy],
-        value: fee
+        value: fee.total
     });
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
     }
     const tx = await getTransactionReceipt(hash as `0x${string}`);
     const event = getCommunityCreatedEvent(tx);
+    if (!event || (event as any).creator?.toLowerCase() !== importer.toLowerCase()) {
+        throw new Error('ImportHelper receipt did not contain the expected CommunityCreated event');
+    }
+    const [recordedImporter, hasIPShare] = await Promise.all([
+        readContract('ImportHelper', 'importerOf', [token]) as Promise<string>,
+        readContract('IPShare3', 'ipshareCreated', [importer]) as Promise<boolean>,
+    ]);
+    if (recordedImporter.toLowerCase() !== importer.toLowerCase() || !hasIPShare) {
+        throw new Error('Imported community ownership or IPShare creation verification failed');
+    }
     return {
         community: (event as any)?.community ?? zeroAddress,
         pool: (event as any)?.pool ?? zeroAddress,
@@ -119,13 +145,14 @@ export const injectTokens = async (
     amount: bigint
 ): Promise<string> => {
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
+    const hourlyTickCalculator = useChainStore().deployment.contracts.hourlyTickCalculator;
     // 检查 allowance
-    const allowance = await readContract('Token1', 'allowance', [userAddress, HourlyTickCalculator], token) as bigint;
+    const allowance = await readContract('Token1', 'allowance', [userAddress, hourlyTickCalculator], token) as bigint;
     if (allowance < amount) {
         await writeContract({
             contractName: 'Token1',
             functionName: 'approve',
-            args: [HourlyTickCalculator, amount],
+            args: [hourlyTickCalculator, amount],
             address: token
         });
     }
@@ -285,7 +312,7 @@ export const getV10DistributionInfo = async (communityAddress: string, socialPoo
         const calculator = await readContract('NutboxCommunity', 'rewardCalculator', [], community) as string
         const calculatorLower = calculator.toLowerCase()
 
-        if (calculatorLower === HourlyTickCalculator.toLowerCase()) {
+        if (calculatorLower === useChainStore().deployment.contracts.hourlyTickCalculator.toLowerCase()) {
             const { dailyRewards, dayStarts, todayIndex, feeRatio, poolRatio, hourlyRewards } =
                 await getV9DailyRewardsByCommunity(community, socialPool)
             return {
@@ -368,7 +395,7 @@ async function getV9DailyRewardsByCommunity(community: `0x${string}`, socialPool
     return { dailyRewards, dayStarts, todayIndex: PAST_DAYS, community, socialPool, feeRatio, poolRatio, hourlyRewards }
 }
 
-export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
+export const buyToken = async (token: string, version: number, amount: bigint, ethAmount: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0, dexVersion = 2, pair?: string) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
@@ -379,10 +406,23 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
             throw new Error('V7/V8/V9 listed buy should use buyTokenV4 directly');
         }
 
-        // 2% transaction fee
-        const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
-
         if (isImport) {
+            const deployment = useChainStore().deployment
+            if (deployment.dex.kind === 'uniswap') {
+                const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
+                if (router === zeroAddress) throw new Error(`Uniswap V${dexVersion} router is not configured on ${deployment.name}`)
+                if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
+                const poolFee = dexVersion === 3
+                    ? await getUniswapV3PoolFee(pair)
+                    : 0
+                const functionName = dexVersion === 3 ? 'buyTokenV3' : 'buyToken'
+                const args = dexVersion === 3
+                    ? [sellsman, amount * BigInt(10000 - slippage) / 10000n, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router, poolFee]
+                    : [sellsman, amount * BigInt(10000 - slippage) / 10000n, [deployment.wrappedNative, token], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router]
+                return writeContract({ contractName: 'TagAISwapWrapper', functionName, args, value: ethAmount })
+            }
+            // BSC path intentionally unchanged.
+            const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
             const hash = await writeContract({
                 contractName: 'WrapSwaper2',
                 functionName: 'buyToken',
@@ -399,6 +439,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
             }
             return hash
         }else {
+            const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
             const hash = await writeContract({
                 contractName: 'WrapSwaper',
                 functionName: 'buyToken',
@@ -457,7 +498,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
     }
 }
 
-export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0) => {
+export const sellToken = async (token: string, version: number, amount: bigint, receiveEth: bigint, sellsman: `0x${string}` | undefined | null, listed: boolean, isImport: boolean, slippage = 0, dexVersion = 2, pair?: string) => {
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
@@ -468,6 +509,27 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         }
 
         if (isImport) {
+            const deployment = useChainStore().deployment
+            if (deployment.dex.kind === 'uniswap') {
+                const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
+                const wrapper = resolveContractAddress('TagAISwapWrapper')
+                if (!wrapper || router === zeroAddress) throw new Error(`Uniswap V${dexVersion} trading is not configured on ${deployment.name}`)
+                if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
+                const poolFee = dexVersion === 3
+                    ? await getUniswapV3PoolFee(pair)
+                    : 0
+                const allowance = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrapper], token) as bigint
+                if (allowance < amount) {
+                    await writeContract({ contractName: 'Token1', functionName: 'approve', args: [wrapper, amount], address: token })
+                }
+                const minOut = receiveEth * BigInt(10000 - slippage) / 10000n
+                const functionName = dexVersion === 3 ? 'sellTokenV3' : 'sellToken'
+                const args = dexVersion === 3
+                    ? [amount, minOut, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router, poolFee]
+                    : [amount, minOut, [token, deployment.wrappedNative], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router]
+                return writeContract({ contractName: 'TagAISwapWrapper', functionName, args })
+            }
+            // BSC path intentionally unchanged.
             const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)
             if (allowance < amount) {
                 // 安全: 只授权所需金额，避免无限授权风险
@@ -688,8 +750,14 @@ const geckoTokenCache = new Map<string, GeckoTokenCacheEntry>()
 const geckoTokenInflight = new Map<string, Promise<GeckoTokenCacheEntry | null>>()
 let geckoRateLimitedUntil = 0
 
+const getGeckoNetwork = () => useChainStore().activeChainId === 56 ? 'bsc'
+    : useChainStore().activeChainId === 4663 ? 'robinhood' : null
+
 const fetchGeckoTokenAttributes = async (token: string): Promise<Record<string, any> | null> => {
-    const key = token.toLowerCase()
+    const network = getGeckoNetwork()
+    if (!network) return null
+    const tokenLower = token.toLowerCase()
+    const key = `${network}:${tokenLower}`
     const now = Date.now()
     const cached = geckoTokenCache.get(key)
 
@@ -711,7 +779,7 @@ const fetchGeckoTokenAttributes = async (token: string): Promise<Record<string, 
             if (Date.now() < geckoRateLimitedUntil) {
                 return cached ?? null
             }
-            const resp = await fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${key}`)
+            const resp = await fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/${tokenLower}`)
             if (resp.status === 429) {
                 geckoRateLimitedUntil = Date.now() + GECKO_RATE_LIMIT_BACKOFF_MS
                 console.warn('GeckoTerminal rate limited, using cached token data')
@@ -781,6 +849,17 @@ const applyThirdPartyMarketCap = (
 
 export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
+    // 只处理当前产品链上的社区，避免 BSC 地址打到 RH RPC
+    const { filterByActiveChain } = await import('@/utils/chainFilter')
+    communities = filterByActiveChain(communities)
+    if (communities.length === 0) return communities;
+    // marketCap 在这里以原生币计价；详情页展示 USD 时会乘该价格。
+    // 不能只在第三方市值币种时加载，否则普通币首次打开详情会显示 $0.00。
+    const stateStore = useStateStore()
+    if (stateStore.ethPrice <= 0) {
+        const price: any = await getEthPrice()
+        stateStore.ethPrice = parseFloat(price) || 0
+    }
     let tokens = communities.filter(com => !com.isImport).map(com => com.token)
     let versions: Record<string, number> = {}
     for (let com of communities) {
@@ -836,6 +915,9 @@ export const getTokenInfo = async (communities: Community[]) => {
 export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     if (tweets.length === 0) return tweets;
     try {
+        const { filterByActiveChain } = await import('@/utils/chainFilter')
+        tweets = filterByActiveChain(tweets)
+        if (tweets.length === 0) return tweets;
         let tokens = tweets.filter(t => !t.isImport).map(t => t.token ?? '')
         let versions: Record<string, number> = {}
         for (let tweet of tweets) {
@@ -921,7 +1003,7 @@ export const getTokenOnchainInfo = async (
                     nutboxSocialPool: pool,
                 }] as const;
             }
-            const pumpAddress = pumpContract[version - 1];
+            const pumpAddress = getActivePumpAddress(version);
             if (!pumpAddress) return null;
             try {
                 const loadTotalClaimed = async (): Promise<bigint> => {
@@ -947,7 +1029,7 @@ export const getTokenOnchainInfo = async (
                     readContract('Token1', 'listed', [], token),
                     loadTotalClaimed(),
                     version < 7
-                        ? readContract('UniswapFactory', 'getPair', [token, WETH])
+                        ? readContract('UniswapFactory', 'getPair', [token, useChainStore().deployment.wrappedNative])
                         : Promise.resolve(undefined)
                 ]);
                 return [token, {
@@ -972,7 +1054,7 @@ export const getTokenOnchainInfo = async (
         const version = versions[token] ?? 4;
         // v10 导入代币无 Pump / bonding curve 接口，单独在后面查矿池 totalClaimed
         if (version === 10) continue;
-        const pumpAddress = pumpContract[version - 1];
+        const pumpAddress = getActivePumpAddress(version);
         if (!pumpAddress) continue;
         calls = calls.concat([
             {
@@ -1018,11 +1100,11 @@ export const getTokenOnchainInfo = async (
         // v7/v8 走 PCS V4，无 Uniswap V2 pair
         if (!isPcsV4Version(version)) {
             calls.push({
-                target: uniswapV2Factory,
+                target: useChainStore().deployment.dex.v2Factory,
                 call: [
                     'getPair(address,address)(address)',
                     token,
-                    WETH
+                    useChainStore().deployment.wrappedNative
                 ],
                 returns: [
                     [token + '-pair']
@@ -1151,7 +1233,7 @@ export const getTokenOnchainInfo = async (
         const token = p[0]
         let info: any = p[1]
         const version = versions[token] ?? 4;
-        const pumpAddress = pumpContract[version - 1];
+        const pumpAddress = getActivePumpAddress(version);
         if (!pumpAddress) continue;
         // v7/v8 上架后走 PCS V4 定价（pairMap），与 Uniswap V2 无关
         const isPcsV4Listed = isPcsV4Version(version) && info.listed;
@@ -1173,7 +1255,7 @@ export const getTokenOnchainInfo = async (
             const poolId = resolveV4PoolId(pairMap[token]);
             if (poolId) {
                 calls.push({
-                    target: PCSCLPoolManager,
+                    target: useChainStore().deployment.dex.v4PoolManager,
                     call: [
                         'getSlot0(bytes32)(uint160,int24,uint24,uint24)',
                         poolId
@@ -1413,6 +1495,41 @@ export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) 
     return amount[amount.length - 1] * 9800n / 10000n;
 }
 
+const getUniswapV3PoolFee = async (pair?: string): Promise<number> => {
+    if (!pair || !isAddress(pair)) throw new Error('Valid Uniswap V3 pool address is required')
+    return Number(await readContract('UniswapV3Pool', 'fee', [], pair as `0x${string}`))
+}
+
+const getUniswapV3AmountOut = async (
+    token: string,
+    pair: string,
+    amountIn: bigint,
+    inputIsToken: boolean
+): Promise<bigint> => {
+    const [slot0, token0, fee] = await Promise.all([
+        readContract('UniswapV3Pool', 'slot0', [], pair as `0x${string}`),
+        readContract('UniswapV3Pool', 'token0', [], pair as `0x${string}`),
+        readContract('UniswapV3Pool', 'fee', [], pair as `0x${string}`),
+    ])
+    const sqrtPriceX96 = BigInt((slot0 as any)[0])
+    const sqrtPriceSquared = sqrtPriceX96 * sqrtPriceX96
+    if (sqrtPriceSquared === 0n) return 0n
+
+    const amountAfterPoolFee = amountIn * (1_000_000n - BigInt(fee as number)) / 1_000_000n
+    const tokenIsToken0 = (token0 as string).toLowerCase() === token.toLowerCase()
+    const inputIsToken0 = inputIsToken === tokenIsToken0
+    return inputIsToken0
+        ? amountAfterPoolFee * sqrtPriceSquared / Q192
+        : amountAfterPoolFee * Q192 / sqrtPriceSquared
+}
+
+/** Uniswap V3 导入币报价；避免把 V3 池错误发送到 V2 Router.getAmountsOut。 */
+export const getV3BuyAmountUseEth = async (token: string, pair: string, ethAmount: bigint) =>
+    getUniswapV3AmountOut(token, pair, ethAmount, false)
+
+export const getV3SellAmountUseToken = async (token: string, pair: string, tokenAmount: bigint) =>
+    (await getUniswapV3AmountOut(token, pair, tokenAmount, true)) * 9800n / 10000n
+
 export const getAIBalance = async (tokens: string[]) => {
     let calls: any[] = []
     for (let token of tokens) {
@@ -1462,9 +1579,10 @@ export type TokenDexResult = {
 }
 
 function parseDexVersion(dexId: string): { dexVersion: number, dexLabel: string } {
-    if (dexId.includes('infinity') || dexId.includes('clmm')) return { dexVersion: 4, dexLabel: 'pancakeswap v4' }
-    if (dexId.includes('v3')) return { dexVersion: 3, dexLabel: 'pancakeswap v3' }
-    return { dexVersion: 2, dexLabel: 'pancakeswap v2' }
+    const dex = useChainStore().deployment.dex.kind === 'pancake' ? 'PancakeSwap' : 'Uniswap'
+    if (dexId.includes('infinity') || dexId.includes('clmm') || dexId.includes('v4')) return { dexVersion: 4, dexLabel: `${dex} v4` }
+    if (dexId.includes('v3')) return { dexVersion: 3, dexLabel: `${dex} v3` }
+    return { dexVersion: 2, dexLabel: `${dex} v2` }
 }
 
 function parsePoolAttrs(p: any, bnbPrice: number): DexPoolInfo {
@@ -1492,13 +1610,16 @@ function parsePoolAttrs(p: any, bnbPrice: number): DexPoolInfo {
 }
 
 export const getTokenDexPools = async (token: string): Promise<TokenDexResult | null> => {
+    const network = getGeckoNetwork()
+    if (!network) return null
+    const dexKind = useChainStore().deployment.dex.kind
     const tokenLower = token.toLowerCase()
     let poolsJson: any
     let tokenJson: { data: { attributes: Record<string, any> } } | null = null
     try {
         const [tokenAttrs, poolsResp] = await Promise.all([
             fetchGeckoTokenAttributes(tokenLower),
-            fetch(`https://api.geckoterminal.com/api/v2/networks/bsc/tokens/${tokenLower}/pools?page=1`)
+            fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/${tokenLower}/pools?page=1`)
         ])
         if (!poolsResp.ok) return null
         poolsJson = await poolsResp.json()
@@ -1523,7 +1644,7 @@ export const getTokenDexPools = async (token: string): Promise<TokenDexResult | 
     const allPools: any[] = poolsJson?.data ?? []
     const filtered = allPools.filter((p: any) => {
         const dexId: string = p.relationships?.dex?.data?.id ?? ''
-        return dexId.includes('pancakeswap')
+        return dexKind === 'pancake' ? dexId.includes('pancakeswap') : dexId.includes('uniswap')
     })
     if (filtered.length === 0) return null
 

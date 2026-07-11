@@ -64,6 +64,7 @@
   "releaseToRefresh": "Lepas untuk menyegarkan",
   "wallet": "Dompet",
   "language": "Bahasa",
+  "chain.network": "Jaringan",
   "notification": "Notifikasi",
   "docs": "Dokumentasi",
   "auditReport": "Laporan audit",
@@ -347,7 +348,8 @@
     "minReceived": "Minimum diterima",
     "highSlippageWarn": "Slippage tinggi",
     "priceImpact": "Dampak harga",
-    "platformFee": "Biaya platform"
+    "platformFee": "Biaya platform",
+    "ipShareFee": "Biaya IPShare"
   },
   "community": {
     "distributionTip": "Total suplai token didistribusikan dalam tiga bagian: 15% distribusi sosial, 65% penjualan bonding curve, dan 20% masuk pool likuiditas",
@@ -455,6 +457,7 @@
     "transInvalid": "Transaksi tidak valid",
     "noBondEth": "Alamat BNB belum ditautkan",
     "paramsError": "Parameter tidak valid",
+    "chainContractsNotReady": "Contracts are not deployed on this network yet. Please switch to BSC or wait for Robinhood launch.",
     "curationNotExsist": "Kurasi tidak ada",
     "insufficientFee": "Biaya tidak cukup",
     "insufficientBalance": "Saldo tidak cukup",

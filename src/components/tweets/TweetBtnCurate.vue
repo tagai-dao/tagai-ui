@@ -55,17 +55,19 @@ async function preCurate() {
 
 async function confirmCurate() {
   try{
+    if (isCurating.value) return
     isCurating.value = true
-    curateVisible.value = false
-    if (!(await preCheckCuration(OperateType.CURATE, props.tweet))) {
+    if (!(await preCheckCuration(OperateType.CURATE, props.tweet, curateAmount.value))) {
       return;
     }
-    const res = await userCurate(props.tweet, props.tweet.tick!, curateAmount.value)
+    await userCurate(props.tweet, props.tweet.tick!, curateAmount.value)
     if (!props.tweet.liked){
-      props.tweet.likeCount += 1;
+      props.tweet.likeCount = (props.tweet.likeCount ?? 0) + 1;
       props.tweet.liked = 1;
     }
+    props.tweet.curateCount = (props.tweet.curateCount ?? 0) + 1;
     props.tweet.curated = 1;
+    curateVisible.value = false
   } catch (e) {
     if (e === errCode.TWITTER_ERR) {
       e = errCode.LIKE_FREQUENT
@@ -73,7 +75,7 @@ async function confirmCurate() {
     if (e === errCode.USER_ALREADY_CURATED_TWEET) {
       props.tweet.curated = 1;
       if (!props.tweet.liked){
-        props.tweet.likeCount += 1;
+        props.tweet.likeCount = (props.tweet.likeCount ?? 0) + 1;
         props.tweet.liked = 1;
       }
       return;
@@ -136,14 +138,15 @@ async function confirmCurate() {
             <i-ep-loading v-if="isCreatingIPShare" class="animate-spin w-6 h-6"/>
           </button> -->
 
-          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" :disabled="isCreatingIPShare" @click="confirmCurate">
+          <button class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" :disabled="isCurating" @click="confirmCurate">
             {{ $t('ipshare.curateDerictly') }}  
-            <i-ep-loading v-if="isCreatingIPShare" class="animate-spin w-6 h-6"/>
+            <i-ep-loading v-if="isCurating" class="animate-spin w-6 h-6"/>
           </button>
 
         </div>
-        <button v-else class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" @click="confirmCurate">
+        <button v-else class="w-full bg-gradient-primary text-white flex justify-center items-center text-h5 rounded-full h-11" :disabled="isCurating" @click="confirmCurate">
           {{$t('confirm')}}
+          <i-ep-loading v-if="isCurating" class="animate-spin w-6 h-6"/>
         </button>
       </div>
 </el-dialog>
