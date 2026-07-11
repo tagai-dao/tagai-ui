@@ -28,6 +28,7 @@ export type ChainDeployment = {
   }
   features: {
     prediction: boolean
+    auPay: boolean
   }
   /** 包装原生币（BSC=WBNB，RH=WETH） */
   wrappedNative: `0x${string}`
@@ -98,7 +99,7 @@ export const BSC_CHAIN: ChainDeployment = {
     multicallAddress: MULTICALL3,
     interval: 3000,
   },
-  features: { prediction: true },
+  features: { prediction: true, auPay: true },
   wrappedNative: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
   dex: {
     kind: 'pancake',
@@ -149,7 +150,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     multicallAddress: MULTICALL3,
     interval: 3000,
   },
-  features: { prediction: false },
+  features: { prediction: false, auPay: false },
   // Uniswap UR constructor 确认的 WETH9
   wrappedNative: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
   dex: {

@@ -25,11 +25,11 @@ const tabOptions = computed(() => [
   'holding',
   'ipshare',
   ...(chainStore.deployment.features.prediction ? ['prediction'] : []),
-  'socialAccount',
+  ...(chainStore.deployment.features.auPay ? ['socialAccount'] : []),
 ])
 const activeTab = ref('holding')
-watch(() => chainStore.deployment.features.prediction, enabled => {
-  if (!enabled && activeTab.value === 'prediction') activeTab.value = 'holding'
+watch(tabOptions, options => {
+  if (!options.includes(activeTab.value)) activeTab.value = 'holding'
 })
 const showPrivyModal = ref(false)
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
@@ -120,7 +120,7 @@ onMounted(() => {
       <TabHoldTag v-if="activeTab==='holding'"/>
       <TabIPShareHolding v-if="activeTab==='ipshare'"/>
       <TabPrediction v-if="activeTab==='prediction'"/>
-      <TabSocialAccount v-if="activeTab==='socialAccount'"/>
+      <TabSocialAccount v-if="chainStore.deployment.features.auPay && activeTab==='socialAccount'"/>
     </div>
     <PrivyModal @close="showPrivyModal = false" v-if="showPrivyModal"/>
   </div>
