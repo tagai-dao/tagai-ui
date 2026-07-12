@@ -93,12 +93,17 @@ type MulticallContract = {
   args?: readonly unknown[]
 }
 
+/** allowFailure:true 时单行结果 */
+type MulticallRow =
+  | { status: 'success'; result: unknown }
+  | { status: 'failure'; error: Error }
+
 /** 分批 multicall，单批失败不拖死整页 */
 const multicallBatched = async (
   client: PublicClient,
   contracts: MulticallContract[],
-) => {
-  const out: Awaited<ReturnType<PublicClient['multicall']>> = []
+): Promise<MulticallRow[]> => {
+  const out: MulticallRow[] = []
   for (let i = 0; i < contracts.length; i += MULTICALL_BATCH) {
     const batch = contracts.slice(i, i + MULTICALL_BATCH)
     const rows = await client.multicall({
@@ -106,13 +111,13 @@ const multicallBatched = async (
       allowFailure: true,
       multicallAddress: MULTICALL3,
     })
-    out.push(...rows)
+    out.push(...(rows as MulticallRow[]))
   }
   return out
 }
 
-const ok = <T>(row: { status: string; result?: unknown }): T | null => {
-  if (row.status !== 'success') return null
+const ok = <T>(row: MulticallRow | undefined): T | null => {
+  if (!row || row.status !== 'success') return null
   return row.result as T
 }
 
@@ -151,7 +156,7 @@ const discoverBaskets = async (chainId: number): Promise<Address[]> => {
     const len = Number(ok<bigint>(first[0]) ?? 0n)
     if (!Number.isFinite(len) || len <= 0) return []
 
-    const pick = (rows: Awaited<ReturnType<typeof multicallBatched>>, offset: number, count: number) =>
+    const pick = (rows: MulticallRow[], offset: number, count: number) =>
       rows
         .slice(offset, offset + count)
         .map((r) => ok<Address>(r))
