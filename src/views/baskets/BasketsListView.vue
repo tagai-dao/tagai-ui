@@ -57,10 +57,11 @@ onMounted(() => {
       :placeholder="$t('baskets.searchPlaceholder')"
     >
 
-    <div v-if="isLoading" class="py-16 text-center text-grey-64 text-sm">
+    <!-- 有壳数据就出列表，不再被 enrich 挡住 -->
+    <div v-if="isLoading && list.length === 0" class="py-16 text-center text-grey-64 text-sm">
       {{ $t('baskets.loading') }}
     </div>
-    <div v-else-if="hasError" class="py-16 text-center text-red-normal text-sm">
+    <div v-else-if="hasError && list.length === 0" class="py-16 text-center text-red-normal text-sm">
       {{ errorMessage || $t('baskets.loadFailed') }}
     </div>
     <div v-else-if="list.length === 0" class="py-16 text-center text-grey-64 text-sm">

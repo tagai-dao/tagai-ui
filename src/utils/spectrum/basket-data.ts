@@ -49,13 +49,18 @@ export type BasketDetail = BasketSummary & {
 export type BasketReadOptions = {
   /** true 时绕过短时缓存 */
   force?: boolean
+  /**
+   * 列表首屏回调：meta（name/NAV/AUM）就绪即触发，top 可能仍为空。
+   * 用于渐进渲染，避免等成分 symbol 才出卡片。
+   */
+  onShell?: (shell: BasketSummary[]) => void
 }
 
 /** Multicall3 标准地址（RH 已部署） */
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const
 const MULTICALL_BATCH = 80
-/** 列表 / 详情短时缓存 TTL */
-const CACHE_TTL_MS = 30_000
+/** 列表 / 详情短时缓存 TTL（列表可稍长，减重复冷启动） */
+const CACHE_TTL_MS = 120_000
 
 type CacheEntry<T> = { at: number; data: T }
 
@@ -127,8 +132,8 @@ const discoverBaskets = async (chainId: number): Promise<Address[]> => {
   const dep = getSpectrumDeployment(chainId)
   if (!dep) return []
   const client = getReadOnlyClient(chainId)
-  /** 首包 over-fetch：一次拿到 length + 地址；过大易拖慢公共 RPC */
-  const DISCOVER_CHUNK = 16
+  /** 单次 multicall：length + 前 N 个地址（N 小，避免大量 revert） */
+  const DISCOVER_CHUNK = 8
   try {
     const first = await multicallBatched(client, [
       {
@@ -153,8 +158,6 @@ const discoverBaskets = async (chainId: number): Promise<Address[]> => {
         .filter((a): a is Address => !!a && isAddress(a))
 
     let addrs = pick(first, 1, Math.min(len, DISCOVER_CHUNK))
-
-    // 超过首包容量再补拉
     if (len > DISCOVER_CHUNK) {
       const rest = await multicallBatched(
         client,
@@ -213,7 +216,7 @@ const readSymbols = async (
 }
 
 /**
- * 列表轻读：name / NAV / AUM / 成分权重 + symbol
+ * 列表轻读：先出 name/NAV/AUM（onShell），再后台补成分 top。
  * 不拉 quoteLeg / idleHeld / fee（详情页再加深）
  */
 export const listBaskets = async (
@@ -221,6 +224,7 @@ export const listBaskets = async (
   opts: BasketReadOptions = {},
 ): Promise<BasketSummary[]> => {
   if (!opts.force && listCache && isFresh(listCache.at)) {
+    opts.onShell?.(listCache.data)
     return listCache.data
   }
 
@@ -235,11 +239,12 @@ export const listBaskets = async (
 
   if (unique.length === 0) {
     listCache = { at: Date.now(), data: [] }
+    opts.onShell?.([])
     return []
   }
 
-  // 波次 1：每个 basket 的元数据（6 字段）
-  const META = 6
+  // —— 首屏：只读卡片必需字段（不含 deployer / legs）——
+  const META = 5
   const metaContracts: MulticallContract[] = []
   for (const addr of unique) {
     metaContracts.push(
@@ -248,7 +253,6 @@ export const listBaskets = async (
       { address: addr, abi: basketAbi, functionName: 'basketLength' },
       { address: addr, abi: basketAbi, functionName: 'exchangeRate' },
       { address: addr, abi: basketAbi, functionName: 'totalReserve' },
-      { address: dep.factory, abi: factoryAbi, functionName: 'tokens', args: [addr] },
     )
   }
   const metaRows = await multicallBatched(client, metaContracts)
@@ -261,7 +265,6 @@ export const listBaskets = async (
     navPerToken: number
     aumUsd: number
     fullyPriced: boolean
-    deployer: Address | null
   }
 
   const metas: Meta[] = []
@@ -274,7 +277,6 @@ export const listBaskets = async (
     const len = Number(ok<bigint>(metaRows[base + 2]) ?? 0n)
     const rate = ok<readonly [bigint, boolean]>(metaRows[base + 3])
     const reserve = ok<readonly [bigint, boolean]>(metaRows[base + 4])
-    const deployerRaw = ok<Address>(metaRows[base + 5])
 
     let navPerToken = 0
     let fullyPriced = false
@@ -299,11 +301,27 @@ export const listBaskets = async (
       navPerToken,
       aumUsd,
       fullyPriced,
-      deployer: deployerRaw && isAddress(deployerRaw) ? deployerRaw : null,
     })
   })
 
-  // 波次 2：所有成分 basket(i)
+  // 先抛出无 top 的壳，让 UI 立刻出卡片
+  const shell: BasketSummary[] = metas
+    .map((m) => ({
+      chainId,
+      address: m.address,
+      name: m.name,
+      symbol: m.symbol,
+      basketLength: m.basketLength,
+      navPerToken: m.navPerToken,
+      aumUsd: m.aumUsd,
+      pricedCount: m.fullyPriced ? m.basketLength : 0,
+      top: [],
+      deployer: null,
+    }))
+    .sort((a, b) => b.aumUsd - a.aumUsd)
+  opts.onShell?.(shell)
+
+  // —— 后台：成分权重 + symbol ——
   const legContracts: MulticallContract[] = []
   const legIndex: { metaIdx: number; legIdx: number }[] = []
   metas.forEach((m, metaIdx) => {
@@ -331,7 +349,6 @@ export const listBaskets = async (
     })
   })
 
-  // 波次 3：去重后读 symbol
   const allAssets = legsByMeta.flatMap((legs) => legs.map((l) => l.asset))
   const symbolMap = await readSymbols(client, allAssets, dep.usdc, dep.usdcSymbol)
 
@@ -353,10 +370,9 @@ export const listBaskets = async (
       basketLength: m.basketLength,
       navPerToken: m.navPerToken,
       aumUsd: m.aumUsd,
-      // 列表未逐腿定价；用 on-chain fullyPriced 近似
       pricedCount: m.fullyPriced ? m.basketLength : 0,
       top,
-      deployer: m.deployer,
+      deployer: null,
     }
   })
 
