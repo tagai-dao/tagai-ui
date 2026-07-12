@@ -41,6 +41,12 @@ export const customRobinhood = defineChain({
       url: ROBINHOOD_CHAIN.browser.replace(/\/$/, ''),
     },
   },
+  // viem multicall 依赖；与 chains.ts MULTICALL3 一致
+  contracts: {
+    multicall3: {
+      address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+    },
+  },
 })
 
 /** Privy / 钱包：产品链 + 少量测试网 */

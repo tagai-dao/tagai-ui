@@ -136,3 +136,5 @@ package-lock.json
 _npm_cache/*
 .gstack/
 docs/
+# Local Spectrum reference clone
+.tmp-spectrum/

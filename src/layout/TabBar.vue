@@ -38,6 +38,10 @@ const isPredictionActive = computed(() => {
   return route.name === 'predictions' || isActive('/predict')
 })
 
+const isBasketsActive = computed(() => {
+  return route.name === 'baskets' || route.name === 'basket-detail' || isActive('/baskets')
+})
+
 const goToTag = () => {
   stateStore.setTagSubMenu('tweets')
 }
@@ -61,6 +65,17 @@ const goToTag = () => {
         <img v-if="isPredictionActive" class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
         <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
         <span class="text-[10px] leading-none" :class="isPredictionActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('prediction') }}</span>
+      </router-link>
+      <router-link to="/baskets" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
+        <img
+          v-if="isBasketsActive"
+          class="w-6 h-6"
+          src="~@/assets/icons/icon-pie-chart.svg"
+          alt=""
+          style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)"
+        >
+        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
+        <span class="text-[10px] leading-none" :class="isBasketsActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('baskets.menu') }}</span>
       </router-link>
       <router-link to="/wallet/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
         <img v-if="$route.name==='wallet'" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">

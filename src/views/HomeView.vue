@@ -172,14 +172,27 @@ async function getNewCommunities() {
   try{
     let communities = await getCommunitiesByNew() as Array<Community>;
     if (communities && communities.length > 0) {
-      getTokenInfo(communities).then((res) => {
-        comStore.newCommunities = [...res]
+      // 先用 API 数据填滚动条；只给可见的前 10 条做链上补价，减轻与 Feed 抢 RPC
+      comStore.newCommunities = communities
+      const head = communities.slice(0, 10)
+      getTokenInfo(head).then((res) => {
+        const byToken = new Map(res.map((c) => [c.token?.toLowerCase(), c]))
+        comStore.newCommunities = communities.map((c) => byToken.get(c.token?.toLowerCase() ?? '') ?? c)
       })
     } else {
       finished[ListType.New] = true
     }
   } catch(e) {
     handleErrorTip(e)
+  }
+}
+
+/** 仅在 Coin/TagCoin 可见时拉重链上列表，避免 Tag 首页抢 RPC */
+function ensureCoinListLoaded() {
+  if (activeMainMenu.value !== 'coin' || coinSubMenu.value !== 'tagCoin') return
+  const list = currentCoinList.value
+  if (!list || list.length === 0) {
+    void refresh()
   }
 }
 
@@ -214,16 +227,22 @@ function switchCoinTab(tab: 'tagCoin' | 'ip') {
   if (route.name === 'coins') {
     router.replace({ query: tab === 'ip' ? { tab: 'ip' } : {} })
   }
+  if (tab === 'tagCoin') ensureCoinListLoaded()
 }
 
 
 onMounted(async () => {
-  refresh();
+  // Tag 首页不立刻打 Coin 列表的 getTokenInfo；切到 Coin 再拉
+  ensureCoinListLoaded()
   getSpaces();
   setInter(getSpaces, 20000);
   getNewCommunities();
   newCommunitiesInterval = setInterval(getNewCommunities, 60000);
   emitter.on('newCommunity', refresh);
+})
+
+watch([activeMainMenu, coinSubMenu], () => {
+  ensureCoinListLoaded()
 })
 
 onActivated(() => {

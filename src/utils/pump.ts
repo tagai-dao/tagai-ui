@@ -872,10 +872,12 @@ export const getTokenInfo = async (communities: Community[]) => {
             socialPoolMap[com.token] = com.socialPoolAddress
         }
     }
-    const thirdPartyMarketCapMap = await fetchThirdPartyMarketCapMap(communities)
-    let result = await getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap)
-
-    let importResult = await getImportTokenOnchainInfo(communities.filter(com => com.isImport), pairMap)
+    // 链上补价 / 导入币 / 第三方市值并行，缩短墙钟时间
+    const [thirdPartyMarketCapMap, result, importResult] = await Promise.all([
+        fetchThirdPartyMarketCapMap(communities),
+        getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap),
+        getImportTokenOnchainInfo(communities.filter(com => com.isImport), pairMap),
+    ])
 
     for (let community of communities) {
         // 导入币后端已确认上架，不依赖链上询价成功与否
@@ -931,15 +933,18 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                 socialPoolMap[tweet.token] = pool
             }
         }
-        const thirdPartyMarketCapMap = await fetchThirdPartyMarketCapMap(tweets)
-        let result = await getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap)
-        let importResult = await getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap)
-
-        const stateStore = useStateStore();
-        if (stateStore.ethPrice == 0) {
-            const price: any = await getEthPrice()
-            stateStore.ethPrice = parseFloat(price)
-        }
+        const stateStore = useStateStore()
+        // 链上补价 / 导入币 / 第三方市值 / ETH 价并行
+        const [thirdPartyMarketCapMap, result, importResult] = await Promise.all([
+            fetchThirdPartyMarketCapMap(tweets),
+            getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap),
+            getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap),
+            stateStore.ethPrice == 0
+                ? getEthPrice().then((price: any) => {
+                    stateStore.ethPrice = parseFloat(price)
+                })
+                : Promise.resolve(),
+        ])
         
         for( let tweet of tweets) {
             if (!tweet.token) continue
@@ -1380,30 +1385,192 @@ export const getImportTokenPrice = async (token: string, pair: string, dexVersio
     }
 }
 
-export const getImportTokenOnchainInfo = async (communities: OnchainTokenInfo[], pairMap: Record<string, string> = {}) => {
-    if (communities.length === 0) return []
+/**
+ * 批量读导入币价格 + totalSupply。
+ * 按 token 去重后一次 multicall，避免首页「29 条推文同一 token」串行打 RPC。
+ */
+export const getImportTokenOnchainInfo = async (
+    communities: OnchainTokenInfo[],
+    pairMap: Record<string, string> = {},
+) => {
+    if (communities.length === 0) return {} as Record<string, { price: number; totalSupply: number }>
 
-    const stateStore = useStateStore();
+    const stateStore = useStateStore()
     if (stateStore.ethPrice == 0) {
         const price: any = await getEthPrice()
         stateStore.ethPrice = parseFloat(price)
     }
+    const ethPrice = stateStore.ethPrice
 
-    let result: any = {}
+    // 同一 token 只保留一条（pair / dexVersion 取首个）
+    type ImportMeta = { token: string; pair: string; dexVersion: number }
+    const byToken = new Map<string, ImportMeta>()
+    for (const c of communities) {
+        if (!c.token || !isAddress(c.token) || !c.pair) continue
+        const key = c.token.toLowerCase()
+        if (byToken.has(key)) continue
+        byToken.set(key, {
+            token: c.token,
+            pair: c.pair,
+            dexVersion: c.dexVersion ?? 2,
+        })
+    }
+    if (byToken.size === 0) return {}
 
-    for (const community of communities) {
-        const token = community.token
-        if (!isAddress(token) || !community.pair) continue;
-        const [price, erc20Info] = await Promise.all([
-            getImportTokenPrice(token, community.pair, community.dexVersion ?? 2, pairMap, stateStore.ethPrice),
-            getTokenERC20Info(token)
-        ])
-        if (price !== undefined) {
-            result[token] = { price, totalSupply: erc20Info.totalSupply }
+    const metas = Array.from(byToken.values())
+    const v4PoolManager = useChainStore().deployment.dex.v4PoolManager
+    const calls: any[] = []
+
+    for (const m of metas) {
+        const { token, pair, dexVersion } = m
+        // ERC20：只要 totalSupply + decimals（symbol 展示不依赖这里）
+        calls.push(
+            {
+                target: token,
+                call: ['totalSupply()(uint256)'],
+                returns: [[`${token}-totalSupply`]],
+            },
+            {
+                target: token,
+                call: ['decimals()(uint8)'],
+                returns: [[`${token}-decimals`]],
+            },
+        )
+
+        if (dexVersion === 4) {
+            const poolId = resolveV4PoolId(pairMap[token] || pair)
+            if (poolId && v4PoolManager) {
+                calls.push({
+                    target: v4PoolManager,
+                    call: ['getSlot0(bytes32)(uint160,int24,uint24,uint24)', poolId],
+                    returns: [
+                        [`${token}-sqrtPriceX96`, (val: any) => BigInt(val)],
+                        [`${token}-tick`],
+                        [`${token}-protocolFee`],
+                        [`${token}-lpFee`],
+                    ],
+                })
+            }
+        } else if (dexVersion === 3) {
+            calls.push(
+                {
+                    target: pair,
+                    call: ['slot0()(uint160,int24,uint16,uint16,uint16,uint8,bool)'],
+                    returns: [
+                        [`${token}-sqrtPriceX96`, (val: any) => BigInt(val)],
+                        [`${token}-v3tick`],
+                        [`${token}-oi`],
+                        [`${token}-oc`],
+                        [`${token}-ocn`],
+                        [`${token}-fp`],
+                        [`${token}-ul`],
+                    ],
+                },
+                {
+                    target: pair,
+                    call: ['token0()(address)'],
+                    returns: [[`${token}-token0`]],
+                },
+            )
+        } else {
+            // Uniswap V2 / Pancake V2
+            calls.push(
+                {
+                    target: pair,
+                    call: ['getReserves()(uint256,uint256)'],
+                    returns: [
+                        [`${token}-r0`, (val: any) => Number(val.toString()) / 1e18],
+                        [`${token}-r1`, (val: any) => Number(val.toString()) / 1e18],
+                    ],
+                },
+                {
+                    target: pair,
+                    call: ['token0()(address)'],
+                    returns: [[`${token}-token0`]],
+                },
+                {
+                    target: pair,
+                    call: ['token1()(address)'],
+                    returns: [[`${token}-token1`]],
+                },
+            )
         }
     }
 
-    return result;
+    let data: Record<string, any> = {}
+    try {
+        const res = await aggregateWithRpcFallback(calls)
+        data = res.results.transformed
+    } catch (e) {
+        console.warn('[getImportTokenOnchainInfo] multicall failed, fallback per-token', e)
+        // 降级：仍按去重后的 token 并行（不再按推文条数串行）
+        const entries = await Promise.all(
+            metas.map(async (m) => {
+                try {
+                    const [price, erc20Info] = await Promise.all([
+                        getImportTokenPrice(m.token, m.pair, m.dexVersion, pairMap, ethPrice),
+                        getTokenERC20Info(m.token),
+                    ])
+                    if (price === undefined) return null
+                    return [m.token, { price, totalSupply: erc20Info.totalSupply }] as const
+                } catch {
+                    return null
+                }
+            }),
+        )
+        return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, { price: number; totalSupply: number }]>)
+    }
+
+    const result: Record<string, { price: number; totalSupply: number }> = {}
+    for (const m of metas) {
+        const { token, dexVersion } = m
+        const decimals = Number(data[`${token}-decimals`] ?? 18)
+        const supplyRaw = data[`${token}-totalSupply`]
+        if (supplyRaw == null) continue
+        const totalSupply = Number(supplyRaw.toString()) / 10 ** decimals
+
+        let price: number | undefined
+        try {
+            if (dexVersion === 4) {
+                const sqrt = data[`${token}-sqrtPriceX96`]
+                if (sqrt !== undefined && BigInt(sqrt) !== 0n) {
+                    price = sqrtPriceX96ToBnbPerToken(BigInt(sqrt))
+                }
+            } else if (dexVersion === 3) {
+                const sqrt = data[`${token}-sqrtPriceX96`]
+                const token0 = data[`${token}-token0`] as string | undefined
+                if (sqrt !== undefined && BigInt(sqrt) !== 0n && token0) {
+                    const scaledPrice = (BigInt(sqrt) * BigInt(sqrt) * 10n ** TOKEN_DECIMALS) / Q192
+                    let p = Number(scaledPrice) / 1e18
+                    if (token0.toLowerCase() !== token.toLowerCase()) {
+                        p = p > 0 ? 1 / p : 0
+                    }
+                    price = p
+                }
+            } else {
+                const r0 = data[`${token}-r0`] as number | undefined
+                const r1 = data[`${token}-r1`] as number | undefined
+                const token0 = data[`${token}-token0`] as string | undefined
+                const token1 = data[`${token}-token1`] as string | undefined
+                if (r0 != null && r1 != null && token0 && r0 > 0 && r1 > 0) {
+                    let p = token0.toLowerCase() === token.toLowerCase() ? r1 / r0 : r0 / r1
+                    const paired = token0.toLowerCase() === token.toLowerCase() ? token1 : token0
+                    if (paired && USD_CONTRACTS[checksumAddress(paired as `0x${string}`) as `0x${string}`]) {
+                        p = ethPrice > 0 ? p / ethPrice : p
+                    }
+                    price = p
+                }
+            }
+        } catch (e) {
+            console.warn('[getImportTokenOnchainInfo] decode failed', token, e)
+        }
+
+        if (price !== undefined && Number.isFinite(price)) {
+            result[token] = { price, totalSupply }
+        }
+    }
+
+    return result
 }
 
 export const getBuyAmountWithETHAfterFee = async (token: string | undefined, version: number, amount: bigint) => {
