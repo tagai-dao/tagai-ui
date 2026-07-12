@@ -72,7 +72,7 @@ function toggleExpand() {
   isExpanded.value = !isExpanded.value
 }
 
-// 如果 marketCapCommunities 为空，则加载数据
+// 侧栏 Top TagCoin：先塞 API，链上补价后台跑，避免拖慢 HomePost Feed
 onMounted(async () => {
   checkIsPC()
   if (typeof window !== 'undefined') {
@@ -83,8 +83,12 @@ onMounted(async () => {
     try {
       const communities = await getCommunityByMarketCap() as Array<Community>
       if (communities && communities.length > 0) {
-        const tokenInfo = await getTokenInfo(communities)
-        comStore.marketCapCommunities = tokenInfo
+        comStore.marketCapCommunities = communities
+        getTokenInfo(communities).then((tokenInfo) => {
+          comStore.marketCapCommunities = tokenInfo
+        }).catch((e) => {
+          console.error('Enrich market cap communities error:', e)
+        })
       }
     } catch (e) {
       console.error('Load market cap communities error:', e)

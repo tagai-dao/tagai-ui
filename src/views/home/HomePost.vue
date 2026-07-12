@@ -40,6 +40,9 @@ const finished = ref({
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
 
+/** 防止快速切 Tab / 连续刷新时，旧的补价结果写回新列表 */
+let enrichSeq = 0
+
 const showingTweets = computed(() => {
   if (tweetsStore?.homeTweetType === TweetListType.New) {
     return tweetsStore.newTweets
@@ -50,62 +53,88 @@ const showingTweets = computed(() => {
   return [] as Tweet[]
 });
 
+/** 按 tweetId 把链上补价写回当前列表（不挡首屏） */
+const enrichHomeTweets = async (type: TweetListType, batch: Tweet[], seq: number) => {
+  if (!batch.length) return
+  try {
+    const enriched = await getTokenInfoOfTweets(batch)
+    // 已过期：用户切走了 Tab 或又点了刷新
+    if (seq !== enrichSeq || tweetsStore.homeTweetType !== type) return
+    const byId = new Map(enriched.map((t) => [t.tweetId, t]))
+    const merge = (rows: Tweet[]) => rows.map((t) => byId.get(t.tweetId) ?? t)
+    if (type === TweetListType.New) {
+      tweetsStore.newTweets = merge(tweetsStore.newTweets)
+    } else {
+      tweetsStore.trendingTweets = merge(tweetsStore.trendingTweets)
+    }
+  } catch (e) {
+    console.warn('[HomePost] enrich tweets failed', e)
+  }
+}
+
 async function onRefresh() {
+  const type = tweetsStore.homeTweetType as TweetListType
+  const seq = ++enrichSeq
   try {
     refreshing.value = true;
-    finished.value[tweetsStore.homeTweetType as TweetListType] = false;
+    finished.value[type] = false;
     let list: Tweet[] = []
-    if (tweetsStore.homeTweetType === TweetListType.New) {
+    if (type === TweetListType.New) {
       list = await getNewTweets(accStore.getAccountInfo?.twitterId) as Tweet[]
-      tweetsStore.newTweets = await getTokenInfoOfTweets(list)
-    } else if (tweetsStore.homeTweetType === TweetListType.Trending) {
+      // API 一到先出列表，补价后台回填
+      tweetsStore.newTweets = list
+    } else if (type === TweetListType.Trending) {
       list = await getTrendingTweets(accStore.getAccountInfo?.twitterId) as Tweet[]
-      tweetsStore.trendingTweets = await getTokenInfoOfTweets(list)
+      tweetsStore.trendingTweets = list
     }
 
     if (list.length < 30) {
-      finished.value[tweetsStore.homeTweetType] = true
+      finished.value[type] = true
     }
+    // 转圈结束：内容已可见，不必等链上价
+    refreshing.value = false
+    void enrichHomeTweets(type, list, seq)
   } catch (e) {
     handleErrorTip(e)
-  } finally {
-    refreshing.value = false;
+    refreshing.value = false
   }
 }
 
 async function onLoad() {
+  const type = tweetsStore.homeTweetType as TweetListType
   try{
-    if (refreshing.value || finished.value[tweetsStore.homeTweetType as TweetListType] || showingTweets.value.length === 0) {
+    if (refreshing.value || finished.value[type] || showingTweets.value.length === 0) {
       return;
     }
     loading.value = true
+    const page = Math.floor((showingTweets.value.length - 1) / 30) + 1
     let list: Tweet[] = []
-    if (tweetsStore.homeTweetType === TweetListType.New) {
-      list = await getNewTweets(accStore.getAccountInfo?.twitterId, Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
-      list = await getTokenInfoOfTweets(list)
+    if (type === TweetListType.New) {
+      list = await getNewTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
       tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
-    } else if (tweetsStore.homeTweetType === TweetListType.Trending) {
-      list = await getTrendingTweets(accStore.getAccountInfo?.twitterId, Math.floor((showingTweets.value.length - 1) / 30) + 1) as Tweet[]
-      list = await getTokenInfoOfTweets(list)
+    } else if (type === TweetListType.Trending) {
+      list = await getTrendingTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
       tweetsStore.trendingTweets = tweetsStore.trendingTweets.concat(list)
     }
     if (list && list.length < 30) {
-      finished.value[tweetsStore.homeTweetType] = true
+      finished.value[type] = true
     }
+    loading.value = false
+    // 分页同样：先追加再补价
+    void enrichHomeTweets(type, list, enrichSeq)
   } catch (e) {
     handleErrorTip(e)
-  } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-onMounted(async () => {
-  await onRefresh();
+onMounted(() => {
+  void onRefresh();
   emitter.on('login', onRefresh);
 });
 
-watch([() => tweetsStore.homeTweetType], async () => {
-  await onRefresh()
+watch([() => tweetsStore.homeTweetType], () => {
+  void onRefresh()
 })
 
 onActivated(() => {
