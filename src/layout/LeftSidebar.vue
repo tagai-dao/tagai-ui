@@ -49,6 +49,10 @@ const isPredictionActive = computed(() => {
   return route.name === 'predictions' || isActive('/predict')
 })
 
+const isBasketsActive = computed(() => {
+  return route.name === 'baskets' || route.name === 'basket-detail' || isActive('/baskets')
+})
+
 // 创建 TagCoin
 const createTagCoin = () => {
   modalStore.setModalVisible(true, GlobalModalType.CreateCoin)
@@ -148,6 +152,21 @@ const handleWalletClick = (e?: Event) => {
           alt="Prediction"
         >
         <span class="hidden desk:inline text-h4 text-content">{{ $t('prediction') || 'Prediction' }}</span>
+      </router-link>
+
+      <!-- Baskets（Spectrum / Robinhood） -->
+      <router-link
+        to="/baskets"
+        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
+        :class="isBasketsActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
+      >
+        <img
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
+          :style="isBasketsActive ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          src="~@/assets/icons/icon-pie-chart.svg"
+          alt="Baskets"
+        >
+        <span class="hidden desk:inline text-h4 text-content">{{ $t('baskets.menu') || 'Baskets' }}</span>
       </router-link>
 
       <!-- 4. 通知 -->

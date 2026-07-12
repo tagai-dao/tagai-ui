@@ -131,6 +131,18 @@ const router = createRouter({
       name: 'about',
       component: AboutView,
       meta: { tabBar: true, topBar: true }
+    },
+    {
+      path: '/baskets',
+      name: 'baskets',
+      component: () => import('@/views/baskets/BasketsListView.vue'),
+      meta: { tabBar: true, topBar: true }
+    },
+    {
+      path: '/baskets/:address',
+      name: 'basket-detail',
+      component: () => import('@/views/baskets/BasketDetailView.vue'),
+      meta: { tabBar: true, topBar: true }
     }
   ]
 })
