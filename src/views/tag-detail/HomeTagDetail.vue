@@ -347,7 +347,7 @@ onBeforeRouteLeave((to, from, next) => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
+  <div class="h-full mobile-scroll-container no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
     <div class="grid grid-cols-1 web:hidden gap-3 " ref="topBannerContainerRef">
       <div v-if="deployTweetList.length>0"
@@ -549,11 +549,11 @@ onBeforeRouteLeave((to, from, next) => {
       <BuyAndSellView
         v-if="(showTradeBox || width>800) && !inlineUnlistedTradeLayout"
       />
-      <div class="min-h-full h-full sticky top-[0px]"
+      <div class="min-h-0 web:min-h-full web:h-full web:sticky web:top-[0px]"
            :class="inlineUnlistedTradeLayout ? 'web:contents' : ''"
            ref="tabContainerRef">
-      <div class="h-full flex gap-2" :class="inlineUnlistedTradeLayout ? 'web:contents' : ''">
-        <div class="h-full w-full flex flex-col gap-2 overflow-hidden"
+      <div class="flex gap-2 web:h-full" :class="inlineUnlistedTradeLayout ? 'web:contents' : ''">
+        <div class="w-full flex flex-col gap-2 web:h-full web:overflow-hidden"
              :class="inlineUnlistedTradeLayout ? 'web:order-1 web:w-auto web:min-w-0 web:flex-1' : ''">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-surface h-12 min-h-12 px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
@@ -561,7 +561,7 @@ onBeforeRouteLeave((to, from, next) => {
                     :class="[tab.key===activeTab?'bg-grey-normal text-white shadow-sm':'text-grey-3f hover:text-content hover:bg-surface-2', tab.key==='ai'?'web:hidden':'']"
                     @click="activeTab=tab.key">{{$t(tab.label)}}</button>
           </div>
-          <div class="flex-1 overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
+          <div class="min-h-0 web:flex-1 web:overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
             <TagContent v-if="activeTab==='content'"/>
             <PredictIndex v-if="activeTab==='predict'"/>
