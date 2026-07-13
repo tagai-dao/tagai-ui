@@ -237,6 +237,17 @@ html.dark .el-overlay { background-color: rgba(0,0,0,0.6) !important; }
   display: none;
 }
 
+/* 移动端页面的唯一纵向滚动容器。min-height: 0 允许它在 flex 布局中正确收缩，
+   避免 PWA 中滚动边界与可视高度不一致；桌面端可继续通过 web:* 使用独立滚动区。 */
+.mobile-scroll-container {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
 ::-webkit-scrollbar-thumb {
   background-color: rgba(194, 194, 194, 0.5);
   border-radius: 10px;
