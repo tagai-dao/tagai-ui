@@ -140,16 +140,9 @@ const deployTweetList = ref([])
 
 const showTradeBox = ref(false)
 const {width} = useWindowSize()
-const inlineSidebarTarget = ref<HTMLElement | null>(null)
+/** 社区侧栏 Teleport 目标（K 线已对 RH 未 list 开放，统一标准布局） */
 const normalSidebarTarget = ref<HTMLElement | null>(null)
-/** 仅 RH 未上架时隐藏市场 K 线；BSC 保持原有 K 线与页面布局。 */
-const inlineUnlistedTradeLayout = computed(() =>
-  width.value > 800 && chainStore.deployment.key === 'rh' &&
-  !!comStore.currentSelectedCommunity && !comStore.currentSelectedCommunity.listed
-)
-const communitySidebarTarget = computed(() =>
-  inlineUnlistedTradeLayout.value ? inlineSidebarTarget.value : normalSidebarTarget.value
-)
+const communitySidebarTarget = computed(() => normalSidebarTarget.value)
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
   if (!spaces || spaces.length == 0) return false;
@@ -541,20 +534,11 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </div>
     </div>
-    <div :class="inlineUnlistedTradeLayout ? 'web:flex web:flex-wrap web:items-start web:gap-2' : ''">
-      <div v-show="inlineUnlistedTradeLayout" class="web:order-2 web:w-[340px] web:min-w-[340px] web:shrink-0">
-        <BuyAndSellView v-if="(showTradeBox || width>800)" />
-        <div ref="inlineSidebarTarget"></div>
-      </div>
-      <BuyAndSellView
-        v-if="(showTradeBox || width>800) && !inlineUnlistedTradeLayout"
-      />
-      <div class="min-h-0 web:min-h-full web:h-full web:sticky web:top-[0px]"
-           :class="inlineUnlistedTradeLayout ? 'web:contents' : ''"
-           ref="tabContainerRef">
-      <div class="flex gap-2 web:h-full" :class="inlineUnlistedTradeLayout ? 'web:contents' : ''">
-        <div class="w-full flex flex-col gap-2 web:h-full web:overflow-hidden"
-             :class="inlineUnlistedTradeLayout ? 'web:order-1 web:w-auto web:min-w-0 web:flex-1' : ''">
+    <div>
+      <BuyAndSellView v-if="(showTradeBox || width>800)" />
+      <div class="min-h-0 web:min-h-full web:h-full web:sticky web:top-[0px]" ref="tabContainerRef">
+      <div class="flex gap-2 web:h-full">
+        <div class="w-full flex flex-col gap-2 web:h-full web:overflow-hidden">
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-surface h-12 min-h-12 px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
                     class="px-3.5 rounded-full h-8 text-h3 font-medium whitespace-nowrap transition-colors"
@@ -575,8 +559,8 @@ onBeforeRouteLeave((to, from, next) => {
             <CommunityMiniTagIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
-        <!-- 两个 Teleport 目标都保持挂载，避免社区数据异步到达时丢失信息栏。 -->
-        <div ref="normalSidebarTarget" v-show="!inlineUnlistedTradeLayout"
+        <!-- Teleport 目标保持挂载，避免社区数据异步到达时丢失信息栏。 -->
+        <div ref="normalSidebarTarget"
              class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar"></div>
         <Teleport v-if="communitySidebarTarget" :to="communitySidebarTarget">
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
@@ -745,7 +729,7 @@ onBeforeRouteLeave((to, from, next) => {
               </el-popover> -->
             </div>
           </div>
-          <div v-if="!inlineUnlistedTradeLayout" class="h-full sticky top-[0px]">
+          <div class="h-full sticky top-[0px]">
             <PostAI/>
           </div>
         </div>

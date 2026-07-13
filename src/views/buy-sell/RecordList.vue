@@ -74,7 +74,8 @@ onMounted(() => {
 
 <template>
   <div>
-    <div v-if="comStore.currentSelectedCommunity?.tick && (comStore.currentSelectedCommunity?.listed || chainStore.deployment.key === 'bsc')"
+    <!-- 移动端 K 线：未 list 自建图，已 list DexScreener（BSC / RH 均开放） -->
+    <div v-if="comStore.currentSelectedCommunity?.tick"
          class="w-full web:hidden min-w-[320px] mb-2">
       <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart2"/>
       <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"

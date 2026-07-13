@@ -49,9 +49,9 @@ const comStore = useCommunityStore()
 const chainStore = useChainStore()
 const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
+/** 有 tick 且非嵌入模式时展示桌面 K 线：未 list 用自建图，已 list 用 DexScreener */
 const showDesktopChart = computed(() =>
-  !!comStore.currentSelectedCommunity?.tick && !props.tick &&
-  (!!comStore.currentSelectedCommunity.listed || chainStore.deployment.key === 'bsc')
+  !!comStore.currentSelectedCommunity?.tick && !props.tick
 )
 const accStore = useAccountStore()
 const modalStore = useModalStore()
