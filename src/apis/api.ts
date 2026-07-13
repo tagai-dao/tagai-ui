@@ -223,6 +223,9 @@ export const getHolderList = async (token: string, pages?: number) =>
 export const getHolderListOfImportToken = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/holderListOfImported', { token, pages })
 
+export const getTokenHolders = async (token: string, imported: boolean, pages?: number) =>
+  get(BACKEND_API_URL + '/community/tokenHolders', { token, imported, pages })
+
 export const getImportedCommunityInfo = async () =>
   get(BACKEND_API_URL + '/community/getImportedCommunityInfo')
 

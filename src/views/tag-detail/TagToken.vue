@@ -4,7 +4,7 @@ import { computed, onMounted, ref, watch, nextTick } from "vue";
 import { formatAddress, formatAmount, formatAmountTrunc, formatPrice, sleep, formatDate } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
-import { getHolderList, getHolderListOfImportToken } from "@/apis/api";
+import { getTokenHolders } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, TipTagSwapHook9, PCSCLPoolManager, PCSVault, ChainConfig } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
@@ -545,23 +545,17 @@ async function onRefresh() {
   refreshing.value = true;
   finished.value = false;
   try{
-    let list: any;
-    if (comStore.currentSelectedCommunity?.isImport) {
-      list = await getHolderListOfImportToken(comStore.currentSelectedCommunity!.token)
-    } else {
-      list = await getHolderList(comStore.currentSelectedCommunity!.token)
-    }
-    if (list && list.length > 0) {
-      list = list.map((h: any) => {
-        return {
-          ...h,
-          community: comStore.currentSelectedCommunity,
-          amount: h.amount.toString() / 1e18,
-          ethAddr: h.holder
-        }
-      })
-      holdingList.value = list as TokenHoldingList[];
-    }
+    let list: any = await getTokenHolders(
+      comStore.currentSelectedCommunity!.token,
+      Boolean(comStore.currentSelectedCommunity?.isImport)
+    )
+    list = Array.isArray(list) ? list : []
+    holdingList.value = list.map((h: any) => ({
+      ...h,
+      community: comStore.currentSelectedCommunity,
+      amount: h.amount.toString() / 1e18,
+      ethAddr: h.holder
+    })) as TokenHoldingList[]
     if (list.length < 30) {
       finished.value = true
     }
@@ -576,13 +570,13 @@ async function onLoad() {
   if (refreshing.value || finished.value || holdingList.value.length == 0) return;
   loading.value = true;
   try{
-    let list: any;
-    if (comStore.currentSelectedCommunity?.isImport) {
-      list = await getHolderListOfImportToken(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
-    } else {
-      list = await getHolderList(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
-    }
-    if (list && list.length > 0) {
+    let list: any = await getTokenHolders(
+      comStore.currentSelectedCommunity!.token,
+      Boolean(comStore.currentSelectedCommunity?.isImport),
+      Math.floor((holdingList.value.length - 1) / 30) + 1
+    )
+    list = Array.isArray(list) ? list : []
+    if (list.length > 0) {
       list = list.map((h: any) => {
         return {
           ...h,
@@ -666,6 +660,8 @@ onMounted(async () => {
 })
 
 watch(() => comStore.currentSelectedCommunity?.token, async (token) => {
+  holdingList.value = []
+  finished.value = false
   if (token && isV9.value) {
     v9HourlyLoaded.value = false
     await Promise.all([loadV9HourlyRewards(), loadV9HolderAddresses()])
@@ -676,6 +672,7 @@ watch(() => comStore.currentSelectedCommunity?.token, async (token) => {
     v9HourlyAmounts.value = []
     await loadV10Distribution()
   }
+  if (token) await onRefresh()
 })
 
 watch(() => comStore.currentSelectedCommunity?.pair, () => {
