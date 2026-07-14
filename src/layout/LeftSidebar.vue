@@ -53,6 +53,14 @@ const isBasketsActive = computed(() => {
   return route.name === 'baskets' || route.name === 'basket-detail' || isActive('/baskets')
 })
 
+/** 选中态：图标染成品牌橙 */
+const activeIconFilter = {
+  filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)',
+} as const
+
+/** 未选中：暗色下 invert，避免深色 SVG 融进侧栏 */
+const inactiveIconCls = 'dark:invert dark:opacity-80'
+
 // 创建 TagCoin
 const createTagCoin = () => {
   modalStore.setModalVisible(true, GlobalModalType.CreateCoin)
@@ -116,7 +124,8 @@ const handleWalletClick = (e?: Event) => {
         >
         <img 
           v-else 
-          class="w-6 h-6 mr-0 desk:mr-3 transition-all" 
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
+          :class="inactiveIconCls"
           src="~@/assets/icons/icon-tabbar-home.svg" 
           alt=""
         >
@@ -131,7 +140,8 @@ const handleWalletClick = (e?: Event) => {
       >
         <img 
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :style="isCoinActive ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          :class="isCoinActive ? '' : inactiveIconCls"
+          :style="isCoinActive ? activeIconFilter : undefined"
           src="~@/assets/icons/icon-coin.svg" 
           alt="Coin"
         >
@@ -147,7 +157,8 @@ const handleWalletClick = (e?: Event) => {
       >
         <img 
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :style="isPredictionActive ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          :class="isPredictionActive ? '' : inactiveIconCls"
+          :style="isPredictionActive ? activeIconFilter : undefined"
           src="~@/assets/icons/icon-pie-chart.svg" 
           alt="Prediction"
         >
@@ -162,7 +173,8 @@ const handleWalletClick = (e?: Event) => {
       >
         <img
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :style="isBasketsActive ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          :class="isBasketsActive ? '' : inactiveIconCls"
+          :style="isBasketsActive ? activeIconFilter : undefined"
           src="~@/assets/icons/icon-pie-chart.svg"
           alt="Baskets"
         >
@@ -178,7 +190,8 @@ const handleWalletClick = (e?: Event) => {
         <div class="relative">
           <img 
             class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-            :style="isActive('/notification') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+            :class="isActive('/notification') ? '' : inactiveIconCls"
+            :style="isActive('/notification') ? activeIconFilter : undefined"
             src="~@/assets/icons/icon-notification.svg" 
             alt=""
           >
@@ -206,7 +219,8 @@ const handleWalletClick = (e?: Event) => {
         >
         <img 
           v-else 
-          class="w-6 h-6 mr-0 desk:mr-3 transition-all" 
+          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
+          :class="inactiveIconCls"
           src="~@/assets/icons/icon-wallet.svg" 
           alt=""
         >
@@ -234,7 +248,8 @@ const handleWalletClick = (e?: Event) => {
           >
           <img 
             v-else
-            class="w-6 h-6 transition-all" 
+            class="w-6 h-6 transition-all"
+            :class="inactiveIconCls"
             src="~@/assets/icons/icon-tabbar-profile.svg" 
             alt=""
           >
@@ -251,7 +266,8 @@ const handleWalletClick = (e?: Event) => {
       >
         <img 
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :style="isActive('/about') ? { filter: 'brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)' } : ''"
+          :class="isActive('/about') ? '' : inactiveIconCls"
+          :style="isActive('/about') ? activeIconFilter : undefined"
           src="~@/assets/icons/icon-docs.svg" 
           alt=""
         >
@@ -272,7 +288,7 @@ const handleWalletClick = (e?: Event) => {
       >
         <template #reference>
           <div 
-            class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors"
+            class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors text-content"
             :class="moreMenuVisible ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
           >
             <span class="text-h4 mr-0 desk:mr-3">⋯</span>
@@ -288,7 +304,7 @@ const handleWalletClick = (e?: Event) => {
               href="https://coincidence-labs.gitbook.io/tagai/" 
               target="_blank"
             >
-              <img class="w-4" src="~@/assets/icons/icon-docs.svg" alt="">
+              <img class="w-4" :class="inactiveIconCls" src="~@/assets/icons/icon-docs.svg" alt="">
               <span>{{ $t('docs') || 'Docs' }}</span>
             </a>
             
@@ -299,7 +315,7 @@ const handleWalletClick = (e?: Event) => {
               href="https://scalebit.xyz/reports/TagAI-Audit-Report.pdf" 
               target="_blank"
             >
-              <img class="w-4" src="~@/assets/icons/icon-warning.svg" alt="">
+              <img class="w-4" :class="inactiveIconCls" src="~@/assets/icons/icon-warning.svg" alt="">
               <span>{{ $t('auditReport') || 'Audit Report' }}</span>
             </a>
             
@@ -310,7 +326,7 @@ const handleWalletClick = (e?: Event) => {
               href="https://x.com/tagaidao" 
               target="_blank"
             >
-              <img class="w-4" src="~@/assets/icons/icon-link-x.svg" alt="">
+              <img class="w-4" :class="inactiveIconCls" src="~@/assets/icons/icon-link-x.svg" alt="">
               <span>{{ $t('Twitter') || 'Twitter' }}</span>
             </a>
             
@@ -321,7 +337,7 @@ const handleWalletClick = (e?: Event) => {
               href="https://t.me/tagaidotfun" 
               target="_blank"
             >
-              <img class="w-4" src="~@/assets/icons/icon-link-tg.svg" alt="">
+              <img class="w-4" :class="inactiveIconCls" src="~@/assets/icons/icon-link-tg.svg" alt="">
               <span>{{ $t('Telegram') || 'Telegram' }}</span>
             </a>
           </div>

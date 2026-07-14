@@ -7,10 +7,12 @@ import {init} from "klinecharts";
 import { useInterval } from "@/composables/useTools";
 import { useWindowSize } from '@vant/use';
 import { useRoute } from "vue-router";
+import { useTheme } from "@/composables/useTheme";
 
 const { width, height } = useWindowSize();
 const props = defineProps(['tick', 'chartId'])
 const { setInter } = useInterval();
+const { isDark } = useTheme()
 let tick = ref('');
 let lastTimestamp = 0;
 type ChartData = {
@@ -83,23 +85,9 @@ function splitData(rawData: (ChartData)[], interval = 60) {
       }
       values[values.length - 1] = lastData;
     }else if (thisInterval > lastInterval + 1) {
-      // categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
-      // lastData = {
-      //   open: lastData.close,
-      //   close: lastData.close,
-      //   low: lastData.close,
-      //   high: lastData.close,
-      //   timestamp: (lastInterval + 1) * interval * 1000
-      // }
       lastInterval = lastInterval + 1
-      // values.push(lastData)
       while(thisInterval > lastInterval + 1) {
         lastInterval = lastInterval + 1
-        // categoryData.push(formatKChartDate(lastInterval * interval * 1000, interval >= 86400));
-        // values.push({
-        //   ...lastData,
-        //   timestamp: lastInterval * interval * 1000
-        // })
       }
       categoryData.push(formatKChartDate((lastInterval + 1) * interval * 1000, interval >= 86400));
       lastData = {
@@ -131,6 +119,47 @@ function splitData(rawData: (ChartData)[], interval = 60) {
 }
 const chartRef = ref<HTMLElement>()
 const chart = ref()
+
+/** 暗色网格用低对比灰，避免默认 #EDEDED 在深底上刺眼 */
+const applyChartTheme = () => {
+  if (!chart.value) return
+  const gridColor = isDark.value ? '#2A2F38' : '#EDEDED'
+  const textColor = isDark.value ? '#9AA0AD' : '#76808F'
+  chart.value.setStyles({
+    grid: {
+      show: true,
+      horizontal: { show: true, color: gridColor },
+      vertical: { show: true, color: gridColor },
+    },
+    candle: {
+      priceMark: {
+        high: { color: textColor },
+        low: { color: textColor },
+      },
+      tooltip: {
+        custom: [
+          { title: 'time', value: '{time}' },
+          { title: 'open', value: '{open}' },
+          { title: 'high', value: '{high}' },
+          { title: 'low', value: '{low}' },
+          { title: 'close', value: '{close}' },
+          { title: '', value: `{change}` },
+        ]
+      }
+    },
+    xAxis: {
+      axisLine: { color: gridColor },
+      tickLine: { color: gridColor },
+      tickText: { color: textColor },
+    },
+    yAxis: {
+      axisLine: { color: gridColor },
+      tickLine: { color: gridColor },
+      tickText: { color: textColor },
+    },
+  })
+}
+
 function updateChart() {
   if(activeTab.value ==='5min') chart.value.applyNewData(data5min.values);
   else if(activeTab.value ==='1h') chart.value.applyNewData(data1h.values);
@@ -210,20 +239,7 @@ onMounted(async () => {
       }
     ]
   });
-  chart.value.setStyles({
-    candle: {
-      tooltip: {
-        custom: [
-          { title: 'time', value: '{time}' },
-          { title: 'open', value: '{open}' },
-          { title: 'high', value: '{high}' },
-          { title: 'low', value: '{low}' },
-          { title: 'close', value: '{close}' },
-          { title: '', value: `{change}` },
-        ]
-      }
-    }
-  })
+  applyChartTheme()
   chart.value.setPriceVolumePrecision(6, 2)
   updateChart();
   setInter(async () => {
@@ -260,6 +276,10 @@ watch(() => width.value, () => {
   chart.value.resize()
 })
 
+watch(() => isDark.value, () => {
+  applyChartTheme()
+})
+
 watch(() => useStateStore().ethPrice, (newPrice, oldPrice) => {
   if (oldPrice === 0 && newPrice > 0 && originalData.length > 0) {
     const m1 = splitData(originalData, 60)
@@ -277,13 +297,13 @@ watch(() => useStateStore().ethPrice, (newPrice, oldPrice) => {
 </script>
 
 <template>
-  <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[400px] w-full bg-white flex flex-col">
+  <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[400px] w-full bg-surface flex flex-col">
     <div class="mb-4 px-3 flex flex-wrap justify-between gap-y-2 gap-x-4">
-      <span class="font-medium text-black text-xl">{{tick + '/USDT'}}</span>
+      <span class="font-medium text-content text-xl">{{tick + '/USDT'}}</span>
       <div class="flex-1 flex justify-end items-center gap-4">
         <button v-for="t of timeOptions" :key="t" class="flex items-center gap-1"
                 @click="activeTab=t">
-          <span class="text-sm font-light">{{t}}</span>
+          <span class="text-sm font-light text-muted">{{t}}</span>
           <span class="flex min-w-8 w-8 h-4 rounded-[5px]"
                 :class="activeTab===t?'bg-green-2f':'bg-grey-light-hover'"></span>
         </button>
