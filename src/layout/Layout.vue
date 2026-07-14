@@ -223,7 +223,11 @@ onMounted( () => {
                  :close-on-click-modal="modalStore.modalCloseEnable"
                  :close-on-press-escape="modalStore.modalCloseEnable"
                  :modal-class="`overlay-white ${modalStore.modalType===GlobalModalType.Login?'modal-gradient-bg':''}`"
-                 :class="modalStore.modalType===GlobalModalType.PredictTrade ? 'max-w-[900px] rounded-[20px]' : 'max-w-[500px] rounded-[20px]'"
+                 :class="modalStore.modalType===GlobalModalType.PredictTrade
+                   ? 'max-w-[900px] rounded-[20px]'
+                   : modalStore.modalType===GlobalModalType.CreateCoin
+                     ? 'max-w-[720px] rounded-[24px] create-token-dialog'
+                     : 'max-w-[500px] rounded-[20px]'"
                  width="90%" :show-close="false" align-center destroy-on-close>
         <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
         <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
