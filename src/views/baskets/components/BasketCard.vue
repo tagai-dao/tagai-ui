@@ -1,48 +1,261 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { BasketSummary } from '@/utils/spectrum/basket-data'
 
-defineProps<{
+const props = defineProps<{
   basket: BasketSummary
 }>()
+
+const legColors = ['#b84fc2', '#5368d9', '#ef7b45', '#27b8a2', '#8d67e8']
+
+const allocationLegs = computed(() => {
+  const visible = props.basket.top.slice(0, 4).map((leg) => ({
+    ...leg,
+    label: leg.symbol,
+  }))
+  if (props.basket.top.length > 4) {
+    visible.push({
+      address: 'other' as typeof visible[number]['address'],
+      symbol: `+${props.basket.top.length - 4}`,
+      label: `+${props.basket.top.length - 4}`,
+      weightPct: props.basket.top.slice(4).reduce((sum, leg) => sum + leg.weightPct, 0),
+    })
+  }
+  return visible
+})
 
 const formatUsd = (n: number) => {
   if (!Number.isFinite(n) || n <= 0) return '—'
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
   if (n >= 1_000) return `$${(n / 1_000).toFixed(2)}K`
-  return `$${n.toFixed(2)}`
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+const formatNav = (n: number) => {
+  if (!Number.isFinite(n) || n <= 0) return '—'
+  const digits = n >= 100 ? 2 : n >= 1 ? 2 : 4
+  return `$${n.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
 }
 </script>
 
 <template>
   <router-link
     :to="`/baskets/${basket.address}`"
-    class="block p-4 rounded-xl border border-gray-200 bg-surface hover:bg-surface-2 transition-colors"
+    class="basket-card group"
+    :aria-label="basket.name"
   >
-    <div class="flex items-start justify-between gap-3">
+    <span class="basket-card__glow basket-card__glow--left" aria-hidden="true" />
+    <span class="basket-card__glow basket-card__glow--right" aria-hidden="true" />
+
+    <div class="relative z-10 flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <div class="font-semibold text-content truncate">{{ basket.name }}</div>
-        <div class="text-xs text-grey-64 mt-0.5">${{ basket.symbol }}</div>
+        <div class="flex items-center gap-2.5 min-w-0">
+          <h2 class="text-xl font-bold tracking-[-0.03em] text-content truncate">
+            {{ basket.symbol }}
+          </h2>
+          <span class="chain-badge"><i /> HOOD</span>
+        </div>
+        <p class="mt-1 text-sm text-muted truncate">{{ basket.name }}</p>
       </div>
-      <div class="text-right shrink-0">
-        <div class="text-sm font-semibold text-content">{{ formatUsd(basket.aumUsd) }}</div>
-        <div class="text-xs text-grey-64">{{ $t('baskets.aum') }}</div>
-      </div>
+      <span class="asset-count">
+        {{ basket.basketLength }} {{ $t('baskets.assets') }}
+      </span>
     </div>
-    <div class="mt-3 flex flex-wrap gap-1.5">
-      <span
-        v-for="leg in basket.top.slice(0, 4)"
+
+    <div v-if="allocationLegs.length" class="allocation" aria-label="Basket allocation">
+      <div
+        v-for="(leg, index) in allocationLegs"
         :key="leg.address"
-        class="text-xs px-2 py-0.5 rounded bg-surface-2 text-grey-normal"
+        class="allocation__leg"
+        :style="{
+          flexGrow: Math.max(leg.weightPct, 8),
+          backgroundColor: legColors[index % legColors.length],
+        }"
       >
-        {{ leg.symbol }} {{ leg.weightPct.toFixed(0) }}%
-      </span>
-      <span v-if="basket.top.length > 4" class="text-xs text-grey-64 self-center">
-        +{{ basket.top.length - 4 }}
-      </span>
+        <span class="allocation__symbol">{{ leg.label }}</span>
+        <span v-if="leg.weightPct >= 9" class="allocation__weight">{{ leg.weightPct.toFixed(0) }}%</span>
+      </div>
     </div>
-    <div class="mt-2 text-xs text-grey-64">
-      {{ $t('baskets.nav') }}: {{ basket.navPerToken > 0 ? `$${basket.navPerToken.toFixed(4)}` : '—' }}
-      · {{ basket.basketLength }} {{ $t('baskets.assets') }}
+    <div v-else class="allocation allocation--loading" aria-hidden="true">
+      <span /><span /><span />
+    </div>
+
+    <div class="relative z-10 mt-6 flex items-end justify-between gap-4">
+      <div class="min-w-0">
+        <div class="text-[28px] leading-8 font-medium tracking-[-0.04em] text-content">
+          {{ formatNav(basket.navPerToken) }}
+        </div>
+        <div class="mt-1.5 text-sm text-muted">
+          {{ $t('baskets.aum') }} {{ formatUsd(basket.aumUsd) }}
+        </div>
+      </div>
+      <span class="basket-card__action" aria-hidden="true">
+        <span>{{ basket.symbol }}</span>
+        <svg viewBox="0 0 20 20" fill="none">
+          <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
     </div>
   </router-link>
 </template>
+
+<style scoped>
+.basket-card {
+  position: relative;
+  display: block;
+  min-height: 320px;
+  overflow: hidden;
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--border-base) 76%, transparent);
+  border-radius: 26px;
+  background:
+    linear-gradient(118deg, color-mix(in srgb, var(--surface) 96%, #8d67e8 4%), var(--surface) 58%, color-mix(in srgb, var(--surface) 92%, #27b8a2 8%));
+  box-shadow: 0 18px 50px rgba(10, 12, 20, 0.08);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.basket-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, #8d67e8 42%, var(--border-base));
+  box-shadow: 0 24px 60px rgba(10, 12, 20, 0.14);
+}
+
+.basket-card__glow {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  filter: blur(68px);
+  opacity: 0.11;
+  pointer-events: none;
+}
+
+.basket-card__glow--left { left: -100px; top: 40px; background: #b84fc2; }
+.basket-card__glow--right { right: -100px; top: -80px; background: #38d39f; }
+
+.chain-badge,
+.asset-count {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--border-base) 85%, transparent);
+  border-radius: 999px;
+}
+
+.chain-badge {
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-color: rgba(167, 218, 0, 0.34);
+  background: rgba(169, 230, 0, 0.08);
+  color: #8eaf00;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.chain-badge i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #b5ec13;
+  box-shadow: 0 0 10px rgba(181, 236, 19, 0.65);
+}
+
+.asset-count {
+  height: 30px;
+  padding: 0 11px;
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+}
+
+.allocation {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 96px;
+  gap: 7px;
+  margin-top: 28px;
+}
+
+.allocation__leg {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 18px;
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.allocation__leg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255,255,255,0.2), transparent 42%, rgba(0,0,0,0.14));
+  pointer-events: none;
+}
+
+.allocation__symbol,
+.allocation__weight {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 20px;
+}
+
+.allocation__symbol {
+  left: 12px;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.9);
+  color: #14151a;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.allocation__weight { right: 12px; text-shadow: 0 1px 4px rgba(0,0,0,0.28); }
+.allocation__symbol + .allocation__weight { top: auto; bottom: 10px; }
+
+.allocation--loading { gap: 7px; }
+.allocation--loading span {
+  flex: 1;
+  border-radius: 18px;
+  background: linear-gradient(100deg, var(--surface-2) 20%, color-mix(in srgb, var(--surface-2) 60%, #8d67e8) 50%, var(--surface-2) 80%);
+  background-size: 220% 100%;
+  animation: basket-shimmer 1.5s linear infinite;
+}
+
+.basket-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 45%;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: linear-gradient(115deg, #704ce8, #17b8d5);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 10px 28px rgba(91, 82, 225, 0.22);
+}
+
+.basket-card__action span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.basket-card__action svg { width: 18px; height: 18px; flex-shrink: 0; transition: transform 180ms ease; }
+.basket-card:hover .basket-card__action svg { transform: translate(2px, -2px); }
+
+@keyframes basket-shimmer { to { background-position: -220% 0; } }
+
+@media (max-width: 420px) {
+  .basket-card { min-height: 300px; padding: 20px; border-radius: 22px; }
+  .allocation { height: 88px; margin-top: 24px; }
+  .allocation__weight { display: none; }
+}
+</style>
