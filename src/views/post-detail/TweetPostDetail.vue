@@ -74,8 +74,9 @@ onMounted(async () => {
           </template>
         </TweetItem>
       </div>
+      <!-- shadow-insert-white：亮色白底 / 暗色由 main.css 翻成 surface；文字用 text-content 跟随主题 -->
       <div v-if="curationStore.currentSelectedTweet.curateCount" class="border-[1px] gradient-border bg-gradient-purple shadow-insert-white h-[50px] min-h-[50px] rounded-full
-                  flex items-center justify-between px-4 mt-3">
+                  flex items-center justify-between px-4 mt-3 text-content">
         <span>{{$t('postView.curatedCount', {count: curationStore.currentSelectedTweet.curateCount})}}</span>
         <div class="flex items-center gap-2">
           <div class="flex">
@@ -91,7 +92,8 @@ onMounted(async () => {
           </div>
           <button class="flex items-center gap-1.5" @click="curatorsModalVisible=true">
             <span>{{ $t('more') }}</span>
-            <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-arrow-forward.svg" alt="">
+            <!-- 箭头 SVG 为深色 fill，暗色下 invert 保证可见 -->
+            <img class="w-4 h-4 min-w-4 dark:invert" src="~@/assets/icons/icon-arrow-forward.svg" alt="">
           </button>
         </div>
       </div>

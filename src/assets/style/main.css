@@ -173,6 +173,10 @@ html.dark #app { background-image: none !important; background-color: var(--app-
 html.dark .bg-white,
 html.dark [class*="bg-white/"] { background-color: var(--surface) !important; }
 html.dark .border-white { border-color: var(--border-base) !important; }
+/* inset 白底技巧（如策展人条）：暗色下改为 surface，避免白底 + 浅色字看不见 */
+html.dark .shadow-insert-white {
+  box-shadow: 1px 1000px 2px var(--surface) inset !important;
+}
 /* 所有灰/白系边框统一为暗色描边，消除暗色下的浅灰/白分隔线（侧栏-内容、搜索栏-内容、帖子内容-互动栏等） */
 html.dark [class*="border-grey-"],
 html.dark [class*="border-gray-"] { border-color: var(--border-base) !important; }
@@ -215,6 +219,35 @@ html.dark .el-input__wrapper,
 html.dark .el-textarea__inner {
   background-color: var(--surface) !important;
   color: var(--text-base) !important;
+}
+/* IPShare 交易/质押弹窗内自定义卡片与输入框（scoped 写死白底时的兜底） */
+html.dark .stake-overview,
+html.dark .input-wrapper,
+html.dark .output-wrapper,
+html.dark .trade-info,
+html.dark .slippage-input-wrapper {
+  background-color: var(--surface-2) !important;
+  border-color: var(--border-base) !important;
+  color: var(--text-base) !important;
+}
+html.dark .stake-overview .label,
+html.dark .stake-overview .value,
+html.dark .amount-input,
+html.dark .amount-output,
+html.dark .token-symbol,
+html.dark .max-btn,
+html.dark .slippage-input {
+  color: var(--text-base) !important;
+}
+html.dark .stake-overview .label,
+html.dark .token-symbol,
+html.dark .input-label,
+html.dark .balance {
+  color: var(--text-muted) !important;
+}
+html.dark .max-btn {
+  background-color: var(--surface) !important;
+  border-color: var(--border-base) !important;
 }
 html.dark .el-popper:not(.is-dark) .el-popper__arrow::before { background: var(--surface) !important; border-color: var(--border-base) !important; }
 /* c-select（广场页右上角圆角筛选下拉）标题与箭头：组件内 :deep 硬编码 #000 !important，

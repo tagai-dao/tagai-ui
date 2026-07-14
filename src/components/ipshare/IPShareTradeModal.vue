@@ -56,17 +56,17 @@
           <el-icon><RefreshRight /></el-icon>
         </div>
 
-        <!-- ETH 显示 -->
+        <!-- 原生币显示（随当前链：BNB / ETH） -->
         <div class="input-group">
           <div class="input-label">
             <span>{{ isBuy ? 'Cost' : 'Receive' }}</span>
             <span class="balance">
-              Balance: {{ formatNumber(ethBalance, 3) }} BNB
+              Balance: {{ formatNumber(ethBalance, 3) }} {{ nativeSymbol }}
             </span>
           </div>
           <div class="output-wrapper">
             <span class="amount-output">{{ formatNumber(receive) }}</span>
-            <span class="token-symbol">BNB</span>
+            <span class="token-symbol">{{ nativeSymbol }}</span>
           </div>
         </div>
       </div>
@@ -79,7 +79,7 @@
         </div>
         <div class="info-row">
           <span>Price</span>
-          <span>{{ formatNumber(price) }} BNB</span>
+          <span>{{ formatNumber(price) }} {{ nativeSymbol }}</span>
         </div>
         <div class="info-row slippage-row">
           <span>Slippage</span>
@@ -158,6 +158,7 @@ import {
 import { getReadOnlyClient } from '@/utils/wallets'
 import { isAddress } from 'viem'
 import { parseViemRevertReason } from '@/utils/notify'
+import { useChainStore } from '@/stores/chain'
 
 interface Props {
   modelValue: boolean
@@ -180,6 +181,9 @@ const emit = defineEmits<{
 
 const accountStore = useAccountStore()
 const ipshareStore = useIpshareData()
+const chainStore = useChainStore()
+/** 当前产品链原生币（BSC→BNB，RH→ETH） */
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 
 const visible = computed({
   get: () => props.modelValue,
@@ -520,9 +524,9 @@ onMounted(() => {
   .tab-btn {
     flex: 1;
     height: 40px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-base);
     background: transparent;
-    color: #999;
+    color: var(--text-muted);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
@@ -552,35 +556,36 @@ onMounted(() => {
   justify-content: space-between;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #999;
+  color: var(--text-muted);
 
   .balance {
-    color: #666;
+    color: var(--text-muted);
   }
 }
 
+/* 输入/输出框：用主题 surface，暗色下强制覆盖避免白底 */
 .input-wrapper,
 .output-wrapper {
   display: flex;
   align-items: center;
   height: 56px;
   padding: 0 16px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border-base) !important;
   border-radius: 12px;
   gap: 12px;
 }
 
 .amount-input {
   flex: 1;
-  background: transparent;
+  background: transparent !important;
   border: none;
   outline: none;
   font-size: 20px;
-  color: #333;
+  color: var(--text-base) !important;
 
   &::placeholder {
-    color: #666;
+    color: var(--text-faint);
   }
 
   /* 移除数字输入框的箭头 */
@@ -595,35 +600,35 @@ onMounted(() => {
 .amount-output {
   flex: 1;
   font-size: 20px;
-  color: #333;
+  color: var(--text-base) !important;
   font-weight: 500;
 }
 
 .token-symbol {
   font-size: 16px;
   font-weight: 600;
-  color: #999;
+  color: var(--text-muted);
 
   .token-owner {
     font-size: 0.5em;
     font-weight: 500;
-    color: #bbb;
+    color: var(--text-faint);
   }
 }
 
 .max-btn {
   padding: 6px 12px;
-  background: #f0f0f0;
-  border: none;
+  background: var(--surface);
+  border: 1px solid var(--border-base);
   border-radius: 6px;
-  color: #666;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s;
 
   &:hover {
-    background: #e0e0e0;
-    color: #333;
+    background: var(--surface-2);
+    color: var(--text-base);
   }
 }
 
@@ -634,19 +639,19 @@ onMounted(() => {
   margin: 8px 0;
   cursor: pointer;
   font-size: 24px;
-  color: #666;
+  color: var(--text-muted);
   transition: all 0.3s;
 
   &:hover {
-    color: #999;
+    color: var(--text-base);
     transform: rotate(180deg);
   }
 }
 
 .trade-info {
   padding: 16px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border-base) !important;
   border-radius: 12px;
   margin-bottom: 24px;
 
@@ -656,14 +661,14 @@ onMounted(() => {
     align-items: center;
     padding: 8px 0;
     font-size: 14px;
-    color: #999;
+    color: var(--text-muted);
 
     &:not(:last-child) {
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid var(--border-base);
     }
 
     span:last-child {
-      color: #333;
+      color: var(--text-base) !important;
       font-weight: 500;
     }
   }
@@ -673,19 +678,19 @@ onMounted(() => {
       display: flex;
       align-items: center;
       gap: 4px;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--border-base) !important;
       border-radius: 6px;
       padding: 4px 8px;
-      background: #fff;
+      background: var(--surface) !important;
       min-width: 100px;
     }
 
     .slippage-input {
       flex: 1;
-      background: transparent;
+      background: transparent !important;
       border: none;
       outline: none;
-      color: #333;
+      color: var(--text-base) !important;
       font-size: 14px;
       font-weight: 500;
       text-align: right;
@@ -722,7 +727,7 @@ onMounted(() => {
       background: transparent;
       border: none;
       cursor: pointer;
-      color: #999;
+      color: var(--text-muted);
       padding: 0;
       transition: color 0.2s;
       line-height: 1;

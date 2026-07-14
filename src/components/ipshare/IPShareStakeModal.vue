@@ -22,39 +22,39 @@
         </button>
       </div>
 
-      <!-- 质押信息概览 -->
-      <div class="stake-overview">
-        <div class="overview-item">
-          <span class="label">Your Balance</span>
-          <span class="value">{{ formatNumber(ipshareBalance) }} IP.Share</span>
+      <!-- 质押信息概览：强制主题底色（暗色下勿白底） -->
+      <div class="stake-overview !bg-surface-2 !border-line">
+        <div class="overview-item border-line">
+          <span class="label !text-muted">Your Balance</span>
+          <span class="value !text-content">{{ formatNumber(ipshareBalance) }} IP.Share</span>
+        </div>
+        <div class="overview-item border-line">
+          <span class="label !text-muted">Staked Amount</span>
+          <span class="value !text-content">{{ formatNumber(stakedAmount) }} IP.Share</span>
         </div>
         <div class="overview-item">
-          <span class="label">Staked Amount</span>
-          <span class="value">{{ formatNumber(stakedAmount) }} IP.Share</span>
-        </div>
-        <div class="overview-item">
-          <span class="label">Pending Rewards</span>
-          <span class="value">{{ formatNumber(pendingRewards) }} IP.Share</span>
+          <span class="label !text-muted">Pending Rewards</span>
+          <span class="value !text-content">{{ formatNumber(pendingRewards) }} IP.Share</span>
         </div>
       </div>
 
       <!-- 输入区域 -->
       <div class="input-section">
-        <div class="input-label">
+        <div class="input-label !text-muted">
           <span>{{ isStake ? 'Stake' : 'Unstake' }} Amount</span>
-          <span class="balance">
+          <span class="balance !text-muted">
             Available: {{ formatNumber(isStake ? ipshareBalance : stakedAmount) }}
           </span>
         </div>
-        <div class="input-wrapper">
+        <div class="input-wrapper !bg-surface-2 !border-line">
           <input
             v-model="amount"
             type="number"
             placeholder="0.00"
-            class="amount-input"
+            class="amount-input !text-content !bg-transparent"
           />
-          <span class="token-symbol">IP.Share</span>
-          <button class="max-btn" @click="setMaxAmount">MAX</button>
+          <span class="token-symbol !text-muted">IP.Share</span>
+          <button class="max-btn !bg-surface !border-line !text-muted" @click="setMaxAmount">MAX</button>
         </div>
       </div>
 
@@ -581,9 +581,9 @@ onMounted(() => {
   .tab-btn {
     flex: 1;
     height: 40px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-base);
     background: transparent;
-    color: #999;
+    color: var(--text-muted);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s;
@@ -602,8 +602,8 @@ onMounted(() => {
 
 .stake-overview {
   padding: 16px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border-base) !important;
   border-radius: 12px;
   margin-bottom: 24px;
 
@@ -614,15 +614,15 @@ onMounted(() => {
     font-size: 14px;
 
     &:not(:last-child) {
-      border-bottom: 1px solid #e0e0e0;
+      border-bottom: 1px solid var(--border-base);
     }
 
     .label {
-      color: #999;
+      color: var(--text-muted) !important;
     }
 
     .value {
-      color: #333;
+      color: var(--text-base) !important;
       font-weight: 500;
     }
   }
@@ -637,10 +637,10 @@ onMounted(() => {
   justify-content: space-between;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #999;
+  color: var(--text-muted) !important;
 
   .balance {
-    color: #666;
+    color: var(--text-muted) !important;
   }
 }
 
@@ -649,22 +649,22 @@ onMounted(() => {
   align-items: center;
   height: 56px;
   padding: 0 16px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border-base) !important;
   border-radius: 12px;
   gap: 12px;
 }
 
 .amount-input {
   flex: 1;
-  background: transparent;
+  background: transparent !important;
   border: none;
   outline: none;
   font-size: 20px;
-  color: #333;
+  color: var(--text-base) !important;
 
   &::placeholder {
-    color: #666;
+    color: var(--text-faint);
   }
 
   &::-webkit-outer-spin-button,
@@ -678,22 +678,22 @@ onMounted(() => {
 .token-symbol {
   font-size: 16px;
   font-weight: 600;
-  color: #999;
+  color: var(--text-muted) !important;
 }
 
 .max-btn {
   padding: 6px 12px;
-  background: #f0f0f0;
-  border: none;
+  background: var(--surface) !important;
+  border: 1px solid var(--border-base) !important;
   border-radius: 6px;
-  color: #666;
+  color: var(--text-muted) !important;
   cursor: pointer;
   font-size: 12px;
   transition: all 0.2s;
 
   &:hover {
-    background: #e0e0e0;
-    color: #333;
+    background: var(--surface-2) !important;
+    color: var(--text-base) !important;
   }
 }
 
