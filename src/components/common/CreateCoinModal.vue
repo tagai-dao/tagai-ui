@@ -70,6 +70,8 @@ const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
 const activeTab = ref('token');
 const chainStore = useChainStore();
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol);
+const dexName = computed(() => chainStore.deployment.dex.kind === 'pancake' ? 'PancakeSwap' : 'Uniswap');
 const showAiDeployTab = computed(() => chainStore.deployment.key !== 'rh');
 
 watch(showAiDeployTab, (visible) => {
@@ -123,7 +125,7 @@ async function refreshCreateFee() {
   }
 }
 
-watch(() => accStore.ethConnectAddress, () => refreshCreateFee(), { immediate: true })
+watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], () => refreshCreateFee(), { immediate: true })
 
 watch(() => showingInitAmount.value, debounce(async (val: number) => {
   if (val && val > 0) {
@@ -217,7 +219,7 @@ const importTokenStepClick = async () => {
       // get dex pools + token info
       const result = await getTokenDexPools(importForm.token)
       if (!result || result.pools.length === 0) {
-        importErrTip.value = 'No PancakeSwap pool found for this token'
+        importErrTip.value = `No ${dexName.value} pool found for this token`
         return
       }
       tokenDexResult.value = result
@@ -257,7 +259,7 @@ const importTokenStepClick = async () => {
       }
       const pool = tokenDexResult.value.pools[selectedPoolIndex.value]
       if (pool.bnbReserves < 1) {
-        importErrTip.value = 'Selected pool liquidity must be greater than 1 BNB'
+        importErrTip.value = `Selected pool liquidity must be greater than 1 ${nativeSymbol.value}`
         return
       }
       importForm.pair = pool.pairAddress
@@ -611,8 +613,8 @@ onMounted(async () => {
           </div>
           <div v-show="showMaxAmount" class="field-error">{{ $t('createCommunity.maxAmountTip') }}</div>
           <div class="purchase-summary">
-            <span>{{ $t('createCommunity.initEth', { amount: showingInitEth }) }}</span>
-            <strong>{{ $t('createCommunity.costTopDeploy') }} <em>{{ showingCreateFee }} BNB</em></strong>
+            <span>{{ $t('pay') }} {{ showingInitEth }} {{ nativeSymbol }}</span>
+            <strong>{{ $t('createCommunity.costTopDeploy') }} <em>{{ showingCreateFee }} {{ nativeSymbol }}</em></strong>
           </div>
         </section>
 
@@ -632,7 +634,7 @@ onMounted(async () => {
       <div class="flex flex-col gap-1" v-show="importStep==1">
         <label for="tokenCA" class="leading-8 text-lg">{{$t('createCommunity.tokenCA')}}:</label>
         <p class="text-grey-normal text-ml">
-          {{ $t('createCommunity.tokenCATip') }}
+          {{ $t('createCommunity.tokenCATip', { chain: chainStore.deployment.name, dex: dexName, symbol: nativeSymbol }) }}
         </p>
         <input
           class="border-[2px] leading-6 text-ml h-10 rounded-lg p-5 text-center my-3 border-orange-light-active"
@@ -681,7 +683,7 @@ onMounted(async () => {
                 <span class="font-medium text-black">{{ pool.feeTier }}</span>
               </div>
               <span class="text-sm font-medium" :class="pool.bnbReserves >= 1 ? 'text-green-600' : 'text-red-e6'">
-                {{ pool.bnbReserves.toFixed(2) }} BNB
+                {{ pool.bnbReserves.toFixed(2) }} {{ nativeSymbol }}
               </span>
             </div>
             <div class="grid grid-cols-3 gap-2 text-xs">
