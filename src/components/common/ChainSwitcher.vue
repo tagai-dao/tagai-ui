@@ -147,6 +147,7 @@ async function onSelectChain(chainId: ProductChainId) {
 .chain-trigger__chevron { width: 16px; height: 16px; flex: 0 0 16px; color: var(--text-muted); transition: transform 160ms ease; }
 
 :global(.chain-switcher-popper.el-popper) { padding: 7px !important; border: 1px solid var(--border-base) !important; border-radius: 18px !important; background: var(--surface) !important; box-shadow: 0 18px 50px rgba(10,12,20,.16) !important; }
+:global(.chain-switcher-popper.el-popper .el-popper__arrow::before) { border-color: var(--border-base) !important; background: var(--surface) !important; }
 .chain-menu { display: flex; flex-direction: column; gap: 5px; }
 .chain-menu__heading { display: flex; align-items: center; justify-content: space-between; padding: 7px 9px 8px; color: var(--text-base); }
 .chain-menu__heading span { font-size: 12px; font-weight: 750; }
@@ -171,6 +172,13 @@ async function onSelectChain(chainId: ProductChainId) {
 .chain-list__copy strong { font-size: 11px; }
 .chain-list__copy small { color: var(--text-muted); font-size: 9px; }
 .chain-list__dot { position: absolute; right: 9px; width: 6px; height: 6px; border-radius: 50%; background: #f47d25; }
+
+:global(html.dark) .chain-trigger,
+:global(html.dark) .chain-menu { background: #16181d !important; }
+:global(html.dark) .chain-trigger { border-color: #262a31; color: #e6e8ec; }
+:global(html.dark) .chain-trigger:hover { background: #1e2127 !important; }
+:global(html.dark .chain-switcher-popper.el-popper) { border-color: #262a31 !important; background: #16181d !important; }
+:global(html.dark .chain-switcher-popper.el-popper .el-popper__arrow::before) { border-color: #262a31 !important; background: #16181d !important; }
 
 @media (min-width: 1200px) {
   .chain-list { padding: 0 16px; }

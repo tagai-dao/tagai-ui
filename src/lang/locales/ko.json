@@ -412,7 +412,7 @@
     "hourlyDistributionDesc": "오늘과 내일을 포함한 지난 7일, HourlyTickCalculator의 시간별 틱을 일별로 집계하고 개발 수수료 차감 후 소셜 풀 지분으로 환산",
     "chartToday": "오늘",
     "chartTomorrow": "내일",
-    "chartActual": "실제",
+    "chartActual": "분배 완료",
     "chartForecast": "예상",
     "noDistributionData": "분배 데이터 없음",
     "injectRewards": "보상 주입",

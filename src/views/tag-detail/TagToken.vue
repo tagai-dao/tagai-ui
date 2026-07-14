@@ -23,12 +23,14 @@ import type { ApexOptions } from "apexcharts";
 import { useI18n } from "vue-i18n";
 import { useTools } from "@/composables/useTools";
 import { useChainStore } from "@/stores/chain";
+import { useTheme } from "@/composables/useTheme";
 
 const ApexCharts = VueApexCharts as any;
 const { t } = useI18n();
 const { onCopy } = useTools();
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
+const { isDark } = useTheme()
 const modalStore = useModalStore()
 const accountStore = useAccountStore()
 const isWalletConnected = computed(() => accountStore.ethConnectState === EthWalletState.Connected && isAddress(accountStore.ethConnectAddress as `0x${string}`))
@@ -247,7 +249,10 @@ const hourlyBarOptions = computed<ApexOptions>(() => ({
     stacked: true,
     toolbar: { show: false },
     fontFamily: 'inherit',
+    background: 'transparent',
+    foreColor: isDark.value ? '#B6BCC7' : '#3F3F3F',
   },
+  theme: { mode: isDark.value ? 'dark' : 'light' },
   plotOptions: {
     bar: {
       borderRadius: 4,
@@ -259,17 +264,21 @@ const hourlyBarOptions = computed<ApexOptions>(() => ({
   dataLabels: { enabled: false },
   xaxis: {
     categories: v9HourlyLabels.value,
+    axisBorder: { color: isDark.value ? '#363B44' : '#D1D5DB' },
+    axisTicks: { color: isDark.value ? '#363B44' : '#D1D5DB' },
     labels: {
       rotate: 0,
-      style: { fontSize: '11px' },
+      style: { fontSize: '11px', colors: isDark.value ? '#B6BCC7' : '#3F3F3F' },
     },
   },
   yaxis: {
     labels: {
       formatter: (val: number) => formatAmountTrunc(val),
+      style: { colors: isDark.value ? '#B6BCC7' : '#3F3F3F' },
     },
   },
   tooltip: {
+    theme: isDark.value ? 'dark' : 'light',
     y: {
       formatter: (val: number) => `${formatAmountTrunc(val)} ${comStore.currentSelectedCommunity?.tick ?? ''}`,
     },
@@ -282,7 +291,10 @@ const hourlyBarOptions = computed<ApexOptions>(() => ({
     fontSize: '11px',
     markers: { size: 6, radius: 2 },
   },
-  grid: { strokeDashArray: 4 },
+  grid: {
+    strokeDashArray: 4,
+    borderColor: isDark.value ? '#363B44' : '#D9DDE5',
+  },
 }))
 
 const hourlyBarSeries = computed(() => {
@@ -890,13 +902,21 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
       <!-- 可滚动内容区域 -->
       <div ref="distributionScrollRef" class="overflow-y-auto pr-2 custom-scrollbar" style="max-height: 60vh;">
         <!-- HourlyTickCalculator：按日分发柱状图（v9 / v10） -->
-        <div v-if="isHourly" class="mb-6 p-4 rounded-xl border border-orange-normal/30 bg-orange-50">
+        <div
+          v-if="isHourly"
+          class="distribution-chart-card mb-6 p-4 rounded-xl border"
+          :style="{
+            backgroundColor: isDark ? '#1a1c22' : '#fff7ed',
+            borderColor: isDark ? 'rgba(255, 143, 64, .28)' : 'rgba(255, 143, 64, .3)',
+          }"
+        >
           <div class="text-h4 font-semibold text-black-19 mb-1">{{ $t('postView.hourlyDistributionTitle') }}</div>
           <div class="text-xs text-grey-93 mb-4">{{ $t('postView.hourlyDistributionDesc') }}</div>
           <div v-if="v9HourlyLoading || v10Loading" class="py-8 text-center text-grey-93 text-h4">{{ $t('loading') }}</div>
           <div v-else-if="v9HourlyAmounts.length > 0">
             <component
               :is="ApexCharts"
+              :key="isDark ? 'distribution-dark' : 'distribution-light'"
               type="bar"
               height="220"
               :options="hourlyBarOptions"
@@ -1128,5 +1148,18 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
 </template>
 
 <style scoped>
+.distribution-chart-card {
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
 
+:global(html.dark) .distribution-chart-card :deep(.apexcharts-canvas),
+:global(html.dark) .distribution-chart-card :deep(.apexcharts-svg) {
+  background: transparent !important;
+}
+
+:global(html.dark) .distribution-chart-card :deep(.apexcharts-legend-text),
+:global(html.dark) .distribution-chart-card :deep(.apexcharts-text) {
+  color: #b6bcc7 !important;
+  fill: #b6bcc7 !important;
+}
 </style>

@@ -430,7 +430,7 @@
     "hourlyDistributionDesc": "7 hari terakhir termasuk hari ini dan besok, diagregasi harian dari tick per jam HourlyTickCalculator, diskalakan dengan porsi pool sosial setelah biaya dev",
     "chartToday": "Hari ini",
     "chartTomorrow": "Besok",
-    "chartActual": "Aktual",
+    "chartActual": "Didistribusikan",
     "chartForecast": "Perkiraan",
     "noDistributionData": "Tidak ada data distribusi",
     "injectRewards": "Suntik reward",
