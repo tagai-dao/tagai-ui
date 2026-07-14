@@ -1,8 +1,9 @@
-import { isAddress, parseAbiItem, zeroAddress } from 'viem'
+import { encodeAbiParameters, isAddress, keccak256, parseAbiItem, zeroAddress } from 'viem'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { readContract, resolveContractAddress, writeContract } from './contract'
 import { getReadOnlyClient } from './wallets'
+import { sqrtPriceX96ToBnbPerToken } from './pcsV4Swap'
 
 /** Uniswap v4 PoolKey; intentionally separate from Pancake Infinity PoolKey. */
 export type RhV4PoolKey = {
@@ -12,6 +13,90 @@ export type RhV4PoolKey = {
   tickSpacing: number
   hooks: `0x${string}`
 }
+
+/**
+ * Uniswap v4 PoolManager 没有 PCS 的 getSlot0(bytes32)。
+ * 池状态在 mapping(PoolId => Pool)，StateLibrary.POOLS_SLOT = 6；
+ * 用 extsload(keccak256(abi.encode(poolId, 6))) 读出 packed slot0。
+ */
+const RH_V4_POOLS_SLOT = 6n
+
+const extsloadAbi = [{
+  inputs: [{ name: 'slot', type: 'bytes32' }],
+  name: 'extsload',
+  outputs: [{ name: 'value', type: 'bytes32' }],
+  stateMutability: 'view',
+  type: 'function',
+}] as const
+
+export type RhV4Slot0 = {
+  sqrtPriceX96: bigint
+  tick: number
+  protocolFee: number
+  lpFee: number
+}
+
+/** poolId → PoolManager 存储槽（与 Uniswap v4 StateLibrary 一致） */
+export const getRhV4PoolStateSlot = (poolId: `0x${string}`): `0x${string}` =>
+  keccak256(encodeAbiParameters(
+    [{ type: 'bytes32' }, { type: 'uint256' }],
+    [poolId, RH_V4_POOLS_SLOT],
+  ))
+
+/** 解包 slot0：sqrtPriceX96 | tick | protocolFee | lpFee */
+export const decodeRhV4Slot0 = (word: bigint | string): RhV4Slot0 => {
+  const w = typeof word === 'bigint' ? word : BigInt(word)
+  const sqrtPriceX96 = w & ((1n << 160n) - 1n)
+  let tick = Number((w >> 160n) & 0xffffffn)
+  if (tick >= 0x800000) tick -= 0x1000000
+  const protocolFee = Number((w >> 184n) & 0xffffffn)
+  const lpFee = Number((w >> 208n) & 0xffffffn)
+  return { sqrtPriceX96, tick, protocolFee, lpFee }
+}
+
+const requireRhV4PoolManager = () => {
+  const deployment = useChainStore().deployment
+  if (deployment.dex.kind !== 'uniswap') {
+    throw new Error('RH V4 pool state called outside an Uniswap chain')
+  }
+  if (deployment.dex.v4PoolManager === zeroAddress) {
+    throw new Error(`Uniswap V4 PoolManager is not configured on ${deployment.name}`)
+  }
+  return deployment
+}
+
+/** 读 RH Uniswap V4 池 slot0（extsload，非 getSlot0） */
+export const getRhV4PoolState = async (poolId: `0x${string}`): Promise<RhV4Slot0> => {
+  const deployment = requireRhV4PoolManager()
+  const word = await getReadOnlyClient().readContract({
+    address: deployment.dex.v4PoolManager,
+    abi: extsloadAbi,
+    functionName: 'extsload',
+    args: [getRhV4PoolStateSlot(poolId)],
+  })
+  return decodeRhV4Slot0(word as `0x${string}`)
+}
+
+/** RH V4 现货价（原生币/Token），数学与 PCS 路径相同 */
+export const getRhV4SpotPrice = async (poolId: `0x${string}`): Promise<number> => {
+  const { sqrtPriceX96 } = await getRhV4PoolState(poolId)
+  if (sqrtPriceX96 === 0n) return 0
+  return sqrtPriceX96ToBnbPerToken(sqrtPriceX96)
+}
+
+/**
+ * makerdao multicall 条目：用 extsload 取 sqrtPriceX96，
+ * 供 getTokenOnchainInfo / 导入币批量补价复用。
+ */
+export const buildRhV4SqrtPriceMulticall = (
+  poolManager: `0x${string}`,
+  poolId: `0x${string}`,
+  returnKey: string,
+) => ({
+  target: poolManager,
+  call: ['extsload(bytes32)(bytes32)', getRhV4PoolStateSlot(poolId)],
+  returns: [[returnKey, (val: any) => decodeRhV4Slot0(val).sqrtPriceX96]],
+})
 
 const isUint24 = (value: number) => Number.isInteger(value) && value >= 0 && value <= 0xffffff
 const isInt24 = (value: number) => Number.isInteger(value) && value >= -0x800000 && value <= 0x7fffff

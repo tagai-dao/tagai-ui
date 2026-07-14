@@ -15,6 +15,7 @@ import { writeContract, readContract, resolveContractAddress } from "./contract"
 import { useChainStore } from '@/stores/chain';
 import { getReadOnlyClient } from "./wallets";
 import { buyTokenV4, sellTokenV4, resolveV4PoolId, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
+import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice } from "./rhV4Swap";
 import { findPump9DeploySalt, verifyPump9SaltVanity } from "./pump9Salt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
 
@@ -1258,20 +1259,30 @@ export const getTokenOnchainInfo = async (
         }
         if (isPcsV4Listed) {
             const poolId = resolveV4PoolId(pairMap[token]);
-            if (poolId) {
-                calls.push({
-                    target: useChainStore().deployment.dex.v4PoolManager,
-                    call: [
-                        'getSlot0(bytes32)(uint160,int24,uint24,uint24)',
-                        poolId
-                    ],
-                    returns: [
-                        [token + '-sqrtPriceX96', (val: any) => BigInt(val)],
-                        [token + '-tick'],
-                        [token + '-protocolFee'],
-                        [token + '-lpFee']
-                    ]
-                })
+            const v4PoolManager = useChainStore().deployment.dex.v4PoolManager
+            if (poolId && v4PoolManager) {
+                // RH Uniswap V4：extsload；BSC PCS Infinity：getSlot0
+                if (useChainStore().deployment.dex.kind === 'uniswap') {
+                    calls.push(buildRhV4SqrtPriceMulticall(
+                        v4PoolManager,
+                        poolId,
+                        token + '-sqrtPriceX96',
+                    ))
+                } else {
+                    calls.push({
+                        target: v4PoolManager,
+                        call: [
+                            'getSlot0(bytes32)(uint160,int24,uint24,uint24)',
+                            poolId
+                        ],
+                        returns: [
+                            [token + '-sqrtPriceX96', (val: any) => BigInt(val)],
+                            [token + '-tick'],
+                            [token + '-protocolFee'],
+                            [token + '-lpFee']
+                        ]
+                    })
+                }
             }
             continue;
         }
@@ -1307,8 +1318,50 @@ export const getTokenOnchainInfo = async (
         }
     }
     if (calls.length > 0) {
-        let res = await aggregateWithRpcFallback(calls);
-        res = res.results.transformed;
+        let res: Record<string, any> = {}
+        try {
+            res = (await aggregateWithRpcFallback(calls)).results.transformed
+        } catch (e) {
+            // 单笔坏 call 会导致整批 empty response；降级逐 token，避免列表全军覆没
+            console.warn('getTokenOnchainInfo price multicall failed, fallback per-token', e)
+            for (const [token, info] of Object.entries(result) as Array<[string, any]>) {
+                const version = versions[token] ?? 4
+                try {
+                    if (!info.listed) {
+                        const pumpAddress = getActivePumpAddress(version)
+                        if (!pumpAddress) continue
+                        const price = await readContract(
+                            ('Pump' + version) as any,
+                            'getPrice',
+                            [info.bondingCurveSupply, parseEther('1')],
+                        ) as bigint
+                        info.price = Number(price) / 1e18
+                        continue
+                    }
+                    if (isPcsV4Version(version)) {
+                        const poolId = resolveV4PoolId(pairMap[token])
+                        if (!poolId) continue
+                        info.price = useChainStore().deployment.dex.kind === 'uniswap'
+                            ? await getRhV4SpotPrice(poolId)
+                            : sqrtPriceX96ToBnbPerToken(
+                                BigInt((await readContract('PCSCLPoolManager', 'getSlot0', [poolId]) as any)[0]),
+                              )
+                        continue
+                    }
+                    if (!info.pair) continue
+                    const [reserves, token0] = await Promise.all([
+                        readContract('UniswapV2Pair', 'getReserves', [], info.pair as `0x${string}`),
+                        readContract('UniswapV2Pair', 'token0', [], info.pair as `0x${string}`),
+                    ])
+                    const r0 = Number((reserves as any)[0]) / 1e18
+                    const r1 = Number((reserves as any)[1]) / 1e18
+                    info.price = (token0 as string).toLowerCase() === token.toLowerCase() ? r1 / r0 : r0 / r1
+                } catch (err) {
+                    console.warn('getTokenOnchainInfo price fallback failed', token, err)
+                }
+            }
+            return result
+        }
         for (let [key, value] of Object.entries(result)) {
             const version = versions[key] ?? 4;
             const info: any = value;
@@ -1327,7 +1380,7 @@ export const getTokenOnchainInfo = async (
                     result[key].price = undefined;
                     continue;
                 }
-                // currency0=BNB, currency1=Token → sqrtPriceX96^2/Q192 = Token/BNB，取倒数得 BNB/Token
+                // currency0=原生币, currency1=Token → 取倒数得 原生币/Token
                 result[key].price = sqrtPriceX96ToBnbPerToken(sqrtPriceX96);
                 continue;
             }
@@ -1348,6 +1401,11 @@ export const getImportTokenPrice = async (token: string, pair: string, dexVersio
         if (dexVersion === 4) {
             const poolId = resolveV4PoolId(pairMap[token] || pair)
             if (!poolId) return undefined
+            // RH Uniswap V4 无 getSlot0，走 extsload
+            if (useChainStore().deployment.dex.kind === 'uniswap') {
+                const price = await getRhV4SpotPrice(poolId)
+                return price > 0 ? price : undefined
+            }
             const slot0 = await readContract('PCSCLPoolManager', 'getSlot0', [poolId])
             const sqrtPriceX96 = BigInt((slot0 as any)[0])
             if (sqrtPriceX96 === 0n) return undefined
@@ -1440,16 +1498,24 @@ export const getImportTokenOnchainInfo = async (
         if (dexVersion === 4) {
             const poolId = resolveV4PoolId(pairMap[token] || pair)
             if (poolId && v4PoolManager) {
-                calls.push({
-                    target: v4PoolManager,
-                    call: ['getSlot0(bytes32)(uint160,int24,uint24,uint24)', poolId],
-                    returns: [
-                        [`${token}-sqrtPriceX96`, (val: any) => BigInt(val)],
-                        [`${token}-tick`],
-                        [`${token}-protocolFee`],
-                        [`${token}-lpFee`],
-                    ],
-                })
+                if (useChainStore().deployment.dex.kind === 'uniswap') {
+                    calls.push(buildRhV4SqrtPriceMulticall(
+                        v4PoolManager,
+                        poolId,
+                        `${token}-sqrtPriceX96`,
+                    ))
+                } else {
+                    calls.push({
+                        target: v4PoolManager,
+                        call: ['getSlot0(bytes32)(uint160,int24,uint24,uint24)', poolId],
+                        returns: [
+                            [`${token}-sqrtPriceX96`, (val: any) => BigInt(val)],
+                            [`${token}-tick`],
+                            [`${token}-protocolFee`],
+                            [`${token}-lpFee`],
+                        ],
+                    })
+                }
             }
         } else if (dexVersion === 3) {
             calls.push(

@@ -18,7 +18,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
-import { buyTokenV4Rh, sellTokenV4Rh, resolveRhV4PoolKeyForTrade, quoteRhV4 } from '@/utils/rhV4Swap'
+import { buyTokenV4Rh, sellTokenV4Rh, resolveRhV4PoolKeyForTrade, quoteRhV4, getRhV4SpotPrice } from '@/utils/rhV4Swap'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -302,7 +302,8 @@ const updateBuyAmount = debounce(async (val: any) => {
         const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
         if (!poolKey) throw new Error('invalid RH V4 PoolKey')
         receive = await quoteRhV4(poolKey, amount, true)
-        spot = 0
+        const poolId = resolveV4PoolId(community!.pair)
+        try { spot = poolId ? await getRhV4SpotPrice(poolId) : 0 } catch (e) { console.warn('getRhV4SpotPrice failed', e) }
       } else {
         const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
         if (!poolKey) throw new Error('invalid V4 pool')
@@ -393,7 +394,8 @@ const updateSellAmount = debounce(async (val: any) => {
           const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
           if (!poolKey) throw new Error('invalid RH V4 PoolKey')
           receive = await quoteRhV4(poolKey, amount, false)
-          spot = 0
+          const poolId = resolveV4PoolId(community!.pair)
+          try { spot = poolId ? await getRhV4SpotPrice(poolId) : 0 } catch (e) { console.warn('getRhV4SpotPrice failed', e) }
         } else {
           const poolKey = await resolveV4PoolKeyForTrade(community!.pair)
           if (!poolKey) throw new Error('invalid V4 pool')
