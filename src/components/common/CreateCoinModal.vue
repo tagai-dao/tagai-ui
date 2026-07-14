@@ -449,11 +449,9 @@ onMounted(async () => {
 
     <nav class="create-tabs" :aria-label="$t('createCommunity.createCommunity')">
       <button type="button" :class="{ active: activeTab === 'token' }" @click="activeTab = 'token'">
-        <span class="tab-number">01</span>
         {{ $t('createCommunity.directly') }}
       </button>
       <button type="button" :class="{ active: activeTab === 'import' }" @click="activeTab = 'import'">
-        <span class="tab-number">02</span>
         {{ $t('createCommunity.importToken') }}
       </button>
       <button
@@ -462,7 +460,6 @@ onMounted(async () => {
         :class="{ active: activeTab === 'tweet' }"
         @click="activeTab = 'tweet'"
       >
-        <span class="tab-number">03</span>
         {{ $t('createCommunity.byAI') }}
       </button>
     </nav>
@@ -877,8 +874,6 @@ onMounted(async () => {
 
 .create-tabs button { display: inline-flex; min-width: 0; flex: 1; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 12px; border-radius: 11px; color: var(--text-muted); font-size: 12px; font-weight: 650; transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease; }
 .create-tabs button.active { background: var(--surface); color: var(--text-base); box-shadow: 0 6px 20px rgba(10,12,20,.08); }
-.create-tabs button.active .tab-number { color: #f47d25; }
-.tab-number { font-size: 9px; font-weight: 800; letter-spacing: .06em; opacity: .75; }
 
 .create-modal__scroll { min-height: 0; overflow-y: auto; padding: 22px 26px 26px; }
 .token-form { display: flex; flex-direction: column; gap: 14px; }
@@ -978,7 +973,6 @@ textarea.field-control { min-height: 90px; resize: vertical; align-items: flex-s
   .create-modal__identity h2 { font-size: 19px; }
   .create-tabs { margin: 0 18px; }
   .create-tabs button { gap: 5px; padding: 0 6px; font-size: 10px; }
-  .create-tabs .tab-number { display: none; }
   .create-modal__scroll { padding: 16px 18px 20px; }
   .form-section { padding: 16px; border-radius: 17px; }
   .basic-grid { grid-template-columns: minmax(0, 1fr) 76px; gap: 13px; }
