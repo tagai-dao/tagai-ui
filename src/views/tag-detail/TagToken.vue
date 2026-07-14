@@ -6,7 +6,7 @@ import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
 import { getHolderList, getHolderListOfImportToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
-import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, TipTagSwapHook9, PCSCLPoolManager, PCSVault, ChainConfig } from '@/config'
+import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, TipTagSwapHook9, PCSCLPoolManager, PCSVault } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { getBlockNumber } from "@/utils/wallets";
@@ -154,9 +154,11 @@ const legacyPumpAddrs = [
   PumpContract5, PumpContract6, PumpContract7,
 ]
 
-function openBscAddress(addr: string) {
+/** 打开当前产品链浏览器上的合约地址（RH→Blockscout，BSC→BscScan） */
+function openExplorerAddress(addr: string) {
   if (!addr) return
-  window.open(`${ChainConfig.browser}address/${addr}`, '_blank')
+  const base = chainStore.browser.replace(/\/$/, '')
+  window.open(`${base}/address/${addr}`, '_blank')
 }
 
 async function loadV9HolderAddresses() {
@@ -746,7 +748,7 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
           <div v-if="displayNutboxCommunityAddr" class="flex items-center gap-1.5">
             <span
               class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
-              @click="openBscAddress(displayNutboxCommunityAddr)"
+              @click="openExplorerAddress(displayNutboxCommunityAddr)"
             >{{ formatAddress(displayNutboxCommunityAddr) }}</span>
             <button type="button" class="shrink-0 p-0.5" @click.stop="onCopy(displayNutboxCommunityAddr)">
               <img class="w-[10px] min-w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="" />
@@ -760,7 +762,7 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
           <div v-if="v9SocialPoolAddr" class="flex items-center gap-1.5">
             <span
               class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
-              @click="openBscAddress(v9SocialPoolAddr)"
+              @click="openExplorerAddress(v9SocialPoolAddr)"
             >{{ formatAddress(v9SocialPoolAddr) }}</span>
             <button type="button" class="shrink-0 p-0.5" @click.stop="onCopy(v9SocialPoolAddr)">
               <img class="w-[10px] min-w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="" />
