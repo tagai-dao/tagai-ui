@@ -169,6 +169,16 @@ const requireRhV4 = () => {
   return { deployment, wrapper }
 }
 
+/** Empty/invalid referral values can come from an optional route param. */
+const normalizeSellsman = (sellsman: string | null | undefined): `0x${string}` =>
+  sellsman && isAddress(sellsman) ? sellsman : zeroAddress
+
+const requireConnectedAddress = (): `0x${string}` => {
+  const address = useAccountStore().ethConnectAddress
+  if (!isAddress(address)) throw new Error('Wallet address is unavailable; please reconnect your wallet')
+  return address
+}
+
 export const getRhWrapperFeeBps = async (): Promise<number> => {
   const [sellsman, tagai] = await Promise.all([
     readContract('TagAISwapWrapper', 'sellsmanRatio', []) as Promise<number>,
@@ -213,12 +223,13 @@ export const buyTokenV4Rh = async (
   poolKey: RhV4PoolKey,
   ethAmount: bigint,
   amountOutMin: bigint,
-  sellsman: `0x${string}` = zeroAddress,
+  sellsman?: string | null,
 ) => {
   const { deployment } = requireRhV4()
+  const recipient = requireConnectedAddress()
   return writeContract({
     contractName: 'TagAISwapWrapper', functionName: 'buyTokenV4',
-    args: [sellsman, amountOutMin, poolKey, useAccountStore().ethConnectAddress,
+    args: [normalizeSellsman(sellsman), amountOutMin, poolKey, recipient,
       deployment.dex.v4PoolManager, 0n],
     value: ethAmount,
   })
@@ -229,16 +240,17 @@ export const sellTokenV4Rh = async (
   token: `0x${string}`,
   amountIn: bigint,
   amountOutMin: bigint,
-  sellsman: `0x${string}` = zeroAddress,
+  sellsman?: string | null,
 ) => {
   const { deployment, wrapper } = requireRhV4()
-  const owner = useAccountStore().ethConnectAddress as `0x${string}`
+  const owner = requireConnectedAddress()
+  const normalizedSellsman = normalizeSellsman(sellsman)
   const allowance = await readContract('Token1', 'allowance', [owner, wrapper], token) as bigint
   if (allowance < amountIn) {
     await writeContract({ contractName: 'Token1', functionName: 'approve', args: [wrapper, amountIn], address: token })
   }
   return writeContract({
     contractName: 'TagAISwapWrapper', functionName: 'sellTokenV4',
-    args: [amountIn, amountOutMin, poolKey, owner, sellsman, deployment.dex.v4PoolManager, 0n],
+    args: [amountIn, amountOutMin, poolKey, owner, normalizedSellsman, deployment.dex.v4PoolManager, 0n],
   })
 }
