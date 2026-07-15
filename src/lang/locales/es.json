@@ -449,7 +449,17 @@
     "totalSupply": "Suministro de IPShare",
     "stake": "Stakear",
     "stakingBenefitTitle": "¿Qué puedes obtener haciendo stake?",
-    "stakingBenefitDesc": "Al hacer stake de IPShare participas en sus recompensas de captura de valor. Una parte de las comisiones de trading del token asociado se usa automáticamente para recomprar este IPShare, y los IPShare adquiridos se distribuyen entre los stakers según su proporción de stake activo. Las recompensas se acumulan en IPShare y se pueden reclamar. Al iniciar el unstake, esa cantidad deja de generar recompensas y puede canjearse después de 7 días."
+    "stakingBenefitDesc": "Al hacer stake de IPShare participas en sus recompensas de captura de valor. Una parte de las comisiones de trading del token asociado se usa automáticamente para recomprar este IPShare, y los IPShare adquiridos se distribuyen entre los stakers según su proporción de stake activo. Las recompensas se acumulan en IPShare y se pueden reclamar. Al iniciar el unstake, esa cantidad deja de generar recompensas y puede canjearse después de 7 días.",
+    "listTitle": "Mercados IPShare",
+    "listDesc": "Descubre mercados de IP personales, opera participaciones de creadores y haz stake de IPShare para participar en recompensas de captura de valor.",
+    "contractBalance": "Saldo del contrato",
+    "totalTradeVolume": "Volumen total negociado",
+    "totalValueCaptured": "Valor total capturado",
+    "totalStaked": "Stake total",
+    "stakedRatio": "Proporción en stake",
+    "searchPlaceholder": "Buscar por creador, usuario o dirección",
+    "noResults": "No hay mercados IPShare coincidentes",
+    "refresh": "Actualizar"
   },
   "errMessage": {
     "idUsed": "La identidad ya está en uso",

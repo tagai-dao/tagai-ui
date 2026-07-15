@@ -432,7 +432,17 @@
     "totalSupply": "IPShare 供应量",
     "stake": "质押",
     "stakingBenefitTitle": "你能从质押中获得什么？",
-    "stakingBenefitDesc": "质押 IPShare 后，你可以分享该 IPShare 的价值捕获收益。关联代币交易产生的部分手续费会自动用于回购该 IPShare，回购所得将按照有效质押占比分配给所有质押者。收益以 IPShare 形式累计并可领取。发起解除质押后，该部分不再参与收益分配，并需等待 7 天后赎回。"
+    "stakingBenefitDesc": "质押 IPShare 后，你可以分享该 IPShare 的价值捕获收益。关联代币交易产生的部分手续费会自动用于回购该 IPShare，回购所得将按照有效质押占比分配给所有质押者。收益以 IPShare 形式累计并可领取。发起解除质押后，该部分不再参与收益分配，并需等待 7 天后赎回。",
+    "listTitle": "IPShare 市场",
+    "listDesc": "发现个人 IP 市场、交易创作者份额，并通过质押 IPShare 参与价值捕获收益分配。",
+    "contractBalance": "合约余额",
+    "totalTradeVolume": "累计交易量",
+    "totalValueCaptured": "累计价值捕获",
+    "totalStaked": "总质押量",
+    "stakedRatio": "质押比例",
+    "searchPlaceholder": "搜索创作者、用户名或地址",
+    "noResults": "没有匹配的 IPShare 市场",
+    "refresh": "刷新"
   },
   "errMessage": {
     "idUsed": "身份已经被使用",

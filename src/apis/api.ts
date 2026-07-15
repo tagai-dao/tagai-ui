@@ -307,8 +307,21 @@ export const setOrderClaimed = async (twitterId: string, orderId: string, hash: 
 export const getIpshareInfo = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/ipshare', {ethAddr})
 
-export const getIPShareList = async (pages?: number) =>
-    get(BACKEND_API_URL + '/ipshare/list', {pages})
+export const getIPShareList = async (pages?: number, keyword?: string) =>
+    get(BACKEND_API_URL + '/ipshare/list', {pages, keyword})
+
+export type IPShareMarketSummary = {
+  chainId: number
+  chain: string
+  nativeSymbol: string
+  tradeCount: number
+  valueCaptureCount: number
+  totalTradeVolume: number
+  totalValueCaptured: number
+}
+
+export const getIPShareMarketSummary = async () =>
+  get(BACKEND_API_URL + '/ipshare/summary') as Promise<IPShareMarketSummary>
 
 export const getIPShareHoldingList = async (ethAddr: string, pages?: number) =>
     get(BACKEND_API_URL + '/ipshare/holdingList', {ethAddr, pages})

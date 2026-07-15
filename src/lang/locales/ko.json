@@ -431,7 +431,17 @@
     "totalSupply": "IPShare 공급량",
     "stake": "스테이킹",
     "stakingBenefitTitle": "스테이킹으로 무엇을 얻을 수 있나요?",
-    "stakingBenefitDesc": "IPShare를 스테이킹하면 해당 IPShare의 가치 포착 보상을 받을 수 있습니다. 연관 토큰 거래 수수료의 일부는 이 IPShare를 자동으로 바이백하는 데 사용되며, 바이백된 IPShare는 유효 스테이킹 비율에 따라 스테이커에게 분배됩니다. 보상은 IPShare로 누적되어 청구할 수 있습니다. 언스테이킹을 시작한 수량은 더 이상 보상에 참여하지 않으며 7일 후 상환할 수 있습니다."
+    "stakingBenefitDesc": "IPShare를 스테이킹하면 해당 IPShare의 가치 포착 보상을 받을 수 있습니다. 연관 토큰 거래 수수료의 일부는 이 IPShare를 자동으로 바이백하는 데 사용되며, 바이백된 IPShare는 유효 스테이킹 비율에 따라 스테이커에게 분배됩니다. 보상은 IPShare로 누적되어 청구할 수 있습니다. 언스테이킹을 시작한 수량은 더 이상 보상에 참여하지 않으며 7일 후 상환할 수 있습니다.",
+    "listTitle": "IPShare 마켓",
+    "listDesc": "개인 IP 마켓을 찾고 크리에이터 지분을 거래하며 IPShare 스테이킹으로 가치 포착 보상에 참여하세요.",
+    "contractBalance": "컨트랙트 잔액",
+    "totalTradeVolume": "누적 거래량",
+    "totalValueCaptured": "누적 가치 포착",
+    "totalStaked": "총 스테이킹",
+    "stakedRatio": "스테이킹 비율",
+    "searchPlaceholder": "크리에이터, 사용자명 또는 주소 검색",
+    "noResults": "일치하는 IPShare 마켓이 없습니다",
+    "refresh": "새로고침"
   },
   "errMessage": {
     "idUsed": "이미 사용된 신원입니다",

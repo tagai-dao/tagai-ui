@@ -149,6 +149,54 @@ export const getTotalStakedIPshares = async (subjects: string[]): Promise<Record
     }
 }
 
+export type IPshareMarketStats = {
+    supplies: Record<string, number>
+    totalStaked: Record<string, number>
+}
+
+/**
+ * 列表页市场统计：一次 multicall 同时读取供应量与总质押量，避免每张卡片分别请求。
+ */
+export const getIPshareMarketStats = async (subjects: string[]): Promise<IPshareMarketStats> => {
+    const emptyResult: IPshareMarketStats = { supplies: {}, totalStaked: {} }
+    try {
+        const ipshare = getActiveIpshare()
+        subjects = uniqueArray(subjects).filter(s => isAddress(s))
+        if (subjects.length === 0) return emptyResult
+
+        const calls = subjects.flatMap(subject => [
+            {
+                target: ipshare.address,
+                call: ['ipshareSupply(address)(uint256)', subject],
+                returns: [[`supply:${subject}`, (val: any) => parseFloat(val.toString()) / 1e18]]
+            },
+            {
+                target: ipshare.address,
+                call: ['totalStakedIPshare(address)(uint256)', subject],
+                returns: [[`staked:${subject}`, (val: any) => parseFloat(val.toString()) / 1e18]]
+            }
+        ])
+
+        const res = await aggregate(calls, ipshare.multiConfig)
+        const transformed = res.results?.transformed || {}
+        const supplies: Record<string, number> = {}
+        const totalStaked: Record<string, number> = {}
+
+        for (const subject of subjects) {
+            supplies[subject] = Number(transformed[`supply:${subject}`]) || 0
+            totalStaked[subject] = Number(transformed[`staked:${subject}`]) || 0
+        }
+
+        const store = useIpshareData()
+        store.saveIPshareSupplies(supplies)
+        store.saveTotalStakedIPshares(totalStaked)
+        return { supplies, totalStaked }
+    } catch (e) {
+        console.error('Get IPShare market stats fail:', e)
+        return emptyResult
+    }
+}
+
 export const getPendingIPshareProfits = async (subjects: string[]): Promise<Record<string, number>> => {
     try {
         const ipshare = getActiveIpshare()

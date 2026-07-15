@@ -432,7 +432,17 @@
     "totalSupply": "IPShare Supply",
     "stake": "Stake",
     "stakingBenefitTitle": "What can you earn from staking?",
-    "stakingBenefitDesc": "Stake IPShare to share in its value-capture rewards. A portion of related token trading fees is automatically used to buy back this IPShare, and the purchased shares are distributed among stakers in proportion to their active stake. Rewards accrue in IPShare and can be claimed. Once unstaking begins, that amount stops earning rewards and can be redeemed after 7 days."
+    "stakingBenefitDesc": "Stake IPShare to share in its value-capture rewards. A portion of related token trading fees is automatically used to buy back this IPShare, and the purchased shares are distributed among stakers in proportion to their active stake. Rewards accrue in IPShare and can be claimed. Once unstaking begins, that amount stops earning rewards and can be redeemed after 7 days.",
+    "listTitle": "IPShare Markets",
+    "listDesc": "Discover personal IP markets, trade creator shares, and stake IPShare to participate in value-capture rewards.",
+    "contractBalance": "Contract balance",
+    "totalTradeVolume": "Total trade volume",
+    "totalValueCaptured": "Total value captured",
+    "totalStaked": "Total staked",
+    "stakedRatio": "Staked ratio",
+    "searchPlaceholder": "Search by creator, username, or address",
+    "noResults": "No matching IPShare markets",
+    "refresh": "Refresh"
   },
   "errMessage": {
     "idUsed": "Identify has been used",
