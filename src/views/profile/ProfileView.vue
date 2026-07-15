@@ -22,12 +22,15 @@ import { getIPShareFee, getCapturedFee } from "@/apis/api";
 import IPShareTradeModal from "@/components/ipshare/IPShareTradeModal.vue";
 import IPShareStakeModal from "@/components/ipshare/IPShareStakeModal.vue";
 import { isAddress } from "viem";
+import { useChainStore } from "@/stores/chain";
 
 const ReactLogoutOAuth = applyPureReactInVue(LogoutOAuth);
 
 const accStore = useAccountStore()
 const ipshareStore = useIpshareData()
 const stateStore = useStateStore()
+const chainStore = useChainStore()
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 const tabOptions = ['post', 'blinksTweet', 'createCoin']
 const activeTab = ref('post')
 const { onCopy } = useTools()
@@ -308,7 +311,7 @@ onMounted(() => {
             <!-- Price and TVL -->
             <div class="px-2 flex justify-between items-center text-xs my-2">
               <span>IPShare {{ $t('postView.price') || 'Price' }} <span class="text-orange-normal">{{ ipsharePrice }}</span></span>
-              <span>TVL {{ tvl }} $BNB</span>
+              <span>TVL {{ tvl }} ${{ nativeSymbol }}</span>
             </div>
             
             <!-- Trade and Staking Buttons -->

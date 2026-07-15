@@ -250,6 +250,24 @@ html.dark .max-btn {
   border-color: var(--border-base) !important;
 }
 html.dark .el-popper:not(.is-dark) .el-popper__arrow::before { background: var(--surface) !important; border-color: var(--border-base) !important; }
+
+/* c-arrow-popper 在 element.css 中写死为白底；tooltip 会 teleport 到 body，需全局覆盖。 */
+html.dark .c-arrow-popper.el-popper {
+  background: var(--surface) !important;
+  border: 1px solid var(--border-base) !important;
+  color: var(--text-base) !important;
+  stroke: var(--border-base) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32) !important;
+}
+html.dark .c-arrow-popper.el-popper .el-popper__arrow::before {
+  background: var(--surface) !important;
+  border-color: var(--border-base) !important;
+}
+html.dark .c-arrow-popper.el-popper .el-popper__content,
+html.dark .c-arrow-popper.el-popper .el-popper__content .text-white {
+  color: var(--text-base) !important;
+}
+
 /* c-select（广场页右上角圆角筛选下拉）标题与箭头：组件内 :deep 硬编码 #000 !important，
    暗色下黑字看不清。全局覆盖 color 与 -webkit-text-fill-color（后者优先级高于 color） */
 html.dark .c-select .el-input__inner,

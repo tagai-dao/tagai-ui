@@ -447,7 +447,9 @@
     "createIPShareTip": "Kamu bisa membuat IPShare dulu",
     "curateDerictly": "Kurasi langsung",
     "totalSupply": "Suplai IPShare",
-    "stake": "Stake"
+    "stake": "Stake",
+    "stakingBenefitTitle": "Apa yang kamu dapatkan dari staking?",
+    "stakingBenefitDesc": "Dengan stake IPShare, kamu berhak mendapat bagian reward dari penangkapan nilainya. Sebagian biaya trading token terkait otomatis digunakan untuk membeli kembali IPShare ini, lalu IPShare hasil buyback dibagikan kepada para staker sesuai proporsi stake aktif. Reward terakumulasi dalam bentuk IPShare dan dapat diklaim. Setelah unstake dimulai, jumlah tersebut tidak lagi mendapat reward dan dapat ditebus setelah 7 hari."
   },
   "errMessage": {
     "idUsed": "Identitas sudah digunakan",

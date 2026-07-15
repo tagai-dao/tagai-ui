@@ -430,7 +430,9 @@
     "createIPShareTip": "您可以先创建IPShare",
     "curateDerictly": "直接策展",
     "totalSupply": "IPShare 供应量",
-    "stake": "质押"
+    "stake": "质押",
+    "stakingBenefitTitle": "你能从质押中获得什么？",
+    "stakingBenefitDesc": "质押 IPShare 后，你可以分享该 IPShare 的价值捕获收益。关联代币交易产生的部分手续费会自动用于回购该 IPShare，回购所得将按照有效质押占比分配给所有质押者。收益以 IPShare 形式累计并可领取。发起解除质押后，该部分不再参与收益分配，并需等待 7 天后赎回。"
   },
   "errMessage": {
     "idUsed": "身份已经被使用",

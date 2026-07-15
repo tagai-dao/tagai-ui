@@ -430,7 +430,9 @@
     "createIPShareTip": "You can create IPShare first",
     "curateDerictly": "Curate directly",
     "totalSupply": "IPShare Supply",
-    "stake": "Stake"
+    "stake": "Stake",
+    "stakingBenefitTitle": "What can you earn from staking?",
+    "stakingBenefitDesc": "Stake IPShare to share in its value-capture rewards. A portion of related token trading fees is automatically used to buy back this IPShare, and the purchased shares are distributed among stakers in proportion to their active stake. Rewards accrue in IPShare and can be claimed. Once unstaking begins, that amount stops earning rewards and can be redeemed after 7 days."
   },
   "errMessage": {
     "idUsed": "Identify has been used",

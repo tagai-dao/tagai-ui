@@ -22,14 +22,34 @@
         </button>
       </div>
 
+      <!-- IPShare 全局质押数据，与当前钱包数据分开展示 -->
+      <div class="total-staked-overview !bg-surface-2 !border-line">
+        <span class="label !text-muted">Total Staked by All Users</span>
+        <div class="total-staked-value">
+          <span class="value !text-content">{{ formatNumber(totalStakedAmount) }} IP.Share</span>
+          <el-tooltip popper-class="c-arrow-popper stake-benefit-popper" placement="top" trigger="click">
+            <template #content>
+              <div class="stake-benefit-tooltip">
+                <div class="benefit-title">{{ $t('ipshare.stakingBenefitTitle') }}</div>
+                <div class="benefit-desc">{{ $t('ipshare.stakingBenefitDesc') }}</div>
+              </div>
+            </template>
+            <button class="benefit-help" type="button" :aria-label="$t('ipshare.stakingBenefitTitle')">
+              <img src="~@/assets/icons/icon-tip.svg" alt="" />
+            </button>
+          </el-tooltip>
+        </div>
+      </div>
+
       <!-- 质押信息概览：强制主题底色（暗色下勿白底） -->
       <div class="stake-overview !bg-surface-2 !border-line">
+        <div class="overview-title !text-content">Your Position</div>
         <div class="overview-item border-line">
           <span class="label !text-muted">Your Balance</span>
           <span class="value !text-content">{{ formatNumber(ipshareBalance) }} IP.Share</span>
         </div>
         <div class="overview-item border-line">
-          <span class="label !text-muted">Staked Amount</span>
+          <span class="label !text-muted">Your Staked</span>
           <span class="value !text-content">{{ formatNumber(stakedAmount) }} IP.Share</span>
         </div>
         <div class="overview-item">
@@ -98,10 +118,10 @@
           <el-button
             type="primary"
             :loading="processing"
-            :disabled="!canOperate"
+            :disabled="isWalletConnected && !canOperate"
             @click="handleConfirm"
           >
-            {{ isStake ? 'Stake' : 'Unstake' }}
+            {{ isWalletConnected ? (isStake ? 'Stake' : 'Unstake') : $t('connect') }}
           </el-button>
         </div>
       </div>
@@ -112,13 +132,14 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useAccountStore, useIpshareData } from '@/stores/web3'
+import { EthWalletState, useAccountStore, useIpshareData } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { stake, unstake, claim, redeem } from '@/utils/ipshare'
 import {
   getIPshareBalances,
   getIPshareStaked,
+  getTotalStakedIPshares,
   getPendingIPshareProfits,
   type StakeInfo
 } from '@/utils/ipshareAsset'
@@ -176,10 +197,16 @@ const claiming = ref(false)
 const redeeming = ref(false)
 const ipshareBalance = ref(0)
 const stakedAmount = ref(0)
+const totalStakedAmount = ref(0)
 const pendingRewards = ref(0)
 const stakeInfo = ref<StakeInfo | null>(null)
 
 // 计算属性
+const isWalletConnected = computed(() =>
+  accountStore.ethConnectState === EthWalletState.Connected &&
+  isAddress(accountStore.ethConnectAddress)
+)
+
 const canOperate = computed(() => {
   const amountNum = parseFloat(amount.value || '0')
   if (amountNum <= 0) return false
@@ -230,37 +257,41 @@ const setMaxAmount = () => {
   }
 }
 
+const resetUserData = () => {
+  ipshareBalance.value = 0
+  stakedAmount.value = 0
+  pendingRewards.value = 0
+  stakeInfo.value = null
+  amount.value = ''
+}
+
+const loadTotalStakedData = async () => {
+  const address = subjectAddress.value
+  if (!address) return
+
+  const totals = await getTotalStakedIPshares([address])
+  if (subjectAddress.value !== address) return
+  totalStakedAmount.value = totals[address] || 0
+}
+
 const loadData = async () => {
+  if (!isWalletConnected.value) return
+
+  const walletAddress = accountStore.ethConnectAddress
   try {
-    // 先尝试从 store 读取已有数据（如果有的话）
-    const storeBalances = ipshareStore.ipshareBalances
-    const storeStakeInfos = ipshareStore.stakeInfos
-    const storeProfits = ipshareStore.pendingIPshareProfits
-    
-    // 如果 store 中有数据，先显示
     const address = subjectAddress.value
     if (!address) return
-    
-    if (storeBalances[address] !== undefined) {
-      ipshareBalance.value = storeBalances[address] || 0
-    }
-    if (storeStakeInfos[address]) {
-      const info = storeStakeInfos[address]
-      stakeInfo.value = info
-      stakedAmount.value = info.amount || 0
-    }
-    if (storeProfits[address] !== undefined) {
-      pendingRewards.value = storeProfits[address] || 0
-    }
 
     // 获取 IPShare 余额（函数内部会处理地址获取）
     const balances = await getIPshareBalances([address])
+    if (accountStore.ethConnectAddress !== walletAddress) return
     if (balances[address] !== undefined) {
       ipshareBalance.value = balances[address] || 0
     }
 
     // 获取质押信息
     const stakeInfos = await getIPshareStaked([address])
+    if (accountStore.ethConnectAddress !== walletAddress) return
     const info = stakeInfos[address]
     if (info) {
       stakeInfo.value = info
@@ -269,6 +300,7 @@ const loadData = async () => {
 
     // 获取待领取收益
     const profits = await getPendingIPshareProfits([address])
+    if (accountStore.ethConnectAddress !== walletAddress) return
     if (profits[address] !== undefined) {
       pendingRewards.value = profits[address] || 0
     }
@@ -279,29 +311,16 @@ const loadData = async () => {
     ipshareStore.savePendingIPshareProfits(profits)
   } catch (e) {
     console.error('Load stake data failed:', e)
-    // 如果获取失败，尝试从 store 读取
-    const storeBalances = ipshareStore.ipshareBalances
-    const storeStakeInfos = ipshareStore.stakeInfos
-    const storeProfits = ipshareStore.pendingIPshareProfits
-    
-    const address = subjectAddress.value
-    if (!address) return
-    
-    if (storeBalances[address] !== undefined) {
-      ipshareBalance.value = storeBalances[address] || 0
-    }
-    if (storeStakeInfos[address]) {
-      const info = storeStakeInfos[address]
-      stakeInfo.value = info
-      stakedAmount.value = info.amount || 0
-    }
-    if (storeProfits[address] !== undefined) {
-      pendingRewards.value = storeProfits[address] || 0
-    }
   }
 }
 
 const handleConfirm = async () => {
+  // 未连接时，主按钮与其他交易按钮一致，先引导用户连接钱包。
+  if (!isWalletConnected.value) {
+    useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet)
+    return
+  }
+
   if (!canOperate.value) return
 
   const amountNum = parseFloat(amount.value || '0')
@@ -315,13 +334,6 @@ const handleConfirm = async () => {
     
     // 检查是否连接钱包（适用于质押和解除质押）
     const stakeAddress = accountStore.ethConnectAddress
-    if (!stakeAddress || !isAddress(stakeAddress)) {
-      processing.value = false
-      // 弹出连接钱包模态框
-      const modalStore = useModalStore()
-      modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
-      return
-    }
     
     if (isStake.value) {
       // 质押前重新获取最新余额并验证
@@ -381,7 +393,7 @@ const handleConfirm = async () => {
       console.log('Transaction hash:', hash)
 
       // 刷新数据
-      await loadData()
+      await Promise.all([loadData(), loadTotalStakedData()])
 
       // 通知父组件
       emit('success')
@@ -416,7 +428,7 @@ const handleConfirm = async () => {
       console.log('Transaction hash:', hash)
 
       // 刷新数据
-      await loadData()
+      await Promise.all([loadData(), loadTotalStakedData()])
 
       // 通知父组件
       emit('success')
@@ -470,7 +482,7 @@ const handleClaim = async () => {
     console.log('Claim hash:', hash)
 
     // 刷新数据
-    await loadData()
+    await Promise.all([loadData(), loadTotalStakedData()])
     emit('success')
   } catch (e: any) {
     console.error('Claim failed:', e)
@@ -525,7 +537,7 @@ const handleRedeem = async () => {
     console.log('Redeem hash:', hash)
 
     // 刷新数据
-    await loadData()
+    await Promise.all([loadData(), loadTotalStakedData()])
     emit('success')
   } catch (e: any) {
     console.error('Redeem failed:', e)
@@ -553,16 +565,36 @@ const handleClose = () => {
   }
 }
 
-// 监听弹窗打开或 subjectAddress 变化
-watch([visible, subjectAddress], ([val, address]) => {
-  if (val && address) {
-    loadData()
+// 打开弹窗、切换 IPShare 或连接/切换钱包后，读取当前钱包的用户数据。
+watch(
+  [visible, subjectAddress, () => accountStore.ethConnectAddress, () => accountStore.ethConnectState],
+  ([val, address], oldValues) => {
+    if (!val) return
+
+    const publicContextChanged = !oldValues ||
+      val !== oldValues[0] ||
+      address !== oldValues[1]
+    const dataContextChanged = !oldValues ||
+      val !== oldValues[0] ||
+      address !== oldValues[1] ||
+      accountStore.ethConnectAddress !== oldValues[2] ||
+      accountStore.ethConnectState !== oldValues[3]
+    if (publicContextChanged) {
+      totalStakedAmount.value = 0
+      if (address) loadTotalStakedData()
+    }
+    if (dataContextChanged || !isWalletConnected.value) resetUserData()
+
+    if (address && isWalletConnected.value) loadData()
   }
-})
+)
 
 // 初始化
 onMounted(() => {
-  if (visible.value) {
+  if (visible.value && subjectAddress.value) {
+    loadTotalStakedData()
+  }
+  if (visible.value && isWalletConnected.value) {
     loadData()
   }
 })
@@ -607,6 +639,13 @@ onMounted(() => {
   border-radius: 12px;
   margin-bottom: 24px;
 
+  .overview-title {
+    padding-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-base) !important;
+  }
+
   .overview-item {
     display: flex;
     justify-content: space-between;
@@ -625,6 +664,64 @@ onMounted(() => {
       color: var(--text-base) !important;
       font-weight: 500;
     }
+  }
+}
+
+.total-staked-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border-base) !important;
+  border-radius: 12px;
+  font-size: 14px;
+
+  .label {
+    color: var(--text-muted);
+  }
+
+  .value {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .total-staked-value {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .benefit-help {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    cursor: pointer;
+
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  }
+}
+
+.stake-benefit-tooltip {
+  max-width: 320px;
+  padding: 10px 12px;
+
+  .benefit-title {
+    margin-bottom: 6px;
+    color: #ff7a00;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .benefit-desc {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
   }
 }
 

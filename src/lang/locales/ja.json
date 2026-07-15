@@ -429,7 +429,9 @@
     "createIPShareTip": "まずIPShareを作成できます",
     "curateDerictly": "直接キュレーション",
     "totalSupply": "IPShare供給量",
-    "stake": "ステーキング"
+    "stake": "ステーキング",
+    "stakingBenefitTitle": "ステーキングで何を得られますか？",
+    "stakingBenefitDesc": "IPShareをステークすると、そのIPShareの価値獲得報酬を受け取れます。関連トークンの取引手数料の一部は、このIPShareの買い戻しに自動的に使用され、買い戻されたIPShareは有効なステーク比率に応じてステーカーに分配されます。報酬はIPShareとして蓄積され、請求できます。アンステークを開始した分は報酬対象外となり、7日後に償還できます。"
   },
   "errMessage": {
     "idUsed": "このIDは既に使用されています",
