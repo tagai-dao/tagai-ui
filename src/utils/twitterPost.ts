@@ -1,3 +1,5 @@
+import { useChainStore } from '@/stores/chain'
+
 /** 发帖跳转 Twitter 前补齐平台标签与社区标签 */
 const TAGAI_MENTION_RE = /@TagAIDAO/i
 const TAGAI_HASHTAG_RE = /#TagAI/i
@@ -52,8 +54,11 @@ export const isNativeTwitterAccount = (accountType?: number | null) =>
 
 const appendCommerceUrl = (text: string, commerceUrl?: string) => {
   if (!commerceUrl) return text
+  const url = new URL(commerceUrl, window.location.origin)
+  url.searchParams.set('chainId', String(useChainStore().activeChainId))
+  const chainAwareCommerceUrl = url.toString()
   const trimmed = text.trimEnd()
-  return trimmed ? `${trimmed}\n\n${commerceUrl}` : commerceUrl
+  return trimmed ? `${trimmed}\n\n${chainAwareCommerceUrl}` : chainAwareCommerceUrl
 }
 
 /** 平台 API 发帖时拼接正文（含标签与 commerce 链接） */

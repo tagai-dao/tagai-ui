@@ -19,6 +19,7 @@ import PredictEventDetail from '@/views/predict-event-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
 import AboutView from '@/views/about/AboutView.vue'
 import { useChainStore } from '@/stores/chain'
+import { isProductChain } from '@/config/chains'
 
 const router = createRouter({
   // @ts-ignore
@@ -148,6 +149,13 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  // Blink 分享链接中的链优先于浏览器记忆；先切产品链，再做路由功能判断和详情请求。
+  const queryChainId = Number(Array.isArray(to.query.chainId) ? to.query.chainId[0] : to.query.chainId)
+  if (isProductChain(queryChainId) && queryChainId !== useChainStore().activeChainId) {
+    // 只切换页面数据链；用户发起交易时再由现有流程同步钱包网络。
+    useChainStore().setActiveChain(queryChainId, { reload: false })
+  }
+
   const predictionRoutes = new Set(['predictions', 'predict-battle', 'predict-event'])
   if (predictionRoutes.has(String(to.name)) && !useChainStore().deployment.features.prediction) {
     next({ path: '/' })
