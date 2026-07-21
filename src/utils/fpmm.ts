@@ -842,8 +842,9 @@ export async function removeLiquidity(battle: BattleData | EventPredictData, sha
     })
 }
 
-/** Gnosis CT indexSets：outcome i 对应 1 << i；二元 [1,2]，三元 [1,2,4] */
-const buildRedeemIndexSets = (battle: BattleData | EventPredictData): number[] => {
+/** Gnosis CT indexSets：outcome i 对应 2^i；二元 [1,2]，三元 [1,2,4]
+ *  必须用 BigInt 位移——JS 的 << 是 32 位有符号运算，i=31 得负数、i>=32 回绕重复 */
+const buildRedeemIndexSets = (battle: BattleData | EventPredictData): bigint[] => {
     const eventMarket = battle as EventPredictData
     let outcomeSlotCount = 2
     if (isMultiOutcomeEventFactory(eventMarket.factoryVersion)) {
@@ -852,7 +853,7 @@ const buildRedeemIndexSets = (battle: BattleData | EventPredictData): number[] =
             eventMarket.outcomeCount ?? getOutcomeList(eventMarket).length ?? 2,
         )
     }
-    return Array.from({ length: outcomeSlotCount }, (_, i) => 1 << i)
+    return Array.from({ length: outcomeSlotCount }, (_, i) => 1n << BigInt(i))
 }
 
 export async function redeemPositions(battle: BattleData | EventPredictData, collateralToken: string) {
