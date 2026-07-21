@@ -388,6 +388,7 @@
     "price": "가격",
     "totalSupply": "토큰 공급량",
     "socialSupply": "소셜 분배",
+    "v4HookTransactionDistribution": "V4 Hook 트랜잭션 분배",
     "bindCurveSold": "본딩커브 판매량",
     "dexLiquidity": "초기 유동성 공급 (Dex)",
     "cap": "상한",

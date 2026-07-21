@@ -389,6 +389,7 @@
     "price": "价格",
     "totalSupply": "Token Supply",
     "socialSupply": "社交分发",
+    "v4HookTransactionDistribution": "V4 Hook 交易分发",
     "bindCurveSold": "曲线销售",
     "dexLiquidity": "初始流动性发行 (Dex)",
     "cap": "市值",

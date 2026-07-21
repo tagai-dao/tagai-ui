@@ -389,6 +389,7 @@
     "price": "Price",
     "totalSupply": "Token Supply",
     "socialSupply": "Social Distribution",
+    "v4HookTransactionDistribution": "V4 Hook Transaction Distribution",
     "bindCurveSold": "Bonding Curve Sold",
     "dexLiquidity": "Initial Liquidity Offering (Dex)",
     "cap": "Cap",
