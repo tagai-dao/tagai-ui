@@ -1788,6 +1788,8 @@ export const getTokenPair = async (token: string) => {
 
 export type DexPoolInfo = {
     pairAddress: string
+    baseToken: string
+    quoteToken: string
     dexVersion: number
     dexLabel: string
     bnbReserves: number
@@ -1827,6 +1829,8 @@ function parsePoolAttrs(p: any, bnbPrice: number): DexPoolInfo {
     const feeMatch = name.match(/([\d.]+)%/)
     return {
         pairAddress: attrs.address ?? '',
+        baseToken: (p.relationships?.base_token?.data?.id ?? '').replace(/^.+_/, ''),
+        quoteToken: (p.relationships?.quote_token?.data?.id ?? '').replace(/^.+_/, ''),
         dexVersion,
         dexLabel,
         bnbReserves: reserveUsd / bnbPrice,

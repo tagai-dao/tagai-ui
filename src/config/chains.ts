@@ -130,6 +130,9 @@ export const BSC_CHAIN: ChainDeployment = {
  * @see https://docs.robinhood.com/chain/connecting
  * Uniswap 地址来自 Uniswap contracts 部署记录；TagAI 合约待 Phase 1 回填
  */
+/** PoolKey fee remains zero; TipTagSwapHook charges this fee inside the hook. */
+export const ROBINHOOD_TIPTAG_HOOK_FEE_PIPS = 6_000
+
 export const ROBINHOOD_CHAIN: ChainDeployment = {
   key: 'rh',
   name: 'Robinhood',

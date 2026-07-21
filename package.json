@@ -8,6 +8,9 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:local-api": "VITE_APP_BACKEND_API_URL=http://127.0.0.1:9900 vite",
+    "basket:discover-presets": "node scripts/discover-basket-presets.mjs",
+    "basket:download-logos": "node scripts/download-basket-logos.mjs",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",

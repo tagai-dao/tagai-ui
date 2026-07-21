@@ -4,8 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useBasketDetail } from '@/composables/baskets/useBasketDetail'
 import BasketChainGate from './components/BasketChainGate.vue'
 import BasketTradePanel from './components/BasketTradePanel.vue'
-import { feeSplit } from '@/utils/spectrum/fee-model'
-import { hasSpectrumFeeWallet, SPECTRUM_MINI_ATTRIBUTION, SPECTRUM_REPO_URL } from '@/config/spectrum'
+import { feeSplit } from '@/utils/baskets/fee-model'
+import { BASKET_FRONTEND_FEE_WALLET, BASKET_PROTOCOL_REPO } from '@/config/baskets'
+import { zeroAddress } from 'viem'
 import { ROBINHOOD_CHAIN } from '@/config/chains'
 
 const route = useRoute()
@@ -23,10 +24,7 @@ const explorerBasket = computed(() => {
 const split = computed(() => {
   const d = detail.value
   if (!d) return null
-  return feeSplit(d.creatorShareBps, {
-    hasInterface: hasSpectrumFeeWallet(),
-    hasLauncher: !!d.launcher,
-  })
+  return feeSplit(d.creatorShareBps, BASKET_FRONTEND_FEE_WALLET !== zeroAddress)
 })
 
 const feeSegments = computed(() => {
@@ -150,7 +148,6 @@ watch(address, (a) => void load(a))
               :key="holding.asset"
               class="hero-composition__leg"
               :style="{
-                flexGrow: Math.max(holding.targetWeightPct, 6),
                 backgroundColor: legColors[index % legColors.length],
               }"
             >
@@ -245,8 +242,8 @@ watch(address, (a) => void load(a))
         </div>
 
         <p class="detail-footer">
-          <a :href="SPECTRUM_REPO_URL" target="_blank" rel="noopener noreferrer">
-            {{ SPECTRUM_MINI_ATTRIBUTION }}
+          <a :href="BASKET_PROTOCOL_REPO" target="_blank" rel="noopener noreferrer">
+            {{ $t('baskets.openSourceProtocol') }}
           </a>
         </p>
       </template>
@@ -294,12 +291,12 @@ watch(address, (a) => void load(a))
 .hero-metrics span { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
 .hero-metrics strong { color: var(--text-base); font-size: 18px; }
 
-.hero-composition { position: relative; z-index: 1; display: flex; height: 94px; gap: 7px; margin-top: 30px; }
-.hero-composition__leg { position: relative; min-width: 0; overflow: hidden; border: 1px solid rgba(255,255,255,.24); border-radius: 18px; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
+.hero-composition { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 7px; margin-top: 30px; }
+.hero-composition__leg { position: relative; display: flex; min-width: 0; min-height: 84px; overflow: hidden; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 12px; border: 1px solid rgba(255,255,255,.24); border-radius: 18px; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
 .hero-composition__leg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.2), transparent 42%, rgba(0,0,0,.14)); }
-.hero-composition__leg span, .hero-composition__leg strong { position: absolute; z-index: 1; top: 12px; font-size: 12px; }
-.hero-composition__leg span { left: 12px; max-width: calc(100% - 24px); overflow: hidden; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.9); color: #14151a; font-weight: 750; line-height: 20px; text-overflow: ellipsis; white-space: nowrap; }
-.hero-composition__leg strong { right: 12px; text-shadow: 0 1px 4px rgba(0,0,0,.28); }
+.hero-composition__leg span, .hero-composition__leg strong { position: relative; z-index: 1; max-width: 100%; font-size: 12px; }
+.hero-composition__leg span { overflow: hidden; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.9); color: #14151a; font-weight: 750; line-height: 20px; text-overflow: ellipsis; white-space: nowrap; }
+.hero-composition__leg strong { align-self: flex-end; text-shadow: 0 1px 4px rgba(0,0,0,.28); }
 
 .content-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr); gap: 18px; margin-top: 18px; align-items: start; }
 .trade-column { position: sticky; top: 18px; }
@@ -358,8 +355,7 @@ watch(address, (a) => void load(a))
   .basket-mark svg { width: 34px; height: 34px; }
   .hero-metrics { width: 100%; }
   .hero-metrics > div { min-width: 0; flex: 1; }
-  .hero-composition { height: 84px; margin-top: 24px; }
-  .hero-composition__leg strong { display: none; }
+  .hero-composition { grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); margin-top: 24px; }
   .holdings-table--head { display: none; }
   .holdings-table--row { grid-template-columns: 1fr 1fr; gap: 14px 20px; padding: 18px 20px 22px; }
   .asset-cell { grid-column: 1 / -1; }

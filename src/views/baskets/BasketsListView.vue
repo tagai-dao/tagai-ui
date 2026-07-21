@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useBasketList } from '@/composables/baskets/useBasketList'
 import BasketChainGate from './components/BasketChainGate.vue'
 import BasketCard from './components/BasketCard.vue'
-import { SPECTRUM_MINI_ATTRIBUTION, SPECTRUM_REPO_URL } from '@/config/spectrum'
-import { getSpectrumDeployment } from '@/utils/spectrum/deployments'
-import { SPECTRUM_CHAIN_ID } from '@/config/spectrum'
+import CreateBasketModal from './components/CreateBasketModal.vue'
+import { BASKET_CONTRACTS, BASKET_PROTOCOL_REPO } from '@/config/baskets'
 import { ROBINHOOD_CHAIN } from '@/config/chains'
 
 const {
@@ -20,10 +19,9 @@ const {
 
 const list = computed(() => filteredBaskets())
 const totalAum = computed(() => baskets.value.reduce((sum, basket) => sum + (basket.aumUsd || 0), 0))
-const factory = getSpectrumDeployment(SPECTRUM_CHAIN_ID)?.factory
-const factoryUrl = factory
-  ? `${ROBINHOOD_CHAIN.browser.replace(/\/$/, '')}/address/${factory}`
-  : SPECTRUM_REPO_URL
+const showCreate = ref(false)
+const factory = BASKET_CONTRACTS.hook
+const factoryUrl = `${ROBINHOOD_CHAIN.browser.replace(/\/$/, '')}/address/${factory}`
 
 const formatUsd = (n: number) => {
   if (!Number.isFinite(n) || n <= 0) return '—'
@@ -80,6 +78,10 @@ onMounted(() => {
             :placeholder="$t('baskets.searchPlaceholder')"
           >
         </label>
+        <button type="button" class="create-button" @click="showCreate = true">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>
+          <span>{{ $t('baskets.create') }}</span>
+        </button>
         <button
           type="button"
           class="refresh-button"
@@ -108,8 +110,8 @@ onMounted(() => {
       </div>
 
       <p class="mt-10 pb-2 text-center text-xs text-muted">
-        <a :href="SPECTRUM_REPO_URL" target="_blank" rel="noopener noreferrer" class="hover:text-content transition-colors">
-          {{ SPECTRUM_MINI_ATTRIBUTION }}
+        <a :href="BASKET_PROTOCOL_REPO" target="_blank" rel="noopener noreferrer" class="hover:text-content transition-colors">
+          {{ $t('baskets.openSourceProtocol') }}
         </a>
         <template v-if="factory">
           <span class="mx-2 opacity-40">·</span>
@@ -118,6 +120,7 @@ onMounted(() => {
           </a>
         </template>
       </p>
+      <CreateBasketModal v-model="showCreate" @created="refresh(true)" />
     </div>
   </div>
 </template>
@@ -212,11 +215,11 @@ onMounted(() => {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 .search-field:focus-within { border-color: #8d67e8; box-shadow: 0 0 0 3px rgba(141,103,232,.1); }
-.search-field svg, .refresh-button svg { width: 18px; height: 18px; flex-shrink: 0; }
+.search-field svg, .refresh-button svg, .create-button svg { width: 18px; height: 18px; flex-shrink: 0; }
 .search-field input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-base); font-size: 13px; }
 .search-field input::placeholder { color: var(--text-faint); }
 
-.refresh-button {
+.refresh-button, .create-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -231,7 +234,8 @@ onMounted(() => {
   font-weight: 650;
   transition: background 160ms ease, transform 160ms ease;
 }
-.refresh-button:hover:not(:disabled) { background: var(--surface-2); transform: translateY(-1px); }
+.create-button { border-color: rgba(141,103,232,.28); background: rgba(141,103,232,.08); color: #8060dc; font-weight: 700; }
+.refresh-button:hover:not(:disabled), .create-button:hover:not(:disabled) { background: var(--surface-2); transform: translateY(-1px); }
 .refresh-button:disabled { opacity: .6; cursor: wait; }
 
 .basket-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -249,5 +253,6 @@ onMounted(() => {
   .hero__stats > div { min-width: 0; flex: 1; }
   .refresh-button { width: 46px; padding: 0; }
   .refresh-button span { display: none; }
+  .create-button { padding: 0 13px; }
 }
 </style>

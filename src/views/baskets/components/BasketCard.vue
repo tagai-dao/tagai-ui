@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { BasketSummary } from '@/utils/spectrum/basket-data'
+import type { BasketSummary } from '@/utils/baskets/types'
 
 const props = defineProps<{
   basket: BasketSummary

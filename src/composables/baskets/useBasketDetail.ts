@@ -3,8 +3,9 @@
  */
 import { ref } from 'vue'
 import { isAddress, type Address } from 'viem'
-import { getBasketDetail, type BasketDetail } from '@/utils/spectrum/basket-data'
-import { SPECTRUM_CHAIN_ID } from '@/config/spectrum'
+import { getBasketDetail } from '@/utils/baskets/data'
+import type { BasketDetail } from '@/utils/baskets/types'
+import { BASKET_CHAIN_ID } from '@/config/baskets'
 
 export const useBasketDetail = () => {
   const detail = ref<BasketDetail | null>(null)
@@ -24,7 +25,7 @@ export const useBasketDetail = () => {
     hasError.value = false
     errorMessage.value = ''
     try {
-      detail.value = await getBasketDetail(address as Address, SPECTRUM_CHAIN_ID, { force })
+      detail.value = await getBasketDetail(address as Address, BASKET_CHAIN_ID, { force })
     } catch (e) {
       hasError.value = true
       errorMessage.value = e instanceof Error ? e.message : 'Failed to load basket'
