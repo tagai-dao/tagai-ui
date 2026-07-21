@@ -406,6 +406,7 @@
     "price": "Harga",
     "totalSupply": "Suplai token",
     "socialSupply": "Distribusi sosial",
+    "v4HookTransactionDistribution": "Distribusi Transaksi Hook V4",
     "bindCurveSold": "Terjual di bonding curve",
     "dexLiquidity": "Penawaran likuiditas awal (Dex)",
     "cap": "Batas",

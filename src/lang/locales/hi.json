@@ -406,6 +406,7 @@
     "price": "कीमत",
     "totalSupply": "टोकन सप्लाई",
     "socialSupply": "सोशल वितरण",
+    "v4HookTransactionDistribution": "V4 Hook लेन-देन वितरण",
     "bindCurveSold": "बॉन्डिंग कर्व बिक्री",
     "dexLiquidity": "प्रारंभिक लिक्विडिटी (Dex)",
     "cap": "सीमा",

@@ -53,6 +53,10 @@ const v10Loading = ref(false)
 const v10Loaded = ref(false)
 
 const isV9 = computed(() => comStore.currentSelectedCommunity?.version === PUMP9_VERSION)
+const isPumpV9OrV10 = computed(() => {
+  const version = Number(comStore.currentSelectedCommunity?.version)
+  return version === PUMP9_VERSION || version === 10
+})
 const marketCapText = computed(() => {
   const nativeMarketCap = Number(comStore.currentSelectedCommunity?.marketCap ?? 0)
   const nativeUsdPrice = Number(useStateStore().ethPrice ?? 0)
@@ -727,7 +731,9 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
         <span class="text-h5 text-black-19">{{ formatAmount(comStore.currentSelectedCommunity.totalSupply) }}</span>
       </div>
       <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">
-        <span class="text-h4 text-grey-93">{{$t('postView.socialSupply')}}</span>
+        <span class="text-h4 text-grey-93">
+          {{ $t(isPumpV9OrV10 ? 'postView.v4HookTransactionDistribution' : 'postView.socialSupply') }}
+        </span>
         <span class="text-h5 text-black-19">{{ formatAmount(SocialSupply) }}</span>
       </div>
       <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">

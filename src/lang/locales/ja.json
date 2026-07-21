@@ -388,6 +388,7 @@
     "price": "価格",
     "totalSupply": "トークン供給量",
     "socialSupply": "ソーシャル分配",
+    "v4HookTransactionDistribution": "V4 Hook トランザクション分配",
     "bindCurveSold": "ボンディングカーブ販売量",
     "dexLiquidity": "初期流動性提供（Dex）",
     "cap": "上限",

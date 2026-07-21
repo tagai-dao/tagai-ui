@@ -406,6 +406,7 @@
     "price": "Precio",
     "totalSupply": "Suministro del token",
     "socialSupply": "Distribución social",
+    "v4HookTransactionDistribution": "Distribución de transacciones del Hook V4",
     "bindCurveSold": "Vendido en bonding curve",
     "dexLiquidity": "Oferta inicial de liquidez (Dex)",
     "cap": "Límite",
