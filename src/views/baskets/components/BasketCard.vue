@@ -8,21 +8,13 @@ const props = defineProps<{
 
 const legColors = ['#b84fc2', '#5368d9', '#ef7b45', '#27b8a2', '#8d67e8']
 
-const allocationLegs = computed(() => {
-  const visible = props.basket.top.slice(0, 4).map((leg) => ({
+const allocationLegs = computed(() =>
+  props.basket.top.slice(0, 4).map((leg) => ({
     ...leg,
     label: leg.symbol,
-  }))
-  if (props.basket.top.length > 4) {
-    visible.push({
-      address: 'other' as typeof visible[number]['address'],
-      symbol: `+${props.basket.top.length - 4}`,
-      label: `+${props.basket.top.length - 4}`,
-      weightPct: props.basket.top.slice(4).reduce((sum, leg) => sum + leg.weightPct, 0),
-    })
-  }
-  return visible
-})
+  })),
+)
+const hiddenLegCount = computed(() => Math.max(0, props.basket.top.length - allocationLegs.value.length))
 
 const formatUsd = (n: number) => {
   if (!Number.isFinite(n) || n <= 0) return '—'
@@ -67,13 +59,13 @@ const formatNav = (n: number) => {
         v-for="(leg, index) in allocationLegs"
         :key="leg.address"
         class="allocation__leg"
-        :style="{
-          flexGrow: Math.max(leg.weightPct, 8),
-          backgroundColor: legColors[index % legColors.length],
-        }"
+        :style="{ backgroundColor: legColors[index % legColors.length] }"
       >
         <span class="allocation__symbol">{{ leg.label }}</span>
-        <span v-if="leg.weightPct >= 9" class="allocation__weight">{{ leg.weightPct.toFixed(0) }}%</span>
+        <span class="allocation__weight">{{ leg.weightPct.toFixed(0) }}%</span>
+      </div>
+      <div v-if="hiddenLegCount" class="allocation__more" :aria-label="`+${hiddenLegCount}`">
+        +{{ hiddenLegCount }}
       </div>
     </div>
     <div v-else class="allocation allocation--loading" aria-hidden="true">
@@ -182,12 +174,26 @@ const formatNav = (n: number) => {
 
 .allocation__leg {
   position: relative;
+  flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 18px;
   color: #fff;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.allocation__more {
+  display: grid;
+  width: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--border-base) 85%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-2) 78%, #8d67e8 22%);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .allocation__leg::after {
