@@ -2,7 +2,7 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { formatUnits, getAddress, isAddress, parseUnits, type Address } from 'viem'
+import { formatUnits, getAddress, isAddress, parseUnits, zeroAddress, type Address } from 'viem'
 import { BASKET_ASSET_PRESETS, BASKET_CHAIN_ID, BASKET_MAX_SLIPPAGE_BPS, BASKET_USDG_DECIMALS } from '@/config/baskets'
 import { ROBINHOOD_CHAIN, ROBINHOOD_TIPTAG_HOOK_FEE_PIPS } from '@/config/chains'
 import {
@@ -90,11 +90,27 @@ const formatUsd = (value: number) => new Intl.NumberFormat(undefined, {
   currency: 'USD',
 }).format(value)
 const formatPoolFee = (fee: number) => `${(fee / 10_000).toLocaleString(undefined, { maximumFractionDigits: 4 })}%`
+const effectiveV4PoolFee = (fee: number, hooks: Address) =>
+  hooks.toLowerCase() === ROBINHOOD_CHAIN.contracts.tipTagSwapHook9.toLowerCase()
+    ? ROBINHOOD_TIPTAG_HOOK_FEE_PIPS
+    : fee
+const presetPoolFee = (asset: typeof BASKET_ASSET_PRESETS[number]) => asset.route.venue === 0
+  ? effectiveV4PoolFee(asset.route.v4Pool.fee, asset.route.v4Pool.hooks)
+  : asset.route.v3Fee
+const presetPoolLabel = (asset: typeof BASKET_ASSET_PRESETS[number]) =>
+  `V${asset.route.venue === 0 ? '4' : '3'} · ${t('baskets.fee')} ${formatPoolFee(presetPoolFee(asset))}`
+const candidatePoolFee = (pool: BasketPoolCandidate) => pool.venue === 0
+  ? effectiveV4PoolFee(pool.fee, pool.hooks)
+  : pool.fee
+const shortPoolId = (value: string) => value.length > 18 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value
+const shortAddress = (value: Address) => `${value.slice(0, 8)}…${value.slice(-6)}`
+const formatPoolDate = (value: string) => {
+  const timestamp = Date.parse(value)
+  return Number.isFinite(timestamp) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(timestamp) : '—'
+}
 const legPoolFee = (leg: CreateBasketLeg) => {
   if (leg.route.venue !== 0) return leg.route.v3Fee
-  return leg.route.v4Pool.hooks.toLowerCase() === ROBINHOOD_CHAIN.contracts.tipTagSwapHook9.toLowerCase()
-    ? ROBINHOOD_TIPTAG_HOOK_FEE_PIPS
-    : leg.route.v4Pool.fee
+  return effectiveV4PoolFee(leg.route.v4Pool.fee, leg.route.v4Pool.hooks)
 }
 
 const rebalanceEqual = () => {
@@ -419,7 +435,7 @@ watch([
                   @click="toggleAsset(asset.address)"
                 >
                   <i :class="{ 'has-logo': asset.logoUrl, 'platform-logo': asset.logoUrl }"><img v-if="asset.logoUrl" :src="asset.logoUrl" alt=""><template v-else>{{ asset.symbol.slice(0, 2) }}</template></i>
-                  <span><strong>{{ asset.symbol }}</strong><small>{{ asset.name }}</small></span>
+                  <span class="asset-option__copy"><span class="asset-option__title"><strong>{{ asset.symbol }}</strong><em>{{ presetPoolLabel(asset) }}</em></span><small>{{ asset.name }}</small></span>
                   <svg v-if="isSelected(asset.address)" viewBox="0 0 20 20" fill="none"><path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
               </div>
@@ -435,7 +451,7 @@ watch([
                   @click="toggleAsset(asset.address)"
                 >
                   <i :class="{ 'has-logo': asset.logoUrl }"><img v-if="asset.logoUrl" :src="asset.logoUrl" alt=""><template v-else>{{ asset.symbol.slice(0, 2) }}</template></i>
-                  <span><strong>{{ asset.symbol }}</strong><small>{{ asset.name }}</small></span>
+                  <span class="asset-option__copy"><span class="asset-option__title"><strong>{{ asset.symbol }}</strong><em>{{ presetPoolLabel(asset) }}</em></span><small>{{ asset.name }}</small></span>
                   <svg v-if="isSelected(asset.address)" viewBox="0 0 20 20" fill="none"><path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
               </div>
@@ -462,9 +478,21 @@ watch([
                       :class="{ selected: selectedPoolId === pool.id }"
                       @click="selectedPoolId = pool.id"
                     >
-                      <span><b>{{ pool.label }}</b><em>{{ formatPoolFee(pool.fee) }}</em></span>
-                      <span><small>{{ $t('baskets.poolLiquidity') }}</small><strong>{{ formatUsd(pool.liquidityUsd) }}</strong></span>
-                      <span><small>{{ $t('baskets.poolVolume24h') }}</small><strong>{{ formatUsd(pool.volume24h) }}</strong></span>
+                      <span class="pool-candidate__head">
+                        <span><b>{{ pool.label }} · {{ pool.pairLabel }}</b><em>{{ $t('baskets.fee') }} {{ formatPoolFee(candidatePoolFee(pool)) }}</em></span>
+                        <i aria-hidden="true" />
+                      </span>
+                      <span class="pool-candidate__stats">
+                        <span><small>{{ $t('baskets.poolLiquidity') }}</small><strong>{{ formatUsd(pool.liquidityUsd) }}</strong></span>
+                        <span><small>{{ $t('baskets.poolVolume24h') }}</small><strong>{{ formatUsd(pool.volume24h) }}</strong></span>
+                        <span><small>{{ $t('baskets.poolTransactions24h') }}</small><strong>{{ pool.txCount24h.toLocaleString() }}</strong></span>
+                      </span>
+                      <span class="pool-candidate__details">
+                        <span><small>{{ pool.venue === 0 ? $t('baskets.poolId') : $t('baskets.poolAddress') }}</small><code :title="pool.id">{{ shortPoolId(pool.id) }}</code></span>
+                        <span v-if="pool.venue === 0"><small>{{ $t('baskets.tickSpacing') }}</small><code>{{ pool.tickSpacing }}</code></span>
+                        <span v-if="pool.venue === 0"><small>{{ $t('baskets.poolHookShort') }}</small><code :title="pool.hooks">{{ pool.hooks === zeroAddress ? $t('baskets.noHook') : shortAddress(pool.hooks) }}</code></span>
+                        <span v-else><small>{{ $t('baskets.poolCreated') }}</small><code>{{ formatPoolDate(pool.createdAt) }}</code></span>
+                      </span>
                     </button>
                   </div>
                   <p v-if="customAssetError" class="custom-error">{{ customAssetError }}</p>
@@ -581,6 +609,9 @@ watch([
 .asset-option > i.platform-logo { padding: 0; background: #000; }
 .asset-option > i img { width: 100%; height: 100%; object-fit: contain; }
 .asset-option > span { min-width: 0; flex: 1; }
+.asset-option__title { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 6px; }
+.asset-option__title strong { min-width: 0; }
+.asset-option__title em { flex-shrink: 0; color: #e77a27; font-size: 7px; font-style: normal; font-weight: 750; white-space: nowrap; }
 .asset-option strong, .asset-option small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .asset-option strong { color: var(--text-base); font-size: 11px; }
 .asset-option small { margin-top: 2px; color: var(--text-muted); font-size: 8px; }
@@ -602,15 +633,20 @@ watch([
 .pool-search:disabled { opacity: .5; }
 .pool-search .spinner { width: 13px; height: 13px; border-color: rgba(141,103,232,.3); border-top-color: #8d67e8; }
 .pool-candidates { display: grid; gap: 7px; margin-top: 9px; }
-.pool-candidate { display: grid; grid-template-columns: 1.15fr 1fr 1fr; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 1px solid var(--border-base); border-radius: 11px; background: var(--surface-2); text-align: left; transition: border-color 150ms ease, background 150ms ease; }
+.pool-candidate { display: block; width: 100%; padding: 12px; border: 1px solid var(--border-base); border-radius: 13px; background: var(--surface-2); text-align: left; transition: border-color 150ms ease, background 150ms ease; }
 .pool-candidate.selected { border-color: rgba(141,103,232,.6); background: rgba(141,103,232,.08); box-shadow: inset 3px 0 #8d67e8; }
-.pool-candidate > span { min-width: 0; }
-.pool-candidate > span:first-child { display: flex; align-items: center; gap: 6px; }
-.pool-candidate b, .pool-candidate strong, .pool-candidate small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pool-candidate__head { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 10px; }
+.pool-candidate__head > span { display: flex; min-width: 0; align-items: center; gap: 7px; }
+.pool-candidate__head > i { width: 10px; height: 10px; flex-shrink: 0; border: 2px solid var(--border-base); border-radius: 50%; }
+.pool-candidate.selected .pool-candidate__head > i { border-color: #8d67e8; background: #8d67e8; box-shadow: inset 0 0 0 2px var(--surface-2); }
+.pool-candidate b, .pool-candidate strong, .pool-candidate small, .pool-candidate code { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pool-candidate b { color: var(--text-base); font-size: 10px; }
 .pool-candidate em { padding: 2px 5px; border-radius: 5px; background: rgba(240,120,42,.1); color: #f0782a; font-size: 8px; font-style: normal; }
 .pool-candidate small { margin-bottom: 2px; color: var(--text-faint); font-size: 8px; }
 .pool-candidate strong { color: var(--text-muted); font-size: 9px; }
+.pool-candidate__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; padding: 9px 0; border-top: 1px solid color-mix(in srgb, var(--border-base) 68%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border-base) 68%, transparent); }
+.pool-candidate__details { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 9px; }
+.pool-candidate__details code { color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; }
 .custom-error { margin-top: 8px; color: var(--color-down) !important; }
 .validate-route { display: flex; width: 100%; height: 36px; align-items: center; justify-content: center; gap: 7px; margin-top: 9px; border-radius: 10px; background: rgba(141,103,232,.12); color: #8d67e8; font-size: 10px; font-weight: 750; }.validate-route:disabled { opacity: .5; }.validate-route .spinner { width: 13px; height: 13px; border-color: rgba(141,103,232,.3); border-top-color: #8d67e8; }
 .leg-slippage-row { display: grid; grid-template-columns: minmax(80px, 1fr) 112px 46px; align-items: center; gap: 7px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--border-base) 70%, transparent); }.leg-slippage-asset { display: flex; min-width: 0; flex-direction: column; gap: 2px; }.leg-slippage-row strong { color: var(--text-base); font-size: 10px; }.leg-slippage-asset em { color: var(--text-muted); font-size: 8px; font-style: normal; }.leg-slippage-row label { display: flex; align-items: center; gap: 4px; padding: 5px 7px; border: 1px solid var(--border-base); border-radius: 8px; background: var(--surface); }.leg-slippage-row input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-base); text-align: right; }.leg-slippage-row label span, .leg-slippage-row button { color: var(--text-muted); font-size: 8px; }.leg-slippage-row button:hover { color: #8d67e8; }
@@ -621,5 +657,5 @@ watch([
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 700ms linear infinite; }
 .basket-modal-enter-active, .basket-modal-leave-active { transition: opacity 180ms ease; }.basket-modal-enter-active .create-modal, .basket-modal-leave-active .create-modal { transition: transform 180ms ease; }.basket-modal-enter-from, .basket-modal-leave-to { opacity: 0; }.basket-modal-enter-from .create-modal, .basket-modal-leave-to .create-modal { transform: translateY(12px) scale(.985); }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 650px) { .modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.asset-grid--platform { grid-template-columns: 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate { grid-template-columns: 1fr 1fr; }.pool-candidate > span:first-child { grid-column: 1 / -1; } }
+@media (max-width: 650px) { .modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.asset-grid--platform { grid-template-columns: 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate__details { grid-template-columns: 1fr 1fr; }.pool-candidate__details > span:first-child { grid-column: 1 / -1; } }
 </style>

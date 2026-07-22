@@ -16,9 +16,14 @@ export type BasketPoolCandidate = {
   id: string
   venue: 0 | 1
   label: 'Uniswap V4' | 'Uniswap V3'
+  pairLabel: string
   fee: number
+  tickSpacing: number | null
+  hooks: Address
   liquidityUsd: number
   volume24h: number
+  txCount24h: number
+  createdAt: string
   route: BasketLegRoute
 }
 
@@ -32,7 +37,11 @@ const isDirectPool = (pool: DexPoolInfo, asset: Address) => {
   return false
 }
 
-const resolveCandidate = async (pool: DexPoolInfo, asset: Address): Promise<BasketPoolCandidate | null> => {
+const resolveCandidate = async (
+  pool: DexPoolInfo,
+  asset: Address,
+  assetSymbol: string,
+): Promise<BasketPoolCandidate | null> => {
   if (!isDirectPool(pool, asset)) return null
   if (pool.dexVersion === 4 && /^0x[\da-fA-F]{64}$/.test(pool.pairAddress)) {
     const key = await getRhV4PoolKeyByPoolId(pool.pairAddress as `0x${string}`)
@@ -41,9 +50,14 @@ const resolveCandidate = async (pool: DexPoolInfo, asset: Address): Promise<Bask
       id: pool.pairAddress,
       venue: 0,
       label: 'Uniswap V4',
+      pairLabel: `${assetSymbol || 'TOKEN'}/ETH`,
       fee: key.fee,
+      tickSpacing: key.tickSpacing,
+      hooks: getAddress(key.hooks),
       liquidityUsd: pool.liquidityUsd,
       volume24h: pool.volume24h,
+      txCount24h: pool.txCount24h,
+      createdAt: pool.createdAt,
       route: buildCustomRoute({
         asset,
         venue: 0,
@@ -67,9 +81,14 @@ const resolveCandidate = async (pool: DexPoolInfo, asset: Address): Promise<Bask
       id: poolAddress,
       venue: 1,
       label: 'Uniswap V3',
+      pairLabel: `${assetSymbol || 'TOKEN'}/WETH`,
       fee: Number(fee),
+      tickSpacing: null,
+      hooks: zeroAddress,
       liquidityUsd: pool.liquidityUsd,
       volume24h: pool.volume24h,
+      txCount24h: pool.txCount24h,
+      createdAt: pool.createdAt,
       route: buildCustomRoute({ asset, venue: 1, fee: Number(fee) }),
     }
   }
@@ -83,7 +102,7 @@ export const discoverBasketPools = async (asset: Address, limit = 2): Promise<Ba
   for (const pool of result.pools) {
     if (candidates.length >= limit) break
     try {
-      const candidate = await resolveCandidate(pool, asset)
+      const candidate = await resolveCandidate(pool, asset, result.tokenSymbol)
       if (candidate) candidates.push(candidate)
     } catch (error) {
       console.warn('Basket pool candidate skipped', pool.pairAddress, error)

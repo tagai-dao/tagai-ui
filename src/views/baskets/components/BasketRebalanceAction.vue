@@ -111,7 +111,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="rebalance-status" :class="{ alert: requiresRebalance }">
+  <div v-if="isCreator" class="rebalance-status" :class="{ alert: requiresRebalance }">
     <div>
       <span>{{ $t('baskets.maxWeightDeviation') }}</span>
       <strong>{{ (maxDeviationBps / 100).toFixed(2) }}%</strong>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { BasketSummary } from '@/utils/baskets/types'
 
 const props = defineProps<{
@@ -7,14 +7,43 @@ const props = defineProps<{
 }>()
 
 const legColors = ['#b84fc2', '#5368d9', '#ef7b45', '#27b8a2', '#8d67e8']
+const allocationElement = ref<HTMLElement>()
+const allocationWidth = ref(0)
+let allocationObserver: ResizeObserver | undefined
+
+const visibleLegLimit = computed(() => {
+  const total = Math.min(props.basket.top.length, 4)
+  const width = allocationWidth.value
+  if (!width || !total) return total
+  const minimumLegWidth = 112
+  const moreWidth = 44
+  const gap = 7
+  for (let count = total; count >= 1; count -= 1) {
+    const hasMore = props.basket.top.length > count
+    const requiredWidth = count * minimumLegWidth
+      + Math.max(0, count - 1) * gap
+      + (hasMore ? moreWidth + gap : 0)
+    if (requiredWidth <= width) return count
+  }
+  return 1
+})
 
 const allocationLegs = computed(() =>
-  props.basket.top.slice(0, 4).map((leg) => ({
+  props.basket.top.slice(0, visibleLegLimit.value).map((leg) => ({
     ...leg,
     label: leg.symbol,
   })),
 )
 const hiddenLegCount = computed(() => Math.max(0, props.basket.top.length - allocationLegs.value.length))
+
+onMounted(() => {
+  if (!allocationElement.value) return
+  allocationObserver = new ResizeObserver(([entry]) => {
+    allocationWidth.value = entry?.contentRect.width ?? 0
+  })
+  allocationObserver.observe(allocationElement.value)
+})
+onBeforeUnmount(() => allocationObserver?.disconnect())
 
 const formatUsd = (n: number) => {
   if (!Number.isFinite(n) || n <= 0) return '—'
@@ -54,7 +83,7 @@ const formatNav = (n: number) => {
       </span>
     </div>
 
-    <div v-if="allocationLegs.length" class="allocation" aria-label="Basket allocation">
+    <div v-if="allocationLegs.length" ref="allocationElement" class="allocation" aria-label="Basket allocation">
       <div
         v-for="(leg, index) in allocationLegs"
         :key="leg.address"
@@ -262,6 +291,5 @@ const formatNav = (n: number) => {
 @media (max-width: 420px) {
   .basket-card { min-height: 300px; padding: 20px; border-radius: 22px; }
   .allocation { height: 88px; margin-top: 24px; }
-  .allocation__weight { display: none; }
 }
 </style>

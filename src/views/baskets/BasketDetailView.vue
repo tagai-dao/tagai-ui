@@ -229,7 +229,7 @@ onUnmounted(() => {
                 <div class="asset-cell">
                   <i :style="{ backgroundColor: legColors[index % legColors.length] }" />
                   <div class="min-w-0">
-                    <strong>{{ holding.symbol }}</strong>
+                    <strong :title="holding.symbol">{{ holding.symbol }}</strong>
                     <span>{{ holding.asset.slice(0, 6) }}…{{ holding.asset.slice(-4) }}</span>
                   </div>
                 </div>
@@ -353,7 +353,7 @@ onUnmounted(() => {
 .hero-composition__leg { position: relative; display: flex; min-width: 0; min-height: 84px; overflow: hidden; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 12px; border: 1px solid rgba(255,255,255,.24); border-radius: 18px; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
 .hero-composition__leg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.2), transparent 42%, rgba(0,0,0,.14)); }
 .hero-composition__leg span, .hero-composition__leg strong { position: relative; z-index: 1; max-width: 100%; font-size: 12px; }
-.hero-composition__leg span { overflow: hidden; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.9); color: #14151a; font-weight: 750; line-height: 20px; text-overflow: ellipsis; white-space: nowrap; }
+.hero-composition__leg span { padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,.9); color: #14151a; font-weight: 750; line-height: 16px; overflow-wrap: anywhere; white-space: normal; }
 .hero-composition__leg strong { align-self: flex-end; text-shadow: 0 1px 4px rgba(0,0,0,.28); }
 
 .content-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr); gap: 18px; margin-top: 18px; align-items: start; }
@@ -377,9 +377,9 @@ onUnmounted(() => {
 .holdings-table--row:last-child { border-bottom: 0; }
 .asset-cell { display: flex; min-width: 0; align-items: center; gap: 10px; }
 .asset-cell > i { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
-.asset-cell strong, .asset-cell span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.asset-cell strong { font-size: 13px; }
-.asset-cell span { margin-top: 2px; color: var(--text-muted); font-size: 9px; }
+.asset-cell strong, .asset-cell span { display: block; }
+.asset-cell strong { overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; white-space: normal; }
+.asset-cell span { overflow: hidden; margin-top: 2px; color: var(--text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .metric-cell { text-align: right; }
 .metric-cell--strong { font-weight: 700; }
 .weight-track { position: absolute; right: 24px; bottom: 10px; left: 24px; height: 2px; overflow: hidden; border-radius: 2px; background: var(--surface-2); }
@@ -417,7 +417,7 @@ onUnmounted(() => {
   .basket-mark svg { width: 34px; height: 34px; }
   .hero-metrics { width: 100%; }
   .hero-metrics > div { min-width: 0; flex: 1; }
-  .hero-composition { grid-template-columns: repeat(auto-fit, minmax(76px, 1fr)); margin-top: 24px; }
+  .hero-composition { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; }
   .holdings-table--head { display: none; }
   .holdings-table--row { grid-template-columns: 1fr 1fr; gap: 14px 20px; padding: 18px 20px 22px; }
   .asset-cell { grid-column: 1 / -1; }
