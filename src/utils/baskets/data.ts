@@ -131,6 +131,8 @@ export const getBasketDetail = async (
       { address, abi: basketTokenAbi, functionName: 'launcherPayout' },
       { address, abi: basketTokenAbi, functionName: 'totalSupply' },
       { address, abi: basketTokenAbi, functionName: 'effectiveSupply' },
+      { address, abi: basketTokenAbi, functionName: 'lastRebalanceAt' },
+      { address, abi: basketTokenAbi, functionName: 'engine' },
     ]
     registered.assets.forEach((asset) => {
       contracts.push(
@@ -161,14 +163,18 @@ export const getBasketDetail = async (
     const launcher = ok<Address>(rows[1])
     const totalSupplyRaw = ok<bigint>(rows[2]) ?? 0n
     const effectiveSupplyRaw = ok<bigint>(rows[3]) ?? 0n
+    const engine = ok<Address>(rows[5])
+    if (!engine || engine.toLowerCase() !== BASKET_CONTRACTS.hook.toLowerCase()) {
+      throw new Error('This Basket belongs to an unsupported protocol deployment')
+    }
     const hubWord = ok<string>(rows[rows.length - 1])
     const hubSqrtPrice = hubWord ? BigInt(hubWord) & ((1n << 160n) - 1n) : 0n
     if (hubSqrtPrice > 0n) hubSqrtCache = { at: Date.now(), data: hubSqrtPrice }
 
     const holdings: BasketHolding[] = registered.assets.map((asset, index) => {
-      const state: any = ok(rows[4 + index * 2])
+      const state: any = ok(rows[6 + index * 2])
       const reserve = BigInt(state?.activeReserve ?? state?.[2] ?? 0)
-      const unitQuote = ok<bigint>(rows[5 + index * 2]) ?? 0n
+      const unitQuote = ok<bigint>(rows[7 + index * 2]) ?? 0n
       const reserveWeth = reserve * unitQuote / (10n ** BigInt(asset.decimals))
       const valueUsd = hubSqrtPrice > 0n
         ? Number(formatUnits(wethToUsdgRaw(reserveWeth, hubSqrtPrice), BASKET_USDG_DECIMALS))
@@ -213,6 +219,7 @@ export const getBasketDetail = async (
       creator: registered.creator,
       version: registered.version,
       createdAt: registered.createdAt,
+      lastRebalanceAt: Number(ok<bigint>(rows[4]) ?? 0n),
       holdings,
       updatedAt: new Date().toISOString(),
     }
@@ -234,6 +241,8 @@ export const getBasketDetail = async (
     { address: BASKET_CONTRACTS.registry, abi: basketRegistryAbi, functionName: 'basketCreator', args: [address] },
     { address: BASKET_CONTRACTS.registry, abi: basketRegistryAbi, functionName: 'basketVersion', args: [address] },
     { address: BASKET_CONTRACTS.registry, abi: basketRegistryAbi, functionName: 'basketCreatedAt', args: [address] },
+    { address, abi: basketTokenAbi, functionName: 'lastRebalanceAt' },
+    { address, abi: basketTokenAbi, functionName: 'engine' },
   ])
   const name = ok<string>(meta[0])
   const symbol = ok<string>(meta[1])
@@ -250,6 +259,11 @@ export const getBasketDetail = async (
   const creator = ok<Address>(meta[10])
   const version = Number(ok<number>(meta[11]) ?? 0)
   const createdAt = Number(ok<bigint>(meta[12]) ?? 0n)
+  const lastRebalanceAt = Number(ok<bigint>(meta[13]) ?? 0n)
+  const engine = ok<Address>(meta[14])
+  if (!engine || engine.toLowerCase() !== BASKET_CONTRACTS.hook.toLowerCase()) {
+    throw new Error('This Basket belongs to an unsupported protocol deployment')
+  }
 
   const legs = await multicall(client, [
     ...Array.from({ length }, (_, index) => ({
@@ -331,6 +345,7 @@ export const getBasketDetail = async (
     creator,
     version,
     createdAt,
+    lastRebalanceAt,
     holdings,
     updatedAt: new Date().toISOString(),
   }

@@ -43,6 +43,7 @@ export type BasketDetail = BasketSummary & {
   creator: Address | null
   version: number
   createdAt: number
+  lastRebalanceAt: number
   holdings: BasketHolding[]
   updatedAt: string
 }

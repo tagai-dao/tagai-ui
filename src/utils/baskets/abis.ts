@@ -25,6 +25,17 @@ export const basketTokenAbi = parseAbi([
   'function creatorShareBps() view returns (uint16)',
   'function creatorPayout() view returns (address)',
   'function launcherPayout() view returns (address)',
+  'function engine() view returns (address)',
+  'function lastRebalanceAt() view returns (uint64)',
+  'function feeReserveWeth() view returns (uint256)',
+  'function pendingCreatorFees() view returns (uint256)',
+  'function pendingLauncherFees() view returns (uint256)',
+  'function pendingFrontendFees(address) view returns (uint256)',
+  'function claimableHolderFees(address) view returns (uint256)',
+  'function claimHolderFeesFor(address holder) returns (uint256)',
+  'function claimFrontendFeesFor(address frontend) returns (uint256)',
+  'function claimCreatorFees() returns (uint256)',
+  'function claimLauncherFees() returns (uint256)',
   'function balanceOf(address) view returns (uint256)',
 ])
 
@@ -41,8 +52,41 @@ export const basketSwapRouterAbi = parseAbi([
 ])
 
 export const rebalanceExecutorAbi = parseAbi([
+  'error InvalidBasket()',
+  'error OnlyBasketCreator()',
+  'error RebalanceNotNeeded()',
+  'error RebalanceCooldown()',
+  'error RebalanceOutOfTolerance()',
+  'error RebalanceNavLoss()',
+  'error OracleUnavailable()',
+  'error SlippageExceeded()',
+  'error PartialFill()',
+  'error WrongPool()',
+  'error InvalidLimits()',
+  'function CALLER_CONTROLLED_SLIPPAGE() view returns (bool)',
   `function quoteAssetToWeth(${LEG_ROUTE} route,address asset,uint256 amount) view returns (uint256)`,
   `function quoteWethToAsset(${LEG_ROUTE} route,address asset,uint256 amount) view returns (uint256)`,
+  'function rebalance(address basket,uint256[] minWethOut,uint256[] minAssetOut) returns (bool executed,uint256 navBefore,uint256 navAfter)',
+])
+
+export const basketFeeAuctionAbi = parseAbi([
+  'function availableAuctionEth() view returns (uint256)',
+  'function quoteSpot(uint256 ethIn) view returns (uint256)',
+  'function minAuctionEth() view returns (uint256)',
+  'function maxAuctionEth() view returns (uint256)',
+  'function cooldownSeconds() view returns (uint64)',
+  'function lastAuctionAt() view returns (uint64)',
+  'function nextAuctionId() view returns (uint256)',
+  'function activeAuctionId() view returns (uint256)',
+  'function activeAuctionEth() view returns (uint256)',
+  'function auctions(uint256) view returns (uint256 ethAmount,uint256 initialBid,uint256 highestBid,address highestBidder,uint64 startTime,uint64 endTime,bool settled)',
+  'function availableBidTokens(address) view returns (uint256)',
+  'function claimableEth(address) view returns (uint256)',
+  'function createAuction(uint256 maxInitialBid) returns (uint256 auctionId)',
+  'function placeBid(uint256 auctionId,uint256 newTotalBid)',
+  'function settleAuction(uint256 auctionId)',
+  'function withdrawBidTokens(uint256 amount,address recipient)',
+  'function claimEth(address recipient)',
 ])
 
 export const erc20Abi = parseAbi([

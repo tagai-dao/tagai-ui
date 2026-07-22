@@ -111,6 +111,26 @@ export const quoteWethToAssetForSwap = (
   }).then(({ result }) => result[0])
 }
 
+export const quoteAssetToWethForSwap = (
+  route: BasketLegRoute,
+  asset: Address,
+  amount: bigint,
+): Promise<bigint> => {
+  if (route.venue === 0) return quoteV4ExactInput(route.v4Pool, asset, amount)
+  return getReadOnlyClient(BASKET_CHAIN_ID).simulateContract({
+    address: BASKET_V3_QUOTER,
+    abi: v3QuoterAbi,
+    functionName: 'quoteExactInputSingle',
+    args: [{
+      tokenIn: asset,
+      tokenOut: BASKET_CONTRACTS.weth,
+      amountIn: amount,
+      fee: route.v3Fee,
+      sqrtPriceLimitX96: 0n,
+    }],
+  }).then(({ result }) => result[0])
+}
+
 const selfPoolKey = (basket: Address) => {
   const basketFirst = basket.toLowerCase() < BASKET_CONTRACTS.usdg.toLowerCase()
   return {

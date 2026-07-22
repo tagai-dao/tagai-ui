@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBasketDetail } from '@/composables/baskets/useBasketDetail'
 import BasketChainGate from './components/BasketChainGate.vue'
 import BasketTradePanel from './components/BasketTradePanel.vue'
+import BasketRebalanceAction from './components/BasketRebalanceAction.vue'
 import { feeSplit } from '@/utils/baskets/fee-model'
 import { BASKET_FRONTEND_FEE_WALLET, BASKET_PROTOCOL_REPO } from '@/config/baskets'
 import { zeroAddress } from 'viem'
@@ -13,6 +14,8 @@ const route = useRoute()
 const router = useRouter()
 const { detail, isLoading, hasError, errorMessage, load } = useBasketDetail()
 const legColors = ['#b84fc2', '#5368d9', '#ef7b45', '#27b8a2', '#8d67e8']
+const addressCopied = ref(false)
+let copiedTimer: ReturnType<typeof setTimeout> | null = null
 
 const address = computed(() => String(route.params.address || ''))
 
@@ -20,6 +23,24 @@ const explorerBasket = computed(() => {
   if (!detail.value) return ''
   return `${ROBINHOOD_CHAIN.browser.replace(/\/$/, '')}/address/${detail.value.address}`
 })
+
+const shortBasketAddress = computed(() => {
+  const value = detail.value?.address
+  return value ? `${value.slice(0, 8)}…${value.slice(-6)}` : ''
+})
+
+const copyBasketAddress = async () => {
+  const value = detail.value?.address
+  if (!value) return
+  try {
+    await navigator.clipboard.writeText(value)
+    addressCopied.value = true
+    if (copiedTimer) clearTimeout(copiedTimer)
+    copiedTimer = setTimeout(() => { addressCopied.value = false }, 1_600)
+  } catch (error) {
+    console.warn('[baskets] copy contract address failed', error)
+  }
+}
 
 const split = computed(() => {
   const d = detail.value
@@ -58,9 +79,13 @@ const formatSupply = (n: number | null) => {
 }
 
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`
+const openFees = () => router.push({ name: 'basket-fees', params: { address: address.value } })
 
 onMounted(() => void load(address.value))
 watch(address, (a) => void load(a))
+onUnmounted(() => {
+  if (copiedTimer) clearTimeout(copiedTimer)
+})
 </script>
 
 <template>
@@ -73,18 +98,36 @@ watch(address, (a) => void load(a))
           </svg>
           {{ $t('baskets.backToList') }}
         </button>
-        <a
-          v-if="explorerBasket"
-          :href="explorerBasket"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="contract-link"
-        >
-          {{ $t('baskets.viewContract') }}
-          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </a>
+        <div v-if="explorerBasket" class="contract-address">
+          <a
+            :href="explorerBasket"
+            :title="detail?.address"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="contract-address__link"
+          >
+            <span>{{ shortBasketAddress }}</span>
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </a>
+          <button
+            type="button"
+            class="contract-address__copy"
+            :class="{ copied: addressCopied }"
+            :title="$t('copy')"
+            :aria-label="$t('copy')"
+            @click="copyBasketAddress"
+          >
+            <svg v-if="addressCopied" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="m5.5 10.5 3 3 6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <svg v-else viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <rect x="6.5" y="6.5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.4" />
+              <path d="M13.5 6.5V5.8a2.3 2.3 0 0 0-2.3-2.3H5.8a2.3 2.3 0 0 0-2.3 2.3v5.4a2.3 2.3 0 0 0 2.3 2.3h.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <BasketChainGate />
@@ -131,10 +174,11 @@ watch(address, (a) => void load(a))
             </div>
 
             <div class="hero-metrics">
-              <div>
+              <button type="button" class="hero-metric-link" @click="openFees">
                 <span>{{ $t('baskets.fee') }}</span>
                 <strong>{{ (detail.basketFeeBps / 100).toFixed(2) }}%</strong>
-              </div>
+                <small>{{ $t('baskets.viewFeeDetails') }} →</small>
+              </button>
               <div>
                 <span>{{ $t('baskets.assets') }}</span>
                 <strong>{{ detail.basketLength }}</strong>
@@ -167,6 +211,8 @@ watch(address, (a) => void load(a))
                 </div>
                 <span class="section-count">{{ detail.basketLength }} {{ $t('baskets.assets') }}</span>
               </div>
+
+              <BasketRebalanceAction :detail="detail" @rebalanced="load(address, true)" />
 
               <div class="holdings-table holdings-table--head">
                 <span>{{ $t('baskets.assets') }}</span>
@@ -211,7 +257,7 @@ watch(address, (a) => void load(a))
               </div>
             </section>
 
-            <section v-if="split" class="content-card fee-card">
+            <section v-if="split" class="content-card fee-card" role="link" tabindex="0" @click="openFees" @keydown.enter="openFees">
               <div class="section-heading">
                 <div>
                   <span class="section-kicker">PROTOCOL</span>
@@ -233,6 +279,7 @@ watch(address, (a) => void load(a))
                   <strong>{{ pct(segment.value) }}</strong>
                 </div>
               </div>
+              <div class="fee-card__more">{{ $t('baskets.viewFeeDetails') }} <span>→</span></div>
             </section>
           </main>
 
@@ -263,9 +310,17 @@ watch(address, (a) => void load(a))
 
 .detail-shell { width: 100%; max-width: 1120px; margin: 0 auto; padding: 20px 16px 44px; }
 .page-actions { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
-.back-button, .contract-link { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 12px; transition: color 160ms ease; }
-.back-button:hover, .contract-link:hover { color: var(--text-base); }
-.back-button svg, .contract-link svg { width: 18px; height: 18px; }
+.back-button { display: inline-flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 12px; transition: color 160ms ease; }
+.back-button:hover { color: var(--text-base); }
+.back-button svg { width: 18px; height: 18px; }
+.contract-address { display: inline-flex; height: 34px; align-items: center; overflow: hidden; border: 1px solid var(--border-base); border-radius: 11px; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--text-muted); }
+.contract-address__link { display: inline-flex; min-width: 0; height: 100%; align-items: center; gap: 6px; padding: 0 10px 0 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px; transition: color 160ms ease, background 160ms ease; }
+.contract-address__link:hover { background: var(--surface-2); color: var(--text-base); }
+.contract-address__link svg { width: 15px; height: 15px; flex-shrink: 0; }
+.contract-address__copy { display: grid; width: 34px; height: 100%; flex-shrink: 0; place-items: center; border-left: 1px solid var(--border-base); transition: color 160ms ease, background 160ms ease; }
+.contract-address__copy:hover { background: var(--surface-2); color: var(--text-base); }
+.contract-address__copy.copied { color: #31b975; }
+.contract-address__copy svg { width: 16px; height: 16px; }
 
 .basket-hero {
   position: relative;
@@ -287,7 +342,10 @@ watch(address, (a) => void load(a))
 .chain-badge i { width: 7px; height: 7px; border-radius: 50%; background: #b5ec13; box-shadow: 0 0 10px rgba(181,236,19,.65); }
 
 .hero-metrics { display: flex; gap: 10px; }
-.hero-metrics > div { display: flex; min-width: 100px; flex-direction: column; gap: 3px; padding: 13px 15px; border: 1px solid color-mix(in srgb, var(--border-base) 80%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--surface-2) 72%, transparent); }
+.hero-metrics > div, .hero-metric-link { display: flex; min-width: 100px; flex-direction: column; gap: 3px; padding: 13px 15px; border: 1px solid color-mix(in srgb, var(--border-base) 80%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--surface-2) 72%, transparent); text-align:left; }
+.hero-metric-link { transition: border-color 160ms ease, transform 160ms ease; }
+.hero-metric-link:hover { border-color:#8d67e8; transform:translateY(-1px); }
+.hero-metric-link small { margin-top:3px; color:#8d67e8; font-size:9px; }
 .hero-metrics span { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
 .hero-metrics strong { color: var(--text-base); font-size: 18px; }
 
@@ -302,6 +360,10 @@ watch(address, (a) => void load(a))
 .trade-column { position: sticky; top: 18px; }
 .content-card { overflow: hidden; border: 1px solid var(--border-base); border-radius: 24px; background: var(--surface); }
 .fee-card { margin-top: 18px; padding: 24px; }
+.fee-card[role="link"] { cursor:pointer; transition:border-color 160ms ease, transform 160ms ease; }
+.fee-card[role="link"]:hover { border-color:color-mix(in srgb,#8d67e8 60%,var(--border-base)); transform:translateY(-1px); }
+.fee-card__more { margin-top:18px; padding-top:15px; border-top:1px solid var(--border-base); color:#8d67e8; font-size:11px; font-weight:700; }
+.fee-card__more span { float:right; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .holdings-card .section-heading { padding: 24px 24px 18px; }
 .section-kicker { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
