@@ -182,6 +182,7 @@ ai_channel
 - tick
 - root_tweet_id
 - agent_twitter_id
+- chain_id (source-table routing attribute; not part of channel identity)
 - summary
 - summary_status
 - last_message_id
@@ -193,17 +194,24 @@ ai_channel
 UNIQUE (tick, root_tweet_id)
 ```
 
-Store an X reference attached to a Steem reply separately:
+Store Steem publication, idempotency, direct-parent, and optional X-reference
+metadata separately. The reply body remains in the existing relation table:
 
 ```text
-ai_channel_message_reference
+ai_channel_reply_meta
 - id
 - channel_id
 - reply_id
-- referenced_tweet_id
+- twitter_id
+- parent_message_id
+- quoted_tweet_id
+- idempotency_key
+- publish_state
+- publish_error
 - created_at
 
-UNIQUE (channel_id, reply_id, referenced_tweet_id)
+UNIQUE (reply_id)
+UNIQUE (twitter_id, idempotency_key)
 ```
 
 Tweet and reply bodies remain in their existing source tables. The API normalizes

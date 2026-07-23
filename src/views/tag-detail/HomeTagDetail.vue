@@ -105,6 +105,27 @@ const comStore = useCommunityStore()
 const tweetTypeRef = ref()
 const route = useRoute()
 const router = useRouter()
+const selectTab = (key: string) => {
+  activeTab.value = key
+  router.replace({
+    query: {
+      ...route.query,
+      tab: key === 'content' ? undefined : key,
+      channel: key === 'ai' ? route.query.channel : undefined,
+      quoteTweetId: key === 'ai' ? route.query.quoteTweetId : undefined,
+    },
+  })
+}
+watch(
+  [() => route.query.tab, tabOptions],
+  ([queryTab]) => {
+    const requested = typeof queryTab === 'string' ? queryTab : 'content'
+    if (tabOptions.value.some((tab) => tab.key === requested)) {
+      activeTab.value = requested
+    }
+  },
+  { immediate: true },
+)
 const tokenInfo = ref()
 const checkingAccount = ref(false);
 const checkingTweet = ref(false);
@@ -549,7 +570,7 @@ onBeforeRouteLeave((to, from, next) => {
             <button v-for="tab of tabOptions" :key="tab.key"
                     class="px-3.5 rounded-full h-8 text-h3 font-medium whitespace-nowrap transition-colors"
                     :class="tab.key===activeTab?'bg-grey-normal text-white shadow-sm':'text-grey-3f hover:text-content hover:bg-surface-2'"
-                    @click="activeTab=tab.key">{{$t(tab.label)}}</button>
+                    @click="selectTab(tab.key)">{{$t(tab.label)}}</button>
           </div>
           <div class="min-h-0 web:flex-1 web:overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
@@ -738,7 +759,7 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
           </div>
           <div class="h-full sticky top-[0px]">
-            <PostAI v-show="activeTab !== 'ai'"/>
+            <PostAI v-if="activeTab !== 'ai'" compact/>
           </div>
         </div>
         </Teleport>
