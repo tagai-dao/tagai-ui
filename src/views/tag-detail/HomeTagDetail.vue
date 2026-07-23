@@ -548,7 +548,7 @@ onBeforeRouteLeave((to, from, next) => {
           <div class="overflow-x-auto no-scroll-bar flex justify-between items-center gap-2 bg-surface h-12 min-h-12 px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
                     class="px-3.5 rounded-full h-8 text-h3 font-medium whitespace-nowrap transition-colors"
-                    :class="[tab.key===activeTab?'bg-grey-normal text-white shadow-sm':'text-grey-3f hover:text-content hover:bg-surface-2', tab.key==='ai'?'web:hidden':'']"
+                    :class="tab.key===activeTab?'bg-grey-normal text-white shadow-sm':'text-grey-3f hover:text-content hover:bg-surface-2'"
                     @click="activeTab=tab.key">{{$t(tab.label)}}</button>
           </div>
           <div class="min-h-0 web:flex-1 web:overflow-auto no-scroll-bar" ref="tabScrollRef" @scroll="pageScroll(tabScrollRef, 'tab')">
@@ -561,7 +561,7 @@ onBeforeRouteLeave((to, from, next) => {
             <CreditIndex v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token'"/>
             <SpcxbLiquidity v-if="activeTab==='liquidity'"/>
-            <PostAI class="web:hidden" v-if="activeTab==='ai'"/>
+            <PostAI v-if="activeTab==='ai'"/>
             <CommunityMiniTagIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
@@ -738,7 +738,7 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
           </div>
           <div class="h-full sticky top-[0px]">
-            <PostAI/>
+            <PostAI v-show="activeTab !== 'ai'"/>
           </div>
         </div>
         </Teleport>
