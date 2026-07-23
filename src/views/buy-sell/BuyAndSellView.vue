@@ -18,7 +18,15 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
-import { buyTokenV4Rh, sellTokenV4Rh, resolveRhV4PoolKeyForTrade, quoteRhV4, getRhV4SpotPrice } from '@/utils/rhV4Swap'
+import {
+  buyTokenV4Rh,
+  buyTokenV4RhDirect,
+  sellTokenV4Rh,
+  sellTokenV4RhDirect,
+  resolveRhV4PoolKeyForTrade,
+  quoteRhV4,
+  getRhV4SpotPrice,
+} from '@/utils/rhV4Swap'
 import debounce from 'lodash.debounce';
 import { formatAmount } from "@/utils/helper";
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -32,7 +40,7 @@ import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
 import Kline from "@/views/buy-sell/Kline.vue";
-import { getDexScreenerEmbedPath, usesListedV4Quote } from '@/utils/pumpVersion'
+import { getDexScreenerEmbedPath, usesDirectRhV4Trade, usesListedV4Quote } from '@/utils/pumpVersion'
 import { isAddress, parseEther, zeroAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useTheme } from "@/composables/useTheme";
@@ -301,7 +309,7 @@ const updateBuyAmount = debounce(async (val: any) => {
       if (chainStore.deployment.dex.kind !== 'pancake') {
         const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
         if (!poolKey) throw new Error('invalid RH V4 PoolKey')
-        receive = await quoteRhV4(poolKey, amount, true)
+        receive = await quoteRhV4(poolKey, amount, true, !usesDirectRhV4Trade(community))
         const poolId = resolveV4PoolId(community!.pair)
         try { spot = poolId ? await getRhV4SpotPrice(poolId) : 0 } catch (e) { console.warn('getRhV4SpotPrice failed', e) }
       } else {
@@ -393,7 +401,7 @@ const updateSellAmount = debounce(async (val: any) => {
         if (chainStore.deployment.dex.kind !== 'pancake') {
           const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
           if (!poolKey) throw new Error('invalid RH V4 PoolKey')
-          receive = await quoteRhV4(poolKey, amount, false)
+          receive = await quoteRhV4(poolKey, amount, false, !usesDirectRhV4Trade(community))
           const poolId = resolveV4PoolId(community!.pair)
           try { spot = poolId ? await getRhV4SpotPrice(poolId) : 0 } catch (e) { console.warn('getRhV4SpotPrice failed', e) }
         } else {
@@ -544,8 +552,11 @@ async function confirm() {
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
           if (!poolKey || !receiveAmount.value) throw new Error('RH V4 PoolKey or quote is unavailable')
-          hash = await buyTokenV4Rh(poolKey, ethAmount, receiveAmount.value,
-            (stateStore.sellsman ?? token.ipshare ?? zeroAddress) as `0x${string}`)
+          const sellsman = (stateStore.sellsman ?? token.ipshare ?? zeroAddress) as `0x${string}`
+          hash = usesDirectRhV4Trade(token)
+            ? await buyTokenV4RhDirect(poolKey, ethAmount, receiveAmount.value, sellsman,
+                Math.ceil(maxSlippage.value * 100))
+            : await buyTokenV4Rh(poolKey, ethAmount, receiveAmount.value, sellsman)
         } else {
           const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
           if (!poolKey) throw new Error('invalid V4 pool')
@@ -578,8 +589,12 @@ async function confirm() {
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
           if (!poolKey || !receiveEth.value) throw new Error('RH V4 PoolKey or quote is unavailable')
-          hash = await sellTokenV4Rh(poolKey, token.token as `0x${string}`, finalSellAmount,
-            receiveEth.value, (stateStore.sellsman ?? token.ipshare ?? zeroAddress) as `0x${string}`)
+          const sellsman = (stateStore.sellsman ?? token.ipshare ?? zeroAddress) as `0x${string}`
+          hash = usesDirectRhV4Trade(token)
+            ? await sellTokenV4RhDirect(poolKey, token.token as `0x${string}`, finalSellAmount,
+                receiveEth.value, sellsman, Math.ceil(maxSlippage.value * 100))
+            : await sellTokenV4Rh(poolKey, token.token as `0x${string}`, finalSellAmount,
+                receiveEth.value, sellsman)
         } else {
           const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
           if (!poolKey) throw new Error('invalid V4 pool')

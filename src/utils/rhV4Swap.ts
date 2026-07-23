@@ -1,9 +1,19 @@
-import { encodeAbiParameters, isAddress, keccak256, parseAbiItem, zeroAddress } from 'viem'
+import {
+  encodeAbiParameters,
+  encodePacked,
+  isAddress,
+  keccak256,
+  maxUint256,
+  parseAbiItem,
+  zeroAddress,
+  type Hex,
+} from 'viem'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { readContract, resolveContractAddress, writeContract } from './contract'
-import { getReadOnlyClient } from './wallets'
-import { sqrtPriceX96ToBnbPerToken } from './pcsV4Swap'
+import { getReadOnlyClient, getWalletClient, setup, waitForTx } from './wallets'
+import { encodeHookData, sqrtPriceX96ToBnbPerToken } from './pcsV4Swap'
+import errCode from '@/errCode'
 
 /** Uniswap v4 PoolKey; intentionally separate from Pancake Infinity PoolKey. */
 export type RhV4PoolKey = {
@@ -169,6 +179,15 @@ const requireRhV4 = () => {
   return { deployment, wrapper }
 }
 
+const requireRhV4Direct = () => {
+  const deployment = useChainStore().deployment
+  if (deployment.dex.kind !== 'uniswap') throw new Error('RH V4 called outside an Uniswap chain')
+  if (deployment.dex.universalRouter === zeroAddress || deployment.dex.permit2 === zeroAddress) {
+    throw new Error(`Uniswap V4 router contracts are not configured on ${deployment.name}`)
+  }
+  return deployment
+}
+
 /** Empty/invalid referral values can come from an optional route param. */
 const normalizeSellsman = (sellsman: string | null | undefined): `0x${string}` =>
   sellsman && isAddress(sellsman) ? sellsman : zeroAddress
@@ -202,10 +221,15 @@ const quoterAbi = [{
   stateMutability: 'nonpayable', type: 'function',
 }] as const
 
-export const quoteRhV4 = async (poolKey: RhV4PoolKey, amountIn: bigint, buying: boolean): Promise<bigint> => {
+export const quoteRhV4 = async (
+  poolKey: RhV4PoolKey,
+  amountIn: bigint,
+  buying: boolean,
+  includeWrapperFee = true,
+): Promise<bigint> => {
   const { deployment } = requireRhV4()
   if (deployment.dex.v4Quoter === zeroAddress) throw new Error(`Uniswap V4 Quoter is not configured on ${deployment.name}`)
-  const feeBps = await getRhWrapperFeeBps()
+  const feeBps = includeWrapperFee ? await getRhWrapperFeeBps() : 0
   const quotedInput = buying ? amountIn * BigInt(10_000 - feeBps) / 10_000n : amountIn
   const nativeIs0 = poolKey.currency0 === zeroAddress || poolKey.currency0.toLowerCase() === deployment.wrappedNative.toLowerCase()
   const zeroForOne = buying ? nativeIs0 : !nativeIs0
@@ -217,6 +241,184 @@ export const quoteRhV4 = async (poolKey: RhV4PoolKey, amountIn: bigint, buying: 
   })
   const amountOut = typeof result === 'bigint' ? result : result[0]
   return buying ? amountOut : amountOut * BigInt(10_000 - feeBps) / 10_000n
+}
+
+const V4_SWAP = 0x10
+const SWAP_EXACT_IN_SINGLE = 0x06
+const SETTLE_ALL = 0x0c
+const TAKE_ALL = 0x0f
+const PERMIT2_MAX_AMOUNT = 2n ** 160n - 1n
+const PERMIT2_MAX_EXPIRATION = 2n ** 48n - 1n
+
+const universalRouterAbi = [{
+  inputs: [
+    { name: 'commands', type: 'bytes' },
+    { name: 'inputs', type: 'bytes[]' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+  name: 'execute',
+  outputs: [],
+  stateMutability: 'payable',
+  type: 'function',
+}] as const
+
+const buildRhV4SwapPayload = (
+  poolKey: RhV4PoolKey,
+  zeroForOne: boolean,
+  amountIn: bigint,
+  amountOutMinimum: bigint,
+  hookData: Hex,
+): Hex => {
+  const swapParams = encodeAbiParameters(
+    [{
+      type: 'tuple',
+      components: [
+        {
+          type: 'tuple',
+          name: 'poolKey',
+          components: [
+            { type: 'address', name: 'currency0' },
+            { type: 'address', name: 'currency1' },
+            { type: 'uint24', name: 'fee' },
+            { type: 'int24', name: 'tickSpacing' },
+            { type: 'address', name: 'hooks' },
+          ],
+        },
+        { type: 'bool', name: 'zeroForOne' },
+        { type: 'uint128', name: 'amountIn' },
+        { type: 'uint128', name: 'amountOutMinimum' },
+        { type: 'uint256', name: 'minHopPriceX36' },
+        { type: 'bytes', name: 'hookData' },
+      ],
+    }],
+    [{
+      poolKey,
+      zeroForOne,
+      amountIn,
+      amountOutMinimum,
+      minHopPriceX36: 0n,
+      hookData,
+    }],
+  )
+
+  const inputCurrency = zeroForOne ? poolKey.currency0 : poolKey.currency1
+  const outputCurrency = zeroForOne ? poolKey.currency1 : poolKey.currency0
+  const actions = encodePacked(
+    ['uint8', 'uint8', 'uint8'],
+    [SWAP_EXACT_IN_SINGLE, SETTLE_ALL, TAKE_ALL],
+  )
+  const params = [
+    swapParams,
+    encodeAbiParameters(
+      [{ type: 'address' }, { type: 'uint256' }],
+      [inputCurrency, maxUint256],
+    ),
+    encodeAbiParameters(
+      [{ type: 'address' }, { type: 'uint256' }],
+      [outputCurrency, amountOutMinimum],
+    ),
+  ]
+  return encodeAbiParameters(
+    [{ type: 'bytes' }, { type: 'bytes[]' }],
+    [actions, params],
+  )
+}
+
+const executeRhV4Direct = async (
+  poolKey: RhV4PoolKey,
+  amountIn: bigint,
+  amountOutMinimum: bigint,
+  buying: boolean,
+  sellsman?: string | null,
+) => {
+  const deployment = requireRhV4Direct()
+  const account = requireConnectedAddress()
+  const nativeIs0 = poolKey.currency0 === zeroAddress
+    || poolKey.currency0.toLowerCase() === deployment.wrappedNative.toLowerCase()
+  const zeroForOne = buying ? nativeIs0 : !nativeIs0
+  const payload = buildRhV4SwapPayload(
+    poolKey,
+    zeroForOne,
+    amountIn,
+    amountOutMinimum,
+    encodeHookData(normalizeSellsman(sellsman)),
+  )
+  const commands = encodePacked(['uint8'], [V4_SWAP])
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 300)
+  const walletClient = getWalletClient()
+  if (!walletClient) throw new Error('no wallet client')
+  if (useAccountStore().getWalletType !== 'privy') await setup()
+
+  const { request } = await getReadOnlyClient().simulateContract({
+    account,
+    address: deployment.dex.universalRouter,
+    abi: universalRouterAbi,
+    functionName: 'execute',
+    args: [commands, [payload], deadline],
+    value: buying ? amountIn : 0n,
+  })
+  const tx = await walletClient.writeContract(request)
+  const hash = await waitForTx(tx)
+  if (!hash) throw errCode.TRANSACTION_INVALID
+  return hash
+}
+
+const ensureRhPermit2Allowance = async (token: `0x${string}`, amount: bigint) => {
+  const deployment = requireRhV4Direct()
+  const owner = requireConnectedAddress()
+  const permit2 = deployment.dex.permit2
+  const router = deployment.dex.universalRouter
+  const erc20Allowance = await readContract('Token1', 'allowance', [owner, permit2], token) as bigint
+  if (erc20Allowance < amount) {
+    const hash = await writeContract({
+      contractName: 'Token1',
+      functionName: 'approve',
+      args: [permit2, maxUint256],
+      address: token,
+    })
+    if (!hash) throw errCode.TRANSACTION_INVALID
+  }
+
+  const allowance: any = await readContract('Permit2', 'allowance', [owner, token, router], permit2)
+  const permittedAmount = BigInt(allowance?.[0] ?? allowance?.amount ?? 0)
+  const expiration = Number(allowance?.[1] ?? allowance?.expiration ?? 0)
+  if (permittedAmount >= amount && expiration > Math.floor(Date.now() / 1000)) return
+
+  const hash = await writeContract({
+    contractName: 'Permit2',
+    functionName: 'approve',
+    args: [token, router, PERMIT2_MAX_AMOUNT, PERMIT2_MAX_EXPIRATION],
+    address: permit2,
+  })
+  if (!hash) throw errCode.TRANSACTION_INVALID
+}
+
+export const buyTokenV4RhDirect = async (
+  poolKey: RhV4PoolKey,
+  ethAmount: bigint,
+  quotedAmountOut: bigint,
+  sellsman?: string | null,
+  slippageBps = 0,
+) => {
+  const amountOutMinimum = slippageBps > 0
+    ? quotedAmountOut * BigInt(10_000 - slippageBps) / 10_000n
+    : quotedAmountOut
+  return executeRhV4Direct(poolKey, ethAmount, amountOutMinimum, true, sellsman)
+}
+
+export const sellTokenV4RhDirect = async (
+  poolKey: RhV4PoolKey,
+  token: `0x${string}`,
+  amountIn: bigint,
+  quotedAmountOut: bigint,
+  sellsman?: string | null,
+  slippageBps = 0,
+) => {
+  await ensureRhPermit2Allowance(token, amountIn)
+  const amountOutMinimum = slippageBps > 0
+    ? quotedAmountOut * BigInt(10_000 - slippageBps) / 10_000n
+    : quotedAmountOut
+  return executeRhV4Direct(poolKey, amountIn, amountOutMinimum, false, sellsman)
 }
 
 export const buyTokenV4Rh = async (
