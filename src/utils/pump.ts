@@ -244,21 +244,22 @@ export const getV9DailyRewards = async (token: `0x${string}`) => {
         await getNutboxSocialPoolScale(community, socialPool)
 
     const rangeStart = getLocalDayStartSec(-PAST_DAYS)
-    const hourlyRewards = await readContract(
+    const communityHourlyRewards = await readContract(
         'HourlyTickCalculator',
         'getHourlyRewards',
         [community, BigInt(rangeStart), BigInt(TOTAL_DAYS * 24)]
     ) as bigint[];
+    // HourlyTickCalculator returns rewards for the whole Nutbox community.
+    // The reward dialog only represents this token's social distribution pool.
+    const hourlyRewards = communityHourlyRewards.map(amount =>
+        applyNutboxSocialPoolScale(amount, scaleNumerator, scaleDenominator)
+    )
 
     const dailyRewards = Array.from({ length: TOTAL_DAYS }, () => 0n)
     for (let i = 0; i < hourlyRewards.length; i++) {
         const dayIdx = Math.floor(i / 24)
         if (dayIdx < TOTAL_DAYS) {
-            dailyRewards[dayIdx] += applyNutboxSocialPoolScale(
-                hourlyRewards[i],
-                scaleNumerator,
-                scaleDenominator
-            )
+            dailyRewards[dayIdx] += hourlyRewards[i]
         }
     }
 
@@ -371,21 +372,20 @@ async function getV9DailyRewardsByCommunity(community: `0x${string}`, socialPool
         await getNutboxSocialPoolScale(community, socialPool)
 
     const rangeStart = getLocalDayStartSec(-PAST_DAYS)
-    const hourlyRewards = await readContract(
+    const communityHourlyRewards = await readContract(
         'HourlyTickCalculator',
         'getHourlyRewards',
         [community, BigInt(rangeStart), BigInt(TOTAL_DAYS * 24)]
     ) as bigint[];
+    const hourlyRewards = communityHourlyRewards.map(amount =>
+        applyNutboxSocialPoolScale(amount, scaleNumerator, scaleDenominator)
+    )
 
     const dailyRewards = Array.from({ length: TOTAL_DAYS }, () => 0n)
     for (let i = 0; i < hourlyRewards.length; i++) {
         const dayIdx = Math.floor(i / 24)
         if (dayIdx < TOTAL_DAYS) {
-            dailyRewards[dayIdx] += applyNutboxSocialPoolScale(
-                hourlyRewards[i],
-                scaleNumerator,
-                scaleDenominator
-            )
+            dailyRewards[dayIdx] += hourlyRewards[i]
         }
     }
 
