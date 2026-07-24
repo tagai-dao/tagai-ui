@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useCommunityStore } from "@/stores/community";
-import { computed, onMounted, ref, watch, nextTick } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
 import { formatAddress, formatAmount, formatAmountTrunc, formatPrice, sleep, formatDate } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
@@ -85,6 +85,15 @@ const displayNutboxCommunityAddr = computed(() => {
   if (isV9.value) return v9NutboxCommunityAddr.value
   return comStore.currentSelectedCommunity?.communityAddress || ''
 })
+const nutboxCommunityUrl = computed(() => {
+  const address = displayNutboxCommunityAddr.value
+  return isAddress(address) ? `https://app.nutbox.io/community/${address}` : ''
+})
+
+function openNutboxCommunity() {
+  if (!nutboxCommunityUrl.value) return
+  window.open(nutboxCommunityUrl.value, '_blank', 'noopener,noreferrer')
+}
 
 /** Inject Rewards 弹窗 */
 const showInjectModal = ref(false)
@@ -557,67 +566,82 @@ async function openDistributionModal() {
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref(false);
+const holderPage = ref(0);
+const holderSentinelRef = ref<HTMLElement>();
+const HOLDER_PAGE_SIZE = 30;
+let holderObserver: IntersectionObserver | null = null;
+let holderRequesting = false;
+
+async function fetchHolderPage(page: number) {
+  const community = comStore.currentSelectedCommunity
+  if (!community?.token) return []
+  if (community.isImport) {
+    return await getHolderListOfImportToken(community.token, page) as any[]
+  }
+  return await getHolderList(community.token, page) as any[]
+}
+
+function mapHolderRows(list: any[]) {
+  return list.map((holder: any) => ({
+    ...holder,
+    community: comStore.currentSelectedCommunity,
+    amount: holder.amount.toString() / 1e18,
+    ethAddr: holder.holder
+  })) as TokenHoldingList[]
+}
 
 async function onRefresh() {
-  if (loading.value) return;
+  if (holderRequesting) {
+    refreshing.value = false
+    return
+  }
+  holderRequesting = true
   refreshing.value = true;
   finished.value = false;
   try{
-    let list: any;
-    if (comStore.currentSelectedCommunity?.isImport) {
-      list = await getHolderListOfImportToken(comStore.currentSelectedCommunity!.token)
-    } else {
-      list = await getHolderList(comStore.currentSelectedCommunity!.token)
-    }
-    if (list && list.length > 0) {
-      list = list.map((h: any) => {
-        return {
-          ...h,
-          community: comStore.currentSelectedCommunity,
-          amount: h.amount.toString() / 1e18,
-          ethAddr: h.holder
-        }
-      })
-      holdingList.value = list as TokenHoldingList[];
-    }
-    if (list.length < 30) {
-      finished.value = true
-    }
+    const list = await fetchHolderPage(0)
+    holdingList.value = mapHolderRows(list)
+    holderPage.value = 0
+    finished.value = list.length < HOLDER_PAGE_SIZE
   } catch (e) {
     handleErrorTip(e)
   } finally {
+    holderRequesting = false
     refreshing.value = false
   }
 }
 
 async function onLoad() {
-  if (refreshing.value || finished.value || holdingList.value.length == 0) return;
+  // van-list sets its v-model loading to true before emitting `load`.
+  // Always release it when this request should not run, otherwise pagination
+  // remains permanently locked.
+  if (refreshing.value || finished.value) {
+    loading.value = false
+    return
+  }
+  if (holderRequesting) {
+    loading.value = false
+    return
+  }
+  holderRequesting = true
   loading.value = true;
   try{
-    let list: any;
-    if (comStore.currentSelectedCommunity?.isImport) {
-      list = await getHolderListOfImportToken(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
-    } else {
-      list = await getHolderList(comStore.currentSelectedCommunity!.token, Math.floor((holdingList.value.length - 1) / 30) + 1);
-    }
-    if (list && list.length > 0) {
-      list = list.map((h: any) => {
-        return {
-          ...h,
-          community: comStore.currentSelectedCommunity,
-          amount: h.amount.toString() / 1e18,
-          ethAddr: h.holder
-        }
-      })
-      holdingList.value = holdingList.value.concat(list as TokenHoldingList[]);
-    }
-    if (list.length < 30) {
-      finished.value = true
-    }
+    const nextPage = holdingList.value.length === 0 ? 0 : holderPage.value + 1
+    const list = await fetchHolderPage(nextPage)
+    const rows = mapHolderRows(list)
+    holdingList.value = nextPage === 0 ? rows : holdingList.value.concat(rows)
+    holderPage.value = nextPage
+    finished.value = list.length < HOLDER_PAGE_SIZE
   } catch (e) {
     handleErrorTip(e)
   } finally {
+    holderRequesting = false
     loading.value = false
+  }
+  await nextTick()
+  if (!finished.value && holderSentinelRef.value) {
+    const rect = holderSentinelRef.value.getBoundingClientRect()
+    if (rect.top <= window.innerHeight + 50) onLoad()
   }
 }
 
@@ -680,7 +704,14 @@ onMounted(async () => {
   } else if (comStore.currentSelectedCommunity?.version === 10) {
     await loadV10Distribution()
   }
-  onRefresh()
+  await onRefresh()
+  await nextTick()
+  if (holderSentinelRef.value && 'IntersectionObserver' in window) {
+    holderObserver = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) onLoad()
+    }, { rootMargin: '100px' })
+    holderObserver.observe(holderSentinelRef.value)
+  }
 })
 
 watch(() => comStore.currentSelectedCommunity?.token, async (token) => {
@@ -694,10 +725,15 @@ watch(() => comStore.currentSelectedCommunity?.token, async (token) => {
     v9HourlyAmounts.value = []
     await loadV10Distribution()
   }
+  if (token) await onRefresh()
 })
 
 watch(() => comStore.currentSelectedCommunity?.pair, () => {
   if (isV9.value) loadV9HolderAddresses()
+})
+
+onBeforeUnmount(() => {
+  holderObserver?.disconnect()
 })
 </script>
 
@@ -843,7 +879,7 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
       :loosing-text="$t('releaseToRefresh')"
     >
       <van-list
-        :loading="loading"
+        v-model:loading="loading"
         :finished="finished"
         :immediate-check="false"
         :finished-text="$t('noMore')"
@@ -887,6 +923,7 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
           </div>
         <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ ((holder.amount as number) / 10000000).toFixed(2) }}%</span>
       </div>
+      <div ref="holderSentinelRef" class="h-px w-full"></div>
       </van-list>
     </van-pull-refresh>
 
@@ -918,7 +955,20 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
             borderColor: isDark ? 'rgba(255, 143, 64, .28)' : 'rgba(255, 143, 64, .3)',
           }"
         >
-          <div class="text-h4 font-semibold text-black-19 mb-1">{{ $t('postView.hourlyDistributionTitle') }}</div>
+          <div class="flex items-start justify-between gap-3 mb-1">
+            <div class="text-h4 font-semibold text-black-19">{{ $t('postView.hourlyDistributionTitle') }}</div>
+            <button
+              v-if="nutboxCommunityUrl"
+              type="button"
+              class="shrink-0 inline-flex items-center gap-1 rounded-full border border-orange-normal px-3 py-1 text-xs font-medium text-orange-normal transition-colors hover:bg-orange-normal hover:text-white"
+              @click="openNutboxCommunity"
+            >
+              {{ $t('postView.viewOnNutbox') }}
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5h5v5m0-5L10 14M19 13v6H5V5h6"/>
+              </svg>
+            </button>
+          </div>
           <div class="text-xs text-grey-93 mb-4">{{ $t('postView.hourlyDistributionDesc') }}</div>
           <div v-if="v9HourlyLoading || v10Loading" class="py-8 text-center text-grey-93 text-h4">{{ $t('loading') }}</div>
           <div v-else-if="v9HourlyAmounts.length > 0">

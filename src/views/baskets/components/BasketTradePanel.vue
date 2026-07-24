@@ -3,22 +3,23 @@
 import { computed, toRef, watch } from 'vue'
 import { formatUnits } from 'viem'
 import { useI18n } from 'vue-i18n'
-import type { BasketDetail } from '@/utils/spectrum/basket-data'
+import type { BasketDetail } from '@/utils/baskets/types'
 import { useBasketTrade } from '@/composables/baskets/useBasketTrade'
-import { useLoginStore, LoginStepType } from '@/stores/login'
-import { SPECTRUM_USDC_DECIMALS, SPECTRUM_MAX_SLIPPAGE_BPS } from '@/config/spectrum'
+import { useModalStore } from '@/stores/common'
+import { GlobalModalType } from '@/types'
+import { BASKET_USDG_DECIMALS, BASKET_MAX_SLIPPAGE_BPS } from '@/config/baskets'
 import { ROBINHOOD_CHAIN } from '@/config/chains'
 
 const props = defineProps<{ detail: BasketDetail }>()
 const emit = defineEmits<{ traded: [] }>()
 const { t } = useI18n()
-const loginStore = useLoginStore()
+const modalStore = useModalStore()
 const detailRef = toRef(props, 'detail')
 
 const {
   side, amountInput, slippageBps, step, txHash, errorMessage,
-  usdcBalance, basketBalance, quote, needsApproval, allLegsPriced,
-  isOnRh, canTradeConfig, account, setMax, runTrade, resetStep,
+  usdgBalance, basketBalance, quote, needsApproval,
+  isOnRh, canTradeConfig, account, setMax, setAmountInput, runTrade, resetStep,
 } = useBasketTrade(detailRef)
 
 const explorerTx = computed(() => {
@@ -27,29 +28,31 @@ const explorerTx = computed(() => {
 })
 
 const balanceLabel = computed(() => {
-  if (side.value === 'buy') return `${formatUnits(usdcBalance.value, SPECTRUM_USDC_DECIMALS)} USDC`
+  if (side.value === 'buy') return `${formatUnits(usdgBalance.value, BASKET_USDG_DECIMALS)} USDG`
   return `${formatUnits(basketBalance.value, props.detail.decimals)} ${props.detail.symbol}`
 })
 
-const inputToken = computed(() => side.value === 'buy' ? 'USDC' : props.detail.symbol)
-const outputToken = computed(() => side.value === 'buy' ? props.detail.symbol : 'USDC')
+const inputToken = computed(() => side.value === 'buy' ? 'USDG' : props.detail.symbol)
+const outputToken = computed(() => side.value === 'buy' ? props.detail.symbol : 'USDG')
 
 const estimatedLabel = computed(() => {
   const q = quote.value
   if (!q) return '—'
   if (side.value === 'buy') return `~${q.estimatedOut.toFixed(6)} ${props.detail.symbol}`
-  return `~$${q.estimatedOut.toFixed(4)} USDC`
+  return `~$${q.estimatedOut.toFixed(4)} USDG`
 })
 
 const isBusy = computed(() => step.value === 'approving' || step.value === 'swapping')
+const isQuoting = computed(() => step.value === 'quoting')
+const showButtonSpinner = computed(() => isBusy.value || isQuoting.value)
 const tradeDisabled = computed(() => {
   if (isBusy.value || !isOnRh.value || !canTradeConfig.value || !account.value || !quote.value) return true
-  if (side.value === 'buy' && !allLegsPriced.value) return true
   return false
 })
 
 const primaryLabel = computed(() => {
   if (!account.value) return t('connect')
+  if (step.value === 'quoting') return t('baskets.quoting')
   if (step.value === 'approving') return t('baskets.approving')
   if (step.value === 'swapping') return t('baskets.swapping')
   if (needsApproval.value) return t('baskets.approveAndTrade')
@@ -58,11 +61,17 @@ const primaryLabel = computed(() => {
 
 const onPrimary = async () => {
   if (!account.value) {
-    loginStore.setLoginStep(LoginStepType.AuthTwitter)
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return
   }
   await runTrade()
   if (step.value === 'success') emit('traded')
+}
+
+const onAmountInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  setAmountInput(input.value)
+  input.value = String(amountInput.value)
 }
 
 watch(side, () => resetStep())
@@ -95,12 +104,12 @@ watch(side, () => resetStep())
       </div>
       <div class="amount-box__input">
         <input
-          v-model="amountInput"
-          type="number"
-          min="0"
-          step="any"
+          :value="amountInput"
+          type="text"
+          inputmode="decimal"
           placeholder="0.00"
           :disabled="isBusy"
+          @input="onAmountInput"
         >
         <span>{{ inputToken }}</span>
       </div>
@@ -130,16 +139,13 @@ watch(side, () => resetStep())
           v-model.number="slippageBps"
           type="number"
           min="1"
-          :max="SPECTRUM_MAX_SLIPPAGE_BPS"
+          :max="BASKET_MAX_SLIPPAGE_BPS"
           :disabled="isBusy"
         >
         <span>bps</span>
       </label>
     </div>
 
-    <div v-if="side === 'buy' && !allLegsPriced" class="trade-alert trade-alert--error">
-      {{ $t('baskets.legsUnpriced') }}
-    </div>
     <div v-if="!isOnRh" class="trade-alert">
       {{ $t('baskets.switchChainHint') }}
     </div>
@@ -147,12 +153,12 @@ watch(side, () => resetStep())
     <button
       type="button"
       class="trade-primary"
-      :class="{ disabled: tradeDisabled && !!account }"
+      :class="{ disabled: tradeDisabled && !!account, quoting: isQuoting }"
       :disabled="tradeDisabled && !!account"
       @click="onPrimary"
     >
       <span>{{ primaryLabel }}</span>
-      <svg v-if="!isBusy" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <svg v-if="!showButtonSpinner" viewBox="0 0 20 20" fill="none" aria-hidden="true">
         <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
       <span v-else class="button-spinner" />
@@ -222,6 +228,7 @@ watch(side, () => resetStep())
 .trade-card--sell .trade-primary { background: linear-gradient(115deg, #ff5c70, #e6374d); box-shadow: 0 12px 28px rgba(230,55,77,.2); }
 .trade-primary:hover:not(:disabled) { transform: translateY(-1px); }
 .trade-primary.disabled { background: var(--grey-normal); box-shadow: none; opacity: .55; }
+.trade-primary.quoting { opacity: .78; cursor: wait; }
 .trade-primary svg { width: 18px; height: 18px; }
 .button-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%; animation: button-spin 700ms linear infinite; }
 .trade-error { margin-top: 10px; color: var(--color-down); font-size: 10px; line-height: 15px; word-break: break-word; }

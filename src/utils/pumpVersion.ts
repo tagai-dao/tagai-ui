@@ -48,6 +48,7 @@ export const isImportedTokenVersion = (version?: number | string | null) =>
 type ListedV4Community = {
     listed?: boolean
     version?: number | null
+    isImport?: boolean | number | null
     dexVersion?: number | null
     pair?: string | null
 }
@@ -64,3 +65,7 @@ export const usesListedV4Quote = (community?: ListedV4Community | null): boolean
     const trimmed = community.pair.trim()
     return trimmed.startsWith('0x') && trimmed.length === 66
 }
+
+/** RH Pump9 上市币直接走 Uniswap V4 Universal Router，不经过 TagAISwapWrapper。 */
+export const usesDirectRhV4Trade = (community?: ListedV4Community | null): boolean =>
+    !!community?.listed && normalizePumpVersion(community.version) === 9 && !community.isImport

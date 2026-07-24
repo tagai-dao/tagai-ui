@@ -3,8 +3,9 @@
  * - 渐进加载：meta 到了先出卡片，成分 top 后台补
  */
 import { ref } from 'vue'
-import { listBaskets, type BasketSummary } from '@/utils/spectrum/basket-data'
-import { SPECTRUM_CHAIN_ID } from '@/config/spectrum'
+import { listBaskets } from '@/utils/baskets/data'
+import type { BasketSummary } from '@/utils/baskets/types'
+import { BASKET_CHAIN_ID } from '@/config/baskets'
 
 export const useBasketList = () => {
   const baskets = ref<BasketSummary[]>([])
@@ -28,12 +29,13 @@ export const useBasketList = () => {
 
   /** force=true 绕过短时缓存（刷新按钮） */
   const refresh = async (force = false) => {
+    const hasExistingList = baskets.value.length > 0
     isLoading.value = true
     isEnriching.value = false
     hasError.value = false
     errorMessage.value = ''
     try {
-      const full = await listBaskets(SPECTRUM_CHAIN_ID, {
+      const full = await listBaskets(BASKET_CHAIN_ID, {
         force,
         onShell: (shell) => {
           // 首屏：name / AUM / NAV 已够展示，结束全屏 loading
@@ -46,7 +48,7 @@ export const useBasketList = () => {
     } catch (e) {
       hasError.value = true
       errorMessage.value = e instanceof Error ? e.message : 'Failed to load baskets'
-      baskets.value = []
+      if (!hasExistingList) baskets.value = []
     } finally {
       isLoading.value = false
       isEnriching.value = false

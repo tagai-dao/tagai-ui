@@ -165,7 +165,7 @@ const handleWalletClick = (e?: Event) => {
         <span class="hidden desk:inline text-h4 text-content">{{ $t('prediction') || 'Prediction' }}</span>
       </router-link>
 
-      <!-- Baskets（Spectrum / Robinhood） -->
+      <!-- Baskets（Robinhood） -->
       <router-link
         to="/baskets"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
