@@ -7,15 +7,19 @@ const props = defineProps<{
   channels: AiChannel[]
   selectedChannelId?: number | null
   loading?: boolean
+  loadingMore?: boolean
+  hasMore?: boolean
   quoteMode?: boolean
 }>()
 
 const emit = defineEmits<{
   select: [channel: AiChannel]
   refresh: []
+  loadMore: []
 }>()
 
 const search = ref('')
+const isSearching = computed(() => search.value.trim().length > 0)
 const filteredChannels = computed(() => {
   const keyword = search.value.trim().toLowerCase()
   if (!keyword) return props.channels
@@ -35,14 +39,14 @@ const filteredChannels = computed(() => {
     <div class="px-4 pt-4 pb-3 border-b border-grey-light-hover">
       <div class="flex items-center justify-between gap-2">
         <div>
-          <h2 class="text-h2 font-bold text-content">Channels</h2>
+          <h2 class="text-h2 font-bold text-content">{{ $t('aiChannelView.channels') }}</h2>
           <p v-if="quoteMode" class="text-sm text-orange-normal mt-1">
-            Select a channel for this X post
+            {{ $t('aiChannelView.quoteSelectHint') }}
           </p>
         </div>
         <button
           class="w-8 h-8 rounded-full hover:bg-grey-f0 flex items-center justify-center"
-          aria-label="Refresh channels"
+          :aria-label="$t('aiChannelView.refreshChannels')"
           @click="emit('refresh')"
         >
           <i-ep-refresh class="w-4 h-4" />
@@ -54,7 +58,7 @@ const filteredChannels = computed(() => {
           v-model="search"
           class="min-w-0 flex-1 bg-transparent outline-none text-base"
           type="search"
-          placeholder="Search channels"
+          :placeholder="$t('aiChannelView.searchPlaceholder')"
         >
       </div>
     </div>
@@ -77,7 +81,7 @@ const filteredChannels = computed(() => {
           <span class="font-bold text-lg leading-6">#</span>
           <div class="min-w-0 flex-1">
             <div class="font-semibold leading-5 line-clamp-2">
-              {{ channel.summary || 'Untitled channel' }}
+              {{ channel.summary || $t('aiChannelView.untitled') }}
             </div>
             <div
               class="mt-1 text-sm flex items-center justify-between gap-2"
@@ -94,10 +98,20 @@ const filteredChannels = computed(() => {
               class="text-xs mt-1"
               :class="channel.id === selectedChannelId ? 'text-white/60' : 'text-grey-bd'"
             >
-              {{ channel.messageCount }} messages
+              {{ $t('aiChannelView.messageCount', { count: channel.messageCount }) }}
             </div>
           </div>
         </div>
+      </button>
+
+      <button
+        v-if="hasMore && !isSearching"
+        class="w-full py-2.5 rounded-xl text-sm font-semibold text-orange-normal hover:bg-grey-f0 disabled:opacity-50 flex items-center justify-center gap-2"
+        :disabled="loadingMore"
+        @click="emit('loadMore')"
+      >
+        <i-ep-loading v-if="loadingMore" class="w-4 h-4 animate-spin" />
+        {{ $t('aiChannelView.loadMore') }}
       </button>
 
       <div
@@ -105,9 +119,11 @@ const filteredChannels = computed(() => {
         class="h-full min-h-48 flex flex-col items-center justify-center text-center px-5 text-grey-8d"
       >
         <img src="~@/assets/images/empty-data.svg" class="w-28 mb-3" alt="">
-        <p class="font-medium text-content">No AI channels yet</p>
-        <p class="text-sm mt-1">
-          A channel appears after the community Agent replies in an X thread where it was mentioned.
+        <p class="font-medium text-content">
+          {{ isSearching ? $t('aiChannelView.noMatchingChannels') : $t('aiChannelView.noChannels') }}
+        </p>
+        <p v-if="!isSearching" class="text-sm mt-1">
+          {{ $t('aiChannelView.noChannelsDesc') }}
         </p>
       </div>
     </div>

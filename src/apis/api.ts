@@ -127,9 +127,6 @@ export const getCommunitySpaceTweets = async (tick: string, twitterId?: string, 
 export const getCommunityTippedTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTippedTweets', {tick, twitterId, pages})
 
-export const getAgentTweets = async (tick: string) =>
-  get(BACKEND_API_URL + '/curation/agentTweets', {tick})
-
 export const getAiChannels = async (
   tick: string,
   cursor?: string,

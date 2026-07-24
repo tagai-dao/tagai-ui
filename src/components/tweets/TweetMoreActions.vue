@@ -30,8 +30,8 @@ const onCommand = async (command: string) => {
   >
     <button
       class="flex justify-center items-center p-2 -m-2"
-      aria-label="More post actions"
-      title="More"
+      :aria-label="$t('aiChannelView.moreActions')"
+      :title="$t('aiChannelView.moreActions')"
       @click.stop
     >
       <i-ep-more-filled class="w-5 h-5 text-grey-bd" />
@@ -41,7 +41,7 @@ const onCommand = async (command: string) => {
         <el-dropdown-item command="quote-ai-channel">
           <div class="flex items-center gap-2 py-1">
             <span class="text-lg">#</span>
-            <span>Quote to AI Channel</span>
+            <span>{{ $t('aiChannelView.quoteToAiChannel') }}</span>
           </div>
         </el-dropdown-item>
       </el-dropdown-menu>

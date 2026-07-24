@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { AiChannelMessage } from '@/types/aiChannel'
-import { parseTimestamp } from '@/utils/helper'
+import { parseTimestamp, safeExternalUrl } from '@/utils/helper'
 
-defineProps<{
+const props = defineProps<{
   message: AiChannelMessage
   isRoot?: boolean
   parentAuthor?: string
 }>()
+
+const messageUrl = computed(() => safeExternalUrl(props.message.xUrl))
+const quotedUrl = computed(() => safeExternalUrl(props.message.quotedTweet?.xUrl))
 </script>
 
 <template>
@@ -17,10 +21,10 @@ defineProps<{
       : 'bg-surface border-grey-light-hover'"
   >
     <div v-if="isRoot" class="text-xs font-bold uppercase tracking-wide text-orange-normal mb-2">
-      Root topic
+      {{ $t('aiChannelView.rootTopic') }}
     </div>
     <div v-if="parentAuthor && !isRoot" class="text-xs text-grey-8d mb-2">
-      Replying to @{{ parentAuthor }}
+      {{ $t('aiChannelView.replyingTo', { user: parentAuthor }) }}
     </div>
 
     <div class="flex items-start gap-3">
@@ -55,12 +59,12 @@ defineProps<{
           </span>
           <span class="text-xs text-grey-bd">{{ parseTimestamp(message.createdAt) }}</span>
           <a
-            v-if="message.xUrl"
-            :href="message.xUrl"
+            v-if="messageUrl"
+            :href="messageUrl"
             target="_blank"
             rel="noopener noreferrer"
             class="ml-auto"
-            title="Open in X"
+            :title="$t('aiChannelView.openInX')"
           >
             <img src="~@/assets/icons/icon-x.svg" class="w-3.5 h-3.5" alt="X">
           </a>
@@ -72,8 +76,8 @@ defineProps<{
 
         <a
           v-if="message.quotedTweet"
-          :href="message.quotedTweet.xUrl || undefined"
-          :target="message.quotedTweet.xUrl ? '_blank' : undefined"
+          :href="quotedUrl"
+          :target="quotedUrl ? '_blank' : undefined"
           rel="noopener noreferrer"
           class="block mt-3 rounded-xl border border-grey-light-hover bg-grey-f0 p-3"
         >
@@ -82,7 +86,7 @@ defineProps<{
               {{ message.quotedTweet.author.name || message.quotedTweet.author.username }}
             </span>
             <span class="text-grey-8d">@{{ message.quotedTweet.author.username }}</span>
-            <span class="ml-auto text-xs text-grey-8d">Quoted from X</span>
+            <span class="ml-auto text-xs text-grey-8d">{{ $t('aiChannelView.quotedFromX') }}</span>
           </div>
           <p class="mt-1 text-sm line-clamp-4 whitespace-pre-wrap">
             {{ message.quotedTweet.content }}
@@ -94,13 +98,13 @@ defineProps<{
           class="mt-2 text-xs text-grey-8d flex items-center gap-1"
         >
           <i-ep-loading class="w-3 h-3 animate-spin" />
-          Publishing to Steem
+          {{ $t('aiChannelView.publishingToSteem') }}
         </div>
         <div
           v-else-if="message.source === 'steem' && message.publishState === 2"
           class="mt-2 text-xs text-red"
         >
-          Steem publishing failed
+          {{ $t('aiChannelView.steemPublishFailed') }}
         </div>
       </div>
     </div>

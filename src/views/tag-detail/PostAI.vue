@@ -35,19 +35,26 @@ const accStore = useAccountStore()
 const modalStore = useModalStore()
 
 const channels = ref<AiChannel[]>([])
+const nextCursor = ref<string | null>(null)
 const selectedChannelId = ref<number | null>(null)
+const directChannel = ref<AiChannel | null>(null)
 const detail = ref<AiChannelDetail | null>(null)
 const loadingChannels = ref(false)
+const loadingMore = ref(false)
 const loadingDetail = ref(false)
 const sending = ref(false)
-const loadError = ref('')
+const loadError = ref<string | null>(null)
 const quoteDraft = ref<AiChannelQuoteDraft | null>(null)
+const replyIdempotencyKey = ref<string | null>(null)
 const detailRef = ref<InstanceType<typeof AiChannelDetailPanel> | null>(null)
+// 详情请求序号：新请求发出即作废旧响应，避免快速切换频道时串数据
+let detailSeq = 0
 
 const tick = computed(() => comStore.currentSelectedCommunity?.tick || String(route.params.id || ''))
 const isDesktop = computed(() => width.value > 800)
 const selectedChannel = computed(() =>
-  channels.value.find((channel) => channel.id === selectedChannelId.value) || null,
+  channels.value.find((channel) => channel.id === selectedChannelId.value)
+  || (directChannel.value?.id === selectedChannelId.value ? directChannel.value : null),
 )
 const showChannelList = computed(() =>
   props.compact || isDesktop.value || !selectedChannelId.value,
@@ -84,46 +91,102 @@ const loadQuoteDraft = async () => {
   }
 }
 
+// 深链接指向未加载页中的频道时，用详情接口的数据构造面板头部所需的频道信息
+const channelFromDetail = (channelDetail: AiChannelDetail): AiChannel => ({
+  ...channelDetail.channel,
+  summaryStatus: 0,
+  rootAuthor: { name: '', username: '', profile: '' },
+  agent: { name: '', username: '', profile: '' },
+})
+
+const loadDetail = async () => {
+  const channelId = selectedChannelId.value
+  if (!channelId) return
+  const seq = ++detailSeq
+  loadingDetail.value = true
+  try {
+    const result = await getAiChannelMessages(channelId)
+    if (seq !== detailSeq || selectedChannelId.value !== channelId) return
+    detail.value = result
+  } catch (error) {
+    if (seq === detailSeq) handleErrorTip(error)
+  } finally {
+    if (seq === detailSeq) loadingDetail.value = false
+  }
+}
+
+const selectChannelById = async (channelId: number) => {
+  if (selectedChannelId.value === channelId && detail.value) return
+  const seq = ++detailSeq
+  loadingDetail.value = true
+  try {
+    const result = await getAiChannelMessages(channelId)
+    if (seq !== detailSeq) return
+    directChannel.value = channelFromDetail(result)
+    selectedChannelId.value = channelId
+    detail.value = result
+  } catch (error) {
+    if (seq === detailSeq) handleErrorTip(error)
+  } finally {
+    if (seq === detailSeq) loadingDetail.value = false
+  }
+}
+
+const applyChannelSelection = async () => {
+  if (props.compact) return
+  const queryChannel = Number(route.query.channel)
+  const hasQueryChannel = Number.isSafeInteger(queryChannel) && queryChannel > 0
+  const requested = hasQueryChannel
+    ? channels.value.find((channel) => channel.id === queryChannel)
+    : null
+  if (requested) {
+    if (requested.id !== selectedChannelId.value || !detail.value) {
+      await selectChannel(requested, false)
+    }
+  } else if (hasQueryChannel) {
+    await selectChannelById(queryChannel)
+  } else if (isDesktop.value && channels.value.length > 0) {
+    await selectChannel(channels.value[0], false)
+  } else if (
+    selectedChannelId.value
+    && !channels.value.some((channel) => channel.id === selectedChannelId.value)
+    && directChannel.value?.id !== selectedChannelId.value
+  ) {
+    selectedChannelId.value = null
+    detail.value = null
+  }
+}
+
 const loadChannels = async () => {
   if (!tick.value || loadingChannels.value) return
   loadingChannels.value = true
-  loadError.value = ''
+  loadError.value = null
   try {
     const page = await getAiChannels(tick.value)
     channels.value = page.items
-    const queryChannel = Number(route.query.channel)
-    const requested = Number.isSafeInteger(queryChannel)
-      ? channels.value.find((channel) => channel.id === queryChannel)
-      : null
-    if (requested) {
-      if (requested.id !== selectedChannelId.value || !detail.value) {
-        await selectChannel(requested, false)
-      }
-    } else if (isDesktop.value && !props.compact && channels.value.length > 0) {
-      await selectChannel(channels.value[0], false)
-    } else if (
-      selectedChannelId.value
-      && !channels.value.some((channel) => channel.id === selectedChannelId.value)
-    ) {
-      selectedChannelId.value = null
-      detail.value = null
-    }
+    nextCursor.value = page.nextCursor
+    await applyChannelSelection()
   } catch (error: any) {
-    loadError.value = error?.data?.error || error?.message || 'Unable to load AI channels'
+    loadError.value = error?.data?.error || error?.message || ''
   } finally {
     loadingChannels.value = false
   }
 }
 
-const loadDetail = async () => {
-  if (!selectedChannelId.value || loadingDetail.value) return
-  loadingDetail.value = true
+const loadMoreChannels = async () => {
+  if (!tick.value || !nextCursor.value || loadingMore.value || loadingChannels.value) return
+  loadingMore.value = true
   try {
-    detail.value = await getAiChannelMessages(selectedChannelId.value)
+    const page = await getAiChannels(tick.value, nextCursor.value)
+    const known = new Set(channels.value.map((channel) => channel.id))
+    channels.value = channels.value.concat(
+      page.items.filter((channel) => !known.has(channel.id)),
+    )
+    nextCursor.value = page.nextCursor
   } catch (error) {
     handleErrorTip(error)
   } finally {
-    loadingDetail.value = false
+    loadingMore.value = false
   }
 }
 
@@ -135,8 +198,10 @@ async function selectChannel(channel: AiChannel, updateUrl = true) {
     })
     return
   }
+  directChannel.value = null
   selectedChannelId.value = channel.id
   detail.value = null
+  replyIdempotencyKey.value = null
   if (updateUrl) {
     replaceQuery({ tab: 'ai', channel: String(channel.id) })
   }
@@ -145,7 +210,9 @@ async function selectChannel(channel: AiChannel, updateUrl = true) {
 
 const backToChannels = () => {
   selectedChannelId.value = null
+  directChannel.value = null
   detail.value = null
+  replyIdempotencyKey.value = null
   replaceQuery({ channel: undefined })
 }
 
@@ -154,7 +221,7 @@ const clearQuote = () => {
   replaceQuery({ quoteTweetId: undefined })
 }
 
-const idempotencyKey = () => {
+const newIdempotencyKey = () => {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
@@ -173,6 +240,8 @@ const sendReply = async (content: string) => {
     || detail.value?.messages.at(-1)?.id
   if (!selectedChannelId.value || !latestMessageId || sending.value) return
 
+  // 同一草稿的重试必须复用同一幂等键，否则服务端已写入时会产生重复回复
+  if (!replyIdempotencyKey.value) replyIdempotencyKey.value = newIdempotencyKey()
   sending.value = true
   try {
     await createAiChannelReply(selectedChannelId.value, {
@@ -180,8 +249,9 @@ const sendReply = async (content: string) => {
       content,
       expectedLatestMessageId: latestMessageId,
       quotedTweetId: quoteDraft.value?.tweetId,
-      idempotencyKey: idempotencyKey(),
+      idempotencyKey: replyIdempotencyKey.value,
     })
+    replyIdempotencyKey.value = null
     detailRef.value?.clearComposer()
     clearQuote()
     await loadDetail()
@@ -201,8 +271,11 @@ watch(
   async (current, previous) => {
     if (!current || current === previous) return
     channels.value = []
+    nextCursor.value = null
     selectedChannelId.value = null
+    directChannel.value = null
     detail.value = null
+    replyIdempotencyKey.value = null
     await Promise.all([loadChannels(), loadQuoteDraft()])
   },
 )
@@ -210,10 +283,12 @@ watch(
 watch(
   () => route.query.channel,
   async (value) => {
+    if (props.compact) return
     const channelId = Number(value)
-    if (!Number.isSafeInteger(channelId) || channelId === selectedChannelId.value) return
+    if (!Number.isSafeInteger(channelId) || channelId <= 0 || channelId === selectedChannelId.value) return
     const channel = channels.value.find((item) => item.id === channelId)
     if (channel) await selectChannel(channel, false)
+    else await selectChannelById(channelId)
   },
 )
 
@@ -227,11 +302,11 @@ onMounted(async () => {
 <template>
   <div class="h-full min-h-[420px] web:min-h-0 flex flex-col">
     <div
-      v-if="loadError"
+      v-if="loadError !== null"
       class="mb-2 px-4 py-3 rounded-xl border border-red/20 bg-red/5 text-red text-sm flex items-center justify-between gap-3"
     >
-      <span>{{ loadError }}</span>
-      <button class="font-semibold" @click="loadChannels">Retry</button>
+      <span>{{ loadError || $t('aiChannelView.loadFailed') }}</span>
+      <button class="font-semibold" @click="loadChannels">{{ $t('aiChannelView.retry') }}</button>
     </div>
 
     <div
@@ -245,9 +320,12 @@ onMounted(async () => {
         :channels="channels"
         :selected-channel-id="selectedChannelId"
         :loading="loadingChannels"
+        :loading-more="loadingMore"
+        :has-more="Boolean(nextCursor)"
         :quote-mode="Boolean(quoteDraft)"
         @select="selectChannel"
         @refresh="loadChannels"
+        @load-more="loadMoreChannels"
       />
 
       <AiChannelDetailPanel
@@ -268,7 +346,7 @@ onMounted(async () => {
         v-else-if="showChannelDetail && !selectedChannel"
         class="hidden web:flex h-full min-h-96 rounded-2xl border border-grey-light-hover bg-surface items-center justify-center text-grey-8d"
       >
-        Select a channel to view the conversation
+        {{ $t('aiChannelView.selectChannelHint') }}
       </div>
     </div>
   </div>

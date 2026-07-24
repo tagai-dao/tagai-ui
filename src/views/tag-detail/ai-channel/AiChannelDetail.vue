@@ -6,6 +6,7 @@ import type {
   AiChannelMessage,
   AiChannelQuoteDraft,
 } from '@/types/aiChannel'
+import { safeExternalUrl } from '@/utils/helper'
 import AiChannelMessageCard from './AiChannelMessage.vue'
 
 const props = defineProps<{
@@ -28,6 +29,7 @@ const timelineRef = ref<HTMLElement | null>(null)
 const messages = computed(() => props.detail?.messages || [])
 const messageById = computed(() => new Map(messages.value.map((message) => [message.id, message])))
 const rootMessage = computed(() => messages.value.find((message) => message.type === 'root'))
+const rootUrl = computed(() => safeExternalUrl(rootMessage.value?.xUrl))
 const canSend = computed(() =>
   content.value.trim().length > 0
   && content.value.length <= 2000
@@ -68,7 +70,7 @@ watch(
     <header class="min-h-16 px-4 py-3 border-b border-grey-light-hover flex items-center gap-3">
       <button
         class="web:hidden w-8 h-8 rounded-full hover:bg-grey-f0 flex items-center justify-center"
-        aria-label="Back to channels"
+        :aria-label="$t('aiChannelView.backToChannels')"
         @click="emit('back')"
       >
         <i-ep-arrow-left class="w-5 h-5" />
@@ -79,22 +81,22 @@ watch(
           <h2 class="font-bold text-h2 truncate">{{ channel.summary }}</h2>
         </div>
         <p class="text-sm text-grey-8d truncate">
-          {{ channel.messageCount }} messages · @{{ channel.agent?.username || 'TagAgent' }}
+          {{ $t('aiChannelView.messageCount', { count: channel.messageCount }) }} · @{{ channel.agent?.username || 'TagAgent' }}
         </p>
       </div>
       <a
-        v-if="rootMessage?.xUrl"
-        :href="rootMessage.xUrl"
+        v-if="rootUrl"
+        :href="rootUrl"
         target="_blank"
         rel="noopener noreferrer"
         class="h-9 px-3 rounded-full border border-grey-light-hover flex items-center gap-2 text-sm font-semibold"
       >
         <img src="~@/assets/icons/icon-x.svg" class="w-3.5 h-3.5" alt="">
-        Open in X
+        {{ $t('aiChannelView.openInX') }}
       </a>
       <button
         class="w-9 h-9 rounded-full hover:bg-grey-f0 flex items-center justify-center"
-        aria-label="Refresh messages"
+        :aria-label="$t('aiChannelView.refreshMessages')"
         @click="emit('refresh')"
       >
         <i-ep-refresh class="w-4 h-4" />
@@ -122,7 +124,7 @@ watch(
         class="mb-2 rounded-xl border border-orange-normal/30 bg-orange-light p-3 flex items-start gap-3"
       >
         <div class="min-w-0 flex-1">
-          <div class="text-xs font-semibold text-orange-normal">Quoted from X</div>
+          <div class="text-xs font-semibold text-orange-normal">{{ $t('aiChannelView.quotedFromX') }}</div>
           <div class="text-sm font-semibold mt-1">
             @{{ quoteDraft.twitterUsername || quoteDraft.twitterName || 'unknown' }}
           </div>
@@ -130,7 +132,7 @@ watch(
         </div>
         <button
           class="w-7 h-7 rounded-full hover:bg-white/70 flex items-center justify-center"
-          aria-label="Remove quoted post"
+          :aria-label="$t('aiChannelView.removeQuoted')"
           @click="emit('clearQuote')"
         >
           <i-ep-close class="w-4 h-4" />
@@ -143,20 +145,20 @@ watch(
           rows="2"
           maxlength="2000"
           class="w-full max-h-36 resize-none outline-none text-base bg-transparent"
-          :placeholder="`Message #${channel.summary}`"
+          :placeholder="$t('aiChannelView.messagePlaceholder', { channel: channel.summary })"
           @keydown.meta.enter.prevent="submit"
           @keydown.ctrl.enter.prevent="submit"
         />
         <div class="flex items-center justify-between gap-3">
           <div class="text-xs text-grey-8d flex items-center gap-2">
-            <span>Publishing to Steem</span>
+            <span>{{ $t('aiChannelView.publishingToSteem') }}</span>
             <span>·</span>
             <span>{{ content.length }}/2000</span>
           </div>
           <button
             class="w-9 h-9 rounded-full bg-orange-normal text-white flex items-center justify-center disabled:opacity-30"
             :disabled="!canSend"
-            aria-label="Send reply"
+            :aria-label="$t('aiChannelView.sendReply')"
             @click="submit"
           >
             <i-ep-loading v-if="sending" class="w-4 h-4 animate-spin" />

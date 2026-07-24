@@ -1,7 +1,7 @@
 # X Thread as AI Channel
 
-Status: implemented behind the companion UI/API Draft PRs and pending database
-migration plus production integration review.
+Status: implemented. The companion API shipped in tagai-api (#63); database
+migration is applied there. Real-data integration follows the API deployment.
 
 ## Goal
 
@@ -133,6 +133,12 @@ eligible for recovery by the next refresh run.
 Agent, and replies created from the TagAI channel. Context-only ancestors may be
 rendered in the detail timeline but do not increase this count.
 
+The UI loads the first page (default 30 channels) and fetches further pages on
+demand with the opaque `nextCursor`. Client-side search filters only the loaded
+pages. A deep link whose `channel` id is not in the loaded pages is resolved by
+fetching the messages endpoint directly and building the detail-pane header from
+its `channel` payload, so shared links keep working for older channels.
+
 ## Reply composer
 
 Replies from this UI publish to Steem only; they do not automatically publish to X.
@@ -143,9 +149,12 @@ Requirements:
 - The user must be signed in and have a Steem account.
 - OP is global and must not be calculated per EVM chain.
 - Suggested maximum length: 2,000 characters.
-- The UI inserts a pending message immediately and later marks it confirmed or
-  failed.
-- Failed messages can be retried safely with the same idempotency key.
+- The composer keeps the draft on failure so the user can retry. One draft uses
+  one idempotency key: the key is generated on the first submit attempt, reused
+  by every retry of that draft, and discarded after a successful send or a
+  channel switch. A retry can therefore never create a duplicate reply.
+- After a successful POST the timeline reloads; the new Steem reply renders with
+  its server-reported `publishState` (publishing / confirmed / failed).
 
 The API receives `expectedLatestMessageId`. If a new message arrives between load
 and submit, it returns `409 CHANNEL_UPDATED`. The UI refreshes the timeline and
@@ -247,7 +256,7 @@ type ChannelMessage = {
   content: string
   createdAt: string
   quotedTweet?: TweetSummary
-  publishState?: 'pending' | 'confirmed' | 'failed'
+  publishState?: 0 | 1 | 2 // Steem replies: 0 publishing, 1 confirmed, 2 failed
 }
 ```
 
