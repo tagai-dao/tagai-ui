@@ -23,6 +23,11 @@ export type AiChannel = {
   agent: AiChannelAuthor
 }
 
+export type AiChannelPage = {
+  items: AiChannel[]
+  nextCursor: string | null
+}
+
 export type AiChannelQuotedTweet = {
   tweetId: string
   content: string

@@ -4,8 +4,8 @@ import type { Community, CreateCommunity } from '@/types'
 
 import type { PoolTvlResponse, ClPositionsIndexResponse } from '@/types/liquidity'
 import type {
-  AiChannel,
   AiChannelDetail,
+  AiChannelPage,
   AiChannelReplyInput,
 } from '@/types/aiChannel'
 
@@ -132,10 +132,10 @@ export const getAgentTweets = async (tick: string) =>
 
 export const getAiChannels = async (
   tick: string,
-  cursor?: number,
+  cursor?: string,
   limit: number = 30,
 ) =>
-  get(BACKEND_API_URL + '/ai/channels', { tick, cursor, limit }) as Promise<AiChannel[]>
+  get(BACKEND_API_URL + '/ai/channels', { tick, cursor, limit }) as Promise<AiChannelPage>
 
 export const getAiChannelMessages = async (channelId: number) =>
   get(BACKEND_API_URL + `/ai/channels/${channelId}/messages`) as Promise<AiChannelDetail>

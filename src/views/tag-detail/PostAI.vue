@@ -89,7 +89,8 @@ const loadChannels = async () => {
   loadingChannels.value = true
   loadError.value = ''
   try {
-    channels.value = await getAiChannels(tick.value)
+    const page = await getAiChannels(tick.value)
+    channels.value = page.items
     const queryChannel = Number(route.query.channel)
     const requested = Number.isSafeInteger(queryChannel)
       ? channels.value.find((channel) => channel.id === queryChannel)

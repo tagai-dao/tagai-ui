@@ -1,7 +1,7 @@
 # X Thread as AI Channel
 
-Status: design proposal for technical review. The channel UI and write APIs described
-below are not implemented by this change.
+Status: implemented behind the companion UI/API Draft PRs and pending database
+migration plus production integration review.
 
 ## Goal
 
@@ -35,6 +35,16 @@ A channel becomes visible only after both conditions are met:
 Additional users mentioning the Agent, and additional Agent replies, do not create
 new channels for the same root post. A mention without an Agent reply does not
 qualify as a channel.
+
+Mention matching uses the X username grammar `[A-Za-z0-9_]{1,15}` and requires
+non-username boundaries on both sides of `@username`. The SQL materializer and
+the JavaScript timeline filter use the same rule, so values such as
+`email@TagAgentX` and `@TagAgentX_extra` do not qualify.
+
+If more than one active Tag Agent qualifies in the same root thread, ownership is
+assigned deterministically to the Agent with the earliest reply. Equal timestamps
+are resolved by reply record ID and then Agent Twitter ID. Re-running
+materialization therefore does not depend on database row iteration order.
 
 The community `tick` is globally unique. The channel identity therefore does not
 include an EVM chain ID.
@@ -113,6 +123,15 @@ as replies arrive.
 
 Each row shows the summary, root author, message count, and last activity time.
 Search and unread state can be added after the initial release.
+
+The list endpoint is read-only. Qualification/materialization and summary
+generation run from the low-frequency `ai-channel:refresh:*` commands, not from a
+page request. A summary claim left in `processing` for more than 15 minutes is
+eligible for recovery by the next refresh run.
+
+`messageCount` means the root plus exact Agent mentions, replies by the owning
+Agent, and replies created from the TagAI channel. Context-only ancestors may be
+rendered in the detail timeline but do not increase this count.
 
 ## Reply composer
 
@@ -238,10 +257,21 @@ Add global social endpoints:
 
 ```text
 GET  /ai/channels?tick=BUIDL&cursor=&limit=30
-GET  /ai/channels/:channelId
-GET  /ai/channels/:channelId/messages?cursor=&limit=50
+GET  /ai/channels/:channelId/messages
 POST /ai/channels/:channelId/replies
 ```
+
+The list response is:
+
+```json
+{
+  "items": [],
+  "nextCursor": "opaque-base64url-cursor-or-null"
+}
+```
+
+The opaque cursor contains both `lastActivityAt` and `id`, matching the database
+order `last_activity_at DESC, id DESC`. Clients must return it unchanged.
 
 Reply body:
 
@@ -254,17 +284,18 @@ Reply body:
 }
 ```
 
-The API derives user identity from the access token and never trusts a client
-supplied Twitter user ID.
+The reply middleware verifies that the supplied Twitter user ID matches the
+authenticated access token before the service consumes OP or writes a reply.
 
 Use global social cache keys, for example:
 
 ```text
 tagai-social:ai-channel:list:{tick}
-tagai-social:ai-channel:messages:{channelId}
 ```
 
 Do not use BSC- or Robinhood-specific business cache prefixes for channel data.
+Only list pages are cached. Non-first cursor/limit variants rely on the short
+15-second TTL; the common first page is also invalidated after a UI reply.
 
 ## Delivery plan
 
