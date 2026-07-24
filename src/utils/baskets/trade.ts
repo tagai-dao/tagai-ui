@@ -97,6 +97,7 @@ export const quoteWethToAssetForSwap = (
   amount: bigint,
 ): Promise<bigint> => {
   if (route.venue === 0) return quoteV4ExactInput(route.v4Pool, zeroAddress, amount)
+  if (route.venue === 2) return Promise.resolve(amount)
   return getReadOnlyClient(BASKET_CHAIN_ID).simulateContract({
     address: BASKET_V3_QUOTER,
     abi: v3QuoterAbi,
@@ -117,6 +118,7 @@ export const quoteAssetToWethForSwap = (
   amount: bigint,
 ): Promise<bigint> => {
   if (route.venue === 0) return quoteV4ExactInput(route.v4Pool, asset, amount)
+  if (route.venue === 2) return Promise.resolve(amount)
   return getReadOnlyClient(BASKET_CHAIN_ID).simulateContract({
     address: BASKET_V3_QUOTER,
     abi: v3QuoterAbi,

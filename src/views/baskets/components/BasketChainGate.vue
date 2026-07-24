@@ -29,7 +29,6 @@ const switchToRh = async () => {
       console.warn('[BasketChainGate] switch failed', e)
     }
   }
-  window.location.reload()
 }
 </script>
 

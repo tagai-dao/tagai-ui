@@ -1048,7 +1048,7 @@
     "createSymbol": "Symbol",
     "chooseAssets": "Choose constituents",
     "chooseAssetsHint": "These routes have been exercised against live Robinhood liquidity.",
-    "platformAssets": "Platform asset",
+    "platformAssets": "Core assets",
     "stockAssets": "Top stock tokens",
     "customAsset": "Advanced: add a custom constituent route",
     "customAssetHint": "Enter a token address to find the two largest compatible direct V3 or V4 pools by liquidity.",

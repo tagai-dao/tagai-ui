@@ -29,6 +29,7 @@ export const useBasketList = () => {
 
   /** force=true 绕过短时缓存（刷新按钮） */
   const refresh = async (force = false) => {
+    const hasExistingList = baskets.value.length > 0
     isLoading.value = true
     isEnriching.value = false
     hasError.value = false
@@ -47,7 +48,7 @@ export const useBasketList = () => {
     } catch (e) {
       hasError.value = true
       errorMessage.value = e instanceof Error ? e.message : 'Failed to load baskets'
-      baskets.value = []
+      if (!hasExistingList) baskets.value = []
     } finally {
       isLoading.value = false
       isEnriching.value = false

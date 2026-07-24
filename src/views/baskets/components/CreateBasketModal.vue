@@ -98,7 +98,9 @@ const presetPoolFee = (asset: typeof BASKET_ASSET_PRESETS[number]) => asset.rout
   ? effectiveV4PoolFee(asset.route.v4Pool.fee, asset.route.v4Pool.hooks)
   : asset.route.v3Fee
 const presetPoolLabel = (asset: typeof BASKET_ASSET_PRESETS[number]) =>
-  `V${asset.route.venue === 0 ? '4' : '3'} · ${t('baskets.fee')} ${formatPoolFee(presetPoolFee(asset))}`
+  asset.route.venue === 2
+    ? 'WETH · 1:1'
+    : `V${asset.route.venue === 0 ? '4' : '3'} · ${t('baskets.fee')} ${formatPoolFee(presetPoolFee(asset))}`
 const candidatePoolFee = (pool: BasketPoolCandidate) => pool.venue === 0
   ? effectiveV4PoolFee(pool.fee, pool.hooks)
   : pool.fee
@@ -109,6 +111,7 @@ const formatPoolDate = (value: string) => {
   return Number.isFinite(timestamp) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(timestamp) : '—'
 }
 const legPoolFee = (leg: CreateBasketLeg) => {
+  if (leg.route.venue === 2) return 0
   if (leg.route.venue !== 0) return leg.route.v3Fee
   return effectiveV4PoolFee(leg.route.v4Pool.fee, leg.route.v4Pool.hooks)
 }
@@ -351,7 +354,11 @@ const submit = async () => {
       initialUsdg: initialUsdg.value,
       slippageBps: slippageBps.value,
       legs: selected.value,
-    }, account.value, () => { state.value = 'approving' })
+    }, account.value, () => {
+      state.value = 'approving'
+    }, () => {
+      state.value = 'creating'
+    })
     state.value = 'success'
     try {
       await registerBasketDeployment(result.basket, result.hash)
@@ -434,7 +441,7 @@ watch([
                   :disabled="isBusy"
                   @click="toggleAsset(asset.address)"
                 >
-                  <i :class="{ 'has-logo': asset.logoUrl, 'platform-logo': asset.logoUrl }"><img v-if="asset.logoUrl" :src="asset.logoUrl" alt=""><template v-else>{{ asset.symbol.slice(0, 2) }}</template></i>
+                  <i :class="{ 'has-logo': asset.logoUrl, 'platform-logo': asset.symbol === 'TagAgent' }"><img v-if="asset.logoUrl" :src="asset.logoUrl" alt=""><template v-else>{{ asset.symbol.slice(0, 2) }}</template></i>
                   <span class="asset-option__copy"><span class="asset-option__title"><strong>{{ asset.symbol }}</strong><em>{{ presetPoolLabel(asset) }}</em></span><small>{{ asset.name }}</small></span>
                   <svg v-if="isSelected(asset.address)" viewBox="0 0 20 20" fill="none"><path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
@@ -599,7 +606,7 @@ watch([
 .asset-group-label { margin-bottom: 7px; color: var(--text-muted); font-size: 9px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
 .asset-group-label--stocks { margin-top: 14px; }
 .asset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.asset-grid--platform { grid-template-columns: minmax(0, 240px); }
+.asset-grid--platform { grid-template-columns: repeat(2, minmax(0, 240px)); }
 .asset-grid--stocks { max-height: 214px; overflow-y: auto; padding: 1px 2px 2px 1px; }
 .asset-option { display: flex; min-width: 0; align-items: center; gap: 9px; padding: 10px; border: 1px solid var(--border-base); border-radius: 13px; background: var(--surface-2); text-align: left; transition: border-color 150ms ease, transform 150ms ease; }
 .asset-option:hover { transform: translateY(-1px); }
@@ -657,5 +664,5 @@ watch([
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 700ms linear infinite; }
 .basket-modal-enter-active, .basket-modal-leave-active { transition: opacity 180ms ease; }.basket-modal-enter-active .create-modal, .basket-modal-leave-active .create-modal { transition: transform 180ms ease; }.basket-modal-enter-from, .basket-modal-leave-to { opacity: 0; }.basket-modal-enter-from .create-modal, .basket-modal-leave-to .create-modal { transform: translateY(12px) scale(.985); }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 650px) { .modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.asset-grid--platform { grid-template-columns: 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate__details { grid-template-columns: 1fr 1fr; }.pool-candidate__details > span:first-child { grid-column: 1 / -1; } }
+@media (max-width: 650px) { .modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate__details { grid-template-columns: 1fr 1fr; }.pool-candidate__details > span:first-child { grid-column: 1 / -1; } }
 </style>

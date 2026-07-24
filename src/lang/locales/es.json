@@ -1042,7 +1042,7 @@
     "createSymbol": "Símbolo",
     "chooseAssets": "Elegir componentes",
     "chooseAssetsHint": "Estas rutas se han probado con liquidez real de Robinhood.",
-    "platformAssets": "Activo de la plataforma",
+    "platformAssets": "Activos principales",
     "stockAssets": "Principales tokens de acciones",
     "customAsset": "Avanzado: añadir una ruta personalizada",
     "customAssetHint": "Introduce la dirección del token para encontrar los dos mayores pools directos V3 o V4 compatibles por liquidez.",

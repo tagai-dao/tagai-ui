@@ -1042,7 +1042,7 @@
     "createSymbol": "प्रतीक",
     "chooseAssets": "घटक एसेट चुनें",
     "chooseAssetsHint": "इन रूट्स को Robinhood की लाइव लिक्विडिटी पर जाँचा गया है।",
-    "platformAssets": "प्लेटफ़ॉर्म एसेट",
+    "platformAssets": "मुख्य एसेट",
     "stockAssets": "शीर्ष स्टॉक टोकन",
     "customAsset": "उन्नत: कस्टम घटक रूट जोड़ें",
     "customAssetHint": "लिक्विडिटी के अनुसार दो सबसे बड़े संगत डायरेक्ट V3 या V4 पूल खोजने के लिए टोकन पता दर्ज करें।",

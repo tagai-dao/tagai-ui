@@ -1051,7 +1051,7 @@
     "createSymbol": "代币符号",
     "chooseAssets": "选择成分资产",
     "chooseAssetsHint": "以下路由均已使用 Robinhood 主网真实流动性完成测试。",
-    "platformAssets": "平台代币",
+    "platformAssets": "核心资产",
     "stockAssets": "头部美股代币",
     "customAsset": "高级：添加自定义成分路由",
     "customAssetHint": "输入代币地址，系统会按流动性列出最大的两个兼容 V3 或 V4 直连池。",

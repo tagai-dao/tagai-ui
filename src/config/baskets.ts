@@ -7,14 +7,14 @@ export const BASKET_DEFAULT_SLIPPAGE_BPS = 100
 export const BASKET_MAX_SLIPPAGE_BPS = 500
 
 export const BASKET_CONTRACTS = {
-  registry: '0x121561CAaFfCC1F489f8F60e7F7529FD8c1C394B',
-  routeRegistry: '0xC877F9661649e52C78Ae318DB7430201F66fe25c',
-  feeAuction: '0x17896D2F09b220a7c1A59473708320B8028dC318',
-  tokenDeployer: '0x661fC0a052d2A73da9E09a5C67AE6b9c1B5Eb352',
-  rebalanceExecutor: '0xd3F321e93645Db6A9E4948CA1198D5Bf7D811108',
-  hook: '0x7c5F5c4358DAd036CBbdde6569CBB9Cec5B86a88',
-  swapRouter: '0xe07514fc71BCB16e6C045c937524099ae029D39b',
-  feeBatchClaimer: '0x9786c19eb28511B58C5F85A67ba659A1A10EE609',
+  registry: '0x1f997dEb6C8Ac7Bb4134Bc7c6bF23F623Cda25C6',
+  routeRegistry: '0x1aE3E64F51CCDC87Ff05E8E8242890e7964FF297',
+  feeAuction: '0xC2526404423ED03Ce8D2608F5b94300F0AafA1A2',
+  tokenDeployer: '0x61221d38e626CDb8B27F755A9e0019d5aAae81EA',
+  rebalanceExecutor: '0x773c71be8b5E3c0c49d9576211d06E2f316AaF4a',
+  hook: '0xC6c999fa94199da470a17806F04De85036f02A88',
+  swapRouter: '0xD96e197F139b78e9f74555701f699aA051E0a50e',
+  feeBatchClaimer: '0x98F020aBB37cF90895A6e08aE430eCcDB369374b',
   poolManager: '0x8366a39CC670B4001A1121B8F6A443A643e40951',
   usdg: '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168',
   weth: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
@@ -47,7 +47,7 @@ export type BasketAssetPreset = {
   logoUrl?: string
   category: 'platform' | 'stock'
   route: {
-    venue: 0 | 1
+    venue: 0 | 1 | 2
     v4Pool: BasketPoolKey
     v3Fee: number
   }
@@ -108,9 +108,18 @@ const v3StockAsset = (
   route: { venue: 1, v4Pool: EMPTY_V4_POOL, v3Fee: fee },
 })
 
+const wethAsset = (): BasketAssetPreset => ({
+  address: BASKET_CONTRACTS.weth,
+  symbol: 'WETH',
+  name: 'Wrapped Ether',
+  category: 'platform',
+  logoUrl: '/images/basket-assets/weth.svg',
+  route: { venue: 2, v4Pool: EMPTY_V4_POOL, v3Fee: 0 },
+})
+
 /**
  * Curated creation assets. Routes are deliberately pinned instead of selected at runtime.
- * Only canonical Robinhood Stock Tokens with a verified direct WETH/native-ETH V3 or V4 route are admitted here.
+ * WETH uses the protocol's direct reserve route; stock tokens use a pinned V3 or V4 route.
  */
 export const BASKET_ASSET_PRESETS: BasketAssetPreset[] = [
   v4Asset(
@@ -118,6 +127,7 @@ export const BASKET_ASSET_PRESETS: BasketAssetPreset[] = [
     '0x5e8e2D77ce0d2e04BA058bbcECC13C7C8aDB20Cc',
     { category: 'platform', logoUrl: '/images/basket-assets/tagagent.jpg' },
   ),
+  wethAsset(),
   stockAsset('0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC', 'NVDA', 'NVIDIA', 10_000, 200),
   stockAsset('0xe93237C50D904957Cf27E7B1133b510C669c2e74', 'MSFT', 'Microsoft', 10_000, 200),
   stockAsset('0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9', 'AAPL', 'Apple', 10_000, 200),

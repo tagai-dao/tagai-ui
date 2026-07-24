@@ -38,7 +38,7 @@ const requiresRebalance = computed(() => maxDeviationBps.value > 300)
 // The deployed executor derives its minimum from the fee-exclusive reference price
 // and permits only 3% slippage. A >=3% venue fee therefore cannot satisfy that minimum.
 const incompatibleHoldings = computed(() => props.detail.holdings.filter((holding) => {
-  const fee = holding.route.venue === 0 ? holding.route.v4Pool.fee : holding.route.v3Fee
+  const fee = holding.route.venue === 2 ? 0 : holding.route.venue === 0 ? holding.route.v4Pool.fee : holding.route.v3Fee
   const live = props.detail.aumUsd > 0 ? holding.valueUsd / props.detail.aumUsd * 100 : 0
   return !callerControlledSlippage.value && fee >= 30_000 && Math.abs(live - holding.targetWeightPct) > 0.0001
 }))

@@ -1042,7 +1042,7 @@
     "createSymbol": "심볼",
     "chooseAssets": "구성 자산 선택",
     "chooseAssetsHint": "이 경로들은 Robinhood의 실제 유동성으로 검증되었습니다.",
-    "platformAssets": "플랫폼 자산",
+    "platformAssets": "핵심 자산",
     "stockAssets": "주요 주식 토큰",
     "customAsset": "고급: 사용자 지정 구성 경로 추가",
     "customAssetHint": "토큰 주소를 입력하면 유동성이 가장 큰 호환 V3 또는 V4 직접 풀 두 개를 찾습니다.",

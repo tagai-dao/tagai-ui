@@ -127,6 +127,7 @@ export const createBasketAndBuy = async (
   input: CreateBasketInput,
   account: Address,
   onApproving?: () => void,
+  onApproved?: () => void,
 ): Promise<CreateBasketResult> => {
   const wallet = getWalletClient()
   if (!wallet) throw new Error('Wallet not connected')
@@ -141,6 +142,9 @@ export const createBasketAndBuy = async (
   if (allowance < usdgIn) {
     onApproving?.()
     await approveBasketTrade(BASKET_CONTRACTS.usdg, usdgIn, account)
+    // Approval is confirmed on-chain. Immediately continue to simulation and
+    // open the creation transaction in the wallet without another UI click.
+    onApproved?.()
   }
 
   const createParams = {

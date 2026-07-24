@@ -1042,7 +1042,7 @@
     "createSymbol": "シンボル",
     "chooseAssets": "構成資産を選択",
     "chooseAssetsHint": "これらのルートはRobinhoodの実稼働流動性で検証済みです。",
-    "platformAssets": "プラットフォーム資産",
+    "platformAssets": "コア資産",
     "stockAssets": "主要株式トークン",
     "customAsset": "詳細設定：カスタム構成ルートを追加",
     "customAssetHint": "トークンアドレスを入力すると、流動性が最も高い互換性のあるV3またはV4直接プールを2件表示します。",
