@@ -299,6 +299,12 @@ function getRelativeTimeFormat() {
   return rtfCache[locale]
 }
 
+/** 仅放行 http(s) 外链，防止 javascript: 等协议进入 href */
+export function safeExternalUrl(url?: string | null): string | undefined {
+  if (!url || !/^https?:\/\//i.test(url)) return undefined
+  return url
+}
+
 export function parseTimestamp(time: any) {
   if (!time) {
     return ''

@@ -3,6 +3,11 @@ import { BACKEND_API_URL, VP_CONSUME } from '@/config'
 import type { Community, CreateCommunity } from '@/types'
 
 import type { PoolTvlResponse, ClPositionsIndexResponse } from '@/types/liquidity'
+import type {
+  AiChannelDetail,
+  AiChannelPage,
+  AiChannelReplyInput,
+} from '@/types/aiChannel'
 
 /************************************ common **********************************/
 export const getEthPrice = async () =>
@@ -122,8 +127,21 @@ export const getCommunitySpaceTweets = async (tick: string, twitterId?: string, 
 export const getCommunityTippedTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTippedTweets', {tick, twitterId, pages})
 
-export const getAgentTweets = async (tick: string) =>
-  get(BACKEND_API_URL + '/curation/agentTweets', {tick})
+export const getAiChannels = async (
+  tick: string,
+  cursor?: string,
+  limit: number = 30,
+) =>
+  get(BACKEND_API_URL + '/ai/channels', { tick, cursor, limit }) as Promise<AiChannelPage>
+
+export const getAiChannelMessages = async (channelId: number) =>
+  get(BACKEND_API_URL + `/ai/channels/${channelId}/messages`) as Promise<AiChannelDetail>
+
+export const createAiChannelReply = async (
+  channelId: number,
+  input: AiChannelReplyInput,
+) =>
+  post(BACKEND_API_URL + `/ai/channels/${channelId}/replies`, input)
 
 export const getUserTweets = async (twitterId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/userTweets', {twitterId, pages})
