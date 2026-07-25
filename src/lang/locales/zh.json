@@ -452,6 +452,8 @@
     "refreshMessages": "刷新消息",
     "removeQuoted": "移除引用帖子",
     "sendReply": "发送回复",
+    "reply": "回复",
+    "cancelReply": "取消回复",
     "replyAndCurate": "回复并策展 · 3 VP",
     "curate": "策展",
     "curateVp": "策展 VP",

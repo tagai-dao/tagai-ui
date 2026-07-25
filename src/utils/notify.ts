@@ -401,10 +401,12 @@ export const notify = (options: Partial<NotifyOptions> = {}) => {
     title = defaultTitle,
     message = defaultMessage,
     type = defaultType,
+    duration,
   } = options;
   ElNotification({
     title,
     message,
     type,
+    duration,
   });
 };
