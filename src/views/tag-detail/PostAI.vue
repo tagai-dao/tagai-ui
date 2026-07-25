@@ -7,6 +7,7 @@ import {
   getAiChannelMessages,
   getAiChannels,
   getTweetById,
+  newCurate,
 } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community'
 import { useAccountStore } from '@/stores/web3'
@@ -17,7 +18,7 @@ import type {
   AiChannelDetail,
   AiChannelQuoteDraft,
 } from '@/types/aiChannel'
-import { handleErrorTip } from '@/utils/notify'
+import { handleErrorTip, notify } from '@/utils/notify'
 import AiChannelList from './ai-channel/AiChannelList.vue'
 import AiChannelDetailPanel from './ai-channel/AiChannelDetail.vue'
 
@@ -43,6 +44,7 @@ const loadingChannels = ref(false)
 const loadingMore = ref(false)
 const loadingDetail = ref(false)
 const sending = ref(false)
+const curating = ref(false)
 const loadError = ref<string | null>(null)
 const quoteDraft = ref<AiChannelQuoteDraft | null>(null)
 const replyIdempotencyKey = ref<string | null>(null)
@@ -96,7 +98,12 @@ const channelFromDetail = (channelDetail: AiChannelDetail): AiChannel => ({
   ...channelDetail.channel,
   summaryStatus: 0,
   rootAuthor: { name: '', username: '', profile: '' },
-  agent: { name: '', username: '', profile: '' },
+  agent: channelDetail.channel.agent || {
+    name: 'TagAgent',
+    username: 'tagagen78',
+    xUsername: 'TagAgentX',
+    profile: '',
+  },
 })
 
 const loadDetail = async () => {
@@ -105,7 +112,7 @@ const loadDetail = async () => {
   const seq = ++detailSeq
   loadingDetail.value = true
   try {
-    const result = await getAiChannelMessages(channelId)
+    const result = await getAiChannelMessages(channelId, tick.value)
     if (seq !== detailSeq || selectedChannelId.value !== channelId) return
     detail.value = result
   } catch (error) {
@@ -120,7 +127,7 @@ const selectChannelById = async (channelId: number) => {
   const seq = ++detailSeq
   loadingDetail.value = true
   try {
-    const result = await getAiChannelMessages(channelId)
+    const result = await getAiChannelMessages(channelId, tick.value)
     if (seq !== detailSeq) return
     directChannel.value = channelFromDetail(result)
     selectedChannelId.value = channelId
@@ -250,6 +257,7 @@ const sendReply = async (content: string) => {
       expectedLatestMessageId: latestMessageId,
       quotedTweetId: quoteDraft.value?.tweetId,
       idempotencyKey: replyIdempotencyKey.value,
+      curate: true,
     })
     replyIdempotencyKey.value = null
     detailRef.value?.clearComposer()
@@ -263,6 +271,30 @@ const sendReply = async (content: string) => {
     handleErrorTip(error)
   } finally {
     sending.value = false
+  }
+}
+
+const curateRoot = async (vp: number) => {
+  const account = accStore.getAccountInfo
+  if (!account?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return
+  }
+  if (!account.steemId) {
+    modalStore.setModalVisible(true, GlobalModalType.Register)
+    return
+  }
+  const rootTweetId = detail.value?.channel.rootTweetId
+    || selectedChannel.value?.rootTweetId
+  if (!rootTweetId || curating.value) return
+  curating.value = true
+  try {
+    await newCurate(account.twitterId, rootTweetId, tick.value, vp)
+    notify({ type: 'success', message: 'Curated successfully' })
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    curating.value = false
   }
 }
 
@@ -335,10 +367,12 @@ onMounted(async () => {
         :detail="detail"
         :loading="loadingDetail"
         :sending="sending"
+        :curating="curating"
         :quote-draft="quoteDraft"
         @back="backToChannels"
         @refresh="loadDetail"
         @send="sendReply"
+        @curate="curateRoot"
         @clear-quote="clearQuote"
       />
 

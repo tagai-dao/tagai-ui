@@ -450,6 +450,9 @@
     "refreshMessages": "메시지 새로고침",
     "removeQuoted": "인용 게시물 제거",
     "sendReply": "답글 보내기",
+    "replyAndCurate": "답글 및 큐레이션 · 3 VP",
+    "curate": "큐레이션",
+    "curateVp": "큐레이션 VP",
     "moreActions": "더 많은 작업"
   },
   "ipshare": {

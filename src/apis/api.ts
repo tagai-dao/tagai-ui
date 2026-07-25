@@ -134,8 +134,8 @@ export const getAiChannels = async (
 ) =>
   get(BACKEND_API_URL + '/ai/channels', { tick, cursor, limit }) as Promise<AiChannelPage>
 
-export const getAiChannelMessages = async (channelId: number) =>
-  get(BACKEND_API_URL + `/ai/channels/${channelId}/messages`) as Promise<AiChannelDetail>
+export const getAiChannelMessages = async (channelId: number, tick?: string) =>
+  get(BACKEND_API_URL + `/ai/channels/${channelId}/messages`, { tick }) as Promise<AiChannelDetail>
 
 export const createAiChannelReply = async (
   channelId: number,

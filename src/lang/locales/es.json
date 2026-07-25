@@ -469,6 +469,9 @@
     "refreshMessages": "Actualizar mensajes",
     "removeQuoted": "Quitar publicación citada",
     "sendReply": "Enviar respuesta",
+    "replyAndCurate": "Responder y curar · 3 VP",
+    "curate": "Curar",
+    "curateVp": "VP de curación",
     "moreActions": "Más acciones"
   },
   "ipshare": {
