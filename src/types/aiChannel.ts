@@ -38,6 +38,14 @@ export type AiChannelQuotedTweet = {
   xUrl?: string | null
 }
 
+export type AiChannelReactionType = 'like' | 'love' | 'laugh'
+
+export type AiChannelReaction = {
+  type: AiChannelReactionType
+  count: number
+  reactedByMe: boolean
+}
+
 export type AiChannelMessage = {
   id: string
   rawId: string
@@ -54,6 +62,7 @@ export type AiChannelMessage = {
   quotedTweet?: AiChannelQuotedTweet | null
   publishState?: number | null
   publishError?: string | null
+  reactions: AiChannelReaction[]
 }
 
 export type AiChannelDetail = {
@@ -65,9 +74,31 @@ export type AiChannelReplyInput = {
   twitterId: string
   content: string
   expectedLatestMessageId: string
+  parentMessageId?: string
   quotedTweetId?: string
   idempotencyKey: string
   curate?: boolean
+}
+
+export type AiChannelReactionInput = {
+  twitterId: string
+  messageId: string
+  reaction: AiChannelReactionType
+  active: boolean
+}
+
+export type AiChannelReplyResult = {
+  id: string
+  rawId: string
+  channelId: number
+  parentId: string
+  content: string
+  publishState: number
+  channelVisible: boolean
+  agentReplyEligible: boolean
+  agentEligibilityReason?: string | null
+  agentEligibilityRequestId?: string | null
+  idempotentReplay: boolean
 }
 
 export type AiChannelQuoteDraft = Pick<

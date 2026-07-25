@@ -8,6 +8,7 @@ import {
   getAiChannels,
   getTweetById,
   newCurate,
+  setAiChannelReaction,
 } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community'
 import { useAccountStore } from '@/stores/web3'
@@ -17,6 +18,7 @@ import type {
   AiChannel,
   AiChannelDetail,
   AiChannelQuoteDraft,
+  AiChannelReactionType,
 } from '@/types/aiChannel'
 import { handleErrorTip, notify } from '@/utils/notify'
 import AiChannelList from './ai-channel/AiChannelList.vue'
@@ -48,6 +50,7 @@ const curating = ref(false)
 const loadError = ref<string | null>(null)
 const quoteDraft = ref<AiChannelQuoteDraft | null>(null)
 const replyIdempotencyKey = ref<string | null>(null)
+const pendingReactions = new Set<string>()
 const detailRef = ref<InstanceType<typeof AiChannelDetailPanel> | null>(null)
 // 详情请求序号：新请求发出即作废旧响应，避免快速切换频道时串数据
 let detailSeq = 0
@@ -112,7 +115,11 @@ const loadDetail = async () => {
   const seq = ++detailSeq
   loadingDetail.value = true
   try {
-    const result = await getAiChannelMessages(channelId, tick.value)
+    const result = await getAiChannelMessages(
+      channelId,
+      tick.value,
+      accStore.getAccountInfo?.twitterId,
+    )
     if (seq !== detailSeq || selectedChannelId.value !== channelId) return
     detail.value = result
   } catch (error) {
@@ -127,7 +134,11 @@ const selectChannelById = async (channelId: number) => {
   const seq = ++detailSeq
   loadingDetail.value = true
   try {
-    const result = await getAiChannelMessages(channelId, tick.value)
+    const result = await getAiChannelMessages(
+      channelId,
+      tick.value,
+      accStore.getAccountInfo?.twitterId,
+    )
     if (seq !== detailSeq) return
     directChannel.value = channelFromDetail(result)
     selectedChannelId.value = channelId
@@ -233,7 +244,17 @@ const newIdempotencyKey = () => {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-const sendReply = async (content: string) => {
+const agentEligibilityWarning = (reason?: string | null) => {
+  if (reason === 'daily_free_reply_cap') {
+    return 'Your reply was published to Steem, but your 24-hour TagAgent reply allowance has been used, so it will not appear in this Channel.'
+  }
+  if (reason?.startsWith('eligibility_check_')) {
+    return 'Your reply was published to Steem, but TagAgent eligibility could not be verified, so it will not appear in this Channel.'
+  }
+  return 'Your reply was published to Steem, but your TagAgent credit does not meet the reply requirement, so it will not appear in this Channel.'
+}
+
+const sendReply = async (content: string, parentMessageId?: string) => {
   const account = accStore.getAccountInfo
   if (!account?.twitterId) {
     modalStore.setModalVisible(true, GlobalModalType.Login)
@@ -251,14 +272,22 @@ const sendReply = async (content: string) => {
   if (!replyIdempotencyKey.value) replyIdempotencyKey.value = newIdempotencyKey()
   sending.value = true
   try {
-    await createAiChannelReply(selectedChannelId.value, {
+    const result = await createAiChannelReply(selectedChannelId.value, {
       twitterId: account.twitterId,
       content,
       expectedLatestMessageId: latestMessageId,
+      parentMessageId,
       quotedTweetId: quoteDraft.value?.tweetId,
       idempotencyKey: replyIdempotencyKey.value,
       curate: true,
     })
+    if (!result.channelVisible) {
+      notify({
+        type: 'warning',
+        message: agentEligibilityWarning(result.agentEligibilityReason),
+        duration: 7000,
+      })
+    }
     replyIdempotencyKey.value = null
     detailRef.value?.clearComposer()
     clearQuote()
@@ -271,6 +300,51 @@ const sendReply = async (content: string) => {
     handleErrorTip(error)
   } finally {
     sending.value = false
+  }
+}
+
+const reactToMessage = async (
+  messageId: string,
+  reaction: AiChannelReactionType,
+  active: boolean,
+) => {
+  const account = accStore.getAccountInfo
+  if (!account?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return
+  }
+  if (!selectedChannelId.value) return
+
+  const pendingKey = `${messageId}:${reaction}`
+  if (pendingReactions.has(pendingKey)) return
+  pendingReactions.add(pendingKey)
+  const message = detail.value?.messages.find((item) => item.id === messageId)
+  const reactions = message
+    ? (message.reactions ||= [])
+    : []
+  const previous = reactions.map((item) => ({ ...item }))
+  if (message) {
+    const current = reactions.find((item) => item.type === reaction)
+    if (current) {
+      current.reactedByMe = active
+      current.count = Math.max(0, current.count + (active ? 1 : -1))
+    } else if (active) {
+      reactions.push({ type: reaction, count: 1, reactedByMe: true })
+    }
+  }
+
+  try {
+    await setAiChannelReaction(selectedChannelId.value, {
+      twitterId: account.twitterId,
+      messageId,
+      reaction,
+      active,
+    })
+  } catch (error) {
+    if (message) message.reactions = previous
+    handleErrorTip(error)
+  } finally {
+    pendingReactions.delete(pendingKey)
   }
 }
 
@@ -372,6 +446,7 @@ onMounted(async () => {
         @back="backToChannels"
         @refresh="loadDetail"
         @send="sendReply"
+        @react="reactToMessage"
         @curate="curateRoot"
         @clear-quote="clearQuote"
       />

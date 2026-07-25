@@ -5,6 +5,7 @@ import type {
   AiChannelDetail,
   AiChannelMessage,
   AiChannelQuoteDraft,
+  AiChannelReactionType,
 } from '@/types/aiChannel'
 import { safeExternalUrl } from '@/utils/helper'
 import AiChannelMessageCard from './AiChannelMessage.vue'
@@ -21,14 +22,17 @@ const props = defineProps<{
 const emit = defineEmits<{
   back: []
   refresh: []
-  send: [content: string]
+  send: [content: string, parentMessageId?: string]
+  react: [messageId: string, reaction: AiChannelReactionType, active: boolean]
   curate: [vp: number]
   clearQuote: []
 }>()
 
 const content = ref('')
+const replyTarget = ref<AiChannelMessage | null>(null)
 const curateVp = ref(5)
 const timelineRef = ref<HTMLElement | null>(null)
+const composerRef = ref<HTMLTextAreaElement | null>(null)
 const messages = computed(() => props.detail?.messages || [])
 const messageById = computed(() => new Map(messages.value.map((message) => [message.id, message])))
 const rootMessage = computed(() => messages.value.find((message) => message.type === 'root'))
@@ -46,14 +50,26 @@ const parentAuthor = (message: AiChannelMessage) => {
 
 const submit = () => {
   if (!canSend.value) return
-  emit('send', content.value.trim())
+  emit('send', content.value.trim(), replyTarget.value?.id)
 }
 
 const clearComposer = () => {
   content.value = ''
+  replyTarget.value = null
+}
+
+const selectReplyTarget = async (message: AiChannelMessage) => {
+  replyTarget.value = message
+  await nextTick()
+  composerRef.value?.focus()
 }
 
 defineExpose({ clearComposer })
+
+watch(
+  () => props.channel.id,
+  () => clearComposer(),
+)
 
 watch(
   () => messages.value.length,
@@ -134,11 +150,34 @@ watch(
           :message="message"
           :is-root="message.type === 'root'"
           :parent-author="parentAuthor(message)"
+          @reply="selectReplyTarget"
+          @react="(reaction, active) => emit('react', message.id, reaction, active)"
         />
       </div>
     </div>
 
     <footer class="border-t border-grey-light-hover p-3 web:p-4 bg-surface">
+      <div
+        v-if="replyTarget"
+        class="mb-2 rounded-xl border border-grey-light-hover bg-grey-f0 p-3 flex items-start gap-3"
+      >
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-semibold text-grey-8d">
+            {{ $t('aiChannelView.replyingTo', { user: replyTarget.author.username || 'unknown' }) }}
+          </div>
+          <p class="mt-1 text-sm line-clamp-2 whitespace-pre-wrap break-words">
+            {{ replyTarget.content }}
+          </p>
+        </div>
+        <button
+          class="w-7 h-7 shrink-0 rounded-full hover:bg-white flex items-center justify-center"
+          :aria-label="$t('aiChannelView.cancelReply')"
+          @click="replyTarget = null"
+        >
+          <i-ep-close class="w-4 h-4" />
+        </button>
+      </div>
+
       <div
         v-if="quoteDraft"
         class="mb-2 rounded-xl border border-orange-normal/30 bg-orange-light p-3 flex items-start gap-3"
@@ -161,6 +200,7 @@ watch(
 
       <div class="rounded-2xl border border-grey-light-hover focus-within:border-orange-normal bg-white px-3 py-2">
         <textarea
+          ref="composerRef"
           v-model="content"
           rows="2"
           maxlength="2000"

@@ -6,7 +6,9 @@ import type { PoolTvlResponse, ClPositionsIndexResponse } from '@/types/liquidit
 import type {
   AiChannelDetail,
   AiChannelPage,
+  AiChannelReactionInput,
   AiChannelReplyInput,
+  AiChannelReplyResult,
 } from '@/types/aiChannel'
 
 /************************************ common **********************************/
@@ -134,14 +136,33 @@ export const getAiChannels = async (
 ) =>
   get(BACKEND_API_URL + '/ai/channels', { tick, cursor, limit }) as Promise<AiChannelPage>
 
-export const getAiChannelMessages = async (channelId: number, tick?: string) =>
-  get(BACKEND_API_URL + `/ai/channels/${channelId}/messages`, { tick }) as Promise<AiChannelDetail>
+export const getAiChannelMessages = async (
+  channelId: number,
+  tick?: string,
+  twitterId?: string,
+) =>
+  get(
+    BACKEND_API_URL + `/ai/channels/${channelId}/messages`,
+    { tick, twitterId },
+  ) as Promise<AiChannelDetail>
 
 export const createAiChannelReply = async (
   channelId: number,
   input: AiChannelReplyInput,
 ) =>
-  post(BACKEND_API_URL + `/ai/channels/${channelId}/replies`, input)
+  post(
+    BACKEND_API_URL + `/ai/channels/${channelId}/replies`,
+    input,
+  ) as Promise<AiChannelReplyResult>
+
+export const setAiChannelReaction = async (
+  channelId: number,
+  input: AiChannelReactionInput,
+) =>
+  post(
+    BACKEND_API_URL + `/ai/channels/${channelId}/reactions`,
+    input,
+  ) as Promise<AiChannelReactionInput & { channelId: number }>
 
 export const getUserTweets = async (twitterId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/userTweets', {twitterId, pages})

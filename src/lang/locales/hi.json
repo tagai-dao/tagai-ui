@@ -469,6 +469,8 @@
     "refreshMessages": "संदेश रीफ्रेश करें",
     "removeQuoted": "उद्धृत पोस्ट हटाएं",
     "sendReply": "जवाब भेजें",
+    "reply": "जवाब दें",
+    "cancelReply": "जवाब रद्द करें",
     "replyAndCurate": "जवाब और क्यूरेट · 3 VP",
     "curate": "क्यूरेट",
     "curateVp": "क्यूरेशन VP",
