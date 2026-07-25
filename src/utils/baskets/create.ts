@@ -1,6 +1,7 @@
 import { isAddress, keccak256, parseEventLogs, parseUnits, stringToHex, zeroAddress, type Address, type Hex } from 'viem'
 import {
   BASKET_CHAIN_ID,
+  BASKET_ASSET_PRESETS,
   BASKET_CONTRACTS,
   BASKET_HUB_POOL,
   BASKET_USDG_DECIMALS,
@@ -10,6 +11,7 @@ import {
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import { basketRegistryAbi, basketSwapRouterAbi, erc20Abi, v4QuoterAbi } from './abis'
 import { applySlippage, encodeBasketTradeData } from './hook-data'
+import { assertBasketRouteUsable } from './route-validation'
 import {
   approveBasketTrade,
   friendlyBasketError,
@@ -103,8 +105,13 @@ export const validateCustomBasketAsset = async ({
   ])
   if (!code || code === '0x') throw new Error('Token address is not a contract')
   if (isBasket) throw new Error('Basket tokens cannot be used as constituents')
-  const quote = await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n)
-  if (quote <= 0n) throw new Error('The selected route has no usable price or liquidity')
+  try {
+    await assertBasketRouteUsable(route, address)
+    const quote = await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n)
+    if (quote <= 0n) throw new Error('The selected route has no usable price or liquidity')
+  } catch (error) {
+    throw new Error(friendlyBasketError(error))
+  }
   return { address, symbol: symbol || `${address.slice(0, 6)}…${address.slice(-4)}` }
 }
 
@@ -138,6 +145,14 @@ export const createBasketAndBuy = async (
     throw new Error('Asset weights must add up to 100%')
   }
 
+  try {
+    const customLegs = input.legs.filter((leg) =>
+      !BASKET_ASSET_PRESETS.some((preset) => preset.address.toLowerCase() === leg.asset.address.toLowerCase()))
+    await Promise.all(customLegs.map((leg) => assertBasketRouteUsable(leg.route, leg.asset.address)))
+  } catch (error) {
+    throw new Error(friendlyBasketError(error))
+  }
+
   const allowance = await getTradeAllowance(BASKET_CONTRACTS.usdg, account)
   if (allowance < usdgIn) {
     onApproving?.()
@@ -162,18 +177,23 @@ export const createBasketAndBuy = async (
   const expectedBasketOut = netBootstrap - 1_000_000_000_000_000n
   if (expectedBasketOut <= 0n) throw new Error('Initial purchase is too small')
   const minBasketOut = applySlippage(expectedBasketOut, input.slippageBps)
-  const grossWeth = await quoteExactInput(BASKET_HUB_POOL, BASKET_CONTRACTS.usdg, usdgIn)
-  const feeWeth = (grossWeth * BigInt(input.basketFeeBps) + 9_999n) / 10_000n
-  const netWeth = grossWeth - feeWeth
-  let allocated = 0n
-  const quotedLegs: bigint[] = []
-  for (let index = 0; index < input.legs.length; index += 1) {
-    const leg = input.legs[index]
-    const legInput = index === input.legs.length - 1
-      ? netWeth - allocated
-      : netWeth * BigInt(leg.weightBps) / 10_000n
-    allocated += legInput
-    quotedLegs.push(await quoteWethToAssetForSwap(leg.route, leg.asset.address, legInput))
+  let quotedLegs: bigint[]
+  try {
+    const grossWeth = await quoteExactInput(BASKET_HUB_POOL, BASKET_CONTRACTS.usdg, usdgIn)
+    const feeWeth = (grossWeth * BigInt(input.basketFeeBps) + 9_999n) / 10_000n
+    const netWeth = grossWeth - feeWeth
+    let allocated = 0n
+    quotedLegs = []
+    for (let index = 0; index < input.legs.length; index += 1) {
+      const leg = input.legs[index]
+      const legInput = index === input.legs.length - 1
+        ? netWeth - allocated
+        : netWeth * BigInt(leg.weightBps) / 10_000n
+      allocated += legInput
+      quotedLegs.push(await quoteWethToAssetForSwap(leg.route, leg.asset.address, legInput))
+    }
+  } catch (error) {
+    throw new Error(friendlyBasketError(error))
   }
   const legMins = quotedLegs.map((amount, index) =>
     applySlippage(amount, input.legs[index]?.slippageBps ?? input.slippageBps))

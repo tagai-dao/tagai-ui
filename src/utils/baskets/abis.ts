@@ -10,6 +10,7 @@ export const basketRegistryAbi = parseAbi([
   'function basketCreatedAt(address basket) view returns (uint64)',
   'function basketVersion(address basket) view returns (uint32)',
   'function isBasket(address basket) view returns (bool)',
+  'function trustedConstituentHooks(address hook) view returns (bool)',
 ])
 
 export const basketTokenAbi = parseAbi([
@@ -116,6 +117,14 @@ export const v4QuoterAbi = [{
   outputs: [{ name: 'amountOut', type: 'uint256' }, { name: 'gasEstimate', type: 'uint256' }],
   stateMutability: 'nonpayable',
   type: 'function',
+}, {
+  inputs: [{ name: 'revertData', type: 'bytes' }],
+  name: 'UnexpectedRevertBytes',
+  type: 'error',
+}, {
+  inputs: [{ name: 'poolId', type: 'bytes32' }],
+  name: 'NotEnoughLiquidity',
+  type: 'error',
 }] as const
 
 export const v3QuoterAbi = [{

@@ -136,6 +136,14 @@ const toggleAsset = (address: Address) => {
   rebalanceEqual()
 }
 
+const removeAsset = (address: Address) => {
+  if (isBusy.value) return
+  const index = selected.value.findIndex((leg) => leg.asset.address.toLowerCase() === address.toLowerCase())
+  if (index < 0) return
+  selected.value.splice(index, 1)
+  rebalanceEqual()
+}
+
 const searchCustomPools = async () => {
   customAssetError.value = ''
   customPoolCandidates.value = []
@@ -515,6 +523,17 @@ watch([
                   <strong>{{ leg.asset.symbol }}</strong>
                   <input v-model.number="leg.weightBps" type="number" min="1" max="10000" :disabled="isBusy">
                   <span>bps</span>
+                  <button
+                    type="button"
+                    class="remove-asset-button"
+                    :aria-label="`${$t('baskets.removeAsset')} ${leg.asset.symbol}`"
+                    :title="`${$t('baskets.removeAsset')} ${leg.asset.symbol}`"
+                    :disabled="isBusy"
+                    @click="removeAsset(leg.asset.address)"
+                  >
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m6 6 8 8m0-8-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+                    <span>{{ $t('baskets.removeAsset') }}</span>
+                  </button>
                 </div>
                 <button type="button" class="equal-button" :disabled="isBusy" @click="rebalanceEqual">{{ $t('baskets.equalWeights') }}</button>
               </div>
@@ -626,8 +645,13 @@ watch([
 .weights-panel { margin-top: 10px; padding: 12px; border: 1px solid var(--border-base); border-radius: 14px; }
 .weights-head { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--text-muted); font-size: 9px; }
 .weights-head strong { color: #42ce85; }.weights-head strong.invalid { color: var(--color-down); }
-.weight-row { display: grid; grid-template-columns: minmax(90px, 1fr) 100px 28px; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--border-base) 70%, transparent); }
+.weight-row { display: grid; grid-template-columns: minmax(90px, 1fr) 100px 28px auto; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--border-base) 70%, transparent); }
 .weight-row strong { color: var(--text-base); font-size: 10px; }.weight-row input { width: 100%; border: 1px solid var(--border-base); border-radius: 8px; background: var(--surface-2); color: var(--text-base); padding: 6px 8px; text-align: right; }.weight-row span { color: var(--text-muted); font-size: 9px; }
+.remove-asset-button { display: inline-flex; height: 28px; align-items: center; justify-content: center; gap: 3px; padding: 0 7px; border: 1px solid color-mix(in srgb, var(--color-down) 30%, var(--border-base)); border-radius: 8px; color: var(--color-down); font-size: 8px; font-weight: 700; transition: border-color 150ms ease, background 150ms ease; }
+.remove-asset-button:hover { border-color: color-mix(in srgb, var(--color-down) 65%, var(--border-base)); background: color-mix(in srgb, var(--color-down) 8%, transparent); }
+.remove-asset-button:disabled { opacity: .45; }
+.remove-asset-button svg { width: 12px; height: 12px; flex-shrink: 0; }
+.remove-asset-button span { color: inherit; font-size: inherit; }
 .equal-button { margin-top: 7px; color: #8d67e8; font-size: 9px; font-weight: 700; }
 .atomic-note { display: flex; align-items: flex-start; gap: 7px; margin-top: 11px; color: var(--text-muted); font-size: 9px; line-height: 15px; }.atomic-note svg { width: 15px; height: 15px; flex-shrink: 0; }
 .advanced-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; margin-top: 11px; padding: 10px 12px; border: 1px solid var(--border-base); border-radius: 11px; background: var(--surface-2); color: var(--text-muted); font-size: 10px; font-weight: 650; }.advanced-toggle:disabled { opacity: .45; }.advanced-toggle svg { width: 16px; height: 16px; transition: transform 150ms ease; }.advanced-toggle.open svg { transform: rotate(180deg); }
@@ -664,5 +688,5 @@ watch([
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 700ms linear infinite; }
 .basket-modal-enter-active, .basket-modal-leave-active { transition: opacity 180ms ease; }.basket-modal-enter-active .create-modal, .basket-modal-leave-active .create-modal { transition: transform 180ms ease; }.basket-modal-enter-from, .basket-modal-leave-to { opacity: 0; }.basket-modal-enter-from .create-modal, .basket-modal-leave-to .create-modal { transform: translateY(12px) scale(.985); }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 650px) { .modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate__details { grid-template-columns: 1fr 1fr; }.pool-candidate__details > span:first-child { grid-column: 1 / -1; } }
+@media (max-width: 650px) { .modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate__details { grid-template-columns: 1fr 1fr; }.pool-candidate__details > span:first-child { grid-column: 1 / -1; }.weight-row { grid-template-columns: minmax(60px, 1fr) 82px 24px 28px; }.remove-asset-button { width: 28px; padding: 0; }.remove-asset-button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 </style>

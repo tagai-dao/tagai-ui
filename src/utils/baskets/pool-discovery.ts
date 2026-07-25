@@ -4,6 +4,7 @@ import { getTokenDexPools, type DexPoolInfo } from '@/utils/pump'
 import { getRhV4PoolKeyByPoolId } from '@/utils/rhV4Swap'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { buildCustomRoute } from './create'
+import { assertBasketRouteUsable } from './route-validation'
 import type { BasketLegRoute } from './types'
 
 const v3PoolAbi = parseAbi([
@@ -46,6 +47,14 @@ const resolveCandidate = async (
   if (pool.dexVersion === 4 && /^0x[\da-fA-F]{64}$/.test(pool.pairAddress)) {
     const key = await getRhV4PoolKeyByPoolId(pool.pairAddress as `0x${string}`)
     if (!sameAddress(key.currency0, zeroAddress) || !sameAddress(key.currency1, asset)) return null
+    const route = buildCustomRoute({
+      asset,
+      venue: 0,
+      fee: key.fee,
+      tickSpacing: key.tickSpacing,
+      hooks: key.hooks,
+    })
+    await assertBasketRouteUsable(route, asset)
     return {
       id: pool.pairAddress,
       venue: 0,
@@ -58,13 +67,7 @@ const resolveCandidate = async (
       volume24h: pool.volume24h,
       txCount24h: pool.txCount24h,
       createdAt: pool.createdAt,
-      route: buildCustomRoute({
-        asset,
-        venue: 0,
-        fee: key.fee,
-        tickSpacing: key.tickSpacing,
-        hooks: key.hooks,
-      }),
+      route,
     }
   }
   if (pool.dexVersion === 3 && isAddress(pool.pairAddress)) {
@@ -77,6 +80,8 @@ const resolveCandidate = async (
     ])
     const tokens = [token0.toLowerCase(), token1.toLowerCase()]
     if (!tokens.includes(asset.toLowerCase()) || !tokens.includes(BASKET_CONTRACTS.weth.toLowerCase())) return null
+    const route = buildCustomRoute({ asset, venue: 1, fee: Number(fee) })
+    await assertBasketRouteUsable(route, asset)
     return {
       id: poolAddress,
       venue: 1,
@@ -89,7 +94,7 @@ const resolveCandidate = async (
       volume24h: pool.volume24h,
       txCount24h: pool.txCount24h,
       createdAt: pool.createdAt,
-      route: buildCustomRoute({ asset, venue: 1, fee: Number(fee) }),
+      route,
     }
   }
   return null

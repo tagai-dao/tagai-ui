@@ -31,13 +31,42 @@ const normalizeBasketAmount = (value: string | number, decimals: number): string
   return normalizedFraction ? `${normalizedWhole}.${normalizedFraction}` : normalizedWhole
 }
 
+const basketErrorText = (error: unknown): string => {
+  const parts: string[] = []
+  const seen = new Set<object>()
+  const visit = (value: unknown) => {
+    if (typeof value === 'string') {
+      parts.push(value)
+      return
+    }
+    if (!value || typeof value !== 'object' || seen.has(value)) return
+    seen.add(value)
+    const record = value as Record<string, unknown>
+    for (const key of ['message', 'shortMessage', 'details', 'data', 'raw', 'errorName', 'args', 'cause']) {
+      visit(record[key])
+    }
+  }
+  visit(error)
+  return parts.join('\n') || String(error)
+}
+
 export const friendlyBasketError = (error: unknown): string => {
-  const text = error instanceof Error ? error.message : String(error)
+  const text = basketErrorText(error)
   if (/user rejected|denied transaction|4001/i.test(text)) return 'Transaction cancelled'
   if (/insufficient funds/i.test(text)) return 'Insufficient ETH for gas'
+  if (/NotEnoughLiquidity|0x7a5ed734|no active liquidity/i.test(text)) {
+    return 'The selected pool has no active liquidity. Choose a different pool.'
+  }
+  if (/\bOLD\b|required 5-minute price history/i.test(text)) {
+    return 'The selected V3 pool does not have the required 5-minute price history yet.'
+  }
+  if (/pool hook is not approved/i.test(text)) return 'The selected pool hook is not approved for Basket constituents.'
   if (/SlippageExceeded|MinOutputNotMet/i.test(text)) return 'Price moved beyond your slippage limit'
   if (/SellLegFailed/i.test(text)) return 'A constituent could not be sold'
   if (/FirstMintLegMinRequired/i.test(text)) return 'First purchase requires protected constituent quotes'
+  if (/UnexpectedRevertBytes|0x6190b2b0/i.test(text)) {
+    return 'The selected pool could not execute this quote. Choose a different pool.'
+  }
   if (/execution reverted/i.test(text)) return 'Transaction would revert. Check liquidity and try a smaller amount.'
   return text.split('\n')[0] || 'Transaction failed'
 }

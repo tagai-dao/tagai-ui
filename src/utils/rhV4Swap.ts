@@ -5,6 +5,7 @@ import {
   keccak256,
   maxUint256,
   parseAbiItem,
+  toHex,
   zeroAddress,
   type Hex,
 } from 'viem'
@@ -30,6 +31,7 @@ export type RhV4PoolKey = {
  * 用 extsload(keccak256(abi.encode(poolId, 6))) 读出 packed slot0。
  */
 const RH_V4_POOLS_SLOT = 6n
+const RH_V4_LIQUIDITY_OFFSET = 3n
 
 const extsloadAbi = [{
   inputs: [{ name: 'slot', type: 'bytes32' }],
@@ -85,6 +87,19 @@ export const getRhV4PoolState = async (poolId: `0x${string}`): Promise<RhV4Slot0
     args: [getRhV4PoolStateSlot(poolId)],
   })
   return decodeRhV4Slot0(word as `0x${string}`)
+}
+
+/** 读当前价格区间内的 active liquidity；第三方 API 的 reserve USD 不能替代该值。 */
+export const getRhV4PoolLiquidity = async (poolId: `0x${string}`): Promise<bigint> => {
+  const deployment = requireRhV4PoolManager()
+  const liquiditySlot = toHex(BigInt(getRhV4PoolStateSlot(poolId)) + RH_V4_LIQUIDITY_OFFSET, { size: 32 })
+  const word = await getReadOnlyClient().readContract({
+    address: deployment.dex.v4PoolManager,
+    abi: extsloadAbi,
+    functionName: 'extsload',
+    args: [liquiditySlot],
+  })
+  return BigInt(word) & ((1n << 128n) - 1n)
 }
 
 /** RH V4 现货价（原生币/Token），数学与 PCS 路径相同 */
