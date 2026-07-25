@@ -14,6 +14,7 @@ const props = defineProps<{
   detail?: AiChannelDetail | null
   loading?: boolean
   sending?: boolean
+  curating?: boolean
   quoteDraft?: AiChannelQuoteDraft | null
 }>()
 
@@ -21,10 +22,12 @@ const emit = defineEmits<{
   back: []
   refresh: []
   send: [content: string]
+  curate: [vp: number]
   clearQuote: []
 }>()
 
 const content = ref('')
+const curateVp = ref(5)
 const timelineRef = ref<HTMLElement | null>(null)
 const messages = computed(() => props.detail?.messages || [])
 const messageById = computed(() => new Map(messages.value.map((message) => [message.id, message])))
@@ -67,7 +70,7 @@ watch(
 
 <template>
   <section class="h-full min-h-0 flex flex-col bg-surface border border-grey-light-hover rounded-2xl overflow-hidden">
-    <header class="min-h-16 px-4 py-3 border-b border-grey-light-hover flex items-center gap-3">
+    <header class="min-h-16 px-4 py-3 border-b border-grey-light-hover flex flex-wrap items-center gap-3">
       <button
         class="web:hidden w-8 h-8 rounded-full hover:bg-grey-f0 flex items-center justify-center"
         :aria-label="$t('aiChannelView.backToChannels')"
@@ -81,7 +84,10 @@ watch(
           <h2 class="font-bold text-h2 truncate">{{ channel.summary }}</h2>
         </div>
         <p class="text-sm text-grey-8d truncate">
-          {{ $t('aiChannelView.messageCount', { count: channel.messageCount }) }} · @{{ channel.agent?.username || 'TagAgent' }}
+          {{ $t('aiChannelView.messageCount', { count: channel.messageCount }) }}
+          · {{ channel.agent?.name || 'TagAgent' }}
+          <span v-if="channel.agent?.username">~{{ channel.agent.username }}</span>
+          <span v-if="channel.agent?.xUsername">· @{{ channel.agent.xUsername }}</span>
         </p>
       </div>
       <a
@@ -94,6 +100,20 @@ watch(
         <img src="~@/assets/icons/icon-x.svg" class="w-3.5 h-3.5" alt="">
         {{ $t('aiChannelView.openInX') }}
       </a>
+      <select
+        v-model.number="curateVp"
+        class="h-9 rounded-full border border-grey-light-hover bg-white px-2 text-sm"
+        :aria-label="$t('aiChannelView.curateVp')"
+      >
+        <option v-for="vp in [1, 3, 5, 10]" :key="vp" :value="vp">{{ vp }} VP</option>
+      </select>
+      <button
+        class="h-9 px-3 rounded-full bg-orange-normal text-white text-sm font-semibold disabled:opacity-30"
+        :disabled="curating"
+        @click="emit('curate', curateVp)"
+      >
+        {{ $t('aiChannelView.curate') }}
+      </button>
       <button
         class="w-9 h-9 rounded-full hover:bg-grey-f0 flex items-center justify-center"
         :aria-label="$t('aiChannelView.refreshMessages')"
@@ -151,7 +171,7 @@ watch(
         />
         <div class="flex items-center justify-between gap-3">
           <div class="text-xs text-grey-8d flex items-center gap-2">
-            <span>{{ $t('aiChannelView.publishingToSteem') }}</span>
+            <span>{{ $t('aiChannelView.replyAndCurate') }}</span>
             <span>·</span>
             <span>{{ content.length }}/2000</span>
           </div>

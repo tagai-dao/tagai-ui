@@ -6,6 +6,8 @@ export type AiChannelAuthor = {
   username: string
   profile: string
   accountType?: number | null
+  xUsername?: string
+  tagAiUsername?: string
 }
 
 export type AiChannel = {
@@ -55,7 +57,7 @@ export type AiChannelMessage = {
 }
 
 export type AiChannelDetail = {
-  channel: Omit<AiChannel, 'rootAuthor' | 'agent' | 'summaryStatus'>
+  channel: Omit<AiChannel, 'rootAuthor' | 'summaryStatus'>
   messages: AiChannelMessage[]
 }
 
@@ -65,6 +67,7 @@ export type AiChannelReplyInput = {
   expectedLatestMessageId: string
   quotedTweetId?: string
   idempotencyKey: string
+  curate?: boolean
 }
 
 export type AiChannelQuoteDraft = Pick<

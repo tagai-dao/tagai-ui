@@ -451,6 +451,9 @@
     "refreshMessages": "メッセージを更新",
     "removeQuoted": "引用ポストを削除",
     "sendReply": "返信を送信",
+    "replyAndCurate": "返信＆キュレーション · 3 VP",
+    "curate": "キュレーション",
+    "curateVp": "キュレーション VP",
     "moreActions": "その他の操作"
   },
   "ipshare": {

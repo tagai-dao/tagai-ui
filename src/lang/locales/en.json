@@ -452,6 +452,9 @@
     "refreshMessages": "Refresh messages",
     "removeQuoted": "Remove quoted post",
     "sendReply": "Send reply",
+    "replyAndCurate": "Reply & Curate · 3 VP",
+    "curate": "Curate",
+    "curateVp": "Curation VP",
     "moreActions": "More post actions"
   },
   "ipshare": {
