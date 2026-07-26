@@ -406,7 +406,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full min-h-[420px] web:min-h-0 flex flex-col">
+  <div class="h-full min-h-[420px] web:min-h-0 flex flex-col web:overflow-hidden">
     <div
       v-if="loadError !== null"
       class="mb-2 px-4 py-3 rounded-xl border border-red/20 bg-red/5 text-red text-sm flex items-center justify-between gap-3"
@@ -416,7 +416,7 @@ onMounted(async () => {
     </div>
 
     <div
-      class="flex-1 min-h-0"
+      class="flex-1 min-h-0 overflow-hidden"
       :class="props.compact
         ? ''
         : 'web:grid web:grid-cols-[minmax(260px,300px)_minmax(0,1fr)] web:gap-2'"

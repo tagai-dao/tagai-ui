@@ -86,7 +86,7 @@ watch(
 
 <template>
   <section class="h-full min-h-0 flex flex-col bg-surface border border-grey-light-hover rounded-2xl overflow-hidden">
-    <header class="min-h-16 px-4 py-3 border-b border-grey-light-hover flex flex-wrap items-center gap-3">
+    <header class="shrink-0 min-h-16 px-4 py-3 border-b border-grey-light-hover flex flex-wrap items-center gap-3">
       <button
         class="web:hidden w-8 h-8 rounded-full hover:bg-grey-f0 flex items-center justify-center"
         :aria-label="$t('aiChannelView.backToChannels')"
@@ -139,7 +139,10 @@ watch(
       </button>
     </header>
 
-    <div ref="timelineRef" class="flex-1 min-h-0 overflow-y-auto no-scroll-bar px-3 web:px-4 py-4">
+    <div
+      ref="timelineRef"
+      class="ai-channel-timeline flex-1 min-h-0 overflow-y-auto px-3 web:px-4 py-4"
+    >
       <div v-if="loading && messages.length === 0" class="h-full flex items-center justify-center">
         <i-ep-loading class="w-7 h-7 animate-spin text-orange-normal" />
       </div>
@@ -156,7 +159,7 @@ watch(
       </div>
     </div>
 
-    <footer class="border-t border-grey-light-hover p-3 web:p-4 bg-surface">
+    <footer class="shrink-0 border-t border-grey-light-hover p-3 web:p-4 bg-surface">
       <div
         v-if="replyTarget"
         class="mb-2 rounded-xl border border-grey-light-hover bg-grey-f0 p-3 flex items-start gap-3"
@@ -229,3 +232,33 @@ watch(
     </footer>
   </section>
 </template>
+
+<style scoped>
+.ai-channel-timeline {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(194 194 194 / 70%) transparent;
+  overscroll-behavior: contain;
+}
+
+.ai-channel-timeline::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ai-channel-timeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ai-channel-timeline::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background: rgb(194 194 194 / 70%);
+  background-clip: padding-box;
+}
+
+.ai-channel-timeline::-webkit-scrollbar-thumb:hover {
+  background: rgb(254 145 63 / 80%);
+  background-clip: padding-box;
+}
+</style>
