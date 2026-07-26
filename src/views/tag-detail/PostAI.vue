@@ -406,7 +406,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full min-h-[420px] web:min-h-0 flex flex-col web:overflow-hidden">
+  <div
+    class="h-full flex flex-col overflow-hidden"
+    :class="props.compact ? 'min-h-[420px]' : 'min-h-0'"
+  >
     <div
       v-if="loadError !== null"
       class="mb-2 px-4 py-3 rounded-xl border border-red/20 bg-red/5 text-red text-sm flex items-center justify-between gap-3"
