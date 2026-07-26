@@ -111,27 +111,14 @@ watch(
         :href="rootUrl"
         target="_blank"
         rel="noopener noreferrer"
-        class="h-9 px-3 rounded-full border border-grey-light-hover flex items-center gap-2 text-sm font-semibold"
+        class="w-9 h-9 shrink-0 rounded-full border border-grey-light-hover flex items-center justify-center hover:bg-grey-f0"
+        :aria-label="$t('aiChannelView.openInX')"
+        :title="$t('aiChannelView.openInX')"
       >
-        <img src="~@/assets/icons/icon-x.svg" class="w-3.5 h-3.5" alt="">
-        {{ $t('aiChannelView.openInX') }}
+        <img src="~@/assets/icons/icon-x.svg" class="w-4 h-4" alt="X">
       </a>
-      <select
-        v-model.number="curateVp"
-        class="h-9 rounded-full border border-grey-light-hover bg-white px-2 text-sm"
-        :aria-label="$t('aiChannelView.curateVp')"
-      >
-        <option v-for="vp in [1, 3, 5, 10]" :key="vp" :value="vp">{{ vp }} VP</option>
-      </select>
       <button
-        class="h-9 px-3 rounded-full bg-orange-normal text-white text-sm font-semibold disabled:opacity-30"
-        :disabled="curating"
-        @click="emit('curate', curateVp)"
-      >
-        {{ $t('aiChannelView.curate') }}
-      </button>
-      <button
-        class="w-9 h-9 rounded-full hover:bg-grey-f0 flex items-center justify-center"
+        class="w-9 h-9 shrink-0 rounded-full hover:bg-grey-f0 flex items-center justify-center"
         :aria-label="$t('aiChannelView.refreshMessages')"
         @click="emit('refresh')"
       >
@@ -155,7 +142,26 @@ watch(
           :parent-author="parentAuthor(message)"
           @reply="selectReplyTarget"
           @react="(reaction, active) => emit('react', message.id, reaction, active)"
-        />
+        >
+          <template v-if="message.type === 'root'" #root-actions>
+            <div class="mt-3 flex items-center justify-end gap-2">
+              <select
+                v-model.number="curateVp"
+                class="h-9 rounded-full border border-grey-light-hover bg-white px-2 text-sm"
+                :aria-label="$t('aiChannelView.curateVp')"
+              >
+                <option v-for="vp in [1, 3, 5, 10]" :key="vp" :value="vp">{{ vp }} VP</option>
+              </select>
+              <button
+                class="h-9 px-3 rounded-full bg-orange-normal text-white text-sm font-semibold disabled:opacity-30"
+                :disabled="curating"
+                @click="emit('curate', curateVp)"
+              >
+                {{ $t('aiChannelView.curate') }}
+              </button>
+            </div>
+          </template>
+        </AiChannelMessageCard>
       </div>
     </div>
 

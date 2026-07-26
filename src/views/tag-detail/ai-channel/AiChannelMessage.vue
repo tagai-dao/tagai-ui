@@ -184,5 +184,7 @@ const toggleReaction = (reaction: AiChannelReactionType) => {
         </div>
       </div>
     </div>
+
+    <slot v-if="isRoot" name="root-actions" />
   </article>
 </template>
