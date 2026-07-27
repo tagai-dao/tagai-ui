@@ -257,6 +257,14 @@ function getTodayElapsedRatio() {
   return Math.min(1, Math.max(0, elapsedMs / (24 * 3600 * 1000)))
 }
 
+/** 纵轴刻度使用紧凑精度，避免 ApexCharts 浮点步长产生长小数 */
+function formatChartAxisAmount(value: number) {
+  if (!Number.isFinite(value) || value === 0) return '0'
+  const abs = Math.abs(value)
+  const maximumFractionDigits = abs >= 1000 ? 0 : abs >= 1 ? 2 : 4
+  return value.toLocaleString(undefined, { maximumFractionDigits })
+}
+
 const hourlyBarOptions = computed<ApexOptions>(() => ({
   chart: {
     type: 'bar',
@@ -287,8 +295,9 @@ const hourlyBarOptions = computed<ApexOptions>(() => ({
     },
   },
   yaxis: {
+    decimalsInFloat: 0,
     labels: {
-      formatter: (val: number) => formatAmountTrunc(val),
+      formatter: (val: number) => formatChartAxisAmount(val),
       style: { colors: isDark.value ? '#B6BCC7' : '#3F3F3F' },
     },
   },
