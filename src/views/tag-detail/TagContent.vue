@@ -6,7 +6,7 @@ import { useTweetsStore } from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets } from "@/apis/api";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { useCommunityStore } from "@/stores/community";
 import { sleep } from "@/utils/helper";
 import type { Tweet } from "@/types";
@@ -21,6 +21,7 @@ enum ListType {
   Space = 'space',
   Tipped = 'tipped'
 }
+const PAGE_SIZE = 30
 const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
 const refreshing = ref(false);
@@ -34,6 +35,14 @@ const finished = ref({
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
 const listType = ref<ListType>(ListType.New)
+const nextPage = ref<Record<ListType, number>>({
+  [ListType.New]: 0,
+  [ListType.Space]: 0,
+  [ListType.Trending]: 0,
+  [ListType.Tipped]: 0,
+})
+const loadMoreSentinel = ref<HTMLElement | null>(null)
+let loadMoreObserver: IntersectionObserver | null = null
 
 const showingTweets = computed(() => {
   if (comStore.currentSelectedCommunity?.tick &&
@@ -56,14 +65,16 @@ const showingTweets = computed(() => {
 });
 
 async function onRefresh() {
+  const activeListType = listType.value
   try {
     refreshing.value = true;
-    finished.value[listType.value as ListType] = false;
+    finished.value[activeListType] = false;
+    nextPage.value[activeListType] = 0
     let list: any;
     const tick = comStore.currentSelectedCommunity!.tick;
     const twitterId = accStore.getAccountInfo?.twitterId;
-    if (listType.value === ListType.New) {
-      list = await getCommunityNewTweets(tick, twitterId);
+    if (activeListType === ListType.New) {
+      list = await getCommunityNewTweets(tick, twitterId, 0);
 
       if (!tweetsStore.communityTweets) {
         tweetsStore.communityTweets = {};
@@ -72,23 +83,23 @@ async function onRefresh() {
         tick
       ] = list as Tweet[];
       tweetsStore.communityTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communityTweets[tick])
-    } else if (listType.value === ListType.Trending) {
-      list = await getCommunityTrendingTweets(tick, twitterId)
+    } else if (activeListType === ListType.Trending) {
+      list = await getCommunityTrendingTweets(tick, twitterId, 0)
       if (!tweetsStore.communityTrendingTweets) {
         tweetsStore.communityTrendingTweets = {};
       }
       tweetsStore.communityTrendingTweets[tick] = list as Tweet[];
       tweetsStore.communityTrendingTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communityTrendingTweets[tick])
-    } else if (listType.value === ListType.Space) {
-      list = await getCommunitySpaceTweets(tick, twitterId)
+    } else if (activeListType === ListType.Space) {
+      list = await getCommunitySpaceTweets(tick, twitterId, 0)
 
       if (!tweetsStore.communitySpaceTweets) {
         tweetsStore.communitySpaceTweets = {};
       }
       tweetsStore.communitySpaceTweets[tick] = list as Tweet[];
       tweetsStore.communitySpaceTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communitySpaceTweets[tick])
-    } else if (listType.value === ListType.Tipped) {
-      list = await getCommunityTippedTweets(tick, twitterId)
+    } else if (activeListType === ListType.Tipped) {
+      list = await getCommunityTippedTweets(tick, twitterId, 0)
 
       if (!tweetsStore.communityTippedTweets) {
         tweetsStore.communityTippedTweets = {};
@@ -97,9 +108,9 @@ async function onRefresh() {
       tweetsStore.communityTippedTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communityTippedTweets[tick])
     }
 
-    if (list.length < 30) {
-      finished.value[listType.value as ListType] = true
-    }
+    const receivedCount = Array.isArray(list) ? list.length : 0
+    nextPage.value[activeListType] = receivedCount > 0 ? 1 : 0
+    finished.value[activeListType] = receivedCount < PAGE_SIZE
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -108,16 +119,17 @@ async function onRefresh() {
 }
 
 async function onLoad() {
+  const activeListType = listType.value
   try{
-    if (refreshing.value || finished.value[listType.value as ListType] || showingTweets.value.length === 0) {
+    if (loading.value || refreshing.value || finished.value[activeListType] || showingTweets.value.length === 0) {
       return;
     }
     loading.value = true
     let list: any;
     const tick = comStore.currentSelectedCommunity!.tick;
     const twitterId = accStore.getAccountInfo?.twitterId;
-    const page = Math.floor((showingTweets.value.length - 1) / 30) + 1;
-    if (listType.value === ListType.New) {
+    const page = nextPage.value[activeListType]
+    if (activeListType === ListType.New) {
       list = await getCommunityNewTweets(tick, twitterId, page)
       tweetsStore.communityTweets![
         tick
@@ -127,7 +139,7 @@ async function onLoad() {
       ] = await getTokenInfoOfTweets(tweetsStore.communityTweets![
         tick
       ])
-    } else if (listType.value === ListType.Trending) {
+    } else if (activeListType === ListType.Trending) {
       list = await getCommunityTrendingTweets(tick, twitterId, page)
       tweetsStore.communityTrendingTweets![
         tick
@@ -137,7 +149,7 @@ async function onLoad() {
       ] = await getTokenInfoOfTweets(tweetsStore.communityTrendingTweets![
         tick
       ])
-    } else if (listType.value === ListType.Space) {
+    } else if (activeListType === ListType.Space) {
       list = await getCommunitySpaceTweets(tick, twitterId, page)
       tweetsStore.communitySpaceTweets![
         tick
@@ -147,20 +159,20 @@ async function onLoad() {
       ] = await getTokenInfoOfTweets(tweetsStore.communitySpaceTweets![
         tick
       ])
-    } else if (listType.value === ListType.Tipped) {
+    } else if (activeListType === ListType.Tipped) {
       list = await getCommunityTippedTweets(tick, twitterId, page)
       tweetsStore.communityTippedTweets![
         tick
       ] = showingTweets.value.concat(list as Tweet[])
-      tweetsStore.communityTrendingTweets![
+      tweetsStore.communityTippedTweets![
         tick
-      ] = await getTokenInfoOfTweets(tweetsStore.communityTrendingTweets![
+      ] = await getTokenInfoOfTweets(tweetsStore.communityTippedTweets![
         tick
       ])
     }
-    if (list && list.length < 30) {
-      finished.value[listType.value as ListType] = true
-    }
+    const receivedCount = Array.isArray(list) ? list.length : 0
+    nextPage.value[activeListType] = page + 1
+    finished.value[activeListType] = receivedCount < PAGE_SIZE
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -168,14 +180,41 @@ async function onLoad() {
   }
 }
 
+async function observeLoadMoreSentinel() {
+  await nextTick()
+  loadMoreObserver?.disconnect()
+  if (!loadMoreSentinel.value || typeof IntersectionObserver === 'undefined') return
+
+  const scrollRoot = loadMoreSentinel.value.closest<HTMLElement>('.mobile-scroll-container')
+  loadMoreObserver = new IntersectionObserver(
+    entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        void onLoad()
+      }
+    },
+    {
+      root: scrollRoot,
+      rootMargin: '0px 0px 100px 0px',
+    },
+  )
+  loadMoreObserver.observe(loadMoreSentinel.value)
+}
+
 onMounted(async () => {
   while (!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.5);
   }
-  onRefresh();
+  await onRefresh();
+  await observeLoadMoreSentinel()
   emitter.on('tweeted', onRefresh);
   emitter.on('login', onRefresh);
 });
+
+onBeforeUnmount(() => {
+  loadMoreObserver?.disconnect()
+  emitter.off('tweeted', onRefresh)
+  emitter.off('login', onRefresh)
+})
 </script>
 
 <template>
@@ -222,9 +261,8 @@ onMounted(async () => {
         :immediate-check="false"
         :finished-text="$t('noMore')"
         :offset="50"
-        @load="onLoad"
       >
-        <div v-for="(tweet, index) of showingTweets" :key="tweet.tweetId" class="mb-2">
+        <div v-for="tweet of showingTweets" :key="tweet.tweetId" class="mb-2">
           <SpaceItem
             v-if="tweet.spaceId"
             class="bg-white rounded-2xl"
@@ -255,6 +293,7 @@ onMounted(async () => {
             </template>
           </TweetItem>
         </div>
+        <div ref="loadMoreSentinel" class="h-px" aria-hidden="true"></div>
       </van-list>
     </van-pull-refresh>
   </div>
