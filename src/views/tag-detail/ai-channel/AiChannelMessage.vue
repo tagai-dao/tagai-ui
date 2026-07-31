@@ -47,9 +47,9 @@ const toggleReaction = (reaction: AiChannelReactionType) => {
 
 <template>
   <article
-    class="group relative rounded-2xl border px-4 py-3"
+    class="group relative rounded-2xl border px-4 py-3 text-content"
     :class="isRoot
-      ? 'bg-orange-light border-orange-normal/20'
+      ? 'ai-channel-message--root border-orange-normal/20'
       : 'bg-surface border-grey-light-hover'"
   >
     <div
@@ -125,7 +125,7 @@ const toggleReaction = (reaction: AiChannelReactionType) => {
             class="ml-auto"
             :title="$t('aiChannelView.openInX')"
           >
-            <img src="~@/assets/icons/icon-x.svg" class="w-3.5 h-3.5" alt="X">
+            <img src="~@/assets/icons/icon-x.svg" class="w-3.5 h-3.5 dark:invert" alt="X">
           </a>
         </div>
 
@@ -188,3 +188,13 @@ const toggleReaction = (reaction: AiChannelReactionType) => {
     <slot v-if="isRoot" name="root-actions" />
   </article>
 </template>
+
+<style scoped>
+.ai-channel-message--root {
+  background-color: #fff4ec;
+}
+
+:global(html.dark) .ai-channel-message--root {
+  background-color: color-mix(in srgb, var(--surface) 88%, #fe913f 12%);
+}
+</style>
