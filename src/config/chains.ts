@@ -29,6 +29,8 @@ export type ChainDeployment = {
   features: {
     prediction: boolean
     auPay: boolean
+    /** 新版 ImportHelper：导入时创建 IPShare，并记录 importerOf(token) */
+    enhancedImportHelper: boolean
   }
   /** 包装原生币（BSC=WBNB，RH=WETH） */
   wrappedNative: `0x${string}`
@@ -99,7 +101,8 @@ export const BSC_CHAIN: ChainDeployment = {
     multicallAddress: MULTICALL3,
     interval: 3000,
   },
-  features: { prediction: true, auPay: true },
+  // BSC 现网仍使用旧版 ImportHelper，不支持 IPShare 创建或 importerOf。
+  features: { prediction: true, auPay: true, enhancedImportHelper: false },
   wrappedNative: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
   dex: {
     kind: 'pancake',
@@ -153,7 +156,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     multicallAddress: MULTICALL3,
     interval: 3000,
   },
-  features: { prediction: false, auPay: false },
+  features: { prediction: false, auPay: false, enhancedImportHelper: true },
   // Uniswap UR constructor 确认的 WETH9
   wrappedNative: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
   dex: {
