@@ -59,7 +59,7 @@ const bStocksLoading = ref(false)
 const bStocksLoaded = ref(false)
 
 const isBStockCommunity = (community: Community) =>
-  !!community.isImport || usesThirdPartyMarketCap(community.tick)
+  usesThirdPartyMarketCap(community.tick)
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -195,18 +195,19 @@ async function getNewCommunities() {
   }
 }
 
-/** 读取当前链全部外部导入社区；SPCXB 与后续导入的 bStocks 自动进入此列表。 */
+/** bStocks 当前只展示 SPCXB；其他外部导入社区仍属于 TagCoin。 */
 async function loadBStocks(force = false) {
   if (bStocksLoading.value || (bStocksLoaded.value && !force)) return
   try {
     bStocksLoading.value = true
-    const imported = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
-    // 先展示 API 数据；链上补价失败时也不隐藏已导入的 bStocks。
-    bStockCommunities.value = imported
+    const bStocks = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
+      .filter(isBStockCommunity)
+    // 先展示 API 数据；链上补价失败时也不隐藏 SPCXB。
+    bStockCommunities.value = bStocks
     bStocksLoaded.value = true
-    if (imported.length) {
+    if (bStocks.length) {
       try {
-        bStockCommunities.value = await getTokenInfo(imported)
+        bStockCommunities.value = await getTokenInfo(bStocks)
       } catch (e) {
         console.error('Hydrate bStocks on-chain data failed:', e)
       }
@@ -262,7 +263,7 @@ function filterDust(list: Community[]) {
   )
 }
 
-/** TagCoin 只展示平台原生社区；外部导入资产统一归入 bStocks。 */
+/** TagCoin 排除 SPCXB；其他外部导入社区仍在此展示。 */
 function filterTagCoins(list: Community[]) {
   return filterDust(list).filter((community) => !isBStockCommunity(community))
 }
