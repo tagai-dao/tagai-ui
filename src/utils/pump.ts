@@ -92,11 +92,19 @@ export type ImportCommunityFee = { createFee: bigint; settingsFee: bigint; ipsha
 
 /** 与 ImportHelper 的链上费用算法保持一致；tick 仍由 API/DB 保证全局唯一。 */
 export const getImportCommunityFee = async (importer: `0x${string}`): Promise<ImportCommunityFee> => {
-    const [createFee, settingsFee, hasIPShare] = await Promise.all([
+    const { features } = useChainStore().deployment;
+    const [createFee, settingsFee] = await Promise.all([
         readContract('NutboxCommittee', 'getCreateCommunityFee', []) as Promise<bigint>,
         readContract('NutboxCommittee', 'getCommunitySettingsFee', []) as Promise<bigint>,
-        readContract('IPShare3', 'ipshareCreated', [importer]) as Promise<boolean>,
     ]);
+
+    // BSC 现网的旧版 ImportHelper 只收取 Nutbox 社区费用；它没有
+    // importerOf，也不会在导入过程中创建 IPShare。
+    if (!features.enhancedImportHelper) {
+        return { createFee, settingsFee, ipshareCreateFee: 0n, total: createFee + settingsFee, createsIPShare: false };
+    }
+
+    const hasIPShare = await readContract('IPShare3', 'ipshareCreated', [importer]) as boolean;
     const ipshareCreateFee = hasIPShare ? 0n : await readContract('IPShare3', 'createFee', []) as bigint;
     return { createFee, settingsFee, ipshareCreateFee, total: createFee + settingsFee + ipshareCreateFee, createsIPShare: !hasIPShare };
 }
@@ -125,12 +133,17 @@ export const deployNutboxCommunity = async (
     if (!event || (event as any).creator?.toLowerCase() !== importer.toLowerCase()) {
         throw new Error('ImportHelper receipt did not contain the expected CommunityCreated event');
     }
-    const [recordedImporter, hasIPShare] = await Promise.all([
-        readContract('ImportHelper', 'importerOf', [token]) as Promise<string>,
-        readContract('IPShare3', 'ipshareCreated', [importer]) as Promise<boolean>,
-    ]);
-    if (recordedImporter.toLowerCase() !== importer.toLowerCase() || !hasIPShare) {
-        throw new Error('Imported community ownership or IPShare creation verification failed');
+
+    // 只有新版 ImportHelper 才能执行 importerOf / IPShare 的增强校验。
+    // BSC 的旧部署以交易回执中的 CommunityCreated.creator 作为成功依据。
+    if (useChainStore().deployment.features.enhancedImportHelper) {
+        const [recordedImporter, hasIPShare] = await Promise.all([
+            readContract('ImportHelper', 'importerOf', [token]) as Promise<string>,
+            readContract('IPShare3', 'ipshareCreated', [importer]) as Promise<boolean>,
+        ]);
+        if (recordedImporter.toLowerCase() !== importer.toLowerCase() || !hasIPShare) {
+            throw new Error('Imported community ownership or IPShare creation verification failed');
+        }
     }
     return {
         community: (event as any)?.community ?? zeroAddress,
