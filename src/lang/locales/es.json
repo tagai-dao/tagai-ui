@@ -23,6 +23,7 @@
   "coin": "Moneda",
   "tag": "Etiqueta",
   "tagCoin": "Tag Coin",
+  "bStocks": "bStocks",
   "ip": "IPShare",
   "ip.priceSupply": "Precio / Suministro",
   "profile": "Perfil",
