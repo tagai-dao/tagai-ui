@@ -189,7 +189,8 @@ router.beforeEach(async (to, from, next) => {
     const stateStore = useStateStore()
     stateStore.setActiveMainMenu(to.meta.mainMenu as 'tag' | 'coin' | 'prediction')
     if (to.meta.mainMenu === 'coin') {
-      stateStore.setCoinSubMenu(to.query.tab === 'ip' ? 'ip' : 'tagCoin')
+      const coinTab = to.query.tab
+      stateStore.setCoinSubMenu(coinTab === 'ip' ? 'ip' : coinTab === 'bstocks' ? 'bStocks' : 'tagCoin')
     }
   }
   next();

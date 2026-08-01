@@ -4,7 +4,7 @@ import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
-import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getOnlineSpaces} from "@/apis/api";
+import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getImportedCommunityInfo, getOnlineSpaces} from "@/apis/api";
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
 import {handleErrorTip} from '@/utils/notify'
@@ -24,6 +24,8 @@ import {useAccountStore} from "@/stores/web3";
 import Predict from "@/views/predict/Index.vue";
 import IPList from "@/views/ip/IPList.vue";
 import {TweetListType, useTweetsStore} from "@/stores/tweets";
+import {filterByActiveChain} from "@/utils/chainFilter";
+import {usesThirdPartyMarketCap} from "@/config";
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
@@ -52,6 +54,12 @@ const activeTab = computed({
 const activeMainMenu = computed(() => stateStore.activeMainMenu)
 const tagSubMenu = computed(() => stateStore.tagSubMenu)
 const coinSubMenu = computed(() => stateStore.coinSubMenu)
+const bStockCommunities = ref<Community[]>([])
+const bStocksLoading = ref(false)
+const bStocksLoaded = ref(false)
+
+const isBStockCommunity = (community: Community) =>
+  !!community.isImport || usesThirdPartyMarketCap(community.tick)
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -187,9 +195,43 @@ async function getNewCommunities() {
   }
 }
 
-/** 仅在 Coin/TagCoin 可见时拉重链上列表，避免 Tag 首页抢 RPC */
+/** 读取当前链全部外部导入社区；SPCXB 与后续导入的 bStocks 自动进入此列表。 */
+async function loadBStocks(force = false) {
+  if (bStocksLoading.value || (bStocksLoaded.value && !force)) return
+  try {
+    bStocksLoading.value = true
+    const imported = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
+    // 先展示 API 数据；链上补价失败时也不隐藏已导入的 bStocks。
+    bStockCommunities.value = imported
+    bStocksLoaded.value = true
+    if (imported.length) {
+      try {
+        bStockCommunities.value = await getTokenInfo(imported)
+      } catch (e) {
+        console.error('Hydrate bStocks on-chain data failed:', e)
+      }
+    }
+  } catch (e) {
+    handleErrorTip(e)
+  } finally {
+    bStocksLoading.value = false
+    refreshing.value = false
+  }
+}
+
+async function refreshBStocks() {
+  refreshing.value = true
+  await loadBStocks(true)
+}
+
+/** 仅在 Coin 列表可见时拉数据，避免 Tag 首页抢 RPC */
 function ensureCoinListLoaded() {
-  if (activeMainMenu.value !== 'coin' || coinSubMenu.value !== 'tagCoin') return
+  if (activeMainMenu.value !== 'coin') return
+  if (coinSubMenu.value === 'bStocks') {
+    void loadBStocks()
+    return
+  }
+  if (coinSubMenu.value !== 'tagCoin') return
   const list = currentCoinList.value
   if (!list || list.length === 0) {
     void refresh()
@@ -220,14 +262,19 @@ function filterDust(list: Community[]) {
   )
 }
 
-// Coin 子 Tab 切换：状态 + URL query 双向同步（深链 ?tab=ip 由路由守卫恢复）
+/** TagCoin 只展示平台原生社区；外部导入资产统一归入 bStocks。 */
+function filterTagCoins(list: Community[]) {
+  return filterDust(list).filter((community) => !isBStockCommunity(community))
+}
+
+// Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
 const route = useRoute()
-function switchCoinTab(tab: 'tagCoin' | 'ip') {
+function switchCoinTab(tab: 'tagCoin' | 'bStocks' | 'ip') {
   stateStore.setCoinSubMenu(tab)
   if (route.name === 'coins') {
-    router.replace({ query: tab === 'ip' ? { tab: 'ip' } : {} })
+    router.replace({ query: tab === 'ip' ? { tab: 'ip' } : tab === 'bStocks' ? { tab: 'bstocks' } : {} })
   }
-  if (tab === 'tagCoin') ensureCoinListLoaded()
+  ensureCoinListLoaded()
 }
 
 
@@ -382,7 +429,7 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- Coin 菜单：TagCoin 和 IPShare 按钮 -->
+    <!-- Coin 菜单：TagCoin、bStocks 和 IPShare -->
     <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center justify-between">
       <div class="flex gap-2">
         <button
@@ -391,6 +438,13 @@ const onCreate = (type: GlobalModalType) => {
           @click="switchCoinTab('tagCoin')"
         >
           {{ $t('tagCoin') || 'TagCoin' }}
+        </button>
+        <button
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
+          :class="coinSubMenu==='bStocks' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="switchCoinTab('bStocks')"
+        >
+          {{ $t('bStocks') || 'bStocks' }}
         </button>
         <button
           class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
@@ -432,35 +486,54 @@ const onCreate = (type: GlobalModalType) => {
                     :finished="finished[listType]"
                     :immediate-check="false"
                     :loading-text="$t('loading')"
-                    :finished-text="currentCoinList.length==0?'':$t('noMore')"
+                    :finished-text="filterTagCoins(currentCoinList).length==0?'':$t('noMore')"
                     :offset="50"
                     @load="loadMore">
 
-            <div v-if="comStore.trendingCommunities.length == 0 && !loading && listType == ListType.Trending"
+            <div v-if="filterTagCoins(comStore.trendingCommunities).length == 0 && !loading && listType == ListType.Trending"
                  class="flex justify-center py-6 w-full">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
             <div v-else v-show="listType == ListType.Trending"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of filterDust(comStore.trendingCommunities)" :community :key="community.tick" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterTagCoins(comStore.trendingCommunities)" :community :key="community.tick" @click="gotoDetail(community)" />
             </div>
-            <div v-if="comStore.newCommunities.length == 0 && !loading && listType == ListType.New"
+            <div v-if="filterTagCoins(comStore.newCommunities).length == 0 && !loading && listType == ListType.New"
                  class="flex justify-center py-6 w-full">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
             <div v-else v-show="listType == ListType.New"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of filterDust(comStore.newCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterTagCoins(comStore.newCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
-            <div v-if="comStore.marketCapCommunities.length == 0 && !loading && listType == ListType.MarketCap"
+            <div v-if="filterTagCoins(comStore.marketCapCommunities).length == 0 && !loading && listType == ListType.MarketCap"
                  class="flex justify-center py-6 w-full">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
             <div v-else v-show="listType == ListType.MarketCap"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of filterDust(comStore.marketCapCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterTagCoins(comStore.marketCapCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
           </van-list>
+        </van-pull-refresh>
+      </div>
+    </template>
+    <template v-if="activeMainMenu==='coin' && coinSubMenu==='bStocks'">
+      <div class="flex-1 min-h-0 px-3 mobile-scroll-container no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+        <van-pull-refresh v-model="refreshing" @refresh="refreshBStocks"
+                          class="min-h-full web:max-w-[1240px] web:mx-auto"
+                          :loading-text="$t('loading')"
+                          :lpulling-text="$t('pullToRefreshData')"
+                          :loosing-text="$t('releaseToRefresh')">
+          <div v-if="bStocksLoading && bStockCommunities.length === 0" class="flex justify-center py-10 w-full">
+            <i-ep-loading class="animate-spin w-7 h-7 text-orange-normal" />
+          </div>
+          <div v-else-if="bStockCommunities.length === 0" class="flex justify-center py-6 w-full">
+            <img src="~@/assets/images/empty-data.svg" alt="">
+          </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
+            <TagListItem v-for="community of bStockCommunities" :community :key="community.tick" @click="gotoDetail(community)" />
+          </div>
         </van-pull-refresh>
       </div>
     </template>

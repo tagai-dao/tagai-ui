@@ -47,10 +47,10 @@ export const useStateStore = defineStore('state', {
       activeMainMenu: 'tag' as 'tag' | 'coin' | 'prediction',
       // Tag 菜单的子标签页：'tweets' 或 'prediction'
       tagSubMenu: 'tweets' as 'tweets' | 'prediction',
-      // Coin 菜单的子标签页：'tagCoin' 或 'ip'
-      coinSubMenu: 'tagCoin' as 'tagCoin' | 'ip',
+      // Coin 菜单的子标签页：TagCoin、外部导入的 bStocks 或 IPShare
+      coinSubMenu: 'tagCoin' as 'tagCoin' | 'bStocks' | 'ip',
       // 兼容旧代码，保持 activeHomeTab
-      activeHomeTab: 'tweets' as 'tweets' | 'prediction' | 'tagCoin' | 'ip' | 'mindshare',
+      activeHomeTab: 'tweets' as 'tweets' | 'prediction' | 'tagCoin' | 'bStocks' | 'ip' | 'mindshare',
       homeSubMenu: 'tweets' as 'tweets' | 'prediction',
     }
   },
@@ -74,19 +74,19 @@ export const useStateStore = defineStore('state', {
       this.activeMainMenu = 'tag'
     },
     // 设置 Coin 子菜单
-    setCoinSubMenu(subMenu: 'tagCoin' | 'ip') {
+    setCoinSubMenu(subMenu: 'tagCoin' | 'bStocks' | 'ip') {
       this.coinSubMenu = subMenu
       this.activeHomeTab = subMenu
       this.activeMainMenu = 'coin'
     },
     // 兼容旧代码的方法
-    setActiveHomeTab(tab: 'tweets' | 'prediction' | 'tagCoin' | 'ip') {
+    setActiveHomeTab(tab: 'tweets' | 'prediction' | 'tagCoin' | 'bStocks' | 'ip') {
       this.activeHomeTab = tab
       if (tab === 'tweets' || tab === 'prediction') {
         this.tagSubMenu = tab
         this.activeMainMenu = 'tag'
         this.homeSubMenu = tab
-      } else if (tab === 'tagCoin' || tab === 'ip') {
+      } else if (tab === 'tagCoin' || tab === 'bStocks' || tab === 'ip') {
         this.coinSubMenu = tab
         this.activeMainMenu = 'coin'
       }

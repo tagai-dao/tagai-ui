@@ -23,6 +23,7 @@
   "coin": "Coin",
   "tag": "Tag",
   "tagCoin": "Tag Coin",
+  "bStocks": "bStocks",
   "ip": "IPShare",
   "ip.priceSupply": "Price / Supply",
   "profile": "Profile",

@@ -23,6 +23,7 @@
   "coin": "币种",
   "tag": "Tag",
   "tagCoin": "标签币",
+  "bStocks": "bStocks",
   "ip": "IPShare",
   "ip.priceSupply": "价格 / 供应量",
   "profile": "我的",
