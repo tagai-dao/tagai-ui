@@ -106,10 +106,16 @@ export const getImportCommunityFee = async (importer: `0x${string}`): Promise<Im
 
     const hasIPShare = await readContract('IPShare3', 'ipshareCreated', [importer]) as boolean;
     const ipshareCreateFee = hasIPShare ? 0n : await readContract('IPShare3', 'createFee', []) as bigint;
-    return { createFee, settingsFee, ipshareCreateFee, total: createFee + settingsFee + ipshareCreateFee, createsIPShare: !hasIPShare };
+    return {
+        createFee,
+        settingsFee,
+        ipshareCreateFee,
+        total: createFee + (settingsFee * 2n) + ipshareCreateFee,
+        createsIPShare: !hasIPShare,
+    };
 }
 
-/** 调用 ImportHelper.createCommunityAndPool 链上创建 Nutbox Community + SocialCuration Pool */
+/** 创建 Nutbox Community，并建立 50/50 Social Curation + AI Channel 双池。 */
 export const deployNutboxCommunity = async (
     token: `0x${string}`,
     // ImportHelper validates that the calculator belongs to its own deployment.
@@ -667,6 +673,25 @@ export const claimRewardV8 = async (
         throw errCode.TRANSACTION_INVALID;
     }
     return hash
+}
+
+export const claimAIChannelReward = async (
+    poolAddress: string,
+    orderId: bigint,
+    amount: bigint,
+    deadline: bigint,
+    signature: `0x${string}`,
+) => {
+    if (!isAddress(poolAddress)) throw errCode.PARAMS_ERROR;
+    const hash = await writeContract({
+        contractName: 'AIChannelPool',
+        functionName: 'claim',
+        args: [orderId, amount, deadline, signature],
+        address: poolAddress as `0x${string}`,
+        value: ClaimFee,
+    });
+    if (!hash) throw errCode.TRANSACTION_INVALID;
+    return hash;
 }
 
 // 领取预测奖励，使用 OracleDistributorV2 合约

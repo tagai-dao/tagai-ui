@@ -105,3 +105,39 @@ export type AiChannelQuoteDraft = Pick<
   Tweet,
   'tweetId' | 'content' | 'twitterName' | 'twitterUsername' | 'profile' | 'tweetTime' | 'tick'
 >
+
+export type AiChannelRewardHistory = {
+  id: number
+  rootTweetId: string
+  rewardType: 1 | 2
+  amount: number
+  rewardDay: string
+}
+
+export type AiChannelRewards = {
+  chainId: number
+  tick: string
+  token: string
+  poolAddress: string
+  channelKey: string
+  policyHash: string
+  authorAmount: number
+  curatorAmount: number
+  amount: number
+  history: AiChannelRewardHistory[]
+}
+
+export type AiChannelClaimOrder = {
+  chainId: number
+  tick: string
+  token: string
+  poolAddress: string
+  channelKey: string
+  policyHash: string
+  orderId: string
+  amount: number
+  amountWei: string
+  receiver: string
+  deadline: number
+  signature: `0x${string}`
+}

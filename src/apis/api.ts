@@ -9,6 +9,8 @@ import type {
   AiChannelReactionInput,
   AiChannelReplyInput,
   AiChannelReplyResult,
+  AiChannelRewards,
+  AiChannelClaimOrder,
 } from '@/types/aiChannel'
 
 /************************************ common **********************************/
@@ -163,6 +165,24 @@ export const setAiChannelReaction = async (
     BACKEND_API_URL + `/ai/channels/${channelId}/reactions`,
     input,
   ) as Promise<AiChannelReactionInput & { channelId: number }>
+
+export const getAiChannelRewards = async (twitterId: string, tick: string) =>
+  get(BACKEND_API_URL + '/ai/channels/rewards', { twitterId, tick }) as Promise<AiChannelRewards>
+
+export const createAiChannelRewardClaim = async (twitterId: string, tick: string) =>
+  post(BACKEND_API_URL + '/ai/channels/rewards/claim', { twitterId, tick }) as Promise<AiChannelClaimOrder>
+
+export const confirmAiChannelRewardClaim = async (
+  twitterId: string,
+  tick: string,
+  orderId: string,
+  txHash: string,
+) => post(BACKEND_API_URL + '/ai/channels/rewards/claimed', {
+  twitterId,
+  tick,
+  orderId,
+  txHash,
+})
 
 export const getUserTweets = async (twitterId: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/userTweets', {twitterId, pages})
