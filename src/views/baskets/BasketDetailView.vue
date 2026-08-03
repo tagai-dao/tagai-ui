@@ -6,9 +6,9 @@ import BasketChainGate from './components/BasketChainGate.vue'
 import BasketTradePanel from './components/BasketTradePanel.vue'
 import BasketRebalanceAction from './components/BasketRebalanceAction.vue'
 import { feeSplit } from '@/utils/baskets/fee-model'
-import { BASKET_FRONTEND_FEE_WALLET, BASKET_PROTOCOL_REPO } from '@/config/baskets'
+import { BASKET_FRONTEND_FEE_WALLET, getBasketDeployment } from '@/config/baskets'
 import { zeroAddress } from 'viem'
-import { ROBINHOOD_CHAIN } from '@/config/chains'
+import { getChainDeployment } from '@/config/chains'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,10 +18,11 @@ const addressCopied = ref(false)
 let copiedTimer: ReturnType<typeof setTimeout> | null = null
 
 const address = computed(() => String(route.params.address || ''))
+const deployment = computed(() => detail.value ? getBasketDeployment(detail.value.chainId) : null)
 
 const explorerBasket = computed(() => {
   if (!detail.value) return ''
-  return `${ROBINHOOD_CHAIN.browser.replace(/\/$/, '')}/address/${detail.value.address}`
+  return `${getChainDeployment(detail.value.chainId).browser.replace(/\/$/, '')}/address/${detail.value.address}`
 })
 
 const shortBasketAddress = computed(() => {
@@ -158,7 +159,7 @@ onUnmounted(() => {
                     {{ detail.name }}
                   </h1>
                   <span class="symbol-badge">{{ detail.symbol }}</span>
-                  <span class="chain-badge"><i /> HOOD</span>
+                  <span class="chain-badge"><i /> {{ deployment?.networkLabel }}</span>
                 </div>
                 <div class="mt-5 text-[38px] web:text-[46px] leading-none font-semibold tracking-[-0.05em] text-content">
                   {{ formatUsd(detail.navPerToken, true) }}
@@ -289,7 +290,7 @@ onUnmounted(() => {
         </div>
 
         <p class="detail-footer">
-          <a :href="BASKET_PROTOCOL_REPO" target="_blank" rel="noopener noreferrer">
+          <a v-if="deployment?.protocolRepo" :href="deployment.protocolRepo" target="_blank" rel="noopener noreferrer">
             {{ $t('baskets.openSourceProtocol') }}
           </a>
         </p>

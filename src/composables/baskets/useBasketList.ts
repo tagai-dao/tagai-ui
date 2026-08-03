@@ -5,9 +5,10 @@
 import { ref } from 'vue'
 import { listBaskets } from '@/utils/baskets/data'
 import type { BasketSummary } from '@/utils/baskets/types'
-import { BASKET_CHAIN_ID } from '@/config/baskets'
+import { useChainStore } from '@/stores/chain'
 
 export const useBasketList = () => {
+  const chainStore = useChainStore()
   const baskets = ref<BasketSummary[]>([])
   const isLoading = ref(false)
   const hasError = ref(false)
@@ -35,7 +36,7 @@ export const useBasketList = () => {
     hasError.value = false
     errorMessage.value = ''
     try {
-      const full = await listBaskets(BASKET_CHAIN_ID, {
+      const full = await listBaskets(chainStore.activeChainId, {
         force,
         onShell: (shell) => {
           // 首屏：name / AUM / NAV 已够展示，结束全屏 loading

@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatUnits, getAddress, isAddress, parseUnits, zeroAddress, type Address } from 'viem'
-import { BASKET_ASSET_PRESETS, BASKET_CHAIN_ID, BASKET_MAX_SLIPPAGE_BPS, BASKET_USDG_DECIMALS } from '@/config/baskets'
+import { BASKET_MAX_SLIPPAGE_BPS, getBasketDeployment, isBscBasketLegAssetBlocked, isUsdBasketLegSymbol, type BasketAssetPreset } from '@/config/baskets'
 import { ROBINHOOD_CHAIN, ROBINHOOD_TIPTAG_HOOK_FEE_PIPS } from '@/config/chains'
 import {
   buildCustomRoute,
@@ -20,6 +20,7 @@ import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
+import { formatAmount } from '@/utils/helper'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; created: [address: Address] }>()
@@ -29,7 +30,9 @@ const accountStore = useAccountStore()
 const chainStore = useChainStore()
 const modalStore = useModalStore()
 
-const BASKET_DRAFT_KEY = `tagai-basket-create-draft-v1:${BASKET_CHAIN_ID}`
+const basketChainId = chainStore.activeChainId
+const deployment = computed(() => getBasketDeployment(basketChainId))
+const BASKET_DRAFT_KEY = `tagai-basket-create-draft-v1:${basketChainId}`
 
 const name = ref('')
 const symbol = ref('')
@@ -42,6 +45,7 @@ const advancedOpen = ref(false)
 const customAssetOpen = ref(false)
 const customAssetAddress = ref('')
 const customPoolCandidates = ref<BasketPoolCandidate[]>([])
+const customPoolRejectionReasons = ref<string[]>([])
 const selectedPoolId = ref('')
 const searchingPools = ref(false)
 const validatingAsset = ref(false)
@@ -54,12 +58,21 @@ const loadingUsdgBalance = ref(false)
 let balanceRequestId = 0
 
 const account = computed(() => isAddress(accountStore.ethConnectAddress) ? getAddress(accountStore.ethConnectAddress) : undefined)
-const isOnRh = computed(() => chainStore.activeChainId === BASKET_CHAIN_ID)
+const isOnBasketChain = computed(() => chainStore.activeChainId === basketChainId)
+const createSubtitle = computed(() => t('baskets.createSubtitle', {
+  settlement: deployment.value.settlementSymbol,
+}).replaceAll('USDG', deployment.value.settlementSymbol))
+const settlementBalanceLabel = computed(() => {
+  const label = t('baskets.settlementBalance', { settlement: deployment.value.settlementSymbol })
+  return label === 'baskets.settlementBalance'
+    ? `${deployment.value.settlementSymbol} ${t('balance')}`
+    : label
+})
 const totalWeight = computed(() => selected.value.reduce((sum, leg) => sum + Number(leg.weightBps || 0), 0))
 const isBusy = computed(() => state.value === 'approving' || state.value === 'creating')
 const initialUsdgRaw = computed(() => {
   try {
-    return parseUnits(initialUsdg.value || '0', BASKET_USDG_DECIMALS)
+    return parseUnits(initialUsdg.value || '0', deployment.value.settlementDecimals)
   } catch {
     return null
   }
@@ -69,14 +82,16 @@ const insufficientUsdg = computed(() =>
 const formattedUsdgBalance = computed(() => {
   if (loadingUsdgBalance.value) return t('baskets.loadingUsdgBalance')
   if (usdgBalance.value === null) return '—'
-  return Number(formatUnits(usdgBalance.value, BASKET_USDG_DECIMALS)).toLocaleString(undefined, {
-    maximumFractionDigits: BASKET_USDG_DECIMALS,
+  const balance = formatUnits(usdgBalance.value, deployment.value.settlementDecimals)
+  if (basketChainId === 56) return formatAmount(balance)
+  return Number(balance).toLocaleString(undefined, {
+    maximumFractionDigits: deployment.value.settlementDecimals,
   })
 })
-const platformAssets = computed(() => BASKET_ASSET_PRESETS.filter((asset) => asset.category === 'platform'))
-const stockAssets = computed(() => BASKET_ASSET_PRESETS.filter((asset) => asset.category === 'stock'))
+const platformAssets = computed(() => deployment.value.assetPresets.filter((asset) => asset.category === 'platform'))
+const stockAssets = computed(() => deployment.value.assetPresets.filter((asset) => asset.category === 'stock'))
 const canSubmit = computed(() =>
-  !!account.value && isOnRh.value && name.value.trim().length >= 2 && symbol.value.trim().length >= 2 &&
+  !!account.value && isOnBasketChain.value && name.value.trim().length >= 2 && symbol.value.trim().length >= 2 &&
   selected.value.length > 0 && totalWeight.value === 10_000 && Number(initialUsdg.value) > 1 &&
   !insufficientUsdg.value &&
   basketFeeBps.value >= 100 && basketFeeBps.value <= 300 && creatorShareBps.value >= 0 && creatorShareBps.value <= 3000,
@@ -89,18 +104,22 @@ const formatUsd = (value: number) => new Intl.NumberFormat(undefined, {
   style: 'currency',
   currency: 'USD',
 }).format(value)
-const formatPoolFee = (fee: number) => `${(fee / 10_000).toLocaleString(undefined, { maximumFractionDigits: 4 })}%`
+const formatPoolFee = (fee: number) => fee === 0x800000
+  ? 'Dynamic'
+  : `${(fee / 10_000).toLocaleString(undefined, { maximumFractionDigits: 4 })}%`
 const effectiveV4PoolFee = (fee: number, hooks: Address) =>
-  hooks.toLowerCase() === ROBINHOOD_CHAIN.contracts.tipTagSwapHook9.toLowerCase()
+  basketChainId === 4663 && hooks.toLowerCase() === ROBINHOOD_CHAIN.contracts.tipTagSwapHook9.toLowerCase()
     ? ROBINHOOD_TIPTAG_HOOK_FEE_PIPS
     : fee
-const presetPoolFee = (asset: typeof BASKET_ASSET_PRESETS[number]) => asset.route.venue === 0
+const presetPoolFee = (asset: BasketAssetPreset) => asset.route.venue === 0
   ? effectiveV4PoolFee(asset.route.v4Pool.fee, asset.route.v4Pool.hooks)
   : asset.route.v3Fee
-const presetPoolLabel = (asset: typeof BASKET_ASSET_PRESETS[number]) =>
+const presetPoolLabel = (asset: BasketAssetPreset) =>
   asset.route.venue === 2
-    ? 'WETH · 1:1'
-    : `V${asset.route.venue === 0 ? '4' : '3'} · ${t('baskets.fee')} ${formatPoolFee(presetPoolFee(asset))}`
+    ? `${deployment.value.wrappedNativeSymbol} · 1:1`
+    : `V${asset.route.venue === 0 ? '4' : '3'} · ${basketChainId === 56 && asset.route.quoteToken === 1
+      ? deployment.value.settlementSymbol
+      : deployment.value.wrappedNativeSymbol} · ${t('baskets.fee')} ${formatPoolFee(presetPoolFee(asset))}`
 const candidatePoolFee = (pool: BasketPoolCandidate) => pool.venue === 0
   ? effectiveV4PoolFee(pool.fee, pool.hooks)
   : pool.fee
@@ -130,7 +149,7 @@ const toggleAsset = (address: Address) => {
   const index = selected.value.findIndex((leg) => leg.asset.address.toLowerCase() === address.toLowerCase())
   if (index >= 0) selected.value.splice(index, 1)
   else {
-    const asset = BASKET_ASSET_PRESETS.find((item) => item.address.toLowerCase() === address.toLowerCase())
+    const asset = deployment.value.assetPresets.find((item) => item.address.toLowerCase() === address.toLowerCase())
     if (asset && selected.value.length < 10) selected.value.push(presetCreateLeg(asset))
   }
   rebalanceEqual()
@@ -147,6 +166,7 @@ const removeAsset = (address: Address) => {
 const searchCustomPools = async () => {
   customAssetError.value = ''
   customPoolCandidates.value = []
+  customPoolRejectionReasons.value = []
   selectedPoolId.value = ''
   if (selected.value.length >= 10) {
     customAssetError.value = t('baskets.customAssetLimit')
@@ -157,15 +177,23 @@ const searchCustomPools = async () => {
     return
   }
   const address = getAddress(customAssetAddress.value)
+  if (isBscBasketLegAssetBlocked(address, basketChainId)) {
+    customAssetError.value = t('baskets.customAssetUsdUnsupported')
+    return
+  }
   if (isSelected(address)) {
     customAssetError.value = t('baskets.customAssetDuplicate')
     return
   }
   try {
     searchingPools.value = true
-    customPoolCandidates.value = await discoverBasketPools(address, 2)
+    const discovery = await discoverBasketPools(address, basketChainId, 2)
+    customPoolCandidates.value = discovery.candidates
+    customPoolRejectionReasons.value = discovery.rejectionReasons
     selectedPoolId.value = customPoolCandidates.value[0]?.id ?? ''
-    if (!customPoolCandidates.value.length) customAssetError.value = t('baskets.noCompatiblePools')
+    if (!customPoolCandidates.value.length && !customPoolRejectionReasons.value.length) {
+      customAssetError.value = t('baskets.noCompatiblePools')
+    }
   } catch (error) {
     customAssetError.value = error instanceof Error ? error.message : String(error)
   } finally {
@@ -187,11 +215,12 @@ const addCustomAsset = async () => {
   }
   try {
     validatingAsset.value = true
-    const asset = await validateCustomBasketAsset({ asset: address, route: candidate.route })
+    const asset = await validateCustomBasketAsset({ asset: address, route: candidate.route, chainId: basketChainId })
     selected.value.push({ asset, route: candidate.route, weightBps: 0 })
     rebalanceEqual()
     customAssetAddress.value = ''
     customPoolCandidates.value = []
+    customPoolRejectionReasons.value = []
     selectedPoolId.value = ''
   } catch (error) {
     customAssetError.value = error instanceof Error ? error.message : String(error)
@@ -216,32 +245,53 @@ const removeSavedDraft = () => {
 const restoreDraftLeg = (value: any): CreateBasketLeg | null => {
   if (!value || !isAddress(value.asset?.address) || typeof value.asset?.symbol !== 'string') return null
   const address = getAddress(value.asset.address)
-  const preset = BASKET_ASSET_PRESETS.find(item => item.address.toLowerCase() === address.toLowerCase())
+  const preset = deployment.value.assetPresets.find(item => item.address.toLowerCase() === address.toLowerCase())
   let leg: CreateBasketLeg
   if (preset) {
     leg = presetCreateLeg(preset)
   } else if (value.route?.venue === 0 && value.route.v4Pool && isAddress(value.route.v4Pool.hooks)) {
     const fee = draftNumber(value.route.v4Pool.fee, -1)
     const tickSpacing = draftNumber(value.route.v4Pool.tickSpacing, 0)
+    const quoteToken = basketChainId === 56 ? draftNumber(value.route.quoteToken, -1) : undefined
     if (!Number.isInteger(fee) || fee < 0 || fee > 0xffffff ||
-      !Number.isInteger(tickSpacing) || tickSpacing < -0x800000 || tickSpacing > 0x7fffff) return null
+      !Number.isInteger(tickSpacing) || tickSpacing < -0x800000 || tickSpacing > 0x7fffff ||
+      (basketChainId === 56 && quoteToken !== 0 && quoteToken !== 1)) return null
     leg = {
       asset: { address, symbol: value.asset.symbol.slice(0, 32) },
       route: buildCustomRoute({
         asset: address,
         venue: 0,
+        ...(quoteToken === undefined ? {} : { quoteToken: quoteToken as 0 | 1 }),
         fee,
         tickSpacing,
         hooks: getAddress(value.route.v4Pool.hooks),
+        ...(basketChainId === 56 && isAddress(value.route.v4Pool.poolManager) && /^0x[\da-fA-F]{64}$/.test(value.route.v4Pool.parameters)
+          ? { poolKey: {
+              currency0: getAddress(value.route.v4Pool.currency0),
+              currency1: getAddress(value.route.v4Pool.currency1),
+              hooks: getAddress(value.route.v4Pool.hooks),
+              poolManager: getAddress(value.route.v4Pool.poolManager),
+              fee,
+              tickSpacing,
+              parameters: value.route.v4Pool.parameters,
+            } }
+          : {}),
       }),
       weightBps: 0,
     }
   } else if (value.route?.venue === 1) {
     const fee = draftNumber(value.route.v3Fee, -1)
-    if (!Number.isInteger(fee) || fee <= 0 || fee > 0xffffff) return null
+    const quoteToken = basketChainId === 56 ? draftNumber(value.route.quoteToken, -1) : undefined
+    if (!Number.isInteger(fee) || fee <= 0 || fee > 0xffffff ||
+      (basketChainId === 56 && quoteToken !== 0 && quoteToken !== 1)) return null
     leg = {
       asset: { address, symbol: value.asset.symbol.slice(0, 32) },
-      route: buildCustomRoute({ asset: address, venue: 1, fee }),
+      route: buildCustomRoute({
+        asset: address,
+        venue: 1,
+        ...(quoteToken === undefined ? {} : { quoteToken: quoteToken as 0 | 1 }),
+        fee,
+      }),
       weightBps: 0,
     }
   } else return null
@@ -264,7 +314,12 @@ const loadDraft = () => {
       : '10'
     slippageBps.value = draftNumber(draft.slippageBps, 100)
     selected.value = Array.isArray(draft.selected)
-      ? draft.selected.map(restoreDraftLeg).filter((leg: CreateBasketLeg | null): leg is CreateBasketLeg => !!leg).slice(0, 10)
+      ? draft.selected
+          .map(restoreDraftLeg)
+          .filter((leg: CreateBasketLeg | null): leg is CreateBasketLeg =>
+            !!leg && !isBscBasketLegAssetBlocked(leg.asset.address, basketChainId) &&
+              (basketChainId !== 56 || !isUsdBasketLegSymbol(leg.asset.symbol)))
+          .slice(0, 10)
       : []
     advancedOpen.value = !!draft.advancedOpen
     customAssetOpen.value = !!draft.customAssetOpen
@@ -308,6 +363,7 @@ const clearDraftAfterSuccess = async () => {
   customAssetOpen.value = false
   customAssetAddress.value = ''
   customPoolCandidates.value = []
+  customPoolRejectionReasons.value = []
   selectedPoolId.value = ''
   await nextTick()
   removeSavedDraft()
@@ -322,14 +378,14 @@ const updateInitialUsdg = (event: Event) => {
 
 const loadUsdgBalance = async () => {
   const requestId = ++balanceRequestId
-  if (!props.modelValue || !account.value || !isOnRh.value) {
+  if (!props.modelValue || !account.value || !isOnBasketChain.value) {
     usdgBalance.value = null
     loadingUsdgBalance.value = false
     return
   }
   loadingUsdgBalance.value = true
   try {
-    const balance = await getBasketUsdgBalance(account.value)
+    const balance = await getBasketUsdgBalance(account.value, basketChainId)
     if (requestId === balanceRequestId) usdgBalance.value = balance
   } catch {
     if (requestId === balanceRequestId) usdgBalance.value = null
@@ -349,12 +405,15 @@ const submit = async () => {
     return
   }
   if (!canSubmit.value) {
-    errorMessage.value = insufficientUsdg.value ? t('baskets.insufficientUsdg') : t('baskets.createValidation')
+    errorMessage.value = insufficientUsdg.value
+      ? t('baskets.insufficientUsdg', { settlement: deployment.value.settlementSymbol })
+      : t('baskets.createValidation')
     return
   }
   try {
     state.value = 'creating'
     const result = await createBasketAndBuy({
+      chainId: basketChainId,
       name: name.value,
       symbol: symbol.value,
       basketFeeBps: basketFeeBps.value,
@@ -369,7 +428,7 @@ const submit = async () => {
     })
     state.value = 'success'
     try {
-      await registerBasketDeployment(result.basket, result.hash)
+      await registerBasketDeployment(result.basket, result.hash, basketChainId)
     } catch (error) {
       // The on-chain creation is already final. Keep the successful UX while
       // making the indexing failure visible to local/prod diagnostics.
@@ -399,11 +458,12 @@ watch(() => props.modelValue, async (open) => {
 
 watch(customAssetAddress, () => {
   customPoolCandidates.value = []
+  customPoolRejectionReasons.value = []
   selectedPoolId.value = ''
   customAssetError.value = ''
 })
 
-watch([() => props.modelValue, account, isOnRh], loadUsdgBalance, { immediate: true })
+watch([() => props.modelValue, account, isOnBasketChain], loadUsdgBalance, { immediate: true })
 
 watch([
   name, symbol, basketFeeBps, creatorShareBps, initialUsdg, slippageBps, selected,
@@ -418,9 +478,9 @@ watch([
         <section class="create-modal" role="dialog" aria-modal="true" :aria-label="$t('baskets.createTitle')">
           <header class="modal-header">
             <div>
-              <span>ROBINHOOD · BASKET V1</span>
+              <span>{{ deployment.networkLabel }} · BASKET V{{ basketChainId === 56 ? 2 : 1 }}</span>
               <h2>{{ $t('baskets.createTitle') }}</h2>
-              <p>{{ $t('baskets.createSubtitle') }}</p>
+              <p>{{ createSubtitle }}</p>
             </div>
             <button type="button" class="close-button" :disabled="isBusy" @click="close" aria-label="Close">
               <svg viewBox="0 0 20 20" fill="none"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
@@ -437,7 +497,7 @@ watch([
             </section>
 
             <section class="form-section">
-              <div class="section-title"><b>02</b><div><strong>{{ $t('baskets.chooseAssets') }}</strong><span>{{ $t('baskets.chooseAssetsHint') }}</span></div><em>{{ selected.length }}/10</em></div>
+              <div class="section-title"><b>02</b><div><strong>{{ $t('baskets.chooseAssets') }}</strong><span>{{ $t('baskets.chooseAssetsHint', { network: deployment.networkLabel }) }}</span></div><em>{{ selected.length }}/10</em></div>
               <div class="asset-group-label">{{ $t('baskets.platformAssets') }}</div>
               <div class="asset-grid asset-grid--platform">
                 <button
@@ -478,6 +538,7 @@ watch([
               <Transition name="advanced">
                 <div v-if="customAssetOpen" class="advanced-panel custom-asset-panel">
                   <p>{{ $t('baskets.customAssetHint') }}</p>
+                  <p v-if="basketChainId === 56" class="custom-usd-warning">{{ $t('baskets.customAssetUsdUnsupported') }}</p>
                   <div class="custom-search-row">
                     <label class="field custom-address"><span>{{ $t('baskets.assetAddress') }}</span><input v-model.trim="customAssetAddress" placeholder="0x…" :disabled="isBusy || searchingPools || validatingAsset" @keyup.enter="searchCustomPools"></label>
                     <button type="button" class="pool-search" :disabled="isBusy || searchingPools || validatingAsset" @click="searchCustomPools">
@@ -509,6 +570,12 @@ watch([
                         <span v-else><small>{{ $t('baskets.poolCreated') }}</small><code>{{ formatPoolDate(pool.createdAt) }}</code></span>
                       </span>
                     </button>
+                  </div>
+                  <div v-if="customPoolRejectionReasons.length" class="pool-rejections">
+                    <strong>{{ $t('baskets.poolRejectedReasons') }}</strong>
+                    <ul>
+                      <li v-for="reason in customPoolRejectionReasons" :key="reason">{{ reason }}</li>
+                    </ul>
                   </div>
                   <p v-if="customAssetError" class="custom-error">{{ customAssetError }}</p>
                   <button v-if="customPoolCandidates.length" type="button" class="validate-route" :disabled="isBusy || validatingAsset || !selectedPoolId" @click="addCustomAsset">
@@ -544,7 +611,7 @@ watch([
               <div class="two-cols">
                 <label class="field"><span>{{ $t('baskets.tradeFeeBps') }}</span><input v-model.number="basketFeeBps" type="number" min="100" max="300" :disabled="isBusy"><small>100–300 bps</small></label>
                 <label class="field"><span>{{ $t('baskets.creatorShareBps') }}</span><input v-model.number="creatorShareBps" type="number" min="0" max="3000" :disabled="isBusy"><small>0–3000 bps</small></label>
-                <label class="field" :class="{ 'balance-invalid': insufficientUsdg }"><span class="field-heading"><span>{{ $t('baskets.initialBuy') }}</span><em>{{ $t('baskets.usdgBalance') }}: {{ formattedUsdgBalance }}</em></span><input :value="initialUsdg" type="number" min="1.01" step="any" :disabled="isBusy" @input="updateInitialUsdg"><small>USDG</small></label>
+                <label class="field" :class="{ 'balance-invalid': insufficientUsdg }"><span class="field-heading"><span>{{ $t('baskets.initialBuy') }}</span><em>{{ settlementBalanceLabel }}: {{ formattedUsdgBalance }}</em></span><input :value="initialUsdg" type="number" min="1.01" step="any" :disabled="isBusy" @input="updateInitialUsdg"><small>{{ deployment.settlementSymbol }}</small></label>
                 <label class="field"><span>{{ $t('baskets.slippage') }}</span><input v-model.number="slippageBps" type="number" min="1" :max="BASKET_MAX_SLIPPAGE_BPS" :disabled="isBusy"><small>bps</small></label>
               </div>
               <button type="button" class="advanced-toggle" :class="{ open: advancedOpen }" :disabled="isBusy || !selected.length" @click="advancedOpen = !advancedOpen">
@@ -583,7 +650,7 @@ watch([
             <button type="button" class="create-submit" :disabled="isBusy || (!!account && !canSubmit)" @click="submit">
               <span v-if="isBusy" class="spinner" />
               <span v-if="!account">{{ $t('connect') }}</span>
-              <span v-else-if="state === 'approving'">{{ $t('baskets.approvingUsdg') }}</span>
+              <span v-else-if="state === 'approving'">{{ $t('baskets.approvingUsdg', { settlement: deployment.settlementSymbol }) }}</span>
               <span v-else-if="state === 'creating'">{{ $t('baskets.creating') }}</span>
               <span v-else>{{ $t('baskets.createAndBuy') }}</span>
             </button>
@@ -617,8 +684,8 @@ watch([
 .field > span { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .08em; }
 .field > span.field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .field-heading em { overflow: hidden; color: var(--text-faint); font-size: 8px; font-style: normal; font-weight: 600; letter-spacing: 0; text-overflow: ellipsis; text-transform: none; white-space: nowrap; }
-.field.balance-invalid { border-color: color-mix(in srgb, var(--color-down) 55%, var(--border-base)); }
-.field.balance-invalid .field-heading em { color: var(--color-down); }
+.field.balance-invalid { border-color: color-mix(in srgb, var(--color-red, #ef596f) 55%, var(--border-base)); }
+.field.balance-invalid .field-heading em { color: var(--color-red, #ef596f); }
 .field input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-base); font-size: 14px; font-weight: 650; }
 .field select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-base); font-size: 13px; font-weight: 650; }
 .field small { position: absolute; right: 12px; bottom: 12px; color: var(--text-faint); font-size: 9px; pointer-events: none; }
@@ -658,6 +725,7 @@ watch([
 .advanced-panel { margin-top: 8px; padding: 11px 12px; border: 1px solid var(--border-base); border-radius: 12px; background: color-mix(in srgb, var(--surface-2) 60%, transparent); }.advanced-panel > p { margin-bottom: 7px; color: var(--text-muted); font-size: 9px; line-height: 14px; }
 .custom-toggle { margin-top: 10px; }
 .custom-asset-panel { padding: 12px; }
+.advanced-panel > p.custom-usd-warning { margin-bottom: 9px; padding: 8px 10px; border: 1px solid rgba(240,120,42,.28); border-radius: 9px; background: rgba(240,120,42,.08); color: #d96a22; }
 .custom-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
 .custom-address { min-width: 0; }
 .pool-search { display: flex; height: 55px; min-width: 112px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border: 1px solid rgba(141,103,232,.3); border-radius: 14px; background: rgba(141,103,232,.1); color: #8d67e8; font-size: 10px; font-weight: 750; }
@@ -678,6 +746,10 @@ watch([
 .pool-candidate__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; padding: 9px 0; border-top: 1px solid color-mix(in srgb, var(--border-base) 68%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border-base) 68%, transparent); }
 .pool-candidate__details { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 9px; }
 .pool-candidate__details code { color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; }
+.pool-rejections { margin-top: 9px; padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--color-down) 24%, var(--border-base)); border-radius: 10px; background: color-mix(in srgb, var(--color-down) 6%, transparent); }
+.pool-rejections strong { display: block; margin-bottom: 5px; color: var(--color-down); font-size: 9px; }
+.pool-rejections ul { margin: 0; padding-left: 15px; }
+.pool-rejections li { color: var(--text-muted); font-size: 8px; line-height: 13px; overflow-wrap: anywhere; }
 .custom-error { margin-top: 8px; color: var(--color-down) !important; }
 .validate-route { display: flex; width: 100%; height: 36px; align-items: center; justify-content: center; gap: 7px; margin-top: 9px; border-radius: 10px; background: rgba(141,103,232,.12); color: #8d67e8; font-size: 10px; font-weight: 750; }.validate-route:disabled { opacity: .5; }.validate-route .spinner { width: 13px; height: 13px; border-color: rgba(141,103,232,.3); border-top-color: #8d67e8; }
 .leg-slippage-row { display: grid; grid-template-columns: minmax(80px, 1fr) 112px 46px; align-items: center; gap: 7px; padding: 6px 0; border-top: 1px solid color-mix(in srgb, var(--border-base) 70%, transparent); }.leg-slippage-asset { display: flex; min-width: 0; flex-direction: column; gap: 2px; }.leg-slippage-row strong { color: var(--text-base); font-size: 10px; }.leg-slippage-asset em { color: var(--text-muted); font-size: 8px; font-style: normal; }.leg-slippage-row label { display: flex; align-items: center; gap: 4px; padding: 5px 7px; border: 1px solid var(--border-base); border-radius: 8px; background: var(--surface); }.leg-slippage-row input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-base); text-align: right; }.leg-slippage-row label span, .leg-slippage-row button { color: var(--text-muted); font-size: 8px; }.leg-slippage-row button:hover { color: #8d67e8; }

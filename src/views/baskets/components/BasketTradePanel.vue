@@ -7,8 +7,8 @@ import type { BasketDetail } from '@/utils/baskets/types'
 import { useBasketTrade } from '@/composables/baskets/useBasketTrade'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
-import { BASKET_USDG_DECIMALS, BASKET_MAX_SLIPPAGE_BPS } from '@/config/baskets'
-import { ROBINHOOD_CHAIN } from '@/config/chains'
+import { BASKET_MAX_SLIPPAGE_BPS, getBasketDeployment } from '@/config/baskets'
+import { getChainDeployment } from '@/config/chains'
 
 const props = defineProps<{ detail: BasketDetail }>()
 const emit = defineEmits<{ traded: [] }>()
@@ -19,34 +19,38 @@ const detailRef = toRef(props, 'detail')
 const {
   side, amountInput, slippageBps, step, txHash, errorMessage,
   usdgBalance, basketBalance, quote, needsApproval,
-  isOnRh, canTradeConfig, account, setMax, setAmountInput, runTrade, resetStep,
+  isOnBasketChain, canTradeConfig, account, setMax, setAmountInput, runTrade, resetStep,
 } = useBasketTrade(detailRef)
+const deployment = computed(() => getBasketDeployment(props.detail.chainId))
+const switchChainHint = computed(() => props.detail.chainId === 4663
+  ? t('baskets.switchChainHint')
+  : `Please switch to ${deployment.value.networkLabel} to continue.`)
 
 const explorerTx = computed(() => {
   if (!txHash.value) return ''
-  return `${ROBINHOOD_CHAIN.browser.replace(/\/$/, '')}/tx/${txHash.value}`
+  return `${getChainDeployment(props.detail.chainId).browser.replace(/\/$/, '')}/tx/${txHash.value}`
 })
 
 const balanceLabel = computed(() => {
-  if (side.value === 'buy') return `${formatUnits(usdgBalance.value, BASKET_USDG_DECIMALS)} USDG`
+  if (side.value === 'buy') return `${formatUnits(usdgBalance.value, deployment.value.settlementDecimals)} ${deployment.value.settlementSymbol}`
   return `${formatUnits(basketBalance.value, props.detail.decimals)} ${props.detail.symbol}`
 })
 
-const inputToken = computed(() => side.value === 'buy' ? 'USDG' : props.detail.symbol)
-const outputToken = computed(() => side.value === 'buy' ? props.detail.symbol : 'USDG')
+const inputToken = computed(() => side.value === 'buy' ? deployment.value.settlementSymbol : props.detail.symbol)
+const outputToken = computed(() => side.value === 'buy' ? props.detail.symbol : deployment.value.settlementSymbol)
 
 const estimatedLabel = computed(() => {
   const q = quote.value
   if (!q) return '—'
   if (side.value === 'buy') return `~${q.estimatedOut.toFixed(6)} ${props.detail.symbol}`
-  return `~$${q.estimatedOut.toFixed(4)} USDG`
+  return `~$${q.estimatedOut.toFixed(4)} ${deployment.value.settlementSymbol}`
 })
 
 const isBusy = computed(() => step.value === 'approving' || step.value === 'swapping')
 const isQuoting = computed(() => step.value === 'quoting')
 const showButtonSpinner = computed(() => isBusy.value || isQuoting.value)
 const tradeDisabled = computed(() => {
-  if (isBusy.value || !isOnRh.value || !canTradeConfig.value || !account.value || !quote.value) return true
+  if (isBusy.value || !isOnBasketChain.value || !canTradeConfig.value || !account.value || !quote.value) return true
   return false
 })
 
@@ -85,7 +89,7 @@ watch(side, () => resetStep())
         <span>{{ $t('baskets.trade') }}</span>
         <h2>{{ detail.symbol }}</h2>
       </div>
-      <span class="network-pill"><i /> HOOD</span>
+      <span class="network-pill"><i /> {{ deployment.networkLabel }}</span>
     </div>
 
     <div class="trade-tabs">
@@ -146,8 +150,8 @@ watch(side, () => resetStep())
       </label>
     </div>
 
-    <div v-if="!isOnRh" class="trade-alert">
-      {{ $t('baskets.switchChainHint') }}
+    <div v-if="!isOnBasketChain" class="trade-alert">
+      {{ switchChainHint }}
     </div>
 
     <button

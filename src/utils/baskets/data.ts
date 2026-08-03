@@ -7,15 +7,21 @@ import {
   type PublicClient,
 } from 'viem'
 import {
-  BASKET_CHAIN_ID,
-  BASKET_CONTRACTS,
-  BASKET_HUB_POOL,
-  BASKET_USDG_DECIMALS,
+  getBasketDeployment,
+  isBasketChain,
+  toContractPoolKey,
+  type BasketDeployment,
   type BasketPoolKey,
 } from '@/config/baskets'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { getRhV4PoolStateSlot } from '@/utils/rhV4Swap'
-import { basketRegistryAbi, basketTokenAbi, erc20Abi, rebalanceExecutorAbi } from './abis'
+import {
+  basketRegistryAbi,
+  erc20Abi,
+  getBasketTokenAbi,
+  getRebalanceExecutorAbi,
+  pancakePoolManagerStateAbi,
+} from './abis'
 import { getRegisteredBasket, listRegisteredBaskets, type RegisteredBasket } from './api'
 import type { BasketDetail, BasketHolding, BasketLegRoute, BasketSummary } from './types'
 
@@ -31,8 +37,8 @@ type MulticallContract = { address: Address; abi: readonly unknown[]; functionNa
 const CACHE_TTL_MS = 60_000
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const
 const detailCache = new Map<string, CacheEntry<BasketDetail>>()
-let listCache: CacheEntry<BasketSummary[]> | null = null
-let hubSqrtCache: CacheEntry<bigint> | null = null
+const listCache = new Map<number, CacheEntry<BasketSummary[]>>()
+const hubSqrtCache = new Map<number, CacheEntry<bigint>>()
 
 const cacheKey = (chainId: number, address: string) => `${chainId}:${address.toLowerCase()}`
 const isFresh = (at: number) => Date.now() - at < CACHE_TTL_MS
@@ -47,50 +53,86 @@ const multicall = async (client: PublicClient, contracts: MulticallContract[]): 
   }) as Promise<MulticallRow[]>
 }
 
-const normalizePool = (raw: any): BasketPoolKey => ({
-  currency0: (raw?.currency0 ?? raw?.[0]) as Address,
-  currency1: (raw?.currency1 ?? raw?.[1]) as Address,
-  fee: Number(raw?.fee ?? raw?.[2] ?? 0),
-  tickSpacing: Number(raw?.tickSpacing ?? raw?.[3] ?? 0),
-  hooks: (raw?.hooks ?? raw?.[4]) as Address,
-})
+const decodePancakeTickSpacing = (parameters: string): number => {
+  const encoded = (BigInt(parameters) >> 16n) & 0xffffffn
+  return Number(encoded >= 0x800000n ? encoded - 0x1000000n : encoded)
+}
 
-const normalizeRoute = (raw: any): BasketLegRoute => ({
-  venue: Number(raw?.venue ?? raw?.[0] ?? 0),
-  v4Pool: normalizePool(raw?.v4Pool ?? raw?.[1]),
-  v3Fee: Number(raw?.v3Fee ?? raw?.[2] ?? 0),
-})
+const normalizePool = (raw: any, chainId: number): BasketPoolKey => chainId === 56
+  ? {
+      currency0: (raw?.currency0 ?? raw?.[0]) as Address,
+      currency1: (raw?.currency1 ?? raw?.[1]) as Address,
+      hooks: (raw?.hooks ?? raw?.[2]) as Address,
+      poolManager: (raw?.poolManager ?? raw?.[3]) as Address,
+      fee: Number(raw?.fee ?? raw?.[4] ?? 0),
+      parameters: (raw?.parameters ?? raw?.[5]) as `0x${string}`,
+      tickSpacing: decodePancakeTickSpacing(raw?.parameters ?? raw?.[5] ?? '0x0'),
+    }
+  : {
+      currency0: (raw?.currency0 ?? raw?.[0]) as Address,
+      currency1: (raw?.currency1 ?? raw?.[1]) as Address,
+      fee: Number(raw?.fee ?? raw?.[2] ?? 0),
+      tickSpacing: Number(raw?.tickSpacing ?? raw?.[3] ?? 0),
+      hooks: (raw?.hooks ?? raw?.[4]) as Address,
+    }
 
-const poolId = (key: BasketPoolKey): `0x${string}` => keccak256(encodeAbiParameters(
-  [{
-    type: 'tuple',
-    components: [
-      { type: 'address', name: 'currency0' },
-      { type: 'address', name: 'currency1' },
-      { type: 'uint24', name: 'fee' },
-      { type: 'int24', name: 'tickSpacing' },
-      { type: 'address', name: 'hooks' },
-    ],
-  }],
-  [key],
-))
+const normalizeRoute = (raw: any, chainId: number): BasketLegRoute => chainId === 56
+  ? {
+      venue: Number(raw?.venue ?? raw?.[0] ?? 0),
+      quoteToken: Number(raw?.quoteToken ?? raw?.[1] ?? 0) === 1 ? 1 : 0,
+      v4Pool: normalizePool(raw?.v4Pool ?? raw?.[2], chainId),
+      v3Fee: Number(raw?.v3Fee ?? raw?.[3] ?? 0),
+    }
+  : {
+      venue: Number(raw?.venue ?? raw?.[0] ?? 0),
+      v4Pool: normalizePool(raw?.v4Pool ?? raw?.[1], chainId),
+      v3Fee: Number(raw?.v3Fee ?? raw?.[2] ?? 0),
+    }
 
-const getHubSqrtPrice = async (client: PublicClient): Promise<bigint> => {
-  if (hubSqrtCache && isFresh(hubSqrtCache.at)) return hubSqrtCache.data
-  const word = await client.readContract({
-    address: BASKET_CONTRACTS.poolManager,
-    abi: [{
-      inputs: [{ name: 'slot', type: 'bytes32' }],
-      name: 'extsload',
-      outputs: [{ name: 'value', type: 'bytes32' }],
-      stateMutability: 'view',
-      type: 'function',
-    }],
-    functionName: 'extsload',
-    args: [getRhV4PoolStateSlot(poolId(BASKET_HUB_POOL))],
-  })
-  const sqrtPrice = BigInt(word as string) & ((1n << 160n) - 1n)
-  hubSqrtCache = { at: Date.now(), data: sqrtPrice }
+const poolId = (key: BasketPoolKey, chainId: number): `0x${string}` => chainId === 56
+  ? keccak256(encodeAbiParameters([{
+      type: 'tuple', components: [
+        { type: 'address', name: 'currency0' }, { type: 'address', name: 'currency1' },
+        { type: 'address', name: 'hooks' }, { type: 'address', name: 'poolManager' },
+        { type: 'uint24', name: 'fee' }, { type: 'bytes32', name: 'parameters' },
+      ],
+    }], [toContractPoolKey(key, chainId) as any]))
+  : keccak256(encodeAbiParameters([{
+      type: 'tuple', components: [
+        { type: 'address', name: 'currency0' }, { type: 'address', name: 'currency1' },
+        { type: 'uint24', name: 'fee' }, { type: 'int24', name: 'tickSpacing' },
+        { type: 'address', name: 'hooks' },
+      ],
+    }], [toContractPoolKey(key, chainId) as any]))
+
+const hubStateContract = (deployment: BasketDeployment): MulticallContract => deployment.chainId === 56
+  ? {
+      address: deployment.contracts.poolManager,
+      abi: pancakePoolManagerStateAbi,
+      functionName: 'getSlot0',
+      args: [poolId(deployment.hubPool, deployment.chainId)],
+    }
+  : {
+      address: deployment.contracts.poolManager,
+      abi: [{
+        inputs: [{ name: 'slot', type: 'bytes32' }], name: 'extsload',
+        outputs: [{ name: 'value', type: 'bytes32' }], stateMutability: 'view', type: 'function',
+      }],
+      functionName: 'extsload',
+      args: [getRhV4PoolStateSlot(poolId(deployment.hubPool, deployment.chainId))],
+    }
+
+const parseHubSqrtPrice = (result: unknown, chainId: number): bigint => chainId === 56
+  ? BigInt((result as readonly unknown[] | undefined)?.[0] as bigint ?? 0n)
+  : BigInt(result as string) & ((1n << 160n) - 1n)
+
+const getHubSqrtPrice = async (client: PublicClient, deployment: BasketDeployment): Promise<bigint> => {
+  const cached = hubSqrtCache.get(deployment.chainId)
+  if (cached && isFresh(cached.at)) return cached.data
+  const contract = hubStateContract(deployment)
+  const result = await client.readContract(contract as any)
+  const sqrtPrice = parseHubSqrtPrice(result, deployment.chainId)
+  hubSqrtCache.set(deployment.chainId, { at: Date.now(), data: sqrtPrice })
   return sqrtPrice
 }
 
@@ -98,20 +140,25 @@ const wethToUsdgRaw = (wethWei: bigint, sqrtPriceX96: bigint): bigint =>
   (wethWei * sqrtPriceX96 * sqrtPriceX96) >> 192n
 
 export const invalidateBasketCache = (address?: Address) => {
-  listCache = null
+  listCache.clear()
   if (!address) {
     detailCache.clear()
     return
   }
-  detailCache.delete(cacheKey(BASKET_CHAIN_ID, address))
+  for (const chainId of [56, 4663]) detailCache.delete(cacheKey(chainId, address))
 }
 
 export const getBasketDetail = async (
   address: Address,
-  chainId: number = BASKET_CHAIN_ID,
+  chainId: number,
   options: BasketReadOptions = {},
 ): Promise<BasketDetail> => {
-  if (chainId !== BASKET_CHAIN_ID) throw new Error('Baskets are only available on Robinhood Chain')
+  if (!isBasketChain(chainId)) throw new Error('Baskets are not available on this chain')
+  const deployment = getBasketDeployment(chainId)
+  const contractsConfig = deployment.contracts
+  const tokenAbi = getBasketTokenAbi(chainId)
+  const executorAbi = getRebalanceExecutorAbi(chainId)
+  const quoteAssetFunction = chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
   if (!isAddress(address)) throw new Error('Invalid basket address')
   const key = cacheKey(chainId, address)
   const cached = detailCache.get(key)
@@ -120,43 +167,32 @@ export const getBasketDetail = async (
   const client = getReadOnlyClient(chainId)
   let registered: RegisteredBasket | null = null
   try {
-    registered = await getRegisteredBasket(address)
+    registered = await getRegisteredBasket(address, chainId)
   } catch {
     // A newly created Basket may be usable onchain before the API write succeeds.
   }
 
   if (registered) {
     const contracts: MulticallContract[] = [
-      { address, abi: basketTokenAbi, functionName: 'creatorPayout' },
-      { address, abi: basketTokenAbi, functionName: 'launcherPayout' },
-      { address, abi: basketTokenAbi, functionName: 'totalSupply' },
-      { address, abi: basketTokenAbi, functionName: 'effectiveSupply' },
-      { address, abi: basketTokenAbi, functionName: 'lastRebalanceAt' },
-      { address, abi: basketTokenAbi, functionName: 'engine' },
+      { address, abi: tokenAbi, functionName: 'creatorPayout' },
+      { address, abi: tokenAbi, functionName: 'launcherPayout' },
+      { address, abi: tokenAbi, functionName: 'totalSupply' },
+      { address, abi: tokenAbi, functionName: 'effectiveSupply' },
+      { address, abi: tokenAbi, functionName: 'lastRebalanceAt' },
+      { address, abi: tokenAbi, functionName: 'engine' },
     ]
     registered.assets.forEach((asset) => {
       contracts.push(
-        { address, abi: basketTokenAbi, functionName: 'assetAt', args: [BigInt(asset.position)] },
+        { address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(asset.position)] },
         {
-          address: BASKET_CONTRACTS.rebalanceExecutor,
-          abi: rebalanceExecutorAbi,
-          functionName: 'quoteAssetToWeth',
-          args: [asset.route, asset.address, 10n ** BigInt(asset.decimals)],
+          address: contractsConfig.rebalanceExecutor,
+          abi: executorAbi,
+          functionName: quoteAssetFunction,
+          args: [{ ...asset.route, v4Pool: toContractPoolKey(asset.route.v4Pool, chainId) }, asset.address, 10n ** BigInt(asset.decimals)],
         },
       )
     })
-    contracts.push({
-      address: BASKET_CONTRACTS.poolManager,
-      abi: [{
-        inputs: [{ name: 'slot', type: 'bytes32' }],
-        name: 'extsload',
-        outputs: [{ name: 'value', type: 'bytes32' }],
-        stateMutability: 'view',
-        type: 'function',
-      }],
-      functionName: 'extsload',
-      args: [getRhV4PoolStateSlot(poolId(BASKET_HUB_POOL))],
-    })
+    contracts.push(hubStateContract(deployment))
 
     const rows = await multicall(client, contracts)
     const creatorPayout = ok<Address>(rows[0])
@@ -164,12 +200,12 @@ export const getBasketDetail = async (
     const totalSupplyRaw = ok<bigint>(rows[2]) ?? 0n
     const effectiveSupplyRaw = ok<bigint>(rows[3]) ?? 0n
     const engine = ok<Address>(rows[5])
-    if (!engine || engine.toLowerCase() !== BASKET_CONTRACTS.hook.toLowerCase()) {
+    if (!engine || engine.toLowerCase() !== contractsConfig.hook.toLowerCase()) {
       throw new Error('This Basket belongs to an unsupported protocol deployment')
     }
-    const hubWord = ok<string>(rows[rows.length - 1])
-    const hubSqrtPrice = hubWord ? BigInt(hubWord) & ((1n << 160n) - 1n) : 0n
-    if (hubSqrtPrice > 0n) hubSqrtCache = { at: Date.now(), data: hubSqrtPrice }
+    const hubResult = ok<unknown>(rows[rows.length - 1])
+    const hubSqrtPrice = hubResult ? parseHubSqrtPrice(hubResult, chainId) : 0n
+    if (hubSqrtPrice > 0n) hubSqrtCache.set(chainId, { at: Date.now(), data: hubSqrtPrice })
 
     const holdings: BasketHolding[] = registered.assets.map((asset, index) => {
       const state: any = ok(rows[6 + index * 2])
@@ -177,7 +213,7 @@ export const getBasketDetail = async (
       const unitQuote = ok<bigint>(rows[7 + index * 2]) ?? 0n
       const reserveWeth = reserve * unitQuote / (10n ** BigInt(asset.decimals))
       const valueUsd = hubSqrtPrice > 0n
-        ? Number(formatUnits(wethToUsdgRaw(reserveWeth, hubSqrtPrice), BASKET_USDG_DECIMALS))
+        ? Number(formatUnits(wethToUsdgRaw(reserveWeth, hubSqrtPrice), deployment.settlementDecimals))
         : 0
       const balance = Number(formatUnits(reserve, asset.decimals))
       return {
@@ -228,21 +264,21 @@ export const getBasketDetail = async (
   }
 
   const meta = await multicall(client, [
-    { address, abi: basketTokenAbi, functionName: 'name' },
-    { address, abi: basketTokenAbi, functionName: 'symbol' },
-    { address, abi: basketTokenAbi, functionName: 'decimals' },
-    { address, abi: basketTokenAbi, functionName: 'assetCount' },
-    { address, abi: basketTokenAbi, functionName: 'basketFeeBps' },
-    { address, abi: basketTokenAbi, functionName: 'creatorShareBps' },
-    { address, abi: basketTokenAbi, functionName: 'creatorPayout' },
-    { address, abi: basketTokenAbi, functionName: 'launcherPayout' },
-    { address, abi: basketTokenAbi, functionName: 'totalSupply' },
-    { address, abi: basketTokenAbi, functionName: 'effectiveSupply' },
-    { address: BASKET_CONTRACTS.registry, abi: basketRegistryAbi, functionName: 'basketCreator', args: [address] },
-    { address: BASKET_CONTRACTS.registry, abi: basketRegistryAbi, functionName: 'basketVersion', args: [address] },
-    { address: BASKET_CONTRACTS.registry, abi: basketRegistryAbi, functionName: 'basketCreatedAt', args: [address] },
-    { address, abi: basketTokenAbi, functionName: 'lastRebalanceAt' },
-    { address, abi: basketTokenAbi, functionName: 'engine' },
+    { address, abi: tokenAbi, functionName: 'name' },
+    { address, abi: tokenAbi, functionName: 'symbol' },
+    { address, abi: tokenAbi, functionName: 'decimals' },
+    { address, abi: tokenAbi, functionName: 'assetCount' },
+    { address, abi: tokenAbi, functionName: 'basketFeeBps' },
+    { address, abi: tokenAbi, functionName: 'creatorShareBps' },
+    { address, abi: tokenAbi, functionName: 'creatorPayout' },
+    { address, abi: tokenAbi, functionName: 'launcherPayout' },
+    { address, abi: tokenAbi, functionName: 'totalSupply' },
+    { address, abi: tokenAbi, functionName: 'effectiveSupply' },
+    { address: contractsConfig.registry, abi: basketRegistryAbi, functionName: 'basketCreator', args: [address] },
+    { address: contractsConfig.registry, abi: basketRegistryAbi, functionName: 'basketVersion', args: [address] },
+    { address: contractsConfig.registry, abi: basketRegistryAbi, functionName: 'basketCreatedAt', args: [address] },
+    { address, abi: tokenAbi, functionName: 'lastRebalanceAt' },
+    { address, abi: tokenAbi, functionName: 'engine' },
   ])
   const name = ok<string>(meta[0])
   const symbol = ok<string>(meta[1])
@@ -261,16 +297,16 @@ export const getBasketDetail = async (
   const createdAt = Number(ok<bigint>(meta[12]) ?? 0n)
   const lastRebalanceAt = Number(ok<bigint>(meta[13]) ?? 0n)
   const engine = ok<Address>(meta[14])
-  if (!engine || engine.toLowerCase() !== BASKET_CONTRACTS.hook.toLowerCase()) {
+  if (!engine || engine.toLowerCase() !== contractsConfig.hook.toLowerCase()) {
     throw new Error('This Basket belongs to an unsupported protocol deployment')
   }
 
   const legs = await multicall(client, [
     ...Array.from({ length }, (_, index) => ({
-      address, abi: basketTokenAbi, functionName: 'assetAt', args: [BigInt(index)],
+      address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(index)],
     })),
     ...Array.from({ length }, (_, index) => ({
-      address, abi: basketTokenAbi, functionName: 'assetRouteAt', args: [BigInt(index)],
+      address, abi: tokenAbi, functionName: 'assetRouteAt', args: [BigInt(index)],
     })),
   ])
 
@@ -280,7 +316,7 @@ export const getBasketDetail = async (
       address: (raw?.asset ?? raw?.[0]) as Address,
       weightBps: Number(raw?.targetWeightBps ?? raw?.[1] ?? 0),
       reserve: BigInt(raw?.activeReserve ?? raw?.[2] ?? 0),
-      route: normalizeRoute(ok(legs[length + index])),
+      route: normalizeRoute(ok(legs[length + index]), chainId),
     }
   }).filter((leg) => isAddress(leg.address))
 
@@ -288,19 +324,19 @@ export const getBasketDetail = async (
     { address: leg.address, abi: erc20Abi, functionName: 'symbol' },
     { address: leg.address, abi: erc20Abi, functionName: 'decimals' },
     {
-      address: BASKET_CONTRACTS.rebalanceExecutor,
-      abi: rebalanceExecutorAbi,
-      functionName: 'quoteAssetToWeth',
-      args: [leg.route, leg.address, leg.reserve],
+      address: contractsConfig.rebalanceExecutor,
+      abi: executorAbi,
+      functionName: quoteAssetFunction,
+      args: [{ ...leg.route, v4Pool: toContractPoolKey(leg.route.v4Pool, chainId) }, leg.address, leg.reserve],
     },
   ]))
-  const hubSqrtPrice = await getHubSqrtPrice(client)
+  const hubSqrtPrice = await getHubSqrtPrice(client, deployment)
 
   const holdings: BasketHolding[] = assets.map((leg, index) => {
     const base = index * 3
     const assetDecimals = Number(ok<number>(assetMeta[base + 1]) ?? 18)
     const reserveWeth = ok<bigint>(assetMeta[base + 2]) ?? 0n
-    const valueUsd = Number(formatUnits(wethToUsdgRaw(reserveWeth, hubSqrtPrice), BASKET_USDG_DECIMALS))
+    const valueUsd = Number(formatUnits(wethToUsdgRaw(reserveWeth, hubSqrtPrice), deployment.settlementDecimals))
     const balance = Number(formatUnits(leg.reserve, assetDecimals))
     const priceUsd = balance > 0 ? valueUsd / balance : 0
     return {
@@ -354,15 +390,21 @@ export const getBasketDetail = async (
 }
 
 export const listBaskets = async (
-  chainId: number = BASKET_CHAIN_ID,
+  chainId: number,
   options: BasketReadOptions = {},
 ): Promise<BasketSummary[]> => {
-  if (!options.force && listCache && isFresh(listCache.at)) {
-    options.onShell?.(listCache.data)
-    return listCache.data
+  const deployment = getBasketDeployment(chainId)
+  const contractsConfig = deployment.contracts
+  const tokenAbi = getBasketTokenAbi(chainId)
+  const executorAbi = getRebalanceExecutorAbi(chainId)
+  const quoteAssetFunction = chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
+  const cached = listCache.get(chainId)
+  if (!options.force && cached && isFresh(cached.at)) {
+    options.onShell?.(cached.data)
+    return cached.data
   }
   const client = getReadOnlyClient(chainId)
-  const registered = (await listRegisteredBaskets())
+  const registered = (await listRegisteredBaskets(chainId))
     .filter((basket) => isAddress(basket.address))
     .sort((a, b) => b.createdAt - a.createdAt)
 
@@ -382,7 +424,7 @@ export const listBaskets = async (
   }))
   options.onShell?.(shells)
   if (!registered.length) {
-    listCache = { at: Date.now(), data: shells }
+    listCache.set(chainId, { at: Date.now(), data: shells })
     return shells
   }
 
@@ -400,36 +442,25 @@ export const listBaskets = async (
   }
 
   registered.forEach((basket, basketIndex) => {
-    addRead({ address: basket.address, abi: basketTokenAbi, functionName: 'effectiveSupply' }, { kind: 'effectiveSupply', basketIndex })
+    addRead({ address: basket.address, abi: tokenAbi, functionName: 'effectiveSupply' }, { kind: 'effectiveSupply', basketIndex })
     basket.assets.forEach((asset, assetIndex) => {
       addRead(
-        { address: basket.address, abi: basketTokenAbi, functionName: 'assetAt', args: [BigInt(asset.position)] },
+        { address: basket.address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(asset.position)] },
         { kind: 'reserve', basketIndex, assetIndex },
       )
       addRead(
         {
-          address: BASKET_CONTRACTS.rebalanceExecutor,
-          abi: rebalanceExecutorAbi,
-          functionName: 'quoteAssetToWeth',
-          args: [asset.route, asset.address, 10n ** BigInt(asset.decimals)],
+          address: contractsConfig.rebalanceExecutor,
+          abi: executorAbi,
+          functionName: quoteAssetFunction,
+          args: [{ ...asset.route, v4Pool: toContractPoolKey(asset.route.v4Pool, chainId) }, asset.address, 10n ** BigInt(asset.decimals)],
         },
         { kind: 'unitQuote', basketIndex, assetIndex },
       )
     })
   })
   addRead(
-    {
-      address: BASKET_CONTRACTS.poolManager,
-      abi: [{
-        inputs: [{ name: 'slot', type: 'bytes32' }],
-        name: 'extsload',
-        outputs: [{ name: 'value', type: 'bytes32' }],
-        stateMutability: 'view',
-        type: 'function',
-      }],
-      functionName: 'extsload',
-      args: [getRhV4PoolStateSlot(poolId(BASKET_HUB_POOL))],
-    },
+    hubStateContract(deployment),
     { kind: 'hubPrice' },
   )
 
@@ -446,7 +477,7 @@ export const listBaskets = async (
       const raw: any = result.result
       reserves[read.basketIndex][read.assetIndex] = BigInt(raw?.activeReserve ?? raw?.[2] ?? 0)
     } else if (read.kind === 'unitQuote') unitQuotes[read.basketIndex][read.assetIndex] = result.result as bigint
-    else hubSqrtPrice = BigInt(result.result as string) & ((1n << 160n) - 1n)
+    else hubSqrtPrice = parseHubSqrtPrice(result.result, chainId)
   })
 
   const baskets = registered.map((basket, basketIndex): BasketSummary => {
@@ -459,7 +490,7 @@ export const listBaskets = async (
       if (reserve > 0n && wethValue > 0n) pricedCount += 1
       if (hubSqrtPrice > 0n) aumRaw += wethToUsdgRaw(wethValue, hubSqrtPrice)
     })
-    const aumUsd = Number(formatUnits(aumRaw, BASKET_USDG_DECIMALS))
+    const aumUsd = Number(formatUnits(aumRaw, deployment.settlementDecimals))
     const effectiveSupply = Number(formatUnits(effectiveSupplies[basketIndex], basket.decimals))
     return {
       ...shells[basketIndex],
@@ -468,12 +499,12 @@ export const listBaskets = async (
       pricedCount,
     }
   })
-  listCache = { at: Date.now(), data: baskets }
+  listCache.set(chainId, { at: Date.now(), data: baskets })
   return baskets
 }
 
-export const getErc20Balance = async (token: Address, account: Address): Promise<bigint> =>
-  getReadOnlyClient(BASKET_CHAIN_ID).readContract({
+export const getErc20Balance = async (token: Address, account: Address, chainId: number): Promise<bigint> =>
+  getReadOnlyClient(chainId).readContract({
     address: token,
     abi: erc20Abi,
     functionName: 'balanceOf',

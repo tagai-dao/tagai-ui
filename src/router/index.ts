@@ -163,7 +163,10 @@ router.beforeEach(async (to, from, next) => {
   }
 
   const predictionRoutes = new Set(['predictions', 'predict-battle', 'predict-event'])
-  if (predictionRoutes.has(String(to.name)) && !useChainStore().deployment.features.prediction) {
+  const predictionFeatures = useChainStore().deployment.features
+  const predictionUnavailable = predictionRoutes.has(String(to.name)) && !predictionFeatures.prediction
+  const predictionMainUnavailable = to.name === 'predictions' && !predictionFeatures.predictionMainEntry
+  if (predictionUnavailable || predictionMainUnavailable) {
     next({ path: '/' })
     return
   }

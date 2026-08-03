@@ -28,6 +28,8 @@ export type ChainDeployment = {
   }
   features: {
     prediction: boolean
+    /** 是否开放聚合预测市场主入口；关闭后仍可从社区进入预测市场。 */
+    predictionMainEntry: boolean
     auPay: boolean
     /** 新版 ImportHelper：导入时创建 IPShare，并记录 importerOf(token) */
     enhancedImportHelper: boolean
@@ -102,7 +104,7 @@ export const BSC_CHAIN: ChainDeployment = {
     interval: 3000,
   },
   // BSC 现网仍使用旧版 ImportHelper，不支持 IPShare 创建或 importerOf。
-  features: { prediction: true, auPay: true, enhancedImportHelper: false },
+  features: { prediction: true, predictionMainEntry: false, auPay: true, enhancedImportHelper: false },
   wrappedNative: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
   dex: {
     kind: 'pancake',
@@ -156,7 +158,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     multicallAddress: MULTICALL3,
     interval: 3000,
   },
-  features: { prediction: false, auPay: false, enhancedImportHelper: true },
+  features: { prediction: false, predictionMainEntry: false, auPay: false, enhancedImportHelper: true },
   // Uniswap UR constructor 确认的 WETH9
   wrappedNative: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
   dex: {

@@ -4,8 +4,9 @@ import { useBasketList } from '@/composables/baskets/useBasketList'
 import BasketChainGate from './components/BasketChainGate.vue'
 import BasketCard from './components/BasketCard.vue'
 import CreateBasketModal from './components/CreateBasketModal.vue'
-import { BASKET_CONTRACTS, BASKET_PROTOCOL_REPO } from '@/config/baskets'
-import { ROBINHOOD_CHAIN } from '@/config/chains'
+import { getBasketDeployment } from '@/config/baskets'
+import { getChainDeployment } from '@/config/chains'
+import { useChainStore } from '@/stores/chain'
 
 const {
   baskets,
@@ -18,10 +19,12 @@ const {
 } = useBasketList()
 
 const list = computed(() => filteredBaskets())
+const chainStore = useChainStore()
+const deployment = computed(() => getBasketDeployment(chainStore.activeChainId))
 const totalAum = computed(() => baskets.value.reduce((sum, basket) => sum + (basket.aumUsd || 0), 0))
 const showCreate = ref(false)
-const factory = BASKET_CONTRACTS.hook
-const factoryUrl = `${ROBINHOOD_CHAIN.browser.replace(/\/$/, '')}/address/${factory}`
+const factory = computed(() => deployment.value.contracts.hook)
+const factoryUrl = computed(() => `${getChainDeployment(chainStore.activeChainId).browser.replace(/\/$/, '')}/address/${factory.value}`)
 
 const formatUsd = (n: number) => {
   if (!Number.isFinite(n) || n <= 0) return '—'
@@ -42,12 +45,12 @@ onMounted(() => {
         <div class="hero__grid" aria-hidden="true" />
         <div class="relative z-10 flex flex-col web:flex-row web:items-end web:justify-between gap-6">
           <div class="max-w-xl">
-            <div class="live-badge"><i /> ROBINHOOD · LIVE</div>
+            <div class="live-badge"><i /> {{ deployment.networkLabel }} · LIVE</div>
             <h1 class="mt-4 text-[34px] web:text-[48px] leading-none font-bold tracking-[-0.055em] text-content">
               {{ $t('baskets.title') }}
             </h1>
             <p class="mt-3 max-w-md text-sm web:text-base leading-6 text-muted">
-              {{ $t('baskets.subtitle') }}
+              {{ $t('baskets.subtitle', { network: deployment.networkLabel }) }}
             </p>
           </div>
 
@@ -110,7 +113,7 @@ onMounted(() => {
       </div>
 
       <p class="mt-10 pb-2 text-center text-xs text-muted">
-        <a :href="BASKET_PROTOCOL_REPO" target="_blank" rel="noopener noreferrer" class="hover:text-content transition-colors">
+        <a v-if="deployment.protocolRepo" :href="deployment.protocolRepo" target="_blank" rel="noopener noreferrer" class="hover:text-content transition-colors">
           {{ $t('baskets.openSourceProtocol') }}
         </a>
         <template v-if="factory">

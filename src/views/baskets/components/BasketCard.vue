@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { BasketSummary } from '@/utils/baskets/types'
+import { getBasketDeployment } from '@/config/baskets'
 
 const props = defineProps<{
   basket: BasketSummary
@@ -35,6 +36,7 @@ const allocationLegs = computed(() =>
   })),
 )
 const hiddenLegCount = computed(() => Math.max(0, props.basket.top.length - allocationLegs.value.length))
+const networkLabel = computed(() => getBasketDeployment(props.basket.chainId).networkLabel)
 
 onMounted(() => {
   if (!allocationElement.value) return
@@ -74,7 +76,7 @@ const formatNav = (n: number) => {
           <h2 class="text-xl font-bold tracking-[-0.03em] text-content truncate">
             {{ basket.symbol }}
           </h2>
-          <span class="chain-badge"><i /> HOOD</span>
+          <span class="chain-badge"><i /> {{ networkLabel }}</span>
         </div>
         <p class="mt-1 text-sm text-muted truncate">{{ basket.name }}</p>
       </div>

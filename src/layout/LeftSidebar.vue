@@ -14,7 +14,10 @@ const modalStore = useModalStore()
 const stateStore = useStateStore()
 const loginStore = useLoginStore()
 const chainStore = useChainStore()
-const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
+const predictionMainEntryEnabled = computed(() => (
+  chainStore.deployment.features.prediction
+  && chainStore.deployment.features.predictionMainEntry
+))
 
 const moreMenuVisible = ref(false)
 const moreMenuRef = ref()
@@ -150,7 +153,7 @@ const handleWalletClick = (e?: Event) => {
 
       <!-- 3. Prediction -->
       <router-link
-        v-if="predictionEnabled"
+        v-if="predictionMainEntryEnabled"
         to="/predictions"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
         :class="isPredictionActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
@@ -165,7 +168,7 @@ const handleWalletClick = (e?: Event) => {
         <span class="hidden desk:inline text-h4 text-content">{{ $t('prediction') || 'Prediction' }}</span>
       </router-link>
 
-      <!-- Baskets（Robinhood） -->
+      <!-- Baskets -->
       <router-link
         to="/baskets"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"

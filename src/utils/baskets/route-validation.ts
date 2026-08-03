@@ -1,8 +1,8 @@
 import { encodeAbiParameters, getAddress, keccak256, parseAbi, zeroAddress, type Address } from 'viem'
-import { BASKET_CHAIN_ID, BASKET_CONTRACTS, type BasketPoolKey } from '@/config/baskets'
+import { getBasketDeployment, toContractPoolKey, type BasketPoolKey } from '@/config/baskets'
 import { getRhV4PoolLiquidity, getRhV4PoolState } from '@/utils/rhV4Swap'
 import { getReadOnlyClient } from '@/utils/wallets'
-import { basketRegistryAbi } from './abis'
+import { basketRegistryAbi, pancakePoolManagerStateAbi } from './abis'
 import type { BasketLegRoute } from './types'
 
 const V3_TWAP_WINDOW_SECONDS = 300
@@ -24,8 +24,15 @@ const v3PoolValidationAbi = parseAbi([
 const sameAddress = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
 /** PoolKey.toId(): keccak256(abi.encode(currency0, currency1, fee, tickSpacing, hooks)). */
-export const getBasketV4PoolId = (pool: BasketPoolKey): `0x${string}` =>
-  keccak256(encodeAbiParameters(
+export const getBasketV4PoolId = (pool: BasketPoolKey, chainId = 4663): `0x${string}` => chainId === 56
+  ? keccak256(encodeAbiParameters([{
+      type: 'tuple', components: [
+        { type: 'address', name: 'currency0' }, { type: 'address', name: 'currency1' },
+        { type: 'address', name: 'hooks' }, { type: 'address', name: 'poolManager' },
+        { type: 'uint24', name: 'fee' }, { type: 'bytes32', name: 'parameters' },
+      ],
+    }], [toContractPoolKey(pool, chainId) as any]))
+  : keccak256(encodeAbiParameters(
     [
       { type: 'address' },
       { type: 'address' },
@@ -36,25 +43,42 @@ export const getBasketV4PoolId = (pool: BasketPoolKey): `0x${string}` =>
     [pool.currency0, pool.currency1, pool.fee, pool.tickSpacing, pool.hooks],
   ))
 
-const assertV4RouteUsable = async (route: BasketLegRoute, asset: Address) => {
+const assertV4RouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number) => {
+  const deployment = getBasketDeployment(chainId)
   const pool = route.v4Pool
-  if (!sameAddress(pool.currency0, zeroAddress) || !sameAddress(pool.currency1, asset)) {
-    throw new Error('The selected V4 pool is not a direct native ETH route for this asset')
+  const quote = chainId === 56 && route.quoteToken === 1
+    ? deployment.contracts.settlementToken
+    : zeroAddress
+  const direct = (sameAddress(pool.currency0, quote) && sameAddress(pool.currency1, asset)) ||
+    (sameAddress(pool.currency0, asset) && sameAddress(pool.currency1, quote))
+  if (!direct) {
+    const quoteLabel = chainId === 56 && route.quoteToken === 1
+      ? deployment.settlementSymbol
+      : deployment.nativeSymbol
+    throw new Error(`The selected V4 pool is not a direct ${quoteLabel} route for this asset`)
+  }
+  if (chainId === 56 && (!pool.poolManager || !sameAddress(pool.poolManager, deployment.contracts.poolManager))) {
+    throw new Error('The selected V4 pool uses an unsupported PoolManager')
   }
 
-  const client = getReadOnlyClient(BASKET_CHAIN_ID)
-  const poolId = getBasketV4PoolId(pool)
+  const client = getReadOnlyClient(chainId)
+  const poolId = getBasketV4PoolId(pool, chainId)
   const hookTrustPromise = sameAddress(pool.hooks, zeroAddress)
     ? Promise.resolve(true)
     : client.readContract({
-        address: BASKET_CONTRACTS.registry,
+        address: deployment.contracts.registry,
         abi: basketRegistryAbi,
         functionName: 'trustedConstituentHooks',
         args: [pool.hooks],
       })
   const [state, liquidity, trustedHook] = await Promise.all([
-    getRhV4PoolState(poolId),
-    getRhV4PoolLiquidity(poolId),
+    chainId === 56
+      ? client.readContract({ address: deployment.contracts.poolManager, abi: pancakePoolManagerStateAbi, functionName: 'getSlot0', args: [poolId] })
+          .then((row) => ({ sqrtPriceX96: row[0] }))
+      : getRhV4PoolState(poolId),
+    chainId === 56
+      ? client.readContract({ address: deployment.contracts.poolManager, abi: pancakePoolManagerStateAbi, functionName: 'getLiquidity', args: [poolId] })
+      : getRhV4PoolLiquidity(poolId),
     hookTrustPromise,
   ])
 
@@ -63,24 +87,28 @@ const assertV4RouteUsable = async (route: BasketLegRoute, asset: Address) => {
   if (!trustedHook) throw new Error('The selected V4 pool hook is not approved for Basket constituents')
 }
 
-const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address) => {
+const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number) => {
+  const deployment = getBasketDeployment(chainId)
   if (!Number.isInteger(route.v3Fee) || route.v3Fee <= 0) {
     throw new Error('The selected V3 route has an invalid fee tier')
   }
 
-  const client = getReadOnlyClient(BASKET_CHAIN_ID)
+  const client = getReadOnlyClient(chainId)
   const factory = await client.readContract({
-    address: BASKET_CONTRACTS.rebalanceExecutor,
+    address: deployment.contracts.rebalanceExecutor,
     abi: rebalanceExecutorRouteAbi,
     functionName: 'v3Factory',
   })
   if (sameAddress(factory, zeroAddress)) throw new Error('V3 Basket routes are not configured')
 
+  const quote = chainId === 56 && route.quoteToken === 1
+    ? deployment.contracts.settlementToken
+    : deployment.contracts.wrappedNative
   const pool = await client.readContract({
     address: factory,
     abi: v3FactoryAbi,
     functionName: 'getPool',
-    args: [BASKET_CONTRACTS.weth, asset, route.v3Fee],
+    args: [quote, asset, route.v3Fee],
   })
   if (sameAddress(pool, zeroAddress)) throw new Error('The selected V3 pool does not exist')
 
@@ -105,9 +133,10 @@ const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address) => {
 }
 
 /** Mirrors the deployed BasketToken constructor's venue-specific route checks. */
-export const assertBasketRouteUsable = async (route: BasketLegRoute, asset: Address): Promise<void> => {
-  if (route.venue === 0) return assertV4RouteUsable(route, asset)
-  if (route.venue === 1) return assertV3RouteUsable(route, asset)
-  if (route.venue === 2 && sameAddress(asset, BASKET_CONTRACTS.weth)) return
+export const assertBasketRouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number): Promise<void> => {
+  const deployment = getBasketDeployment(chainId)
+  if (route.venue === 0) return assertV4RouteUsable(route, asset, chainId)
+  if (route.venue === 1) return assertV3RouteUsable(route, asset, chainId)
+  if (route.venue === 2 && sameAddress(asset, deployment.contracts.wrappedNative)) return
   throw new Error('The selected route is not compatible with this Basket constituent')
 }

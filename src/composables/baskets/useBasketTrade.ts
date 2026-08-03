@@ -3,10 +3,8 @@ import { formatUnits, type Address } from 'viem'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import {
-  BASKET_CHAIN_ID,
-  BASKET_CONTRACTS,
   BASKET_DEFAULT_SLIPPAGE_BPS,
-  BASKET_USDG_DECIMALS,
+  getBasketDeployment,
 } from '@/config/baskets'
 import { getBasketBalance, getErc20Balance, invalidateBasketCache } from '@/utils/baskets/data'
 import type { BasketDetail, BasketSwapQuote, TradeSide } from '@/utils/baskets/types'
@@ -44,8 +42,9 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     const connected = accountStore.ethConnectAddress
     return connected ? connected as Address : undefined
   })
-  const isOnRh = computed(() => chainStore.activeChainId === BASKET_CHAIN_ID)
-  const canTradeConfig = computed(() => Boolean(BASKET_CONTRACTS.swapRouter && BASKET_CONTRACTS.usdg))
+  const deployment = computed(() => getBasketDeployment(detail.value?.chainId ?? chainStore.activeChainId))
+  const isOnBasketChain = computed(() => !!detail.value && chainStore.activeChainId === detail.value.chainId)
+  const canTradeConfig = computed(() => Boolean(deployment.value.contracts.swapRouter && deployment.value.contracts.settlementToken))
   const amount = computed(() => {
     const value = Number(amountInput.value)
     return Number.isFinite(value) && value > 0 ? value : 0
@@ -88,18 +87,19 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
   const refreshBalances = async () => {
     const basket = detail.value
     const owner = account.value
-    if (!basket || !owner || !isOnRh.value) {
+    if (!basket || !owner || !isOnBasketChain.value) {
       usdgBalance.value = 0n
       basketBalance.value = 0n
       allowance.value = 0n
       return
     }
-    const tokenIn = side.value === 'buy' ? BASKET_CONTRACTS.usdg : basket.address
+    const config = getBasketDeployment(basket.chainId)
+    const tokenIn = side.value === 'buy' ? config.contracts.settlementToken : basket.address
     try {
       const [settlement, shares, approved] = await Promise.all([
-        getErc20Balance(BASKET_CONTRACTS.usdg, owner),
-        getBasketBalance(basket.address, owner),
-        getTradeAllowance(tokenIn, owner),
+        getErc20Balance(config.contracts.settlementToken, owner, basket.chainId),
+        getBasketBalance(basket.address, owner, basket.chainId),
+        getTradeAllowance(tokenIn, owner, basket.chainId),
       ])
       usdgBalance.value = settlement
       basketBalance.value = shares
@@ -109,19 +109,19 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     }
   }
 
-  watch([detail, account, side, isOnRh], () => void refreshBalances(), { immediate: true })
+  watch([detail, account, side, isOnBasketChain], () => void refreshBalances(), { immediate: true })
   watch([amountInput, side, slippageBps, detail], scheduleQuote)
 
   const setMax = () => {
     const basket = detail.value
     if (!basket) return
     amountInput.value = side.value === 'buy'
-      ? formatUnits(usdgBalance.value, BASKET_USDG_DECIMALS)
+      ? formatUnits(usdgBalance.value, deployment.value.settlementDecimals)
       : formatUnits(basketBalance.value, basket.decimals)
   }
 
   const setAmountInput = (value: string | number) => {
-    const decimals = side.value === 'buy' ? BASKET_USDG_DECIMALS : (detail.value?.decimals ?? 18)
+    const decimals = side.value === 'buy' ? deployment.value.settlementDecimals : (detail.value?.decimals ?? 18)
     amountInput.value = sanitizeBasketAmountInput(value, decimals)
   }
 
@@ -135,16 +135,16 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
       step.value = 'error'
       return
     }
-    if (!isOnRh.value) {
-      errorMessage.value = 'Switch to Robinhood Chain'
+    if (!isOnBasketChain.value) {
+      errorMessage.value = `Switch to ${deployment.value.networkLabel}`
       step.value = 'error'
       return
     }
-    const tokenIn = side.value === 'buy' ? BASKET_CONTRACTS.usdg : basket.address
+    const tokenIn = side.value === 'buy' ? deployment.value.contracts.settlementToken : basket.address
     try {
       if (needsApproval.value) {
         step.value = 'approving'
-        await approveBasketTrade(tokenIn, quote.value.amountRaw, owner)
+        await approveBasketTrade(tokenIn, quote.value.amountRaw, owner, basket.chainId)
         await refreshBalances()
       }
       step.value = 'swapping'
@@ -181,7 +181,8 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     quote,
     needsApproval,
     allLegsPriced,
-    isOnRh,
+    isOnBasketChain,
+    deployment,
     canTradeConfig,
     account,
     refreshBalances,

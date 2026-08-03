@@ -3,6 +3,8 @@ import type { BasketPoolKey } from '@/config/baskets'
 
 export type BasketLegRoute = {
   venue: number
+  /** BSC only: 0 = WBNB, 1 = settlement token (USDT). */
+  quoteToken?: 0 | 1
   v4Pool: BasketPoolKey
   v3Fee: number
 }

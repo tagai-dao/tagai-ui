@@ -5,9 +5,10 @@ import { ref } from 'vue'
 import { isAddress, type Address } from 'viem'
 import { getBasketDetail } from '@/utils/baskets/data'
 import type { BasketDetail } from '@/utils/baskets/types'
-import { BASKET_CHAIN_ID } from '@/config/baskets'
+import { useChainStore } from '@/stores/chain'
 
 export const useBasketDetail = () => {
+  const chainStore = useChainStore()
   const detail = ref<BasketDetail | null>(null)
   const isLoading = ref(false)
   const isRefreshing = ref(false)
@@ -38,7 +39,7 @@ export const useBasketDetail = () => {
       errorMessage.value = ''
     }
     try {
-      const next = await getBasketDetail(address as Address, BASKET_CHAIN_ID, { force })
+      const next = await getBasketDetail(address as Address, chainStore.activeChainId, { force })
       if (currentRequest !== requestId) return
       detail.value = next
       hasError.value = false

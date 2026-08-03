@@ -2,8 +2,8 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getAddress, isAddress } from 'viem'
 import type { BasketDetail } from '@/utils/baskets/types'
-import { BASKET_CHAIN_ID, BASKET_CONTRACTS } from '@/config/baskets'
-import { rebalanceExecutorAbi } from '@/utils/baskets/abis'
+import { getBasketDeployment } from '@/config/baskets'
+import { getRebalanceExecutorAbi } from '@/utils/baskets/abis'
 import { friendlyBasketError } from '@/utils/baskets/trade'
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import { useAccountStore } from '@/stores/web3'
@@ -15,6 +15,8 @@ const props = defineProps<{ detail: BasketDetail }>()
 const emit = defineEmits<{ rebalanced: [] }>()
 const accountStore = useAccountStore()
 const chainStore = useChainStore()
+const deployment = computed(() => getBasketDeployment(props.detail.chainId))
+const executorAbi = computed(() => getRebalanceExecutorAbi(props.detail.chainId))
 const { t } = useI18n()
 const now = ref(Date.now())
 const state = ref<'idle' | 'quoting' | 'submitting' | 'success' | 'error'>('idle')
@@ -38,7 +40,8 @@ const requiresRebalance = computed(() => maxDeviationBps.value > 300)
 // The deployed executor derives its minimum from the fee-exclusive reference price
 // and permits only 3% slippage. A >=3% venue fee therefore cannot satisfy that minimum.
 const incompatibleHoldings = computed(() => props.detail.holdings.filter((holding) => {
-  const fee = holding.route.venue === 2 ? 0 : holding.route.venue === 0 ? holding.route.v4Pool.fee : holding.route.v3Fee
+  const rawFee = holding.route.venue === 2 ? 0 : holding.route.venue === 0 ? holding.route.v4Pool.fee : holding.route.v3Fee
+  const fee = props.detail.chainId === 56 && rawFee === 0x800000 ? 0 : rawFee
   const live = props.detail.aumUsd > 0 ? holding.valueUsd / props.detail.aumUsd * 100 : 0
   return !callerControlledSlippage.value && fee >= 30_000 && Math.abs(live - holding.targetWeightPct) > 0.0001
 }))
@@ -48,7 +51,7 @@ const canRebalance = computed(() => isCreator.value && requiresRebalance.value &
   && props.detail.fullyPriced && (props.detail.effectiveSupply ?? 0) > 0
   && capabilityLoaded.value
   && incompatibleHoldings.value.length === 0
-  && chainStore.activeChainId === BASKET_CHAIN_ID && state.value !== 'quoting' && state.value !== 'submitting')
+  && chainStore.activeChainId === props.detail.chainId && state.value !== 'quoting' && state.value !== 'submitting')
 
 const rebalanceError = (error: unknown) => {
   const text = error instanceof Error ? error.message : String(error)
@@ -67,19 +70,21 @@ const rebalance = async () => {
   errorMessage.value = ''
   try {
     const slippageBps = Math.min(10_000, Math.max(0, Math.round(Number(slippagePct.value || 0) * 100)))
-    const { minWethOut, minAssetOut } = await buildRebalanceLimits(props.detail, slippageBps)
+    const { minWethOut, minQuoteOut, minAssetOut, minHubOut } = await buildRebalanceLimits(props.detail, slippageBps)
     state.value = 'submitting'
-    const client = getReadOnlyClient(BASKET_CHAIN_ID)
+    const client = getReadOnlyClient(props.detail.chainId)
     const wallet = getWalletClient()
     if (!wallet) throw new Error('Wallet not connected')
     const { request } = await client.simulateContract({
       account: account.value,
-      address: BASKET_CONTRACTS.rebalanceExecutor,
-      abi: rebalanceExecutorAbi,
+      address: deployment.value.contracts.rebalanceExecutor,
+      abi: executorAbi.value,
       functionName: 'rebalance',
-      args: [props.detail.address, minWethOut, minAssetOut],
-    })
-    const hash = await wallet.writeContract(request)
+      args: props.detail.chainId === 56
+        ? [props.detail.address, minQuoteOut, minAssetOut, minHubOut]
+        : [props.detail.address, minWethOut, minAssetOut],
+    } as any)
+    const hash = await wallet.writeContract(request as any)
     if (!await waitForTx(hash)) throw new Error('Rebalance failed')
     state.value = 'success'
     emit('rebalanced')
@@ -97,11 +102,11 @@ const onSlippageInput = (event: Event) => {
 
 onMounted(async () => {
   try {
-    callerControlledSlippage.value = await getReadOnlyClient(BASKET_CHAIN_ID).readContract({
-      address: BASKET_CONTRACTS.rebalanceExecutor,
-      abi: rebalanceExecutorAbi,
+    callerControlledSlippage.value = await getReadOnlyClient(props.detail.chainId).readContract({
+      address: deployment.value.contracts.rebalanceExecutor,
+      abi: executorAbi.value,
       functionName: 'CALLER_CONTROLLED_SLIPPAGE',
-    })
+    } as any) as boolean
   } catch {
     callerControlledSlippage.value = false
   } finally {

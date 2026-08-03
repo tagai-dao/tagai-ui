@@ -1,6 +1,6 @@
 import { get, post } from '@/apis/axios'
 import { API_BASE_URL } from '@/config/api'
-import { BASKET_CHAIN_ID } from '@/config/baskets'
+import { getBasketDeployment } from '@/config/baskets'
 import type { Address, Hex } from 'viem'
 import type { BasketLegRoute } from './types'
 
@@ -42,19 +42,22 @@ type BasketDetailResponse = {
   d: RegisteredBasket
 }
 
-const chainHeaders = { headers: { 'X-Chain-Id': String(BASKET_CHAIN_ID) } }
+const chainHeaders = (chainId: number) => {
+  getBasketDeployment(chainId)
+  return { headers: { 'X-Chain-Id': String(chainId) } }
+}
 
-export const registerBasketDeployment = (basketAddress: Address, txHash: Hex) =>
-  post(`${API_BASE_URL}/basket/register`, { basketAddress, txHash }, chainHeaders)
+export const registerBasketDeployment = (basketAddress: Address, txHash: Hex, chainId: number) =>
+  post(`${API_BASE_URL}/basket/register`, { basketAddress, txHash }, chainHeaders(chainId))
 
-export const listRegisteredBaskets = async (): Promise<RegisteredBasket[]> => {
+export const listRegisteredBaskets = async (chainId: number): Promise<RegisteredBasket[]> => {
   const baskets: RegisteredBasket[] = []
   const size = 100
   for (let page = 0; page < 100; page += 1) {
     const response = await get(
       `${API_BASE_URL}/basket/list`,
       { page, size },
-      chainHeaders,
+      chainHeaders(chainId),
     ) as BasketListResponse
     const rows = Array.isArray(response?.d?.list) ? response.d.list : []
     baskets.push(...rows)
@@ -63,14 +66,14 @@ export const listRegisteredBaskets = async (): Promise<RegisteredBasket[]> => {
   return baskets
 }
 
-export const listRegisteredBasketAddresses = async (): Promise<Address[]> =>
-  (await listRegisteredBaskets()).map((basket) => basket.address)
+export const listRegisteredBasketAddresses = async (chainId: number): Promise<Address[]> =>
+  (await listRegisteredBaskets(chainId)).map((basket) => basket.address)
 
-export const getRegisteredBasket = async (address: Address): Promise<RegisteredBasket> => {
+export const getRegisteredBasket = async (address: Address, chainId: number): Promise<RegisteredBasket> => {
   const response = await get(
     `${API_BASE_URL}/basket/${address}`,
     undefined,
-    chainHeaders,
+    chainHeaders(chainId),
   ) as BasketDetailResponse
   return response.d
 }

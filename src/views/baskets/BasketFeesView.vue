@@ -4,9 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { formatUnits, getAddress, isAddress, parseUnits, type Address } from 'viem'
 import { useBasketDetail } from '@/composables/baskets/useBasketDetail'
 import { feeSplit } from '@/utils/baskets/fee-model'
-import { basketFeeAuctionAbi, basketTokenAbi, erc20Abi } from '@/utils/baskets/abis'
+import { erc20Abi, getBasketFeeAuctionAbi, getBasketTokenAbi } from '@/utils/baskets/abis'
 import { friendlyBasketError, sanitizeBasketAmountInput } from '@/utils/baskets/trade'
-import { BASKET_CHAIN_ID, BASKET_CONTRACTS, BASKET_FRONTEND_FEE_WALLET } from '@/config/baskets'
+import { BASKET_FRONTEND_FEE_WALLET, getBasketDeployment } from '@/config/baskets'
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
@@ -21,6 +21,10 @@ const accountStore = useAccountStore()
 const chainStore = useChainStore()
 const modalStore = useModalStore()
 const { detail, isLoading, hasError, errorMessage, load } = useBasketDetail()
+const deployment = computed(() => getBasketDeployment(detail.value?.chainId ?? chainStore.activeChainId))
+const contracts = computed(() => deployment.value.contracts)
+const tokenAbi = computed(() => getBasketTokenAbi(deployment.value.chainId))
+const auctionAbi = computed(() => getBasketFeeAuctionAbi(deployment.value.chainId))
 const address = computed(() => String(route.params.address || ''))
 const account = computed(() => isAddress(accountStore.ethConnectAddress) ? getAddress(accountStore.ethConnectAddress) : undefined)
 const now = ref(Date.now())
@@ -73,7 +77,7 @@ const pct = (value: number) => `${(value * 100).toFixed(value < .1 ? 2 : 1)}%`
 const formatDate = (timestamp: number) => timestamp ? new Date(timestamp * 1_000).toLocaleString() : '—'
 const normalizeAuction = (raw: any, id: bigint): Auction => ({
   id,
-  ethAmount: BigInt(raw?.ethAmount ?? raw?.[0] ?? 0),
+  ethAmount: BigInt(raw?.ethAmount ?? raw?.bnbAmount ?? raw?.[0] ?? 0),
   initialBid: BigInt(raw?.initialBid ?? raw?.[1] ?? 0),
   highestBid: BigInt(raw?.highestBid ?? raw?.[2] ?? 0),
   highestBidder: (raw?.highestBidder ?? raw?.[3]) as Address,
@@ -86,30 +90,31 @@ const loadFees = async () => {
   if (!detail.value) return
   loadingFees.value = true
   try {
-    const client = getReadOnlyClient(BASKET_CHAIN_ID)
+    const chainId = detail.value.chainId
+    const client = getReadOnlyClient(chainId)
     const beneficiary = account.value ?? '0x0000000000000000000000000000000000000000'
     const basket = detail.value.address
     const calls = [
-      { address: basket, abi: basketTokenAbi, functionName: 'claimableHolderFees', args: [beneficiary] },
-      { address: basket, abi: basketTokenAbi, functionName: 'pendingFrontendFees', args: [beneficiary] },
-      { address: basket, abi: basketTokenAbi, functionName: 'pendingCreatorFees' },
-      { address: basket, abi: basketTokenAbi, functionName: 'pendingLauncherFees' },
-      { address: basket, abi: basketTokenAbi, functionName: 'feeReserveWeth' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'availableAuctionEth' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'minAuctionEth' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'maxAuctionEth' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'lastAuctionAt' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'cooldownSeconds' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'nextAuctionId' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'activeAuctionId' },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'availableBidTokens', args: [beneficiary] },
-      { address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'claimableEth', args: [beneficiary] },
-      { address: BASKET_CONTRACTS.bidToken, abi: erc20Abi, functionName: 'decimals' },
-      { address: BASKET_CONTRACTS.bidToken, abi: erc20Abi, functionName: 'symbol' },
-      { address: BASKET_CONTRACTS.bidToken, abi: erc20Abi, functionName: 'balanceOf', args: [beneficiary] },
-      { address: BASKET_CONTRACTS.bidToken, abi: erc20Abi, functionName: 'allowance', args: [beneficiary, BASKET_CONTRACTS.feeAuction] },
-    ] as const
-    const rows = await client.multicall({ contracts: calls, allowFailure: true })
+      { address: basket, abi: tokenAbi.value, functionName: 'claimableHolderFees', args: [beneficiary] },
+      { address: basket, abi: tokenAbi.value, functionName: 'pendingFrontendFees', args: [beneficiary] },
+      { address: basket, abi: tokenAbi.value, functionName: 'pendingCreatorFees' },
+      { address: basket, abi: tokenAbi.value, functionName: 'pendingLauncherFees' },
+      { address: basket, abi: tokenAbi.value, functionName: chainId === 56 ? 'feeReserveWbnb' : 'feeReserveWeth' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: chainId === 56 ? 'availableAuctionBnb' : 'availableAuctionEth' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: chainId === 56 ? 'minAuctionBnb' : 'minAuctionEth' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: chainId === 56 ? 'maxAuctionBnb' : 'maxAuctionEth' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'lastAuctionAt' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'cooldownSeconds' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'nextAuctionId' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'activeAuctionId' },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'availableBidTokens', args: [beneficiary] },
+      { address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: chainId === 56 ? 'claimableBnb' : 'claimableEth', args: [beneficiary] },
+      { address: contracts.value.bidToken, abi: erc20Abi, functionName: 'decimals' },
+      { address: contracts.value.bidToken, abi: erc20Abi, functionName: 'symbol' },
+      { address: contracts.value.bidToken, abi: erc20Abi, functionName: 'balanceOf', args: [beneficiary] },
+      { address: contracts.value.bidToken, abi: erc20Abi, functionName: 'allowance', args: [beneficiary, contracts.value.feeAuction] },
+    ]
+    const rows = await client.multicall({ contracts: calls as any, allowFailure: true })
     const value = <T>(index: number, fallback: T) => rows[index]?.status === 'success' ? rows[index].result as T : fallback
     holderFees.value = value(0, 0n); frontendFees.value = value(1, 0n); creatorFees.value = value(2, 0n); launcherFees.value = value(3, 0n); feeReserve.value = value(4, 0n)
     availableEth.value = value(5, 0n); minAuctionEth.value = value(6, 0n); maxAuctionEth.value = value(7, 0n); lastAuctionAt.value = Number(value(8, 0n)); cooldownSeconds.value = Number(value(9, 0n)); nextAuctionId.value = value(10, 0n); activeAuctionId.value = value(11, 0n)
@@ -117,10 +122,10 @@ const loadFees = async () => {
     const first = nextAuctionId.value > 20n ? nextAuctionId.value - 19n : 1n
     const ids: bigint[] = []
     for (let id = nextAuctionId.value; id >= first && id > 0n; id -= 1n) ids.push(id)
-    const history = ids.length ? await client.multicall({ contracts: ids.map((id) => ({ address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'auctions', args: [id] })), allowFailure: true }) : []
+    const history = ids.length ? await client.multicall({ contracts: ids.map((id) => ({ address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'auctions', args: [id] })) as any, allowFailure: true }) : []
     auctions.value = history.flatMap((row, index) => row.status === 'success' ? [normalizeAuction(row.result, ids[index])] : [])
     if (auctionLot.value > 0n) {
-      try { spotQuote.value = await client.readContract({ address: BASKET_CONTRACTS.feeAuction, abi: basketFeeAuctionAbi, functionName: 'quoteSpot', args: [auctionLot.value] }) } catch { spotQuote.value = 0n }
+      try { spotQuote.value = await client.readContract({ address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'quoteSpot', args: [auctionLot.value] } as any) as bigint } catch { spotQuote.value = 0n }
     }
   } finally { loadingFees.value = false }
 }
@@ -128,10 +133,10 @@ const loadFees = async () => {
 const connectWallet = () => modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
 const write = async (key: string, address: Address, abi: any, functionName: string, args: readonly unknown[]) => {
   if (!account.value) { connectWallet(); return }
-  if (chainStore.activeChainId !== BASKET_CHAIN_ID) return
+  if (!detail.value || chainStore.activeChainId !== detail.value.chainId) return
   action.value = key; actionError.value = ''
   try {
-    const client = getReadOnlyClient(BASKET_CHAIN_ID)
+    const client = getReadOnlyClient(detail.value.chainId)
     const wallet = getWalletClient()
     if (!wallet) throw new Error('Wallet not connected')
     const { request } = await client.simulateContract({ account: account.value, address, abi, functionName, args } as any)
@@ -143,13 +148,13 @@ const write = async (key: string, address: Address, abi: any, functionName: stri
 const ensureAllowance = async (amount: bigint) => {
   const needed = amount > availableBidTokens.value ? amount - availableBidTokens.value : 0n
   if (needed <= bidAllowance.value) return true
-  await write('approve', BASKET_CONTRACTS.bidToken, erc20Abi, 'approve', [BASKET_CONTRACTS.feeAuction, needed])
+  await write('approve', contracts.value.bidToken, erc20Abi, 'approve', [contracts.value.feeAuction, needed])
   return !actionError.value
 }
 const createAuction = async () => {
   const maxBid = openingBid.value * 10_200n / 10_000n
   if (!maxBid || !await ensureAllowance(maxBid)) return
-  await write('create', BASKET_CONTRACTS.feeAuction, basketFeeAuctionAbi, 'createAuction', [maxBid])
+  await write('create', contracts.value.feeAuction, auctionAbi.value, 'createAuction', [maxBid])
 }
 const placeBid = async () => {
   if (!activeAuction.value) return
@@ -157,14 +162,14 @@ const placeBid = async () => {
   try { if (bidInput.value) amount = parseUnits(bidInput.value, bidDecimals.value) } catch { actionError.value = 'Invalid bid amount'; return }
   if (amount < minimumNextBid.value) { actionError.value = 'Bid is below the minimum'; return }
   if (!await ensureAllowance(amount)) return
-  await write('bid', BASKET_CONTRACTS.feeAuction, basketFeeAuctionAbi, 'placeBid', [activeAuction.value.id, amount])
+  await write('bid', contracts.value.feeAuction, auctionAbi.value, 'placeBid', [activeAuction.value.id, amount])
 }
 const onBidInput = (event: Event) => { bidInput.value = sanitizeBasketAmountInput((event.target as HTMLInputElement).value, bidDecimals.value) }
 const onWithdrawInput = (event: Event) => { withdrawInput.value = sanitizeBasketAmountInput((event.target as HTMLInputElement).value, bidDecimals.value) }
 const withdraw = async () => {
   let amount = availableBidTokens.value
   try { if (withdrawInput.value) amount = parseUnits(withdrawInput.value, bidDecimals.value) } catch { actionError.value = 'Invalid amount'; return }
-  await write('withdraw', BASKET_CONTRACTS.feeAuction, basketFeeAuctionAbi, 'withdrawBidTokens', [amount, account.value!])
+  await write('withdraw', contracts.value.feeAuction, auctionAbi.value, 'withdrawBidTokens', [amount, account.value!])
 }
 
 onMounted(() => void load(address.value))
@@ -192,30 +197,30 @@ watch(account, () => void loadFees())
       <section class="panel"><div class="panel-title"><div><span>CLAIMS</span><h2>{{ $t('baskets.feeClaims') }}</h2></div><button v-if="!account" class="primary small" @click="connectWallet">{{ $t('baskets.connectWallet') }}</button></div>
         <p class="panel-copy">{{ $t('baskets.publicClaimHint') }}</p>
         <div class="claim-grid">
-          <article><span>{{ $t('baskets.holderClaim') }}</span><strong>{{ formatToken(holderFees) }} WETH</strong><button :disabled="!account || !holderFees || !!action" @click="write('holder', detail.address, basketTokenAbi, 'claimHolderFeesFor', [account!])">{{ action === 'holder' ? $t('baskets.claiming') : $t('baskets.claim') }}</button></article>
-          <article><span>{{ $t('baskets.frontendClaim') }}</span><strong>{{ formatToken(frontendFees) }} WETH</strong><button :disabled="!account || !frontendFees || !!action" @click="write('frontend', detail.address, basketTokenAbi, 'claimFrontendFeesFor', [account!])">{{ action === 'frontend' ? $t('baskets.claiming') : $t('baskets.claim') }}</button></article>
-          <article><span>{{ $t('baskets.creatorClaim') }} · {{ short(detail.deployer) }}</span><strong>{{ formatToken(creatorFees) }} WETH</strong><button :disabled="!account || !creatorFees || !!action" @click="write('creator', detail.address, basketTokenAbi, 'claimCreatorFees', [])">{{ action === 'creator' ? $t('baskets.claiming') : $t('baskets.executeClaim') }}</button></article>
-          <article><span>{{ $t('baskets.launcherClaim') }} · {{ short(detail.launcher) }}</span><strong>{{ formatToken(launcherFees) }} WETH</strong><button :disabled="!account || !launcherFees || !!action" @click="write('launcher', detail.address, basketTokenAbi, 'claimLauncherFees', [])">{{ action === 'launcher' ? $t('baskets.claiming') : $t('baskets.executeClaim') }}</button></article>
+          <article><span>{{ $t('baskets.holderClaim') }}</span><strong>{{ formatToken(holderFees) }} {{ deployment.wrappedNativeSymbol }}</strong><button :disabled="!account || !holderFees || !!action" @click="write('holder', detail.address, tokenAbi, 'claimHolderFeesFor', [account!])">{{ action === 'holder' ? $t('baskets.claiming') : $t('baskets.claim') }}</button></article>
+          <article><span>{{ $t('baskets.frontendClaim') }}</span><strong>{{ formatToken(frontendFees) }} {{ deployment.wrappedNativeSymbol }}</strong><button :disabled="!account || !frontendFees || !!action" @click="write('frontend', detail.address, tokenAbi, 'claimFrontendFeesFor', [account!])">{{ action === 'frontend' ? $t('baskets.claiming') : $t('baskets.claim') }}</button></article>
+          <article><span>{{ $t('baskets.creatorClaim') }} · {{ short(detail.deployer) }}</span><strong>{{ formatToken(creatorFees) }} {{ deployment.wrappedNativeSymbol }}</strong><button :disabled="!account || !creatorFees || !!action" @click="write('creator', detail.address, tokenAbi, 'claimCreatorFees', [])">{{ action === 'creator' ? $t('baskets.claiming') : $t('baskets.executeClaim') }}</button></article>
+          <article><span>{{ $t('baskets.launcherClaim') }} · {{ short(detail.launcher) }}</span><strong>{{ formatToken(launcherFees) }} {{ deployment.wrappedNativeSymbol }}</strong><button :disabled="!account || !launcherFees || !!action" @click="write('launcher', detail.address, tokenAbi, 'claimLauncherFees', [])">{{ action === 'launcher' ? $t('baskets.claiming') : $t('baskets.executeClaim') }}</button></article>
         </div>
       </section>
 
       <section class="panel auction-panel"><div class="panel-title"><div><span>BUYBACK</span><h2>{{ $t('baskets.buybackAuction') }}</h2></div><em>{{ loadingFees ? $t('baskets.loading') : $t('baskets.liveOnChain') }}</em></div>
-        <div class="pool-stats"><div><span>{{ $t('baskets.availableBuybackPool') }}</span><strong>{{ formatToken(availableEth) }} ETH</strong></div><div><span>{{ $t('baskets.auctionRange') }}</span><strong>{{ formatToken(minAuctionEth) }}–{{ formatToken(maxAuctionEth) }} ETH</strong></div><div><span>{{ $t('baskets.basketFeeReserve') }}</span><strong>{{ formatToken(feeReserve) }} WETH</strong></div></div>
+        <div class="pool-stats"><div><span>{{ $t('baskets.availableBuybackPool') }}</span><strong>{{ formatToken(availableEth) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.auctionRange') }}</span><strong>{{ formatToken(minAuctionEth) }}–{{ formatToken(maxAuctionEth) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.basketFeeReserve') }}</span><strong>{{ formatToken(feeReserve) }} {{ deployment.wrappedNativeSymbol }}</strong></div></div>
         <div v-if="activeAuction" class="active-auction">
           <div class="auction-head"><div><span>#{{ activeAuction.id }}</span><h3>{{ $t('baskets.activeAuction') }}</h3></div><b>{{ isAuctionEnded ? $t('baskets.readyToSettle') : $t('baskets.endsAt', { time: formatDate(activeAuction.endTime) }) }}</b></div>
-          <div class="auction-values"><div><span>{{ $t('baskets.ethLot') }}</span><strong>{{ formatToken(activeAuction.ethAmount) }} ETH</strong></div><div><span>{{ $t('baskets.highestBid') }}</span><strong>{{ formatToken(activeAuction.highestBid, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.highestBidder') }}</span><strong>{{ short(activeAuction.highestBidder) }}</strong></div></div>
-          <button v-if="isAuctionEnded" class="primary" :disabled="!!action" @click="write('settle', BASKET_CONTRACTS.feeAuction, basketFeeAuctionAbi, 'settleAuction', [activeAuction.id])">{{ action === 'settle' ? $t('baskets.settling') : $t('baskets.settleAuction') }}</button>
+          <div class="auction-values"><div><span>{{ $t('baskets.ethLot').replace('ETH', deployment.nativeSymbol) }}</span><strong>{{ formatToken(activeAuction.ethAmount) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.highestBid') }}</span><strong>{{ formatToken(activeAuction.highestBid, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.highestBidder') }}</span><strong>{{ short(activeAuction.highestBidder) }}</strong></div></div>
+          <button v-if="isAuctionEnded" class="primary" :disabled="!!action" @click="write('settle', contracts.feeAuction, auctionAbi, 'settleAuction', [activeAuction.id])">{{ action === 'settle' ? $t('baskets.settling') : $t('baskets.settleAuction') }}</button>
           <div v-else class="bid-row"><input :value="bidInput" :placeholder="`${formatToken(minimumNextBid, bidDecimals)} ${bidSymbol}`" @input="onBidInput"><button class="primary" :disabled="!account || !!action" @click="placeBid">{{ action === 'approve' ? $t('baskets.approving') : action === 'bid' ? $t('baskets.bidding') : $t('baskets.placeBid') }}</button></div>
         </div>
         <div v-else class="create-auction"><div><h3>{{ $t('baskets.startAuction') }}</h3><p class="auction-threshold">{{ $t('baskets.auctionThresholdHint', { threshold: formatToken(minAuctionEth) }) }}</p><p>{{ $t('baskets.startAuctionHint', { amount: formatToken(openingBid, bidDecimals), symbol: bidSymbol }) }}</p></div><button class="primary" :disabled="!account || !canCreateAuction || !spotQuote || !!action" @click="createAuction">{{ action === 'approve' ? $t('baskets.approving') : action === 'create' ? $t('baskets.startingAuction') : $t('baskets.startAuction') }}</button></div>
-        <div v-if="account" class="account-balances"><div><span>{{ $t('baskets.bidTokenBalance') }}</span><strong>{{ formatToken(bidBalance, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.refundableBid') }}</span><strong>{{ formatToken(availableBidTokens, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.claimableAuctionEth') }}</span><strong>{{ formatToken(claimableEth) }} ETH</strong></div></div>
-        <div v-if="account && (availableBidTokens || claimableEth)" class="account-actions"><div><input :value="withdrawInput" :placeholder="$t('baskets.withdrawAmount')" @input="onWithdrawInput"><button :disabled="!availableBidTokens || !!action" @click="withdraw">{{ $t('baskets.withdrawBid') }}</button></div><button :disabled="!claimableEth || !!action" @click="write('claimEth', BASKET_CONTRACTS.feeAuction, basketFeeAuctionAbi, 'claimEth', [account!])">{{ $t('baskets.claimAuctionEth') }}</button></div>
+        <div v-if="account" class="account-balances"><div><span>{{ $t('baskets.bidTokenBalance') }}</span><strong>{{ formatToken(bidBalance, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.refundableBid') }}</span><strong>{{ formatToken(availableBidTokens, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.claimableAuctionEth').replace('ETH', deployment.nativeSymbol) }}</span><strong>{{ formatToken(claimableEth) }} {{ deployment.nativeSymbol }}</strong></div></div>
+        <div v-if="account && (availableBidTokens || claimableEth)" class="account-actions"><div><input :value="withdrawInput" :placeholder="$t('baskets.withdrawAmount')" @input="onWithdrawInput"><button :disabled="!availableBidTokens || !!action" @click="withdraw">{{ $t('baskets.withdrawBid') }}</button></div><button :disabled="!claimableEth || !!action" @click="write('claimEth', contracts.feeAuction, auctionAbi, deployment.chainId === 56 ? 'claimBnb' : 'claimEth', [account!])">{{ $t('baskets.claimAuctionEth').replace('ETH', deployment.nativeSymbol) }}</button></div>
         <p v-if="actionError" class="action-error">{{ actionError }}</p>
       </section>
 
       <section class="panel"><div class="panel-title"><div><span>HISTORY</span><h2>{{ $t('baskets.auctionHistory') }}</h2></div></div>
         <div v-if="!auctions.length" class="empty">{{ $t('baskets.noAuctions') }}</div>
-        <div v-else class="history"><article v-for="item in auctions" :key="item.id.toString()"><b>#{{ item.id }}</b><div><span>{{ $t('baskets.ethLot') }}</span><strong>{{ formatToken(item.ethAmount) }} ETH</strong></div><div><span>{{ $t('baskets.winningBid') }}</span><strong>{{ formatToken(item.highestBid, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.winner') }}</span><strong>{{ short(item.highestBidder) }}</strong></div><em :class="{ done: item.settled }">{{ item.settled ? $t('baskets.settled') : item.endTime * 1000 <= now ? $t('baskets.awaitingSettlement') : $t('baskets.active') }}</em></article></div>
+        <div v-else class="history"><article v-for="item in auctions" :key="item.id.toString()"><b>#{{ item.id }}</b><div><span>{{ $t('baskets.ethLot').replace('ETH', deployment.nativeSymbol) }}</span><strong>{{ formatToken(item.ethAmount) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.winningBid') }}</span><strong>{{ formatToken(item.highestBid, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.winner') }}</span><strong>{{ short(item.highestBidder) }}</strong></div><em :class="{ done: item.settled }">{{ item.settled ? $t('baskets.settled') : item.endTime * 1000 <= now ? $t('baskets.awaitingSettlement') : $t('baskets.active') }}</em></article></div>
       </section>
     </template>
   </div></div>
