@@ -199,6 +199,34 @@ const bscAssets: BasketAssetPreset[] = [
     '/images/basket-assets/nvda.png',
   ),
   bscV3Asset(
+    '0x431a3BEE82E2ca41e49895CbECE5bB0F76A89b7A', 'AAPLB', 'Apple (bStocks)', 1, 2_500,
+    '/images/basket-assets/aapl.png',
+  ),
+  bscV3Asset(
+    '0x5b1910eAaD6450E50f816082Aa078C41F10C292f', 'TSLAB', 'Tesla (bStocks)', 1, 2_500,
+    '/images/basket-assets/tsla.png',
+  ),
+  bscV3Asset(
+    '0x80106cb3EAD06659A5ad19DF39D9b4733863B9b0', 'MSFTB', 'Microsoft (bStocks)', 1, 2_500,
+    '/images/basket-assets/msft.png',
+  ),
+  bscV3Asset(
+    '0x7425889FE94F9d693E8daefE88BCCed6AcFEf4c0', 'METAB', 'Meta (bStocks)', 1, 2_500,
+    '/images/basket-assets/meta.png',
+  ),
+  bscV3Asset(
+    '0xCA750eF65f295BBECd685Abf54e82CAf297BDB61', 'SKHYB', 'SK Hynix (bStocks)', 1, 2_500,
+    'https://cdn.dexscreener.com/cms/images/Dv6-VNcUq4Lxx9yf?width=800&height=800&quality=95&format=auto',
+  ),
+  bscV3Asset(
+    '0x1a4b499833A79A09ad7Cf1D42D7DacF71e92eb00', 'AMZNB', 'Amazon (bStocks)', 1, 2_500,
+    '/images/basket-assets/amzn.png',
+  ),
+  bscV3Asset(
+    '0x3F53De71c126BdaBAe20f9cD64848d317f6C3238', 'GOOGLB', 'Alphabet (bStocks)', 1, 2_500,
+    '/images/basket-assets/googl.png',
+  ),
+  bscV3Asset(
     '0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1', 'SPCXB', 'SpaceX', 1, 2_500,
     '/images/basket-assets/spcx.svg',
   ),
