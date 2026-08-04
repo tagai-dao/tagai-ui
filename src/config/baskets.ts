@@ -203,6 +203,10 @@ const bscAssets: BasketAssetPreset[] = [
     '/images/basket-assets/nvda.png',
   ),
   bscV3Asset(
+    '0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436', 'NVDAB', 'NVIDIA (bStocks)', 1, 2_500,
+    '/images/basket-assets/nvda.png',
+  ),
+  bscV3Asset(
     '0x091FC7778e6932d4009B087B191D1EE3bac5729A', 'GOOGLon', 'Alphabet (Ondo)', 1, 10_000,
     '/images/basket-assets/googl.png',
   ),
@@ -213,6 +217,10 @@ const bscAssets: BasketAssetPreset[] = [
   bscV3Asset(
     '0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1', 'SPCXB', 'SpaceX', 1, 2_500,
     '/images/basket-assets/spcx.svg',
+  ),
+  bscV3Asset(
+    '0x205812CdBed920aFf76C6580abD681a46D11efc7', 'QQQB', 'Invesco QQQ (bStocks)', 1, 100,
+    '/images/basket-assets/qqq.png',
   ),
 ]
 
