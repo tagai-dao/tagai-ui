@@ -1,8 +1,9 @@
 /**
  * TagAI OG 注入 Worker（crawler-only）
  *
- * 部署到 tagai.fun 的 Cloudflare 路由上（zone worker route: tagai.fun/*）。
- * 普通用户请求原样透传；社交爬虫访问 /tag-detail/:id、/post-detail/:id 或 /commerce/:id 时，
+ * 部署到 tagai.fun 的 Cloudflare 路由上。
+ * 普通用户请求原样透传；社交爬虫访问 /:chain/tag-detail/:id、
+ * /:chain/post-detail/:id 或 /:chain/commerce/:id 时，
  * 向后端 /meta/og 取动态摘要，把 OG/Twitter meta 注入 index.html，
  * 让分享到 X / Telegram / Discord 的链接带预览卡。
  *
@@ -11,14 +12,54 @@
  */
 
 const META_API = 'https://bsc-api.tagai.fun/meta/og'
+const DEFAULT_CHAIN_SLUG = 'bsc'
+const CHAIN_IDS = Object.freeze({ bsc: 56, rh: 4663 })
 
 const CRAWLER_UA = /twitterbot|facebookexternalhit|telegrambot|discordbot|slackbot|linkedinbot|whatsapp|line-podcast|skypeuripreview|embedly|pinterestbot|redditbot|googlebot|bingbot/i
 
-const ROUTE_PATTERNS = [
-  { regex: /^\/tag-detail\/([^/]+)/, type: 'tag' },
-  { regex: /^\/post-detail\/([^/]+)/, type: 'post' },
-  { regex: /^\/commerce\/([^/]+)/, type: 'commerce' },
-]
+const ROUTE_PATTERN = /^\/(?:(bsc|rh)\/)?(tag-detail|post-detail|commerce)\/([^/]+)(?:\/|$)/
+const ROUTE_TYPES = Object.freeze({
+  'tag-detail': 'tag',
+  'post-detail': 'post',
+  commerce: 'commerce',
+})
+
+function decodePathSegment(segment) {
+  try {
+    return decodeURIComponent(segment)
+  } catch {
+    return segment
+  }
+}
+
+export function matchOgRoute(pathname) {
+  const match = pathname.match(ROUTE_PATTERN)
+  if (!match) return null
+
+  const chainSlug = match[1] || DEFAULT_CHAIN_SLUG
+  return {
+    chainId: CHAIN_IDS[chainSlug],
+    chainSlug,
+    type: ROUTE_TYPES[match[2]],
+    id: decodePathSegment(match[3]),
+  }
+}
+
+export function buildMetaRequest(route) {
+  const url = new URL(META_API)
+  url.searchParams.set('type', route.type)
+  url.searchParams.set('id', route.id)
+  // chainId also splits Cloudflare's cache key; the API gateway routes by header.
+  url.searchParams.set('chainId', String(route.chainId))
+
+  return {
+    url: url.toString(),
+    init: {
+      headers: { 'X-Chain-Id': String(route.chainId) },
+      cf: { cacheTtl: 60 },
+    },
+  }
+}
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
@@ -53,7 +94,7 @@ function stripStaticMeta(html) {
 }
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request) {
     const ua = request.headers.get('user-agent') || ''
     const url = new URL(request.url)
 
@@ -61,18 +102,16 @@ export default {
       return fetch(request)
     }
 
-    const match = ROUTE_PATTERNS
-      .map((p) => ({ ...p, m: url.pathname.match(p.regex) }))
-      .find((p) => p.m)
-    if (!match) {
+    const route = matchOgRoute(url.pathname)
+    if (!route) {
       return fetch(request)
     }
 
+    const metaRequest = buildMetaRequest(route)
+
     const [origin, metaResp] = await Promise.all([
       fetch(request),
-      fetch(`${META_API}?type=${match.type}&id=${encodeURIComponent(match.m[1])}`, {
-        cf: { cacheTtl: 60 },
-      }).catch(() => null),
+      fetch(metaRequest.url, metaRequest.init).catch(() => null),
     ])
 
     if (!metaResp || !metaResp.ok) {
@@ -88,9 +127,11 @@ export default {
       /<head>/i,
       `<head>\n    ${buildMetaTags(meta)}`
     )
+    const headers = new Headers(origin.headers)
+    headers.delete('content-length')
     return new Response(injected, {
       status: origin.status,
-      headers: origin.headers,
+      headers,
     })
   },
 }

@@ -2,11 +2,17 @@
   // TagAI OG 注入 Worker — 部署：npx wrangler deploy（需要 tagai.fun zone 权限）
   "name": "tagai-og-injector",
   "main": "worker.js",
-  "compatibility_date": "2025-06-01",
+  "compatibility_date": "2026-08-04",
   "routes": [
     { "pattern": "tagai.fun/tag-detail/*", "zone_name": "tagai.fun" },
     { "pattern": "tagai.fun/post-detail/*", "zone_name": "tagai.fun" },
-    { "pattern": "tagai.fun/commerce/*", "zone_name": "tagai.fun" }
+    { "pattern": "tagai.fun/commerce/*", "zone_name": "tagai.fun" },
+    { "pattern": "tagai.fun/bsc/tag-detail/*", "zone_name": "tagai.fun" },
+    { "pattern": "tagai.fun/bsc/post-detail/*", "zone_name": "tagai.fun" },
+    { "pattern": "tagai.fun/bsc/commerce/*", "zone_name": "tagai.fun" },
+    { "pattern": "tagai.fun/rh/tag-detail/*", "zone_name": "tagai.fun" },
+    { "pattern": "tagai.fun/rh/post-detail/*", "zone_name": "tagai.fun" },
+    { "pattern": "tagai.fun/rh/commerce/*", "zone_name": "tagai.fun" }
   ],
   "observability": { "enabled": true }
 }
