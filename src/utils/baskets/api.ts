@@ -27,6 +27,25 @@ export type RegisteredBasket = {
   assets: RegisteredBasketAsset[]
 }
 
+export type BasketTradeEvent = {
+  id: string
+  basket: Address
+  is_buy: number | boolean
+  payer: Address
+  recipient: Address
+  frontend?: Address
+  usdg_amount: string
+  basket_amount: string
+  fee_weth: string
+  routed?: number | boolean
+  router_log_index?: number
+  block_number: number
+  block_hash?: string
+  block_timestamp: number
+  transaction_hash: Hex
+  log_index: number
+}
+
 type BasketListResponse = {
   c: number
   d: {
@@ -40,6 +59,15 @@ type BasketListResponse = {
 type BasketDetailResponse = {
   c: number
   d: RegisteredBasket
+}
+
+type BasketEventsResponse<T> = {
+  c: number
+  d: {
+    list: T[]
+    page: number
+    size: number
+  }
 }
 
 const chainHeaders = (chainId: number) => {
@@ -76,4 +104,18 @@ export const getRegisteredBasket = async (address: Address, chainId: number): Pr
     chainHeaders(chainId),
   ) as BasketDetailResponse
   return response.d
+}
+
+export const listBasketTrades = async (
+  address: Address,
+  chainId: number,
+  page = 0,
+  size = 20,
+): Promise<BasketTradeEvent[]> => {
+  const response = await get(
+    `${API_BASE_URL}/basket/${address}/trades`,
+    { page, size },
+    chainHeaders(chainId),
+  ) as BasketEventsResponse<BasketTradeEvent>
+  return Array.isArray(response?.d?.list) ? response.d.list : []
 }

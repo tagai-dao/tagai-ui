@@ -7,15 +7,20 @@ import BasketTradePanel from './components/BasketTradePanel.vue'
 import BasketRebalanceAction from './components/BasketRebalanceAction.vue'
 import { feeSplit } from '@/utils/baskets/fee-model'
 import { BASKET_FRONTEND_FEE_WALLET, getBasketDeployment } from '@/config/baskets'
-import { zeroAddress } from 'viem'
+import { formatUnits, zeroAddress } from 'viem'
 import { getChainDeployment } from '@/config/chains'
+import { listBasketTrades, type BasketTradeEvent } from '@/utils/baskets/api'
 
 const route = useRoute()
 const router = useRouter()
 const { detail, isLoading, hasError, errorMessage, load } = useBasketDetail()
 const legColors = ['#b84fc2', '#5368d9', '#ef7b45', '#27b8a2', '#8d67e8']
 const addressCopied = ref(false)
+const trades = ref<BasketTradeEvent[]>([])
+const tradesLoading = ref(false)
+const tradesError = ref('')
 let copiedTimer: ReturnType<typeof setTimeout> | null = null
+let tradesRequestId = 0
 
 const address = computed(() => String(route.params.address || ''))
 const deployment = computed(() => detail.value ? getBasketDeployment(detail.value.chainId) : null)
@@ -79,11 +84,93 @@ const formatSupply = (n: number | null) => {
   return n.toLocaleString(undefined, { maximumFractionDigits: 2 })
 }
 
+const rawAmount = (value: string | undefined, decimals: number): number => {
+  try {
+    return Number(formatUnits(BigInt(value || '0'), decimals))
+  } catch {
+    return 0
+  }
+}
+
+const formatTokenAmount = (n: number, maxDigits = 4) => {
+  if (!Number.isFinite(n) || n <= 0) return '—'
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(2)}K`
+  return n.toLocaleString(undefined, { maximumFractionDigits: maxDigits })
+}
+
+const tradeSettlementAmount = (trade: BasketTradeEvent): number =>
+  rawAmount(trade.usdg_amount, deployment.value?.settlementDecimals ?? 18)
+
+const tradeBasketAmount = (trade: BasketTradeEvent): number =>
+  rawAmount(trade.basket_amount, detail.value?.decimals ?? 18)
+
+const tradePrice = (trade: BasketTradeEvent): number => {
+  const basketAmount = tradeBasketAmount(trade)
+  return basketAmount > 0 ? tradeSettlementAmount(trade) / basketAmount : 0
+}
+
+const isBuyTrade = (trade: BasketTradeEvent): boolean => Number(trade.is_buy) === 1
+
+const shortAddress = (value: string | undefined) =>
+  value ? `${value.slice(0, 6)}…${value.slice(-4)}` : '—'
+
+const tradeTxUrl = (trade: BasketTradeEvent) => {
+  if (!detail.value) return ''
+  return `${getChainDeployment(detail.value.chainId).browser.replace(/\/$/, '')}/tx/${trade.transaction_hash}`
+}
+
+const formatTradeTime = (seconds: number) => {
+  if (!seconds) return '—'
+  return new Date(seconds * 1000).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+const loadTrades = async () => {
+  const requestId = ++tradesRequestId
+  const current = detail.value
+  if (!current) {
+    trades.value = []
+    tradesError.value = ''
+    tradesLoading.value = false
+    return
+  }
+  tradesLoading.value = true
+  tradesError.value = ''
+  try {
+    const rows = await listBasketTrades(current.address, current.chainId, 0, 20)
+    if (requestId !== tradesRequestId) return
+    trades.value = rows
+  } catch (error) {
+    if (requestId !== tradesRequestId) return
+    console.warn('[baskets] load trade history failed', error)
+    trades.value = []
+    tradesError.value = error instanceof Error ? error.message : 'Failed to load trades'
+  } finally {
+    if (requestId === tradesRequestId) tradesLoading.value = false
+  }
+}
+
+const refreshDetail = async (force = false) => {
+  await load(address.value, force)
+  await loadTrades()
+}
+
 const pct = (n: number) => `${(n * 100).toFixed(1)}%`
 const openFees = () => router.push({ name: 'basket-fees', params: { address: address.value } })
 
-onMounted(() => void load(address.value))
-watch(address, (a) => void load(a))
+onMounted(() => void refreshDetail())
+watch(address, () => {
+  tradesRequestId += 1
+  trades.value = []
+  tradesError.value = ''
+  tradesLoading.value = false
+  void refreshDetail()
+})
 onUnmounted(() => {
   if (copiedTimer) clearTimeout(copiedTimer)
 })
@@ -213,7 +300,7 @@ onUnmounted(() => {
                 <span class="section-count">{{ detail.basketLength }} {{ $t('baskets.assets') }}</span>
               </div>
 
-              <BasketRebalanceAction :detail="detail" @rebalanced="load(address, true)" />
+              <BasketRebalanceAction :detail="detail" @rebalanced="refreshDetail(true)" />
 
               <div class="holdings-table holdings-table--head">
                 <span>{{ $t('baskets.assets') }}</span>
@@ -285,9 +372,74 @@ onUnmounted(() => {
           </main>
 
           <aside class="trade-column">
-            <BasketTradePanel :detail="detail" @traded="load(address)" />
+            <BasketTradePanel :detail="detail" @traded="refreshDetail(true)" />
           </aside>
         </div>
+
+        <section class="content-card trade-history-card">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">{{ $t('baskets.trade') }}</span>
+              <h2>{{ $t('baskets.tradeHistory') }}</h2>
+            </div>
+            <span class="section-count">{{ $t('baskets.recentTrades', { count: trades.length }) }}</span>
+          </div>
+
+          <div v-if="tradesLoading" class="trade-history-state">
+            <span class="loading-orbit" />
+            {{ $t('baskets.loadingTrades') }}
+          </div>
+          <div v-else-if="tradesError" class="trade-history-state text-red-normal">
+            {{ $t('baskets.tradeLoadFailed') }}
+          </div>
+          <div v-else-if="!trades.length" class="trade-history-state">
+            {{ $t('baskets.noTrades') }}
+          </div>
+          <template v-else>
+            <div class="trade-history-table trade-history-table--head">
+              <span>{{ $t('baskets.time') }}</span>
+              <span>{{ $t('baskets.side') }}</span>
+              <span>{{ $t('baskets.price') }}</span>
+              <span>{{ detail.symbol }}</span>
+              <span>{{ deployment?.settlementSymbol }}</span>
+              <span>{{ $t('baskets.trader') }}</span>
+              <span>{{ $t('baskets.tx') }}</span>
+            </div>
+            <div
+              v-for="trade in trades"
+              :key="trade.id"
+              class="trade-history-table trade-history-table--row"
+            >
+              <div class="trade-time" :data-label="$t('baskets.time')">{{ formatTradeTime(Number(trade.block_timestamp)) }}</div>
+              <div class="trade-side-cell" :data-label="$t('baskets.side')">
+                <span class="trade-side" :class="isBuyTrade(trade) ? 'trade-side--buy' : 'trade-side--sell'">
+                  {{ isBuyTrade(trade) ? $t('buy') : $t('sell') }}
+                </span>
+              </div>
+              <div class="trade-metric" :data-label="$t('baskets.price')">{{ formatUsd(tradePrice(trade), true) }}</div>
+              <div class="trade-metric" :data-label="detail.symbol">{{ formatTokenAmount(tradeBasketAmount(trade)) }}</div>
+              <div class="trade-metric trade-metric--strong" :data-label="deployment?.settlementSymbol">
+                {{ formatTokenAmount(tradeSettlementAmount(trade), 2) }}
+              </div>
+              <div class="trade-address" :data-label="$t('baskets.trader')" :title="trade.payer">
+                {{ shortAddress(trade.payer) }}
+              </div>
+              <div class="trade-link-cell" :data-label="$t('baskets.tx')">
+                <a
+                  :href="tradeTxUrl(trade)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="trade-tx-link"
+                  :title="trade.transaction_hash"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </template>
+        </section>
 
         <p class="detail-footer">
           <a v-if="deployment?.protocolRepo" :href="deployment.protocolRepo" target="_blank" rel="noopener noreferrer">
@@ -382,11 +534,30 @@ onUnmounted(() => {
 .asset-cell strong { overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; white-space: normal; }
 .asset-cell span { overflow: hidden; margin-top: 2px; color: var(--text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .metric-cell { text-align: right; }
-.metric-cell--strong { font-weight: 700; }
-.weight-track { position: absolute; right: 24px; bottom: 10px; left: 24px; height: 2px; overflow: hidden; border-radius: 2px; background: var(--surface-2); }
-.weight-track span { display: block; height: 100%; border-radius: inherit; opacity: .8; }
+	.metric-cell--strong { font-weight: 700; }
+	.weight-track { position: absolute; right: 24px; bottom: 10px; left: 24px; height: 2px; overflow: hidden; border-radius: 2px; background: var(--surface-2); }
+	.weight-track span { display: block; height: 100%; border-radius: inherit; opacity: .8; }
 
-.fee-bar { display: flex; height: 9px; gap: 3px; overflow: hidden; margin-top: 20px; border-radius: 999px; background: var(--surface-2); }
+	.trade-history-card { margin-top: 18px; }
+	.trade-history-card .section-heading { padding: 24px 24px 18px; }
+	.trade-history-table { display: grid; grid-template-columns: minmax(112px, .95fr) 74px repeat(3, minmax(78px, .8fr)) minmax(92px, .8fr) 44px; align-items: center; column-gap: 12px; }
+	.trade-history-table--head { padding: 10px 24px; border-top: 1px solid var(--border-base); border-bottom: 1px solid var(--border-base); background: color-mix(in srgb, var(--surface-2) 55%, transparent); color: var(--text-muted); font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
+	.trade-history-table--head span:not(:first-child) { text-align: right; }
+	.trade-history-table--row { min-height: 58px; padding: 12px 24px; border-bottom: 1px solid var(--border-base); color: var(--text-base); font-size: 12px; }
+	.trade-history-table--row:last-child { border-bottom: 0; }
+	.trade-time { color: var(--text-muted); font-size: 11px; }
+	.trade-side-cell, .trade-metric, .trade-address, .trade-link-cell { text-align: right; }
+	.trade-side { display: inline-flex; height: 24px; align-items: center; justify-content: center; padding: 0 9px; border-radius: 999px; font-size: 10px; font-weight: 800; }
+	.trade-side--buy { background: rgba(39,184,162,.12); color: #27b8a2; }
+	.trade-side--sell { background: rgba(239,123,69,.12); color: #ef7b45; }
+	.trade-metric--strong { font-weight: 700; }
+	.trade-address { overflow: hidden; color: var(--text-muted); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+	.trade-tx-link { display: inline-grid; width: 28px; height: 28px; place-items: center; border: 1px solid var(--border-base); border-radius: 9px; color: var(--text-muted); transition: color 160ms ease, border-color 160ms ease, background 160ms ease; }
+	.trade-tx-link:hover { border-color: #8d67e8; background: color-mix(in srgb, #8d67e8 10%, transparent); color: #8d67e8; }
+	.trade-tx-link svg { width: 15px; height: 15px; }
+	.trade-history-state { display: flex; min-height: 112px; align-items: center; justify-content: center; gap: 10px; border-top: 1px solid var(--border-base); color: var(--text-muted); font-size: 12px; }
+
+	.fee-bar { display: flex; height: 9px; gap: 3px; overflow: hidden; margin-top: 20px; border-radius: 999px; background: var(--surface-2); }
 .fee-bar span { min-width: 3px; border-radius: 999px; }
 .fee-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
 .fee-legend > div { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 7px; color: var(--text-muted); font-size: 10px; }
@@ -400,11 +571,13 @@ onUnmounted(() => {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 980px) {
-  .content-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr); }
-  .holdings-table { grid-template-columns: minmax(125px, 1.3fr) repeat(4, minmax(55px, .7fr)); column-gap: 8px; }
-  .holdings-table--head, .holdings-table--row { padding-right: 16px; padding-left: 16px; }
-  .weight-track { right: 16px; left: 16px; }
-}
+	  .content-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr); }
+	  .holdings-table { grid-template-columns: minmax(125px, 1.3fr) repeat(4, minmax(55px, .7fr)); column-gap: 8px; }
+	  .holdings-table--head, .holdings-table--row { padding-right: 16px; padding-left: 16px; }
+	  .weight-track { right: 16px; left: 16px; }
+	  .trade-history-table { grid-template-columns: minmax(104px, .9fr) 68px repeat(3, minmax(62px, .7fr)) minmax(76px, .7fr) 36px; column-gap: 8px; }
+	  .trade-history-table--head, .trade-history-table--row { padding-right: 16px; padding-left: 16px; }
+	}
 
 @media (max-width: 803px) {
   .detail-shell { padding-top: 14px; padding-bottom: 88px; }
@@ -420,11 +593,17 @@ onUnmounted(() => {
   .hero-metrics > div { min-width: 0; flex: 1; }
   .hero-composition { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; }
   .holdings-table--head { display: none; }
-  .holdings-table--row { grid-template-columns: 1fr 1fr; gap: 14px 20px; padding: 18px 20px 22px; }
-  .asset-cell { grid-column: 1 / -1; }
-  .metric-cell { display: flex; justify-content: space-between; gap: 8px; text-align: right; }
-  .metric-cell::before { content: attr(data-label); color: var(--text-muted); font-size: 10px; }
-  .weight-track { right: 20px; left: 20px; }
-  .fee-legend { grid-template-columns: 1fr 1fr; }
-}
+	  .holdings-table--row { grid-template-columns: 1fr 1fr; gap: 14px 20px; padding: 18px 20px 22px; }
+	  .asset-cell { grid-column: 1 / -1; }
+	  .metric-cell { display: flex; justify-content: space-between; gap: 8px; text-align: right; }
+	  .metric-cell::before { content: attr(data-label); color: var(--text-muted); font-size: 10px; }
+	  .weight-track { right: 20px; left: 20px; }
+	  .fee-legend { grid-template-columns: 1fr 1fr; }
+	  .trade-history-table--head { display: none; }
+	  .trade-history-table--row { grid-template-columns: 1fr 1fr; gap: 12px 18px; padding: 16px 20px; }
+	  .trade-time, .trade-side-cell, .trade-metric, .trade-address, .trade-link-cell { display: flex; justify-content: space-between; gap: 8px; text-align: right; }
+	  .trade-time::before, .trade-side-cell::before, .trade-metric::before, .trade-address::before, .trade-link-cell::before { content: attr(data-label); color: var(--text-muted); font-family: inherit; font-size: 10px; }
+	  .trade-time, .trade-link-cell { grid-column: 1 / -1; }
+	  .trade-link-cell { align-items: center; }
+	}
 </style>
