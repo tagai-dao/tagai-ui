@@ -195,24 +195,8 @@ const bscAssets: BasketAssetPreset[] = [
     route: { venue: 1, quoteToken: 0, v4Pool: bscEmptyPool, v3Fee: 500 },
   },
   bscV3Asset(
-    '0x390a684EF9cADE28A7AD0DFa61AB1Eb3842618c4', 'AAPLon', 'Apple (Ondo)', 1, 2_500,
-    '/images/basket-assets/aapl.png',
-  ),
-  bscV3Asset(
-    '0xA9eE28C80f960B889dFbd1902055218cBa016F75', 'NVDAon', 'NVIDIA (Ondo)', 1, 10_000,
-    '/images/basket-assets/nvda.png',
-  ),
-  bscV3Asset(
     '0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436', 'NVDAB', 'NVIDIA (bStocks)', 1, 2_500,
     '/images/basket-assets/nvda.png',
-  ),
-  bscV3Asset(
-    '0x091FC7778e6932d4009B087B191D1EE3bac5729A', 'GOOGLon', 'Alphabet (Ondo)', 1, 10_000,
-    '/images/basket-assets/googl.png',
-  ),
-  bscV3Asset(
-    '0xdABb9afF4cf02f26D2014e4cA9f94aC6fe6572a3', 'GMEon', 'GameStop (Ondo)', 1, 2_500,
-    '/images/basket-assets/gme.png',
   ),
   bscV3Asset(
     '0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1', 'SPCXB', 'SpaceX', 1, 2_500,
