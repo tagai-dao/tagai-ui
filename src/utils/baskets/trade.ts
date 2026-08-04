@@ -338,6 +338,7 @@ export const quoteBasketSwap = async ({
     ? key.currency0.toLowerCase() === deployment.contracts.settlementToken.toLowerCase()
     : key.currency0.toLowerCase() === detail.address.toLowerCase()
   const hookData = encodeBasketTradeData({
+    chainId: detail.chainId,
     side,
     minOut: 0n,
     legCount: detail.basketLength,
@@ -399,6 +400,7 @@ export const executeBasketSwap = async ({
   if (!wallet) throw new Error('Wallet not connected')
   const firstMint = side === 'buy' && (detail.effectiveSupply ?? 0) === 0
   const hookData = encodeBasketTradeData({
+    chainId: detail.chainId,
     side,
     minOut: quote.minOutRaw,
     legCount: detail.basketLength,

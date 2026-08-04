@@ -210,6 +210,7 @@ export const createBasketAndBuy = async (
     applySlippage(amount, input.legs[index]?.slippageBps ?? input.slippageBps))
   if (legMins.some((amount) => amount <= 0n)) throw new Error('A constituent route has insufficient liquidity')
   const hookData = encodeBasketTradeData({
+    chainId: input.chainId,
     side: 'buy',
     minOut: minBasketOut,
     legCount: input.legs.length,
