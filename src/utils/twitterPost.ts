@@ -1,3 +1,4 @@
+import { getChainIdFromSlug, getChainPath } from '@/config/chains'
 import { useChainStore } from '@/stores/chain'
 
 /** 发帖跳转 Twitter 前补齐平台标签与社区标签 */
@@ -55,7 +56,10 @@ export const isNativeTwitterAccount = (accountType?: number | null) =>
 const appendCommerceUrl = (text: string, commerceUrl?: string) => {
   if (!commerceUrl) return text
   const url = new URL(commerceUrl, window.location.origin)
-  url.searchParams.set('chainId', String(useChainStore().activeChainId))
+  const parts = url.pathname.split('/').filter(Boolean)
+  if (getChainIdFromSlug(parts[0])) parts.shift()
+  url.pathname = getChainPath(useChainStore().activeChainId, parts.join('/'))
+  url.searchParams.delete('chainId')
   const chainAwareCommerceUrl = url.toString()
   const trimmed = text.trimEnd()
   return trimmed ? `${trimmed}\n\n${chainAwareCommerceUrl}` : chainAwareCommerceUrl

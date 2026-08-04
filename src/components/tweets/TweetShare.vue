@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import {ref} from "vue";
-import {handleErrorTip, notify} from "@/utils/notify";
-import {useStateStore} from "@/stores/common";
-import { type Tweet } from "@/types";
-import { OperateType, useTweet } from "@/composables/useTweet";
-import errCode from "@/errCode";
+import { getChainPath } from '@/config/chains'
+import { useChainStore } from '@/stores/chain'
+import { notify } from '@/utils/notify'
+import type { Tweet } from '@/types'
 
 const props = defineProps<{
     tweet: Tweet;
   }>()
 
+const chainStore = useChainStore()
 
 function copyLink() {
-    navigator.clipboard.writeText('https://tagai.fun/post-detail/' + props.tweet.tweetId)
+    const path = getChainPath(chainStore.activeChainId, `/post-detail/${props.tweet.tweetId}`)
+    navigator.clipboard.writeText(new URL(path, 'https://tagai.fun').toString())
     notify({
       message: 'Copied link'
     })

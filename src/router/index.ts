@@ -19,134 +19,136 @@ import PredictEventDetail from '@/views/predict-event-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
 import AboutView from '@/views/about/AboutView.vue'
 import { useChainStore } from '@/stores/chain'
-import { isProductChain } from '@/config/chains'
+import { getChainIdFromSlug, getChainPath, isProductChain } from '@/config/chains'
+
+const chainPrefix = '/:chain(bsc|rh)?'
 
 const router = createRouter({
   // @ts-ignore
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/:commerceid?',
+      path: `${chainPrefix}/:commerceid?`,
       name: 'home',
       component: HomeView,
       meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'tag' }
     },
     {
-      path: '/coins',
+      path: `${chainPrefix}/coins`,
       name: 'coins',
       component: HomeView,
       meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'coin' }
     },
     {
-      path: '/predictions',
+      path: `${chainPrefix}/predictions`,
       name: 'predictions',
       component: HomeView,
       meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'prediction' }
     },
     {
-      path: '/commerce/:commerceid?',
+      path: `${chainPrefix}/commerce/:commerceid?`,
       name: 'commerce',
       component: HomeView,
       meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'tag' }
     },
     {
-      path: '/tag-detail/:id/:sellsman?',
+      path: `${chainPrefix}/tag-detail/:id/:sellsman?`,
       name: 'tag-detail',
       component: HomeTagDetail,
       meta: { tabBar: true, topBar: true, keepAlive: true }
     },
     {
-      path: '/buy-sell/:id/:sellsman?',
+      path: `${chainPrefix}/buy-sell/:id/:sellsman?`,
       name: 'buy-sell',
       component: BuyAndSellView
     },
     {
-      path: '/space-detail/:id',
+      path: `${chainPrefix}/space-detail/:id`,
       name: 'space-detail',
       component: TweetSpaceDetail
     },
     {
-      path: '/post-detail/:id',
+      path: `${chainPrefix}/post-detail/:id`,
       name: 'post-detail',
       component: TweetPostDetail
     },
     {
-      path: '/profile',
+      path: `${chainPrefix}/profile`,
       name: 'profile',
       component: ProfileView,
       meta: { tabBar: true, topBar: true, gotoHome: true, keepAlive: true }
     },
     {
-      path: '/user/:username',
+      path: `${chainPrefix}/user/:username`,
       name: 'user',
       component: UserView,
       meta: { tabBar: true, topBar: true }
     },
     {
-      path: '/wallet',
+      path: `${chainPrefix}/wallet`,
       name: 'wallet',
       component: WalletView,
       meta: { tabBar: true, topBar: true, gotoHome: true, keepAlive: true }
     },
     {
-      path: '/notification',
+      path: `${chainPrefix}/notification`,
       name: 'notification',
       component: NotificationView
     },
     {
-      path: '/login',
+      path: `${chainPrefix}/login`,
       name: 'login-call-back',
       component: () => import('@/views/LoginCallBack.vue')
     },
     {
-      path: '/clanker/token/:token',
+      path: `${chainPrefix}/clanker/token/:token`,
       name: 'clanker-token',
       component: ClankerDetail,
       meta: { tabBar: true, topBar: true }
     },
     {
-      path: '/tip-record',
+      path: `${chainPrefix}/tip-record`,
       name: 'tip-record',
       component: TipTokenRecord
     },
     {
-      path: "/callback", component: () => import("@/views/Callback.vue")
+      path: `${chainPrefix}/callback`, component: () => import("@/views/Callback.vue")
     },
     {
-      path: '/predict/battle/:id',
+      path: `${chainPrefix}/predict/battle/:id`,
       name: 'predict-battle',
       component: PredictDetail
     },
     {
-      path: '/mindshare',
+      path: `${chainPrefix}/mindshare`,
       name: 'mindshare',
       component: MindShareIndex
     },
     {
-      path: '/predict/event/:id',
+      path: `${chainPrefix}/predict/event/:id`,
       name: 'predict-event',
       component: PredictEventDetail
     },
     {
-      path: '/about',
+      path: `${chainPrefix}/about`,
       name: 'about',
       component: AboutView,
       meta: { tabBar: true, topBar: true }
     },
     {
-      path: '/baskets',
+      path: `${chainPrefix}/baskets`,
       name: 'baskets',
       component: () => import('@/views/baskets/BasketsListView.vue'),
       meta: { tabBar: true, topBar: true }
     },
     {
-      path: '/baskets/:address/fees',
+      path: `${chainPrefix}/baskets/:address/fees`,
       name: 'basket-fees',
       component: () => import('@/views/baskets/BasketFeesView.vue'),
       meta: { tabBar: true, topBar: true }
     },
     {
-      path: '/baskets/:address',
+      path: `${chainPrefix}/baskets/:address`,
       name: 'basket-detail',
       component: () => import('@/views/baskets/BasketDetailView.vue'),
       meta: { tabBar: true, topBar: true }
@@ -155,15 +157,35 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
-  // Blink 分享链接中的链优先于浏览器记忆；先切产品链，再做路由功能判断和详情请求。
+  const chainStore = useChainStore()
+  const routeChain = Array.isArray(to.params.chain) ? to.params.chain[0] : to.params.chain
+  const routeChainId = getChainIdFromSlug(routeChain)
   const queryChainId = Number(Array.isArray(to.query.chainId) ? to.query.chainId[0] : to.query.chainId)
-  if (isProductChain(queryChainId) && queryChainId !== useChainStore().activeChainId) {
+
+  // 兼容旧链接：URL 路径链 > ?chainId= > 浏览器记忆，并统一重定向到 /bsc 或 /rh 前缀。
+  if (!routeChainId) {
+    const chainId = isProductChain(queryChainId) ? queryChainId : chainStore.activeChainId
+    const query = { ...to.query }
+    delete query.chainId
+    next({ path: getChainPath(chainId, to.path), query, hash: to.hash, replace: true })
+    return
+  }
+
+  if (routeChainId !== chainStore.activeChainId) {
     // 只切换页面数据链；用户发起交易时再由现有流程同步钱包网络。
-    useChainStore().setActiveChain(queryChainId, { reload: false })
+    chainStore.setActiveChain(routeChainId, { reload: false })
+  }
+
+  // 路径已经明确链时移除旧 query，避免同一个链接出现两个相互冲突的链标识。
+  if ('chainId' in to.query) {
+    const query = { ...to.query }
+    delete query.chainId
+    next({ path: to.path, query, hash: to.hash, replace: true })
+    return
   }
 
   const predictionRoutes = new Set(['predictions', 'predict-battle', 'predict-event'])
-  const predictionFeatures = useChainStore().deployment.features
+  const predictionFeatures = chainStore.deployment.features
   const predictionUnavailable = predictionRoutes.has(String(to.name)) && !predictionFeatures.prediction
   const predictionMainUnavailable = to.name === 'predictions' && !predictionFeatures.predictionMainEntry
   if (predictionUnavailable || predictionMainUnavailable) {

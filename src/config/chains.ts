@@ -207,6 +207,20 @@ export const getChainDeployment = (chainId: number): ChainDeployment => {
 export const isProductChain = (chainId: number): chainId is ProductChainId =>
   PRODUCT_CHAIN_IDS.includes(chainId as ProductChainId)
 
+export const getChainSlug = (chainId: number): ChainDeployment['key'] =>
+  getChainDeployment(chainId).key
+
+export const getChainIdFromSlug = (slug: unknown): ProductChainId | null => {
+  const normalized = String(slug ?? '').toLowerCase()
+  const deployment = Object.values(CHAINS).find((chain) => chain.key === normalized)
+  return deployment && isProductChain(deployment.chainId) ? deployment.chainId : null
+}
+
+export const getChainPath = (chainId: number, path = ''): string => {
+  const suffix = path && path !== '/' ? `/${String(path).replace(/^\/+/, '')}` : ''
+  return `/${getChainSlug(chainId)}${suffix}`
+}
+
 /** TagAI 自有合约是否已在该链部署（非零地址） */
 export const hasTagAiContracts = (chainId: number): boolean => {
   const { contracts } = getChainDeployment(chainId)

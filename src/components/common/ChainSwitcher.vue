@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
  * 产品链切换：BSC / Robinhood
- * 切链流程：同步钱包 → 持久化链 ID → 整页 reload
+ * 切链流程：同步钱包 → 持久化链 ID → 导航到带链前缀的 URL
  */
 import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useChainStore } from '@/stores/chain'
 import { usePrivyStore } from '@/stores/privy'
-import { PRODUCT_CHAIN_IDS, getChainDeployment, type ProductChainId } from '@/config/chains'
+import { PRODUCT_CHAIN_IDS, getChainDeployment, getChainIdFromSlug, type ProductChainId } from '@/config/chains'
 import { getProvider } from '@/utils/wallets'
 import { setupNetwork } from '@/utils/web3'
 import { EthWalletState, useAccountStore } from '@/stores/web3'
@@ -20,6 +21,8 @@ withDefaults(defineProps<{
 })
 
 const chainStore = useChainStore()
+const route = useRoute()
+const router = useRouter()
 const popoverRef = ref()
 const activeChainId = computed(() => chainStore.activeChainId)
 const activeChain = computed(() => getChainDeployment(activeChainId.value))
@@ -55,8 +58,19 @@ async function onSelectChain(chainId: ProductChainId) {
     }
   }
 
-  // 整页重载，所有数据按新链重新获取
-  window.location.reload()
+  const parts = route.path.split('/').filter(Boolean)
+  const nextSlug = getChainDeployment(chainId).key
+  if (getChainIdFromSlug(parts[0])) parts[0] = nextSlug
+  else parts.unshift(nextSlug)
+
+  const query = { ...route.query }
+  delete query.chainId
+  // 通过完整页面导航重新初始化链相关数据，同时使复制后的 URL 自带链信息。
+  window.location.assign(router.resolve({
+    path: `/${parts.join('/')}`,
+    query,
+    hash: route.hash,
+  }).href)
 }
 </script>
 

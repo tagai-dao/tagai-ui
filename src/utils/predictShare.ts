@@ -1,5 +1,6 @@
 import { stringLength } from '@/utils/helper'
 import { COMMERCE_SITE_URL } from '@/config'
+import { getChainPath } from '@/config/chains'
 import { useChainStore } from '@/stores/chain'
 
 /** Twitter 单条推文总字数上限 */
@@ -8,11 +9,16 @@ export const TWITTER_TWEET_MAX_LENGTH = 280
 export type PredictShareType = 'battle' | 'event'
 
 /** commerceId 长度不固定，分享前用估算值预留后缀空间 */
-const getCommerceUrlEstimate = () =>
-  `${COMMERCE_SITE_URL}${'x'.repeat(22)}?chainId=${useChainStore().activeChainId}`
+const buildChainCommerceUrl = (commerceId: string) => {
+  const url = new URL(COMMERCE_SITE_URL)
+  url.pathname = getChainPath(useChainStore().activeChainId, `/commerce/${commerceId}`)
+  return url.toString()
+}
+
+const getCommerceUrlEstimate = () => buildChainCommerceUrl('x'.repeat(22))
 
 export function buildCommerceBlinkUrl(commerceId: string) {
-  return `${COMMERCE_SITE_URL}${commerceId}?chainId=${useChainStore().activeChainId}`
+  return buildChainCommerceUrl(commerceId)
 }
 
 /**
