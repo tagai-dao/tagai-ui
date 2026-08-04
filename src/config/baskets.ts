@@ -231,7 +231,7 @@ export const BASKET_DEPLOYMENTS: Record<BasketChainId, BasketDeployment> = {
       parameters: `0x${'0'.repeat(58)}010000` as Hex,
     },
     // Canonical PancakeSwap V3 QuoterV2 on BNB Chain.
-    v3Quoter: '0xB048BBC1Ee6B733FFfCFb9e9CeF7375518e25997',
+    v3Quoter: '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
     assetPresets: bscAssets,
     protocolRepo: '',
   },
