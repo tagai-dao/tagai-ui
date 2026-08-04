@@ -56,9 +56,11 @@ const auctions = ref<Auction[]>([])
 const timer = window.setInterval(() => { now.value = Date.now() }, 1_000)
 onBeforeUnmount(() => window.clearInterval(timer))
 
+const isBsc = computed(() => deployment.value.chainId === 56)
+const feeCenterSubtitleKey = computed(() => isBsc.value ? 'buidlFeeCenterSubtitle' : 'feeCenterSubtitle')
 const split = computed(() => detail.value ? feeSplit(detail.value.creatorShareBps, BASKET_FRONTEND_FEE_WALLET !== '0x0000000000000000000000000000000000000000') : null)
 const feeParts = computed(() => split.value ? [
-  { key: 'feeBurn', desc: 'feeBuybackDescription', value: split.value.burn },
+  { key: 'feeBurn', desc: isBsc.value ? 'buidlFeeBuybackDescription' : 'feeBuybackDescription', value: split.value.burn },
   { key: 'feeInterface', desc: 'feeFrontendDescription', value: split.value.interface },
   { key: 'feeLauncher', desc: 'feeLauncherDescription', value: split.value.launcher },
   { key: 'feeCreator', desc: 'feeCreatorDescription', value: split.value.creator },
@@ -186,7 +188,7 @@ watch(account, () => void loadFees())
     <div v-else-if="hasError || !detail" class="state text-red-normal">{{ errorMessage || $t('baskets.loadFailed') }}</div>
     <template v-else>
       <header class="fee-hero">
-        <div><span>{{ detail.symbol }} · {{ $t('baskets.feeCenter') }}</span><h1>{{ $t('baskets.feeCenterTitle') }}</h1><p>{{ $t('baskets.feeCenterSubtitle') }}</p></div>
+        <div><span>{{ detail.symbol }} · {{ $t('baskets.feeCenter') }}</span><h1>{{ $t('baskets.feeCenterTitle') }}</h1><p>{{ $t(`baskets.${feeCenterSubtitleKey}`) }}</p></div>
         <strong>{{ (detail.basketFeeBps / 100).toFixed(2) }}%</strong>
       </header>
 

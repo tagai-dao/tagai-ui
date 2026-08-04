@@ -18,7 +18,11 @@ const {
   refresh,
 } = useBasketList()
 
-const list = computed(() => filteredBaskets())
+const list = computed(() => [...filteredBaskets()].sort((a, b) => {
+  const aumA = Number.isFinite(a.aumUsd) ? a.aumUsd : 0
+  const aumB = Number.isFinite(b.aumUsd) ? b.aumUsd : 0
+  return aumB - aumA
+}))
 const chainStore = useChainStore()
 const deployment = computed(() => getBasketDeployment(chainStore.activeChainId))
 const totalAum = computed(() => baskets.value.reduce((sum, basket) => sum + (basket.aumUsd || 0), 0))
