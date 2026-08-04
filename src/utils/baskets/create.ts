@@ -10,7 +10,7 @@ import {
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import { basketRegistryAbi, erc20Abi, getBasketSwapRouterAbi } from './abis'
 import { applySlippage, encodeBasketTradeData } from './hook-data'
-import { assertBasketRouteUsable } from './route-validation'
+import { assertBasketRouteUsable, BasketPoolValidationError } from './route-validation'
 import {
   approveBasketTrade,
   friendlyBasketError,
@@ -129,6 +129,7 @@ export const validateCustomBasketAsset = async ({
     const quote = await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n, chainId)
     if (quote <= 0n) throw new Error('The selected route has no usable price or liquidity')
   } catch (error) {
+    if (error instanceof BasketPoolValidationError) throw error
     throw new Error(friendlyBasketError(error))
   }
   return { address, symbol: symbol || `${address.slice(0, 6)}…${address.slice(-4)}` }
@@ -166,6 +167,7 @@ export const createBasketAndBuy = async (
       !presets.some((preset) => preset.address.toLowerCase() === leg.asset.address.toLowerCase()))
     await Promise.all(customLegs.map((leg) => assertBasketRouteUsable(leg.route, leg.asset.address, input.chainId)))
   } catch (error) {
+    if (error instanceof BasketPoolValidationError) throw error
     throw new Error(friendlyBasketError(error))
   }
 

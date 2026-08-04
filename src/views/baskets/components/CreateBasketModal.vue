@@ -13,7 +13,12 @@ import {
   validateCustomBasketAsset,
   type CreateBasketLeg,
 } from '@/utils/baskets/create'
-import { discoverBasketPools, type BasketPoolCandidate } from '@/utils/baskets/pool-discovery'
+import {
+  discoverBasketPools,
+  type BasketPoolCandidate,
+  type BasketPoolRejection,
+} from '@/utils/baskets/pool-discovery'
+import { BasketPoolValidationError } from '@/utils/baskets/route-validation'
 import { invalidateBasketCache } from '@/utils/baskets/data'
 import { registerBasketDeployment } from '@/utils/baskets/api'
 import { useAccountStore } from '@/stores/web3'
@@ -45,7 +50,7 @@ const advancedOpen = ref(false)
 const customAssetOpen = ref(false)
 const customAssetAddress = ref('')
 const customPoolCandidates = ref<BasketPoolCandidate[]>([])
-const customPoolRejectionReasons = ref<string[]>([])
+const customPoolRejectionReasons = ref<BasketPoolRejection[]>([])
 const selectedPoolId = ref('')
 const searchingPools = ref(false)
 const validatingAsset = ref(false)
@@ -90,6 +95,13 @@ const formattedUsdgBalance = computed(() => {
 })
 const platformAssets = computed(() => deployment.value.assetPresets.filter((asset) => asset.category === 'platform'))
 const stockAssets = computed(() => deployment.value.assetPresets.filter((asset) => asset.category === 'stock'))
+const primaryAssets = computed(() => basketChainId === 56 ? deployment.value.assetPresets : platformAssets.value)
+const customAssetUsdBlocked = computed(() => basketChainId === 56 && isAddress(customAssetAddress.value) &&
+  isBscBasketLegAssetBlocked(getAddress(customAssetAddress.value), basketChainId))
+const customAssetUsdDetected = computed(() => customAssetUsdBlocked.value ||
+  customPoolRejectionReasons.value.some((reason) => reason.issue === 'usdConstituent'))
+const displayedPoolRejectionReasons = computed(() =>
+  customPoolRejectionReasons.value.filter((reason) => reason.issue !== 'usdConstituent'))
 const canSubmit = computed(() =>
   !!account.value && isOnBasketChain.value && name.value.trim().length >= 2 && symbol.value.trim().length >= 2 &&
   selected.value.length > 0 && totalWeight.value === 10_000 && Number(initialUsdg.value) > 1 &&
@@ -125,6 +137,13 @@ const candidatePoolFee = (pool: BasketPoolCandidate) => pool.venue === 0
   : pool.fee
 const shortPoolId = (value: string) => value.length > 18 ? `${value.slice(0, 10)}…${value.slice(-8)}` : value
 const shortAddress = (value: Address) => `${value.slice(0, 8)}…${value.slice(-6)}`
+const poolRejectionText = (reason: BasketPoolRejection) =>
+  t(`baskets.poolReasons.${reason.issue}`, reason.params ?? {})
+const poolRejectionKey = (reason: BasketPoolRejection) =>
+  `${reason.poolLabel ?? ''}:${reason.issue}:${JSON.stringify(reason.params ?? {})}`
+const localizedPoolError = (error: unknown) => error instanceof BasketPoolValidationError
+  ? poolRejectionText(error)
+  : t('baskets.poolReasons.validationFailed')
 const formatPoolDate = (value: string) => {
   const timestamp = Date.parse(value)
   return Number.isFinite(timestamp) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(timestamp) : '—'
@@ -178,7 +197,6 @@ const searchCustomPools = async () => {
   }
   const address = getAddress(customAssetAddress.value)
   if (isBscBasketLegAssetBlocked(address, basketChainId)) {
-    customAssetError.value = t('baskets.customAssetUsdUnsupported')
     return
   }
   if (isSelected(address)) {
@@ -195,7 +213,7 @@ const searchCustomPools = async () => {
       customAssetError.value = t('baskets.noCompatiblePools')
     }
   } catch (error) {
-    customAssetError.value = error instanceof Error ? error.message : String(error)
+    customAssetError.value = localizedPoolError(error)
   } finally {
     searchingPools.value = false
   }
@@ -223,7 +241,7 @@ const addCustomAsset = async () => {
     customPoolRejectionReasons.value = []
     selectedPoolId.value = ''
   } catch (error) {
-    customAssetError.value = error instanceof Error ? error.message : String(error)
+    customAssetError.value = localizedPoolError(error)
   } finally {
     validatingAsset.value = false
   }
@@ -441,7 +459,9 @@ const submit = async () => {
     await router.push(`/baskets/${result.basket}`)
   } catch (error) {
     state.value = 'idle'
-    errorMessage.value = error instanceof Error ? error.message : String(error)
+    errorMessage.value = error instanceof BasketPoolValidationError
+      ? localizedPoolError(error)
+      : error instanceof Error ? error.message : String(error)
   }
 }
 
@@ -499,9 +519,9 @@ watch([
             <section class="form-section">
               <div class="section-title"><b>02</b><div><strong>{{ $t('baskets.chooseAssets') }}</strong><span>{{ $t('baskets.chooseAssetsHint', { network: deployment.networkLabel }) }}</span></div><em>{{ selected.length }}/10</em></div>
               <div class="asset-group-label">{{ $t('baskets.platformAssets') }}</div>
-              <div class="asset-grid asset-grid--platform">
+              <div class="asset-grid" :class="basketChainId === 56 ? 'asset-grid--stocks' : 'asset-grid--platform'">
                 <button
-                  v-for="asset in platformAssets"
+                  v-for="asset in primaryAssets"
                   :key="asset.address"
                   type="button"
                   class="asset-option"
@@ -514,8 +534,8 @@ watch([
                   <svg v-if="isSelected(asset.address)" viewBox="0 0 20 20" fill="none"><path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
               </div>
-              <div class="asset-group-label asset-group-label--stocks">{{ $t('baskets.stockAssets') }}</div>
-              <div class="asset-grid asset-grid--stocks">
+              <div v-if="basketChainId !== 56" class="asset-group-label asset-group-label--stocks">{{ $t('baskets.stockAssets') }}</div>
+              <div v-if="basketChainId !== 56" class="asset-grid asset-grid--stocks">
                 <button
                   v-for="asset in stockAssets"
                   :key="asset.address"
@@ -538,13 +558,13 @@ watch([
               <Transition name="advanced">
                 <div v-if="customAssetOpen" class="advanced-panel custom-asset-panel">
                   <p>{{ $t('baskets.customAssetHint') }}</p>
-                  <p v-if="basketChainId === 56" class="custom-usd-warning">{{ $t('baskets.customAssetUsdUnsupported') }}</p>
                   <div class="custom-search-row">
                     <label class="field custom-address"><span>{{ $t('baskets.assetAddress') }}</span><input v-model.trim="customAssetAddress" placeholder="0x…" :disabled="isBusy || searchingPools || validatingAsset" @keyup.enter="searchCustomPools"></label>
-                    <button type="button" class="pool-search" :disabled="isBusy || searchingPools || validatingAsset" @click="searchCustomPools">
+                    <button type="button" class="pool-search" :disabled="isBusy || searchingPools || validatingAsset || customAssetUsdDetected" @click="searchCustomPools">
                       <span v-if="searchingPools" class="spinner" />{{ searchingPools ? $t('baskets.searchingPools') : $t('baskets.searchPools') }}
                     </button>
                   </div>
+                  <p v-if="customAssetUsdDetected" class="custom-usd-warning">{{ $t('baskets.customAssetUsdUnsupported') }}</p>
                   <div v-if="customPoolCandidates.length" class="pool-candidates">
                     <button
                       v-for="pool in customPoolCandidates"
@@ -571,10 +591,12 @@ watch([
                       </span>
                     </button>
                   </div>
-                  <div v-if="customPoolRejectionReasons.length" class="pool-rejections">
+                  <div v-if="displayedPoolRejectionReasons.length" class="pool-rejections">
                     <strong>{{ $t('baskets.poolRejectedReasons') }}</strong>
                     <ul>
-                      <li v-for="reason in customPoolRejectionReasons" :key="reason">{{ reason }}</li>
+                      <li v-for="reason in displayedPoolRejectionReasons" :key="poolRejectionKey(reason)">
+                        <template v-if="reason.poolLabel">{{ reason.poolLabel }}: </template>{{ poolRejectionText(reason) }}
+                      </li>
                     </ul>
                   </div>
                   <p v-if="customAssetError" class="custom-error">{{ customAssetError }}</p>
@@ -723,9 +745,11 @@ watch([
 .atomic-note { display: flex; align-items: flex-start; gap: 7px; margin-top: 11px; color: var(--text-muted); font-size: 9px; line-height: 15px; }.atomic-note svg { width: 15px; height: 15px; flex-shrink: 0; }
 .advanced-toggle { display: flex; width: 100%; align-items: center; justify-content: space-between; margin-top: 11px; padding: 10px 12px; border: 1px solid var(--border-base); border-radius: 11px; background: var(--surface-2); color: var(--text-muted); font-size: 10px; font-weight: 650; }.advanced-toggle:disabled { opacity: .45; }.advanced-toggle svg { width: 16px; height: 16px; transition: transform 150ms ease; }.advanced-toggle.open svg { transform: rotate(180deg); }
 .advanced-panel { margin-top: 8px; padding: 11px 12px; border: 1px solid var(--border-base); border-radius: 12px; background: color-mix(in srgb, var(--surface-2) 60%, transparent); }.advanced-panel > p { margin-bottom: 7px; color: var(--text-muted); font-size: 9px; line-height: 14px; }
-.custom-toggle { margin-top: 10px; }
+.custom-toggle { margin-top: 14px; padding: 13px 15px; border-color: rgba(141,103,232,.4); background: linear-gradient(135deg,rgba(141,103,232,.13),rgba(240,120,42,.08)); color: var(--text-base); font-size: 12px; font-weight: 750; box-shadow: 0 8px 22px rgba(91,67,160,.08); }
+.custom-toggle:hover:not(:disabled),.custom-toggle.open { border-color: rgba(141,103,232,.68); background: linear-gradient(135deg,rgba(141,103,232,.18),rgba(240,120,42,.11)); }
+.custom-toggle svg { color: #8d67e8; }
 .custom-asset-panel { padding: 12px; }
-.advanced-panel > p.custom-usd-warning { margin-bottom: 9px; padding: 8px 10px; border: 1px solid rgba(240,120,42,.28); border-radius: 9px; background: rgba(240,120,42,.08); color: #d96a22; }
+.advanced-panel > p.custom-usd-warning { margin: 9px 0 0; padding: 8px 10px; border: 1px solid rgba(240,120,42,.28); border-radius: 9px; background: rgba(240,120,42,.08); color: #d96a22; }
 .custom-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
 .custom-address { min-width: 0; }
 .pool-search { display: flex; height: 55px; min-width: 112px; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border: 1px solid rgba(141,103,232,.3); border-radius: 14px; background: rgba(141,103,232,.1); color: #8d67e8; font-size: 10px; font-weight: 750; }

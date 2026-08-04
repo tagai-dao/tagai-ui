@@ -181,16 +181,17 @@ const bscV3Asset = (
 const bscAssets: BasketAssetPreset[] = [
   {
     address: bscContracts.wrappedNative, symbol: 'WBNB', name: 'Wrapped BNB', category: 'platform',
+    logoUrl: '/images/basket-assets/wbnb.svg',
     route: { venue: 2, quoteToken: 0, v4Pool: bscEmptyPool, v3Fee: 0 },
   },
   {
     address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', symbol: 'ETH', name: 'Binance-Peg Ethereum',
-    category: 'platform',
+    category: 'platform', logoUrl: '/images/basket-assets/eth.svg',
     route: { venue: 1, quoteToken: 0, v4Pool: bscEmptyPool, v3Fee: 500 },
   },
   {
     address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', symbol: 'BTC', name: 'Binance-Peg Bitcoin',
-    category: 'platform',
+    category: 'platform', logoUrl: '/images/basket-assets/btc.svg',
     route: { venue: 1, quoteToken: 0, v4Pool: bscEmptyPool, v3Fee: 500 },
   },
   bscV3Asset(
@@ -204,6 +205,10 @@ const bscAssets: BasketAssetPreset[] = [
   bscV3Asset(
     '0x091FC7778e6932d4009B087B191D1EE3bac5729A', 'GOOGLon', 'Alphabet (Ondo)', 1, 10_000,
     '/images/basket-assets/googl.png',
+  ),
+  bscV3Asset(
+    '0xdABb9afF4cf02f26D2014e4cA9f94aC6fe6572a3', 'GMEon', 'GameStop (Ondo)', 1, 2_500,
+    '/images/basket-assets/gme.png',
   ),
   bscV3Asset(
     '0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1', 'SPCXB', 'SpaceX', 1, 2_500,

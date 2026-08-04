@@ -5,7 +5,11 @@ import { getRhV4PoolKeyByPoolId } from '@/utils/rhV4Swap'
 import { resolveV4PoolKeyForTrade } from '@/utils/pcsV4Swap'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { buildCustomRoute } from './create'
-import { assertBasketRouteUsable } from './route-validation'
+import {
+  assertBasketRouteUsable,
+  BasketPoolValidationError,
+  type BasketPoolIssueParams,
+} from './route-validation'
 import type { BasketLegRoute } from './types'
 
 const v3PoolAbi = parseAbi([
@@ -33,29 +37,51 @@ export type BasketPoolCandidate = {
 
 export type BasketPoolDiscoveryResult = {
   candidates: BasketPoolCandidate[]
-  rejectionReasons: string[]
+  rejectionReasons: BasketPoolRejection[]
+}
+
+export type BasketPoolRejection = {
+  poolLabel?: string
+  issue: string
+  params?: BasketPoolIssueParams
+}
+
+const rejection = (
+  issue: string,
+  params?: BasketPoolIssueParams,
+  poolLabel?: string,
+): BasketPoolRejection => ({ issue, ...(params ? { params } : {}), ...(poolLabel ? { poolLabel } : {}) })
+
+const failDiscovery = (issue: string, params?: BasketPoolIssueParams): never => {
+  throw new BasketPoolValidationError(issue, params)
 }
 
 const sameAddress = (a: string | undefined, b: string) => !!a && a.toLowerCase() === b.toLowerCase()
 
-const poolCompatibilityIssue = (pool: DexPoolInfo, asset: Address, chainId: number): string | null => {
+const poolCompatibilityIssue = (pool: DexPoolInfo, asset: Address, chainId: number): BasketPoolRejection | null => {
   const deployment = getBasketDeployment(chainId)
   const tokens = [pool.baseToken, pool.quoteToken]
-  if (!tokens.some((token) => sameAddress(token, asset))) return 'Pool metadata does not contain the requested token.'
+  if (!tokens.some((token) => sameAddress(token, asset))) return rejection('metadataTokenMismatch')
   if (pool.dexVersion === 4) {
     if (tokens.some((token) => sameAddress(token, zeroAddress))) return null
     if (chainId === 56 && tokens.some((token) =>
       sameAddress(token, deployment.contracts.wrappedNative) ||
       sameAddress(token, deployment.contracts.settlementToken))) return null
-    return `Infinity pools must pair the token directly with ${chainId === 56 ? 'BNB or USDT' : deployment.nativeSymbol}.`
+    return rejection('directRouteRequired', {
+      venue: chainId === 56 ? 'Infinity' : 'V4',
+      quotes: chainId === 56 ? 'BNB or USDT' : deployment.nativeSymbol,
+    })
   }
   if (pool.dexVersion === 3) {
-    if (!isAddress(pool.pairAddress)) return 'The V3 pool address is invalid.'
+    if (!isAddress(pool.pairAddress)) return rejection('invalidPoolAddress', { venue: 'V3' })
     if (tokens.some((token) => sameAddress(token, deployment.contracts.wrappedNative))) return null
     if (chainId === 56 && tokens.some((token) => sameAddress(token, deployment.contracts.settlementToken))) return null
-    return `V3 pools must pair the token directly with ${chainId === 56 ? 'WBNB or USDT' : deployment.wrappedNativeSymbol}.`
+    return rejection('directRouteRequired', {
+      venue: 'V3',
+      quotes: chainId === 56 ? 'WBNB or USDT' : deployment.wrappedNativeSymbol,
+    })
   }
-  return 'V2 pools are not supported; choose a V3 or Infinity pool.'
+  return rejection('v2Unsupported')
 }
 
 const hasPair = (currency0: string, currency1: string, a: string, b: string) =>
@@ -71,12 +97,12 @@ const resolveCandidate = async (
   const deployment = getBasketDeployment(chainId)
   if (pool.dexVersion === 4) {
     if (chainId !== 56 && !/^0x[\da-fA-F]{64}$/.test(pool.pairAddress)) {
-      throw new Error('The V4 pool ID is invalid.')
+      failDiscovery('invalidPoolAddress', { venue: 'V4' })
     }
     const key: any = chainId === 56
       ? await resolveV4PoolKeyForTrade(pool.pairAddress)
       : await getRhV4PoolKeyByPoolId(pool.pairAddress as `0x${string}`)
-    if (!key) throw new Error('The Infinity PoolKey could not be resolved.')
+    if (!key) failDiscovery('poolKeyUnavailable', { venue: chainId === 56 ? 'Infinity' : 'V4' })
     const encodedTick = chainId === 56 ? (BigInt(key.parameters) >> 16n) & 0xffffffn : 0n
     const tickSpacing = chainId === 56
       ? Number(encodedTick >= 0x800000n ? encodedTick - 0x1000000n : encodedTick)
@@ -89,9 +115,9 @@ const resolveCandidate = async (
         quoteSymbol = deployment.settlementSymbol
       } else if (hasPair(key.currency0, key.currency1, asset, zeroAddress)) {
         quoteToken = 0
-      } else throw new Error('The resolved Infinity PoolKey is not a direct BNB/USDT route for this token.')
+      } else failDiscovery('directRouteRequired', { venue: 'Infinity', quotes: 'BNB or USDT' })
     } else if (!sameAddress(key.currency0, zeroAddress) || !sameAddress(key.currency1, asset)) {
-      throw new Error('The resolved V4 PoolKey is not a direct native-token route.')
+      failDiscovery('directRouteRequired', { venue: 'V4', quotes: deployment.nativeSymbol })
     }
     const route = buildCustomRoute({
       asset,
@@ -127,7 +153,7 @@ const resolveCandidate = async (
       client.readContract({ address: poolAddress, abi: v3PoolAbi, functionName: 'token1' }),
     ])
     const tokens = [token0.toLowerCase(), token1.toLowerCase()]
-    if (!tokens.includes(asset.toLowerCase())) throw new Error('The V3 pool does not contain the requested token.')
+    if (!tokens.includes(asset.toLowerCase())) failDiscovery('poolTokenMismatch', { venue: 'V3' })
     let quoteToken: 0 | 1 | undefined
     let quoteSymbol: string = deployment.wrappedNativeSymbol
     if (tokens.includes(deployment.contracts.wrappedNative.toLowerCase())) {
@@ -135,7 +161,10 @@ const resolveCandidate = async (
     } else if (chainId === 56 && tokens.includes(deployment.contracts.settlementToken.toLowerCase())) {
       quoteToken = 1
       quoteSymbol = deployment.settlementSymbol
-    } else throw new Error(`The V3 pool is not quoted in ${chainId === 56 ? 'WBNB or USDT' : deployment.wrappedNativeSymbol}.`)
+    } else failDiscovery('directRouteRequired', {
+      venue: 'V3',
+      quotes: chainId === 56 ? 'WBNB or USDT' : deployment.wrappedNativeSymbol,
+    })
     const route = buildCustomRoute({ asset, venue: 1, quoteToken, fee: Number(fee) })
     await assertBasketRouteUsable(route, asset, chainId)
     return {
@@ -166,22 +195,23 @@ const rejectedPoolLabel = (pool: DexPoolInfo, chainId: number) => {
 
 export const discoverBasketPools = async (asset: Address, chainId: number, limit = 2): Promise<BasketPoolDiscoveryResult> => {
   const result = await getTokenDexPools(asset)
-  if (!result) return { candidates: [], rejectionReasons: ['No compatible DEX pool metadata was found for this token.'] }
+  if (!result) return { candidates: [], rejectionReasons: [rejection('metadataUnavailable')] }
   const client = getReadOnlyClient(chainId)
   const assetSymbol = await client.readContract({ address: asset, abi: tokenSymbolAbi, functionName: 'symbol' })
     .then(String, () => result.tokenSymbol || 'TOKEN')
   if (chainId === 56 && isUsdBasketLegSymbol(assetSymbol)) {
     return {
       candidates: [],
-      rejectionReasons: [`${assetSymbol} is a USD stablecoin and cannot be used as a Basket constituent.`],
+      rejectionReasons: [rejection('usdConstituent', { symbol: assetSymbol })],
     }
   }
   const candidates: BasketPoolCandidate[] = []
-  const rejectionReasons = new Set<string>()
+  const rejectionReasons = new Map<string, BasketPoolRejection>()
   for (const pool of result.pools) {
     const issue = poolCompatibilityIssue(pool, asset, chainId)
     if (issue) {
-      rejectionReasons.add(`${rejectedPoolLabel(pool, chainId)}: ${issue}`)
+      const poolLabel = rejectedPoolLabel(pool, chainId)
+      rejectionReasons.set(`${poolLabel}:${issue.issue}:${JSON.stringify(issue.params ?? {})}`, { ...issue, poolLabel })
       continue
     }
     if (candidates.length >= limit) continue
@@ -190,9 +220,11 @@ export const discoverBasketPools = async (asset: Address, chainId: number, limit
       if (candidate) candidates.push(candidate)
     } catch (error) {
       console.warn('Basket pool candidate skipped', pool.pairAddress, error)
-      const reason = error instanceof Error ? error.message : String(error)
-      rejectionReasons.add(`${rejectedPoolLabel(pool, chainId)}: ${reason}`)
+      const issue = error instanceof BasketPoolValidationError
+        ? rejection(error.issue, error.params, rejectedPoolLabel(pool, chainId))
+        : rejection('validationFailed', undefined, rejectedPoolLabel(pool, chainId))
+      rejectionReasons.set(`${issue.poolLabel}:${issue.issue}:${JSON.stringify(issue.params ?? {})}`, issue)
     }
   }
-  return { candidates, rejectionReasons: [...rejectionReasons] }
+  return { candidates, rejectionReasons: [...rejectionReasons.values()] }
 }

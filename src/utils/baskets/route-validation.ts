@@ -7,6 +7,22 @@ import type { BasketLegRoute } from './types'
 
 const V3_TWAP_WINDOW_SECONDS = 300
 
+export type BasketPoolIssueParams = Record<string, string | number>
+
+export class BasketPoolValidationError extends Error {
+  constructor(
+    public readonly issue: string,
+    public readonly params: BasketPoolIssueParams = {},
+  ) {
+    super(issue)
+    this.name = 'BasketPoolValidationError'
+  }
+}
+
+const failPoolValidation = (issue: string, params: BasketPoolIssueParams = {}): never => {
+  throw new BasketPoolValidationError(issue, params)
+}
+
 const rebalanceExecutorRouteAbi = parseAbi([
   'function v3Factory() view returns (address)',
 ])
@@ -55,10 +71,10 @@ const assertV4RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
     const quoteLabel = chainId === 56 && route.quoteToken === 1
       ? deployment.settlementSymbol
       : deployment.nativeSymbol
-    throw new Error(`The selected V4 pool is not a direct ${quoteLabel} route for this asset`)
+    failPoolValidation('directRouteRequired', { venue: 'V4', quotes: quoteLabel })
   }
   if (chainId === 56 && (!pool.poolManager || !sameAddress(pool.poolManager, deployment.contracts.poolManager))) {
-    throw new Error('The selected V4 pool uses an unsupported PoolManager')
+    failPoolValidation('unsupportedPoolManager')
   }
 
   const client = getReadOnlyClient(chainId)
@@ -82,15 +98,15 @@ const assertV4RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
     hookTrustPromise,
   ])
 
-  if (state.sqrtPriceX96 === 0n) throw new Error('The selected V4 pool is not initialized')
-  if (liquidity === 0n) throw new Error('The selected V4 pool has no active liquidity')
-  if (!trustedHook) throw new Error('The selected V4 pool hook is not approved for Basket constituents')
+  if (state.sqrtPriceX96 === 0n) failPoolValidation('uninitialized', { venue: 'V4' })
+  if (liquidity === 0n) failPoolValidation('noLiquidity', { venue: 'V4' })
+  if (!trustedHook) failPoolValidation('hookNotApproved')
 }
 
 const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number) => {
   const deployment = getBasketDeployment(chainId)
   if (!Number.isInteger(route.v3Fee) || route.v3Fee <= 0) {
-    throw new Error('The selected V3 route has an invalid fee tier')
+    failPoolValidation('invalidFee')
   }
 
   const client = getReadOnlyClient(chainId)
@@ -99,7 +115,7 @@ const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
     abi: rebalanceExecutorRouteAbi,
     functionName: 'v3Factory',
   })
-  if (sameAddress(factory, zeroAddress)) throw new Error('V3 Basket routes are not configured')
+  if (sameAddress(factory, zeroAddress)) failPoolValidation('v3NotConfigured')
 
   const quote = chainId === 56 && route.quoteToken === 1
     ? deployment.contracts.settlementToken
@@ -110,15 +126,15 @@ const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
     functionName: 'getPool',
     args: [quote, asset, route.v3Fee],
   })
-  if (sameAddress(pool, zeroAddress)) throw new Error('The selected V3 pool does not exist')
+  if (sameAddress(pool, zeroAddress)) failPoolValidation('poolNotFound', { venue: 'V3' })
 
   const poolAddress = getAddress(pool)
   const [slot0, liquidity] = await Promise.all([
     client.readContract({ address: poolAddress, abi: v3PoolValidationAbi, functionName: 'slot0' }),
     client.readContract({ address: poolAddress, abi: v3PoolValidationAbi, functionName: 'liquidity' }),
   ])
-  if (slot0[0] === 0n) throw new Error('The selected V3 pool is not initialized')
-  if (liquidity === 0n) throw new Error('The selected V3 pool has no active liquidity')
+  if (slot0[0] === 0n) failPoolValidation('uninitialized', { venue: 'V3' })
+  if (liquidity === 0n) failPoolValidation('noLiquidity', { venue: 'V3' })
 
   try {
     await client.readContract({
@@ -128,7 +144,7 @@ const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
       args: [[V3_TWAP_WINDOW_SECONDS, 0]],
     })
   } catch {
-    throw new Error('The selected V3 pool does not have the required 5-minute price history yet')
+    failPoolValidation('twapUnavailable')
   }
 }
 
@@ -138,5 +154,5 @@ export const assertBasketRouteUsable = async (route: BasketLegRoute, asset: Addr
   if (route.venue === 0) return assertV4RouteUsable(route, asset, chainId)
   if (route.venue === 1) return assertV3RouteUsable(route, asset, chainId)
   if (route.venue === 2 && sameAddress(asset, deployment.contracts.wrappedNative)) return
-  throw new Error('The selected route is not compatible with this Basket constituent')
+  failPoolValidation('routeIncompatible')
 }
