@@ -9,7 +9,11 @@ import {isNativePlatform, NATIVE_OAUTH_REDIRECT_URL} from "@/utils/native.ts";
 
 function ReactApp(props) {
     // Privy 仅接受 http(s) redirect：回跳先到托管跳板页，再由其深链转发回 App（tagai://auth-callback）
-    const customOAuthRedirectUrl = isNativePlatform() ? NATIVE_OAUTH_REDIRECT_URL : undefined;
+    // Web 端固定回跳到 origin：Privy 的 redirect allowlist 按完整 URL 校验，
+    // 直接使用当前 /bsc、/coins 等路径会被拒绝为 "Redirect URL is not allowed"。
+    const customOAuthRedirectUrl = isNativePlatform()
+        ? NATIVE_OAUTH_REDIRECT_URL
+        : window.location.origin;
 
     return (
         <PrivyProvider
@@ -22,6 +26,7 @@ function ReactApp(props) {
                         createOnLogin: 'all-users'
                     }
                 },
+                customOAuthRedirectUrl,
                 // 产品链：BSC + Robinhood；测试网保留
                 defaultChain: customBsc,
                 supportedChains: [customBsc, customRobinhood, bscTestnet, sepolia]

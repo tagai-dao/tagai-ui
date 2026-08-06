@@ -1,22 +1,35 @@
-import {useLoginWithOAuth, useOAuthTokens, usePrivy } from '@privy-io/react-auth';
-import {useEffect, useState} from "react";
+import {useLoginWithOAuth} from '@privy-io/react-auth';
+import {useCallback, useEffect, useRef, useState} from "react";
 import emitter from "@/utils/emitter.ts";
 import {runNativeBrowserOAuth} from "@/utils/native.ts";
 
 export default function LoginWithOAuth() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
-    const { logout } = usePrivy();
-
     const [ isLoading, setIsLoading] = useState(false);
+    const reportedErrorRef = useRef('');
+
+    const reportAuthError = useCallback((error) => {
+        const errorKey = [
+            error?.privyErrorCode,
+            error?.data?.code,
+            error?.message ?? String(error ?? '')
+        ].filter(Boolean).join(':');
+
+        if (!errorKey || reportedErrorRef.current === errorKey) return;
+
+        reportedErrorRef.current = errorKey;
+        emitter.emit('authError', error);
+    }, []);
 
     const handleLogin = async () => {
         try {
             setIsLoading(true);
+            reportedErrorRef.current = '';
             window.localStorage.setItem('lastLoginTime', '0');
-            await logout();
             await runNativeBrowserOAuth(() => initOAuth({ provider: 'twitter' }));
         } catch (err) {
             console.error(err);
+            reportAuthError(err);
             setIsLoading(false);
         }
     };
@@ -25,13 +38,13 @@ export default function LoginWithOAuth() {
         console.log('state', state.status)
         console.log('loading', loading)
         if(state.status==="error") {
-            emitter.emit('authError')
+            reportAuthError(state.error)
             setIsLoading(false);
         }
         if(state.status==="success") {
             setIsLoading(false);
         }
-    }, [state, loading])
+    }, [state, loading, reportAuthError])
 
     return (
         <button onClick={handleLogin} disabled={isLoading}
