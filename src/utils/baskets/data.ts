@@ -24,7 +24,12 @@ import {
   getRebalanceExecutorAbi,
   pancakePoolManagerStateAbi,
 } from './abis'
-import { getRegisteredBasket, listRegisteredBaskets, type RegisteredBasket } from './api'
+import {
+  getBasketPerformances,
+  getRegisteredBasket,
+  listRegisteredBaskets,
+  type RegisteredBasket,
+} from './api'
 import type { BasketDetail, BasketHolding, BasketLegRoute, BasketSummary } from './types'
 
 export type BasketReadOptions = {
@@ -558,6 +563,11 @@ export const listBaskets = async (
     navPerToken: 0,
     aumUsd: 0,
     pricedCount: 0,
+    launchNav: null,
+    currentNavAsOf: null,
+    toDatePct: null,
+    dataQuality: 'unavailable',
+    launchNavQuality: 'unavailable',
     top: [...basket.assets]
       .sort((a, b) => b.targetWeightBps - a.targetWeightBps)
       .map((asset) => ({ address: asset.address, symbol: asset.symbol, weightPct: asset.targetWeightBps / 100 })),
@@ -649,6 +659,29 @@ export const listBaskets = async (
       pricedCount,
     }
   })
+  try {
+    const performance = await getBasketPerformances(baskets.map((basket) => basket.address), chainId)
+    const byAddress = new Map(performance.map((item) => [item.address.toLowerCase(), item]))
+    baskets.forEach((basket) => {
+      const item = byAddress.get(basket.address.toLowerCase())
+      if (!item) return
+      const currentNav = Number(item.currentNav)
+      const currentAum = Number(item.aumUsd)
+      if (item.dataQuality === 'complete' && Number.isFinite(currentNav) && currentNav > 0) {
+        basket.navPerToken = currentNav
+        if (Number.isFinite(currentAum) && currentAum >= 0) basket.aumUsd = currentAum
+      }
+      basket.launchNav = item.launchNav == null ? null : Number(item.launchNav)
+      basket.currentNavAsOf = item.asOf
+      basket.toDatePct = item.toDatePct ?? null
+      basket.dataQuality = item.dataQuality
+      basket.launchNavQuality = item.launchNavQuality
+    })
+  } catch (error) {
+    // NAV history is deployed independently; current on-chain valuation remains usable
+    // while the snapshot migration or worker is not available yet.
+    console.warn('[baskets] performance API unavailable', error)
+  }
   listCache.set(chainId, { at: Date.now(), data: baskets })
   return baskets
 }

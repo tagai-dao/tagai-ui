@@ -2,7 +2,12 @@ import { get, post } from '@/apis/axios'
 import { API_BASE_URL } from '@/config/api'
 import { getBasketDeployment } from '@/config/baskets'
 import type { Address, Hex } from 'viem'
-import type { BasketLegRoute } from './types'
+import type {
+  BasketLegRoute,
+  BasketPerformance,
+  BasketPerformanceRange,
+  BasketPerformanceSeries,
+} from './types'
 
 export type RegisteredBasketAsset = {
   position: number
@@ -70,6 +75,9 @@ type BasketEventsResponse<T> = {
   }
 }
 
+type BasketPerformanceListResponse = { c: number; d: BasketPerformance[] }
+type BasketPerformanceSeriesResponse = { c: number; d: BasketPerformanceSeries }
+
 const chainHeaders = (chainId: number) => {
   getBasketDeployment(chainId)
   return { headers: { 'X-Chain-Id': String(chainId) } }
@@ -119,3 +127,43 @@ export const listBasketTrades = async (
   ) as BasketEventsResponse<BasketTradeEvent>
   return Array.isArray(response?.d?.list) ? response.d.list : []
 }
+
+export const getBasketPerformances = async (
+  addresses: Address[],
+  chainId: number,
+): Promise<BasketPerformance[]> => {
+  if (!addresses.length) return []
+  const result: BasketPerformance[] = []
+  for (let offset = 0; offset < addresses.length; offset += 50) {
+    const response = await get(
+      `${API_BASE_URL}/basket/performance`,
+      { addresses: addresses.slice(offset, offset + 50).join(',') },
+      chainHeaders(chainId),
+    ) as BasketPerformanceListResponse
+    if (Array.isArray(response?.d)) result.push(...response.d)
+  }
+  return result
+}
+
+export const getBasketPerformanceSeries = async (
+  address: Address,
+  chainId: number,
+  range: BasketPerformanceRange,
+): Promise<BasketPerformanceSeries> => {
+  const response = await get(
+    `${API_BASE_URL}/basket/${address}/performance`,
+    { range },
+    chainHeaders(chainId),
+  ) as BasketPerformanceSeriesResponse
+  return response.d
+}
+
+export const requestBasketNavSnapshot = (
+  address: Address,
+  chainId: number,
+  reason: 'trade' | 'rebalance',
+) => post(
+  `${API_BASE_URL}/basket/${address}/snapshot`,
+  { reason },
+  chainHeaders(chainId),
+)

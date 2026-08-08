@@ -37,6 +37,11 @@ const allocationLegs = computed(() =>
 )
 const hiddenLegCount = computed(() => Math.max(0, props.basket.top.length - allocationLegs.value.length))
 const networkLabel = computed(() => getBasketDeployment(props.basket.chainId).networkLabel)
+const performanceAvailable = computed(() => Number.isFinite(props.basket.toDatePct))
+const performanceClass = computed(() => {
+  if (!performanceAvailable.value) return 'performance--unavailable'
+  return Number(props.basket.toDatePct) >= 0 ? 'performance--positive' : 'performance--negative'
+})
 
 onMounted(() => {
   if (!allocationElement.value) return
@@ -58,6 +63,12 @@ const formatNav = (n: number) => {
   if (!Number.isFinite(n) || n <= 0) return '—'
   const digits = n >= 100 ? 2 : n >= 1 ? 2 : 4
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
+}
+
+const formatPerformance = (value: number | null | undefined) => {
+  if (!Number.isFinite(value)) return '—'
+  const number = Number(value)
+  return `${number >= 0 ? '+' : ''}${number.toFixed(2)}%`
 }
 </script>
 
@@ -104,12 +115,22 @@ const formatNav = (n: number) => {
     </div>
 
     <div class="relative z-10 mt-6 flex items-end justify-between gap-4">
-      <div class="min-w-0">
-        <div class="text-[28px] leading-8 font-medium tracking-[-0.04em] text-content">
-          {{ formatNav(basket.navPerToken) }}
+      <div class="basket-card__metrics min-w-0">
+        <div class="min-w-0">
+          <div class="text-[28px] leading-8 font-medium tracking-[-0.04em] text-content">
+            {{ formatNav(basket.navPerToken) }}
+          </div>
+          <div class="mt-1.5 text-sm text-muted">
+            {{ $t('baskets.aum') }} {{ formatUsd(basket.aumUsd) }}
+          </div>
         </div>
-        <div class="mt-1.5 text-sm text-muted">
-          {{ $t('baskets.aum') }} {{ formatUsd(basket.aumUsd) }}
+        <div
+          class="performance"
+          :class="performanceClass"
+          :title="basket.launchNavQuality === 'estimated' ? $t('baskets.estimatedLaunchNavHelp') : $t('baskets.toDateHelp')"
+        >
+          <strong>{{ basket.launchNavQuality === 'estimated' && performanceAvailable ? '≈' : '' }}{{ formatPerformance(basket.toDatePct) }}</strong>
+          <span>{{ $t('baskets.toDate') }}</span>
         </div>
       </div>
       <span class="basket-card__action" aria-hidden="true">
@@ -284,6 +305,27 @@ const formatNav = (n: number) => {
   box-shadow: 0 10px 28px rgba(91, 82, 225, 0.22);
 }
 
+.basket-card__metrics {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+}
+
+.performance {
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-left: 18px;
+  border-left: 1px solid color-mix(in srgb, var(--border-base) 80%, transparent);
+}
+
+.performance strong { font-size: 16px; line-height: 22px; font-weight: 750; }
+.performance span { margin-top: 2px; color: var(--text-muted); font-size: 9px; font-weight: 750; letter-spacing: .12em; }
+.performance--positive strong { color: #20b77a; }
+.performance--negative strong { color: #e25367; }
+.performance--unavailable strong { color: var(--text-muted); }
+
 .basket-card__action span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .basket-card__action svg { width: 18px; height: 18px; flex-shrink: 0; transition: transform 180ms ease; }
 .basket-card:hover .basket-card__action svg { transform: translate(2px, -2px); }
@@ -293,5 +335,7 @@ const formatNav = (n: number) => {
 @media (max-width: 420px) {
   .basket-card { min-height: 300px; padding: 20px; border-radius: 22px; }
   .allocation { height: 88px; margin-top: 24px; }
+  .basket-card__metrics { gap: 12px; }
+  .performance { padding-left: 12px; }
 }
 </style>

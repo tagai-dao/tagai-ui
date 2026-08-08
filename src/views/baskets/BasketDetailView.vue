@@ -5,6 +5,7 @@ import { useBasketDetail } from '@/composables/baskets/useBasketDetail'
 import BasketChainGate from './components/BasketChainGate.vue'
 import BasketTradePanel from './components/BasketTradePanel.vue'
 import BasketRebalanceAction from './components/BasketRebalanceAction.vue'
+import BasketPerformanceChart from './components/BasketPerformanceChart.vue'
 import { feeSplit } from '@/utils/baskets/fee-model'
 import { BASKET_FRONTEND_FEE_WALLET, getBasketDeployment } from '@/config/baskets'
 import { formatUnits, zeroAddress } from 'viem'
@@ -288,6 +289,8 @@ onUnmounted(() => {
             </div>
           </div>
         </section>
+
+        <BasketPerformanceChart :address="detail.address" :chain-id="detail.chainId" />
 
         <div class="content-grid">
           <main class="min-w-0">

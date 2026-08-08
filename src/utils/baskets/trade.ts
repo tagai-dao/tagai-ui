@@ -18,6 +18,7 @@ import {
 } from './abis'
 import { applySlippage, encodeBasketTradeData } from './hook-data'
 import type { BasketDetail, BasketLegRoute, BasketSwapQuote, TradeSide } from './types'
+import { requestBasketNavSnapshot } from './api'
 
 export const sanitizeBasketAmountInput = (value: string | number, decimals: number): string => {
   const raw = String(value).replace(/[^\d.]/g, '')
@@ -423,6 +424,9 @@ export const executeBasketSwap = async ({
   const hash = await wallet.writeContract(request as any)
   const confirmed = await waitForTx(hash)
   if (!confirmed) throw new Error('Transaction failed')
+  void requestBasketNavSnapshot(detail.address, detail.chainId, 'trade').catch((error) => {
+    console.warn('[baskets] post-trade NAV snapshot request failed', error)
+  })
   return hash
 }
 
