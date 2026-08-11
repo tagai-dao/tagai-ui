@@ -157,13 +157,3 @@ export const getBasketPerformanceSeries = async (
   ) as BasketPerformanceSeriesResponse
   return response.d
 }
-
-export const requestBasketNavSnapshot = (
-  address: Address,
-  chainId: number,
-  reason: 'trade' | 'rebalance',
-) => post(
-  `${API_BASE_URL}/basket/${address}/snapshot`,
-  { reason },
-  chainHeaders(chainId),
-)

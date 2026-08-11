@@ -368,6 +368,7 @@ export const getBasketDetail = async (
       symbol: registered.symbol,
       decimals: registered.decimals,
       basketLength: registered.basketLength,
+      launchNav: 1,
       navPerToken: effectiveSupply > 0 ? aumUsd / effectiveSupply : 0,
       aumUsd,
       pricedCount: holdings.filter((holding) => holding.priced).length,
@@ -513,6 +514,7 @@ export const getBasketDetail = async (
     symbol,
     decimals,
     basketLength: assets.length,
+    launchNav: 1,
     navPerToken,
     aumUsd,
     pricedCount: holdings.filter((holding) => holding.priced).length,
@@ -563,11 +565,11 @@ export const listBaskets = async (
     navPerToken: 0,
     aumUsd: 0,
     pricedCount: 0,
-    launchNav: null,
+    launchNav: 1,
     currentNavAsOf: null,
     toDatePct: null,
     dataQuality: 'unavailable',
-    launchNavQuality: 'unavailable',
+    launchTimeQuality: 'unavailable',
     top: [...basket.assets]
       .sort((a, b) => b.targetWeightBps - a.targetWeightBps)
       .map((asset) => ({ address: asset.address, symbol: asset.symbol, weightPct: asset.targetWeightBps / 100 })),
@@ -671,11 +673,11 @@ export const listBaskets = async (
         basket.navPerToken = currentNav
         if (Number.isFinite(currentAum) && currentAum >= 0) basket.aumUsd = currentAum
       }
-      basket.launchNav = item.launchNav == null ? null : Number(item.launchNav)
+      basket.launchNav = 1
       basket.currentNavAsOf = item.asOf
       basket.toDatePct = item.toDatePct ?? null
       basket.dataQuality = item.dataQuality
-      basket.launchNavQuality = item.launchNavQuality
+      basket.launchTimeQuality = item.launchTimeQuality
     })
   } catch (error) {
     // NAV history is deployed independently; current on-chain valuation remains usable

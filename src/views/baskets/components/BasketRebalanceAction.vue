@@ -10,7 +10,6 @@ import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { useI18n } from 'vue-i18n'
 import { buildRebalanceLimits } from '@/utils/baskets/rebalance'
-import { requestBasketNavSnapshot } from '@/utils/baskets/api'
 
 const props = defineProps<{ detail: BasketDetail }>()
 const emit = defineEmits<{ rebalanced: [] }>()
@@ -87,9 +86,6 @@ const rebalance = async () => {
     } as any)
     const hash = await wallet.writeContract(request as any)
     if (!await waitForTx(hash)) throw new Error('Rebalance failed')
-    void requestBasketNavSnapshot(props.detail.address, props.detail.chainId, 'rebalance').catch((error) => {
-      console.warn('[baskets] post-rebalance NAV snapshot request failed', error)
-    })
     state.value = 'success'
     emit('rebalanced')
   } catch (error) {

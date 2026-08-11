@@ -127,9 +127,9 @@ const formatPerformance = (value: number | null | undefined) => {
         <div
           class="performance"
           :class="performanceClass"
-          :title="basket.launchNavQuality === 'estimated' ? $t('baskets.estimatedLaunchNavHelp') : $t('baskets.toDateHelp')"
+          :title="$t('baskets.toDateHelp')"
         >
-          <strong>{{ basket.launchNavQuality === 'estimated' && performanceAvailable ? '≈' : '' }}{{ formatPerformance(basket.toDatePct) }}</strong>
+          <strong>{{ formatPerformance(basket.toDatePct) }}</strong>
           <span>{{ $t('baskets.toDate') }}</span>
         </div>
       </div>

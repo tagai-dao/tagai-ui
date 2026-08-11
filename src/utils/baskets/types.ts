@@ -32,15 +32,15 @@ export type BasketSummary = {
   pricedCount: number
   top: { address: Address; symbol: string; weightPct: number }[]
   deployer: Address | null
-  launchNav?: number | null
+  launchNav: number
   currentNavAsOf?: number | null
   toDatePct?: number | null
   dataQuality?: BasketDataQuality
-  launchNavQuality?: BasketLaunchNavQuality
+  launchTimeQuality?: BasketLaunchTimeQuality
 }
 
-export type BasketDataQuality = 'complete' | 'partial' | 'stale' | 'estimated' | 'unavailable'
-export type BasketLaunchNavQuality = 'complete' | 'estimated' | 'unavailable'
+export type BasketDataQuality = 'complete' | 'partial' | 'stale' | 'unavailable'
+export type BasketLaunchTimeQuality = 'complete' | 'unavailable'
 export type BasketPerformanceRange = '24h' | '7d' | '30d' | 'all'
 
 export type BasketPerformancePoint = {
@@ -55,9 +55,9 @@ export type BasketPerformancePoint = {
 
 export type BasketPerformance = {
   address: Address
-  launchNav: string | null
+  launchNav: string
   launchTimestamp?: number | null
-  launchNavQuality: BasketLaunchNavQuality
+  launchTimeQuality: BasketLaunchTimeQuality
   currentNav: string | null
   aumUsd?: string | null
   toDatePct?: number | null

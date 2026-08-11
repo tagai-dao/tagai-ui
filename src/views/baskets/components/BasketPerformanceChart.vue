@@ -51,8 +51,7 @@ const changePositive = computed(() => Number(change.value) >= 0)
 const changeText = computed(() => {
   if (!changeAvailable.value) return '—'
   const value = Number(change.value)
-  const estimate = data.value?.launchNavQuality === 'estimated' && selectedRange.value === 'all' ? '≈' : ''
-  return `${estimate}${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
+  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`
 })
 const changeLabel = computed(() => selectedRange.value === 'all'
   ? t('baskets.sinceLaunch')
@@ -176,7 +175,6 @@ const series = computed(() => [{ name: 'INDEX NAV', data: points.value }])
       <span v-if="data.asOf">
         {{ $t('baskets.asOf') }} {{ new Date(data.asOf * 1000).toLocaleString() }}
       </span>
-      <span v-if="data.launchNavQuality === 'estimated'">{{ $t('baskets.estimatedLaunchNav') }}</span>
     </div>
   </section>
 </template>
