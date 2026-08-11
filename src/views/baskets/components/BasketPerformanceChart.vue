@@ -13,6 +13,19 @@ import type {
 const props = defineProps<{ address: Address; chainId: number }>()
 const { t } = useI18n()
 const ranges: BasketPerformanceRange[] = ['24h', '7d', '30d', 'all']
+const rangeDurationMs: Partial<Record<BasketPerformanceRange, number>> = {
+  '24h': 24 * 60 * 60 * 1000,
+  '7d': 7 * 24 * 60 * 60 * 1000,
+  '30d': 30 * 24 * 60 * 60 * 1000,
+}
+const rangeTickAmount: Record<BasketPerformanceRange, number> = {
+  // Six equal four-hour segments keep the complete 24-hour window readable.
+  '24h': 6,
+  // Seven one-day segments and ten three-day segments respectively.
+  '7d': 7,
+  '30d': 10,
+  all: 6,
+}
 const selectedRange = ref<BasketPerformanceRange>('all')
 const data = ref<BasketPerformanceSeries | null>(null)
 const loading = ref(false)
@@ -44,6 +57,33 @@ watch(
 const points = computed(() => (data.value?.points || [])
   .filter((point) => Number.isFinite(Number(point.nav)))
   .map((point) => ({ x: point.timestamp * 1000, y: Number(point.nav) })))
+
+const chartBounds = computed(() => {
+  const firstPoint = points.value[0]?.x
+  const lastPoint = points.value[points.value.length - 1]?.x
+  const asOf = data.value?.asOf ? data.value.asOf * 1000 : undefined
+  const max = asOf || lastPoint
+  if (!max) return { min: undefined, max: undefined }
+  const duration = rangeDurationMs[selectedRange.value]
+  const min = duration ? max - duration : firstPoint
+  return { min, max }
+})
+
+const formatAxisTimestamp = (value: string | number) => {
+  const timestamp = Number(value)
+  if (!Number.isFinite(timestamp)) return ''
+  if (selectedRange.value === '24h') {
+    return new Date(timestamp).toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+  }
+  return new Date(timestamp).toLocaleDateString(undefined, {
+    month: 'numeric',
+    day: 'numeric',
+  })
+}
 
 const change = computed(() => data.value?.changePct ?? null)
 const changeAvailable = computed(() => Number.isFinite(change.value))
@@ -91,10 +131,25 @@ const chartOptions = computed<ApexOptions>(() => ({
     padding: { left: 8, right: 12, top: 2, bottom: 0 },
   },
   xaxis: {
-    type: 'datetime',
-    labels: { datetimeUTC: false, style: { colors: '#858997', fontSize: '11px' } },
+    // Numeric timestamps make ApexCharts honor exact, proportional tick counts.
+    type: 'numeric',
+    min: chartBounds.value.min,
+    max: chartBounds.value.max,
+    tickAmount: rangeTickAmount[selectedRange.value],
+    decimalsInFloat: 0,
+    labels: {
+      formatter: (value: string) => formatAxisTimestamp(value),
+      hideOverlappingLabels: true,
+      trim: false,
+      style: { colors: '#858997', fontSize: '11px' },
+    },
     axisBorder: { show: false },
     axisTicks: { show: false },
+    crosshairs: {
+      show: true,
+      position: 'back',
+      stroke: { color: 'rgba(132, 137, 151, .45)', width: 1, dashArray: 3 },
+    },
     tooltip: { enabled: false },
   },
   yaxis: {
@@ -105,10 +160,25 @@ const chartOptions = computed<ApexOptions>(() => ({
     },
   },
   tooltip: {
-    x: { format: 'yyyy-MM-dd HH:mm' },
-    y: { formatter: (value: number) => `${formatNav(value)} NAV` },
+    enabled: true,
+    shared: false,
+    intersect: false,
+    followCursor: false,
+    marker: { show: true },
+    x: {
+      formatter: (value: number) => new Date(value).toLocaleString(),
+    },
+    y: {
+      formatter: (value: number) => `${formatNav(value)} NAV`,
+      title: { formatter: () => 'INDEX NAV:' },
+    },
   },
-  markers: { size: 0, hover: { size: 5 } },
+  markers: {
+    size: 0,
+    strokeWidth: 2,
+    strokeColors: '#fff',
+    hover: { size: 6, sizeOffset: 2 },
+  },
   noData: { text: t('baskets.performanceCollecting') },
 }))
 
