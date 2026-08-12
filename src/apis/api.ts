@@ -558,7 +558,9 @@ export type RewardPeriod = 'all' | '1d' | '7d' | '30d'
 export const getRewardLeaderboard = async (
   category: RewardCategory = 'all',
   period: RewardPeriod = 'all',
-) => get(BACKEND_API_URL + '/rewards/leaderboard', { category, period })
+  page = 0,
+  size = 30,
+) => get(BACKEND_API_URL + '/rewards/leaderboard', { category, period, page, size })
 
 export const getUserClaimPredictRewardSignature = async (twitterId: string, tick: string) =>
   post(BACKEND_API_URL + '/predict/getUserClaimPredictRewardSignature', { twitterId, tick })
