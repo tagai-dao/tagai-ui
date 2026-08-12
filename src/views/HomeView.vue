@@ -21,8 +21,9 @@ import HomePost from "@/views/home/HomePost.vue";
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
 import MindShare from "@/views/mind-share/MindShare.vue";
 import {useAccountStore} from "@/stores/web3";
+import {useChainStore} from "@/stores/chain";
 import Predict from "@/views/predict/Index.vue";
-import IPList from "@/views/ip/IPList.vue";
+import BasketsListView from '@/views/baskets/BasketsListView.vue'
 import {TweetListType, useTweetsStore} from "@/stores/tweets";
 import {filterByActiveChain} from "@/utils/chainFilter";
 import {usesThirdPartyMarketCap} from "@/config";
@@ -37,6 +38,7 @@ const refreshing = ref(false);
 const loading = ref(false);
 const router = useRouter();
 const stateStore = useStateStore();
+const chainStore = useChainStore();
 const finished = reactive({
   [ListType.MarketCap]: false,
   [ListType.Trending]: false,
@@ -270,10 +272,10 @@ function filterTagCoins(list: Community[]) {
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
 const route = useRoute()
-function switchCoinTab(tab: 'tagCoin' | 'bStocks' | 'ip') {
+function switchCoinTab(tab: 'tagCoin' | 'baskets' | 'bStocks') {
   stateStore.setCoinSubMenu(tab)
-  if (route.name === 'coins') {
-    router.replace({ query: tab === 'ip' ? { tab: 'ip' } : tab === 'bStocks' ? { tab: 'bstocks' } : {} })
+  if (route.name === 'home') {
+    router.replace({ query: tab === 'baskets' ? { tab: 'baskets' } : tab === 'bStocks' ? { tab: 'bstocks' } : {} })
   }
   ensureCoinListLoaded()
 }
@@ -360,7 +362,7 @@ const onCreate = (type: GlobalModalType) => {
 <template>
   <div class="h-full min-h-0 overflow-hidden pb-2 flex flex-col gap-3 pt-2 w-full">
     <!-- 新社区列表（TagCoin 滚动条）- 移动端显示在 Space 滚动条上方，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
-    <div class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
+    <div v-if="activeMainMenu==='tag'" class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
       <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
         <div class="flex h-full" :class="newComNeedScroll?'scroll-content':''"
              :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
@@ -390,7 +392,7 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Space 滚动条 - 仅在移动端显示，PC 端在右侧 Live Spaces 框中显示 -->
-    <div class="web:hidden px-3">
+    <div v-if="activeMainMenu==='tag'" class="web:hidden px-3">
       <div class="relative flex overflow-hidden">
         <div class="w-full overflow-x-hidden whitespace-nowrap relative">
           <div class="flex" :class="needScroll?'scroll-content':''"
@@ -430,29 +432,30 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- Coin 菜单：TagCoin、bStocks 和 IPShare -->
+    <!-- Home 菜单：TagCoin、Baskets、链对应的股票资产 -->
     <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center justify-between">
       <div class="flex gap-2">
         <button
-          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="coinSubMenu==='tagCoin' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          class="h-9 px-2 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
+          :class="coinSubMenu==='tagCoin' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('tagCoin')"
         >
           {{ $t('tagCoin') || 'TagCoin' }}
         </button>
         <button
-          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="coinSubMenu==='bStocks' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="switchCoinTab('bStocks')"
+          class="h-9 px-2 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
+          :class="coinSubMenu==='baskets' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
+          @click="switchCoinTab('baskets')"
         >
-          {{ $t('bStocks') || 'bStocks' }}
+          {{ $t('baskets.menu') || 'Baskets' }}
         </button>
         <button
-          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="coinSubMenu==='ip' ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="switchCoinTab('ip')"
+          class="h-9 px-2 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors inline-flex items-center gap-1.5"
+          :class="coinSubMenu==='bStocks' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
+          @click="switchCoinTab('bStocks')"
         >
-          {{ $t('ip') || 'IPShare' }}
+          <img v-if="chainStore.deployment.key === 'rh'" src="~@/assets/icons/robinhood.png" class="h-5 w-auto object-contain" alt="Robinhood">
+          {{ chainStore.deployment.key === 'rh' ? 'Stocks' : ($t('bStocks') || 'bStocks') }}
         </button>
       </div>
       <!-- 排序 + 隐藏小市值开关 -->
@@ -519,6 +522,9 @@ const onCreate = (type: GlobalModalType) => {
         </van-pull-refresh>
       </div>
     </template>
+    <div v-if="activeMainMenu==='coin' && coinSubMenu==='baskets'" class="flex-1 min-h-0 overflow-hidden">
+      <BasketsListView />
+    </div>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='bStocks'">
       <div class="flex-1 min-h-0 px-3 mobile-scroll-container no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
         <van-pull-refresh v-model="refreshing" @refresh="refreshBStocks"
@@ -540,9 +546,6 @@ const onCreate = (type: GlobalModalType) => {
     </template>
     <Predict :type="0" v-if="activeMainMenu==='prediction' || (activeMainMenu==='tag' && tagSubMenu==='prediction')"/>
     <MindShare :mindShareType="mindShareType" v-if="activeTab==='mindshare'"/>
-    <div class="flex-1 overflow-auto" v-if="activeMainMenu==='coin' && coinSubMenu==='ip'">
-      <IPList />
-    </div>
     
     <div>
       <button v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'"

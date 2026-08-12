@@ -5,13 +5,15 @@ import UserAvatar from "@/components/common/UserAvatar.vue";
 import {useTweet} from "@/composables/useTweet";
 import TweetSpaceCard from "@/components/tweets/TweetSpaceCard.vue";
 import {usePost} from "@/composables/usePost";
-import type {Tweet} from "@/types";
+import type {FeedTokenSheetAsset, Tweet} from "@/types";
 import { useStateStore } from '@/stores/common';
+import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
 
 const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,},
   multiline: {type: Boolean, required: false}
 })
+const emit = defineEmits<{ openTokenDetails: [asset: FeedTokenSheetAsset] }>()
 
 const {formatEmojiText} = useTweet()
 const {
@@ -181,6 +183,7 @@ const onUserAvatar = () => {
         </div>
         <div class="px-3 md:pl-12">
           <TweetSpaceCard v-if="tweet.spaceId" :tweet="tweet" />
+          <CommunityTradeCard v-if="tweet.tick && tweet.token" :tweet="tweet" @open-details="emit('openTokenDetails', $event)" />
           <slot name="tweet-mint"></slot>
           <slot name="tweet-action-bar"></slot>
         </div>

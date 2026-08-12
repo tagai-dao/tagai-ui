@@ -5,10 +5,10 @@ import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
 import {TweetListType, useTweetsStore} from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
-import { getNewTweets, getTrendingTweets} from "@/apis/api";
-import {computed, onActivated, onMounted, ref, watch} from "vue";
+import { getNewTweets, getTrendingTweets, getTradeFeed } from "@/apis/api";
+import {computed, onActivated, onMounted, onUnmounted, ref, watch} from "vue";
 import { useCommunityStore } from "@/stores/community";
-import type { Tweet } from "@/types";
+import type { Community, FeedTokenSheetAsset, FeedTrade, Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { useCurationStore } from "@/stores/curation";
 import UserList from "@/views/home/UserList.vue";
@@ -18,6 +18,10 @@ import { getTokenInfoOfTweets } from "@/utils/pump";
 import {usePageScroll} from "@/composables/useTools";
 import emitter from "@/utils/emitter";
 import { IgnoreAuthor } from "@/config";
+import FeedTradeActivity from '@/components/feed/FeedTradeActivity.vue'
+import { getTokenInfo } from '@/utils/pump'
+import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
+import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
 
 // 新手引导卡：可关闭，关闭后持久记忆
 const ONBOARD_KEY = 'onboard-card-dismissed'
@@ -39,6 +43,55 @@ const finished = ref({
 });
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
+const trades = ref<FeedTrade[]>([])
+const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
+const showFeedTokenSheet = ref(false)
+const showFeedTradeSheet = ref(false)
+
+function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
+  selectedFeedToken.value = asset
+  showFeedTradeSheet.value = false
+  showFeedTokenSheet.value = true
+}
+
+function openBuy() {
+  showFeedTradeSheet.value = true
+}
+
+function closeFeedSheets() {
+  showFeedTradeSheet.value = false
+  showFeedTokenSheet.value = false
+  selectedFeedToken.value = null
+}
+
+watch(showFeedTokenSheet, visible => {
+  if (!visible) showFeedTradeSheet.value = false
+})
+
+const feedItems = computed(() => {
+  if (tweetsStore.homeTweetType !== TweetListType.New || !trades.value.length) return showingTweets.value.map(tweet => ({ type: 'post' as const, tweet }))
+  const items: Array<{ type: 'post'; tweet: Tweet } | { type: 'trade'; trade: FeedTrade }> = []
+  let tradeIndex = 0
+  showingTweets.value.forEach((tweet, index) => {
+    items.push({ type: 'post', tweet })
+    if ((index + 1) % 3 === 0 && tradeIndex < trades.value.length) items.push({ type: 'trade', trade: trades.value[tradeIndex++]! })
+  })
+  return items
+})
+
+async function loadTrades(page = 0, replace = false) {
+  try {
+    const rows = (await getTradeFeed(page) || []) as FeedTrade[]
+    const pseudo = rows.map(row => ({ ...row, description: '', name: row.name || row.tick, logo: row.logo || '' })) as unknown as Community[]
+    const enriched = pseudo.length ? await getTokenInfo(pseudo) : []
+    const byToken = new Map(enriched.map(item => [item.token?.toLowerCase(), item]))
+    const next = rows.map(row => ({ ...row, ...(byToken.get(row.token?.toLowerCase()) || {}) })) as FeedTrade[]
+    trades.value = replace ? next : [...trades.value, ...next]
+  } catch (error) {
+    console.warn('[HomePost] trade feed unavailable', error)
+    if (replace) trades.value = []
+  }
+}
 
 /** 防止快速切 Tab / 连续刷新时，旧的补价结果写回新列表 */
 let enrichSeq = 0
@@ -80,7 +133,8 @@ async function onRefresh() {
     finished.value[type] = false;
     let list: Tweet[] = []
     if (type === TweetListType.New) {
-      list = await getNewTweets(accStore.getAccountInfo?.twitterId) as Tweet[]
+      const [tweetRows] = await Promise.all([getNewTweets(accStore.getAccountInfo?.twitterId), loadTrades(0, true)])
+      list = tweetRows as Tweet[]
       // API 一到先出列表，补价后台回填
       tweetsStore.newTweets = list
     } else if (type === TweetListType.Trending) {
@@ -112,6 +166,7 @@ async function onLoad() {
     if (type === TweetListType.New) {
       list = await getNewTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
       tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
+      void loadTrades(page)
     } else if (type === TweetListType.Trending) {
       list = await getTrendingTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
       tweetsStore.trendingTweets = tweetsStore.trendingTweets.concat(list)
@@ -131,7 +186,13 @@ async function onLoad() {
 onMounted(() => {
   void onRefresh();
   emitter.on('login', onRefresh);
+  emitter.on('mainTabNavigate', closeFeedSheets)
 });
+
+onUnmounted(() => {
+  emitter.off('login', onRefresh)
+  emitter.off('mainTabNavigate', closeFeedSheets)
+})
 
 watch([() => tweetsStore.homeTweetType], () => {
   void onRefresh()
@@ -179,36 +240,39 @@ onActivated(() => {
               @load="onLoad"
           >
             <!-- 用 template 包 v-for，避免与 v-if 同元素时 v-if 优先导致 tweet 被解析为 api.tweet 函数 -->
-            <template v-for="(tweet, index) of showingTweets" :key="tweet.tweetId">
+            <template v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : item.trade.transHash">
               <div
                   class="mb-2"
               >
+                <FeedTradeActivity v-if="item.type === 'trade'" :trade="item.trade" @open-details="openFeedTokenSheet" />
                 <SpaceItem
-                    v-if="tweet.spaceId"
+                    v-else-if="item.tweet.spaceId"
                     class="bg-white rounded-2xl"
-                    :tweet="tweet"
-                    @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
+                    :tweet="item.tweet"
+                    @open-token-details="openFeedTokenSheet"
+                    @click.stop="curationStore.currentSelectedTweet = item.tweet;$router.push(`/space-detail/${item.tweet.tweetId}`)"
                 >
                   <template #tweet-action-bar>
                     <PostButtonGroup
                         @click.stop
-                        :tweet="tweet"
+                        :tweet="item.tweet"
                     />
                   </template>
                 </SpaceItem>
                 <TweetItem
                     v-else
                     class="bg-white rounded-2xl"
-                    :tweet="tweet"
-                    @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
+                    :tweet="item.tweet"
+                    @open-token-details="openFeedTokenSheet"
+                    @click.stop="curationStore.currentSelectedTweet = item.tweet;$router.push(`/post-detail/${item.tweet.tweetId}`)"
                 >
-                  <template #tweet-trade v-if="tweet.commerceId">
-                    <CommerceBtn :tweet="tweet"/>
+                  <template #tweet-trade v-if="item.tweet.commerceId">
+                    <CommerceBtn :tweet="item.tweet"/>
                   </template>
                   <template #tweet-action-bar>
                     <PostButtonGroup
                         @click.stop
-                        :tweet="tweet"
+                        :tweet="item.tweet"
                     />
                   </template>
                 </TweetItem>
@@ -235,6 +299,8 @@ onActivated(() => {
     </div>
 
   </div>
+  <FeedTokenDetailSheet v-model="showFeedTokenSheet" :asset="selectedFeedToken" @buy="openBuy" />
+  <FeedTokenTradeSheet v-model="showFeedTradeSheet" :asset="selectedFeedToken" />
 </template>
 
 <style scoped></style>

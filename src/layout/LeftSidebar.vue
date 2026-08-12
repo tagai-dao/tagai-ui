@@ -5,7 +5,6 @@ import { useAccountStore } from '@/stores/web3'
 import { useModalStore, useStateStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { useLoginStore, LoginStepType } from '@/stores/login'
-import { useChainStore } from '@/stores/chain'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,11 +12,6 @@ const accStore = useAccountStore()
 const modalStore = useModalStore()
 const stateStore = useStateStore()
 const loginStore = useLoginStore()
-const chainStore = useChainStore()
-const predictionMainEntryEnabled = computed(() => (
-  chainStore.deployment.features.prediction
-  && chainStore.deployment.features.predictionMainEntry
-))
 
 const moreMenuVisible = ref(false)
 const moreMenuRef = ref()
@@ -40,21 +34,9 @@ const isActive = (path: string | string[]) => {
 }
 
 // 主菜单已路由化（/、/coins、/predictions），激活态直接看路由
-const isCoinActive = computed(() => {
-  return route.name === 'coins' || isActive(['/tag-detail', '/buy-sell'])
-})
-
-const isTagActive = computed(() => {
-  return route.name === 'home' || route.name === 'commerce'
-})
-
-const isPredictionActive = computed(() => {
-  return route.name === 'predictions' || isActive('/predict')
-})
-
-const isBasketsActive = computed(() => {
-  return route.name === 'baskets' || route.name === 'basket-detail' || isActive('/baskets')
-})
+const isTokenActive = computed(() => ['home', 'basket-detail', 'basket-fees', 'tag-detail', 'buy-sell'].includes(String(route.name)))
+const isHomeActive = computed(() => route.name === 'feed' || route.name === 'commerce')
+const isBuidlerActive = computed(() => route.name === 'buidler')
 
 /** 选中态：图标染成品牌橙 */
 const activeIconFilter = {
@@ -106,21 +88,20 @@ const handleWalletClick = (e?: Event) => {
         class="h-5 desk:h-8 cursor-pointer"
         src="~@/assets/logo.png"
         alt="TagAI"
-        @click="router.push('/')"
+        @click="router.push('/feed')"
       >
     </div>
 
     <!-- 菜单项 -->
     <nav class="flex-1 px-2 py-4 space-y-1">
-      <!-- 1. Tag 菜单 -->
+      <!-- 1. Home（Feed） -->
       <router-link
-        to="/"
+        to="/feed"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isTagActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
-        @click="stateStore.setTagSubMenu('tweets')"
+        :class="isHomeActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
       >
         <img 
-          v-if="isTagActive" 
+          v-if="isHomeActive"
           class="w-6 h-6 mr-0 desk:mr-3 transition-all" 
           src="~@/assets/icons/icon-tabbar-home-active.svg" 
           alt=""
@@ -132,56 +113,39 @@ const handleWalletClick = (e?: Event) => {
           src="~@/assets/icons/icon-tabbar-home.svg" 
           alt=""
         >
-        <span class="hidden desk:inline text-h4 text-content">{{ $t('home') || 'Home' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">Home</span>
       </router-link>
 
-      <!-- 2. Coin -->
+      <!-- 2. Token -->
       <router-link
-        to="/coins"
+        to="/"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isCoinActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
+        :class="isTokenActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
       >
         <img 
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :class="isCoinActive ? '' : inactiveIconCls"
-          :style="isCoinActive ? activeIconFilter : undefined"
+          :class="isTokenActive ? '' : inactiveIconCls"
+          :style="isTokenActive ? activeIconFilter : undefined"
           src="~@/assets/icons/icon-coin.svg" 
-          alt="Coin"
+          alt="Token"
         >
-        <span class="hidden desk:inline text-h4 text-content">{{ $t('coin') || 'Coin' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">Token</span>
       </router-link>
 
-      <!-- 3. Prediction -->
+      <!-- 3. BUIDLer -->
       <router-link
-        v-if="predictionMainEntryEnabled"
-        to="/predictions"
+        to="/buidler"
         class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isPredictionActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
-      >
-        <img 
-          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :class="isPredictionActive ? '' : inactiveIconCls"
-          :style="isPredictionActive ? activeIconFilter : undefined"
-          src="~@/assets/icons/icon-pie-chart.svg" 
-          alt="Prediction"
-        >
-        <span class="hidden desk:inline text-h4 text-content">{{ $t('prediction') || 'Prediction' }}</span>
-      </router-link>
-
-      <!-- Baskets -->
-      <router-link
-        to="/baskets"
-        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isBasketsActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
+        :class="isBuidlerActive ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
       >
         <img
           class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :class="isBasketsActive ? '' : inactiveIconCls"
-          :style="isBasketsActive ? activeIconFilter : undefined"
+          :class="isBuidlerActive ? '' : inactiveIconCls"
+          :style="isBuidlerActive ? activeIconFilter : undefined"
           src="~@/assets/icons/icon-pie-chart.svg"
-          alt="Baskets"
+          alt="BUIDLer"
         >
-        <span class="hidden desk:inline text-h4 text-content">{{ $t('baskets.menu') || 'Baskets' }}</span>
+        <span class="hidden desk:inline text-h4 text-content">BUIDLer</span>
       </router-link>
 
       <!-- 4. 通知 -->

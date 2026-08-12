@@ -18,6 +18,7 @@ import PredictDetail from '@/views/predict-detail/Index.vue'
 import PredictEventDetail from '@/views/predict-event-detail/Index.vue'
 import MindShareIndex from '@/views/mind-share/Index.vue'
 import AboutView from '@/views/about/AboutView.vue'
+import BuidlerView from '@/views/buidler/BuidlerView.vue'
 import { useChainStore } from '@/stores/chain'
 import { getChainIdFromSlug, getChainPath, isProductChain } from '@/config/chains'
 
@@ -31,19 +32,33 @@ const router = createRouter({
       path: `${chainPrefix}/:commerceid?`,
       name: 'home',
       component: HomeView,
+      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'coin' }
+    },
+    {
+      path: `${chainPrefix}/feed`,
+      name: 'feed',
+      component: HomeView,
       meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'tag' }
+    },
+    {
+      path: `${chainPrefix}/buidler`,
+      name: 'buidler',
+      component: BuidlerView,
+      meta: { tabBar: true, topBar: true, keepAlive: true }
     },
     {
       path: `${chainPrefix}/coins`,
       name: 'coins',
-      component: HomeView,
-      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'coin' }
+      redirect: to => ({
+        name: to.query.tab === 'ip' ? 'buidler' : 'home',
+        params: { chain: to.params.chain },
+        query: to.query.tab === 'ip' ? { tab: 'ipshare' } : to.query.tab === 'bstocks' ? { tab: 'bstocks' } : {},
+      }),
     },
     {
       path: `${chainPrefix}/predictions`,
       name: 'predictions',
-      component: HomeView,
-      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'prediction' }
+      redirect: to => ({ name: 'home', params: { chain: to.params.chain } })
     },
     {
       path: `${chainPrefix}/commerce/:commerceid?`,
@@ -112,7 +127,9 @@ const router = createRouter({
       component: TipTokenRecord
     },
     {
-      path: `${chainPrefix}/callback`, component: () => import("@/views/Callback.vue")
+      path: `${chainPrefix}/callback`,
+      name: 'privy-callback',
+      component: () => import("@/views/Callback.vue")
     },
     {
       path: `${chainPrefix}/predict/battle/:id`,
@@ -138,8 +155,7 @@ const router = createRouter({
     {
       path: `${chainPrefix}/baskets`,
       name: 'baskets',
-      component: () => import('@/views/baskets/BasketsListView.vue'),
-      meta: { tabBar: true, topBar: true }
+      redirect: to => ({ name: 'home', params: { chain: to.params.chain }, query: { tab: 'baskets' } })
     },
     {
       path: `${chainPrefix}/baskets/:address/fees`,
@@ -215,7 +231,7 @@ router.beforeEach(async (to, from, next) => {
     stateStore.setActiveMainMenu(to.meta.mainMenu as 'tag' | 'coin' | 'prediction')
     if (to.meta.mainMenu === 'coin') {
       const coinTab = to.query.tab
-      stateStore.setCoinSubMenu(coinTab === 'ip' ? 'ip' : coinTab === 'bstocks' ? 'bStocks' : 'tagCoin')
+      stateStore.setCoinSubMenu(coinTab === 'baskets' ? 'baskets' : coinTab === 'bstocks' ? 'bStocks' : 'tagCoin')
     }
   }
   next();

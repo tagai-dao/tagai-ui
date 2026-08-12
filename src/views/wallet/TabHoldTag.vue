@@ -132,11 +132,14 @@ const onRefresh = async () => {
     currentLenth = list.length;
   } catch(e) {
     console.error(6234, e)
-    handleErrorTip(e)
-    if (e === errCode.InvalidAccessToken) {
+    const isAuthExpired = e === errCode.InvalidAccessToken || (e as any)?.status === errCode.InvalidAccessToken
+    if (isAuthExpired) {
       accStore.clear();
+      useModalStore().setModalVisible(true, GlobalModalType.Login)
       router.replace('/')
+      return
     }
+    handleErrorTip(e)
   } finally {
     refreshing.value = false
   }

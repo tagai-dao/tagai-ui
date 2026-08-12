@@ -4,6 +4,10 @@ const config: CapacitorConfig = {
   appId: 'fun.tagai.app',
   appName: 'TagAI',
   webDir: 'dist',
+  server: {
+    hostname: 'tagai.fun',
+    androidScheme: 'https',
+  },
   plugins: {
     SplashScreen: {
       launchAutoHide: false,

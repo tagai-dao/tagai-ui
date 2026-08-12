@@ -13,6 +13,17 @@ const router = useRouter()
 const accStore = useAccountStore()
 
 onMounted(async () => {
+    // 兼容已发布旧 APK：它们会错误地把 Privy OAuth 参数转到 /login。
+    // 不要让下方旧 Twitter state 流程清掉参数，改交给专用回调页处理。
+    if (route.query.privy_oauth_code || route.query.privy_oauth_state || route.query.privy_oauth_provider) {
+        await router.replace({
+            name: 'privy-callback',
+            params: { chain: route.params.chain },
+            query: route.query,
+            hash: route.hash,
+        })
+        return
+    }
     const state = route.query.state;
     if (state) {
         let userInfo: any = await twitterLogin(state as string)

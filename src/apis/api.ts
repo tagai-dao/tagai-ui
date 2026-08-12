@@ -268,6 +268,9 @@ export const getImportedCommunityInfo = async () =>
 export const getTokenTradeList = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/tradeList', { token, pages })
 
+export const getTradeFeed = async (pages?: number) =>
+  get(BACKEND_API_URL + '/community/tradeFeed', { pages })
+
 export const isTokenExist = async (tick: string) =>
   get(BACKEND_API_URL + '/community/isTokenExist', { tick, _: Date.now() })
 
@@ -545,6 +548,17 @@ export const getMyPredictRewards = async (twitterId: string) =>
 
 export const getMyUnclaimablePredictRewards = async (twitterId: string) =>
   get(BACKEND_API_URL + '/predict/userUnclaimablePredictRewards', { twitterId })
+
+export const getClaimedRewards = async (twitterId: string) =>
+  get(BACKEND_API_URL + '/rewards/claimed', { twitterId })
+
+export type RewardCategory = 'all' | 'social' | 'nft_holding' | 'index_pool' | 'staking'
+export type RewardPeriod = 'all' | '1d' | '7d' | '30d'
+
+export const getRewardLeaderboard = async (
+  category: RewardCategory = 'all',
+  period: RewardPeriod = 'all',
+) => get(BACKEND_API_URL + '/rewards/leaderboard', { category, period })
 
 export const getUserClaimPredictRewardSignature = async (twitterId: string, tick: string) =>
   post(BACKEND_API_URL + '/predict/getUserClaimPredictRewardSignature', { twitterId, tick })

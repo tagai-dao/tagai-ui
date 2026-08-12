@@ -102,6 +102,43 @@ export type Trade = {
   block?: number;
 };
 
+export type FeedTrade = {
+  timestamp: string | number;
+  tick: string;
+  token: string;
+  name?: string;
+  logo?: string;
+  amount: string | number;
+  ethAmount: string | number;
+  isBuy: boolean | number;
+  trader: string;
+  transHash: string;
+  twitterId: string;
+  twitterName: string;
+  twitterUsername: string;
+  profile?: string;
+  marketCap?: string | number;
+  price?: number;
+  priceChange24h?: number | null;
+}
+
+/** Feed 代币详情 Bottom Sheet 使用的统一展示模型。 */
+export type FeedTokenSheetAsset = {
+  tick: string;
+  token: string;
+  name?: string;
+  logo?: string;
+  price?: number;
+  marketCap?: number | string;
+  priceChange24h?: number | null;
+  sparkline24h?: number[] | null;
+  listed?: boolean;
+  creatorName?: string;
+  creatorUsername?: string;
+  creatorProfile?: string;
+  sellsman?: string;
+}
+
 export type Account = {
   twitterId: string;
   twitterName: string;
