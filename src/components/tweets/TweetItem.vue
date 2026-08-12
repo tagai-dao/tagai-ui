@@ -8,11 +8,12 @@ import LinkPreview from "@/components/tweets/LinkPreview.vue";
 import QuoteTweet from "@/components/tweets/QuoteTweet.vue";
 import {useTweet} from "@/composables/useTweet";
 import {usePost} from "@/composables/usePost";
-import type {Tweet} from "@/types";
+import type {FeedTokenSheetAsset, Tweet} from "@/types";
 import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import { useStateStore } from '@/stores/common';
 import { useRouter } from 'vue-router';
 import { BACKEND_API_URL } from '@/config';
+import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
 
 const router = useRouter();
 
@@ -25,6 +26,7 @@ const props = defineProps({
   showMarketCap: {type: Boolean, required: false, default: true},
   textOnly: {type: Boolean, required: false, default: false}
 })
+const emit = defineEmits<{ openTokenDetails: [asset: FeedTokenSheetAsset] }>()
 
 const {formatEmojiText} = useTweet()
 const {
@@ -239,6 +241,7 @@ onUnmounted(() => {
           </div>
           <slot name="tweet-trade"></slot>
           <slot name="tweet-mint"></slot>
+          <CommunityTradeCard v-if="tweet.tick && tweet.token" :tweet="tweet" @open-details="emit('openTokenDetails', $event)" />
           <slot name="tweet-action-bar"></slot>
         </div>
       </div>

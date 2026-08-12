@@ -42,7 +42,10 @@ export async function initNativeApp(router: Router) {
     await Browser.close().catch(() => {})
 
     const callbackUrl = new URL(url)
-    const loginUrl = new URL('/login', window.location.origin)
+    // Privy OAuth 必须进入专用 callback 页。旧的 /login 是 TagAI 历史
+    // Twitter state 轮询回调，会在看不到 `state` 时立即清空 URL，导致
+    // Privy SDK 尚未消费 privy_oauth_* 参数就丢失登录结果。
+    const loginUrl = new URL('/callback', window.location.origin)
     callbackUrl.searchParams.forEach((value, key) => {
       loginUrl.searchParams.set(key, value)
     })

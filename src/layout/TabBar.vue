@@ -1,95 +1,44 @@
 <script setup lang="ts">
-import {useModalStore, useStateStore} from "@/stores/common";
-import { useAccountStore } from "@/stores/web3";
-import { useAccount } from "@/composables/useAccount";
-import ProfileBtn from "@/layout/ProfileBtn.vue";
-import CreateBtn from "@/layout/CreateBtn.vue";
-import { useRoute } from "vue-router";
-import { computed } from "vue";
-import { useChainStore } from '@/stores/chain'
+import ProfileBtn from '@/layout/ProfileBtn.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import emitter from '@/utils/emitter'
 
-const accStore = useAccountStore()
-const modalStore = useModalStore()
-const stateStore = useStateStore()
 const route = useRoute()
-const chainStore = useChainStore()
-const predictionMainEntryEnabled = computed(() => (
-  chainStore.deployment.features.prediction
-  && chainStore.deployment.features.predictionMainEntry
-))
-
-const { vp, op } = useAccount()
-
-// 判断当前路由是否激活
-const isActive = (path: string | string[]) => {
-  if (Array.isArray(path)) {
-    return path.some(p => route.path.startsWith(p))
-  }
-  return route.path === path || route.path.startsWith(path + '/')
-}
-
-// 主菜单已路由化（/、/coins、/predictions），激活态直接看路由
-const isTagActive = computed(() => {
-  return route.name === 'home' || route.name === 'commerce'
-})
-
-const isCoinActive = computed(() => {
-  return route.name === 'coins' || isActive(['/tag-detail', '/buy-sell'])
-})
-
-const isPredictionActive = computed(() => {
-  return route.name === 'predictions' || isActive('/predict')
-})
-
-const isBasketsActive = computed(() => {
-  return route.name === 'baskets' || route.name === 'basket-detail' || isActive('/baskets')
-})
-
-const goToTag = () => {
-  stateStore.setTagSubMenu('tweets')
-}
-
+const isToken = computed(() => ['home', 'baskets', 'basket-detail', 'basket-fees', 'tag-detail', 'buy-sell'].includes(String(route.name)))
+const isHome = computed(() => route.name === 'feed' || route.name === 'commerce')
+const isBuidler = computed(() => route.name === 'buidler')
+const activeFilter = 'filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg)'
+const leaveFeedOverlays = () => emitter.emit('mainTabNavigate')
 </script>
 
 <template>
   <div class="relative bg-surface" style="height: calc(3.5rem + var(--safe-area-bottom));">
-    <div class="w-full h-14 native-safe-tabbar-content flex justify-between items-center px-6 relative z-10">
-      <router-link to="/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]" @click="goToTag">
-        <img v-if="isTagActive" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
-        <span class="text-[10px] leading-none" :class="isTagActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('home') }}</span>
+    <div class="native-safe-tabbar-content relative z-10 flex h-14 w-full items-center justify-between px-6">
+      <router-link to="/feed" class="tab-item" @click="leaveFeedOverlays">
+        <img v-if="isHome" class="h-6 w-6" src="~@/assets/icons/icon-tabbar-home-active.svg" alt="">
+        <img v-else class="h-6 w-6" src="~@/assets/icons/icon-tabbar-home.svg" alt="">
+        <span :class="isHome ? 'text-orange-normal font-semibold' : 'text-grey-normal'">Home</span>
       </router-link>
-      <router-link to="/coins" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
-        <img v-if="isCoinActive" class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-coin.svg" alt="">
-        <span class="text-[10px] leading-none" :class="isCoinActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('coin') }}</span>
+      <router-link to="/" class="tab-item" @click="leaveFeedOverlays">
+        <img class="h-6 w-6" src="~@/assets/icons/icon-coin.svg" alt="" :style="isToken ? activeFilter : ''">
+        <span :class="isToken ? 'text-orange-normal font-semibold' : 'text-grey-normal'">Token</span>
       </router-link>
-      <router-link v-if="predictionMainEntryEnabled" to="/predictions" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
-        <img v-if="isPredictionActive" class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="" style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)">
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
-        <span class="text-[10px] leading-none" :class="isPredictionActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('prediction') }}</span>
+      <router-link to="/buidler" class="tab-item" @click="leaveFeedOverlays">
+        <img class="h-6 w-6" src="~@/assets/icons/icon-pie-chart.svg" alt="" :style="isBuidler ? activeFilter : ''">
+        <span :class="isBuidler ? 'text-orange-normal font-semibold' : 'text-grey-normal'">BUIDLer</span>
       </router-link>
-      <router-link to="/baskets" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
-        <img
-          v-if="isBasketsActive"
-          class="w-6 h-6"
-          src="~@/assets/icons/icon-pie-chart.svg"
-          alt=""
-          style="filter: brightness(0) saturate(100%) invert(58%) sepia(95%) saturate(2000%) hue-rotate(0deg) brightness(1.1) contrast(1.1)"
-        >
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-pie-chart.svg" alt="">
-        <span class="text-[10px] leading-none" :class="isBasketsActive ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('baskets.menu') }}</span>
+      <router-link to="/wallet/" class="tab-item" @click="leaveFeedOverlays">
+        <img v-if="$route.name==='wallet'" class="h-6 w-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">
+        <img v-else class="h-6 w-6" src="~@/assets/icons/icon-wallet.svg" alt="">
+        <span :class="$route.name==='wallet' ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('wallet') }}</span>
       </router-link>
-      <router-link to="/wallet/" class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]">
-        <img v-if="$route.name==='wallet'" class="w-6 h-6" src="~@/assets/icons/icon-tabbar-wallet-active.svg" alt="">
-        <img v-else class="w-6 h-6" src="~@/assets/icons/icon-wallet.svg" alt="">
-        <span class="text-[10px] leading-none" :class="$route.name==='wallet' ? 'text-orange-normal font-semibold' : 'text-grey-normal'">{{ $t('wallet') }}</span>
-      </router-link>
-      <ProfileBtn class="flex flex-col items-center justify-center cursor-pointer p-1 gap-0.5 min-w-[44px]" />
+      <ProfileBtn class="tab-item" @click="leaveFeedOverlays" />
     </div>
   </div>
 </template>
 
 <style scoped>
-
+.tab-item { display:flex; min-width:44px; cursor:pointer; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:4px; }
+.tab-item span { font-size:10px; line-height:1; }
 </style>

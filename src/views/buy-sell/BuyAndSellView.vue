@@ -476,6 +476,12 @@ async function checkTweet() {
 }
 
 async function confirm() {
+  // Feed 内嵌交易框以 TagAI 登录态为第一层状态：未登录先进入登录，
+  // 已登录则沿用 AuthLoading 同步的 embedded wallet/provider。
+  if (!accStore.getAccountInfo?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return
+  }
   // check wallet connect
   if (accStore.ethConnectState !== EthWalletState.Connected) {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
@@ -901,16 +907,16 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || accStore.ethConnectState == EthWalletState.Connecting || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || (!!accStore.getAccountInfo?.twitterId && accStore.ethConnectState == EthWalletState.Connecting) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
-            !accStore.ethConnectAddress
+            !accStore.getAccountInfo?.twitterId
               ? $t('connect')
               : (isV8PreListNoTrade
                   ? $t('buyAndSell.v8PreListAgentOnly')
                   : (listed ? $t('confirmListed') : $t('confirm')))
           }}</span>
-          <i-ep-loading v-show="trading || calculating || accStore.ethConnectState == EthWalletState.Connecting" class="animate-spin" />
+          <i-ep-loading v-show="trading || calculating || (!!accStore.getAccountInfo?.twitterId && accStore.ethConnectState == EthWalletState.Connecting)" class="animate-spin" />
         </button>
 
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">
