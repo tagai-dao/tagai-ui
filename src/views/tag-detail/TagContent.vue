@@ -6,14 +6,16 @@ import { useTweetsStore } from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets } from "@/apis/api";
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useCommunityStore } from "@/stores/community";
 import { sleep } from "@/utils/helper";
-import type { Tweet } from "@/types";
+import type { FeedTokenSheetAsset, Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
+import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
+import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
 
 enum ListType {
   Trending = 'trending',
@@ -43,6 +45,29 @@ const nextPage = ref<Record<ListType, number>>({
 })
 const loadMoreSentinel = ref<HTMLElement | null>(null)
 let loadMoreObserver: IntersectionObserver | null = null
+const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
+const showFeedTokenSheet = ref(false)
+const showFeedTradeSheet = ref(false)
+
+function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
+  selectedFeedToken.value = asset
+  showFeedTradeSheet.value = false
+  showFeedTokenSheet.value = true
+}
+
+function openBuy() {
+  showFeedTradeSheet.value = true
+}
+
+function closeFeedSheets() {
+  showFeedTradeSheet.value = false
+  showFeedTokenSheet.value = false
+  selectedFeedToken.value = null
+}
+
+watch(showFeedTokenSheet, visible => {
+  if (!visible) showFeedTradeSheet.value = false
+})
 
 const showingTweets = computed(() => {
   if (comStore.currentSelectedCommunity?.tick &&
@@ -208,12 +233,14 @@ onMounted(async () => {
   await observeLoadMoreSentinel()
   emitter.on('tweeted', onRefresh);
   emitter.on('login', onRefresh);
+  emitter.on('mainTabNavigate', closeFeedSheets)
 });
 
 onBeforeUnmount(() => {
   loadMoreObserver?.disconnect()
   emitter.off('tweeted', onRefresh)
   emitter.off('login', onRefresh)
+  emitter.off('mainTabNavigate', closeFeedSheets)
 })
 </script>
 
@@ -267,6 +294,7 @@ onBeforeUnmount(() => {
             v-if="tweet.spaceId"
             class="bg-white rounded-2xl"
             :tweet="tweet"
+            @open-token-details="openFeedTokenSheet"
             @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
           >
             <template #tweet-action-bar>
@@ -280,6 +308,7 @@ onBeforeUnmount(() => {
             v-else
             class="bg-white rounded-2xl"
             :tweet="tweet"
+            @open-token-details="openFeedTokenSheet"
             @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
           >
             <template #tweet-trade v-if="tweet.commerceId">
@@ -297,6 +326,8 @@ onBeforeUnmount(() => {
       </van-list>
     </van-pull-refresh>
   </div>
+  <FeedTokenDetailSheet v-model="showFeedTokenSheet" :asset="selectedFeedToken" @buy="openBuy" />
+  <FeedTokenTradeSheet v-model="showFeedTradeSheet" :asset="selectedFeedToken" />
 </template>
 
 <style scoped></style>

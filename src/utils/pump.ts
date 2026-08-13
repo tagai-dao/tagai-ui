@@ -820,6 +820,84 @@ const fetchGeckoTokenAttributes = async (token: string): Promise<Record<string, 
     return entry?.attributes ?? cached?.attributes ?? null
 }
 
+type ImportedTokenMetadata = {
+    logo?: string
+    priceUsd?: number
+    fdvUsd?: number
+}
+
+/**
+ * Imported communities do not always carry community.logo in curation/feed
+ * responses. Resolve their public metadata in one GeckoTerminal batch request
+ * and seed the existing token cache so opening a sheet does not request it
+ * again.
+ */
+const fetchImportedTokenMetadataMap = async (
+    items: Array<{ token?: string; isImport?: boolean | number }>
+): Promise<Record<string, ImportedTokenMetadata>> => {
+    const network = getGeckoNetwork()
+    if (!network) return {}
+    const tokens = _.union(items.filter(item => item.isImport && item.token).map(item => item.token!.toLowerCase()))
+    if (!tokens.length) return {}
+
+    const result: Record<string, ImportedTokenMetadata> = {}
+    const missing: string[] = []
+    const now = Date.now()
+    for (const token of tokens) {
+        const cached = geckoTokenCache.get(`${network}:${token}`)
+        if (cached && now - cached.fetchedAt < GECKO_TOKEN_CACHE_TTL_MS && cached.attributes) {
+            const attrs = cached.attributes
+            result[token] = {
+                logo: attrs.image_url || undefined,
+                priceUsd: Number(attrs.price_usd) || undefined,
+                fdvUsd: Number(attrs.fdv_usd) || undefined,
+            }
+        } else {
+            missing.push(token)
+        }
+    }
+
+    for (let offset = 0; offset < missing.length; offset += 30) {
+        const chunk = missing.slice(offset, offset + 30)
+        try {
+            const response = await fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/multi/${chunk.join(',')}`)
+            if (response.status === 429) {
+                geckoRateLimitedUntil = Date.now() + GECKO_RATE_LIMIT_BACKOFF_MS
+                break
+            }
+            if (!response.ok) continue
+            const json = await response.json()
+            for (const row of json?.data ?? []) {
+                const token = String(row?.id ?? '').replace(/^.+_/, '').toLowerCase()
+                const attrs = row?.attributes ?? null
+                if (!token || !attrs) continue
+                geckoTokenCache.set(`${network}:${token}`, { attributes: attrs, fetchedAt: Date.now() })
+                result[token] = {
+                    logo: attrs.image_url || undefined,
+                    priceUsd: Number(attrs.price_usd) || undefined,
+                    fdvUsd: Number(attrs.fdv_usd) || undefined,
+                }
+            }
+        } catch (error) {
+            console.warn('GeckoTerminal imported-token metadata fetch failed', error)
+        }
+    }
+    return result
+}
+
+const applyImportedTokenMetadata = (
+    item: { token?: string; isImport?: boolean | number; logo?: string; price?: number; marketCap?: number },
+    metadataMap: Record<string, ImportedTokenMetadata>,
+    nativeUsdPrice: number,
+) => {
+    if (!item.isImport || !item.token) return
+    const metadata = metadataMap[item.token.toLowerCase()]
+    if (!metadata) return
+    if (!item.logo && metadata.logo) item.logo = metadata.logo
+    if (nativeUsdPrice > 0 && metadata.priceUsd) item.price = metadata.priceUsd / nativeUsdPrice
+    if (nativeUsdPrice > 0 && metadata.fdvUsd) item.marketCap = metadata.fdvUsd / nativeUsdPrice
+}
+
 /** GeckoTerminal 聚合 FDV（USD） */
 const getThirdPartyFdvUsd = async (token: string): Promise<number | undefined> => {
     const attrs = await fetchGeckoTokenAttributes(token)
@@ -887,8 +965,9 @@ export const getTokenInfo = async (communities: Community[]) => {
         }
     }
     // 链上补价 / 导入币 / 第三方市值并行，缩短墙钟时间
-    const [thirdPartyMarketCapMap, result, importResult] = await Promise.all([
+    const [thirdPartyMarketCapMap, importedMetadataMap, result, importResult] = await Promise.all([
         fetchThirdPartyMarketCapMap(communities),
+        fetchImportedTokenMetadataMap(communities),
         getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap),
         getImportTokenOnchainInfo(communities.filter(com => com.isImport), pairMap),
     ])
@@ -919,6 +998,7 @@ export const getTokenInfo = async (communities: Community[]) => {
                 community.totalSupply = importInfo.totalSupply;
             }
         }
+        applyImportedTokenMetadata(community, importedMetadataMap, stateStore.ethPrice)
         applyThirdPartyMarketCap(community, thirdPartyMarketCapMap)
         // const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
@@ -949,8 +1029,9 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         }
         const stateStore = useStateStore()
         // 链上补价 / 导入币 / 第三方市值 / ETH 价并行
-        const [thirdPartyMarketCapMap, result, importResult] = await Promise.all([
+        const [thirdPartyMarketCapMap, importedMetadataMap, result, importResult] = await Promise.all([
             fetchThirdPartyMarketCapMap(tweets),
+            fetchImportedTokenMetadataMap(tweets),
             getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap),
             getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap),
             stateStore.ethPrice == 0
@@ -983,6 +1064,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                     tweet.pair = tokenInfo.pair;
                 }
             }
+            applyImportedTokenMetadata(tweet, importedMetadataMap, stateStore.ethPrice)
             applyThirdPartyMarketCap(tweet, thirdPartyMarketCapMap)
         }
         return tweets;
@@ -1913,6 +1995,62 @@ export const getTokenDexPools = async (token: string): Promise<TokenDexResult | 
     const pools = filtered.map((p: any) => parsePoolAttrs(p, bnbPrice))
 
     return { tokenName, tokenSymbol, tokenLogo, tokenPrice, fdv, pools }
+}
+
+export type ExternalTokenCandle = {
+    timestamp: number
+    close: number
+}
+
+/** Load USD OHLCV for an imported token from its deepest supported DEX pool. */
+export const getExternalTokenChartData = async (
+    token: string,
+    rangeSeconds: number,
+): Promise<ExternalTokenCandle[]> => {
+    const network = getGeckoNetwork()
+    if (!network || !token) return []
+    const tokenLower = token.toLowerCase()
+    const dex = await getTokenDexPools(tokenLower)
+    const pool = dex?.pools[0]
+    if (!pool?.pairAddress) return []
+
+    let timeframe = 'hour'
+    let aggregate = 1
+    let limit = Math.min(1000, Math.max(24, Math.ceil((rangeSeconds || 30 * 86400) / 3600) + 1))
+    if (rangeSeconds > 0 && rangeSeconds <= 4 * 3600) {
+        timeframe = 'minute'
+        aggregate = 5
+        limit = Math.max(24, Math.ceil(rangeSeconds / 300) + 1)
+    } else if (rangeSeconds > 7 * 86400 && rangeSeconds <= 30 * 86400) {
+        aggregate = 4
+        limit = Math.ceil(rangeSeconds / (aggregate * 3600)) + 1
+    } else if (!rangeSeconds) {
+        timeframe = 'day'
+        aggregate = 1
+        limit = 1000
+    }
+
+    const tokenSide = pool.quoteToken?.toLowerCase() === tokenLower ? 'quote' : 'base'
+    const params = new URLSearchParams({
+        aggregate: String(aggregate),
+        limit: String(Math.min(1000, limit)),
+        currency: 'usd',
+        token: tokenSide,
+    })
+    try {
+        const response = await fetch(
+            `https://api.geckoterminal.com/api/v2/networks/${network}/pools/${pool.pairAddress}/ohlcv/${timeframe}?${params}`
+        )
+        if (!response.ok) return []
+        const json = await response.json()
+        return (json?.data?.attributes?.ohlcv_list ?? [])
+            .map((row: unknown[]) => ({ timestamp: Number(row?.[0]), close: Number(row?.[4]) }))
+            .filter((row: ExternalTokenCandle) => Number.isFinite(row.timestamp) && Number.isFinite(row.close) && row.close > 0)
+            .sort((a: ExternalTokenCandle, b: ExternalTokenCandle) => a.timestamp - b.timestamp)
+    } catch (error) {
+        console.warn('GeckoTerminal OHLCV fetch failed', tokenLower, error)
+        return []
+    }
 }
 
 export const getTokenERC20Info = async (token: string): Promise<{ totalSupply: number, symbol: string, decimals: number }> => {
