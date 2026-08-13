@@ -4,6 +4,7 @@
   "main": "worker.js",
   "compatibility_date": "2026-08-04",
   "routes": [
+    { "pattern": "tagai.fun/actions.json", "zone_name": "tagai.fun" },
     { "pattern": "tagai.fun/tag-detail/*", "zone_name": "tagai.fun" },
     { "pattern": "tagai.fun/post-detail/*", "zone_name": "tagai.fun" },
     { "pattern": "tagai.fun/commerce/*", "zone_name": "tagai.fun" },
