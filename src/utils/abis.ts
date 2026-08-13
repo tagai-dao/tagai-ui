@@ -3654,6 +3654,12 @@ export const abis = {
         "type": "function"
       }
     ],
+    "AIChannelPool": [
+      {"inputs":[{"internalType":"uint256","name":"orderId","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"bytes","name":"signature","type":"bytes"}],"name":"claim","outputs":[],"stateMutability":"payable","type":"function"},
+      {"inputs":[],"name":"channelKey","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"inputs":[],"name":"rewardPolicyHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"uint256","name":"orderId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":true,"internalType":"bytes32","name":"channelKey","type":"bytes32"},{"indexed":false,"internalType":"bool","name":"harvested","type":"bool"}],"name":"AIChannelRewardClaimed","type":"event"}
+    ],
     "UniswapFactory": [
       {
         "inputs": [
@@ -5250,7 +5256,8 @@ export const abis = {
       {"inputs":[],"name":"ipshare","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"InsufficientFee","type":"error"},
       {"inputs":[],"name":"TokenAlreadyImported","type":"error"},
-      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"token","type":"address"},{"indexed":true,"internalType":"address","name":"community","type":"address"},{"indexed":true,"internalType":"address","name":"pool","type":"address"},{"indexed":false,"internalType":"address","name":"creator","type":"address"},{"indexed":false,"internalType":"address","name":"calculator","type":"address"}],"name":"CommunityCreated","type":"event"}
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"token","type":"address"},{"indexed":true,"internalType":"address","name":"community","type":"address"},{"indexed":true,"internalType":"address","name":"pool","type":"address"},{"indexed":false,"internalType":"address","name":"creator","type":"address"},{"indexed":false,"internalType":"address","name":"calculator","type":"address"}],"name":"CommunityCreated","type":"event"},
+      {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"token","type":"address"},{"indexed":true,"internalType":"address","name":"community","type":"address"},{"indexed":true,"internalType":"address","name":"aiChannelPool","type":"address"}],"name":"AIChannelLinked","type":"event"}
     ],
     "TagAISwapWrapper": [
       {"inputs":[{"type":"address","name":"sellsman"},{"type":"uint256","name":"amountOutMin"},{"type":"address[]","name":"path"},{"type":"address","name":"to"},{"type":"uint256","name":"deadline"},{"type":"address","name":"router"}],"name":"buyToken","outputs":[],"stateMutability":"payable","type":"function"},

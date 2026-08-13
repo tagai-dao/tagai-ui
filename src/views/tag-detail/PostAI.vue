@@ -4,6 +4,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useWindowSize } from '@vant/use'
 import {
   createAiChannelReply,
+  createAiChannelRewardClaim,
+  confirmAiChannelRewardClaim,
+  getAiChannelRewards,
   getAiChannelMessages,
   getAiChannels,
   getTweetById,
@@ -12,6 +15,7 @@ import {
 } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community'
 import { useAccountStore } from '@/stores/web3'
+import { EthWalletState } from '@/stores/web3'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType, type Tweet } from '@/types'
 import type {
@@ -19,10 +23,14 @@ import type {
   AiChannelDetail,
   AiChannelQuoteDraft,
   AiChannelReactionType,
+  AiChannelRewards,
 } from '@/types/aiChannel'
 import { handleErrorTip, notify } from '@/utils/notify'
 import AiChannelList from './ai-channel/AiChannelList.vue'
 import AiChannelDetailPanel from './ai-channel/AiChannelDetail.vue'
+import { claimAIChannelReward } from '@/utils/pump'
+import { getTransactionReceipt } from '@/utils/web3'
+import { formatAmount } from '@/utils/helper'
 
 const props = withDefaults(defineProps<{
   compact?: boolean
@@ -47,6 +55,9 @@ const loadingMore = ref(false)
 const loadingDetail = ref(false)
 const sending = ref(false)
 const curating = ref(false)
+const rewards = ref<AiChannelRewards | null>(null)
+const loadingRewards = ref(false)
+const claimingRewards = ref(false)
 const loadError = ref<string | null>(null)
 const quoteDraft = ref<AiChannelQuoteDraft | null>(null)
 const replyIdempotencyKey = ref<string | null>(null)
@@ -67,6 +78,65 @@ const showChannelList = computed(() =>
 const showChannelDetail = computed(() =>
   !props.compact && (isDesktop.value || Boolean(selectedChannelId.value)),
 )
+
+const rewardAmount = computed(() => Number(rewards.value?.amount || 0))
+
+const loadRewards = async () => {
+  const twitterId = accStore.getAccountInfo?.twitterId
+  if (!twitterId || !tick.value || loadingRewards.value) {
+    rewards.value = null
+    return
+  }
+  loadingRewards.value = true
+  try {
+    rewards.value = await getAiChannelRewards(twitterId, tick.value)
+  } catch (error: any) {
+    if (!['AI_CHANNEL_POOL_NOT_CONFIGURED', 'AI_CHANNEL_KEY_NOT_CONFIGURED']
+      .includes(error?.data?.error)) {
+      console.warn('load AI Channel rewards failed', error)
+    }
+    rewards.value = null
+  } finally {
+    loadingRewards.value = false
+  }
+}
+
+const claimRewards = async () => {
+  const account = accStore.getAccountInfo
+  if (!account?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return
+  }
+  if (accStore.ethConnectState !== EthWalletState.Connected) {
+    modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
+    return
+  }
+  if (claimingRewards.value || rewardAmount.value <= 0) return
+  claimingRewards.value = true
+  try {
+    const order = await createAiChannelRewardClaim(account.twitterId, tick.value)
+    const txHash = await claimAIChannelReward(
+      order.poolAddress,
+      BigInt(order.orderId),
+      BigInt(order.amountWei),
+      BigInt(order.deadline),
+      order.signature,
+    )
+    await getTransactionReceipt(txHash as `0x${string}`)
+    await confirmAiChannelRewardClaim(
+      account.twitterId,
+      tick.value,
+      order.orderId,
+      txHash,
+    )
+    notify({ type: 'success', message: 'AI Channel rewards claimed' })
+    await loadRewards()
+  } catch (error) {
+    handleErrorTip(error)
+  } finally {
+    claimingRewards.value = false
+  }
+}
 
 const replaceQuery = (changes: Record<string, string | undefined>) => {
   router.replace({
@@ -382,7 +452,7 @@ watch(
     directChannel.value = null
     detail.value = null
     replyIdempotencyKey.value = null
-    await Promise.all([loadChannels(), loadQuoteDraft()])
+    await Promise.all([loadChannels(), loadQuoteDraft(), loadRewards()])
   },
 )
 
@@ -399,9 +469,10 @@ watch(
 )
 
 watch(() => route.query.quoteTweetId, loadQuoteDraft)
+watch(() => accStore.getAccountInfo?.twitterId, loadRewards)
 
 onMounted(async () => {
-  await Promise.all([loadChannels(), loadQuoteDraft()])
+  await Promise.all([loadChannels(), loadQuoteDraft(), loadRewards()])
 })
 </script>
 
@@ -410,6 +481,25 @@ onMounted(async () => {
     class="h-full flex flex-col overflow-hidden"
     :class="props.compact ? 'min-h-[420px]' : 'min-h-0'"
   >
+    <div
+      v-if="rewards"
+      class="mb-2 px-4 py-3 rounded-xl border border-orange/20 bg-orange/5 flex items-center justify-between gap-4"
+    >
+      <div class="min-w-0">
+        <div class="font-semibold text-sm">AI Channel Pool · 50% Social Distribution</div>
+        <div class="text-xs text-grey-8d mt-1">
+          Author {{ formatAmount(rewards.authorAmount) }} · Curator {{ formatAmount(rewards.curatorAmount) }}
+        </div>
+      </div>
+      <button
+        class="shrink-0 px-4 py-2 rounded-full bg-orange text-white text-sm font-semibold disabled:opacity-50"
+        :disabled="claimingRewards || rewardAmount <= 0"
+        @click="claimRewards"
+      >
+        {{ claimingRewards ? 'Claiming…' : `Claim ${formatAmount(rewardAmount)}` }}
+      </button>
+    </div>
+
     <div
       v-if="loadError !== null"
       class="mb-2 px-4 py-3 rounded-xl border border-red/20 bg-red/5 text-red text-sm flex items-center justify-between gap-3"
