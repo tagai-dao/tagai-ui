@@ -68,7 +68,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
     // contracts.tagAiSwapWrapper (which is intentionally unset on BSC).
     if (chainId === 56) {
         if (contractName === 'WrapSwaper') return wrappedUniswapV2ForTagAI
-        if (contractName === 'WrapSwaper2') return wrappedUniswapV2ForTagAI2
+        if (contractName === 'WrapSwaper2' || contractName === 'TagAISwapWrapper') return wrappedUniswapV2ForTagAI2
     }
 
     const byName: Record<string, `0x${string}` | undefined> = {

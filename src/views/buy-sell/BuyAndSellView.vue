@@ -14,7 +14,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   buyToken, sellToken, getUserTokenInfo,
   getBuyAmountUseEth, getSellAmountUseToken, getV3BuyAmountUseEth, getV3SellAmountUseToken,
   getBuyPriceAfterFee,
-  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice
+  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice, resolveV3NativePool
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
@@ -322,7 +322,8 @@ const updateBuyAmount = debounce(async (val: any) => {
       }
     } else if (community?.isImport && community.dexVersion === 3) {
       receive = await getV3BuyAmountUseEth(community.token!, community.pair!, amount * 9800n / 10000n)
-      spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
+      const nativePool = await resolveV3NativePool(community.token!, community.pair!)
+      spot = await getImportTokenPrice(community.token!, nativePool.pair, 3, {}, stateStore.ethPrice) ?? 0
     } else {
       receive = await getBuyAmountUseEth(community!.token, amount * 9800n / 10000n)
       try {
@@ -414,7 +415,8 @@ const updateSellAmount = debounce(async (val: any) => {
         }
       } else if (community?.isImport && community.dexVersion === 3) {
         receive = await getV3SellAmountUseToken(community.token!, community.pair!, amount)
-        spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
+        const nativePool = await resolveV3NativePool(community.token!, community.pair!)
+        spot = await getImportTokenPrice(community.token!, nativePool.pair, 3, {}, stateStore.ethPrice) ?? 0
       } else {
         receive = await getSellAmountUseToken(community!.token, amount)
         try {

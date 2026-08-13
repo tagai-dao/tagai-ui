@@ -42,6 +42,8 @@ export type ChainDeployment = {
     v2Router: `0x${string}`
     v2Factory: `0x${string}`
     v3Router: `0x${string}`
+    /** V3 QuoterV2；用于按真实流动性计算成交输出，而不是仅使用池现价。 */
+    v3Quoter: `0x${string}`
     permit2: `0x${string}`
     universalRouter: `0x${string}`
     /** V4 PoolManager；BSC=PCS CLPoolManager，RH=Uniswap V4 PoolManager */
@@ -110,7 +112,10 @@ export const BSC_CHAIN: ChainDeployment = {
     kind: 'pancake',
     v2Router: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
     v2Factory: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',
-    v3Router: ZERO,
+    // Legacy SwapRouter keeps the deadline-bearing exactInputSingle ABI used by
+    // TagAI's deployed BSC wrapper. Pancake SmartRouter (0x13f4...) omits it.
+    v3Router: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
+    v3Quoter: '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
     permit2: '0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768',
     universalRouter: '0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB',
     v4PoolManager: '0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b',
@@ -166,6 +171,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     v2Router: '0x89e5DB8B5aA49aA85AC63f691524311AEB649eba',
     v2Factory: '0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f',
     v3Router: '0xCaf681a66D020601342297493863E78C959E5cb2',
+    v3Quoter: ZERO,
     permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
     universalRouter: '0x8876789976decbfcbbbe364623c63652db8c0904',
     v4PoolManager: '0x8366a39CC670B4001A1121B8F6A443A643e40951',
