@@ -14,6 +14,13 @@
 const META_API = 'https://bsc-api.tagai.fun/meta/og'
 const DEFAULT_CHAIN_SLUG = 'bsc'
 const CHAIN_IDS = Object.freeze({ bsc: 56, rh: 4663 })
+const ACTIONS_PATH = '/actions.json'
+const ACTIONS_CORS_HEADERS = Object.freeze({
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-blockchain-ids, x-action-version',
+  'Access-Control-Max-Age': '86400',
+})
 
 const CRAWLER_UA = /twitterbot|facebookexternalhit|telegrambot|discordbot|slackbot|linkedinbot|whatsapp|line-podcast|skypeuripreview|embedly|pinterestbot|redditbot|googlebot|bingbot/i
 
@@ -93,10 +100,29 @@ function stripStaticMeta(html) {
     .replace(/<meta\s+(?:name|property)="(?:og:title|og:description|og:image|og:url|og:type|twitter:title|twitter:description|twitter:image|twitter:card)"[^>]*>\s*/gi, '')
 }
 
+function withActionsCors(response) {
+  const headers = new Headers(response.headers)
+  for (const [name, value] of Object.entries(ACTIONS_CORS_HEADERS)) {
+    headers.set(name, value)
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
 export default {
   async fetch(request) {
     const ua = request.headers.get('user-agent') || ''
     const url = new URL(request.url)
+
+    if (url.pathname === ACTIONS_PATH) {
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { status: 204, headers: ACTIONS_CORS_HEADERS })
+      }
+      return withActionsCors(await fetch(request))
+    }
 
     if (request.method !== 'GET' || !CRAWLER_UA.test(ua)) {
       return fetch(request)

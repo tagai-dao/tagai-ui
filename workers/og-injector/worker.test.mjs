@@ -1,7 +1,58 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
 
 import worker, { buildMetaRequest, matchOgRoute } from './worker.js'
+
+test('maps legacy and chain-prefixed commerce URLs to the Action API', async () => {
+  const config = JSON.parse(await readFile(new URL('../../public/actions.json', import.meta.url), 'utf8'))
+
+  assert.deepEqual(config.rules, [
+    {
+      pathPattern: '/commerce/**',
+      apiPath: 'https://bsc-api.tagai.fun/action/commerce/**',
+    },
+    {
+      pathPattern: '/bsc/commerce/**',
+      apiPath: 'https://bsc-api.tagai.fun/action/commerce/**',
+    },
+    {
+      pathPattern: '/rh/commerce/**',
+      apiPath: 'https://bsc-api.tagai.fun/action/commerce/**',
+    },
+  ])
+})
+
+test('answers actions.json preflight requests with Blink CORS headers', async () => {
+  const response = await worker.fetch(new Request('https://tagai.fun/actions.json', {
+    method: 'OPTIONS',
+    headers: {
+      origin: 'https://x.com',
+      'access-control-request-method': 'GET',
+    },
+  }))
+
+  assert.equal(response.status, 204)
+  assert.equal(response.headers.get('access-control-allow-origin'), '*')
+  assert.equal(response.headers.get('access-control-allow-methods'), 'GET, OPTIONS')
+  assert.match(response.headers.get('access-control-allow-headers'), /x-action-version/)
+})
+
+test('keeps origin actions.json responses streamable and adds CORS headers', async (t) => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response('{"rules":[]}', {
+    headers: { 'content-type': 'application/json' },
+  })
+  t.after(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  const response = await worker.fetch(new Request('https://tagai.fun/actions.json'))
+
+  assert.equal(await response.text(), '{"rules":[]}')
+  assert.equal(response.headers.get('content-type'), 'application/json')
+  assert.equal(response.headers.get('access-control-allow-origin'), '*')
+})
 
 test('matches chain-prefixed OG routes', () => {
   assert.deepEqual(matchOgRoute('/rh/tag-detail/RH-TAG'), {

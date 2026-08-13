@@ -1,7 +1,15 @@
 {
     "rules": [
         {
-            "pathPattern": "https://tagai.fun/commerce/**",
+            "pathPattern": "/commerce/**",
+            "apiPath": "https://bsc-api.tagai.fun/action/commerce/**"
+        },
+        {
+            "pathPattern": "/bsc/commerce/**",
+            "apiPath": "https://bsc-api.tagai.fun/action/commerce/**"
+        },
+        {
+            "pathPattern": "/rh/commerce/**",
             "apiPath": "https://bsc-api.tagai.fun/action/commerce/**"
         }
     ]
