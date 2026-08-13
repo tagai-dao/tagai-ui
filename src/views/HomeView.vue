@@ -26,7 +26,7 @@ import Predict from "@/views/predict/Index.vue";
 import BasketsListView from '@/views/baskets/BasketsListView.vue'
 import {TweetListType, useTweetsStore} from "@/stores/tweets";
 import {filterByActiveChain} from "@/utils/chainFilter";
-import {usesThirdPartyMarketCap} from "@/config";
+import {isBscBStockToken} from '@/config/bstocks'
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
@@ -61,7 +61,7 @@ const bStocksLoading = ref(false)
 const bStocksLoaded = ref(false)
 
 const isBStockCommunity = (community: Community) =>
-  usesThirdPartyMarketCap(community.tick)
+  isBscBStockToken(community.token)
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -197,14 +197,14 @@ async function getNewCommunities() {
   }
 }
 
-/** bStocks 当前只展示 SPCXB；其他外部导入社区仍属于 TagCoin。 */
+/** bStocks 按 BNB Chain 代币 CA 白名单分类，社区显示符号不参与判断。 */
 async function loadBStocks(force = false) {
   if (bStocksLoading.value || (bStocksLoaded.value && !force)) return
   try {
     bStocksLoading.value = true
     const bStocks = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
       .filter(isBStockCommunity)
-    // 先展示 API 数据；链上补价失败时也不隐藏 SPCXB。
+    // 先展示 API 数据；链上补价失败时也不隐藏已识别的 bStocks。
     bStockCommunities.value = bStocks
     bStocksLoaded.value = true
     if (bStocks.length) {
@@ -265,7 +265,7 @@ function filterDust(list: Community[]) {
   )
 }
 
-/** TagCoin 排除 SPCXB；其他外部导入社区仍在此展示。 */
+/** TagCoin 排除 CA 已识别为 bStocks 的导入社区。 */
 function filterTagCoins(list: Community[]) {
   return filterDust(list).filter((community) => !isBStockCommunity(community))
 }

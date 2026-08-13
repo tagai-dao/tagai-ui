@@ -9,6 +9,7 @@ import { getCommunityByMarketCap } from '@/apis/api'
 import { getTokenInfo } from '@/utils/pump'
 import { handleErrorTip } from '@/utils/notify'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
+import { isBscBStockToken } from '@/config/bstocks'
 
 const comStore = useCommunityStore()
 const stateStore = useStateStore()
@@ -37,6 +38,7 @@ const sortedTagCoins = computed(() => {
   }
   // 按市值排序
   return comStore.marketCapCommunities
+    .filter((community) => !isBscBStockToken(community.token))
     .slice()
     .sort((a, b) => {
       const marketCapA = parseFloat(a.marketCap as any) || 0
