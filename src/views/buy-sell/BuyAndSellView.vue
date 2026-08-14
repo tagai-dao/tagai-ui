@@ -14,7 +14,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   buyToken, sellToken, getUserTokenInfo,
   getBuyAmountUseEth, getSellAmountUseToken, getV3BuyAmountUseEth, getV3SellAmountUseToken,
   getBuyPriceAfterFee,
-  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice
+  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice, resolveV3NativePool
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
@@ -63,6 +63,10 @@ const showDesktopChart = computed(() =>
 )
 const accStore = useAccountStore()
 const modalStore = useModalStore()
+const isWalletConnected = computed(() =>
+  accStore.ethConnectState === EthWalletState.Connected &&
+  isAddress(accStore.ethConnectAddress ?? '')
+)
 const tradeType = ref('buy')
 const route = useRoute()
 const tokenInfo = ref()
@@ -322,7 +326,8 @@ const updateBuyAmount = debounce(async (val: any) => {
       }
     } else if (community?.isImport && community.dexVersion === 3) {
       receive = await getV3BuyAmountUseEth(community.token!, community.pair!, amount * 9800n / 10000n)
-      spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
+      const nativePool = await resolveV3NativePool(community.token!, community.pair!)
+      spot = await getImportTokenPrice(community.token!, nativePool.pair, 3, {}, stateStore.ethPrice) ?? 0
     } else {
       receive = await getBuyAmountUseEth(community!.token, amount * 9800n / 10000n)
       try {
@@ -414,7 +419,8 @@ const updateSellAmount = debounce(async (val: any) => {
         }
       } else if (community?.isImport && community.dexVersion === 3) {
         receive = await getV3SellAmountUseToken(community.token!, community.pair!, amount)
-        spot = await getImportTokenPrice(community.token!, community.pair!, 3, {}, stateStore.ethPrice) ?? 0
+        const nativePool = await resolveV3NativePool(community.token!, community.pair!)
+        spot = await getImportTokenPrice(community.token!, nativePool.pair, 3, {}, stateStore.ethPrice) ?? 0
       } else {
         receive = await getSellAmountUseToken(community!.token, amount)
         try {
@@ -476,16 +482,19 @@ async function checkTweet() {
 }
 
 async function confirm() {
-  // Feed 内嵌交易框以 TagAI 登录态为第一层状态：未登录先进入登录，
-  // 已登录则沿用 AuthLoading 同步的 embedded wallet/provider。
-  if (!accStore.getAccountInfo?.twitterId) {
-    modalStore.setModalVisible(true, GlobalModalType.Login)
-    return
-  }
-  // check wallet connect
-  if (accStore.ethConnectState !== EthWalletState.Connected) {
+  // 交易只要求链上钱包，不要求 TagAI / Twitter 登录。社交登录仅用于
+  // Log in、Wallet、Profile 和发帖等账户功能，不能拦截纯链上交易。
+  if (!isWalletConnected.value) {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
+  }
+  // V5 bonding-curve buys still require the backend reputation signature,
+  // which is only available to a registered TagAI account. Listed/imported
+  // token swaps remain wallet-only.
+  const requiresLegacyTradeAccount = !listed.value && comStore.currentSelectedCommunity?.version === 5
+  if ((isPostTweet.value || requiresLegacyTradeAccount) && !accStore.getAccountInfo?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return
   }
   if (comStore.currentSelectedCommunity?.version === 8 && !comStore.currentSelectedCommunity?.listed) {
     notify({ message: t('buyAndSell.v8PreListAgentOnly') })
@@ -907,16 +916,16 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || (!!accStore.getAccountInfo?.twitterId && accStore.ethConnectState == EthWalletState.Connecting) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
-            !accStore.getAccountInfo?.twitterId
+            !isWalletConnected
               ? $t('connect')
               : (isV8PreListNoTrade
                   ? $t('buyAndSell.v8PreListAgentOnly')
                   : (listed ? $t('confirmListed') : $t('confirm')))
           }}</span>
-          <i-ep-loading v-show="trading || calculating || (!!accStore.getAccountInfo?.twitterId && accStore.ethConnectState == EthWalletState.Connecting)" class="animate-spin" />
+          <i-ep-loading v-show="trading || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress)" class="animate-spin" />
         </button>
 
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">

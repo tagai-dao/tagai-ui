@@ -428,12 +428,12 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
 
         if (isImport) {
             const deployment = useChainStore().deployment
-            if (deployment.dex.kind === 'uniswap') {
+            if (deployment.dex.kind === 'uniswap' || dexVersion === 3) {
                 const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
                 if (router === zeroAddress) throw new Error(`Uniswap V${dexVersion} router is not configured on ${deployment.name}`)
                 if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
                 const poolFee = dexVersion === 3
-                    ? await getUniswapV3PoolFee(pair)
+                    ? (await resolveV3NativePool(token, pair)).fee
                     : 0
                 const functionName = dexVersion === 3 ? 'buyTokenV3' : 'buyToken'
                 const args = dexVersion === 3
@@ -441,7 +441,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
                     : [sellsman, amount * BigInt(10000 - slippage) / 10000n, [deployment.wrappedNative, token], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router]
                 return writeContract({ contractName: 'TagAISwapWrapper', functionName, args, value: ethAmount })
             }
-            // BSC path intentionally unchanged.
+            // BSC V2 legacy path.
             const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
             const hash = await writeContract({
                 contractName: 'WrapSwaper2',
@@ -530,13 +530,13 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
 
         if (isImport) {
             const deployment = useChainStore().deployment
-            if (deployment.dex.kind === 'uniswap') {
+            if (deployment.dex.kind === 'uniswap' || dexVersion === 3) {
                 const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
                 const wrapper = resolveContractAddress('TagAISwapWrapper')
                 if (!wrapper || router === zeroAddress) throw new Error(`Uniswap V${dexVersion} trading is not configured on ${deployment.name}`)
                 if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
                 const poolFee = dexVersion === 3
-                    ? await getUniswapV3PoolFee(pair)
+                    ? (await resolveV3NativePool(token, pair)).fee
                     : 0
                 const allowance = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrapper], token) as bigint
                 if (allowance < amount) {
@@ -549,7 +549,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                     : [amount, minOut, [token, deployment.wrappedNative], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router]
                 return writeContract({ contractName: 'TagAISwapWrapper', functionName, args })
             }
-            // BSC path intentionally unchanged.
+            // BSC V2 legacy path.
             const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)
             if (allowance < amount) {
                 // 安全: 只授权所需金额，避免无限授权风险
@@ -1853,9 +1853,103 @@ export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) 
     return amount[amount.length - 1] * 9800n / 10000n;
 }
 
-const getUniswapV3PoolFee = async (pair?: string): Promise<number> => {
-    if (!pair || !isAddress(pair)) throw new Error('Valid Uniswap V3 pool address is required')
-    return Number(await readContract('UniswapV3Pool', 'fee', [], pair as `0x${string}`))
+const V3_POOL_LOOKUP_ABI = [
+    { type: 'function', name: 'factory', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+    { type: 'function', name: 'token0', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+    { type: 'function', name: 'token1', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+    { type: 'function', name: 'fee', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint24' }] },
+    { type: 'function', name: 'liquidity', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint128' }] },
+] as const
+
+const V3_FACTORY_LOOKUP_ABI = [{
+    type: 'function', name: 'getPool', stateMutability: 'view',
+    inputs: [{ type: 'address' }, { type: 'address' }, { type: 'uint24' }],
+    outputs: [{ type: 'address' }],
+}] as const
+
+const V3_QUOTER_V2_ABI = [{
+    type: 'function', name: 'quoteExactInputSingle', stateMutability: 'nonpayable',
+    inputs: [{
+        name: 'params', type: 'tuple', components: [
+            { name: 'tokenIn', type: 'address' },
+            { name: 'tokenOut', type: 'address' },
+            { name: 'amountIn', type: 'uint256' },
+            { name: 'fee', type: 'uint24' },
+            { name: 'sqrtPriceLimitX96', type: 'uint160' },
+        ],
+    }],
+    outputs: [
+        { name: 'amountOut', type: 'uint256' },
+        { name: 'sqrtPriceX96After', type: 'uint160' },
+        { name: 'initializedTicksCrossed', type: 'uint32' },
+        { name: 'gasEstimate', type: 'uint256' },
+    ],
+}] as const
+
+type V3NativePool = { pair: `0x${string}`; fee: number }
+const v3NativePoolCache = new Map<string, Promise<V3NativePool>>()
+
+/**
+ * Imported communities store their most liquid display/chart pool. That pool can
+ * be TOKEN/USDT, while the swap wrapper always trades TOKEN/wrapped-native.
+ * Resolve the native pool explicitly instead of assuming `community.pair` is it.
+ */
+export const resolveV3NativePool = async (token: string, pair?: string): Promise<V3NativePool> => {
+    if (!isAddress(token) || !pair || !isAddress(pair)) {
+        throw new Error('Valid token and Uniswap V3 pool addresses are required')
+    }
+    const deployment = useChainStore().deployment
+    const cacheKey = `${deployment.chainId}:${token.toLowerCase()}:${pair.toLowerCase()}`
+    const cached = v3NativePoolCache.get(cacheKey)
+    if (cached) return cached
+
+    const resolving = (async () => {
+        const client = getReadOnlyClient()
+        const storedPair = pair as `0x${string}`
+        const [factory, token0, token1, storedFee] = await Promise.all([
+            client.readContract({ address: storedPair, abi: V3_POOL_LOOKUP_ABI, functionName: 'factory' }),
+            client.readContract({ address: storedPair, abi: V3_POOL_LOOKUP_ABI, functionName: 'token0' }),
+            client.readContract({ address: storedPair, abi: V3_POOL_LOOKUP_ABI, functionName: 'token1' }),
+            client.readContract({ address: storedPair, abi: V3_POOL_LOOKUP_ABI, functionName: 'fee' }),
+        ])
+        const target = token.toLowerCase()
+        const wrappedNative = deployment.wrappedNative.toLowerCase()
+        const pairTokens = [token0.toLowerCase(), token1.toLowerCase()]
+        if (!pairTokens.includes(target)) throw new Error('Stored V3 pool does not contain the imported token')
+        if (pairTokens.includes(wrappedNative)) return { pair: storedPair, fee: Number(storedFee) }
+
+        const standardFeeTiers = deployment.dex.kind === 'pancake'
+            ? [100, 500, 2500, 10000]
+            : [100, 500, 3000, 10000]
+        const feeTiers = Array.from(new Set([Number(storedFee), ...standardFeeTiers]))
+        const pools = await Promise.all(feeTiers.map(async fee => {
+            const candidate = await client.readContract({
+                address: factory,
+                abi: V3_FACTORY_LOOKUP_ABI,
+                functionName: 'getPool',
+                args: [token as `0x${string}`, deployment.wrappedNative, fee],
+            })
+            if (candidate === zeroAddress) return null
+            const liquidity = await client.readContract({
+                address: candidate,
+                abi: V3_POOL_LOOKUP_ABI,
+                functionName: 'liquidity',
+            })
+            return liquidity > 0n ? { pair: candidate, fee, liquidity } : null
+        }))
+        const best = pools
+            .filter((pool): pool is V3NativePool & { liquidity: bigint } => pool !== null)
+            .sort((a, b) => a.liquidity === b.liquidity ? 0 : a.liquidity > b.liquidity ? -1 : 1)[0]
+        if (!best) throw new Error('No liquid TOKEN/wrapped-native V3 pool found')
+        return { pair: best.pair, fee: best.fee }
+    })()
+    v3NativePoolCache.set(cacheKey, resolving)
+    try {
+        return await resolving
+    } catch (error) {
+        v3NativePoolCache.delete(cacheKey)
+        throw error
+    }
 }
 
 const getUniswapV3AmountOut = async (
@@ -1864,10 +1958,30 @@ const getUniswapV3AmountOut = async (
     amountIn: bigint,
     inputIsToken: boolean
 ): Promise<bigint> => {
+    const deployment = useChainStore().deployment
+    const nativePool = await resolveV3NativePool(token, pair)
+    if (deployment.dex.v3Quoter !== zeroAddress) {
+        const { result } = await getReadOnlyClient().simulateContract({
+            address: deployment.dex.v3Quoter,
+            abi: V3_QUOTER_V2_ABI,
+            functionName: 'quoteExactInputSingle',
+            args: [{
+                tokenIn: (inputIsToken ? token : deployment.wrappedNative) as `0x${string}`,
+                tokenOut: (inputIsToken ? deployment.wrappedNative : token) as `0x${string}`,
+                amountIn,
+                fee: nativePool.fee,
+                sqrtPriceLimitX96: 0n,
+            }],
+        })
+        return result[0]
+    }
+
+    // Some product chains do not have QuoterV2 configured yet. Retain the old
+    // spot-price fallback there, but always use the resolved native pool.
     const [slot0, token0, fee] = await Promise.all([
-        readContract('UniswapV3Pool', 'slot0', [], pair as `0x${string}`),
-        readContract('UniswapV3Pool', 'token0', [], pair as `0x${string}`),
-        readContract('UniswapV3Pool', 'fee', [], pair as `0x${string}`),
+        readContract('UniswapV3Pool', 'slot0', [], nativePool.pair),
+        readContract('UniswapV3Pool', 'token0', [], nativePool.pair),
+        readContract('UniswapV3Pool', 'fee', [], nativePool.pair),
     ])
     const sqrtPriceX96 = BigInt((slot0 as any)[0])
     const sqrtPriceSquared = sqrtPriceX96 * sqrtPriceX96
