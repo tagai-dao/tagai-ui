@@ -857,6 +857,11 @@ const fetchImportedTokenMetadataMap = async (
         }
     }
 
+    // Honor the shared GeckoTerminal backoff while still returning fresh cache
+    // entries collected above. Without this guard, each feed page retries the
+    // batch endpoint immediately after a 429 response.
+    if (Date.now() < geckoRateLimitedUntil) return result
+
     for (let offset = 0; offset < missing.length; offset += 30) {
         const chunk = missing.slice(offset, offset + 30)
         try {

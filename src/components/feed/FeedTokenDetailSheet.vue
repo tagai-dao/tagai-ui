@@ -126,7 +126,7 @@ async function loadData() {
         if (asset.isImport) {
           return { rows: await getExternalTokenChartData(asset.token, rangeSeconds).catch(() => []), external: true }
         }
-        const internalRows = await getTokenTradeData(asset.tick, undefined, true).catch(() => [])
+        const internalRows = await getTokenTradeData(asset.tick, undefined, true).catch(() => []) as CandleRow[]
         if (internalRows?.length) return { rows: internalRows, external: false }
         const fallbackRows = await getExternalTokenChartData(asset.token, rangeSeconds).catch(() => [])
         return { rows: fallbackRows, external: fallbackRows.length > 0 }
@@ -146,7 +146,7 @@ async function loadData() {
 async function selectRange(range: RangeKey) {
   activeRange.value = range
   const asset = props.asset
-  if (!props.modelValue || (!asset?.isImport && !externalChart.value) || !asset.token) return
+  if (!props.modelValue || !asset || (!asset.isImport && !externalChart.value) || !asset.token) return
   const sequence = ++loadSequence
   loading.value = true
   const seconds = ranges.find(item => item.key === range)?.seconds || 0
