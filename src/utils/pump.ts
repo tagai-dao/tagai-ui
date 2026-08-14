@@ -10,12 +10,12 @@ import _ from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
-import { isAddress, zeroAddress, maxUint256, parseEventLogs, checksumAddress, encodeAbiParameters, keccak256, parseEther, type Log } from "viem";
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, encodeAbiParameters, keccak256, parseEther, type Log } from "viem";
 import { writeContract, readContract, resolveContractAddress } from "./contract";
 import { useChainStore } from '@/stores/chain';
 import { getReadOnlyClient } from "./wallets";
-import { buyTokenV4, sellTokenV4, resolveV4PoolId, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
-import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice } from "./rhV4Swap";
+import { buyTokenV4, sellTokenV4, poolKeyToPoolId, resolveV4PoolId, resolveV4PoolKeyForTrade, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
+import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice, resolveRhV4PoolKeyForTrade } from "./rhV4Swap";
 import { findPump9DeploySalt, verifyPump9SaltVanity } from "./pump9Salt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
 
@@ -40,7 +40,246 @@ const getActivePumpAddress = (version: number): string | undefined => {
 }
 
 const Q192 = 2n ** 192n;
-const TOKEN_DECIMALS = 18n;
+const SPOT_PRICE_SCALE = 10n ** 36n;
+const USD_QUOTE_ADDRESSES = new Set(Object.keys(USD_CONTRACTS).map(address => address.toLowerCase()))
+
+type PoolCurrencies = { token0: string; token1: string }
+type QuoteKind = 'native' | 'usd'
+const isValidNativeUsdPrice = (value: number) => Number.isFinite(value) && value > 0
+
+const sameToken = (a: string | undefined, b: string | undefined) =>
+    Boolean(a && b && a.toLowerCase() === b.toLowerCase())
+
+const normalizeTokenDecimals = (value: unknown): number | undefined => {
+    const decimals = Number(value)
+    return Number.isInteger(decimals) && decimals >= 0 && decimals <= 255 ? decimals : undefined
+}
+
+const getPoolQuoteToken = (
+    token: string,
+    token0: string,
+    token1: string,
+): string | undefined => {
+    if (sameToken(token, token0)) return token1
+    if (sameToken(token, token1)) return token0
+    return undefined
+}
+
+const getQuoteKind = (quote: string, wrappedNative: string, chainId: number): QuoteKind | undefined => {
+    if (sameToken(quote, zeroAddress) || sameToken(quote, wrappedNative)) return 'native'
+    // USD_CONTRACTS is the BSC deployment table (USDT/USD1). Do not classify
+    // the same numeric addresses as stablecoins on another product chain.
+    if (chainId === 56 && USD_QUOTE_ADDRESSES.has(quote.toLowerCase())) return 'usd'
+    return undefined
+}
+
+const scaledRatioToNumber = (numerator: bigint, denominator: bigint): number | undefined => {
+    if (numerator <= 0n || denominator <= 0n) return undefined
+    const value = Number(numerator * SPOT_PRICE_SCALE / denominator) / Number(SPOT_PRICE_SCALE)
+    return Number.isFinite(value) && value > 0 ? value : undefined
+}
+
+type QuoteAwareRawSpotParams = PoolCurrencies & {
+    token: string
+    tokenDecimals: number
+    quoteDecimals: number
+    rawToken1PerToken0Numerator: bigint
+    rawToken1PerToken0Denominator: bigint
+    chainId: number
+    wrappedNative: string
+    nativeUsdPrice: number
+}
+
+/**
+ * Convert a pool's raw token1/token0 ratio to native/token display units.
+ * Stablecoin quotes are normalized through nativeUsdPrice; unsupported quote
+ * assets deliberately fail closed instead of being mislabeled as native.
+ */
+const getQuoteAwareRawSpotPrice = ({
+    token,
+    token0,
+    token1,
+    tokenDecimals,
+    quoteDecimals,
+    rawToken1PerToken0Numerator,
+    rawToken1PerToken0Denominator,
+    chainId,
+    wrappedNative,
+    nativeUsdPrice,
+}: QuoteAwareRawSpotParams): number | undefined => {
+    const normalizedTokenDecimals = normalizeTokenDecimals(tokenDecimals)
+    const normalizedQuoteDecimals = normalizeTokenDecimals(quoteDecimals)
+    if (normalizedTokenDecimals === undefined || normalizedQuoteDecimals === undefined) return undefined
+
+    const tokenIs0 = sameToken(token, token0)
+    const tokenIs1 = sameToken(token, token1)
+    if (tokenIs0 === tokenIs1) return undefined
+
+    const quote = tokenIs0 ? token1 : token0
+    const quoteKind = getQuoteKind(quote, wrappedNative, chainId)
+    if (!quoteKind) return undefined
+
+    const tokenScale = 10n ** BigInt(normalizedTokenDecimals)
+    const quoteScale = 10n ** BigInt(normalizedQuoteDecimals)
+    const quotePerToken = tokenIs0
+        ? scaledRatioToNumber(
+            rawToken1PerToken0Numerator * tokenScale,
+            rawToken1PerToken0Denominator * quoteScale,
+        )
+        : scaledRatioToNumber(
+            rawToken1PerToken0Denominator * tokenScale,
+            rawToken1PerToken0Numerator * quoteScale,
+        )
+    if (quotePerToken === undefined) return undefined
+    if (quoteKind === 'native') return quotePerToken
+    return isValidNativeUsdPrice(nativeUsdPrice) ? quotePerToken / nativeUsdPrice : undefined
+}
+
+export type QuoteAwareV3SpotParams = PoolCurrencies & {
+    sqrtPriceX96: bigint
+    token: string
+    tokenDecimals: number
+    quoteDecimals: number
+    chainId: number
+    wrappedNative: string
+    nativeUsdPrice: number
+}
+
+/** Decode a V3/V4 sqrtPriceX96 using the actual pool direction and token decimals. */
+export const getQuoteAwareV3SpotPrice = ({
+    sqrtPriceX96,
+    ...params
+}: QuoteAwareV3SpotParams): number | undefined => {
+    if (sqrtPriceX96 <= 0n) return undefined
+    return getQuoteAwareRawSpotPrice({
+        ...params,
+        rawToken1PerToken0Numerator: sqrtPriceX96 * sqrtPriceX96,
+        rawToken1PerToken0Denominator: Q192,
+    })
+}
+
+const getQuoteAwareV2SpotPrice = (
+    params: Omit<QuoteAwareRawSpotParams, 'rawToken1PerToken0Numerator' | 'rawToken1PerToken0Denominator'> & {
+        reserve0: bigint
+        reserve1: bigint
+    },
+): number | undefined => getQuoteAwareRawSpotPrice({
+    ...params,
+    rawToken1PerToken0Numerator: params.reserve1,
+    rawToken1PerToken0Denominator: params.reserve0,
+})
+
+const currencyDecimalsCache = new Map<string, number>()
+const currencyDecimalsCacheKey = (chainId: number, currency: string) => `${chainId}:${currency.toLowerCase()}`
+
+const cacheCurrencyDecimals = (chainId: number, currency: string, value: unknown): number | undefined => {
+    const decimals = normalizeTokenDecimals(value)
+    if (decimals !== undefined) currencyDecimalsCache.set(currencyDecimalsCacheKey(chainId, currency), decimals)
+    return decimals
+}
+
+const getCachedCurrencyDecimals = (chainId: number, currency: string): number | undefined =>
+    currencyDecimalsCache.get(currencyDecimalsCacheKey(chainId, currency))
+
+type CurrencyDecimalsRead = { address: string; returnKey: string }
+
+const getSupportedErc20QuoteAddresses = (): string[] => {
+    const deployment = useChainStore().deployment
+    const addresses: string[] = [deployment.wrappedNative]
+    if (deployment.chainId === 56) addresses.push(...Object.keys(USD_CONTRACTS))
+    return Array.from(new Map(addresses
+        .filter(address => isAddress(address) && !sameToken(address, zeroAddress))
+        .map(address => [address.toLowerCase(), address])).values())
+}
+
+const appendMissingQuoteDecimalsCalls = (
+    calls: any[],
+    prefix: string,
+    alreadyRead: Set<string> = new Set(),
+    candidates: string[] = getSupportedErc20QuoteAddresses(),
+): CurrencyDecimalsRead[] => {
+    const deployment = useChainStore().deployment
+    const supported = new Set(getSupportedErc20QuoteAddresses().map(address => address.toLowerCase()))
+    const reads: CurrencyDecimalsRead[] = []
+    for (const address of candidates) {
+        const key = address.toLowerCase()
+        if (!supported.has(key)) continue
+        if (alreadyRead.has(key) || getCachedCurrencyDecimals(deployment.chainId, address) !== undefined) continue
+        const returnKey = `${prefix}-quote-${reads.length}-decimals`
+        calls.push({
+            target: address,
+            call: ['decimals()(uint8)'],
+            returns: [[returnKey]],
+        })
+        reads.push({ address, returnKey })
+    }
+    return reads
+}
+
+const cacheQuoteDecimalsReads = (reads: CurrencyDecimalsRead[], data: Record<string, any>) => {
+    const chainId = useChainStore().deployment.chainId
+    for (const read of reads) cacheCurrencyDecimals(chainId, read.address, data[read.returnKey])
+}
+
+type ImportV4Pool = PoolCurrencies & { poolId: `0x${string}` }
+const importV4PoolCache = new Map<string, Promise<ImportV4Pool | undefined>>()
+const importV4PoolFailureUntil = new Map<string, number>()
+const IMPORT_V4_POOL_FAILURE_BACKOFF_MS = 5 * 60 * 1000
+
+const RH_V4_POOL_KEY_ENCODE_TYPES = [{
+    type: 'tuple',
+    components: [
+        { type: 'address', name: 'currency0' },
+        { type: 'address', name: 'currency1' },
+        { type: 'uint24', name: 'fee' },
+        { type: 'int24', name: 'tickSpacing' },
+        { type: 'address', name: 'hooks' },
+    ],
+}] as const
+
+const resolveImportV4PoolUncached = async (pair: string): Promise<ImportV4Pool | undefined> => {
+    const deployment = useChainStore().deployment
+    if (deployment.dex.kind === 'uniswap') {
+        const key = await resolveRhV4PoolKeyForTrade(pair)
+        if (!key) return undefined
+        const storedPoolId = pair.trim().startsWith('0x') && pair.trim().length === 66
+            ? pair.trim() as `0x${string}`
+            : undefined
+        const computedPoolId = keccak256(encodeAbiParameters(RH_V4_POOL_KEY_ENCODE_TYPES, [key]))
+        if (storedPoolId && storedPoolId.toLowerCase() !== computedPoolId.toLowerCase()) return undefined
+        return { poolId: computedPoolId, token0: key.currency0, token1: key.currency1 }
+    }
+
+    const key = await resolveV4PoolKeyForTrade(pair)
+    const storedPoolId = resolveV4PoolId(pair)
+    if (!key || !storedPoolId) return undefined
+    const computedPoolId = poolKeyToPoolId(key)
+    if (storedPoolId.toLowerCase() !== computedPoolId.toLowerCase()) return undefined
+    return { poolId: computedPoolId, token0: key.currency0, token1: key.currency1 }
+}
+
+const resolveImportV4Pool = async (pair: string): Promise<ImportV4Pool | undefined> => {
+    const deployment = useChainStore().deployment
+    const cacheKey = `${deployment.chainId}:${pair.trim().toLowerCase()}`
+    if ((importV4PoolFailureUntil.get(cacheKey) ?? 0) > Date.now()) return undefined
+    const cached = importV4PoolCache.get(cacheKey)
+    if (cached) return cached
+    const loading = resolveImportV4PoolUncached(pair)
+    importV4PoolCache.set(cacheKey, loading)
+    try {
+        const pool = await loading
+        if (pool) importV4PoolFailureUntil.delete(cacheKey)
+        else {
+            importV4PoolCache.delete(cacheKey)
+            importV4PoolFailureUntil.set(cacheKey, Date.now() + IMPORT_V4_POOL_FAILURE_BACKOFF_MS)
+        }
+        return pool
+    } catch (error) {
+        importV4PoolCache.delete(cacheKey)
+        importV4PoolFailureUntil.set(cacheKey, Date.now() + IMPORT_V4_POOL_FAILURE_BACKOFF_MS)
+        throw error
+    }
+}
 
 export const checkTickUsed = async (tick: string) => {
     const created = await isTokenExist(tick);
@@ -428,6 +667,8 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
 
         if (isImport) {
             const deployment = useChainStore().deployment
+            dexVersion = Number(dexVersion)
+            if (dexVersion === 2) await resolveV2NativePair(token)
             if (deployment.dex.kind === 'uniswap' || dexVersion === 3) {
                 const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
                 if (router === zeroAddress) throw new Error(`Uniswap V${dexVersion} router is not configured on ${deployment.name}`)
@@ -442,7 +683,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
                 return writeContract({ contractName: 'TagAISwapWrapper', functionName, args, value: ethAmount })
             }
             // BSC V2 legacy path.
-            const amountOut = await getBuyAmountUseEth(token, ethAmount * 9800n / 10000n);
+            const amountOut = await getImportedV2BuyAmountUseNative(token, ethAmount * 9800n / 10000n);
             const hash = await writeContract({
                 contractName: 'WrapSwaper2',
                 functionName: 'buyToken',
@@ -530,6 +771,8 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
 
         if (isImport) {
             const deployment = useChainStore().deployment
+            dexVersion = Number(dexVersion)
+            if (dexVersion === 2) await resolveV2NativePair(token)
             if (deployment.dex.kind === 'uniswap' || dexVersion === 3) {
                 const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
                 const wrapper = resolveContractAddress('TagAISwapWrapper')
@@ -565,7 +808,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                 }
             }
 
-            const expectedReceive = await getSellAmountUseToken(token, amount);
+            const expectedReceive = await getImportedV2SellAmountUseToken(token, amount);
 
             const hash = await writeContract({
                 contractName: 'WrapSwaper2',
@@ -771,6 +1014,7 @@ const buildPairMap = (items: Array<{ token?: string; pair?: string | null | unde
         // Pump 创建的 V7/V8/V9 代币，或导入代币 dexVersion=4
         if (isPcsV4Version(v) || (v === 10 && item.dexVersion === 4)) {
             pairMap[item.token] = item.pair;
+            pairMap[item.token.toLowerCase()] = item.pair;
         }
     }
     return pairMap;
@@ -919,13 +1163,22 @@ const applyImportedTokenMetadata = (
     item: { token?: string; isImport?: boolean | number; logo?: string; price?: number; marketCap?: number },
     metadataMap: Record<string, ImportedTokenMetadata>,
     nativeUsdPrice: number,
+    onchainPriceSucceeded: boolean,
 ) => {
     if (!item.isImport || !item.token) return
     const metadata = metadataMap[item.token.toLowerCase()]
     if (!metadata) return
     if (!item.logo && metadata.logo) item.logo = metadata.logo
-    if (nativeUsdPrice > 0 && metadata.priceUsd) item.price = metadata.priceUsd / nativeUsdPrice
-    if (nativeUsdPrice > 0 && metadata.fdvUsd) item.marketCap = metadata.fdvUsd / nativeUsdPrice
+    const validNativeUsdPrice = isValidNativeUsdPrice(nativeUsdPrice)
+    // When the selected on-chain pool cannot be normalized, Gecko is the
+    // fallback even if the API item still carries an older, wrongly-scaled
+    // value. If Gecko is unavailable, leave that API value untouched.
+    if (!onchainPriceSucceeded && validNativeUsdPrice && metadata.priceUsd) {
+        item.price = metadata.priceUsd / nativeUsdPrice
+    }
+    if (!onchainPriceSucceeded && validNativeUsdPrice && metadata.fdvUsd) {
+        item.marketCap = metadata.fdvUsd / nativeUsdPrice
+    }
 }
 
 /** GeckoTerminal 聚合 FDV（USD） */
@@ -942,11 +1195,12 @@ const fetchThirdPartyMarketCapMap = async (items: Array<{ token?: string; tick?:
     if (tokens.length === 0) return {} as Record<string, number>
 
     const stateStore = useStateStore()
-    if (stateStore.ethPrice === 0) {
+    if (!isValidNativeUsdPrice(stateStore.ethPrice)) {
         const price: any = await getEthPrice()
-        stateStore.ethPrice = parseFloat(price)
+        const parsed = parseFloat(price)
+        stateStore.ethPrice = isValidNativeUsdPrice(parsed) ? parsed : 0
     }
-    if (stateStore.ethPrice <= 0) return {}
+    if (!isValidNativeUsdPrice(stateStore.ethPrice)) return {}
 
     const entries = await Promise.all(tokens.map(async (token) => {
         const fdv = await getThirdPartyFdvUsd(token)
@@ -978,9 +1232,10 @@ export const getTokenInfo = async (communities: Community[]) => {
     // marketCap 在这里以原生币计价；详情页展示 USD 时会乘该价格。
     // 不能只在第三方市值币种时加载，否则普通币首次打开详情会显示 $0.00。
     const stateStore = useStateStore()
-    if (stateStore.ethPrice <= 0) {
+    if (!isValidNativeUsdPrice(stateStore.ethPrice)) {
         const price: any = await getEthPrice()
-        stateStore.ethPrice = parseFloat(price) || 0
+        const parsed = parseFloat(price)
+        stateStore.ethPrice = isValidNativeUsdPrice(parsed) ? parsed : 0
     }
     let tokens = communities.filter(com => !com.isImport).map(com => com.token)
     let versions: Record<string, number> = {}
@@ -1008,6 +1263,9 @@ export const getTokenInfo = async (communities: Community[]) => {
             community.listed = true
         }
         const tokenInfo = result[community.token]
+        const importInfo = community.isImport && community.token
+            ? importResult[community.token.toLowerCase()]
+            : undefined
         if (tokenInfo) {
             community.listed = tokenInfo.listed;
             community.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
@@ -1019,7 +1277,6 @@ export const getTokenInfo = async (communities: Community[]) => {
             }
             community.totalSupply = TotalSupply;
         } else if (community.isImport) {
-            const importInfo = importResult[community.token]
             community.bondingCurveSupply = 0;
             community.totalClaimedSocialRewards = 0;
             if (importInfo) {
@@ -1028,7 +1285,7 @@ export const getTokenInfo = async (communities: Community[]) => {
                 community.totalSupply = importInfo.totalSupply;
             }
         }
-        applyImportedTokenMetadata(community, importedMetadataMap, stateStore.ethPrice)
+        applyImportedTokenMetadata(community, importedMetadataMap, stateStore.ethPrice, Boolean(importInfo))
         applyThirdPartyMarketCap(community, thirdPartyMarketCapMap)
         // const distribution = JSON.parse(community.distribution);
         // community.distributionEnded = (community.listedDayNumber ?? 0) + 100 < getDayNumber();
@@ -1064,9 +1321,10 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
             fetchImportedTokenMetadataMap(tweets),
             getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap),
             getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap),
-            stateStore.ethPrice == 0
+            !isValidNativeUsdPrice(stateStore.ethPrice)
                 ? getEthPrice().then((price: any) => {
-                    stateStore.ethPrice = parseFloat(price)
+                    const parsed = parseFloat(price)
+                    stateStore.ethPrice = isValidNativeUsdPrice(parsed) ? parsed : 0
                 })
                 : Promise.resolve(),
         ])
@@ -1074,9 +1332,9 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         for( let tweet of tweets) {
             if (!tweet.token) continue
             const tokenInfo = result[tweet.token]
+            const importInfo = tweet.isImport ? importResult[tweet.token.toLowerCase()] : undefined
             if (tweet.isImport) {
                 tweet.listed = true;
-                const importInfo = importResult[tweet.token]
                 tweet.bondingCurveSupply = 0;
                 tweet.totalClaimedSocialRewards = 0;
                 if (importInfo) {
@@ -1094,7 +1352,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                     tweet.pair = tokenInfo.pair;
                 }
             }
-            applyImportedTokenMetadata(tweet, importedMetadataMap, stateStore.ethPrice)
+            applyImportedTokenMetadata(tweet, importedMetadataMap, stateStore.ethPrice, Boolean(importInfo))
             applyThirdPartyMarketCap(tweet, thirdPartyMarketCapMap)
         }
         return tweets;
@@ -1523,45 +1781,138 @@ export const getTokenOnchainInfo = async (
 /** 根据 dexVersion 获取导入代币价格 */
 export const getImportTokenPrice = async (token: string, pair: string, dexVersion: number, pairMap: Record<string, string>, ethPrice: number): Promise<number | undefined> => {
     try {
-        if (dexVersion === 4) {
-            const poolId = resolveV4PoolId(pairMap[token] || pair)
-            if (!poolId) return undefined
-            // RH Uniswap V4 无 getSlot0，走 extsload
-            if (useChainStore().deployment.dex.kind === 'uniswap') {
-                const price = await getRhV4SpotPrice(poolId)
-                return price > 0 ? price : undefined
+        if (!isAddress(token)) return undefined
+        const deployment = useChainStore().deployment
+        const normalizedDexVersion = Number(dexVersion)
+        const cachedTokenDecimals = getCachedCurrencyDecimals(deployment.chainId, token)
+
+        if (normalizedDexVersion === 4) {
+            const source = pairMap[token] || pairMap[token.toLowerCase()] || pair
+            const pool = await resolveImportV4Pool(source)
+            if (!pool || deployment.dex.v4PoolManager === zeroAddress) return undefined
+            const quote = getPoolQuoteToken(token, pool.token0, pool.token1)
+            if (!quote || !getQuoteKind(quote, deployment.wrappedNative, deployment.chainId)) return undefined
+
+            const calls: any[] = deployment.dex.kind === 'uniswap'
+                ? [buildRhV4SqrtPriceMulticall(deployment.dex.v4PoolManager, pool.poolId, 'import-price-sqrt')]
+                : [{
+                    target: deployment.dex.v4PoolManager,
+                    call: ['getSlot0(bytes32)(uint160,int24,uint24,uint24)', pool.poolId],
+                    returns: [['import-price-sqrt', (value: any) => BigInt(value)]],
+                }]
+            if (cachedTokenDecimals === undefined) {
+                calls.push({
+                    target: token,
+                    call: ['decimals()(uint8)'],
+                    returns: [['import-price-token-decimals']],
+                })
             }
-            const slot0 = await readContract('PCSCLPoolManager', 'getSlot0', [poolId])
-            const sqrtPriceX96 = BigInt((slot0 as any)[0])
-            if (sqrtPriceX96 === 0n) return undefined
-            return sqrtPriceX96ToBnbPerToken(sqrtPriceX96)
+            const quoteDecimalsReads = appendMissingQuoteDecimalsCalls(
+                calls,
+                'import-price',
+                cachedTokenDecimals === undefined ? new Set([token.toLowerCase()]) : new Set(),
+                sameToken(quote, zeroAddress) ? [] : [quote],
+            )
+            const data = (await aggregateWithRpcFallback(calls)).results.transformed
+            const tokenDecimals = cachedTokenDecimals
+                ?? cacheCurrencyDecimals(deployment.chainId, token, data['import-price-token-decimals'])
+            cacheQuoteDecimalsReads(quoteDecimalsReads, data)
+            const quoteDecimals = sameToken(quote, zeroAddress)
+                ? deployment.decimals
+                : getCachedCurrencyDecimals(deployment.chainId, quote)
+            if (tokenDecimals === undefined || quoteDecimals === undefined) return undefined
+            return getQuoteAwareV3SpotPrice({
+                sqrtPriceX96: BigInt(data['import-price-sqrt']),
+                token,
+                token0: pool.token0,
+                token1: pool.token1,
+                tokenDecimals,
+                quoteDecimals,
+                chainId: deployment.chainId,
+                wrappedNative: deployment.wrappedNative,
+                nativeUsdPrice: ethPrice,
+            })
         }
-        if (dexVersion === 3) {
-            const [slot0, token0] = await Promise.all([
-                readContract('UniswapV3Pool', 'slot0', [], pair as `0x${string}`),
-                readContract('UniswapV3Pool', 'token0', [], pair as `0x${string}`),
-            ])
-            const sqrtPriceX96 = BigInt((slot0 as any)[0])
-            if (sqrtPriceX96 === 0n) return undefined
-            const scaledPrice = (sqrtPriceX96 * sqrtPriceX96 * (10n ** TOKEN_DECIMALS)) / Q192;
-            let price = Number(scaledPrice) / 1e18
-            if ((token0 as string).toLowerCase() !== token.toLowerCase()) {
-                price = price > 0 ? 1 / price : 0
-            }
-            return price
+
+        if ((normalizedDexVersion !== 2 && normalizedDexVersion !== 3) || !isAddress(pair)) return undefined
+        const calls: any[] = normalizedDexVersion === 3
+            ? [{
+                target: pair,
+                call: ['slot0()(uint160,int24,uint16,uint16,uint16,uint8,bool)'],
+                returns: [['import-price-sqrt', (value: any) => BigInt(value)]],
+            }]
+            : [{
+                target: pair,
+                call: ['getReserves()(uint256,uint256)'],
+                returns: [
+                    ['import-price-r0', (value: any) => BigInt(value)],
+                    ['import-price-r1', (value: any) => BigInt(value)],
+                ],
+            }]
+        calls.push(
+            {
+                target: pair,
+                call: ['token0()(address)'],
+                returns: [['import-price-token0']],
+            },
+            {
+                target: pair,
+                call: ['token1()(address)'],
+                returns: [['import-price-token1']],
+            },
+        )
+        if (cachedTokenDecimals === undefined) {
+            calls.push({
+                target: token,
+                call: ['decimals()(uint8)'],
+                returns: [['import-price-token-decimals']],
+            })
         }
-        // dexVersion === 2: UniswapV2 pair getReserves
-        const [reserves, token0] = await Promise.all([
-            readContract('UniswapV2Pair', 'getReserves', [], pair as `0x${string}`),
-            readContract('UniswapV2Pair', 'token0', [], pair as `0x${string}`),
-        ])
-        const r0 = Number((reserves as any)[0]) / 1e18
-        const r1 = Number((reserves as any)[1]) / 1e18
-        const price = (token0 as string).toLowerCase() === token.toLowerCase() ? r1 / r0 : r0 / r1
-        const pairedToken = (token0 as string).toLowerCase() === token.toLowerCase()
-            ? (await readContract('UniswapV2Pair', 'token1', [], pair as `0x${string}`)) as string
-            : token0 as string
-        return USD_CONTRACTS[checksumAddress(pairedToken as `0x${string}`) as `0x${string}`] ? price / ethPrice : price
+        const quoteDecimalsReads = appendMissingQuoteDecimalsCalls(
+            calls,
+            'import-price',
+            cachedTokenDecimals === undefined ? new Set([token.toLowerCase()]) : new Set(),
+        )
+        const data = (await aggregateWithRpcFallback(calls)).results.transformed
+        const token0 = data['import-price-token0'] as string | undefined
+        const token1 = data['import-price-token1'] as string | undefined
+        const tokenDecimals = cachedTokenDecimals
+            ?? cacheCurrencyDecimals(deployment.chainId, token, data['import-price-token-decimals'])
+        cacheQuoteDecimalsReads(quoteDecimalsReads, data)
+        if (!token0 || !token1 || tokenDecimals === undefined) return undefined
+        const quote = getPoolQuoteToken(token, token0, token1)
+        if (!quote || !getQuoteKind(quote, deployment.wrappedNative, deployment.chainId)) return undefined
+        const quoteDecimals = sameToken(quote, zeroAddress)
+            ? deployment.decimals
+            : getCachedCurrencyDecimals(deployment.chainId, quote)
+        if (quoteDecimals === undefined) return undefined
+
+        if (normalizedDexVersion === 3) {
+            return getQuoteAwareV3SpotPrice({
+                sqrtPriceX96: BigInt(data['import-price-sqrt']),
+                token,
+                token0,
+                token1,
+                tokenDecimals,
+                quoteDecimals,
+                chainId: deployment.chainId,
+                wrappedNative: deployment.wrappedNative,
+                nativeUsdPrice: ethPrice,
+            })
+        }
+
+        return getQuoteAwareV2SpotPrice({
+            reserve0: BigInt(data['import-price-r0']),
+            reserve1: BigInt(data['import-price-r1']),
+            token,
+            token0,
+            token1,
+            tokenDecimals,
+            quoteDecimals,
+            chainId: deployment.chainId,
+            wrappedNative: deployment.wrappedNative,
+            nativeUsdPrice: ethPrice,
+        })
     } catch (e) {
         console.error('getImportTokenPrice failed', token, dexVersion, e)
         return undefined
@@ -1579,9 +1930,10 @@ export const getImportTokenOnchainInfo = async (
     if (communities.length === 0) return {} as Record<string, { price: number; totalSupply: number }>
 
     const stateStore = useStateStore()
-    if (stateStore.ethPrice == 0) {
+    if (!isValidNativeUsdPrice(stateStore.ethPrice)) {
         const price: any = await getEthPrice()
-        stateStore.ethPrice = parseFloat(price)
+        const parsed = parseFloat(price)
+        stateStore.ethPrice = isValidNativeUsdPrice(parsed) ? parsed : 0
     }
     const ethPrice = stateStore.ethPrice
 
@@ -1590,49 +1942,65 @@ export const getImportTokenOnchainInfo = async (
     const byToken = new Map<string, ImportMeta>()
     for (const c of communities) {
         if (!c.token || !isAddress(c.token) || !c.pair) continue
+        const dexVersion = Number(c.dexVersion ?? 2)
+        if (![2, 3, 4].includes(dexVersion)) continue
+        if (dexVersion !== 4 && !isAddress(c.pair)) continue
         const key = c.token.toLowerCase()
         if (byToken.has(key)) continue
         byToken.set(key, {
             token: c.token,
             pair: c.pair,
-            dexVersion: c.dexVersion ?? 2,
+            dexVersion,
         })
     }
     if (byToken.size === 0) return {}
 
     const metas = Array.from(byToken.values())
-    const v4PoolManager = useChainStore().deployment.dex.v4PoolManager
+    const deployment = useChainStore().deployment
+    const v4PoolManager = deployment.dex.v4PoolManager
+    const v4Pools = new Map<string, ImportV4Pool>()
+    await Promise.all(metas.filter(meta => meta.dexVersion === 4).map(async meta => {
+        try {
+            const pool = await resolveImportV4Pool(pairMap[meta.token] || pairMap[meta.token.toLowerCase()] || meta.pair)
+            if (pool) v4Pools.set(meta.token.toLowerCase(), pool)
+        } catch (error) {
+            console.warn('[getImportTokenOnchainInfo] V4 PoolKey lookup failed', meta.token, error)
+        }
+    }))
     const calls: any[] = []
+    const targetDecimalsReadTokens = new Set<string>()
 
     for (const m of metas) {
         const { token, pair, dexVersion } = m
-        // ERC20：只要 totalSupply + decimals（symbol 展示不依赖这里）
-        calls.push(
-            {
-                target: token,
-                call: ['totalSupply()(uint256)'],
-                returns: [[`${token}-totalSupply`]],
-            },
-            {
+        // ERC20：只要 totalSupply + decimals（symbol 展示不依赖这里）。
+        // decimals immutable，热路径直接复用 module cache。
+        calls.push({
+            target: token,
+            call: ['totalSupply()(uint256)'],
+            returns: [[`${token}-totalSupply`]],
+        })
+        if (getCachedCurrencyDecimals(deployment.chainId, token) === undefined) {
+            calls.push({
                 target: token,
                 call: ['decimals()(uint8)'],
                 returns: [[`${token}-decimals`]],
-            },
-        )
+            })
+            targetDecimalsReadTokens.add(token.toLowerCase())
+        }
 
         if (dexVersion === 4) {
-            const poolId = resolveV4PoolId(pairMap[token] || pair)
-            if (poolId && v4PoolManager) {
-                if (useChainStore().deployment.dex.kind === 'uniswap') {
+            const pool = v4Pools.get(token.toLowerCase())
+            if (pool && v4PoolManager !== zeroAddress) {
+                if (deployment.dex.kind === 'uniswap') {
                     calls.push(buildRhV4SqrtPriceMulticall(
                         v4PoolManager,
-                        poolId,
+                        pool.poolId,
                         `${token}-sqrtPriceX96`,
                     ))
                 } else {
                     calls.push({
                         target: v4PoolManager,
-                        call: ['getSlot0(bytes32)(uint160,int24,uint24,uint24)', poolId],
+                        call: ['getSlot0(bytes32)(uint160,int24,uint24,uint24)', pool.poolId],
                         returns: [
                             [`${token}-sqrtPriceX96`, (val: any) => BigInt(val)],
                             [`${token}-tick`],
@@ -1662,16 +2030,21 @@ export const getImportTokenOnchainInfo = async (
                     call: ['token0()(address)'],
                     returns: [[`${token}-token0`]],
                 },
+                {
+                    target: pair,
+                    call: ['token1()(address)'],
+                    returns: [[`${token}-token1`]],
+                },
             )
-        } else {
+        } else if (dexVersion === 2) {
             // Uniswap V2 / Pancake V2
             calls.push(
                 {
                     target: pair,
                     call: ['getReserves()(uint256,uint256)'],
                     returns: [
-                        [`${token}-r0`, (val: any) => Number(val.toString()) / 1e18],
-                        [`${token}-r1`, (val: any) => Number(val.toString()) / 1e18],
+                        [`${token}-r0`, (val: any) => BigInt(val)],
+                        [`${token}-r1`, (val: any) => BigInt(val)],
                     ],
                 },
                 {
@@ -1688,76 +2061,95 @@ export const getImportTokenOnchainInfo = async (
         }
     }
 
+    // Include missing immutable quote decimals in the same pool snapshot.
+    const quoteDecimalsReads = appendMissingQuoteDecimalsCalls(
+        calls,
+        'import-batch',
+        targetDecimalsReadTokens,
+    )
+
     let data: Record<string, any> = {}
     try {
         const res = await aggregateWithRpcFallback(calls)
         data = res.results.transformed
     } catch (e) {
-        console.warn('[getImportTokenOnchainInfo] multicall failed, fallback per-token', e)
-        // 降级：仍按去重后的 token 并行（不再按推文条数串行）
-        const entries = await Promise.all(
-            metas.map(async (m) => {
-                try {
-                    const [price, erc20Info] = await Promise.all([
-                        getImportTokenPrice(m.token, m.pair, m.dexVersion, pairMap, ethPrice),
-                        getTokenERC20Info(m.token),
-                    ])
-                    if (price === undefined) return null
-                    return [m.token, { price, totalSupply: erc20Info.totalSupply }] as const
-                } catch {
-                    return null
-                }
-            }),
-        )
-        return Object.fromEntries(entries.filter(Boolean) as Array<readonly [string, { price: number; totalSupply: number }]>)
+        // aggregateWithRpcFallback already tried each configured RPC. Avoid an
+        // N-token request storm; callers retain their API/Gecko fallback data.
+        console.warn('[getImportTokenOnchainInfo] multicall failed; chain quote unavailable', e)
+        return {}
     }
+
+    const getCurrenciesForMeta = (meta: ImportMeta): PoolCurrencies | undefined => {
+        if (meta.dexVersion === 4) return v4Pools.get(meta.token.toLowerCase())
+        const token0 = data[`${meta.token}-token0`] as string | undefined
+        const token1 = data[`${meta.token}-token1`] as string | undefined
+        return token0 && token1 ? { token0, token1 } : undefined
+    }
+
+    for (const meta of metas) {
+        cacheCurrencyDecimals(deployment.chainId, meta.token, data[`${meta.token}-decimals`])
+    }
+    cacheQuoteDecimalsReads(quoteDecimalsReads, data)
 
     const result: Record<string, { price: number; totalSupply: number }> = {}
     for (const m of metas) {
         const { token, dexVersion } = m
-        const decimals = Number(data[`${token}-decimals`] ?? 18)
+        const decimals = normalizeTokenDecimals(data[`${token}-decimals`])
+            ?? getCachedCurrencyDecimals(deployment.chainId, token)
         const supplyRaw = data[`${token}-totalSupply`]
-        if (supplyRaw == null) continue
+        if (decimals === undefined || supplyRaw == null) continue
         const totalSupply = Number(supplyRaw.toString()) / 10 ** decimals
 
         let price: number | undefined
         try {
-            if (dexVersion === 4) {
+            const currencies = getCurrenciesForMeta(m)
+            if (!currencies) continue
+            const quote = getPoolQuoteToken(token, currencies.token0, currencies.token1)
+            if (!quote || !getQuoteKind(quote, deployment.wrappedNative, deployment.chainId)) continue
+            const quoteTokenDecimals = sameToken(quote, zeroAddress)
+                ? deployment.decimals
+                : getCachedCurrencyDecimals(deployment.chainId, quote)
+            if (quoteTokenDecimals === undefined) continue
+
+            if (dexVersion === 4 || dexVersion === 3) {
                 const sqrt = data[`${token}-sqrtPriceX96`]
-                if (sqrt !== undefined && BigInt(sqrt) !== 0n) {
-                    price = sqrtPriceX96ToBnbPerToken(BigInt(sqrt))
+                if (sqrt !== undefined) {
+                    price = getQuoteAwareV3SpotPrice({
+                        sqrtPriceX96: BigInt(sqrt),
+                        token,
+                        token0: currencies.token0,
+                        token1: currencies.token1,
+                        tokenDecimals: decimals,
+                        quoteDecimals: quoteTokenDecimals,
+                        chainId: deployment.chainId,
+                        wrappedNative: deployment.wrappedNative,
+                        nativeUsdPrice: ethPrice,
+                    })
                 }
-            } else if (dexVersion === 3) {
-                const sqrt = data[`${token}-sqrtPriceX96`]
-                const token0 = data[`${token}-token0`] as string | undefined
-                if (sqrt !== undefined && BigInt(sqrt) !== 0n && token0) {
-                    const scaledPrice = (BigInt(sqrt) * BigInt(sqrt) * 10n ** TOKEN_DECIMALS) / Q192
-                    let p = Number(scaledPrice) / 1e18
-                    if (token0.toLowerCase() !== token.toLowerCase()) {
-                        p = p > 0 ? 1 / p : 0
-                    }
-                    price = p
-                }
-            } else {
-                const r0 = data[`${token}-r0`] as number | undefined
-                const r1 = data[`${token}-r1`] as number | undefined
-                const token0 = data[`${token}-token0`] as string | undefined
-                const token1 = data[`${token}-token1`] as string | undefined
-                if (r0 != null && r1 != null && token0 && r0 > 0 && r1 > 0) {
-                    let p = token0.toLowerCase() === token.toLowerCase() ? r1 / r0 : r0 / r1
-                    const paired = token0.toLowerCase() === token.toLowerCase() ? token1 : token0
-                    if (paired && USD_CONTRACTS[checksumAddress(paired as `0x${string}`) as `0x${string}`]) {
-                        p = ethPrice > 0 ? p / ethPrice : p
-                    }
-                    price = p
+            } else if (dexVersion === 2) {
+                const reserve0 = data[`${token}-r0`]
+                const reserve1 = data[`${token}-r1`]
+                if (reserve0 != null && reserve1 != null) {
+                    price = getQuoteAwareV2SpotPrice({
+                        reserve0: BigInt(reserve0),
+                        reserve1: BigInt(reserve1),
+                        token,
+                        token0: currencies.token0,
+                        token1: currencies.token1,
+                        tokenDecimals: decimals,
+                        quoteDecimals: quoteTokenDecimals,
+                        chainId: deployment.chainId,
+                        wrappedNative: deployment.wrappedNative,
+                        nativeUsdPrice: ethPrice,
+                    })
                 }
             }
         } catch (e) {
             console.warn('[getImportTokenOnchainInfo] decode failed', token, e)
         }
 
-        if (price !== undefined && Number.isFinite(price)) {
-            result[token] = { price, totalSupply }
+        if (price !== undefined && Number.isFinite(price) && price > 0 && Number.isFinite(totalSupply) && totalSupply > 0) {
+            result[token.toLowerCase()] = { price, totalSupply }
         }
     }
 
@@ -1851,6 +2243,76 @@ export const getBuyAmountUseEth = async (token: string, ethAmount: BigInt) => {
 export const getSellAmountUseToken = async (token: string, tokenAmount: BigInt) => {
     const amount: any = await readContract('UniswapRouter', 'getAmountsOut', [tokenAmount, [token, WETH]]);
     return amount[amount.length - 1] * 9800n / 10000n;
+}
+
+const V2_FACTORY_LOOKUP_ABI = [{
+    type: 'function',
+    name: 'getPair',
+    stateMutability: 'view',
+    inputs: [{ type: 'address' }, { type: 'address' }],
+    outputs: [{ type: 'address' }],
+}] as const
+
+const v2NativePairCache = new Map<string, Promise<`0x${string}`>>()
+const v2NativePairFailureUntil = new Map<string, number>()
+const V2_NATIVE_PAIR_FAILURE_BACKOFF_MS = 5 * 60 * 1000
+
+/** Resolve the actual TOKEN/wrapped-native V2 pair used by the one-hop trade path. */
+export const resolveV2NativePair = async (token: string): Promise<`0x${string}`> => {
+    if (!isAddress(token)) throw new Error('Valid token address is required')
+    const deployment = useChainStore().deployment
+    if (deployment.dex.v2Factory === zeroAddress) {
+        throw new Error(`V2 factory is not configured on ${deployment.name}`)
+    }
+    const cacheKey = `${deployment.chainId}:${token.toLowerCase()}`
+    if ((v2NativePairFailureUntil.get(cacheKey) ?? 0) > Date.now()) {
+        throw new Error('No TOKEN/wrapped-native V2 pool is available')
+    }
+    const cached = v2NativePairCache.get(cacheKey)
+    if (cached) return cached
+
+    const loading = (async () => {
+        const pair = await getReadOnlyClient().readContract({
+            address: deployment.dex.v2Factory,
+            abi: V2_FACTORY_LOOKUP_ABI,
+            functionName: 'getPair',
+            args: [token, deployment.wrappedNative],
+        })
+        if (pair === zeroAddress) throw new Error('No TOKEN/wrapped-native V2 pool is available')
+        return pair
+    })()
+    v2NativePairCache.set(cacheKey, loading)
+    try {
+        const pair = await loading
+        v2NativePairFailureUntil.delete(cacheKey)
+        return pair
+    } catch (error) {
+        v2NativePairCache.delete(cacheKey)
+        v2NativePairFailureUntil.set(cacheKey, Date.now() + V2_NATIVE_PAIR_FAILURE_BACKOFF_MS)
+        throw error
+    }
+}
+
+export const getImportedV2BuyAmountUseNative = async (token: string, nativeAmount: bigint) => {
+    await resolveV2NativePair(token)
+    const deployment = useChainStore().deployment
+    const amounts = await readContract(
+        'UniswapRouter',
+        'getAmountsOut',
+        [nativeAmount, [deployment.wrappedNative, token]],
+    ) as bigint[]
+    return amounts[amounts.length - 1]
+}
+
+export const getImportedV2SellAmountUseToken = async (token: string, tokenAmount: bigint) => {
+    await resolveV2NativePair(token)
+    const deployment = useChainStore().deployment
+    const amounts = await readContract(
+        'UniswapRouter',
+        'getAmountsOut',
+        [tokenAmount, [token, deployment.wrappedNative]],
+    ) as bigint[]
+    return amounts[amounts.length - 1] * 9800n / 10000n
 }
 
 const V3_POOL_LOOKUP_ABI = [

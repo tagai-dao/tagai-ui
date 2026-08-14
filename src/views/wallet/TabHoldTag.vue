@@ -114,14 +114,14 @@ const onRefresh = async () => {
         price: priceList[item.token]?.price
       })).concat(importedCommunities.map((item: any) => ({
         ...item,
-        price: importedPriceList[item.token]?.price
+        price: importedPriceList[item.token.toLowerCase()]?.price
       }))).sort((a: any, b: any) => (b.amount?.toString() as any) * b.price - (a.amount?.toString() as any) * a.price)
     
       updateHoldingValue(accStore.tokenHoldingList);
     } else {
       accStore.tokenHoldingList = importedCommunities.map((item: any) => ({
         ...item,
-        price: importedPriceList[item.token]?.price
+        price: importedPriceList[item.token.toLowerCase()]?.price
       }))
       updateHoldingValue(accStore.tokenHoldingList);
       finished.value = true

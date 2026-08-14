@@ -56,6 +56,16 @@ export type PoolKey = {
     parameters: `0x${string}`;
 }
 
+/** PCS one-hop helpers settle msg.value, so only native-BNB/token pools are valid. */
+export const assertDirectNativeTokenPool = (poolKey: PoolKey, expectedToken: string) => {
+    if (!isAddress(expectedToken)
+        || poolKey.currency0.toLowerCase() !== zeroAddress.toLowerCase()
+        || poolKey.currency1.toLowerCase() !== expectedToken.toLowerCase()
+        || poolKey.poolManager.toLowerCase() !== PCSCLPoolManager.toLowerCase()) {
+        throw new Error('Selected V4 pool is not a direct native/token pool; multi-hop trading is unsupported')
+    }
+}
+
 const POOL_KEY_ENCODE_TYPES = [{
     type: 'tuple',
     components: [
@@ -277,11 +287,13 @@ const buildInfiSwapPayload = (
  */
 export const buyTokenV4 = async (
     poolKey: PoolKey,
+    token: `0x${string}`,
     ethAmount: bigint,
     minTokenOut: bigint,
     sellsman: `0x${string}` | undefined | null,
     slippage: number = 0
 ): Promise<string> => {
+    assertDirectNativeTokenPool(poolKey, token)
     const hookData = encodeHookData(sellsman);
     
     // Apply slippage to minTokenOut
@@ -340,6 +352,8 @@ export const sellTokenV4 = async (
     sellsman: `0x${string}` | undefined | null,
     slippage: number = 0
 ): Promise<string> => {
+    // Reject unsupported stable/token pools before approval or wallet signing.
+    assertDirectNativeTokenPool(poolKey, token)
     const account = useAccountStore().ethConnectAddress as `0x${string}`;
     
     // Step 1: Ensure token is approved to Permit2
@@ -565,6 +579,9 @@ const quoteV4ExactInputSingle = async (
     exactAmount: bigint,
     sellsman?: `0x${string}` | null | undefined,
 ): Promise<bigint> => {
+    if (poolKey.currency0.toLowerCase() !== zeroAddress.toLowerCase()) {
+        throw new Error('Selected V4 pool is not native-quoted; multi-hop quoting is unsupported')
+    }
     if (exactAmount <= 0n) return 0n
     const publicClient = getReadOnlyClient()
     const hookData = encodeHookData(sellsman)
@@ -603,9 +620,11 @@ const getV4BuyQuoteSpot = (sqrtPriceX96: bigint, lpFee: number, ethAmount: bigin
  */
 export const getV4BuyQuote = async (
     poolKey: PoolKey,
+    token: `0x${string}`,
     ethAmount: bigint,
     sellsman?: `0x${string}` | null | undefined,
 ): Promise<bigint> => {
+    assertDirectNativeTokenPool(poolKey, token)
     return quoteV4ExactInputSingle(poolKey, true, ethAmount, sellsman)
 }
 
@@ -614,29 +633,33 @@ export const getV4BuyQuote = async (
  */
 export const getV4SellQuote = async (
     poolKey: PoolKey,
+    token: `0x${string}`,
     tokenAmount: bigint,
     sellsman?: `0x${string}` | null | undefined,
 ): Promise<bigint> => {
+    assertDirectNativeTokenPool(poolKey, token)
     return quoteV4ExactInputSingle(poolKey, false, tokenAmount, sellsman)
 }
 
 /** poolId 入口：先反查 PoolKey 再询价 */
 export const getV4BuyQuoteByPoolId = async (
     poolId: `0x${string}`,
+    token: `0x${string}`,
     ethAmount: bigint,
     sellsman?: `0x${string}` | null | undefined,
 ) => {
     const poolKey = await getV4PoolKeyByPoolId(poolId)
-    return getV4BuyQuote(poolKey, ethAmount, sellsman)
+    return getV4BuyQuote(poolKey, token, ethAmount, sellsman)
 }
 
 export const getV4SellQuoteByPoolId = async (
     poolId: `0x${string}`,
+    token: `0x${string}`,
     tokenAmount: bigint,
     sellsman?: `0x${string}` | null | undefined,
 ) => {
     const poolKey = await getV4PoolKeyByPoolId(poolId)
-    return getV4SellQuote(poolKey, tokenAmount, sellsman)
+    return getV4SellQuote(poolKey, token, tokenAmount, sellsman)
 }
 
 /** sqrtPriceX96 → BNB/Token（池子 currency0=BNB, currency1=Token） */

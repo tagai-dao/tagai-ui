@@ -127,7 +127,7 @@ function updateReward() {
         const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
 
         for (let t of list) {
-          t.price = (list1[t.token]?.price ?? list2[t.token]?.price ?? 0) * useStateStore().ethPrice;
+          t.price = (list1[t.token]?.price ?? list2[t.token.toLowerCase()]?.price ?? 0) * useStateStore().ethPrice;
         }
 
         claimableRewards.value = list
@@ -153,7 +153,7 @@ function updateReward() {
         const list2 = await getImportTokenOnchainInfo(list.filter((l: any) => l.isImport))
 
         for (let t of list) {
-          t.price = (list1[t.token]?.price ?? list2[t.token]?.price ?? 0) * useStateStore().ethPrice;
+          t.price = (list1[t.token]?.price ?? list2[t.token.toLowerCase()]?.price ?? 0) * useStateStore().ethPrice;
         }
 
         unclaimableRewards.value = list

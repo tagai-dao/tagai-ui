@@ -13,8 +13,10 @@ import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
   getBuyAmountUseEth, getSellAmountUseToken, getV3BuyAmountUseEth, getV3SellAmountUseToken,
+  getImportedV2BuyAmountUseNative, getImportedV2SellAmountUseToken,
   getBuyPriceAfterFee,
-  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice, resolveV3NativePool
+  getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice,
+  resolveV2NativePair, resolveV3NativePool
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
@@ -321,13 +323,21 @@ const updateBuyAmount = debounce(async (val: any) => {
         if (!poolKey) throw new Error('invalid V4 pool')
         const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
         const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
-        receive = await getV4BuyQuote(poolKey, amount, sellsman)
-        try { spot = await getV4SpotPrice(poolId) } catch (e) { console.warn('getV4SpotPrice failed', e) }
+        receive = await getV4BuyQuote(poolKey, community!.token as `0x${string}`, amount, sellsman)
+        try {
+          spot = community?.isImport
+            ? await getImportTokenPrice(community.token!, JSON.stringify(poolKey), 4, {}, stateStore.ethPrice) ?? 0
+            : await getV4SpotPrice(poolId)
+        } catch (e) { console.warn('getV4SpotPrice failed', e) }
       }
-    } else if (community?.isImport && community.dexVersion === 3) {
+    } else if (community?.isImport && Number(community.dexVersion) === 3) {
       receive = await getV3BuyAmountUseEth(community.token!, community.pair!, amount * 9800n / 10000n)
       const nativePool = await resolveV3NativePool(community.token!, community.pair!)
       spot = await getImportTokenPrice(community.token!, nativePool.pair, 3, {}, stateStore.ethPrice) ?? 0
+    } else if (community?.isImport && Number(community.dexVersion ?? 2) === 2) {
+      const nativePair = await resolveV2NativePair(community.token!)
+      receive = await getImportedV2BuyAmountUseNative(community.token!, amount * 9800n / 10000n)
+      spot = await getImportTokenPrice(community.token!, nativePair, 2, {}, stateStore.ethPrice) ?? 0
     } else {
       receive = await getBuyAmountUseEth(community!.token, amount * 9800n / 10000n)
       try {
@@ -414,13 +424,21 @@ const updateSellAmount = debounce(async (val: any) => {
           if (!poolKey) throw new Error('invalid V4 pool')
           const poolId = resolveV4PoolId(community!.pair) ?? poolKeyToPoolId(poolKey)
           const sellsman = (stateStore.sellsman ?? community!.ipshare) as `0x${string}` | undefined
-          receive = await getV4SellQuote(poolKey, amount, sellsman)
-          try { spot = await getV4SpotPrice(poolId) } catch (e) { console.warn('getV4SpotPrice failed', e) }
+          receive = await getV4SellQuote(poolKey, community!.token as `0x${string}`, amount, sellsman)
+          try {
+            spot = community?.isImport
+              ? await getImportTokenPrice(community.token!, JSON.stringify(poolKey), 4, {}, stateStore.ethPrice) ?? 0
+              : await getV4SpotPrice(poolId)
+          } catch (e) { console.warn('getV4SpotPrice failed', e) }
         }
-      } else if (community?.isImport && community.dexVersion === 3) {
+      } else if (community?.isImport && Number(community.dexVersion) === 3) {
         receive = await getV3SellAmountUseToken(community.token!, community.pair!, amount)
         const nativePool = await resolveV3NativePool(community.token!, community.pair!)
         spot = await getImportTokenPrice(community.token!, nativePool.pair, 3, {}, stateStore.ethPrice) ?? 0
+      } else if (community?.isImport && Number(community.dexVersion ?? 2) === 2) {
+        const nativePair = await resolveV2NativePair(community.token!)
+        receive = await getImportedV2SellAmountUseToken(community.token!, amount)
+        spot = await getImportTokenPrice(community.token!, nativePair, 2, {}, stateStore.ethPrice) ?? 0
       } else {
         receive = await getSellAmountUseToken(community!.token, amount)
         try {
@@ -575,12 +593,15 @@ async function confirm() {
         } else {
           const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
           if (!poolKey) throw new Error('invalid V4 pool')
-          hash = await buyTokenV4(poolKey, ethAmount, receiveAmount.value ?? 0n,
+          hash = await buyTokenV4(poolKey, token.token as `0x${string}`, ethAmount, receiveAmount.value ?? 0n,
             (stateStore.sellsman ?? token.ipshare) as `0x${string}`, Math.ceil(maxSlippage.value * 100));
         }
       } else {
         // check list
-        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, token!.pair);
+        const tradePair = token.isImport && Number(token.dexVersion ?? 2) === 2
+          ? await resolveV2NativePair(token.token!)
+          : token.pair
+        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, tradePair);
       }
       if (hash) {
         payEth.value = ''
@@ -618,7 +639,10 @@ async function confirm() {
             Math.ceil(maxSlippage.value * 100));
         }
       } else {
-        hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, token!.pair);
+        const tradePair = token.isImport && Number(token.dexVersion ?? 2) === 2
+          ? await resolveV2NativePair(token.token!)
+          : token.pair
+        hash = await sellToken(token!.token, token!.version ?? 4, finalSellAmount, receiveEth.value, (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, tradePair);
       }
       if (hash) {
         sellAmount.value = ''
