@@ -80,11 +80,24 @@ export const isMultiOutcomeEventFactory = (factoryVersion?: number | null) =>
 
 type OutcomePositionSpec = { outcomeIndex: number; positionId: string; label?: string }
 
+/** API 中的历史市场可能没有 position id，不能把 null/空字符串交给 ABI uint256 编码器。 */
+export const isValidPositionId = (value: unknown): value is string => {
+    if (typeof value !== 'string') return false
+    const normalized = value.trim()
+    if (!/^(?:0x[0-9a-fA-F]+|[0-9]+)$/.test(normalized)) return false
+    try {
+        const positionId = BigInt(normalized)
+        return positionId >= 0n && positionId <= maxUint256
+    } catch {
+        return false
+    }
+}
+
 /** 多元市场：从 API outcomes 收集带 positionId 的槽位 */
 export const resolveMultiOutcomePositions = (event: EventPredictData) => {
     const allOutcomes = getOutcomeList(event)
     const withPosition = allOutcomes
-        .filter(o => o.positionId?.trim())
+        .filter(o => isValidPositionId(o.positionId))
         .map(o => ({
             outcomeIndex: o.outcomeIndex,
             positionId: o.positionId!.trim(),
@@ -315,16 +328,20 @@ export const getEventMarketInfos = async (market: EventPredictData): Promise<Eve
             })
         }
     } else if (!isMulti) {
-        calls.push({
-            target: ConditionalTokens,
-            call: ['balanceOf(address,uint256)(uint256)', market.marketMaker, market.positionAID],
-            returns: [[market.marketMaker + '-priceA', (val: any) => val / 1e18]]
-        })
-        calls.push({
-            target: ConditionalTokens,
-            call: ['balanceOf(address,uint256)(uint256)', market.marketMaker, market.positionBID],
-            returns: [[market.marketMaker + '-priceB', (val: any) => val / 1e18]]
-        })
+        if (isValidPositionId(market.positionAID)) {
+            calls.push({
+                target: ConditionalTokens,
+                call: ['balanceOf(address,uint256)(uint256)', market.marketMaker, market.positionAID.trim()],
+                returns: [[market.marketMaker + '-priceA', (val: any) => val / 1e18]]
+            })
+        }
+        if (isValidPositionId(market.positionBID)) {
+            calls.push({
+                target: ConditionalTokens,
+                call: ['balanceOf(address,uint256)(uint256)', market.marketMaker, market.positionBID.trim()],
+                returns: [[market.marketMaker + '-priceB', (val: any) => val / 1e18]]
+            })
+        }
     }
     calls.push({
         target: market.marketMaker,
@@ -382,28 +399,32 @@ export const getMarketInfos = async (markets: BattleData[] | EventPredictData[])
                 })
             }
         } else if (!isMulti) {
-            calls.push({
-                target: ConditionalTokens,
-                call: [
-                    'balanceOf(address,uint256)(uint256)',
-                    market.marketMaker,
-                    market.positionAID,
-                ],
-                returns: [
-                    [market.marketMaker + '-priceA', (val: any) => val / 1e18],
-                ],
-            })
-            calls.push({
-                target: ConditionalTokens,
-                call: [
-                    'balanceOf(address,uint256)(uint256)',
-                    market.marketMaker,
-                    market.positionBID,
-                ],
-                returns: [
-                    [market.marketMaker + '-priceB', (val: any) => val / 1e18],
-                ],
-            })
+            if (isValidPositionId(market.positionAID)) {
+                calls.push({
+                    target: ConditionalTokens,
+                    call: [
+                        'balanceOf(address,uint256)(uint256)',
+                        market.marketMaker,
+                        market.positionAID.trim(),
+                    ],
+                    returns: [
+                        [market.marketMaker + '-priceA', (val: any) => val / 1e18],
+                    ],
+                })
+            }
+            if (isValidPositionId(market.positionBID)) {
+                calls.push({
+                    target: ConditionalTokens,
+                    call: [
+                        'balanceOf(address,uint256)(uint256)',
+                        market.marketMaker,
+                        market.positionBID.trim(),
+                    ],
+                    returns: [
+                        [market.marketMaker + '-priceB', (val: any) => val / 1e18],
+                    ],
+                })
+            }
         }
         calls.push({
             target: market.marketMaker,
@@ -417,7 +438,17 @@ export const getMarketInfos = async (markets: BattleData[] | EventPredictData[])
         })
     }
     const res = await aggregateWithRpcFallback(calls)
-    return res.results.transformed as Record<string, number>
+    const transformed = res.results.transformed as Record<string, number>
+    for (const market of markets) {
+        const { isMulti } = resolveMultiOutcomePositions(market as EventPredictData)
+        if (!isMulti) {
+            transformed[market.marketMaker + '-priceA'] ??= 0
+            transformed[market.marketMaker + '-priceB'] ??= 0
+        }
+        transformed[market.marketMaker + '-fee'] ??= 0
+        transformed[market.marketMaker + '-totalSupply'] ??= 0
+    }
+    return transformed
 }
 
 /** 多元市场 positionId 未齐时打日志，避免静默走二元储备路径 */
