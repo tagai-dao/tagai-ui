@@ -426,6 +426,7 @@ export type CommunityCredit = {
 export type TokenTrade = {
   tick: string,
   trader: string,
+  username?: string | null,
   amount: string,
   timestamp: number | string | Date,
   ethAmount: string,

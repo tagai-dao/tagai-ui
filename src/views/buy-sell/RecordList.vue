@@ -105,9 +105,9 @@ onMounted(() => {
           </div>
           <div v-else class="grid grid-cols-4 gap-x-2 h-8 items-center text-h4"
                v-for="(token, i) of listData" :key="i">
-            <div class="col-span-1 truncate flex items-center gap-1 cursor-pointer" @click="onCopy(token.trader)">
+            <div class="col-span-1 truncate flex items-center gap-1 cursor-pointer" :title="token.trader" @click="onCopy(token.trader)">
               <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
-              <span class="truncate">{{ formatAddress(token.trader, 5, 4) }}</span>
+              <span class="truncate">{{ token.username || formatAddress(token.trader, 5, 4) }}</span>
             </div>
             <span class="col-span-1 text-center" :class="token.isBuy?'text-green-34':'text-red-normal'">
             {{ token.isBuy ? $t('buy') : $t('sell') }} {{ formatPastTime(token.timestamp as number) }}
