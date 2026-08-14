@@ -48,6 +48,18 @@ const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
 const showFeedTokenSheet = ref(false)
 const showFeedTradeSheet = ref(false)
 
+function tradeIdentity(trade: FeedTrade) {
+  const hash = trade.transHash?.trim().toLowerCase()
+  if (hash) return `hash:${hash}`
+  return [trade.timestamp, trade.trader, trade.token, trade.isBuy, trade.amount, trade.ethAmount].join(':').toLowerCase()
+}
+
+function mergeUniqueTrades(existing: FeedTrade[], incoming: FeedTrade[]) {
+  const unique = new Map<string, FeedTrade>()
+  for (const trade of [...existing, ...incoming]) unique.set(tradeIdentity(trade), trade)
+  return [...unique.values()]
+}
+
 function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
   selectedFeedToken.value = asset
   showFeedTradeSheet.value = false
@@ -86,7 +98,7 @@ async function loadTrades(page = 0, replace = false) {
     const enriched = pseudo.length ? await getTokenInfo(pseudo) : []
     const byToken = new Map(enriched.map(item => [item.token?.toLowerCase(), item]))
     const next = rows.map(row => ({ ...row, ...(byToken.get(row.token?.toLowerCase()) || {}) })) as FeedTrade[]
-    trades.value = replace ? next : [...trades.value, ...next]
+    trades.value = mergeUniqueTrades(replace ? [] : trades.value, next)
   } catch (error) {
     console.warn('[HomePost] trade feed unavailable', error)
     if (replace) trades.value = []
