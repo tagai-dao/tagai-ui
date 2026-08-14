@@ -4,6 +4,7 @@ import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
 import type { FeedTokenSheetAsset, TokenTrade } from '@/types'
 import { getTokenTradeData, getTokenTradeList } from '@/apis/api'
+import { getExternalTokenChartData } from '@/utils/pump'
 import { useStateStore } from '@/stores/common'
 import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
 import { formatAddress, formatPastTime } from '@/utils/helper'
@@ -24,6 +25,8 @@ const emit = defineEmits<{
 const stateStore = useStateStore()
 const loading = ref(false)
 const candles = ref<CandleRow[]>([])
+const candlesInUsd = ref(false)
+const externalChart = ref(false)
 const trades = ref<TokenTrade[]>([])
 const activeRange = ref<RangeKey>('1D')
 const showTransactions = ref(false)
@@ -66,7 +69,7 @@ const chartPoints = computed(() => {
   const nativePrice = stateStore.ethPrice || 0
   const rows = selectedCandles.value.map(row => ({
     x: normalizeTimestamp(row.timestamp),
-    y: Number(row.close) / 1e18 * nativePrice,
+    y: candlesInUsd.value ? Number(row.close) : Number(row.close) / 1e18 * nativePrice,
   })).filter(point => Number.isFinite(point.y))
 
   if (rows.length > 1) return rows
@@ -111,17 +114,47 @@ async function loadData() {
   const sequence = ++loadSequence
   loading.value = true
   candles.value = []
+  candlesInUsd.value = false
+  externalChart.value = false
   trades.value = []
   showTransactions.value = false
   activeRange.value = '1D'
   try {
-    const [candleRows, tradeRows] = await Promise.all([
-      getTokenTradeData(asset.tick, undefined, true).catch(() => []),
+    const rangeSeconds = ranges.find(range => range.key === activeRange.value)?.seconds || 0
+    const [chartResult, tradeRows] = await Promise.all([
+      (async () => {
+        if (asset.isImport) {
+          return { rows: await getExternalTokenChartData(asset.token, rangeSeconds).catch(() => []), external: true }
+        }
+        const internalRows = await getTokenTradeData(asset.tick, undefined, true).catch(() => []) as CandleRow[]
+        if (internalRows?.length) return { rows: internalRows, external: false }
+        const fallbackRows = await getExternalTokenChartData(asset.token, rangeSeconds).catch(() => [])
+        return { rows: fallbackRows, external: fallbackRows.length > 0 }
+      })(),
       getTokenTradeList(asset.token, 0).catch(() => []),
     ])
     if (sequence !== loadSequence) return
-    candles.value = (candleRows || []) as CandleRow[]
+    externalChart.value = chartResult.external
+    candlesInUsd.value = chartResult.external
+    candles.value = (chartResult.rows || []) as CandleRow[]
     trades.value = (tradeRows || []) as TokenTrade[]
+  } finally {
+    if (sequence === loadSequence) loading.value = false
+  }
+}
+
+async function selectRange(range: RangeKey) {
+  activeRange.value = range
+  const asset = props.asset
+  if (!props.modelValue || !asset || (!asset.isImport && !externalChart.value) || !asset.token) return
+  const sequence = ++loadSequence
+  loading.value = true
+  const seconds = ranges.find(item => item.key === range)?.seconds || 0
+  try {
+    const rows = await getExternalTokenChartData(asset.token, seconds)
+    if (sequence !== loadSequence) return
+    candlesInUsd.value = true
+    candles.value = rows
   } finally {
     if (sequence === loadSequence) loading.value = false
   }
@@ -212,7 +245,7 @@ onUnmounted(() => { document.body.style.overflow = previousBodyOverflow })
             </div>
 
             <div class="grid grid-cols-6 gap-1 pb-3">
-              <button v-for="range in ranges" :key="range.key" class="h-8 rounded-lg text-xs font-semibold" :class="activeRange === range.key ? 'bg-orange-normal/15 text-orange-normal' : 'text-grey-64'" @click="activeRange = range.key">{{ range.label }}</button>
+              <button v-for="range in ranges" :key="range.key" class="h-8 rounded-lg text-xs font-semibold" :class="activeRange === range.key ? 'bg-orange-normal/15 text-orange-normal' : 'text-grey-64'" @click="selectRange(range.key)">{{ range.label }}</button>
             </div>
 
             <button type="button" class="flex w-full items-center justify-between py-2 text-left text-base font-semibold text-content" @click="showTransactions = !showTransactions">

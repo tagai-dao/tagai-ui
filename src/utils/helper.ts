@@ -310,7 +310,17 @@ export function parseTimestamp(time: any) {
     return ''
   }
 
-  const timestamp = Math.ceil(new Date(time).getTime() / 1000)
+  // MySQL/chain trade feeds use Unix seconds, while tweets generally use ISO
+  // strings or millisecond timestamps. `new Date(17xxxxxxxxx)` interprets a
+  // seconds value as milliseconds and produces a date in January 1970.
+  const numeric = typeof time === 'number' || /^\d+(?:\.\d+)?$/.test(String(time).trim())
+    ? Number(time)
+    : NaN
+  const milliseconds = Number.isFinite(numeric)
+    ? (Math.abs(numeric) < 100_000_000_000 ? numeric * 1000 : numeric)
+    : new Date(time).getTime()
+  if (!Number.isFinite(milliseconds)) return ''
+  const timestamp = Math.ceil(milliseconds / 1000)
   const nowStamp = Math.ceil(Date.now() / 1000)
   // 正值 = 未来，负值 = 过去（Intl.RelativeTimeFormat 的约定）
   const delta = timestamp - nowStamp

@@ -120,6 +120,10 @@ export type FeedTrade = {
   marketCap?: string | number;
   price?: number;
   priceChange24h?: number | null;
+  isImport?: boolean | number;
+  version?: number;
+  pair?: string;
+  dexVersion?: number;
 }
 
 /** Feed 代币详情 Bottom Sheet 使用的统一展示模型。 */
@@ -133,6 +137,10 @@ export type FeedTokenSheetAsset = {
   priceChange24h?: number | null;
   sparkline24h?: number[] | null;
   listed?: boolean;
+  isImport?: boolean | number;
+  version?: number;
+  pair?: string;
+  dexVersion?: number;
   creatorName?: string;
   creatorUsername?: string;
   creatorProfile?: string;
