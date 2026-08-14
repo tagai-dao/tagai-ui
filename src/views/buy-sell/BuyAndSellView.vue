@@ -63,6 +63,10 @@ const showDesktopChart = computed(() =>
 )
 const accStore = useAccountStore()
 const modalStore = useModalStore()
+const isWalletConnected = computed(() =>
+  accStore.ethConnectState === EthWalletState.Connected &&
+  isAddress(accStore.ethConnectAddress ?? '')
+)
 const tradeType = ref('buy')
 const route = useRoute()
 const tokenInfo = ref()
@@ -478,16 +482,16 @@ async function checkTweet() {
 }
 
 async function confirm() {
-  // Feed 内嵌交易框以 TagAI 登录态为第一层状态：未登录先进入登录，
-  // 已登录则沿用 AuthLoading 同步的 embedded wallet/provider。
-  if (!accStore.getAccountInfo?.twitterId) {
-    modalStore.setModalVisible(true, GlobalModalType.Login)
-    return
-  }
-  // check wallet connect
-  if (accStore.ethConnectState !== EthWalletState.Connected) {
+  // 交易只要求链上钱包，不要求 TagAI / Twitter 登录。社交登录仅用于
+  // Log in、Wallet、Profile 和发帖等账户功能，不能拦截纯链上交易。
+  if (!isWalletConnected.value) {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
+  }
+  // 如重新启用「交易并发帖」，该社交动作仍需要 TagAI 登录。
+  if (isPostTweet.value && !accStore.getAccountInfo?.twitterId) {
+    modalStore.setModalVisible(true, GlobalModalType.Login)
+    return
   }
   if (comStore.currentSelectedCommunity?.version === 8 && !comStore.currentSelectedCommunity?.listed) {
     notify({ message: t('buyAndSell.v8PreListAgentOnly') })
@@ -909,16 +913,16 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || (!!accStore.getAccountInfo?.twitterId && accStore.ethConnectState == EthWalletState.Connecting) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
-            !accStore.getAccountInfo?.twitterId
+            !isWalletConnected
               ? $t('connect')
               : (isV8PreListNoTrade
                   ? $t('buyAndSell.v8PreListAgentOnly')
                   : (listed ? $t('confirmListed') : $t('confirm')))
           }}</span>
-          <i-ep-loading v-show="trading || calculating || (!!accStore.getAccountInfo?.twitterId && accStore.ethConnectState == EthWalletState.Connecting)" class="animate-spin" />
+          <i-ep-loading v-show="trading || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress)" class="animate-spin" />
         </button>
 
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">
