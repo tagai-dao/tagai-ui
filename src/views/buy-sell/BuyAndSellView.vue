@@ -488,8 +488,11 @@ async function confirm() {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
-  // 如重新启用「交易并发帖」，该社交动作仍需要 TagAI 登录。
-  if (isPostTweet.value && !accStore.getAccountInfo?.twitterId) {
+  // V5 bonding-curve buys still require the backend reputation signature,
+  // which is only available to a registered TagAI account. Listed/imported
+  // token swaps remain wallet-only.
+  const requiresLegacyTradeAccount = !listed.value && comStore.currentSelectedCommunity?.version === 5
+  if ((isPostTweet.value || requiresLegacyTradeAccount) && !accStore.getAccountInfo?.twitterId) {
     modalStore.setModalVisible(true, GlobalModalType.Login)
     return
   }

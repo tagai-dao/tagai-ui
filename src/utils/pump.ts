@@ -1831,7 +1831,10 @@ export const resolveV3NativePool = async (token: string, pair?: string): Promise
         if (!pairTokens.includes(target)) throw new Error('Stored V3 pool does not contain the imported token')
         if (pairTokens.includes(wrappedNative)) return { pair: storedPair, fee: Number(storedFee) }
 
-        const feeTiers = Array.from(new Set([Number(storedFee), 100, 500, 2500, 10000]))
+        const standardFeeTiers = deployment.dex.kind === 'pancake'
+            ? [100, 500, 2500, 10000]
+            : [100, 500, 3000, 10000]
+        const feeTiers = Array.from(new Set([Number(storedFee), ...standardFeeTiers]))
         const pools = await Promise.all(feeTiers.map(async fee => {
             const candidate = await client.readContract({
                 address: factory,
