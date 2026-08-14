@@ -10,7 +10,11 @@ const stateStore = useStateStore()
 const emit = defineEmits<{ openDetails: [asset: FeedTokenSheetAsset] }>()
 const price = computed(() => Number(props.tweet.price || 0) * stateStore.ethPrice)
 const marketCap = computed(() => Number(props.tweet.marketCap || 0) * stateStore.ethPrice)
-const change = computed(() => Number(props.tweet.priceChange24h || 0))
+const change = computed<number | null>(() => {
+  if (props.tweet.priceChange24h === null || props.tweet.priceChange24h === undefined) return null
+  const value = Number(props.tweet.priceChange24h)
+  return Number.isFinite(value) ? value : null
+})
 function openDetails() {
   if (!props.tweet.tick || !props.tweet.token) return
   emit('openDetails', {
@@ -43,7 +47,8 @@ function openDetails() {
     </div>
     <div class="ml-3 text-right">
       <strong class="block text-sm text-content tabular-nums">{{ formatUsd(price) }}</strong>
-      <span class="text-xs font-semibold tabular-nums" :class="change >= 0 ? 'text-up' : 'text-down'">{{ change >= 0 ? '△ +' : '▽ ' }}{{ change.toFixed(2) }}%</span>
+      <span v-if="change !== null" class="text-xs font-semibold tabular-nums" :class="change >= 0 ? 'text-up' : 'text-down'">{{ change >= 0 ? '△ +' : '▽ ' }}{{ change.toFixed(2) }}%</span>
+      <span v-else class="text-xs font-semibold tabular-nums text-grey-64">--</span>
       <span v-if="marketCap" class="ml-2 text-[10px] text-grey-64">{{ formatUsdCompact(marketCap) }} MC</span>
     </div>
   </button>
