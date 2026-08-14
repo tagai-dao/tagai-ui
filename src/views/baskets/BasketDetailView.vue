@@ -6,9 +6,8 @@ import BasketChainGate from './components/BasketChainGate.vue'
 import BasketTradePanel from './components/BasketTradePanel.vue'
 import BasketRebalanceAction from './components/BasketRebalanceAction.vue'
 import BasketPerformanceChart from './components/BasketPerformanceChart.vue'
-import { feeSplit } from '@/utils/baskets/fee-model'
-import { BASKET_FRONTEND_FEE_WALLET, getBasketDeployment } from '@/config/baskets'
-import { formatUnits, zeroAddress } from 'viem'
+import { getBasketDeployment } from '@/config/baskets'
+import { formatUnits } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import { listBasketTrades, type BasketTradeEvent } from '@/utils/baskets/api'
 
@@ -48,23 +47,6 @@ const copyBasketAddress = async () => {
     console.warn('[baskets] copy contract address failed', error)
   }
 }
-
-const split = computed(() => {
-  const d = detail.value
-  if (!d) return null
-  return feeSplit(d.creatorShareBps, BASKET_FRONTEND_FEE_WALLET !== zeroAddress)
-})
-
-const feeSegments = computed(() => {
-  if (!split.value) return []
-  return [
-    { key: 'feeBurn', value: split.value.burn },
-    { key: 'feeInterface', value: split.value.interface },
-    { key: 'feeLauncher', value: split.value.launcher },
-    { key: 'feeCreator', value: split.value.creator },
-    { key: 'feeHolders', value: split.value.holders },
-  ].filter((item) => item.value > 0)
-})
 
 const liveWeight = (valueUsd: number) => {
   const total = detail.value?.aumUsd ?? 0
@@ -161,7 +143,6 @@ const refreshDetail = async (force = false) => {
   await loadTrades()
 }
 
-const pct = (n: number) => `${(n * 100).toFixed(1)}%`
 const openFees = () => router.push({ name: 'basket-fees', params: { address: address.value } })
 
 onMounted(() => void refreshDetail())
@@ -274,110 +255,70 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
+        </section>
 
-          <div class="hero-composition" :aria-label="$t('baskets.composition')">
-            <div
-              v-for="(holding, index) in detail.holdings"
-              :key="holding.asset"
-              class="hero-composition__leg"
-              :style="{
-                backgroundColor: legColors[index % legColors.length],
-              }"
-            >
-              <span>{{ holding.symbol }}</span>
-              <strong>{{ holding.targetWeightPct.toFixed(0) }}%</strong>
+        <div class="market-grid">
+          <div class="market-panel market-panel--chart">
+            <BasketPerformanceChart :address="detail.address" :chain-id="detail.chainId" />
+          </div>
+          <div class="market-panel market-panel--trade">
+            <BasketTradePanel :detail="detail" @traded="refreshDetail(true)" />
+          </div>
+        </div>
+
+        <section class="content-card holdings-card">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">{{ $t('baskets.composition') }}</span>
+              <h2>{{ $t('baskets.holdings') }}</h2>
+            </div>
+            <span class="section-count">{{ detail.basketLength }} {{ $t('baskets.assets') }}</span>
+          </div>
+
+          <BasketRebalanceAction :detail="detail" @rebalanced="refreshDetail(true)" />
+
+          <div class="holdings-table holdings-table--head">
+            <span>{{ $t('baskets.assets') }}</span>
+            <span>{{ $t('baskets.target') }}</span>
+            <span>{{ $t('baskets.live') }}</span>
+            <span>{{ $t('baskets.price') }}</span>
+            <span>{{ $t('baskets.value') }}</span>
+          </div>
+          <div
+            v-for="(holding, index) in detail.holdings"
+            :key="holding.asset"
+            class="holdings-table holdings-table--row"
+          >
+            <div class="asset-cell">
+              <i :style="{ backgroundColor: legColors[index % legColors.length] }" />
+              <div class="min-w-0">
+                <strong :title="holding.symbol">{{ holding.symbol }}</strong>
+                <span>{{ holding.asset.slice(0, 6) }}…{{ holding.asset.slice(-4) }}</span>
+              </div>
+            </div>
+            <div class="metric-cell" :data-label="$t('baskets.target')">
+              {{ holding.targetWeightPct.toFixed(1) }}%
+            </div>
+            <div class="metric-cell" :data-label="$t('baskets.live')">
+              {{ liveWeight(holding.valueUsd).toFixed(1) }}%
+            </div>
+            <div class="metric-cell" :data-label="$t('baskets.price')">
+              <template v-if="holding.priced">{{ formatUsd(holding.priceUsd, true) }}</template>
+              <span v-else class="text-red-normal">{{ $t('baskets.unpriced') }}</span>
+            </div>
+            <div class="metric-cell metric-cell--strong" :data-label="$t('baskets.value')">
+              {{ formatUsd(holding.valueUsd) }}
+            </div>
+            <div class="weight-track" aria-hidden="true">
+              <span
+                :style="{
+                  width: `${Math.min(liveWeight(holding.valueUsd), 100)}%`,
+                  backgroundColor: legColors[index % legColors.length],
+                }"
+              />
             </div>
           </div>
         </section>
-
-        <BasketPerformanceChart :address="detail.address" :chain-id="detail.chainId" />
-
-        <div class="content-grid">
-          <main class="min-w-0">
-            <section class="content-card holdings-card">
-              <div class="section-heading">
-                <div>
-                  <span class="section-kicker">{{ $t('baskets.composition') }}</span>
-                  <h2>{{ $t('baskets.holdings') }}</h2>
-                </div>
-                <span class="section-count">{{ detail.basketLength }} {{ $t('baskets.assets') }}</span>
-              </div>
-
-              <BasketRebalanceAction :detail="detail" @rebalanced="refreshDetail(true)" />
-
-              <div class="holdings-table holdings-table--head">
-                <span>{{ $t('baskets.assets') }}</span>
-                <span>{{ $t('baskets.target') }}</span>
-                <span>{{ $t('baskets.live') }}</span>
-                <span>{{ $t('baskets.price') }}</span>
-                <span>{{ $t('baskets.value') }}</span>
-              </div>
-              <div
-                v-for="(holding, index) in detail.holdings"
-                :key="holding.asset"
-                class="holdings-table holdings-table--row"
-              >
-                <div class="asset-cell">
-                  <i :style="{ backgroundColor: legColors[index % legColors.length] }" />
-                  <div class="min-w-0">
-                    <strong :title="holding.symbol">{{ holding.symbol }}</strong>
-                    <span>{{ holding.asset.slice(0, 6) }}…{{ holding.asset.slice(-4) }}</span>
-                  </div>
-                </div>
-                <div class="metric-cell" :data-label="$t('baskets.target')">
-                  {{ holding.targetWeightPct.toFixed(1) }}%
-                </div>
-                <div class="metric-cell" :data-label="$t('baskets.live')">
-                  {{ liveWeight(holding.valueUsd).toFixed(1) }}%
-                </div>
-                <div class="metric-cell" :data-label="$t('baskets.price')">
-                  <template v-if="holding.priced">{{ formatUsd(holding.priceUsd, true) }}</template>
-                  <span v-else class="text-red-normal">{{ $t('baskets.unpriced') }}</span>
-                </div>
-                <div class="metric-cell metric-cell--strong" :data-label="$t('baskets.value')">
-                  {{ formatUsd(holding.valueUsd) }}
-                </div>
-                <div class="weight-track" aria-hidden="true">
-                  <span
-                    :style="{
-                      width: `${Math.min(liveWeight(holding.valueUsd), 100)}%`,
-                      backgroundColor: legColors[index % legColors.length],
-                    }"
-                  />
-                </div>
-              </div>
-            </section>
-
-            <section v-if="split" class="content-card fee-card" role="link" tabindex="0" @click="openFees" @keydown.enter="openFees">
-              <div class="section-heading">
-                <div>
-                  <span class="section-kicker">PROTOCOL</span>
-                  <h2>{{ $t('baskets.feeSplit') }}</h2>
-                </div>
-                <span class="section-count">{{ (detail.basketFeeBps / 100).toFixed(2) }}%</span>
-              </div>
-              <div class="fee-bar" aria-hidden="true">
-                <span
-                  v-for="(segment, index) in feeSegments"
-                  :key="segment.key"
-                  :style="{ flexGrow: segment.value, backgroundColor: legColors[index % legColors.length] }"
-                />
-              </div>
-              <div class="fee-legend">
-                <div v-for="(segment, index) in feeSegments" :key="segment.key">
-                  <i :style="{ backgroundColor: legColors[index % legColors.length] }" />
-                  <span>{{ $t(`baskets.${segment.key}`) }}</span>
-                  <strong>{{ pct(segment.value) }}</strong>
-                </div>
-              </div>
-              <div class="fee-card__more">{{ $t('baskets.viewFeeDetails') }} <span>→</span></div>
-            </section>
-          </main>
-
-          <aside class="trade-column">
-            <BasketTradePanel :detail="detail" @traded="refreshDetail(true)" />
-          </aside>
-        </div>
 
         <section class="content-card trade-history-card">
           <div class="section-heading">
@@ -505,21 +446,13 @@ onUnmounted(() => {
 .hero-metrics span { color: var(--text-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
 .hero-metrics strong { color: var(--text-base); font-size: 18px; }
 
-.hero-composition { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(88px, 1fr)); gap: 7px; margin-top: 30px; }
-.hero-composition__leg { position: relative; display: flex; min-width: 0; min-height: 84px; overflow: hidden; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 12px; border: 1px solid rgba(255,255,255,.24); border-radius: 18px; color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,.25); }
-.hero-composition__leg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, rgba(255,255,255,.2), transparent 42%, rgba(0,0,0,.14)); }
-.hero-composition__leg span, .hero-composition__leg strong { position: relative; z-index: 1; max-width: 100%; font-size: 12px; }
-.hero-composition__leg span { padding: 2px 8px; border-radius: 12px; background: rgba(255,255,255,.9); color: #14151a; font-weight: 750; line-height: 16px; overflow-wrap: anywhere; white-space: normal; }
-.hero-composition__leg strong { align-self: flex-end; text-shadow: 0 1px 4px rgba(0,0,0,.28); }
-
-.content-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr); gap: 18px; margin-top: 18px; align-items: start; }
-.trade-column { position: sticky; top: 18px; }
+.market-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr); gap: 18px; margin-top: 18px; align-items: stretch; }
+.market-panel { display: flex; min-width: 0; }
+.market-panel--trade :deep(.trade-card),
+.market-panel--chart :deep(.performance-card) { width: 100%; height: 100%; }
+.market-panel--chart :deep(.performance-card) { margin-bottom: 0; }
 .content-card { overflow: hidden; border: 1px solid var(--border-base); border-radius: 24px; background: var(--surface); }
-.fee-card { margin-top: 18px; padding: 24px; }
-.fee-card[role="link"] { cursor:pointer; transition:border-color 160ms ease, transform 160ms ease; }
-.fee-card[role="link"]:hover { border-color:color-mix(in srgb,#8d67e8 60%,var(--border-base)); transform:translateY(-1px); }
-.fee-card__more { margin-top:18px; padding-top:15px; border-top:1px solid var(--border-base); color:#8d67e8; font-size:11px; font-weight:700; }
-.fee-card__more span { float:right; }
+.holdings-card { margin-top: 18px; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .holdings-card .section-heading { padding: 24px 24px 18px; }
 .section-kicker { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
@@ -560,13 +493,6 @@ onUnmounted(() => {
 	.trade-tx-link svg { width: 15px; height: 15px; }
 	.trade-history-state { display: flex; min-height: 112px; align-items: center; justify-content: center; gap: 10px; border-top: 1px solid var(--border-base); color: var(--text-muted); font-size: 12px; }
 
-	.fee-bar { display: flex; height: 9px; gap: 3px; overflow: hidden; margin-top: 20px; border-radius: 999px; background: var(--surface-2); }
-.fee-bar span { min-width: 3px; border-radius: 999px; }
-.fee-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
-.fee-legend > div { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: 7px; color: var(--text-muted); font-size: 10px; }
-.fee-legend i { width: 7px; height: 7px; border-radius: 50%; }
-.fee-legend strong { color: var(--text-base); font-size: 11px; }
-
 .detail-state { display: flex; min-height: 360px; align-items: center; justify-content: center; gap: 12px; color: var(--text-muted); font-size: 13px; }
 .loading-orbit { width: 20px; height: 20px; border: 2px solid var(--border-base); border-top-color: #8d67e8; border-radius: 50%; animation: spin 750ms linear infinite; }
 .detail-footer { padding-top: 30px; text-align: center; color: var(--text-muted); font-size: 10px; }
@@ -574,7 +500,7 @@ onUnmounted(() => {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 980px) {
-	  .content-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr); }
+	  .market-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr); }
 	  .holdings-table { grid-template-columns: minmax(125px, 1.3fr) repeat(4, minmax(55px, .7fr)); column-gap: 8px; }
 	  .holdings-table--head, .holdings-table--row { padding-right: 16px; padding-left: 16px; }
 	  .weight-track { right: 16px; left: 16px; }
@@ -584,8 +510,7 @@ onUnmounted(() => {
 
 @media (max-width: 803px) {
   .detail-shell { padding-top: 14px; padding-bottom: 88px; }
-  .content-grid { grid-template-columns: 1fr; }
-  .trade-column { position: static; order: -1; }
+  .market-grid { grid-template-columns: 1fr; }
   .basket-hero { padding: 24px 20px; border-radius: 24px; }
 }
 
@@ -594,14 +519,12 @@ onUnmounted(() => {
   .basket-mark svg { width: 34px; height: 34px; }
   .hero-metrics { width: 100%; }
   .hero-metrics > div { min-width: 0; flex: 1; }
-  .hero-composition { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; }
   .holdings-table--head { display: none; }
 	  .holdings-table--row { grid-template-columns: 1fr 1fr; gap: 14px 20px; padding: 18px 20px 22px; }
 	  .asset-cell { grid-column: 1 / -1; }
 	  .metric-cell { display: flex; justify-content: space-between; gap: 8px; text-align: right; }
 	  .metric-cell::before { content: attr(data-label); color: var(--text-muted); font-size: 10px; }
 	  .weight-track { right: 20px; left: 20px; }
-	  .fee-legend { grid-template-columns: 1fr 1fr; }
 	  .trade-history-table--head { display: none; }
 	  .trade-history-table--row { grid-template-columns: 1fr 1fr; gap: 12px 18px; padding: 16px 20px; }
 	  .trade-time, .trade-side-cell, .trade-metric, .trade-address, .trade-link-cell { display: flex; justify-content: space-between; gap: 8px; text-align: right; }

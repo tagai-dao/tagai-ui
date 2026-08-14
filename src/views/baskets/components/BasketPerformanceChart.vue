@@ -253,6 +253,7 @@ const series = computed(() => [{ name: 'INDEX NAV', data: points.value }])
 .performance-card {
   position: relative;
   overflow: hidden;
+  container-type: inline-size;
   margin-bottom: 18px;
   padding: 24px 24px 12px;
   border: 1px solid color-mix(in srgb, var(--border-base) 80%, transparent);
@@ -299,6 +300,13 @@ const series = computed(() => [{ name: 'INDEX NAV', data: points.value }])
 :deep(.apexcharts-canvas) { position: relative; z-index: 1; }
 :deep(.apexcharts-tooltip) { border-color: var(--border-base) !important; background: var(--surface) !important; color: var(--text-base) !important; box-shadow: 0 12px 32px rgba(5, 7, 12, .18) !important; }
 :deep(.apexcharts-tooltip-title) { border-color: var(--border-base) !important; background: var(--surface-2) !important; }
+
+@container (max-width: 520px) {
+  .performance-card__header { flex-direction: column; }
+  .performance-card__controls { width: 100%; flex-wrap: wrap; }
+  .range-tabs { flex: 1; justify-content: space-between; }
+  .range-tabs button { flex: 1; padding: 0 6px; }
+}
 
 @media (max-width: 760px) {
   .performance-card { padding: 20px 12px 10px; border-radius: 20px; }
