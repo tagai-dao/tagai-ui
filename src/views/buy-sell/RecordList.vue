@@ -11,6 +11,7 @@ import Kline from "@/views/buy-sell/Kline.vue";
 import { getDexScreenerEmbedPath } from '@/utils/pumpVersion'
 import { useTheme } from "@/composables/useTheme";
 import { useChainStore } from '@/stores/chain'
+import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
 
 const { isDark } = useTheme()
 const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
@@ -28,6 +29,21 @@ const { onCopy } = useTools()
 
 function tradeTime (token: TokenTrade) {
   return formatPastTime(token.timestamp as number)
+}
+
+const isRegisteredTrader = (trade: TokenTrade) => Boolean(trade.twitterId)
+
+const traderAvatar = (trade: TokenTrade) =>
+  trade.profile?.replace('normal', '200x200') ||
+  (trade.twitterId ? `https://profile-images.heywallet.com/${trade.twitterId}` : emptyProfile)
+
+const traderName = (trade: TokenTrade) =>
+  trade.twitterUsername ? `@${trade.twitterUsername}` : (trade.username || formatAddress(trade.trader, 5, 4))
+
+const replaceEmptyProfile = (event: Event) => {
+  const image = event.target as HTMLImageElement
+  image.onerror = null
+  image.src = emptyProfile
 }
 
 const onLoad = async () => {
@@ -103,11 +119,18 @@ onMounted(() => {
           <div class="flex justify-center items-center h-full my-20 py-10" v-if="listData.length === 0">
             {{$t('buyAndSell.noTradeData')}}
           </div>
-          <div v-else class="grid grid-cols-4 gap-x-2 h-8 items-center text-h4"
+          <div v-else class="grid grid-cols-4 gap-x-2 min-h-9 items-center text-h4"
                v-for="(token, i) of listData" :key="i">
             <div class="col-span-1 truncate flex items-center gap-1 cursor-pointer" :title="token.trader" @click="onCopy(token.trader)">
-              <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
-              <span class="truncate">{{ token.username || formatAddress(token.trader, 5, 4) }}</span>
+              <img
+                v-if="isRegisteredTrader(token)"
+                class="h-5 w-5 min-w-5 rounded-full object-cover"
+                :src="traderAvatar(token)"
+                :alt="traderName(token)"
+                referrerpolicy="no-referrer"
+                @error="replaceEmptyProfile"
+              >
+              <span class="truncate">{{ traderName(token) }}</span>
             </div>
             <span class="col-span-1 text-center" :class="token.isBuy?'text-green-34':'text-red-normal'">
             {{ token.isBuy ? $t('buy') : $t('sell') }} {{ formatPastTime(token.timestamp as number) }}
