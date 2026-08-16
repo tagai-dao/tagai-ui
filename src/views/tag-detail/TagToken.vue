@@ -6,7 +6,7 @@ import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
 import { getHolderList, getHolderListOfImportToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
-import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, TipTagSwapHook9, PCSCLPoolManager, PCSVault } from '@/config'
+import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, PUMP11_VERSION, TipTagSwapHook9, TipTagSwapHook11, PCSCLPoolManager, PCSVault } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
 import { getBlockNumber } from "@/utils/wallets";
@@ -38,7 +38,7 @@ const isWalletConnected = computed(() => accountStore.ethConnectState === EthWal
 const holdingList = ref<TokenHoldingList[]>([])
 const showDistributionModal = ref(false)
 
-/** v9：按天聚合的分发量（过去 7 天含今天 + 明日） */
+/** v9/v11：按天聚合的分发量（过去 7 天含今天 + 明日） */
 const v9HourlyAmounts = ref<number[]>([])
 const v9HourlyLabels = ref<string[]>([])
 const v9TodayChartIndex = ref(6)
@@ -52,10 +52,13 @@ const v10Distribution = ref<V10DistributionInfo | null>(null)
 const v10Loading = ref(false)
 const v10Loaded = ref(false)
 
-const isV9 = computed(() => comStore.currentSelectedCommunity?.version === PUMP9_VERSION)
-const isPumpV9OrV10 = computed(() => {
+const isNativePumpNutbox = computed(() => {
   const version = Number(comStore.currentSelectedCommunity?.version)
-  return version === PUMP9_VERSION || version === 10
+  return version === PUMP9_VERSION || version === PUMP11_VERSION
+})
+const isPumpNutboxVersion = computed(() => {
+  const version = Number(comStore.currentSelectedCommunity?.version)
+  return version === PUMP9_VERSION || version === 10 || version === PUMP11_VERSION
 })
 const marketCapText = computed(() => {
   const nativeMarketCap = Number(comStore.currentSelectedCommunity?.marketCap ?? 0)
@@ -69,7 +72,7 @@ const marketCapText = computed(() => {
 
 /** v9 或 v10 + HourlyTickCalculator → 柱状图展示 */
 const isHourly = computed(() => {
-  if (isV9.value) return true
+  if (isNativePumpNutbox.value) return true
   if (comStore.currentSelectedCommunity?.version === 10 && v10Distribution.value?.calculatorType === 'hourly') return true
   return false
 })
@@ -80,9 +83,9 @@ const isV10Block = computed(() =>
 )
 
 /** 展示 Nutbox 社区地址的版本（v9 从链上读取，v10 从 community 数据获取） */
-const showNutboxInfo = computed(() => isV9.value || comStore.currentSelectedCommunity?.version === 10)
+const showNutboxInfo = computed(() => isNativePumpNutbox.value || comStore.currentSelectedCommunity?.version === 10)
 const displayNutboxCommunityAddr = computed(() => {
-  if (isV9.value) return v9NutboxCommunityAddr.value
+  if (isNativePumpNutbox.value) return v9NutboxCommunityAddr.value
   return comStore.currentSelectedCommunity?.communityAddress || ''
 })
 const nutboxCommunityUrl = computed(() => {
@@ -136,7 +139,7 @@ async function onInjectConfirm() {
     )
     showInjectModal.value = false
     // 刷新每日奖励数据
-    if (isV9.value) {
+    if (isNativePumpNutbox.value) {
       await loadV9HourlyRewards()
     } else if (community.version === 10) {
       await loadV10Distribution()
@@ -148,7 +151,7 @@ async function onInjectConfirm() {
   }
 }
 
-/** v9 holder 列表特殊地址：Hook / Nutbox Community / PCS V4 */
+/** v9/v11 holder 列表特殊地址：Hook / Nutbox Community / PCS V4 */
 const v9HookAddr = ref('')
 const v9NutboxCommunityAddr = ref('')
 const v9SocialPoolAddr = ref('')
@@ -175,7 +178,7 @@ function openExplorerAddress(addr: string) {
 }
 
 async function loadV9HolderAddresses() {
-  if (!isV9.value) return
+  if (!isNativePumpNutbox.value) return
   const token = comStore.currentSelectedCommunity?.token
   if (!token || !isAddress(token)) return
 
@@ -188,7 +191,10 @@ async function loadV9HolderAddresses() {
     v9NutboxCommunityAddr.value = community && community !== zeroAddress ? community : ''
     v9SocialPoolAddr.value = socialPool && socialPool !== zeroAddress ? socialPool : ''
 
-    let hook = normalizeAddr(TipTagSwapHook9)
+    const defaultHook = comStore.currentSelectedCommunity?.version === PUMP11_VERSION
+      ? TipTagSwapHook11
+      : TipTagSwapHook9
+    let hook = normalizeAddr(defaultHook)
     const pcsAddrs = new Set<string>([
       normalizeAddr(PCSCLPoolManager),
       normalizeAddr(PCSVault),
@@ -209,7 +215,10 @@ async function loadV9HolderAddresses() {
     v9PcsV4Addrs.value = [...pcsAddrs].filter(Boolean)
   } catch (e) {
     console.error('loadV9HolderAddresses failed', e)
-    v9HookAddr.value = normalizeAddr(TipTagSwapHook9)
+    const defaultHook = comStore.currentSelectedCommunity?.version === PUMP11_VERSION
+      ? TipTagSwapHook11
+      : TipTagSwapHook9
+    v9HookAddr.value = normalizeAddr(defaultHook)
     v9NutboxCommunityAddr.value = ''
     v9SocialPoolAddr.value = ''
     v9PcsV4Addrs.value = [normalizeAddr(PCSCLPoolManager), normalizeAddr(PCSVault)].filter(Boolean)
@@ -374,7 +383,7 @@ function formatV9ChartDayLabel(dayStartSec: number, dayIndex: number, todayIndex
 
 async function loadV9HourlyRewards() {
   const token = comStore.currentSelectedCommunity?.token
-  if (!token || !isAddress(token) || !isV9.value) return
+  if (!token || !isAddress(token) || !isNativePumpNutbox.value) return
   v9HourlyLoading.value = true
   try {
     const { dailyRewards, dayStarts, todayIndex, hourlyRewards } = await getV9DailyRewards(token as `0x${string}`)
@@ -563,7 +572,7 @@ const timelineDistribution = computed(() => {
 })
 
 async function openDistributionModal() {
-  if (isHourly.value && isV9.value) {
+  if (isHourly.value && isNativePumpNutbox.value) {
     await loadV9HourlyRewards()
   }
   if (comStore.currentSelectedCommunity?.version === 10 && !v10Loaded.value) {
@@ -708,7 +717,7 @@ onMounted(async () => {
   while(!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.3)
   }
-  if (isV9.value) {
+  if (isNativePumpNutbox.value) {
     await Promise.all([loadV9HourlyRewards(), loadV9HolderAddresses()])
   } else if (comStore.currentSelectedCommunity?.version === 10) {
     await loadV10Distribution()
@@ -724,7 +733,7 @@ onMounted(async () => {
 })
 
 watch(() => comStore.currentSelectedCommunity?.token, async (token) => {
-  if (token && isV9.value) {
+  if (token && isNativePumpNutbox.value) {
     v9HourlyLoaded.value = false
     await Promise.all([loadV9HourlyRewards(), loadV9HolderAddresses()])
   } else if (token && comStore.currentSelectedCommunity?.version === 10) {
@@ -738,7 +747,7 @@ watch(() => comStore.currentSelectedCommunity?.token, async (token) => {
 })
 
 watch(() => comStore.currentSelectedCommunity?.pair, () => {
-  if (isV9.value) loadV9HolderAddresses()
+  if (isNativePumpNutbox.value) loadV9HolderAddresses()
 })
 
 onBeforeUnmount(() => {
@@ -777,7 +786,7 @@ onBeforeUnmount(() => {
       </div>
       <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">
-          {{ $t(isPumpV9OrV10 ? 'postView.v4HookTransactionDistribution' : 'postView.socialSupply') }}
+          {{ $t(isPumpNutboxVersion ? 'postView.v4HookTransactionDistribution' : 'postView.socialSupply') }}
         </span>
         <span class="text-h5 text-black-19">{{ formatAmount(SocialSupply) }}</span>
       </div>
@@ -827,7 +836,7 @@ onBeforeUnmount(() => {
         <div class="flex items-center gap-2">
           <span class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
                  @click="openDistributionModal">
-            <template v-if="(isV9 && v9HourlyLoading) || (comStore.currentSelectedCommunity?.version === 10 && v10Loading)">...</template>
+            <template v-if="(isNativePumpNutbox && v9HourlyLoading) || (comStore.currentSelectedCommunity?.version === 10 && v10Loading)">...</template>
             <template v-else>{{ formatAmount(rewardPerDay) }}</template>
           </span>
           <button v-if="isHourly"
@@ -918,17 +927,17 @@ onBeforeUnmount(() => {
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.contract') }}</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.deployer') }}</span>
             <!-- v9：PCS V4 流动性合约 -->
-            <span v-show="isV9 && isPcsV4Holder(holder.ethAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.pcsV4') }}</span>
+            <span v-show="isNativePumpNutbox && isPcsV4Holder(holder.ethAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.pcsV4') }}</span>
             <!-- 旧版 Uniswap V2 pair -->
-            <span v-show="!isV9 && holder.ethAddr == comStore.currentSelectedCommunity.pair" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">DEX</span>
+            <span v-show="!isNativePumpNutbox && holder.ethAddr == comStore.currentSelectedCommunity.pair" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">DEX</span>
             <span v-show="holder.ethAddr == '0x3758AA66caD9F2606F1F501c9CB31b94b713A6d5'" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">NerveNetwork: Bridge</span>
             <span v-show="holder.ethAddr == '0x4daB069f85441f48bB1b1224d6C41D2301451C69' && comStore.currentSelectedCommunity.tick == 'BUIDL'" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Community Fund</span>
             <!-- v9：Hook 持有社交分配代币 -->
-            <span v-show="isV9 && isSameAddr(holder.ethAddr, v9HookAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.swapHook') }}</span>
+            <span v-show="isNativePumpNutbox && isSameAddr(holder.ethAddr, v9HookAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.swapHook') }}</span>
             <!-- v9：Nutbox 社区合约 -->
-            <span v-show="isV9 && isSameAddr(holder.ethAddr, v9NutboxCommunityAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.nutbox') }}</span>
+            <span v-show="isNativePumpNutbox && isSameAddr(holder.ethAddr, v9NutboxCommunityAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.nutbox') }}</span>
             <!-- v1–v7：Pump 社交分发合约 -->
-            <span v-show="!isV9 && legacyPumpAddrs.includes(holder.ethAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Social Distribution</span>
+            <span v-show="!isNativePumpNutbox && legacyPumpAddrs.includes(holder.ethAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">Social Distribution</span>
           </div>
         <span class="col-span-2 text-right">{{ formatAmount(holder.amount) }} / {{ ((holder.amount as number) / 10000000).toFixed(2) }}%</span>
       </div>

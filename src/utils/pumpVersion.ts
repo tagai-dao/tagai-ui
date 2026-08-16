@@ -7,23 +7,23 @@ export const normalizePumpVersion = (version?: number | string | null) => {
 /** PCS V4 上架后代币（pair 字段为 PoolKey JSON） */
 export const isPcsV4Version = (version?: number | string | null) => {
     const v = normalizePumpVersion(version)
-    return v === 7 || v === 8 || v === 9
+    return v === 7 || v === 8 || v === 9 || v === 11
 }
 
-/** Social 奖励走 nutboxSocialPool.claim（v8/v9/v10） */
+/** Social 奖励走 nutboxSocialPool.claim（v8/v9/v10/v11） */
 export const usesNutboxSocialPool = (version?: number | string | null) => {
     const v = normalizePumpVersion(version)
-    return v === 8 || v === 9 || v === 10
+    return v === 8 || v === 9 || v === 10 || v === 11
 }
 
 /** Pump 合约自身暴露 totalClaimedSocialRewards(token) 的版本（仅 v7） */
 export const hasPumpTotalClaimedSocialRewards = (version?: number | null) =>
     version === 7
 
-/** v9/v10 使用 HourlyTickCalculator 动态分发 */
+/** v9/v10/v11 使用 HourlyTickCalculator 动态分发 */
 export const isHourlyDistributionVersion = (version?: number | string | null) => {
     const v = normalizePumpVersion(version)
-    return v === 9 || v === 10
+    return v === 9 || v === 10 || v === 11
 }
 
 /** DexScreener embed 路径：导入币统一用 token，让 DexScreener 选择当前链已索引的主池。 */
@@ -55,7 +55,7 @@ type ListedV4Community = {
 
 /**
  * 上市后是否走 PCS V4 询价/交易。
- * 覆盖：Pump v7-v9（pair 为 PoolKey JSON）、导入币 v10+dexVersion=4（pair 为 poolId bytes32）。
+ * 覆盖：Pump v7-v9/v11（pair 为 PoolKey JSON）、导入币 v10+dexVersion=4（pair 为 poolId bytes32）。
  */
 export const usesListedV4Quote = (community?: ListedV4Community | null): boolean => {
     if (!community?.listed || !community.pair?.trim()) return false

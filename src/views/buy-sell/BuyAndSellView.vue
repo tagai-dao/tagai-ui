@@ -192,12 +192,15 @@ const LISTED_V2_FEE = 0.02       // 上市后 Uniswap V2 路由 2% 手续费
 const V4_HOOK_FEE = 0.006
 const SPCXB_HOOK_FEE = 0.01
 
-const isV9 = computed(() => comStore.currentSelectedCommunity?.version === 9)
+const isV9OrV11FeeModel = computed(() => {
+  const version = Number(comStore.currentSelectedCommunity?.version)
+  return version === 9 || version === 11
+})
 const tradeFeeRate = computed(() => {
   const c = comStore.currentSelectedCommunity
   if (!c) return BONDING_CURVE_FEE
-  // v9 内盘 0.6%；上市后走 V4，询价已扣 lpFee
-  if (c.version === 9 && !c.listed) return V9_TOTAL_FEE
+  // v9/v11 内盘 0.6%；上市后走 V4，询价已扣 lpFee
+  if ((c.version === 9 || c.version === 11) && !c.listed) return V9_TOTAL_FEE
   if (usesListedV4Quote(c)) return 0
   if (c.listed) return LISTED_V2_FEE
   return BONDING_CURVE_FEE
@@ -813,11 +816,11 @@ onMounted(async () => {
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
             <span>{{ formatAmount((receiveAmount?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} ${{ comStore.currentSelectedCommunity?.tick }}</span>
           </div>
-          <div v-if="isV9 && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+          <div v-if="isV9OrV11FeeModel && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.platformFee') }}</span>
             <span class="tabular-nums">{{ (V9_PLATFORM_FEE * 100).toFixed(1) }}%</span>
           </div>
-          <div v-if="isV9 && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+          <div v-if="isV9OrV11FeeModel && receiveAmount && Number(receiveAmount) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.ipShareFee') }}</span>
             <span class="tabular-nums">{{ (V9_IPSHARE_FEE * 100).toFixed(1) }}%</span>
           </div>
@@ -860,11 +863,11 @@ onMounted(async () => {
             <span>{{ $t('buyAndSell.minReceived') }} ({{ Number(maxSlippage) }}%)</span>
             <span>{{ formatAmount((receiveEth?.toString() / 1e18) * (1 - Number(maxSlippage) / 100)) }} ${{ nativeSymbol }}</span>
           </div>
-          <div v-if="isV9 && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+          <div v-if="isV9OrV11FeeModel && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.platformFee') }}</span>
             <span class="tabular-nums">{{ (V9_PLATFORM_FEE * 100).toFixed(1) }}%</span>
           </div>
-          <div v-if="isV9 && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
+          <div v-if="isV9OrV11FeeModel && receiveEth && Number(receiveEth) > 0" class="flex justify-between text-sm text-grey-64 px-1">
             <span>{{ $t('buyAndSell.ipShareFee') }}</span>
             <span class="tabular-nums">{{ (V9_IPSHARE_FEE * 100).toFixed(1) }}%</span>
           </div></template

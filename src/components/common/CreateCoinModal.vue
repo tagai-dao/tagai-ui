@@ -7,7 +7,7 @@ import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitEth, checkTickUsed, getPump9CreateFee, getTokenDexPools, getTokenERC20Info, deployNutboxCommunity, injectTokens, type TokenDexResult, type DexPoolInfo } from "@/utils/pump";
+import { createCoin, calculateInitEth, checkTickUsed, getCreatePumpFee, getTokenDexPools, getTokenERC20Info, deployNutboxCommunity, injectTokens, type TokenDexResult, type DexPoolInfo } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { createCommunity, importCommunity } from '@/apis/api'
 import { getTagStyle } from '@/composables/useTags'
@@ -118,7 +118,7 @@ async function refreshCreateFee() {
     return
   }
   try {
-    const fee = await getPump9CreateFee(addr as `0x${string}`)
+    const fee = await getCreatePumpFee(addr as `0x${string}`)
     showingCreateFee.value = `~ ${formatPrice(Number(fee) / 1e18)}`
   } catch (e) {
     console.error('refreshCreateFee failed', e)
@@ -371,9 +371,10 @@ const create = async () => {
       return;
     }
     // create token
-    const {createHash, token} = await createCoin(createForm);
+    const {createHash, token, version} = await createCoin(createForm);
     createForm.createHash = createHash as string;
     createForm.token = token;
+    createForm.version = version;
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth

@@ -23,7 +23,7 @@ import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import CommunityMiniTagIndex from "@/views/tag-detail/communityMiniTags/Index.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatAmount, formatPrice } from "@/utils/helper";
-import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply, PUMP9_VERSION, usesThirdPartyMarketCap } from '@/config'
+import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply, PUMP9_VERSION, PUMP11_VERSION, usesThirdPartyMarketCap } from '@/config'
 import IconLinks from "@/components/home/IconLinks.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
@@ -133,9 +133,9 @@ const showModal = ref(false);
 const curationType = ref(CurationType.TWEET);
 const accStore = useAccountStore();
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
-const isPumpV9OrV10 = computed(() => {
+const isPumpNutboxVersion = computed(() => {
   const version = Number(comStore.currentSelectedCommunity?.version)
-  return version === PUMP9_VERSION || version === 10
+  return version === PUMP9_VERSION || version === 10 || version === PUMP11_VERSION
 })
 const tokenExternalLinks = computed(() => {
   const token = comStore.currentSelectedCommunity?.token
@@ -482,7 +482,7 @@ onBeforeRouteLeave((to, from, next) => {
               <template #content>
                 <div class="flex gap-1 text-grey-normal">
                   <span class="text-sm">
-                    {{ index === 0 && isPumpV9OrV10 ? $t('postView.v4HookTransactionDistribution') : data.desc }}
+                    {{ index === 0 && isPumpNutboxVersion ? $t('postView.v4HookTransactionDistribution') : data.desc }}
                   </span>
                   <span class="font-semibold text-base">{{data.percent}}</span>
                 </div>
@@ -697,7 +697,7 @@ onBeforeRouteLeave((to, from, next) => {
                     <template #content>
                       <div class="flex gap-1 text-grey-normal">
                         <span class="text-sm">
-                          {{ index === 0 && isPumpV9OrV10 ? $t('postView.v4HookTransactionDistribution') : data.desc }}
+                          {{ index === 0 && isPumpNutboxVersion ? $t('postView.v4HookTransactionDistribution') : data.desc }}
                         </span>
                         <span class="font-semibold text-base">{{data.percent}}</span>
                       </div>

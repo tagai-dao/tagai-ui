@@ -1,5 +1,5 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
-import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, PUMP9_VERSION, NutboxCommittee, usesThirdPartyMarketCap } from "@/config";
+import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, NutboxCommittee, usesThirdPartyMarketCap } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor, OracleDistributorV2, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
@@ -16,7 +16,7 @@ import { useChainStore } from '@/stores/chain';
 import { getReadOnlyClient } from "./wallets";
 import { buyTokenV4, sellTokenV4, poolKeyToPoolId, resolveV4PoolId, resolveV4PoolKeyForTrade, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
 import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice, resolveRhV4PoolKeyForTrade } from "./rhV4Swap";
-import { findPump9DeploySalt, verifyPump9SaltVanity } from "./pump9Salt";
+import { findPumpDeploySalt, getCreatePumpDeployment, verifyPumpSaltVanity } from "./pumpSalt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
 
 const pumpContract = [
@@ -31,10 +31,11 @@ const pumpContract = [
     PumpContract9
 ]
 
-/** 旧版本仅部署在 BSC；v9 从当前链部署配置读取。 */
+/** 旧版本仅部署在 BSC；v9/v11 从当前链部署配置读取。 */
 const getActivePumpAddress = (version: number): string | undefined => {
     const deployment = useChainStore().deployment
     if (version === 9) return deployment.contracts.pump9
+    if (version === 11) return deployment.contracts.pump11
     if (deployment.key !== 'bsc') return undefined
     return pumpContract[version - 1]
 }
@@ -288,13 +289,14 @@ export const checkTickUsed = async (tick: string) => {
 
 export const createCoin = async (createParms: CreateCommunity) => {
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
-    const salt = await findPump9DeploySalt(userAddress);
+    const createPump = getCreatePumpDeployment();
+    const salt = await findPumpDeploySalt(userAddress);
     // 部署前链上二次校验，防止本地缓存 salt 或 predict 偏差导致非靓号地址
-    await verifyPump9SaltVanity(userAddress, salt);
-    const createFee = await getPump9CreateFee(userAddress);
+    await verifyPumpSaltVanity(userAddress, salt);
+    const createFee = await getCreatePumpFee(userAddress);
 
     let hash = await writeContract({
-        contractName: 'Pump9',
+        contractName: createPump.contractName,
         functionName: 'createToken',
         args: [createParms.tick, salt],
         value: (createParms.initEth ?? 0n) + createFee
@@ -303,17 +305,18 @@ export const createCoin = async (createParms: CreateCommunity) => {
         throw errCode.TRANSACTION_INVALID;
     }
     let tx = await getTransactionReceipt(hash as `0x${string}`)
-    const event: any = getCreateTokenEventByHash(tx, PUMP9_VERSION);
+    const event: any = getCreateTokenEventByHash(tx, createPump.version);
     if (event?.tick == createParms.tick) {
-        return {token: event.token, createHash: tx.transactionHash}
+        return {token: event.token, createHash: tx.transactionHash, version: createPump.version}
     }
-    return {createHash: hash}
+    return {createHash: hash, version: createPump.version}
 }
 
-/** Pump9 创建固定费用：Pump.createFee + Nutbox Committee 费用 + 可选 IPShare 创建费 */
-export const getPump9CreateFee = async (userAddress: `0x${string}`): Promise<bigint> => {
+/** 当前链最新 Pump 创建固定费用：Pump + Nutbox Committee + 可选 IPShare 创建费。 */
+export const getCreatePumpFee = async (userAddress: `0x${string}`): Promise<bigint> => {
+    const { contractName } = getCreatePumpDeployment();
     const [pumpFee, commFee, settingsFee, ipshareCreated] = await Promise.all([
-        readContract('Pump9', 'createFee', []) as Promise<bigint>,
+        readContract(contractName, 'createFee', []) as Promise<bigint>,
         readContract('NutboxCommittee', 'getCreateCommunityFee', []) as Promise<bigint>,
         readContract('NutboxCommittee', 'getCommunitySettingsFee', []) as Promise<bigint>,
         readContract('IPShare3', 'ipshareCreated', [userAddress]) as Promise<boolean>,
@@ -660,9 +663,9 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         sellsman = zeroAddress;
     }
     if (listed) {
-        // v7/v8 上架后代币走 PCS V4（BuyAndSellView 使用 buyTokenV4）
+        // v7/v8/v9/v11 上架后代币走 PCS V4（BuyAndSellView 使用 buyTokenV4）
         if (isPcsV4Version(version)) {
-            throw new Error('V7/V8/V9 listed buy should use buyTokenV4 directly');
+            throw new Error('V7/V8/V9/V11 listed buy should use buyTokenV4 directly');
         }
 
         if (isImport) {
@@ -766,7 +769,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
     }
     if (listed) {
         if (isPcsV4Version(version)) {
-            throw new Error('V7/V8/V9 listed sell should use sellTokenV4 directly');
+            throw new Error('V7/V8/V9/V11 listed sell should use sellTokenV4 directly');
         }
 
         if (isImport) {
@@ -970,7 +973,8 @@ export const transferToken = async (token: string, to: string, amount: bigint, i
 }
 
 export const calculateInitEth = async (amount: bigint) => {
-    return await readContract('Pump9', 'getBuyPriceAfterFee', [0n, amount]) as bigint
+    const { contractName } = getCreatePumpDeployment()
+    return await readContract(contractName, 'getBuyPriceAfterFee', [0n, amount]) as bigint
 }
 
 export const getUserTokenInfo = async (token: string, ethAddr: string) => {
@@ -1005,13 +1009,13 @@ function checkDistributionEnd(config: any) {
     return Date.now() / 1000 > lastTime;
 }
 
-/** PCS V4 poolId（bytes32）来自后端 pair 字段，v7/v8/v10 上架代币定价共用 */
+/** PCS V4 poolId（bytes32）来自后端 pair 字段，v7/v8/v9/v10/v11 上架代币定价共用 */
 const buildPairMap = (items: Array<{ token?: string; pair?: string | null | undefined; version?: number | null | undefined; dexVersion?: number | null | undefined }>) => {
     const pairMap: Record<string, string> = {};
     for (const item of items) {
         if (!item.token || !item.pair) continue;
         const v = item.version ?? 2;
-        // Pump 创建的 V7/V8/V9 代币，或导入代币 dexVersion=4
+        // Pump 创建的 V7/V8/V9/V11 代币，或导入代币 dexVersion=4
         if (isPcsV4Version(v) || (v === 10 && item.dexVersion === 4)) {
             pairMap[item.token] = item.pair;
             pairMap[item.token.toLowerCase()] = item.pair;
@@ -1401,7 +1405,7 @@ export const getTokenOnchainInfo = async (
                         if (version === 10) {
                             socialPool = socialPoolMap[token]
                         } else {
-                            const tokenAbi = version === 9 ? 'Token9' : 'Token8';
+                            const tokenAbi = version >= 9 && version !== 10 ? 'Token9' : 'Token8';
                             socialPool = await readContract(tokenAbi, 'nutboxSocialPool', [], token as `0x${string}`) as string
                         }
                         if (!socialPool || socialPool === zeroAddress || !isAddress(socialPool)) return 0n;
@@ -1624,7 +1628,7 @@ export const getTokenOnchainInfo = async (
         const version = versions[token] ?? 4;
         const pumpAddress = getActivePumpAddress(version);
         if (!pumpAddress) continue;
-        // v7/v8 上架后走 PCS V4 定价（pairMap），与 Uniswap V2 无关
+        // v7/v8/v9/v11 上架后走 PCS V4 定价（pairMap），与 Uniswap V2 无关
         const isPcsV4Listed = isPcsV4Version(version) && info.listed;
         if (!info.listed) {
             calls.push({

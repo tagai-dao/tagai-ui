@@ -4,7 +4,7 @@ import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2,
     wrappedUniswapV2ForTagAI, CoinPurse, WETH, PumpContract5, PumpContract6,
     wrappedUniswapV2ForTagAI2, FPMMDeterministicFactory, ConditionalTokens,
-    FPMMDeterministicFactoryEvent, FPMMDeterministicFactoryEventV2, FPMMDeterministicFactoryEventV3, PumpContract7, PumpContract8, PumpContract9, IPShareContract3,
+    FPMMDeterministicFactoryEvent, FPMMDeterministicFactoryEventV2, FPMMDeterministicFactoryEventV3, PumpContract7, PumpContract8, PumpContract9, PumpContract11, IPShareContract3,
     HourlyTickCalculator, NutboxCommittee,
     PCSUniversalRouter, PCSPermit2, PCSCLPoolManager, ImportHelper,
     LinearCalculator, LinearTimeCalculator} from '@/config'
@@ -25,6 +25,7 @@ const ContractAddress = {
     Pump7: PumpContract7,
     Pump8: PumpContract8,
     Pump9: PumpContract9,
+    Pump11: PumpContract11,
     HourlyTickCalculator,
     LinearCalculator,
     LinearTimeCalculator,
@@ -52,7 +53,7 @@ const ContractAddress = {
 
 /** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
 const CHAIN_SCOPED_CONTRACTS = new Set([
-    'Pump9', 'IPShare3', 'ImportHelper', 'TagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'Pump9', 'Pump11', 'IPShare3', 'ImportHelper', 'TagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
     'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
 ])
 
@@ -73,6 +74,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
 
     const byName: Record<string, `0x${string}` | undefined> = {
         Pump9: c.pump9,
+        Pump11: c.pump11,
         IPShare3: c.ipshare3,
         ImportHelper: c.importHelper,
         TagAISwapWrapper: c.tagAiSwapWrapper,
@@ -105,6 +107,15 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
     return ContractAddress[contractName] as `0x${string}` | undefined
 }
 
+/** V11 保持 V9 的现有调用 ABI；只替换部署地址。 */
+const resolveContractAbi = (contractName: string) => {
+    const aliases: Record<string, keyof typeof abis> = {
+        Pump11: 'Pump9',
+        Token11: 'Token9',
+    }
+    return abis[(aliases[contractName] ?? contractName) as keyof typeof abis]
+}
+
 export const readContract = async (contractName: string, functionName: string, args: any, address?: `0x${string}`) => {
     const client = getReadOnlyClient();
     if (!address) {
@@ -113,7 +124,7 @@ export const readContract = async (contractName: string, functionName: string, a
     if (!address || address === zeroAddress) {
         throw new Error(`Contract ${contractName} not deployed on current chain`)
     }
-    const abi = abis[contractName as keyof typeof abis]
+    const abi = resolveContractAbi(contractName)
     const result = await client.readContract({
         address,
         abi,
@@ -231,7 +242,7 @@ export const writeContract = async ({
     if (!address || address === zeroAddress) {
         throw new Error(`Contract ${contractName} not deployed on current chain`)
     }
-    const abi = abis[contractName as keyof typeof abis]
+    const abi = resolveContractAbi(contractName)
     // 交易目标链必须与产品当前链一致（Privy 钱包 chain 也要对齐）
     const chain = getChainById(useChainStore().activeChainId)
 

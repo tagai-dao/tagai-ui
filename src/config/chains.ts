@@ -9,6 +9,8 @@ export type ChainDeployment = {
   key: 'bsc' | 'rh'
   name: string
   chainId: number
+  /** 当前链新创建社区代币使用的 Pump 版本。 */
+  latestPumpVersion: 9 | 11
   symbol: string
   decimals: number
   browser: string
@@ -59,9 +61,12 @@ export type ChainDeployment = {
   contracts: {
     pump9: `0x${string}`
     tokenImplementation9: `0x${string}`
+    pump11: `0x${string}`
+    tokenImplementation11: `0x${string}`
     importHelper: `0x${string}`
     tagAiSwapWrapper: `0x${string}`
     tipTagSwapHook9: `0x${string}`
+    tipTagSwapHook11: `0x${string}`
     hourlyTickCalculator: `0x${string}`
     nutboxCommittee: `0x${string}`
     ipshare3: `0x${string}`
@@ -89,6 +94,7 @@ export const BSC_CHAIN: ChainDeployment = {
   key: 'bsc',
   name: 'BSC',
   chainId: 56,
+  latestPumpVersion: 11,
   symbol: 'BNB',
   decimals: 18,
   browser: 'https://bscscan.com/',
@@ -125,9 +131,12 @@ export const BSC_CHAIN: ChainDeployment = {
   contracts: {
     pump9: '0x327a473c763bcf0d60CCd6811F832332939110D5',
     tokenImplementation9: '0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16',
+    pump11: '0x8fEF5b4c0f761a0cc447800e3019B089ac306F28',
+    tokenImplementation11: '0xfD40C112F39D372786265a032C546D05Feec4D66',
     importHelper: '0xF346A700830633bB27a46fC1e7eAAE49F593A4c6',
     tagAiSwapWrapper: '0x0000000000000000000000000000000000000000',
     tipTagSwapHook9: '0x78443e75aD3D70DAAab0De33d2D5Dea0cBae0cC1',
+    tipTagSwapHook11: '0x9E38747072F326b4e614EfF6FdCA8529db090cc1',
     hourlyTickCalculator: '0x6cCEC02E7D371FED954D7D16eCb7F2f57cccF54d',
     nutboxCommittee: '0xe10F967DD356504EDB731612789D0D0f0ba2929f',
     ipshare3: '0x95450AaD4Cc195e03BB4791B7f6f04aC6D9BA922',
@@ -147,6 +156,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
   key: 'rh',
   name: 'Robinhood',
   chainId: 4663,
+  latestPumpVersion: 9,
   symbol: 'ETH',
   decimals: 18,
   browser: 'https://robinhoodchain.blockscout.com/',
@@ -181,9 +191,12 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
   contracts: {
     pump9: '0x6C75E165E52E9c1661a75041650be2D919eE02A1',
     tokenImplementation9: '0x95c62F6A3AC1A3b7D08d866eeBDc74700aB954D6',
+    pump11: ZERO,
+    tokenImplementation11: ZERO,
     importHelper: '0xEC774DB6800B00BA1e87f0799cb29dEc21ACB4A9',
     tagAiSwapWrapper: '0xa12d998bff956c1034f863a4cd30f4403b6b2b4f',
     tipTagSwapHook9: '0x5e8e2D77ce0d2e04BA058bbcECC13C7C8aDB20Cc',
+    tipTagSwapHook11: ZERO,
     hourlyTickCalculator: '0x3DC52C69C3C8be568372E16d50E9F3FEc796610c',
     nutboxCommittee: '0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0',
     ipshare3: '0x8A7b0d80FA92699CE3e5bB2c8fE404D6733796d1',
@@ -229,6 +242,7 @@ export const getChainPath = (chainId: number, path = ''): string => {
 
 /** TagAI 自有合约是否已在该链部署（非零地址） */
 export const hasTagAiContracts = (chainId: number): boolean => {
-  const { contracts } = getChainDeployment(chainId)
-  return contracts.pump9 !== ZERO && contracts.ipshare3 !== ZERO
+  const { contracts, latestPumpVersion } = getChainDeployment(chainId)
+  const activePump = latestPumpVersion === 11 ? contracts.pump11 : contracts.pump9
+  return activePump !== ZERO && contracts.ipshare3 !== ZERO
 }

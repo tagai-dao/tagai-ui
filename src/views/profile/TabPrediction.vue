@@ -14,6 +14,7 @@
     import { getTokenOnchainInfo } from '@/utils/pump'
     import { useStateStore } from '@/stores/common'
     import { useI18n } from 'vue-i18n'
+    import { isPcsV4Version } from '@/utils/pumpVersion'
     
     const { t } = useI18n()
     const comStore = useCommunityStore()
@@ -166,7 +167,7 @@
     const buildPairMap = (list: any[]) => {
       const pairs: Record<string, string> = {}
       for (const item of list) {
-        if (item.token && item.pair && (item.version ?? 2) === 9) {
+        if (item.token && item.pair && isPcsV4Version(item.version ?? 2)) {
           pairs[item.token] = item.pair
         }
       }

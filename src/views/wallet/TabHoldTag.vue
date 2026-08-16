@@ -14,6 +14,7 @@ import BuyAndSellView from "@/views/buy-sell/BuyAndSellView.vue";
 import { useAccount } from "@/composables/useAccount";
 import { getTokenBalances } from "@/utils/web3";
 import { filterByActiveChain } from "@/utils/chainFilter";
+import { isPcsV4Version } from '@/utils/pumpVersion'
 
 enum ModalType {
   transfer,
@@ -160,7 +161,7 @@ const generatePairMap = (list: any) => {
   for (const item of list) {
     const pair = item.community?.pair ?? item.pair;
     const version = item.community?.version ?? item.version ?? 4;
-    if (item.token && pair && (version === 7 || version === 8 || version === 9)) {
+    if (item.token && pair && isPcsV4Version(version)) {
       pairs[item.token] = pair;
     }
   }

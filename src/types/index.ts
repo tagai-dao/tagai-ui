@@ -395,6 +395,7 @@ export type CreateCommunity = {
   dexVersion?: number,
   communityAddress?: string,  // Nutbox Community 地址（V10 导入代币）
   socialPoolAddress?: string, // SocialCuration Pool 地址（V10 导入代币）
+  version?: number, // 新建代币的 Pump 版本；导入流程由 API 固定为 V10
 }
 
 export type TokenHoldingList = {

@@ -16,6 +16,7 @@ import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import { DefaultCommunityTick } from "@/config";
 import { type Account } from "@/types";
+import { isPcsV4Version } from '@/utils/pumpVersion'
 
 const accStore = useAccountStore()
 const stateStore = useStateStore()
@@ -94,7 +95,7 @@ function updateReward() {
   const buildPairMap = (list: any[]) => {
     const pairs: Record<string, string> = {}
     for (const item of list) {
-      if (item.token && item.pair && (item.version ?? 2) === 9) {
+      if (item.token && item.pair && isPcsV4Version(item.version ?? 2)) {
         pairs[item.token] = item.pair
       }
     }
