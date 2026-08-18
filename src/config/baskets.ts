@@ -33,11 +33,14 @@ export type BasketAssetPreset = {
   logoUrl?: string
   category: 'platform' | 'stock'
   route: {
-    venue: 0 | 1 | 2
+    venue: 0 | 1 | 2 | 3
     /** BSC only: 0 = WBNB, 1 = settlement token (USDT). */
     quoteToken?: 0 | 1
+    /** BSC V3: token paired directly with the constituent. Native BNB is address(0). */
+    poolQuoteToken?: Address
     v4Pool: BasketPoolKey
     v3Fee: number
+    defaultMaxExecutionLossBps?: number
   }
 }
 
@@ -54,6 +57,9 @@ export type BasketContracts = {
   settlementToken: Address
   wrappedNative: Address
   bidToken: Address
+  nutboxRouter?: Address
+  v2Factory?: Address
+  v3Factory?: Address
 }
 
 export type BasketDeployment = {
@@ -65,6 +71,8 @@ export type BasketDeployment = {
   wrappedNativeSymbol: 'WBNB' | 'WETH'
   nativeSymbol: 'BNB' | 'ETH'
   contracts: BasketContracts
+  creationVersion: number
+  protocols?: Readonly<Record<number, BasketContracts>>
   hubPool: BasketPoolKey
   v3Quoter: Address
   assetPresets: BasketAssetPreset[]
@@ -143,7 +151,7 @@ const rhAssets: BasketAssetPreset[] = [
   rhStock('0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa', 'SPCX', 'SpaceX', 10_000, 200, 'svg'),
 ]
 
-const bscContracts = {
+const bscContractsV2 = {
   registry: '0x5B45ad2c3A2B8b8989579162C4faE2D64598Cefe',
   routeRegistry: '0xB086FC19925A9Af5371eb7Aba3c2c404eA471596',
   feeAuction: '0x5070CA9Ec62b47e2AEb9AcfE40B7Ec40cAFeB375',
@@ -158,15 +166,33 @@ const bscContracts = {
   bidToken: '0x32ef878D527d860339818571E8DA17005110f04E',
 } as const satisfies BasketContracts
 
+const bscContractsV3 = {
+  registry: '0x5B45ad2c3A2B8b8989579162C4faE2D64598Cefe',
+  routeRegistry: '0xE8C56D5243c9b170287cEfB6E8CEceA56113c366',
+  feeAuction: '0xfCF8C3cd5dCACb7b911149D1bc5bBCf275975396',
+  tokenDeployer: '0x410b65451BC216424781224FFb0c74b4300A4d5f',
+  rebalanceExecutor: '0x6bC03401B51484fA7cB5209100B82dBc2987596A',
+  hook: '0xe1666e91B18d1D3abeBea04Dd564D9973AB19985',
+  swapRouter: '0xa777987Ae5AE1D619A36Bd8E57258CB08f2A06E1',
+  feeBatchClaimer: '0xF232DD1142ffE0C90e8B25CBe2304C6c7c7D5d1F',
+  poolManager: '0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b',
+  settlementToken: '0x55d398326f99059fF775485246999027B3197955',
+  wrappedNative: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+  bidToken: '0x32ef878D527d860339818571E8DA17005110f04E',
+  nutboxRouter: '0x04e2d43bA38e3f3F0D0dab3A30D1B58BFE9B659f',
+  v2Factory: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',
+  v3Factory: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
+} as const satisfies BasketContracts
+
 export const BSC_USDC: Address = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d'
 export const BSC_USD1: Address = '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
 
-const bscEmptyPool = emptyPool(bscContracts.poolManager)
+const bscEmptyPool = emptyPool(bscContractsV3.poolManager)
 const bscV3Asset = (
   address: Address,
   symbol: string,
   name: string,
-  quoteToken: 0 | 1,
+  poolQuoteToken: Address,
   v3Fee: number,
   logoUrl?: string,
 ): BasketAssetPreset => ({
@@ -175,63 +201,63 @@ const bscV3Asset = (
   name,
   category: 'stock',
   logoUrl,
-  route: { venue: 1, quoteToken, v4Pool: bscEmptyPool, v3Fee },
+  route: { venue: 1, poolQuoteToken, v4Pool: bscEmptyPool, v3Fee },
 })
 
 const bscAssets: BasketAssetPreset[] = [
   {
-    address: bscContracts.wrappedNative, symbol: 'WBNB', name: 'Wrapped BNB', category: 'platform',
+    address: bscContractsV3.wrappedNative, symbol: 'WBNB', name: 'Wrapped BNB', category: 'platform',
     logoUrl: '/images/basket-assets/wbnb.svg',
-    route: { venue: 2, quoteToken: 0, v4Pool: bscEmptyPool, v3Fee: 0 },
+    route: { venue: 2, poolQuoteToken: bscContractsV3.wrappedNative, v4Pool: bscEmptyPool, v3Fee: 0 },
   },
   {
     address: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', symbol: 'ETH', name: 'Binance-Peg Ethereum',
     category: 'platform', logoUrl: '/images/basket-assets/eth.svg',
-    route: { venue: 1, quoteToken: 0, v4Pool: bscEmptyPool, v3Fee: 500 },
+    route: { venue: 1, poolQuoteToken: bscContractsV3.wrappedNative, v4Pool: bscEmptyPool, v3Fee: 500 },
   },
   {
     address: '0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c', symbol: 'BTC', name: 'Binance-Peg Bitcoin',
     category: 'platform', logoUrl: '/images/basket-assets/btc.svg',
-    route: { venue: 1, quoteToken: 0, v4Pool: bscEmptyPool, v3Fee: 500 },
+    route: { venue: 1, poolQuoteToken: bscContractsV3.wrappedNative, v4Pool: bscEmptyPool, v3Fee: 500 },
   },
   bscV3Asset(
-    '0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436', 'NVDAB', 'NVIDIA (bStocks)', 1, 2_500,
+    '0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436', 'NVDAB', 'NVIDIA (bStocks)', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/nvda.png',
   ),
   bscV3Asset(
-    '0x431a3BEE82E2ca41e49895CbECE5bB0F76A89b7A', 'AAPLB', 'Apple (bStocks)', 1, 2_500,
+    '0x431a3BEE82E2ca41e49895CbECE5bB0F76A89b7A', 'AAPLB', 'Apple (bStocks)', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/aapl.png',
   ),
   bscV3Asset(
-    '0x5b1910eAaD6450E50f816082Aa078C41F10C292f', 'TSLAB', 'Tesla (bStocks)', 1, 2_500,
+    '0x5b1910eAaD6450E50f816082Aa078C41F10C292f', 'TSLAB', 'Tesla (bStocks)', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/tsla.png',
   ),
   bscV3Asset(
-    '0x80106cb3EAD06659A5ad19DF39D9b4733863B9b0', 'MSFTB', 'Microsoft (bStocks)', 1, 2_500,
+    '0x80106cb3EAD06659A5ad19DF39D9b4733863B9b0', 'MSFTB', 'Microsoft (bStocks)', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/msft.png',
   ),
   bscV3Asset(
-    '0x7425889FE94F9d693E8daefE88BCCed6AcFEf4c0', 'METAB', 'Meta (bStocks)', 1, 2_500,
+    '0x7425889FE94F9d693E8daefE88BCCed6AcFEf4c0', 'METAB', 'Meta (bStocks)', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/meta.png',
   ),
   bscV3Asset(
-    '0xCA750eF65f295BBECd685Abf54e82CAf297BDB61', 'SKHYB', 'SK Hynix (bStocks)', 1, 2_500,
+    '0xCA750eF65f295BBECd685Abf54e82CAf297BDB61', 'SKHYB', 'SK Hynix (bStocks)', bscContractsV3.settlementToken, 2_500,
     'https://cdn.dexscreener.com/cms/images/Dv6-VNcUq4Lxx9yf?width=800&height=800&quality=95&format=auto',
   ),
   bscV3Asset(
-    '0x1a4b499833A79A09ad7Cf1D42D7DacF71e92eb00', 'AMZNB', 'Amazon (bStocks)', 1, 2_500,
+    '0x1a4b499833A79A09ad7Cf1D42D7DacF71e92eb00', 'AMZNB', 'Amazon (bStocks)', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/amzn.png',
   ),
   bscV3Asset(
-    '0x3F53De71c126BdaBAe20f9cD64848d317f6C3238', 'GOOGLB', 'Alphabet (bStocks)', 1, 2_500,
+    '0x3F53De71c126BdaBAe20f9cD64848d317f6C3238', 'GOOGLB', 'Alphabet (bStocks)', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/googl.png',
   ),
   bscV3Asset(
-    '0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1', 'SPCXB', 'SpaceX', 1, 2_500,
+    '0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1', 'SPCXB', 'SpaceX', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/spcx.svg',
   ),
   bscV3Asset(
-    '0x205812CdBed920aFf76C6580abD681a46D11efc7', 'QQQB', 'Invesco QQQ (bStocks)', 1, 100,
+    '0x205812CdBed920aFf76C6580abD681a46D11efc7', 'QQQB', 'Invesco QQQ (bStocks)', bscContractsV3.settlementToken, 100,
     '/images/basket-assets/qqq.png',
   ),
 ]
@@ -245,12 +271,14 @@ export const BASKET_DEPLOYMENTS: Record<BasketChainId, BasketDeployment> = {
     settlementDecimals: 18,
     wrappedNativeSymbol: 'WBNB',
     nativeSymbol: 'BNB',
-    contracts: bscContracts,
+    contracts: bscContractsV3,
+    creationVersion: 3,
+    protocols: { 2: bscContractsV2, 3: bscContractsV3 },
     hubPool: {
       currency0: zeroAddress,
-      currency1: bscContracts.settlementToken,
+      currency1: bscContractsV3.settlementToken,
       hooks: zeroAddress,
-      poolManager: bscContracts.poolManager,
+      poolManager: bscContractsV3.poolManager,
       fee: 67,
       tickSpacing: 1,
       parameters: `0x${'0'.repeat(58)}010000` as Hex,
@@ -269,6 +297,7 @@ export const BASKET_DEPLOYMENTS: Record<BasketChainId, BasketDeployment> = {
     wrappedNativeSymbol: 'WETH',
     nativeSymbol: 'ETH',
     contracts: rhContracts,
+    creationVersion: 1,
     hubPool: {
       currency0: zeroAddress,
       currency1: rhContracts.settlementToken,
@@ -288,6 +317,19 @@ export const isBasketChain = (chainId: number): chainId is BasketChainId =>
 export const getBasketDeployment = (chainId: number): BasketDeployment => {
   if (!isBasketChain(chainId)) throw new Error(`Basket is not deployed on chain ${chainId}`)
   return BASKET_DEPLOYMENTS[chainId]
+}
+
+export const getBasketProtocol = (chainId: number, version?: number): BasketContracts => {
+  const deployment = getBasketDeployment(chainId)
+  if (!deployment.protocols) return deployment.contracts
+  const protocol = deployment.protocols[Number(version)]
+  if (!protocol) throw new Error(`Unsupported Basket protocol version ${version} on chain ${chainId}`)
+  return protocol
+}
+
+export const getBasketCreationProtocol = (chainId: number): BasketContracts => {
+  const deployment = getBasketDeployment(chainId)
+  return getBasketProtocol(chainId, deployment.creationVersion)
 }
 
 /** BSC USD routing/settlement assets may be used between swaps, but never as basket constituents. */

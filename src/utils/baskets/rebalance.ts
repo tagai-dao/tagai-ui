@@ -1,13 +1,84 @@
 import { zeroAddress, type Address } from 'viem'
-import { getBasketDeployment, toContractPoolKey } from '@/config/baskets'
+import { getBasketDeployment, getBasketProtocol } from '@/config/baskets'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { getBasketTokenAbi, getRebalanceExecutorAbi, pancakePoolManagerStateAbi } from './abis'
 import { applySlippage } from './hook-data'
 import { getBasketV4PoolId } from './route-validation'
 import { quoteAssetToWethForSwap, quoteBasketHubExactInput, quoteWethToAssetForSwap } from './trade'
+import { quoteBscV3AssetToSettlement, quoteBscV3SettlementToAsset } from './bsc-v3-routing'
+import { isBscBasketV3, toContractLegRoute } from './routes'
 import type { BasketDetail } from './types'
 
 type LegState = { asset: Address; weightBps: bigint; reserve: bigint; value: bigint }
+
+const applyInputCeiling = (amount: bigint, bps: number) =>
+  amount === 0n ? 0n : (amount * BigInt(10_000 + bps) + 9_999n) / 10_000n
+
+const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: number) => {
+  const protocol = getBasketProtocol(detail.chainId, detail.version)
+  const client = getReadOnlyClient(detail.chainId)
+  const abi = getRebalanceExecutorAbi(detail.chainId, detail.version)
+  const raw: any = await client.readContract({
+    address: protocol.rebalanceExecutor,
+    abi,
+    functionName: 'previewRebalance',
+    args: [detail.address],
+  } as any)
+  const preview = raw?.preview ?? raw
+  const needed = Boolean(preview?.needed ?? preview?.[0])
+  if (!needed) throw new Error('RebalanceNotNeeded')
+  const sellMask = Number(preview?.sellMask ?? preview?.[1] ?? 0)
+  const buyMask = Number(preview?.buyMask ?? preview?.[2] ?? 0)
+  const assetIn = [...(preview?.assetIn ?? preview?.[5] ?? [])] as bigint[]
+  const expectedSettlementOut = [...(preview?.expectedSettlementOut ?? preview?.[6] ?? [])] as bigint[]
+  const settlementIn = [...(preview?.settlementIn ?? preview?.[7] ?? [])] as bigint[]
+  const count = detail.holdings.length
+  if (assetIn.length !== count || expectedSettlementOut.length !== count || settlementIn.length !== count) {
+    throw new Error('InvalidLimits')
+  }
+
+  const maxAssetIn = Array.from({ length: count }, () => 0n)
+  const minSettlementOut = Array.from({ length: count }, () => 0n)
+  const maxSettlementIn = Array.from({ length: count }, () => 0n)
+  const minAssetOut = Array.from({ length: count }, () => 0n)
+  for (let index = 0; index < count; index += 1) {
+    if ((sellMask & (1 << index)) === 0) continue
+    const holding = detail.holdings[index]
+    maxAssetIn[index] = applyInputCeiling(assetIn[index], slippageBps)
+    const quoted = await quoteBscV3AssetToSettlement(holding.route, holding.asset, assetIn[index])
+    minSettlementOut[index] = applySlippage(quoted, slippageBps)
+  }
+
+  const expectedProceeds = expectedSettlementOut.reduce((sum, value) => sum + value, 0n)
+  const protectedProceeds = minSettlementOut.reduce((sum, value) => sum + value, 0n)
+  if (!expectedProceeds || !protectedProceeds) throw new Error('RebalanceNotNeeded')
+  let allocated = 0n
+  let lastBuy = -1
+  for (let index = count - 1; index >= 0; index -= 1) {
+    if ((buyMask & (1 << index)) !== 0) { lastBuy = index; break }
+  }
+  for (let index = 0; index < count; index += 1) {
+    if ((buyMask & (1 << index)) === 0) continue
+    const protectedIn = index === lastBuy
+      ? protectedProceeds - allocated
+      : protectedProceeds * settlementIn[index] / expectedProceeds
+    allocated += protectedIn
+    maxSettlementIn[index] = applyInputCeiling(settlementIn[index], slippageBps)
+    const holding = detail.holdings[index]
+    const quoted = await quoteBscV3SettlementToAsset(holding.route, holding.asset, protectedIn)
+    minAssetOut[index] = applySlippage(quoted, slippageBps)
+  }
+
+  return {
+    expectedSellMask: sellMask,
+    expectedBuyMask: buyMask,
+    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+    maxAssetIn,
+    minSettlementOut,
+    maxSettlementIn,
+    minAssetOut,
+  }
+}
 
 /**
  * Reproduces the executor's rebalance plan, but quotes actual DEX outputs so
@@ -16,9 +87,20 @@ type LegState = { asset: Address; weightBps: bigint; reserve: bigint; value: big
  * even when every sell leg lands exactly on its caller-provided floor.
  */
 export const buildRebalanceLimits = async (detail: BasketDetail, slippageBps: number) => {
+  if (isBscBasketV3(detail.chainId, detail.version)) {
+    const v3Limits = await buildBscV3RebalanceLimits(detail, slippageBps)
+    return {
+      v3Limits,
+      minWethOut: v3Limits.minSettlementOut,
+      minQuoteOut: v3Limits.minSettlementOut,
+      minAssetOut: v3Limits.minAssetOut,
+      minHubOut: 0n,
+    }
+  }
   const deployment = getBasketDeployment(detail.chainId)
-  const tokenAbi = getBasketTokenAbi(detail.chainId)
-  const executorAbi = getRebalanceExecutorAbi(detail.chainId)
+  const protocol = getBasketProtocol(detail.chainId, detail.chainId === 56 ? detail.version : undefined)
+  const tokenAbi = getBasketTokenAbi(detail.chainId, detail.version)
+  const executorAbi = getRebalanceExecutorAbi(detail.chainId, detail.version)
   const quoteAssetFunction = detail.chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
   const client = getReadOnlyClient(detail.chainId)
   const rawStates = await Promise.all(detail.holdings.map((_, index) => client.readContract({
@@ -32,10 +114,10 @@ export const buildRebalanceLimits = async (detail: BasketDetail, slippageBps: nu
     const weightBps = BigInt(raw?.targetWeightBps ?? raw?.[1] ?? 0)
     const reserve = BigInt(raw?.activeReserve ?? raw?.[2] ?? 0)
     const value = await client.readContract({
-      address: deployment.contracts.rebalanceExecutor,
+      address: protocol.rebalanceExecutor,
       abi: executorAbi,
       functionName: quoteAssetFunction,
-      args: [{ ...detail.holdings[index].route, v4Pool: toContractPoolKey(detail.holdings[index].route.v4Pool, detail.chainId) }, asset, reserve],
+      args: [toContractLegRoute(detail.holdings[index].route, detail.chainId, detail.version), asset, reserve],
     } as any) as bigint
     return { asset, weightBps, reserve, value }
   }))
@@ -79,7 +161,7 @@ export const buildRebalanceLimits = async (detail: BasketDetail, slippageBps: nu
       const quoted = await quoteWethToAssetForSwap(detail.holdings[index].route, legs[index].asset, wethIn, detail.chainId)
       minAssetOut[index] = applySlippage(quoted, slippageBps)
     }
-    return { minWethOut: minQuoteOut, minQuoteOut, minAssetOut, minHubOut: 0n }
+    return { v3Limits: undefined, minWethOut: minQuoteOut, minQuoteOut, minAssetOut, minHubOut: 0n }
   }
 
   let protectedWbnb = 0n
@@ -181,5 +263,5 @@ export const buildRebalanceLimits = async (detail: BasketDetail, slippageBps: nu
     const quoted = await quoteWethToAssetForSwap(detail.holdings[index].route, legs[index].asset, quoteIn, detail.chainId)
     minAssetOut[index] = applySlippage(quoted, slippageBps)
   }
-  return { minWethOut: minQuoteOut, minQuoteOut, minAssetOut, minHubOut }
+  return { v3Limits: undefined, minWethOut: minQuoteOut, minQuoteOut, minAssetOut, minHubOut }
 }

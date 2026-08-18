@@ -10,6 +10,7 @@ import {
 } from 'viem'
 import {
   getBasketDeployment,
+  getBasketProtocol,
   isBasketChain,
   toContractPoolKey,
   type BasketDeployment,
@@ -30,6 +31,7 @@ import {
   listRegisteredBaskets,
   type RegisteredBasket,
 } from './api'
+import { isBscBasketV3, toContractLegRoute } from './routes'
 import type { BasketDetail, BasketHolding, BasketLegRoute, BasketSummary } from './types'
 
 export type BasketReadOptions = {
@@ -102,8 +104,14 @@ const normalizePool = (raw: any, chainId: number): BasketPoolKey => chainId === 
       hooks: (raw?.hooks ?? raw?.[4]) as Address,
     }
 
-const normalizeRoute = (raw: any, chainId: number): BasketLegRoute => chainId === 56
-  ? {
+const normalizeRoute = (raw: any, chainId: number, version = 0): BasketLegRoute => chainId === 56
+  ? isBscBasketV3(chainId, version) ? {
+      venue: Number(raw?.venue ?? raw?.[0] ?? 0),
+      poolQuoteToken: (raw?.poolQuoteToken ?? raw?.[1] ?? zeroAddress) as Address,
+      v4Pool: normalizePool(raw?.v4Pool ?? raw?.[2], chainId),
+      v3Fee: Number(raw?.v3Fee ?? raw?.[3] ?? 0),
+      defaultMaxExecutionLossBps: Number(raw?.defaultMaxExecutionLossBps ?? raw?.[4] ?? 0),
+    } : {
       venue: Number(raw?.venue ?? raw?.[0] ?? 0),
       quoteToken: Number(raw?.quoteToken ?? raw?.[1] ?? 0) === 1 ? 1 : 0,
       v4Pool: normalizePool(raw?.v4Pool ?? raw?.[2], chainId),
@@ -267,10 +275,7 @@ export const getBasketDetail = async (
 ): Promise<BasketDetail> => {
   if (!isBasketChain(chainId)) throw new Error('Baskets are not available on this chain')
   const deployment = getBasketDeployment(chainId)
-  const contractsConfig = deployment.contracts
-  const tokenAbi = getBasketTokenAbi(chainId)
-  const executorAbi = getRebalanceExecutorAbi(chainId)
-  const quoteAssetFunction = chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
+  const defaultTokenAbi = getBasketTokenAbi(chainId, chainId === 56 ? 2 : undefined)
   if (!isAddress(address)) throw new Error('Invalid basket address')
   const key = cacheKey(chainId, address)
   const cached = detailCache.get(key)
@@ -285,6 +290,11 @@ export const getBasketDetail = async (
   }
 
   if (registered) {
+    const contractsConfig = getBasketProtocol(chainId, chainId === 56 ? registered.version : undefined)
+    const tokenAbi = getBasketTokenAbi(chainId, registered.version)
+    const executorAbi = getRebalanceExecutorAbi(chainId, registered.version)
+    const bscV3 = isBscBasketV3(chainId, registered.version)
+    const quoteAssetFunction = bscV3 ? 'quoteAssetToQuote' : chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
     const contracts: MulticallContract[] = [
       { address, abi: tokenAbi, functionName: 'creatorPayout' },
       { address, abi: tokenAbi, functionName: 'launcherPayout' },
@@ -298,7 +308,15 @@ export const getBasketDetail = async (
       const stateIndex = contracts.length
       contracts.push({ address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(asset.position)] })
       let quoteIndex: number | null = null
-      if (chainId === 56) {
+      if (bscV3) {
+        quoteIndex = contracts.length
+        contracts.push({
+          address: contractsConfig.rebalanceExecutor,
+          abi: executorAbi,
+          functionName: quoteAssetFunction,
+          args: [toContractLegRoute(asset.route, chainId, registered.version), asset.address, 10n ** BigInt(asset.decimals)],
+        })
+      } else if (chainId === 56) {
         const spotContract = bscSpotQuoteContract(deployment, asset.address, asset.route)
         if (spotContract) {
           quoteIndex = contracts.length
@@ -310,12 +328,12 @@ export const getBasketDetail = async (
           address: contractsConfig.rebalanceExecutor,
           abi: executorAbi,
           functionName: quoteAssetFunction,
-          args: [{ ...asset.route, v4Pool: toContractPoolKey(asset.route.v4Pool, chainId) }, asset.address, 10n ** BigInt(asset.decimals)],
+          args: [toContractLegRoute(asset.route, chainId, registered.version), asset.address, 10n ** BigInt(asset.decimals)],
         })
       }
       assetReads.push({ stateIndex, quoteIndex })
     })
-    contracts.push(hubStateContract(deployment))
+    if (!bscV3) contracts.push(hubStateContract(deployment))
 
     const rows = await multicall(client, contracts)
     const creatorPayout = ok<Address>(rows[0])
@@ -326,9 +344,9 @@ export const getBasketDetail = async (
     if (!engine || engine.toLowerCase() !== contractsConfig.hook.toLowerCase()) {
       throw new Error('This Basket belongs to an unsupported protocol deployment')
     }
-    const hubResult = ok<unknown>(rows[rows.length - 1])
+    const hubResult = bscV3 ? null : ok<unknown>(rows[rows.length - 1])
     const hubSqrtPrice = hubResult ? parseHubSqrtPrice(hubResult, chainId) : 0n
-    if (hubSqrtPrice > 0n) hubSqrtCache.set(chainId, { at: Date.now(), data: hubSqrtPrice })
+    if (!bscV3 && hubSqrtPrice > 0n) hubSqrtCache.set(chainId, { at: Date.now(), data: hubSqrtPrice })
 
     const holdings: BasketHolding[] = registered.assets.map((asset, index) => {
       const read = assetReads[index]
@@ -336,12 +354,18 @@ export const getBasketDetail = async (
       const reserve = BigInt(state?.activeReserve ?? state?.[2] ?? 0)
       const quoteResult = read.quoteIndex === null ? null : ok<unknown>(rows[read.quoteIndex])
       const unitQuote = read.quoteIndex === null ? 0n : ok<bigint>(rows[read.quoteIndex]) ?? 0n
-      const reserveWeth = chainId === 56
-        ? bscSpotAssetToWbnb(deployment, asset.address, asset.route, reserve, quoteResult, hubSqrtPrice)
-        : reserve * unitQuote / (10n ** BigInt(asset.decimals))
-      const valueUsd = hubSqrtPrice > 0n
-        ? Number(formatUnits(wethToUsdgRaw(reserveWeth, hubSqrtPrice), deployment.settlementDecimals))
-        : 0
+      const reserveQuote = bscV3 || chainId !== 56
+        ? reserve * unitQuote / (10n ** BigInt(asset.decimals))
+        : 0n
+      const reserveWeth = bscV3
+        ? 0n
+        : chainId === 56
+          ? bscSpotAssetToWbnb(deployment, asset.address, asset.route, reserve, quoteResult, hubSqrtPrice)
+          : reserveQuote
+      const valueSettlement = bscV3
+        ? reserveQuote
+        : hubSqrtPrice > 0n ? wethToUsdgRaw(reserveWeth, hubSqrtPrice) : 0n
+      const valueUsd = Number(formatUnits(valueSettlement, deployment.settlementDecimals))
       const balance = Number(formatUnits(reserve, asset.decimals))
       return {
         asset: asset.address,
@@ -351,7 +375,7 @@ export const getBasketDetail = async (
         balance,
         priceUsd: balance > 0 ? valueUsd / balance : 0,
         valueUsd,
-        priced: reserveWeth > 0n && valueUsd > 0,
+        priced: valueSettlement > 0n && valueUsd > 0,
         route: asset.route,
       }
     })
@@ -392,21 +416,21 @@ export const getBasketDetail = async (
   }
 
   const meta = await multicall(client, [
-    { address, abi: tokenAbi, functionName: 'name' },
-    { address, abi: tokenAbi, functionName: 'symbol' },
-    { address, abi: tokenAbi, functionName: 'decimals' },
-    { address, abi: tokenAbi, functionName: 'assetCount' },
-    { address, abi: tokenAbi, functionName: 'basketFeeBps' },
-    { address, abi: tokenAbi, functionName: 'creatorShareBps' },
-    { address, abi: tokenAbi, functionName: 'creatorPayout' },
-    { address, abi: tokenAbi, functionName: 'launcherPayout' },
-    { address, abi: tokenAbi, functionName: 'totalSupply' },
-    { address, abi: tokenAbi, functionName: 'effectiveSupply' },
-    { address: contractsConfig.registry, abi: basketRegistryAbi, functionName: 'basketCreator', args: [address] },
-    { address: contractsConfig.registry, abi: basketRegistryAbi, functionName: 'basketVersion', args: [address] },
-    { address: contractsConfig.registry, abi: basketRegistryAbi, functionName: 'basketCreatedAt', args: [address] },
-    { address, abi: tokenAbi, functionName: 'lastRebalanceAt' },
-    { address, abi: tokenAbi, functionName: 'engine' },
+    { address, abi: defaultTokenAbi, functionName: 'name' },
+    { address, abi: defaultTokenAbi, functionName: 'symbol' },
+    { address, abi: defaultTokenAbi, functionName: 'decimals' },
+    { address, abi: defaultTokenAbi, functionName: 'assetCount' },
+    { address, abi: defaultTokenAbi, functionName: 'basketFeeBps' },
+    { address, abi: defaultTokenAbi, functionName: 'creatorShareBps' },
+    { address, abi: defaultTokenAbi, functionName: 'creatorPayout' },
+    { address, abi: defaultTokenAbi, functionName: 'launcherPayout' },
+    { address, abi: defaultTokenAbi, functionName: 'totalSupply' },
+    { address, abi: defaultTokenAbi, functionName: 'effectiveSupply' },
+    { address: deployment.contracts.registry, abi: basketRegistryAbi, functionName: 'basketCreator', args: [address] },
+    { address: deployment.contracts.registry, abi: basketRegistryAbi, functionName: 'basketVersion', args: [address] },
+    { address: deployment.contracts.registry, abi: basketRegistryAbi, functionName: 'basketCreatedAt', args: [address] },
+    { address, abi: defaultTokenAbi, functionName: 'lastRebalanceAt' },
+    { address, abi: defaultTokenAbi, functionName: 'engine' },
   ])
   const name = ok<string>(meta[0])
   const symbol = ok<string>(meta[1])
@@ -422,6 +446,11 @@ export const getBasketDetail = async (
   const effectiveSupplyRaw = ok<bigint>(meta[9]) ?? 0n
   const creator = ok<Address>(meta[10])
   const version = Number(ok<number>(meta[11]) ?? 0)
+  const contractsConfig = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
+  const tokenAbi = getBasketTokenAbi(chainId, version)
+  const executorAbi = getRebalanceExecutorAbi(chainId, version)
+  const bscV3 = isBscBasketV3(chainId, version)
+  const quoteAssetFunction = bscV3 ? 'quoteAssetToQuote' : chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
   const createdAt = Number(ok<bigint>(meta[12]) ?? 0n)
   const lastRebalanceAt = Number(ok<bigint>(meta[13]) ?? 0n)
   const engine = ok<Address>(meta[14])
@@ -444,7 +473,7 @@ export const getBasketDetail = async (
       address: (raw?.asset ?? raw?.[0]) as Address,
       weightBps: Number(raw?.targetWeightBps ?? raw?.[1] ?? 0),
       reserve: BigInt(raw?.activeReserve ?? raw?.[2] ?? 0),
-      route: normalizeRoute(ok(legs[length + index]), chainId),
+      route: normalizeRoute(ok(legs[length + index]), chainId, version),
     }
   }).filter((leg) => isAddress(leg.address))
 
@@ -456,7 +485,15 @@ export const getBasketDetail = async (
     const decimalsIndex = assetMetaContracts.length
     assetMetaContracts.push({ address: leg.address, abi: erc20Abi, functionName: 'decimals' })
     let quoteIndex: number | null = null
-    if (chainId === 56) {
+    if (bscV3) {
+      quoteIndex = assetMetaContracts.length
+      assetMetaContracts.push({
+        address: contractsConfig.rebalanceExecutor,
+        abi: executorAbi,
+        functionName: quoteAssetFunction,
+        args: [toContractLegRoute(leg.route, chainId, version), leg.address, leg.reserve],
+      })
+    } else if (chainId === 56) {
       const spotContract = bscSpotQuoteContract(deployment, leg.address, leg.route)
       if (spotContract) {
         quoteIndex = assetMetaContracts.length
@@ -468,22 +505,26 @@ export const getBasketDetail = async (
         address: contractsConfig.rebalanceExecutor,
         abi: executorAbi,
         functionName: quoteAssetFunction,
-        args: [{ ...leg.route, v4Pool: toContractPoolKey(leg.route.v4Pool, chainId) }, leg.address, leg.reserve],
+        args: [toContractLegRoute(leg.route, chainId, version), leg.address, leg.reserve],
       })
     }
     assetMetaReads.push({ symbolIndex, decimalsIndex, quoteIndex })
   })
   const assetMeta = await multicall(client, assetMetaContracts)
-  const hubSqrtPrice = await getHubSqrtPrice(client, deployment)
+  const hubSqrtPrice = bscV3 ? 0n : await getHubSqrtPrice(client, deployment)
 
   const holdings: BasketHolding[] = assets.map((leg, index) => {
     const read = assetMetaReads[index]
     const assetDecimals = Number(ok<number>(assetMeta[read.decimalsIndex]) ?? 18)
     const quoteResult = read.quoteIndex === null ? null : ok<unknown>(assetMeta[read.quoteIndex])
-    const reserveWeth = chainId === 56
-      ? bscSpotAssetToWbnb(deployment, leg.address, leg.route, leg.reserve, quoteResult, hubSqrtPrice)
-      : read.quoteIndex === null ? 0n : ok<bigint>(assetMeta[read.quoteIndex]) ?? 0n
-    const valueUsd = Number(formatUnits(wethToUsdgRaw(reserveWeth, hubSqrtPrice), deployment.settlementDecimals))
+    const directQuote = read.quoteIndex === null ? 0n : ok<bigint>(assetMeta[read.quoteIndex]) ?? 0n
+    const reserveWeth = bscV3
+      ? 0n
+      : chainId === 56
+        ? bscSpotAssetToWbnb(deployment, leg.address, leg.route, leg.reserve, quoteResult, hubSqrtPrice)
+        : directQuote
+    const valueSettlement = bscV3 ? directQuote : wethToUsdgRaw(reserveWeth, hubSqrtPrice)
+    const valueUsd = Number(formatUnits(valueSettlement, deployment.settlementDecimals))
     const balance = Number(formatUnits(leg.reserve, assetDecimals))
     const priceUsd = balance > 0 ? valueUsd / balance : 0
     return {
@@ -494,7 +535,7 @@ export const getBasketDetail = async (
       balance,
       priceUsd,
       valueUsd,
-      priced: reserveWeth > 0n && valueUsd > 0,
+      priced: valueSettlement > 0n && valueUsd > 0,
       route: leg.route,
     }
   })
@@ -542,10 +583,6 @@ export const listBaskets = async (
   options: BasketReadOptions = {},
 ): Promise<BasketSummary[]> => {
   const deployment = getBasketDeployment(chainId)
-  const contractsConfig = deployment.contracts
-  const tokenAbi = getBasketTokenAbi(chainId)
-  const executorAbi = getRebalanceExecutorAbi(chainId)
-  const quoteAssetFunction = chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
   const cached = listCache.get(chainId)
   if (!options.force && cached && isFresh(cached.at)) {
     options.onShell?.(cached.data)
@@ -561,6 +598,7 @@ export const listBaskets = async (
     address: basket.address,
     name: basket.name,
     symbol: basket.symbol,
+    version: basket.version,
     basketLength: basket.basketLength,
     navPerToken: 0,
     aumUsd: 0,
@@ -596,13 +634,28 @@ export const listBaskets = async (
   }
 
   registered.forEach((basket, basketIndex) => {
+    const contractsConfig = getBasketProtocol(chainId, chainId === 56 ? basket.version : undefined)
+    const tokenAbi = getBasketTokenAbi(chainId, basket.version)
+    const executorAbi = getRebalanceExecutorAbi(chainId, basket.version)
+    const bscV3 = isBscBasketV3(chainId, basket.version)
+    const quoteAssetFunction = bscV3 ? 'quoteAssetToQuote' : chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
     addRead({ address: basket.address, abi: tokenAbi, functionName: 'effectiveSupply' }, { kind: 'effectiveSupply', basketIndex })
     basket.assets.forEach((asset, assetIndex) => {
       addRead(
         { address: basket.address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(asset.position)] },
         { kind: 'reserve', basketIndex, assetIndex },
       )
-      if (chainId === 56) {
+      if (bscV3) {
+        addRead(
+          {
+            address: contractsConfig.rebalanceExecutor,
+            abi: executorAbi,
+            functionName: quoteAssetFunction,
+            args: [toContractLegRoute(asset.route, chainId, basket.version), asset.address, 10n ** BigInt(asset.decimals)],
+          },
+          { kind: 'unitQuote', basketIndex, assetIndex },
+        )
+      } else if (chainId === 56) {
         const spotContract = bscSpotQuoteContract(deployment, asset.address, asset.route)
         if (spotContract) addRead(spotContract, { kind: 'spotQuote', basketIndex, assetIndex })
       } else {
@@ -611,7 +664,7 @@ export const listBaskets = async (
             address: contractsConfig.rebalanceExecutor,
             abi: executorAbi,
             functionName: quoteAssetFunction,
-            args: [{ ...asset.route, v4Pool: toContractPoolKey(asset.route.v4Pool, chainId) }, asset.address, 10n ** BigInt(asset.decimals)],
+            args: [toContractLegRoute(asset.route, chainId, basket.version), asset.address, 10n ** BigInt(asset.decimals)],
           },
           { kind: 'unitQuote', basketIndex, assetIndex },
         )
@@ -646,11 +699,18 @@ export const listBaskets = async (
     let pricedCount = 0
     basket.assets.forEach((asset, assetIndex) => {
       const reserve = reserves[basketIndex][assetIndex]
-      const wethValue = chainId === 56
-        ? bscSpotAssetToWbnb(deployment, asset.address, asset.route, reserve, spotQuotes[basketIndex][assetIndex], hubSqrtPrice)
-        : reserve * unitQuotes[basketIndex][assetIndex] / (10n ** BigInt(asset.decimals))
-      if (reserve > 0n && wethValue > 0n) pricedCount += 1
-      if (hubSqrtPrice > 0n) aumRaw += wethToUsdgRaw(wethValue, hubSqrtPrice)
+      const bscV3 = isBscBasketV3(chainId, basket.version)
+      const unitValue = reserve * unitQuotes[basketIndex][assetIndex] / (10n ** BigInt(asset.decimals))
+      const wethValue = bscV3
+        ? 0n
+        : chainId === 56
+          ? bscSpotAssetToWbnb(deployment, asset.address, asset.route, reserve, spotQuotes[basketIndex][assetIndex], hubSqrtPrice)
+          : unitValue
+      const settlementValue = bscV3
+        ? unitValue
+        : hubSqrtPrice > 0n ? wethToUsdgRaw(wethValue, hubSqrtPrice) : 0n
+      if (reserve > 0n && settlementValue > 0n) pricedCount += 1
+      aumRaw += settlementValue
     })
     const aumUsd = Number(formatUnits(aumRaw, deployment.settlementDecimals))
     const effectiveSupply = Number(formatUnits(effectiveSupplies[basketIndex], basket.decimals))

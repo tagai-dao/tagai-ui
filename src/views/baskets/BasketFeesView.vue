@@ -6,7 +6,7 @@ import { useBasketDetail } from '@/composables/baskets/useBasketDetail'
 import { feeSplit } from '@/utils/baskets/fee-model'
 import { erc20Abi, getBasketFeeAuctionAbi, getBasketTokenAbi } from '@/utils/baskets/abis'
 import { friendlyBasketError, sanitizeBasketAmountInput } from '@/utils/baskets/trade'
-import { BASKET_FRONTEND_FEE_WALLET, getBasketDeployment } from '@/config/baskets'
+import { BASKET_FRONTEND_FEE_WALLET, getBasketDeployment, getBasketProtocol } from '@/config/baskets'
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
@@ -22,8 +22,11 @@ const chainStore = useChainStore()
 const modalStore = useModalStore()
 const { detail, isLoading, hasError, errorMessage, load } = useBasketDetail()
 const deployment = computed(() => getBasketDeployment(detail.value?.chainId ?? chainStore.activeChainId))
-const contracts = computed(() => deployment.value.contracts)
-const tokenAbi = computed(() => getBasketTokenAbi(deployment.value.chainId))
+const contracts = computed(() => getBasketProtocol(
+  deployment.value.chainId,
+  deployment.value.chainId === 56 ? detail.value?.version ?? deployment.value.creationVersion : undefined,
+))
+const tokenAbi = computed(() => getBasketTokenAbi(deployment.value.chainId, detail.value?.version))
 const auctionAbi = computed(() => getBasketFeeAuctionAbi(deployment.value.chainId))
 const address = computed(() => String(route.params.address || ''))
 const account = computed(() => isAddress(accountStore.ethConnectAddress) ? getAddress(accountStore.ethConnectAddress) : undefined)

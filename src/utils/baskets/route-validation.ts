@@ -1,8 +1,9 @@
 import { encodeAbiParameters, getAddress, keccak256, parseAbi, zeroAddress, type Address } from 'viem'
-import { getBasketDeployment, toContractPoolKey, type BasketPoolKey } from '@/config/baskets'
+import { getBasketDeployment, getBasketProtocol, toContractPoolKey, type BasketPoolKey } from '@/config/baskets'
 import { getRhV4PoolLiquidity, getRhV4PoolState } from '@/utils/rhV4Swap'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { basketRegistryAbi, pancakePoolManagerStateAbi } from './abis'
+import { validateNutboxRoute } from './bsc-v3-routing'
 import type { BasketLegRoute } from './types'
 
 const V3_TWAP_WINDOW_SECONDS = 300
@@ -37,6 +38,11 @@ const v3PoolValidationAbi = parseAbi([
   'function observe(uint32[] secondsAgos) view returns (int56[] tickCumulatives,uint160[] secondsPerLiquidityCumulativeX128s)',
 ])
 
+const v2FactoryAbi = parseAbi(['function getPair(address tokenA,address tokenB) view returns (address pair)'])
+const v2PairValidationAbi = parseAbi([
+  'function getReserves() view returns (uint112 reserve0,uint112 reserve1,uint32 blockTimestampLast)',
+])
+
 const sameAddress = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
 /** PoolKey.toId(): keccak256(abi.encode(currency0, currency1, fee, tickSpacing, hooks)). */
@@ -62,15 +68,11 @@ export const getBasketV4PoolId = (pool: BasketPoolKey, chainId = 4663): `0x${str
 const assertV4RouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number) => {
   const deployment = getBasketDeployment(chainId)
   const pool = route.v4Pool
-  const quote = chainId === 56 && route.quoteToken === 1
-    ? deployment.contracts.settlementToken
-    : zeroAddress
+  const quote = chainId === 56 ? route.poolQuoteToken ?? zeroAddress : zeroAddress
   const direct = (sameAddress(pool.currency0, quote) && sameAddress(pool.currency1, asset)) ||
     (sameAddress(pool.currency0, asset) && sameAddress(pool.currency1, quote))
   if (!direct) {
-    const quoteLabel = chainId === 56 && route.quoteToken === 1
-      ? deployment.settlementSymbol
-      : deployment.nativeSymbol
+    const quoteLabel = chainId === 56 ? quote : deployment.nativeSymbol
     failPoolValidation('directRouteRequired', { venue: 'V4', quotes: quoteLabel })
   }
   if (chainId === 56 && (!pool.poolManager || !sameAddress(pool.poolManager, deployment.contracts.poolManager))) {
@@ -117,8 +119,8 @@ const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
   })
   if (sameAddress(factory, zeroAddress)) failPoolValidation('v3NotConfigured')
 
-  const quote = chainId === 56 && route.quoteToken === 1
-    ? deployment.contracts.settlementToken
+  const quote = chainId === 56
+    ? route.poolQuoteToken ?? zeroAddress
     : deployment.contracts.wrappedNative
   const pool = await client.readContract({
     address: factory,
@@ -136,23 +138,70 @@ const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
   if (slot0[0] === 0n) failPoolValidation('uninitialized', { venue: 'V3' })
   if (liquidity === 0n) failPoolValidation('noLiquidity', { venue: 'V3' })
 
+  if (chainId !== 56) {
+    try {
+      await client.readContract({
+        address: poolAddress,
+        abi: v3PoolValidationAbi,
+        functionName: 'observe',
+        args: [[V3_TWAP_WINDOW_SECONDS, 0]],
+      })
+    } catch {
+      failPoolValidation('twapUnavailable')
+    }
+  }
+}
+
+const assertV2RouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number) => {
+  if (chainId !== 56) failPoolValidation('v2Unsupported')
+  const protocol = getBasketProtocol(chainId, 3)
+  const quote = route.poolQuoteToken ?? zeroAddress
+  const factory = protocol.v2Factory
+  if (sameAddress(quote, zeroAddress)) failPoolValidation('routeIncompatible')
+  if (!factory) failPoolValidation('routeIncompatible')
+  const v2Factory = factory as Address
+  const client = getReadOnlyClient(chainId)
+  const pair = await client.readContract({
+    address: v2Factory,
+    abi: v2FactoryAbi,
+    functionName: 'getPair',
+    args: [asset, quote],
+  })
+  if (sameAddress(pair, zeroAddress)) failPoolValidation('poolNotFound', { venue: 'V2' })
+  const reserves = await client.readContract({
+    address: getAddress(pair),
+    abi: v2PairValidationAbi,
+    functionName: 'getReserves',
+  })
+  if (reserves[0] === 0n || reserves[1] === 0n) failPoolValidation('noLiquidity', { venue: 'V2' })
+}
+
+const assertBscV3Bridge = async (route: BasketLegRoute, chainId: number) => {
+  if (chainId !== 56) return
+  const protocol = getBasketProtocol(chainId, 3)
+  if (!route.poolQuoteToken) failPoolValidation('quoteTokenUnavailable')
+  const quote = route.poolQuoteToken as Address
+  if (sameAddress(quote, protocol.settlementToken)) return
   try {
-    await client.readContract({
-      address: poolAddress,
-      abi: v3PoolValidationAbi,
-      functionName: 'observe',
-      args: [[V3_TWAP_WINDOW_SECONDS, 0]],
-    })
+    await Promise.all([
+      validateNutboxRoute(quote, protocol.settlementToken),
+      validateNutboxRoute(protocol.settlementToken, quote),
+    ])
   } catch {
-    failPoolValidation('twapUnavailable')
+    failPoolValidation('nutboxRouteUnavailable')
   }
 }
 
 /** Mirrors the deployed BasketToken constructor's venue-specific route checks. */
 export const assertBasketRouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number): Promise<void> => {
   const deployment = getBasketDeployment(chainId)
-  if (route.venue === 0) return assertV4RouteUsable(route, asset, chainId)
-  if (route.venue === 1) return assertV3RouteUsable(route, asset, chainId)
-  if (route.venue === 2 && sameAddress(asset, deployment.contracts.wrappedNative)) return
-  failPoolValidation('routeIncompatible')
+  if (route.venue === 0) await assertV4RouteUsable(route, asset, chainId)
+  else if (route.venue === 1) await assertV3RouteUsable(route, asset, chainId)
+  else if (route.venue === 2 && sameAddress(asset, deployment.contracts.wrappedNative)) {
+    if (chainId === 56 && !sameAddress(route.poolQuoteToken ?? zeroAddress, deployment.contracts.wrappedNative)) {
+      failPoolValidation('routeIncompatible')
+    }
+  } else if (route.venue === 3) await assertV2RouteUsable(route, asset, chainId)
+  else failPoolValidation('routeIncompatible')
+  await assertBscV3Bridge(route, chainId)
 }

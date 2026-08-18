@@ -1,6 +1,7 @@
 import { formatUnits, parseUnits, zeroAddress, type Address, type Hex } from 'viem'
 import {
   getBasketDeployment,
+  getBasketProtocol,
   toContractPoolKey,
   type BasketPoolKey,
 } from '@/config/baskets'
@@ -16,7 +17,9 @@ import {
   v3QuoterAbi,
   v4QuoterAbi,
 } from './abis'
+import { quoteBscV3SettlementToAsset } from './bsc-v3-routing'
 import { applySlippage, encodeBasketTradeData } from './hook-data'
+import { isBscBasketV3, toContractLegRoute } from './routes'
 import type { BasketDetail, BasketLegRoute, BasketSwapQuote, TradeSide } from './types'
 
 export const sanitizeBasketAmountInput = (value: string | number, decimals: number): string => {
@@ -77,18 +80,29 @@ export const friendlyBasketError = (error: unknown): string => {
   return text.split('\n')[0] || 'Transaction failed'
 }
 
-export const getTradeAllowance = async (token: Address, owner: Address, chainId: number): Promise<bigint> => {
-  const deployment = getBasketDeployment(chainId)
+export const getTradeAllowance = async (
+  token: Address,
+  owner: Address,
+  chainId: number,
+  version?: number,
+): Promise<bigint> => {
+  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
   return getReadOnlyClient(chainId).readContract({
     address: token,
     abi: erc20Abi,
     functionName: 'allowance',
-    args: [owner, deployment.contracts.swapRouter],
+    args: [owner, protocol.swapRouter],
   })
 }
 
-export const approveBasketTrade = async (token: Address, amount: bigint, account: Address, chainId: number): Promise<Hex> => {
-  const deployment = getBasketDeployment(chainId)
+export const approveBasketTrade = async (
+  token: Address,
+  amount: bigint,
+  account: Address,
+  chainId: number,
+  version?: number,
+): Promise<Hex> => {
+  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
   const wallet = getWalletClient()
   if (!wallet) throw new Error('Wallet not connected')
   const publicClient = getReadOnlyClient(chainId)
@@ -97,7 +111,7 @@ export const approveBasketTrade = async (token: Address, amount: bigint, account
     address: token,
     abi: erc20Abi,
     functionName: 'approve',
-    args: [deployment.contracts.swapRouter, amount],
+    args: [protocol.swapRouter, amount],
   })
   const hash = await wallet.writeContract(request as any)
   const confirmed = await waitForTx(hash)
@@ -105,13 +119,19 @@ export const approveBasketTrade = async (token: Address, amount: bigint, account
   return hash
 }
 
-export const quoteWethToAsset = (route: BasketLegRoute, asset: Address, amount: bigint, chainId: number): Promise<bigint> => {
-  const deployment = getBasketDeployment(chainId)
+export const quoteWethToAsset = (
+  route: BasketLegRoute,
+  asset: Address,
+  amount: bigint,
+  chainId: number,
+  version?: number,
+): Promise<bigint> => {
+  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
   return getReadOnlyClient(chainId).readContract({
-    address: deployment.contracts.rebalanceExecutor,
-    abi: getRebalanceExecutorAbi(chainId) as any,
-    functionName: chainId === 56 ? 'quoteQuoteToAsset' : 'quoteWethToAsset',
-    args: [{ ...route, v4Pool: toContractPoolKey(route.v4Pool, chainId) }, asset, amount],
+    address: protocol.rebalanceExecutor,
+    abi: getRebalanceExecutorAbi(chainId, version) as any,
+    functionName: chainId === 56 && Number(version) >= 3 ? 'quoteQuoteToAsset' : chainId === 56 ? 'quoteQuoteToAsset' : 'quoteWethToAsset',
+    args: [toContractLegRoute(route, chainId, version), asset, amount],
   } as any) as Promise<bigint>
 }
 
@@ -189,11 +209,12 @@ export const quoteAssetToWethForSwap = (
   }).then(({ result }) => result[0])
 }
 
-const selfPoolKey = async (basket: Address, chainId: number): Promise<BasketPoolKey> => {
+const selfPoolKey = async (basket: Address, chainId: number, version?: number): Promise<BasketPoolKey> => {
   const deployment = getBasketDeployment(chainId)
+  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
   if (chainId === 56) {
     const raw: any = await getReadOnlyClient(chainId).readContract({
-      address: deployment.contracts.hook,
+      address: protocol.hook,
       abi: bscBasketHookAbi,
       functionName: 'selfPoolKey',
       args: [basket],
@@ -213,17 +234,19 @@ const selfPoolKey = async (basket: Address, chainId: number): Promise<BasketPool
     currency1: basketFirst ? deployment.contracts.settlementToken : basket,
     fee: 0,
     tickSpacing: 60,
-    hooks: deployment.contracts.hook,
+    hooks: protocol.hook,
   }
 }
 
 export const quoteBasketBuyLegOutputs = async ({
   chainId,
+  version,
   settlementIn,
   basketFeeBps,
   legs,
 }: {
   chainId: number
+  version?: number
   settlementIn: bigint
   basketFeeBps: number
   legs: { route: BasketLegRoute; asset: Address; weightBps: number }[]
@@ -247,6 +270,22 @@ export const quoteBasketBuyLegOutputs = async ({
         : netWeth * BigInt(leg.weightBps) / 10_000n
       allocated += amountIn
       outputs.push(await quoteWethToAssetForSwap(leg.route, leg.asset, amountIn, chainId))
+    }
+    return outputs
+  }
+
+  if (isBscBasketV3(chainId, version)) {
+    const feeSettlement = (settlementIn * BigInt(basketFeeBps) + 9_999n) / 10_000n
+    const netSettlement = settlementIn - feeSettlement
+    let allocated = 0n
+    const outputs: bigint[] = []
+    for (let index = 0; index < legs.length; index += 1) {
+      const leg = legs[index]
+      const amountIn = index === legs.length - 1
+        ? netSettlement - allocated
+        : netSettlement * BigInt(leg.weightBps) / 10_000n
+      allocated += amountIn
+      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn))
     }
     return outputs
   }
@@ -297,6 +336,7 @@ export const quoteBasketBuyLegOutputs = async ({
 const buyLegMins = async (detail: BasketDetail, usdgIn: bigint, slippageBps: number): Promise<bigint[]> => {
   const outputs = await quoteBasketBuyLegOutputs({
     chainId: detail.chainId,
+    version: detail.version,
     settlementIn: usdgIn,
     basketFeeBps: detail.basketFeeBps,
     legs: detail.holdings.map((holding) => ({
@@ -328,7 +368,7 @@ export const quoteBasketSwap = async ({
   const amountText = normalizeBasketAmount(amount, decimals)
   const amountRaw = parseUnits(amountText, decimals)
   if (amountRaw <= 0n || amountRaw >= 2n ** 128n) throw new Error('Invalid amount')
-  const key = await selfPoolKey(detail.address, detail.chainId)
+  const key = await selfPoolKey(detail.address, detail.chainId, detail.version)
   const isFirstMint = side === 'buy' && (detail.effectiveSupply ?? 0) === 0
   // Always provide buy-leg limits. The Hook's spot-price fallback does not
   // deduct the pool fee (some curated pools charge 5%), so its built-in 3%
@@ -339,6 +379,7 @@ export const quoteBasketSwap = async ({
     : key.currency0.toLowerCase() === detail.address.toLowerCase()
   const hookData = encodeBasketTradeData({
     chainId: detail.chainId,
+    version: detail.version,
     side,
     minOut: 0n,
     legCount: detail.basketLength,
@@ -401,13 +442,14 @@ export const executeBasketSwap = async ({
   const firstMint = side === 'buy' && (detail.effectiveSupply ?? 0) === 0
   const hookData = encodeBasketTradeData({
     chainId: detail.chainId,
+    version: detail.version,
     side,
     minOut: quote.minOutRaw,
     legCount: detail.basketLength,
     firstMint,
     legMins: quote.legMins,
   })
-  const deployment = getBasketDeployment(detail.chainId)
+  const protocol = getBasketProtocol(detail.chainId, detail.chainId === 56 ? detail.version : undefined)
   const functionName = side === 'buy'
     ? (detail.chainId === 56 ? 'buyExactSettlement' : 'buyExactUsdg')
     : 'sellExactBasket'
@@ -415,8 +457,8 @@ export const executeBasketSwap = async ({
   const publicClient = getReadOnlyClient(detail.chainId)
   const { request } = await publicClient.simulateContract({
     account,
-    address: deployment.contracts.swapRouter,
-    abi: getBasketSwapRouterAbi(detail.chainId),
+    address: protocol.swapRouter,
+    abi: getBasketSwapRouterAbi(detail.chainId, detail.version),
     functionName,
     args,
   } as any)
@@ -429,7 +471,7 @@ export const executeBasketSwap = async ({
 export const isBasketContract = async (address: Address, chainId: number): Promise<boolean> =>
   getReadOnlyClient(chainId).readContract({
     address,
-    abi: getBasketTokenAbi(chainId),
+    abi: getBasketTokenAbi(chainId, chainId === 56 ? 2 : undefined),
     functionName: 'effectiveSupply',
   }).then(() => true, () => false)
 

@@ -88,6 +88,7 @@ const formatPerformance = (value: number | null | undefined) => {
             {{ basket.symbol }}
           </h2>
           <span class="chain-badge"><i /> {{ networkLabel }}</span>
+          <span class="version-badge">V{{ basket.version }}</span>
         </div>
         <p class="mt-1 text-sm text-muted truncate">{{ basket.name }}</p>
       </div>
@@ -178,12 +179,22 @@ const formatPerformance = (value: number | null | undefined) => {
 .basket-card__glow--right { right: -100px; top: -80px; background: #38d39f; }
 
 .chain-badge,
+.version-badge,
 .asset-count {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
   border: 1px solid color-mix(in srgb, var(--border-base) 85%, transparent);
   border-radius: 999px;
+}
+
+.version-badge {
+  height: 24px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--surface-2) 78%, transparent);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .chain-badge {

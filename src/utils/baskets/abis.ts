@@ -4,6 +4,7 @@ const POOL_KEY = '(address currency0,address currency1,uint24 fee,int24 tickSpac
 const LEG_ROUTE = `(uint8 venue,${POOL_KEY} v4Pool,uint24 v3Fee)`
 const PANCAKE_POOL_KEY = '(address currency0,address currency1,address hooks,address poolManager,uint24 fee,bytes32 parameters)'
 const PANCAKE_LEG_ROUTE = `(uint8 venue,uint8 quoteToken,${PANCAKE_POOL_KEY} v4Pool,uint24 v3Fee)`
+const PANCAKE_V3_LEG_ROUTE = `(uint8 venue,address poolQuoteToken,${PANCAKE_POOL_KEY} v4Pool,uint24 v3Fee,uint16 defaultMaxExecutionLossBps)`
 
 export const basketRegistryAbi = parseAbi([
   'function basketCount() view returns (uint256)',
@@ -12,6 +13,8 @@ export const basketRegistryAbi = parseAbi([
   'function basketCreatedAt(address basket) view returns (uint64)',
   'function basketVersion(address basket) view returns (uint32)',
   'function isBasket(address basket) view returns (bool)',
+  'function approvedRegistrars(address registrar) view returns (bool)',
+  'function approvedCreatorForwarders(address forwarder) view returns (bool)',
   'function trustedConstituentHooks(address hook) view returns (bool)',
 ])
 
@@ -69,6 +72,33 @@ export const bscBasketTokenAbi = parseAbi([
   'function balanceOf(address) view returns (uint256)',
 ])
 
+export const bscV3BasketTokenAbi = parseAbi([
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+  'function totalSupply() view returns (uint256)',
+  'function effectiveSupply() view returns (uint256)',
+  'function assetCount() view returns (uint256)',
+  'function assetAt(uint256 index) view returns (address asset,uint16 targetWeightBps,uint256 activeReserve)',
+  `function assetRouteAt(uint256 index) view returns (${PANCAKE_V3_LEG_ROUTE})`,
+  'function basketFeeBps() view returns (uint16)',
+  'function creatorShareBps() view returns (uint16)',
+  'function creatorPayout() view returns (address)',
+  'function launcherPayout() view returns (address)',
+  'function engine() view returns (address)',
+  'function lastRebalanceAt() view returns (uint256)',
+  'function feeReserveWbnb() view returns (uint256)',
+  'function pendingCreatorFees() view returns (uint256)',
+  'function pendingLauncherFees() view returns (uint256)',
+  'function pendingFrontendFees(address) view returns (uint256)',
+  'function claimableHolderFees(address) view returns (uint256)',
+  'function claimHolderFeesFor(address holder) returns (uint256)',
+  'function claimFrontendFeesFor(address frontend) returns (uint256)',
+  'function claimCreatorFees() returns (uint256)',
+  'function claimLauncherFees() returns (uint256)',
+  'function balanceOf(address) view returns (uint256)',
+])
+
 export const basketHookAbi = parseAbi([
   `function createBasket(bytes32 userSalt,(string name,string symbol,address creator,uint16 basketFeeBps,uint16 creatorShareBps,address[] constituentAssets,${LEG_ROUTE}[] constituentRoutes,uint16[] targetWeights) p) returns (address basket)`,
   'event BasketCreated(address indexed basket,address indexed creator,uint32 indexed version,bytes32 salt)',
@@ -89,6 +119,13 @@ export const bscBasketSwapRouterAbi = parseAbi([
   'function buyExactSettlement(address basket,uint256 settlementTokenIn,uint256 minBasketOut,bytes hookData,address recipient) returns (uint256 basketOut)',
   'function sellExactBasket(address basket,uint256 basketIn,uint256 minSettlementOut,bytes hookData,address recipient) returns (uint256 settlementTokenOut)',
   `function createAndBuyExactSettlement(bytes32 userSalt,(string name,string symbol,address creator,uint16 basketFeeBps,uint16 creatorShareBps,address[] constituentAssets,${PANCAKE_LEG_ROUTE}[] constituentRoutes,uint16[] targetWeights) createParams,uint256 settlementTokenIn,uint256 minBasketOut,bytes hookData,address recipient) returns (address basket,uint256 basketOut)`,
+  'event BasketCreatedAndBought(address indexed basket,address indexed creator,address indexed recipient,bytes32 userSalt,uint256 settlementTokenIn,uint256 basketOut)',
+])
+
+export const bscV3BasketSwapRouterAbi = parseAbi([
+  'function buyExactSettlement(address basket,uint256 settlementTokenIn,uint256 minBasketOut,bytes hookData,address recipient) returns (uint256 basketOut)',
+  'function sellExactBasket(address basket,uint256 basketIn,uint256 minSettlementOut,bytes hookData,address recipient) returns (uint256 settlementTokenOut)',
+  `function createAndBuyExactSettlement(bytes32 userSalt,(string name,string symbol,address creator,uint16 basketFeeBps,uint16 creatorShareBps,address[] constituentAssets,${PANCAKE_V3_LEG_ROUTE}[] constituentRoutes,uint16[] targetWeights) createParams,uint256 settlementTokenIn,uint256 minBasketOut,bytes hookData,address recipient) returns (address basket,uint256 basketOut)`,
   'event BasketCreatedAndBought(address indexed basket,address indexed creator,address indexed recipient,bytes32 userSalt,uint256 settlementTokenIn,uint256 basketOut)',
 ])
 
@@ -127,6 +164,29 @@ export const bscRebalanceExecutorAbi = parseAbi([
   `function quoteAssetToQuote(${PANCAKE_LEG_ROUTE} route,address asset,uint256 amount) view returns (uint256)`,
   `function quoteQuoteToAsset(${PANCAKE_LEG_ROUTE} route,address asset,uint256 amount) view returns (uint256)`,
   'function rebalance(address basket,uint256[] minQuoteOut,uint256[] minAssetOut,uint256 minHubOut) returns (bool executed,uint256 navBefore,uint256 navAfter)',
+])
+
+export const bscV3RebalanceExecutorAbi = parseAbi([
+  'error InvalidBasket()',
+  'error OnlyBasketCreator()',
+  'error RebalanceNotNeeded()',
+  'error RebalanceCooldown()',
+  'error RebalanceOutOfTolerance()',
+  'error RebalanceNavLoss()',
+  'error OracleUnavailable()',
+  'error SlippageExceeded()',
+  'error PartialFill()',
+  'error WrongPool()',
+  'error InvalidLimits()',
+  'error RebalanceDeadlineExpired()',
+  'error RebalancePlanMismatch(uint16 actualSellMask,uint16 actualBuyMask)',
+  'error RebalanceInputExceeded(uint256 index,uint256 amount,uint256 maximum)',
+  'function CALLER_CONTROLLED_SLIPPAGE() view returns (bool)',
+  `function quoteAssetToWbnb(${PANCAKE_V3_LEG_ROUTE} route,address asset,uint256 amount) view returns (uint256)`,
+  `function quoteAssetToQuote(${PANCAKE_V3_LEG_ROUTE} route,address asset,uint256 amount) view returns (uint256)`,
+  `function quoteQuoteToAsset(${PANCAKE_V3_LEG_ROUTE} route,address asset,uint256 amount) view returns (uint256)`,
+  'function previewRebalance(address basket) view returns ((bool needed,uint16 sellMask,uint16 buyMask,uint16 maxDeviationBps,uint256 nav,uint256[] assetIn,uint256[] expectedSettlementOut,uint256[] settlementIn,uint256[] expectedAssetOut) preview)',
+  'function rebalance(address basket,(uint16 expectedSellMask,uint16 expectedBuyMask,uint64 deadline,uint256[] maxAssetIn,uint256[] minSettlementOut,uint256[] maxSettlementIn,uint256[] minAssetOut) limits) returns (bool executed,uint256 navBefore,uint256 navAfter)',
 ])
 
 export const basketFeeAuctionAbi = parseAbi([
@@ -169,9 +229,15 @@ export const bscBasketFeeAuctionAbi = parseAbi([
   'function claimBnb(address recipient) returns (uint256)',
 ])
 
-export const getBasketTokenAbi = (chainId: number) => chainId === 56 ? bscBasketTokenAbi : basketTokenAbi
-export const getBasketSwapRouterAbi = (chainId: number) => chainId === 56 ? bscBasketSwapRouterAbi : basketSwapRouterAbi
-export const getRebalanceExecutorAbi = (chainId: number) => chainId === 56 ? bscRebalanceExecutorAbi : rebalanceExecutorAbi
+export const getBasketTokenAbi = (chainId: number, version?: number) => chainId === 56
+  ? Number(version) >= 3 ? bscV3BasketTokenAbi : bscBasketTokenAbi
+  : basketTokenAbi
+export const getBasketSwapRouterAbi = (chainId: number, version?: number) => chainId === 56
+  ? Number(version) >= 3 ? bscV3BasketSwapRouterAbi : bscBasketSwapRouterAbi
+  : basketSwapRouterAbi
+export const getRebalanceExecutorAbi = (chainId: number, version?: number) => chainId === 56
+  ? Number(version) >= 3 ? bscV3RebalanceExecutorAbi : bscRebalanceExecutorAbi
+  : rebalanceExecutorAbi
 export const getBasketFeeAuctionAbi = (chainId: number) => chainId === 56 ? bscBasketFeeAuctionAbi : basketFeeAuctionAbi
 
 export const erc20Abi = parseAbi([

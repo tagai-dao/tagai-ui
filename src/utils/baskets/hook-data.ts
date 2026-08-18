@@ -16,6 +16,7 @@ export const applySlippage = (amount: bigint, bps: number): bigint =>
 
 export const encodeBasketTradeData = ({
   chainId,
+  version,
   side,
   minOut,
   legCount,
@@ -24,6 +25,7 @@ export const encodeBasketTradeData = ({
   legMins,
 }: {
   chainId: number
+  version?: number
   side: TradeSide
   minOut: bigint
   legCount: number
@@ -31,6 +33,7 @@ export const encodeBasketTradeData = ({
   frontend?: Address
   legMins?: bigint[]
 }): Hex => {
+  const strictBscV3 = chainId === 56 && Number(version) >= 3
   const common = {
     frontend,
     minBasketOut: side === 'buy' ? minOut : 0n,
@@ -39,7 +42,30 @@ export const encodeBasketTradeData = ({
       ? (legMins ?? (firstMint ? Array.from({ length: legCount }, () => 1n) : []))
       : [],
     legSqrtPriceLimitsX96: [],
-    allowFailedLegs: side === 'sell' ? Array.from({ length: legCount }, () => true) : [],
+    allowFailedLegs: side === 'sell' && !strictBscV3
+      ? Array.from({ length: legCount }, () => true)
+      : [],
+  }
+
+  if (strictBscV3) {
+    return encodeAbiParameters(
+      [{
+        type: 'tuple',
+        components: [
+          { name: 'frontend', type: 'address' },
+          { name: 'minBasketOut', type: 'uint256' },
+          { name: 'minSettlementOut', type: 'uint256' },
+          { name: 'legMins', type: 'uint256[]' },
+          { name: 'legSqrtPriceLimitsX96', type: 'uint160[]' },
+          { name: 'settlementToWbnbSqrtPriceLimitX96', type: 'uint160' },
+          { name: 'allowFailedLegs', type: 'bool[]' },
+        ],
+      }],
+      [{
+        ...common,
+        settlementToWbnbSqrtPriceLimitX96: 0n,
+      }],
+    )
   }
 
   if (chainId === 56) {

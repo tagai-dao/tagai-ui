@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { getAddress, isAddress } from 'viem'
 import type { BasketDetail } from '@/utils/baskets/types'
-import { getBasketDeployment } from '@/config/baskets'
+import { getBasketProtocol } from '@/config/baskets'
 import { getRebalanceExecutorAbi } from '@/utils/baskets/abis'
 import { friendlyBasketError } from '@/utils/baskets/trade'
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
@@ -10,13 +10,17 @@ import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { useI18n } from 'vue-i18n'
 import { buildRebalanceLimits } from '@/utils/baskets/rebalance'
+import { isBscBasketV3 } from '@/utils/baskets/routes'
 
 const props = defineProps<{ detail: BasketDetail }>()
 const emit = defineEmits<{ rebalanced: [] }>()
 const accountStore = useAccountStore()
 const chainStore = useChainStore()
-const deployment = computed(() => getBasketDeployment(props.detail.chainId))
-const executorAbi = computed(() => getRebalanceExecutorAbi(props.detail.chainId))
+const protocol = computed(() => getBasketProtocol(
+  props.detail.chainId,
+  props.detail.chainId === 56 ? props.detail.version : undefined,
+))
+const executorAbi = computed(() => getRebalanceExecutorAbi(props.detail.chainId, props.detail.version))
 const { t } = useI18n()
 const now = ref(Date.now())
 const state = ref<'idle' | 'quoting' | 'submitting' | 'success' | 'error'>('idle')
@@ -55,7 +59,9 @@ const canRebalance = computed(() => isCreator.value && requiresRebalance.value &
 
 const rebalanceError = (error: unknown) => {
   const text = error instanceof Error ? error.message : String(error)
-  if (/SlippageExceeded|0x8199f5f3/i.test(text)) return t('baskets.rebalanceSlippageError')
+  if (/SlippageExceeded|RebalancePlanMismatch|RebalanceInputExceeded|RebalanceDeadlineExpired|0x8199f5f3/i.test(text)) {
+    return t('baskets.rebalanceSlippageError')
+  }
   if (/RebalanceCooldown|0xccfe2c65/i.test(text)) return t('baskets.rebalanceCooldownError')
   if (/RebalanceNotNeeded/i.test(text)) return t('baskets.rebalanceNotNeededError')
   if (/RebalanceOutOfTolerance/i.test(text)) return t('baskets.rebalanceToleranceError')
@@ -70,18 +76,20 @@ const rebalance = async () => {
   errorMessage.value = ''
   try {
     const slippageBps = Math.min(10_000, Math.max(0, Math.round(Number(slippagePct.value || 0) * 100)))
-    const { minWethOut, minQuoteOut, minAssetOut, minHubOut } = await buildRebalanceLimits(props.detail, slippageBps)
+    const { v3Limits, minWethOut, minQuoteOut, minAssetOut, minHubOut } = await buildRebalanceLimits(props.detail, slippageBps)
     state.value = 'submitting'
     const client = getReadOnlyClient(props.detail.chainId)
     const wallet = getWalletClient()
     if (!wallet) throw new Error('Wallet not connected')
     const { request } = await client.simulateContract({
       account: account.value,
-      address: deployment.value.contracts.rebalanceExecutor,
+      address: protocol.value.rebalanceExecutor,
       abi: executorAbi.value,
       functionName: 'rebalance',
-      args: props.detail.chainId === 56
-        ? [props.detail.address, minQuoteOut, minAssetOut, minHubOut]
+      args: isBscBasketV3(props.detail.chainId, props.detail.version)
+        ? [props.detail.address, v3Limits]
+        : props.detail.chainId === 56
+          ? [props.detail.address, minQuoteOut, minAssetOut, minHubOut]
         : [props.detail.address, minWethOut, minAssetOut],
     } as any)
     const hash = await wallet.writeContract(request as any)
@@ -103,7 +111,7 @@ const onSlippageInput = (event: Event) => {
 onMounted(async () => {
   try {
     callerControlledSlippage.value = await getReadOnlyClient(props.detail.chainId).readContract({
-      address: deployment.value.contracts.rebalanceExecutor,
+      address: protocol.value.rebalanceExecutor,
       abi: executorAbi.value,
       functionName: 'CALLER_CONTROLLED_SLIPPAGE',
     } as any) as boolean

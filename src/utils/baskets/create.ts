@@ -1,16 +1,19 @@
 import { isAddress, keccak256, parseEventLogs, parseUnits, stringToHex, zeroAddress, type Address, type Hex } from 'viem'
 import {
+  BASKET_DEFAULT_SLIPPAGE_BPS,
+  getBasketCreationProtocol,
   getBasketDeployment,
   isBscBasketLegAssetBlocked,
   isUsdBasketLegSymbol,
-  toContractPoolKey,
   type BasketAssetPreset,
   type BasketPoolKey,
 } from '@/config/baskets'
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import { basketRegistryAbi, erc20Abi, getBasketSwapRouterAbi } from './abis'
+import { getBscV3DefaultExecutionLossBps, quoteBscV3SettlementToAsset } from './bsc-v3-routing'
 import { applySlippage, encodeBasketTradeData } from './hook-data'
 import { assertBasketRouteUsable, BasketPoolValidationError } from './route-validation'
+import { toContractLegRoute } from './routes'
 import {
   approveBasketTrade,
   friendlyBasketError,
@@ -72,14 +75,16 @@ export const buildCustomRoute = ({
   asset,
   venue,
   quoteToken,
+  poolQuoteToken,
   fee,
   tickSpacing,
   hooks = zeroAddress,
   poolKey,
 }: {
   asset: Address
-  venue: 0 | 1
+  venue: 0 | 1 | 3
   quoteToken?: 0 | 1
+  poolQuoteToken?: Address
   fee: number
   tickSpacing?: number
   hooks?: Address
@@ -88,10 +93,17 @@ export const buildCustomRoute = ({
   ? {
       venue,
       ...(quoteToken === undefined ? {} : { quoteToken }),
+      ...(poolQuoteToken === undefined ? {} : { poolQuoteToken }),
       v4Pool: poolKey ?? { currency0: zeroAddress, currency1: asset, fee, tickSpacing: tickSpacing ?? 0, hooks },
       v3Fee: 0,
     }
-  : { venue, ...(quoteToken === undefined ? {} : { quoteToken }), v4Pool: EMPTY_POOL, v3Fee: fee }
+  : {
+      venue,
+      ...(quoteToken === undefined ? {} : { quoteToken }),
+      ...(poolQuoteToken === undefined ? {} : { poolQuoteToken }),
+      v4Pool: EMPTY_POOL,
+      v3Fee: venue === 1 ? fee : 0,
+    }
 
 export const validateCustomBasketAsset = async ({
   asset,
@@ -121,12 +133,14 @@ export const validateCustomBasketAsset = async ({
   if (chainId === 56 && isUsdBasketLegSymbol(symbol)) {
     throw new Error('USD stablecoins cannot be used as BSC basket constituents')
   }
-  if (chainId === 56 && route.quoteToken !== 0 && route.quoteToken !== 1) {
+  if (chainId === 56 && !route.poolQuoteToken) {
     throw new Error('The selected BSC route has no quote token')
   }
   try {
     await assertBasketRouteUsable(route, address, chainId)
-    const quote = await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n, chainId)
+    const quote = chainId === 56
+      ? await quoteBscV3SettlementToAsset(route, address, 1_000_000_000_000_000n)
+      : await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n, chainId)
     if (quote <= 0n) throw new Error('The selected route has no usable price or liquidity')
   } catch (error) {
     if (error instanceof BasketPoolValidationError) throw error
@@ -144,6 +158,8 @@ export const createBasketAndBuy = async (
   const wallet = getWalletClient()
   if (!wallet) throw new Error('Wallet not connected')
   const deployment = getBasketDeployment(input.chainId)
+  const creationVersion = deployment.creationVersion
+  const creationProtocol = getBasketCreationProtocol(input.chainId)
   const presets = deployment.assetPresets
   const usdgIn = parseUnits(String(input.initialUsdg), deployment.settlementDecimals)
   if (usdgIn <= 10n ** BigInt(deployment.settlementDecimals)) {
@@ -155,11 +171,32 @@ export const createBasketAndBuy = async (
     (input.chainId === 56 && isUsdBasketLegSymbol(leg.asset.symbol)))) {
     throw new Error('USD stablecoins cannot be used as BSC basket constituents')
   }
-  if (input.chainId === 56 && input.legs.some((leg) => leg.route.quoteToken !== 0 && leg.route.quoteToken !== 1)) {
-    throw new Error('Every BSC constituent route must use WBNB or USDT as its quote token')
+  if (input.chainId === 56 && input.legs.some((leg) => !leg.route.poolQuoteToken)) {
+    throw new Error('Every BSC constituent route must include its direct pool quote token')
   }
   if (input.legs.reduce((sum, leg) => sum + leg.weightBps, 0) !== 10_000) {
     throw new Error('Asset weights must add up to 100%')
+  }
+
+  if (input.chainId === 56 && creationVersion >= 3) {
+    const registryClient = getReadOnlyClient(input.chainId)
+    const [registrarApproved, forwarderApproved] = await Promise.all([
+      registryClient.readContract({
+        address: creationProtocol.registry,
+        abi: basketRegistryAbi,
+        functionName: 'approvedRegistrars',
+        args: [creationProtocol.hook],
+      }),
+      registryClient.readContract({
+        address: creationProtocol.registry,
+        abi: basketRegistryAbi,
+        functionName: 'approvedCreatorForwarders',
+        args: [creationProtocol.swapRouter],
+      }),
+    ])
+    if (!registrarApproved || !forwarderApproved) {
+      throw new Error('Basket V3 creation is not active on this network yet')
+    }
   }
 
   try {
@@ -171,15 +208,26 @@ export const createBasketAndBuy = async (
     throw new Error(friendlyBasketError(error))
   }
 
-  const allowance = await getTradeAllowance(deployment.contracts.settlementToken, account, input.chainId)
+  const allowance = await getTradeAllowance(
+    deployment.contracts.settlementToken,
+    account,
+    input.chainId,
+    creationVersion,
+  )
   if (allowance < usdgIn) {
     onApproving?.()
-    await approveBasketTrade(deployment.contracts.settlementToken, usdgIn, account, input.chainId)
+    await approveBasketTrade(deployment.contracts.settlementToken, usdgIn, account, input.chainId, creationVersion)
     // Approval is confirmed on-chain. Immediately continue to simulation and
     // open the creation transaction in the wallet without another UI click.
     onApproved?.()
   }
 
+  const routes = await Promise.all(input.legs.map(async (leg) => ({
+    ...leg.route,
+    defaultMaxExecutionLossBps: input.chainId === 56
+      ? await getBscV3DefaultExecutionLossBps(leg.route, BASKET_DEFAULT_SLIPPAGE_BPS)
+      : leg.route.defaultMaxExecutionLossBps,
+  })))
   const createParams = {
     name: input.name.trim(),
     symbol: input.symbol.trim().toUpperCase(),
@@ -187,9 +235,7 @@ export const createBasketAndBuy = async (
     basketFeeBps: input.basketFeeBps,
     creatorShareBps: input.creatorShareBps,
     constituentAssets: input.legs.map((leg) => leg.asset.address),
-    constituentRoutes: input.legs.map((leg) => input.chainId === 56
-      ? { ...leg.route, quoteToken: leg.route.quoteToken ?? 0, v4Pool: toContractPoolKey(leg.route.v4Pool, input.chainId) }
-      : { venue: leg.route.venue, v4Pool: toContractPoolKey(leg.route.v4Pool, input.chainId), v3Fee: leg.route.v3Fee }),
+    constituentRoutes: routes.map((route) => toContractLegRoute(route, input.chainId, creationVersion)),
     targetWeights: input.legs.map((leg) => leg.weightBps),
   }
   const bootstrapShares = usdgIn * 10n ** BigInt(18 - deployment.settlementDecimals)
@@ -201,6 +247,7 @@ export const createBasketAndBuy = async (
   try {
     quotedLegs = await quoteBasketBuyLegOutputs({
       chainId: input.chainId,
+      version: creationVersion,
       settlementIn: usdgIn,
       basketFeeBps: input.basketFeeBps,
       legs: input.legs.map((leg) => ({ route: leg.route, asset: leg.asset.address, weightBps: leg.weightBps })),
@@ -213,6 +260,7 @@ export const createBasketAndBuy = async (
   if (legMins.some((amount) => amount <= 0n)) throw new Error('A constituent route has insufficient liquidity')
   const hookData = encodeBasketTradeData({
     chainId: input.chainId,
+    version: creationVersion,
     side: 'buy',
     minOut: minBasketOut,
     legCount: input.legs.length,
@@ -226,8 +274,8 @@ export const createBasketAndBuy = async (
   try {
     const { request } = await publicClient.simulateContract({
       account,
-      address: deployment.contracts.swapRouter,
-      abi: getBasketSwapRouterAbi(input.chainId),
+      address: creationProtocol.swapRouter,
+      abi: getBasketSwapRouterAbi(input.chainId, creationVersion),
       functionName: input.chainId === 56 ? 'createAndBuyExactSettlement' : 'createAndBuyExactUsdg',
       args,
     } as any)
@@ -235,7 +283,11 @@ export const createBasketAndBuy = async (
     const confirmed = await waitForTx(hash)
     if (!confirmed) throw new Error('Creation transaction failed')
     const receipt = await publicClient.getTransactionReceipt({ hash })
-    const events = parseEventLogs({ abi: getBasketSwapRouterAbi(input.chainId), logs: receipt.logs, eventName: 'BasketCreatedAndBought' } as any)
+    const events = parseEventLogs({
+      abi: getBasketSwapRouterAbi(input.chainId, creationVersion),
+      logs: receipt.logs,
+      eventName: 'BasketCreatedAndBought',
+    } as any)
     const basket = (events[0] as any)?.args?.basket as Address | undefined
     if (!basket) throw new Error('Basket created, but its address could not be read from the receipt')
     return { hash, basket }

@@ -37,7 +37,7 @@ const modalStore = useModalStore()
 
 const basketChainId = chainStore.activeChainId
 const deployment = computed(() => getBasketDeployment(basketChainId))
-const BASKET_DRAFT_KEY = `tagai-basket-create-draft-v1:${basketChainId}`
+const BASKET_DRAFT_KEY = `tagai-basket-create-draft-v2:${basketChainId}`
 
 const name = ref('')
 const symbol = ref('')
@@ -125,13 +125,19 @@ const effectiveV4PoolFee = (fee: number, hooks: Address) =>
     : fee
 const presetPoolFee = (asset: BasketAssetPreset) => asset.route.venue === 0
   ? effectiveV4PoolFee(asset.route.v4Pool.fee, asset.route.v4Pool.hooks)
-  : asset.route.v3Fee
+  : asset.route.venue === 3 ? 2_500 : asset.route.v3Fee
+const routeQuoteLabel = (route: BasketAssetPreset['route']) => {
+  if (basketChainId !== 56) return deployment.value.wrappedNativeSymbol
+  const quote = route.poolQuoteToken
+  if (!quote || quote.toLowerCase() === zeroAddress) return deployment.value.nativeSymbol
+  if (quote.toLowerCase() === deployment.value.contracts.settlementToken.toLowerCase()) return deployment.value.settlementSymbol
+  if (quote.toLowerCase() === deployment.value.contracts.wrappedNative.toLowerCase()) return deployment.value.wrappedNativeSymbol
+  return shortAddress(quote)
+}
 const presetPoolLabel = (asset: BasketAssetPreset) =>
   asset.route.venue === 2
     ? `${deployment.value.wrappedNativeSymbol} · 1:1`
-    : `V${asset.route.venue === 0 ? '4' : '3'} · ${basketChainId === 56 && asset.route.quoteToken === 1
-      ? deployment.value.settlementSymbol
-      : deployment.value.wrappedNativeSymbol} · ${t('baskets.fee')} ${formatPoolFee(presetPoolFee(asset))}`
+    : `V${asset.route.venue === 0 ? '4' : asset.route.venue === 3 ? '2' : '3'} · ${routeQuoteLabel(asset.route)} · ${t('baskets.fee')} ${formatPoolFee(presetPoolFee(asset))}`
 const candidatePoolFee = (pool: BasketPoolCandidate) => pool.venue === 0
   ? effectiveV4PoolFee(pool.fee, pool.hooks)
   : pool.fee
@@ -150,6 +156,7 @@ const formatPoolDate = (value: string) => {
 }
 const legPoolFee = (leg: CreateBasketLeg) => {
   if (leg.route.venue === 2) return 0
+  if (leg.route.venue === 3) return 2_500
   if (leg.route.venue !== 0) return leg.route.v3Fee
   return effectiveV4PoolFee(leg.route.v4Pool.fee, leg.route.v4Pool.hooks)
 }
@@ -205,7 +212,7 @@ const searchCustomPools = async () => {
   }
   try {
     searchingPools.value = true
-    const discovery = await discoverBasketPools(address, basketChainId, 2)
+    const discovery = await discoverBasketPools(address, basketChainId, 8)
     customPoolCandidates.value = discovery.candidates
     customPoolRejectionReasons.value = discovery.rejectionReasons
     selectedPoolId.value = customPoolCandidates.value[0]?.id ?? ''
@@ -270,16 +277,18 @@ const restoreDraftLeg = (value: any): CreateBasketLeg | null => {
   } else if (value.route?.venue === 0 && value.route.v4Pool && isAddress(value.route.v4Pool.hooks)) {
     const fee = draftNumber(value.route.v4Pool.fee, -1)
     const tickSpacing = draftNumber(value.route.v4Pool.tickSpacing, 0)
-    const quoteToken = basketChainId === 56 ? draftNumber(value.route.quoteToken, -1) : undefined
+    const poolQuoteToken = basketChainId === 56 && isAddress(value.route.poolQuoteToken)
+      ? getAddress(value.route.poolQuoteToken)
+      : undefined
     if (!Number.isInteger(fee) || fee < 0 || fee > 0xffffff ||
       !Number.isInteger(tickSpacing) || tickSpacing < -0x800000 || tickSpacing > 0x7fffff ||
-      (basketChainId === 56 && quoteToken !== 0 && quoteToken !== 1)) return null
+      (basketChainId === 56 && !poolQuoteToken)) return null
     leg = {
       asset: { address, symbol: value.asset.symbol.slice(0, 32) },
       route: buildCustomRoute({
         asset: address,
         venue: 0,
-        ...(quoteToken === undefined ? {} : { quoteToken: quoteToken as 0 | 1 }),
+        ...(poolQuoteToken === undefined ? {} : { poolQuoteToken }),
         fee,
         tickSpacing,
         hooks: getAddress(value.route.v4Pool.hooks),
@@ -299,16 +308,29 @@ const restoreDraftLeg = (value: any): CreateBasketLeg | null => {
     }
   } else if (value.route?.venue === 1) {
     const fee = draftNumber(value.route.v3Fee, -1)
-    const quoteToken = basketChainId === 56 ? draftNumber(value.route.quoteToken, -1) : undefined
+    const poolQuoteToken = basketChainId === 56 && isAddress(value.route.poolQuoteToken)
+      ? getAddress(value.route.poolQuoteToken)
+      : undefined
     if (!Number.isInteger(fee) || fee <= 0 || fee > 0xffffff ||
-      (basketChainId === 56 && quoteToken !== 0 && quoteToken !== 1)) return null
+      (basketChainId === 56 && !poolQuoteToken)) return null
     leg = {
       asset: { address, symbol: value.asset.symbol.slice(0, 32) },
       route: buildCustomRoute({
         asset: address,
         venue: 1,
-        ...(quoteToken === undefined ? {} : { quoteToken: quoteToken as 0 | 1 }),
+        ...(poolQuoteToken === undefined ? {} : { poolQuoteToken }),
         fee,
+      }),
+      weightBps: 0,
+    }
+  } else if (basketChainId === 56 && value.route?.venue === 3 && isAddress(value.route.poolQuoteToken)) {
+    leg = {
+      asset: { address, symbol: value.asset.symbol.slice(0, 32) },
+      route: buildCustomRoute({
+        asset: address,
+        venue: 3,
+        poolQuoteToken: getAddress(value.route.poolQuoteToken),
+        fee: 0,
       }),
       weightBps: 0,
     }
@@ -498,7 +520,7 @@ watch([
         <section class="create-modal" role="dialog" aria-modal="true" :aria-label="$t('baskets.createTitle')">
           <header class="modal-header">
             <div>
-              <span>{{ deployment.networkLabel }} · BASKET V{{ basketChainId === 56 ? 2 : 1 }}</span>
+              <span>{{ deployment.networkLabel }} · BASKET V{{ deployment.creationVersion }}</span>
               <h2>{{ $t('baskets.createTitle') }}</h2>
               <p>{{ createSubtitle }}</p>
             </div>

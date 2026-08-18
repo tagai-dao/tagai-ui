@@ -99,7 +99,7 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
       const [settlement, shares, approved] = await Promise.all([
         getErc20Balance(config.contracts.settlementToken, owner, basket.chainId),
         getBasketBalance(basket.address, owner, basket.chainId),
-        getTradeAllowance(tokenIn, owner, basket.chainId),
+        getTradeAllowance(tokenIn, owner, basket.chainId, basket.version),
       ])
       usdgBalance.value = settlement
       basketBalance.value = shares
@@ -144,7 +144,7 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     try {
       if (needsApproval.value) {
         step.value = 'approving'
-        await approveBasketTrade(tokenIn, quote.value.amountRaw, owner, basket.chainId)
+        await approveBasketTrade(tokenIn, quote.value.amountRaw, owner, basket.chainId, basket.version)
         await refreshBalances()
       }
       step.value = 'swapping'
