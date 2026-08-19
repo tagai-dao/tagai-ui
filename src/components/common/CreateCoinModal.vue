@@ -7,7 +7,7 @@ import { EthWalletState, useAccountStore } from "@/stores/web3";
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
 import { bytesToHex, formatPrice } from "@/utils/helper";
-import { createCoin, calculateInitEth, checkTickUsed, getCreatePumpFee, getTokenDexPools, getTokenERC20Info, deployNutboxCommunity, injectTokens, type TokenDexResult, type DexPoolInfo } from "@/utils/pump";
+import { createCoin, calculateInitEth, checkTickUsed, getCreatePumpFee, getTokenDexPools, getTokenERC20Info, deployNutboxCommunity, injectTokens, validateImportedTokenPool, type TokenDexResult, type DexPoolInfo } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
 import { createCommunity, importCommunity } from '@/apis/api'
 import { getTagStyle } from '@/composables/useTags'
@@ -52,6 +52,8 @@ const importStep = ref(1);
 const importErrTip = ref('');
 const tokenDexResult = ref<TokenDexResult | null>(null);
 const selectedPoolIndex = ref(-1);
+type PoolValidationState = { status: 'checking' | 'supported' | 'unsupported'; error?: string }
+const poolValidation = ref<Record<string, PoolValidationState>>({});
 const createLoading = ref(false);
 const invalidTick = ['tiptag', 'tagai', 'deploy', 'no-tick-of-tiptag', 'no-tick-of-tagai', 'weth', 'wbnb', 'bnb', 'usdt', 'usdc', 'eth', 'btc', 'sol', 'iso', 'ixo']
 
@@ -60,6 +62,59 @@ const formatFDV = (n: number) => {
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M'
   if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K'
   return n.toFixed(0)
+}
+
+const poolValidationKey = (pool: DexPoolInfo) => pool.pairAddress.toLowerCase()
+const getPoolValidation = (pool: DexPoolInfo): PoolValidationState =>
+  poolValidation.value[poolValidationKey(pool)] ?? { status: 'checking' }
+const shortAddress = (address: string) => address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Unknown'
+const getPairedTokenLabel = (pool: DexPoolInfo) => pool.pairedTokenSymbol || shortAddress(pool.pairedToken)
+
+const selectImportPool = (index: number) => {
+  const pool = tokenDexResult.value?.pools[index]
+  if (!pool || getPoolValidation(pool).status !== 'supported') return
+  selectedPoolIndex.value = index
+  importErrTip.value = ''
+}
+
+const validateImportPools = async (token: string, result: TokenDexResult) => {
+  poolValidation.value = Object.fromEntries(result.pools.map(pool => [
+    poolValidationKey(pool),
+    { status: 'checking' as const },
+  ]))
+
+  // ImportedTokenSwapWrapper is currently the BSC imported-token executor.
+  if (chainStore.deployment.key !== 'bsc') {
+    poolValidation.value = Object.fromEntries(result.pools.map(pool => [
+      poolValidationKey(pool),
+      { status: 'supported' as const },
+    ]))
+    selectedPoolIndex.value = result.pools.length ? 0 : -1
+    return
+  }
+
+  let cursor = 0
+  const workerCount = Math.min(3, result.pools.length)
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (cursor < result.pools.length) {
+      const index = cursor++
+      const pool = result.pools[index]
+      const validation = await validateImportedTokenPool(token, pool.pairAddress, pool.dexVersion)
+      poolValidation.value = {
+        ...poolValidation.value,
+        [poolValidationKey(pool)]: validation.supported
+          ? { status: 'supported' }
+          : { status: 'unsupported', error: validation.error || 'Quote or trade simulation failed' },
+      }
+    }
+  }))
+
+  selectedPoolIndex.value = result.pools.findIndex(pool =>
+    getPoolValidation(pool).status === 'supported' && pool.bnbReserves >= 1
+  )
+  if (selectedPoolIndex.value < 0) {
+    importErrTip.value = 'No pool passed both quote and trade validation'
+  }
 }
 
 // 分发策略相关
@@ -223,7 +278,7 @@ const importTokenStepClick = async () => {
         return
       }
       tokenDexResult.value = result
-      selectedPoolIndex.value = 0
+      selectedPoolIndex.value = -1
 
       // get ERC20 info from chain
       const erc20Info = await getTokenERC20Info(importForm.token)
@@ -234,7 +289,9 @@ const importTokenStepClick = async () => {
 
       // sanitize tick: replace spaces with underscores
       const tick = erc20Info.symbol.replace(/\s+/g, '_')
-      if (!tick || !/^[a-zA-Z0-9_]+$/.test(tick)) {
+      // 与普通社区创建及后端 tick 校验保持一致：支持中文、字母、数字和下划线，
+      // 长度 1–16，且不能是纯数字。
+      if (!tick || !/^(?!\d+$)[A-Za-z0-9\u4e00-\u9fa5_]{1,16}$/.test(tick)) {
         importErrTip.value = `Token symbol "${erc20Info.symbol}" is not valid`
         return
       }
@@ -250,6 +307,7 @@ const importTokenStepClick = async () => {
       importForm.tick = tick
       importForm.decimals = erc20Info.decimals
       importStep.value = 2
+      await validateImportPools(importForm.token, result)
 
     } else if (importStep.value === 2) {
       // pool selection
@@ -258,6 +316,10 @@ const importTokenStepClick = async () => {
         return
       }
       const pool = tokenDexResult.value.pools[selectedPoolIndex.value]
+      if (getPoolValidation(pool).status !== 'supported') {
+        importErrTip.value = 'Selected pool does not support quoting and trading'
+        return
+      }
       if (pool.bnbReserves < 1) {
         importErrTip.value = `Selected pool liquidity must be greater than 1 ${nativeSymbol.value}`
         return
@@ -666,10 +728,12 @@ onMounted(async () => {
           <div
             v-for="(pool, index) in tokenDexResult.pools"
             :key="pool.pairAddress"
-            @click="selectedPoolIndex = index"
+            @click="selectImportPool(index)"
             class="import-pool-card border-2 rounded-lg p-3 cursor-pointer transition-all duration-200"
             :class="{
-              'import-pool-card--selected': selectedPoolIndex === index
+              'import-pool-card--selected': selectedPoolIndex === index,
+              'import-pool-card--disabled': getPoolValidation(pool).status === 'unsupported',
+              'cursor-wait': getPoolValidation(pool).status === 'checking'
             }"
           >
             <div class="flex justify-between items-center mb-2">
@@ -682,11 +746,34 @@ onMounted(async () => {
                   }"
                 >V{{ pool.dexVersion }}</span>
                 <span class="font-medium text-black">{{ pool.feeTier }}</span>
+                <span class="font-semibold text-black">
+                  {{ tokenDexResult.tokenSymbol }} / {{ getPairedTokenLabel(pool) }}
+                </span>
               </div>
               <span class="text-sm font-medium" :class="pool.bnbReserves >= 1 ? 'text-green-600' : 'text-red-e6'">
                 {{ pool.bnbReserves.toFixed(2) }} {{ nativeSymbol }}
               </span>
             </div>
+            <div class="flex items-center justify-between gap-2 mb-2 text-xs">
+              <span class="text-grey-normal font-mono" :title="pool.pairedToken">
+                Quote: {{ getPairedTokenLabel(pool) }} ({{ shortAddress(pool.pairedToken) }})
+              </span>
+              <span v-if="getPoolValidation(pool).status === 'checking'" class="text-grey-normal">
+                Checking quote &amp; trade…
+              </span>
+              <span v-else-if="getPoolValidation(pool).status === 'supported'" class="text-green-600 font-medium">
+                ✓ Quote &amp; trade supported
+              </span>
+              <span v-else class="text-red-e6 font-medium" :title="getPoolValidation(pool).error">
+                ✕ Unsupported
+              </span>
+            </div>
+            <p
+              v-if="getPoolValidation(pool).status === 'unsupported'"
+              class="text-red-e6 text-xs mb-2 break-words"
+            >
+              {{ getPoolValidation(pool).error }}
+            </p>
             <div class="grid grid-cols-3 gap-2 text-xs">
               <div>
                 <span class="text-grey-normal">Liquidity</span>
@@ -731,6 +818,9 @@ onMounted(async () => {
               }"
             >V{{ tokenDexResult.pools[selectedPoolIndex]?.dexVersion }}</span>
             <span class="text-sm font-medium text-black">{{ tokenDexResult.pools[selectedPoolIndex]?.feeTier }}</span>
+            <span class="text-sm font-semibold text-black">
+              {{ tokenDexResult.tokenSymbol }} / {{ getPairedTokenLabel(tokenDexResult.pools[selectedPoolIndex]) }}
+            </span>
           </div>
           <div class="text-xs text-grey-normal font-mono break-all">{{ importForm.pair }}</div>
         </div>
@@ -953,6 +1043,11 @@ textarea.field-control { min-height: 90px; resize: vertical; align-items: flex-s
 .import-pool-card--selected {
   background-color: var(--pool-selected-bg);
   border-color: #fe913f;
+}
+
+.import-pool-card--disabled {
+  cursor: not-allowed;
+  opacity: .62;
 }
 
 .import-pool-card--selected .text-black {

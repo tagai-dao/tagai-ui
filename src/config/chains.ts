@@ -44,6 +44,8 @@ export type ChainDeployment = {
     v2Router: `0x${string}`
     v2Factory: `0x${string}`
     v3Router: `0x${string}`
+    /** V3 SmartRouter；ImportedTokenSwapWrapper 使用不带 deadline 的 exactInputSingle。 */
+    v3SmartRouter: `0x${string}`
     /** V3 QuoterV2；用于按真实流动性计算成交输出，而不是仅使用池现价。 */
     v3Quoter: `0x${string}`
     permit2: `0x${string}`
@@ -64,6 +66,7 @@ export type ChainDeployment = {
     pump11: `0x${string}`
     tokenImplementation11: `0x${string}`
     importHelper: `0x${string}`
+    importedTokenSwapWrapper: `0x${string}`
     tagAiSwapWrapper: `0x${string}`
     tipTagSwapHook9: `0x${string}`
     tipTagSwapHook11: `0x${string}`
@@ -111,7 +114,7 @@ export const BSC_CHAIN: ChainDeployment = {
     multicallAddress: MULTICALL3,
     interval: 3000,
   },
-  // BSC 现网仍使用旧版 ImportHelper，不支持 IPShare 创建或 importerOf。
+  // BSC ImportHelper 创建固定 HourlyTickCalculator 社区；不创建 IPShare 或 importerOf。
   features: { prediction: true, predictionMainEntry: false, auPay: true, enhancedImportHelper: false },
   wrappedNative: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
   dex: {
@@ -121,6 +124,7 @@ export const BSC_CHAIN: ChainDeployment = {
     // Legacy SwapRouter keeps the deadline-bearing exactInputSingle ABI used by
     // TagAI's deployed BSC wrapper. Pancake SmartRouter (0x13f4...) omits it.
     v3Router: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
+    v3SmartRouter: '0x13f4EA83D0bd40E75C8222255bc855a974568Dd4',
     v3Quoter: '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
     permit2: '0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768',
     universalRouter: '0xd9C500DfF816a1Da21A48A732d3498Bf09dc9AEB',
@@ -133,7 +137,8 @@ export const BSC_CHAIN: ChainDeployment = {
     tokenImplementation9: '0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16',
     pump11: '0x8fEF5b4c0f761a0cc447800e3019B089ac306F28',
     tokenImplementation11: '0xfD40C112F39D372786265a032C546D05Feec4D66',
-    importHelper: '0xF346A700830633bB27a46fC1e7eAAE49F593A4c6',
+    importHelper: '0x18b639c7F0Ce51ED950cf6B6ad1550F72c6b8DE4',
+    importedTokenSwapWrapper: '0xdeE655Bc5b312f566248e4321F28523Cef72083C',
     tagAiSwapWrapper: '0x0000000000000000000000000000000000000000',
     tipTagSwapHook9: '0x78443e75aD3D70DAAab0De33d2D5Dea0cBae0cC1',
     tipTagSwapHook11: '0x9E38747072F326b4e614EfF6FdCA8529db090cc1',
@@ -181,6 +186,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     v2Router: '0x89e5DB8B5aA49aA85AC63f691524311AEB649eba',
     v2Factory: '0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f',
     v3Router: '0xCaf681a66D020601342297493863E78C959E5cb2',
+    v3SmartRouter: ZERO,
     v3Quoter: ZERO,
     permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
     universalRouter: '0x8876789976decbfcbbbe364623c63652db8c0904',
@@ -194,6 +200,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     pump11: ZERO,
     tokenImplementation11: ZERO,
     importHelper: '0xEC774DB6800B00BA1e87f0799cb29dEc21ACB4A9',
+    importedTokenSwapWrapper: ZERO,
     tagAiSwapWrapper: '0xa12d998bff956c1034f863a4cd30f4403b6b2b4f',
     tipTagSwapHook9: '0x5e8e2D77ce0d2e04BA058bbcECC13C7C8aDB20Cc',
     tipTagSwapHook11: ZERO,

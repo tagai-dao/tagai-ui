@@ -10,7 +10,7 @@ import _ from 'lodash'
 import { useStateStore } from "@/stores/common";
 import { getTradeSignature, isTokenExist } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
-import { isAddress, zeroAddress, maxUint256, parseEventLogs, encodeAbiParameters, keccak256, parseEther, type Log } from "viem";
+import { isAddress, zeroAddress, maxUint256, parseEventLogs, encodeAbiParameters, keccak256, parseEther, type Hex, type Log } from "viem";
 import { writeContract, readContract, resolveContractAddress } from "./contract";
 import { useChainStore } from '@/stores/chain';
 import { getReadOnlyClient } from "./wallets";
@@ -340,8 +340,8 @@ export const getImportCommunityFee = async (importer: `0x${string}`): Promise<Im
         readContract('NutboxCommittee', 'getCommunitySettingsFee', []) as Promise<bigint>,
     ]);
 
-    // BSC 现网的旧版 ImportHelper 只收取 Nutbox 社区费用；它没有
-    // importerOf，也不会在导入过程中创建 IPShare。
+    // BSC ImportHelper 只收取 Nutbox 社区创建和设置费用；它不会在
+    // 导入过程中创建 IPShare。
     if (!features.enhancedImportHelper) {
         return { createFee, settingsFee, ipshareCreateFee: 0n, total: createFee + settingsFee, createsIPShare: false };
     }
@@ -357,20 +357,17 @@ export const getImportCommunityFee = async (importer: `0x${string}`): Promise<Im
     };
 }
 
-/** 创建 Nutbox Community，并建立 50/50 Social Curation + AI Channel 双池。 */
+/** 创建 Nutbox Community，并使用固定 HourlyTickCalculator 建立 Social Curation 分发池。 */
 export const deployNutboxCommunity = async (
-    token: `0x${string}`,
-    // ImportHelper validates that the calculator belongs to its own deployment.
-    // Do not use the historical BSC constant when the active chain is Robinhood.
-    calculator: `0x${string}` = useChainStore().deployment.contracts.hourlyTickCalculator,
-    distributionPolicy: `0x${string}` = '0x'
+    token: `0x${string}`
 ): Promise<{ community: string; pool: string; txHash: string }> => {
     const importer = useAccountStore().ethConnectAddress as `0x${string}`;
     const fee = await getImportCommunityFee(importer);
     const hash = await writeContract({
         contractName: 'ImportHelper',
         functionName: 'createCommunityAndPool',
-        args: [token, calculator, distributionPolicy],
+        // 用户导入始终创建新 Community；已有 Community 复用入口仅供线下操作。
+        args: [token, zeroAddress],
         value: fee.total
     });
     if (!hash) {
@@ -382,8 +379,8 @@ export const deployNutboxCommunity = async (
         throw new Error('ImportHelper receipt did not contain the expected CommunityCreated event');
     }
 
-    // 只有新版 ImportHelper 才能执行 importerOf / IPShare 的增强校验。
-    // BSC 的旧部署以交易回执中的 CommunityCreated.creator 作为成功依据。
+    // 仅在支持 importerOf / IPShare 的链上部署执行增强校验。
+    // BSC 以交易回执中的 CommunityCreated.creator 作为成功依据。
     if (useChainStore().deployment.features.enhancedImportHelper) {
         const [recordedImporter, hasIPShare] = await Promise.all([
             readContract('ImportHelper', 'importerOf', [token]) as Promise<string>,
@@ -398,6 +395,197 @@ export const deployNutboxCommunity = async (
         pool: (event as any)?.pool ?? zeroAddress,
         txHash: hash
     };
+}
+
+type ImportedSwapSource = {
+    sourceType: 0 | 1 | 3
+    sourceData: Hex
+}
+
+const V2_SOURCE_PARAMETERS = [{
+    type: 'tuple',
+    components: [
+        { type: 'address', name: 'router' },
+        { type: 'address', name: 'pair' },
+    ],
+}] as const
+
+const V3_SOURCE_PARAMETERS = [{
+    type: 'tuple',
+    components: [
+        { type: 'address', name: 'router' },
+        { type: 'address', name: 'quoter' },
+        { type: 'address', name: 'pool' },
+    ],
+}] as const
+
+const PANCAKE_V4_SOURCE_PARAMETERS = [{
+    type: 'tuple',
+    components: [
+        { type: 'address', name: 'quoter' },
+        {
+            type: 'tuple',
+            name: 'pool',
+            components: [
+                { type: 'address', name: 'currency0' },
+                { type: 'address', name: 'currency1' },
+                { type: 'address', name: 'hooks' },
+                { type: 'address', name: 'poolManager' },
+                { type: 'uint24', name: 'fee' },
+                { type: 'bytes32', name: 'parameters' },
+            ],
+        },
+    ],
+}] as const
+
+/** Encode the backend-selected imported-token pool for one Wrapper quote/trade. */
+export const buildImportedTokenSwapSource = async (
+    dexVersion: number,
+    pair: string | null | undefined,
+): Promise<ImportedSwapSource> => {
+    const deployment = useChainStore().deployment
+    if (deployment.key !== 'bsc') throw new Error('ImportedTokenSwapWrapper is only deployed on BSC')
+
+    if (dexVersion === 2) {
+        if (!pair || !isAddress(pair)) throw new Error('Imported V2 pair is unavailable')
+        return {
+            sourceType: 0,
+            sourceData: encodeAbiParameters(V2_SOURCE_PARAMETERS, [{
+                router: deployment.dex.v2Router,
+                pair: pair as `0x${string}`,
+            }]),
+        }
+    }
+
+    if (dexVersion === 3) {
+        if (!pair || !isAddress(pair)) throw new Error('Imported V3 pool is unavailable')
+        if (deployment.dex.v3SmartRouter === zeroAddress || deployment.dex.v3Quoter === zeroAddress) {
+            throw new Error('Imported V3 router or quoter is unavailable')
+        }
+        return {
+            sourceType: 1,
+            sourceData: encodeAbiParameters(V3_SOURCE_PARAMETERS, [{
+                router: deployment.dex.v3SmartRouter,
+                quoter: deployment.dex.v3Quoter,
+                pool: pair as `0x${string}`,
+            }]),
+        }
+    }
+
+    if (dexVersion === 4) {
+        const pool = await resolveV4PoolKeyForTrade(pair)
+        if (!pool) throw new Error('Imported V4 PoolKey is unavailable')
+        if (deployment.dex.v4Quoter === zeroAddress) throw new Error('Imported V4 quoter is unavailable')
+        return {
+            sourceType: 3,
+            sourceData: encodeAbiParameters(PANCAKE_V4_SOURCE_PARAMETERS, [{
+                quoter: deployment.dex.v4Quoter,
+                pool,
+            }]),
+        }
+    }
+
+    throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
+}
+
+const simulateImportedTokenQuote = async (
+    functionName: 'quoteBuy' | 'quoteSell',
+    token: string,
+    pair: string | null | undefined,
+    dexVersion: number,
+    amountIn: bigint,
+): Promise<bigint> => {
+    if (!isAddress(token) || amountIn <= 0n) throw errCode.PARAMS_ERROR
+    const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
+    if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
+    const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
+    const account = useAccountStore().ethConnectAddress
+    const simulation = await getReadOnlyClient().simulateContract({
+        address: wrapper,
+        abi: abis.ImportedTokenSwapWrapper,
+        functionName,
+        args: [token, sourceType, sourceData, amountIn],
+        account: isAddress(account ?? '') ? account as `0x${string}` : undefined,
+    } as any)
+    return simulation.result as bigint
+}
+
+export const quoteImportedTokenBuy = (
+    token: string,
+    pair: string | null | undefined,
+    dexVersion: number,
+    nativeAmountIn: bigint,
+) => simulateImportedTokenQuote('quoteBuy', token, pair, dexVersion, nativeAmountIn)
+
+export const quoteImportedTokenSell = (
+    token: string,
+    pair: string | null | undefined,
+    dexVersion: number,
+    tokenAmountIn: bigint,
+) => simulateImportedTokenQuote('quoteSell', token, pair, dexVersion, tokenAmountIn)
+
+export type ImportedPoolValidation = {
+    supported: boolean
+    buyAmountOut: bigint
+    sellAmountOut: bigint
+    error?: string
+}
+
+const formatImportedPoolValidationError = (error: any): string => {
+    const message = error?.shortMessage
+        ?? error?.cause?.shortMessage
+        ?? error?.message
+        ?? String(error)
+    return String(message).split('\n')[0].slice(0, 160)
+}
+
+/**
+ * Read-only validation for a candidate imported-token pool. It verifies both
+ * final-output quotes, then simulates the actual buy entrypoint so no wallet
+ * transaction is submitted while checking the DEX executor and bridge route.
+ */
+export const validateImportedTokenPool = async (
+    token: string,
+    pair: string,
+    dexVersion: number,
+): Promise<ImportedPoolValidation> => {
+    try {
+        const account = useAccountStore().ethConnectAddress
+        if (!isAddress(account ?? '')) throw new Error('Connect a wallet to validate trading')
+        const validationNativeIn = 1_000_000_000_000n // 0.000001 BNB; eth_call only.
+        const buyAmountOut = await quoteImportedTokenBuy(token, pair, dexVersion, validationNativeIn)
+        if (buyAmountOut <= 0n) throw new Error('Buy quote returned zero output')
+        const sellAmountOut = await quoteImportedTokenSell(token, pair, dexVersion, buyAmountOut)
+        if (sellAmountOut <= 0n) throw new Error('Sell quote returned zero output')
+
+        const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
+        if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
+        const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
+        await getReadOnlyClient().simulateContract({
+            address: wrapper,
+            abi: abis.ImportedTokenSwapWrapper,
+            functionName: 'buyToken',
+            args: [
+                token as `0x${string}`,
+                sourceType,
+                sourceData,
+                1n,
+                account as `0x${string}`,
+                BigInt(Math.floor(Date.now() / 1000) + 300),
+                zeroAddress,
+            ],
+            account: account as `0x${string}`,
+            value: validationNativeIn,
+        } as any)
+        return { supported: true, buyAmountOut, sellAmountOut }
+    } catch (error) {
+        return {
+            supported: false,
+            buyAmountOut: 0n,
+            sellAmountOut: 0n,
+            error: formatImportedPoolValidationError(error),
+        }
+    }
 }
 
 /** 注入代币到 HourlyTickCalculator（开启社交分发） */
@@ -662,6 +850,27 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
     if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
     }
+    const activeDeployment = useChainStore().deployment
+    if (isImport && activeDeployment.key === 'bsc') {
+        const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
+        if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured on BSC')
+        const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
+        const minimumTokenOut = amount * BigInt(10000 - slippage) / 10000n
+        return writeContract({
+            contractName: 'ImportedTokenSwapWrapper',
+            functionName: 'buyToken',
+            args: [
+                token,
+                sourceType,
+                sourceData,
+                minimumTokenOut,
+                useAccountStore().ethConnectAddress,
+                Math.floor(Date.now() / 1000) + 300,
+                sellsman,
+            ],
+            value: ethAmount,
+        })
+    }
     if (listed) {
         // v7/v8/v9/v11 上架后代币走 PCS V4（BuyAndSellView 使用 buyTokenV4）
         if (isPcsV4Version(version)) {
@@ -766,6 +975,38 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
     if (!isAddress(token)) throw errCode.PARAMS_ERROR;
     if (!sellsman || !isAddress(sellsman)) {
         sellsman = zeroAddress;
+    }
+    const activeDeployment = useChainStore().deployment
+    if (isImport && activeDeployment.key === 'bsc') {
+        const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
+        if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured on BSC')
+        const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
+        const user = useAccountStore().ethConnectAddress as `0x${string}`
+        const allowance = await readContract('Token1', 'allowance', [user, wrapper], token as `0x${string}`) as bigint
+        if (allowance < amount) {
+            const approvalHash = await writeContract({
+                contractName: 'Token1',
+                functionName: 'approve',
+                args: [wrapper, amount],
+                address: token as `0x${string}`,
+            })
+            if (!approvalHash) throw errCode.TRANSACTION_INVALID
+        }
+        const minimumNativeOut = receiveEth * BigInt(10000 - slippage) / 10000n
+        return writeContract({
+            contractName: 'ImportedTokenSwapWrapper',
+            functionName: 'sellToken',
+            args: [
+                token,
+                sourceType,
+                sourceData,
+                amount,
+                minimumNativeOut,
+                user,
+                Math.floor(Date.now() / 1000) + 300,
+                sellsman,
+            ],
+        })
     }
     if (listed) {
         if (isPcsV4Version(version)) {
@@ -2495,6 +2736,10 @@ export type DexPoolInfo = {
     pairAddress: string
     baseToken: string
     quoteToken: string
+    baseTokenSymbol: string
+    quoteTokenSymbol: string
+    pairedToken: string
+    pairedTokenSymbol: string
     dexVersion: number
     dexLabel: string
     bnbReserves: number
@@ -2525,17 +2770,35 @@ function parseDexVersion(dexId: string): { dexVersion: number, dexLabel: string 
     return { dexVersion: 2, dexLabel: `${dex} v2` }
 }
 
-function parsePoolAttrs(p: any, bnbPrice: number): DexPoolInfo {
+function parsePoolAttrs(
+    p: any,
+    bnbPrice: number,
+    importedToken: string,
+    includedTokens: Map<string, Record<string, any>>,
+): DexPoolInfo {
     const attrs = p.attributes ?? {}
     const dexId: string = p.relationships?.dex?.data?.id ?? ''
     const { dexVersion, dexLabel } = parseDexVersion(dexId)
     const reserveUsd = parseFloat(attrs.reserve_in_usd ?? '0')
     const name: string = attrs.name ?? ''
     const feeMatch = name.match(/([\d.]+)%/)
+    const baseId = p.relationships?.base_token?.data?.id ?? ''
+    const quoteId = p.relationships?.quote_token?.data?.id ?? ''
+    const baseToken = String(baseId).replace(/^.+_/, '')
+    const quoteToken = String(quoteId).replace(/^.+_/, '')
+    const baseAttrs = includedTokens.get(baseId) ?? includedTokens.get(baseToken.toLowerCase()) ?? {}
+    const quoteAttrs = includedTokens.get(quoteId) ?? includedTokens.get(quoteToken.toLowerCase()) ?? {}
+    const importedIsBase = baseToken.toLowerCase() === importedToken.toLowerCase()
+    const pairedToken = importedIsBase ? quoteToken : baseToken
+    const pairedAttrs = importedIsBase ? quoteAttrs : baseAttrs
     return {
         pairAddress: attrs.address ?? '',
-        baseToken: (p.relationships?.base_token?.data?.id ?? '').replace(/^.+_/, ''),
-        quoteToken: (p.relationships?.quote_token?.data?.id ?? '').replace(/^.+_/, ''),
+        baseToken,
+        quoteToken,
+        baseTokenSymbol: baseAttrs.symbol ?? '',
+        quoteTokenSymbol: quoteAttrs.symbol ?? '',
+        pairedToken,
+        pairedTokenSymbol: pairedAttrs.symbol ?? '',
         dexVersion,
         dexLabel,
         bnbReserves: reserveUsd / bnbPrice,
@@ -2561,7 +2824,7 @@ export const getTokenDexPools = async (token: string): Promise<TokenDexResult | 
     try {
         const [tokenAttrs, poolsResp] = await Promise.all([
             fetchGeckoTokenAttributes(tokenLower),
-            fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/${tokenLower}/pools?page=1`)
+            fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/${tokenLower}/pools?include=base_token%2Cquote_token&page=1`)
         ])
         if (!poolsResp.ok) return null
         poolsJson = await poolsResp.json()
@@ -2602,7 +2865,13 @@ export const getTokenDexPools = async (token: string): Promise<TokenDexResult | 
     filtered.sort((a: any, b: any) =>
         parseFloat(b.attributes?.reserve_in_usd ?? '0') - parseFloat(a.attributes?.reserve_in_usd ?? '0')
     )
-    const pools = filtered.map((p: any) => parsePoolAttrs(p, bnbPrice))
+    const includedTokens = new Map<string, Record<string, any>>()
+    for (const item of poolsJson?.included ?? []) {
+        if (item?.type !== 'token' || !item?.id) continue
+        includedTokens.set(item.id, item.attributes ?? {})
+        includedTokens.set(String(item.id).replace(/^.+_/, '').toLowerCase(), item.attributes ?? {})
+    }
+    const pools = filtered.map((p: any) => parsePoolAttrs(p, bnbPrice, tokenLower, includedTokens))
 
     return { tokenName, tokenSymbol, tokenLogo, tokenPrice, fdv, pools }
 }
