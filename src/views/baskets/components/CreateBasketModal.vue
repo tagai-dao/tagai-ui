@@ -757,7 +757,7 @@ watch([
 .section-title strong { color: var(--text-base); font-size: 14px; }
 .section-title span { margin-top: 2px; color: var(--text-muted); font-size: 10px; line-height: 15px; }
 .section-title em { color: var(--text-muted); font-size: 10px; font-style: normal; }
-.two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.two-cols { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 12px; }
 .field { position: relative; display: block; padding: 11px 13px; border: 1px solid var(--border-base); border-radius: 14px; background: var(--surface-2); }
 .field > span { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 9px; font-weight: 650; text-transform: uppercase; letter-spacing: .08em; }
 .field > span.field-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
