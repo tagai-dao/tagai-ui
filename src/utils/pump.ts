@@ -488,7 +488,7 @@ export const buildImportedTokenSwapSource = async (
     throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
 }
 
-const simulateImportedTokenQuote = async (
+const readImportedTokenQuote = async (
     functionName: 'quoteBuy' | 'quoteSell',
     token: string,
     pair: string | null | undefined,
@@ -499,15 +499,16 @@ const simulateImportedTokenQuote = async (
     const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
     if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
     const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
-    const account = useAccountStore().ethConnectAddress
-    const simulation = await getReadOnlyClient().simulateContract({
+    // quoteBuy / quoteSell are caller-independent view functions. Reading them
+    // directly avoids making a quote depend on the connected wallet's `from`
+    // address (some wallet/account combinations reject the simulated write and
+    // the trade panel previously turned that failure into a misleading zero).
+    return await getReadOnlyClient().readContract({
         address: wrapper,
         abi: abis.ImportedTokenSwapWrapper,
         functionName,
         args: [token, sourceType, sourceData, amountIn],
-        account: isAddress(account ?? '') ? account as `0x${string}` : undefined,
-    } as any)
-    return simulation.result as bigint
+    } as any) as bigint
 }
 
 export const quoteImportedTokenBuy = (
@@ -515,14 +516,14 @@ export const quoteImportedTokenBuy = (
     pair: string | null | undefined,
     dexVersion: number,
     nativeAmountIn: bigint,
-) => simulateImportedTokenQuote('quoteBuy', token, pair, dexVersion, nativeAmountIn)
+) => readImportedTokenQuote('quoteBuy', token, pair, dexVersion, nativeAmountIn)
 
 export const quoteImportedTokenSell = (
     token: string,
     pair: string | null | undefined,
     dexVersion: number,
     tokenAmountIn: bigint,
-) => simulateImportedTokenQuote('quoteSell', token, pair, dexVersion, tokenAmountIn)
+) => readImportedTokenQuote('quoteSell', token, pair, dexVersion, tokenAmountIn)
 
 export type ImportedPoolValidation = {
     supported: boolean
