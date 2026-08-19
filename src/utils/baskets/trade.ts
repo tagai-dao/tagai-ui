@@ -70,6 +70,9 @@ export const friendlyBasketError = (error: unknown): string => {
     return 'The selected V3 pool does not have the required 5-minute price history yet.'
   }
   if (/pool hook is not approved/i.test(text)) return 'The selected pool hook is not approved for Basket constituents.'
+  if (/TransferTaxNotSupported|0xf0cba19a/i.test(text)) {
+    return 'Fee-on-transfer tokens are not supported as Basket constituents.'
+  }
   if (/SlippageExceeded|MinOutputNotMet/i.test(text)) return 'Price moved beyond your slippage limit'
   if (/SellLegFailed/i.test(text)) return 'A constituent could not be sold'
   if (/FirstMintLegMinRequired/i.test(text)) return 'First purchase requires protected constituent quotes'

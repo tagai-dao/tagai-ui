@@ -159,6 +159,9 @@ export const createBasketAndBuy = async (
   if (!wallet) throw new Error('Wallet not connected')
   const deployment = getBasketDeployment(input.chainId)
   const creationVersion = deployment.creationVersion
+  if (input.chainId === 56 && creationVersion !== 3) {
+    throw new Error('New BSC Basket creation requires protocol V3')
+  }
   const creationProtocol = getBasketCreationProtocol(input.chainId)
   const presets = deployment.assetPresets
   const usdgIn = parseUnits(String(input.initialUsdg), deployment.settlementDecimals)
@@ -178,7 +181,7 @@ export const createBasketAndBuy = async (
     throw new Error('Asset weights must add up to 100%')
   }
 
-  if (input.chainId === 56 && creationVersion >= 3) {
+  if (input.chainId === 56) {
     const registryClient = getReadOnlyClient(input.chainId)
     const [registrarApproved, forwarderApproved] = await Promise.all([
       registryClient.readContract({

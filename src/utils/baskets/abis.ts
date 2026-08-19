@@ -123,6 +123,7 @@ export const bscBasketSwapRouterAbi = parseAbi([
 ])
 
 export const bscV3BasketSwapRouterAbi = parseAbi([
+  'error TransferTaxNotSupported(address asset)',
   'function buyExactSettlement(address basket,uint256 settlementTokenIn,uint256 minBasketOut,bytes hookData,address recipient) returns (uint256 basketOut)',
   'function sellExactBasket(address basket,uint256 basketIn,uint256 minSettlementOut,bytes hookData,address recipient) returns (uint256 settlementTokenOut)',
   `function createAndBuyExactSettlement(bytes32 userSalt,(string name,string symbol,address creator,uint16 basketFeeBps,uint16 creatorShareBps,address[] constituentAssets,${PANCAKE_V3_LEG_ROUTE}[] constituentRoutes,uint16[] targetWeights) createParams,uint256 settlementTokenIn,uint256 minBasketOut,bytes hookData,address recipient) returns (address basket,uint256 basketOut)`,

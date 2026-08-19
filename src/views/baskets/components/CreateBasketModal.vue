@@ -82,6 +82,9 @@ const initialUsdgRaw = computed(() => {
     return null
   }
 })
+const minimumInitialUsdgRaw = computed(() => 10n ** BigInt(deployment.value.settlementDecimals))
+const initialUsdgTooSmall = computed(() =>
+  initialUsdgRaw.value === null || initialUsdgRaw.value <= minimumInitialUsdgRaw.value)
 const insufficientUsdg = computed(() =>
   usdgBalance.value !== null && initialUsdgRaw.value !== null && initialUsdgRaw.value > usdgBalance.value)
 const formattedUsdgBalance = computed(() => {
@@ -102,12 +105,30 @@ const customAssetUsdDetected = computed(() => customAssetUsdBlocked.value ||
   customPoolRejectionReasons.value.some((reason) => reason.issue === 'usdConstituent'))
 const displayedPoolRejectionReasons = computed(() =>
   customPoolRejectionReasons.value.filter((reason) => reason.issue !== 'usdConstituent'))
-const canSubmit = computed(() =>
-  !!account.value && isOnBasketChain.value && name.value.trim().length >= 2 && symbol.value.trim().length >= 2 &&
-  selected.value.length > 0 && totalWeight.value === 10_000 && Number(initialUsdg.value) > 1 &&
-  !insufficientUsdg.value &&
-  basketFeeBps.value >= 100 && basketFeeBps.value <= 300 && creatorShareBps.value >= 0 && creatorShareBps.value <= 3000,
-)
+const initialBuyIssue = computed(() => {
+  if (initialUsdgTooSmall.value) {
+    return t('baskets.initialBuyMinimum', { settlement: deployment.value.settlementSymbol })
+  }
+  if (insufficientUsdg.value) {
+    return t('baskets.insufficientUsdg', { settlement: deployment.value.settlementSymbol })
+  }
+  return ''
+})
+const submitIssues = computed(() => {
+  const issues: string[] = []
+  if (!isOnBasketChain.value) issues.push(t('baskets.createIssueNetwork', { network: deployment.value.networkLabel }))
+  if (name.value.trim().length < 2) issues.push(t('baskets.createIssueName'))
+  if (symbol.value.trim().length < 2) issues.push(t('baskets.createIssueSymbol'))
+  if (!selected.value.length) issues.push(t('baskets.createIssueAssets'))
+  if (selected.value.length && totalWeight.value !== 10_000) {
+    issues.push(t('baskets.createIssueWeights', { weight: (totalWeight.value / 100).toFixed(2) }))
+  }
+  if (initialBuyIssue.value) issues.push(initialBuyIssue.value)
+  if (basketFeeBps.value < 100 || basketFeeBps.value > 300) issues.push(t('baskets.createIssueTradeFee'))
+  if (creatorShareBps.value < 0 || creatorShareBps.value > 3000) issues.push(t('baskets.createIssueCreatorShare'))
+  return issues
+})
+const canSubmit = computed(() => !!account.value && submitIssues.value.length === 0)
 
 const isSelected = (address: Address) => selected.value.some((leg) => leg.asset.address.toLowerCase() === address.toLowerCase())
 const formatUsd = (value: number) => new Intl.NumberFormat(undefined, {
@@ -150,6 +171,14 @@ const poolRejectionKey = (reason: BasketPoolRejection) =>
 const localizedPoolError = (error: unknown) => error instanceof BasketPoolValidationError
   ? poolRejectionText(error)
   : t('baskets.poolReasons.validationFailed')
+const localizedCreationError = (error: unknown) => {
+  if (error instanceof BasketPoolValidationError) return localizedPoolError(error)
+  const message = error instanceof Error ? error.message : String(error)
+  if (/Fee-on-transfer tokens|TransferTaxNotSupported|0xf0cba19a/i.test(message)) {
+    return t('baskets.transferTaxUnsupported')
+  }
+  return message
+}
 const formatPoolDate = (value: string) => {
   const timestamp = Date.parse(value)
   return Number.isFinite(timestamp) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(timestamp) : '—'
@@ -481,9 +510,7 @@ const submit = async () => {
     await router.push(`/baskets/${result.basket}`)
   } catch (error) {
     state.value = 'idle'
-    errorMessage.value = error instanceof BasketPoolValidationError
-      ? localizedPoolError(error)
-      : error instanceof Error ? error.message : String(error)
+    errorMessage.value = localizedCreationError(error)
   }
 }
 
@@ -655,7 +682,10 @@ watch([
               <div class="two-cols">
                 <label class="field"><span>{{ $t('baskets.tradeFeeBps') }}</span><input v-model.number="basketFeeBps" type="number" min="100" max="300" :disabled="isBusy"><small>100–300 bps</small></label>
                 <label class="field"><span>{{ $t('baskets.creatorShareBps') }}</span><input v-model.number="creatorShareBps" type="number" min="0" max="3000" :disabled="isBusy"><small>0–3000 bps</small></label>
-                <label class="field" :class="{ 'balance-invalid': insufficientUsdg }"><span class="field-heading"><span>{{ $t('baskets.initialBuy') }}</span><em>{{ settlementBalanceLabel }}: {{ formattedUsdgBalance }}</em></span><input :value="initialUsdg" type="number" min="1.01" step="any" :disabled="isBusy" @input="updateInitialUsdg"><small>{{ deployment.settlementSymbol }}</small></label>
+                <div class="field-stack">
+                  <label class="field" :class="{ 'balance-invalid': initialBuyIssue }"><span class="field-heading"><span>{{ $t('baskets.initialBuy') }}</span><em>{{ settlementBalanceLabel }}: {{ formattedUsdgBalance }}</em></span><input :value="initialUsdg" type="number" min="1.01" step="any" :disabled="isBusy" @input="updateInitialUsdg"><small>{{ deployment.settlementSymbol }}</small></label>
+                  <p class="field-validation" :class="{ invalid: initialBuyIssue }">{{ initialBuyIssue || $t('baskets.initialBuyHint', { settlement: deployment.settlementSymbol }) }}</p>
+                </div>
                 <label class="field"><span>{{ $t('baskets.slippage') }}</span><input v-model.number="slippageBps" type="number" min="1" :max="BASKET_MAX_SLIPPAGE_BPS" :disabled="isBusy"><small>bps</small></label>
               </div>
               <button type="button" class="advanced-toggle" :class="{ open: advancedOpen }" :disabled="isBusy || !selected.length" @click="advancedOpen = !advancedOpen">
@@ -691,6 +721,10 @@ watch([
 
           <footer class="modal-footer">
             <p v-if="errorMessage" class="create-error">{{ errorMessage }}</p>
+            <div v-if="account && submitIssues.length" class="create-validation-summary">
+              <strong>{{ $t('baskets.createMissingTitle') }}</strong>
+              <ul><li v-for="issue in submitIssues" :key="issue">{{ issue }}</li></ul>
+            </div>
             <button type="button" class="create-submit" :disabled="isBusy || (!!account && !canSubmit)" @click="submit">
               <span v-if="isBusy" class="spinner" />
               <span v-if="!account">{{ $t('connect') }}</span>
@@ -730,6 +764,9 @@ watch([
 .field-heading em { overflow: hidden; color: var(--text-faint); font-size: 8px; font-style: normal; font-weight: 600; letter-spacing: 0; text-overflow: ellipsis; text-transform: none; white-space: nowrap; }
 .field.balance-invalid { border-color: color-mix(in srgb, var(--color-red, #ef596f) 55%, var(--border-base)); }
 .field.balance-invalid .field-heading em { color: var(--color-red, #ef596f); }
+.field-stack { min-width: 0; }
+.field-validation { margin: 5px 2px 0; color: var(--text-faint); font-size: 8px; line-height: 12px; }
+.field-validation.invalid { color: var(--color-red, #ef596f); }
 .field input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-base); font-size: 14px; font-weight: 650; }
 .field select { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-base); font-size: 13px; font-weight: 650; }
 .field small { position: absolute; right: 12px; bottom: 12px; color: var(--text-faint); font-size: 9px; pointer-events: none; }
@@ -802,6 +839,10 @@ watch([
 .advanced-enter-active, .advanced-leave-active { transition: opacity 150ms ease, transform 150ms ease; }.advanced-enter-from, .advanced-leave-to { opacity: 0; transform: translateY(-4px); }
 .modal-footer { padding: 16px 28px 22px; border-top: 1px solid var(--border-base); background: color-mix(in srgb, var(--surface-2) 55%, var(--surface)); }
 .create-error { margin-bottom: 10px; color: var(--color-down); font-size: 10px; line-height: 15px; }
+.create-validation-summary { margin-bottom: 10px; padding: 9px 11px; border: 1px solid color-mix(in srgb, var(--color-down) 28%, var(--border-base)); border-radius: 10px; background: color-mix(in srgb, var(--color-down) 6%, transparent); }
+.create-validation-summary strong { display: block; margin-bottom: 4px; color: var(--color-down); font-size: 9px; }
+.create-validation-summary ul { margin: 0; padding-left: 15px; }
+.create-validation-summary li { color: var(--text-muted); font-size: 9px; line-height: 14px; }
 .create-submit { display: flex; width: 100%; height: 50px; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; background: linear-gradient(115deg, #8d67e8, #5f74df 58%, #27b8b0); color: #fff; font-size: 13px; font-weight: 750; box-shadow: 0 12px 28px rgba(102,89,217,.22); }.create-submit:disabled { opacity: .45; box-shadow: none; cursor: not-allowed; }
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 700ms linear infinite; }
 .basket-modal-enter-active, .basket-modal-leave-active { transition: opacity 180ms ease; }.basket-modal-enter-active .create-modal, .basket-modal-leave-active .create-modal { transition: transform 180ms ease; }.basket-modal-enter-from, .basket-modal-leave-to { opacity: 0; }.basket-modal-enter-from .create-modal, .basket-modal-leave-to .create-modal { transform: translateY(12px) scale(.985); }
