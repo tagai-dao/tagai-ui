@@ -268,7 +268,16 @@ export const writeContract = async ({
         value: typeof value === 'string' ? BigInt(value) : value
     });
 
-    const tx = await client.writeContract(request);
+    // Reuse the same RPC that successfully simulated the call to estimate gas.
+    // Supplying the buffered limit prevents the wallet from having to perform a
+    // separate gas estimation, which can fail for complex multi-hop swaps.
+    const estimatedGas = await publicClient.estimateContractGas(request)
+    const gas = estimatedGas * 120n / 100n
+
+    const tx = await client.writeContract({
+        ...request,
+        gas
+    });
     console.log('tx', tx)
     const hash = await waitForTx(tx);
     console.log('hash1', hash)
