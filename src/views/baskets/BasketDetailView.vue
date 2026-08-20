@@ -16,10 +16,12 @@ const router = useRouter()
 const { detail, isLoading, hasError, errorMessage, load } = useBasketDetail()
 const legColors = ['#b84fc2', '#5368d9', '#ef7b45', '#27b8a2', '#8d67e8']
 const addressCopied = ref(false)
+const copiedLegAddress = ref('')
 const trades = ref<BasketTradeEvent[]>([])
 const tradesLoading = ref(false)
 const tradesError = ref('')
 let copiedTimer: ReturnType<typeof setTimeout> | null = null
+let copiedLegTimer: ReturnType<typeof setTimeout> | null = null
 let tradesRequestId = 0
 
 const address = computed(() => String(route.params.address || ''))
@@ -45,6 +47,18 @@ const copyBasketAddress = async () => {
     copiedTimer = setTimeout(() => { addressCopied.value = false }, 1_600)
   } catch (error) {
     console.warn('[baskets] copy contract address failed', error)
+  }
+}
+
+const copyLegAddress = async (value: string) => {
+  if (!value) return
+  try {
+    await navigator.clipboard.writeText(value)
+    copiedLegAddress.value = value
+    if (copiedLegTimer) clearTimeout(copiedLegTimer)
+    copiedLegTimer = setTimeout(() => { copiedLegAddress.value = '' }, 1_600)
+  } catch (error) {
+    console.warn('[baskets] copy leg address failed', error)
   }
 }
 
@@ -155,6 +169,7 @@ watch(address, () => {
 })
 onUnmounted(() => {
   if (copiedTimer) clearTimeout(copiedTimer)
+  if (copiedLegTimer) clearTimeout(copiedLegTimer)
 })
 </script>
 
@@ -294,7 +309,25 @@ onUnmounted(() => {
               <i :style="{ backgroundColor: legColors[index % legColors.length] }" />
               <div class="min-w-0">
                 <strong :title="holding.symbol">{{ holding.symbol }}</strong>
-                <span>{{ holding.asset.slice(0, 6) }}…{{ holding.asset.slice(-4) }}</span>
+                <div class="asset-address">
+                  <span :title="holding.asset">{{ holding.asset.slice(0, 6) }}…{{ holding.asset.slice(-4) }}</span>
+                  <button
+                    type="button"
+                    class="asset-address__copy"
+                    :class="{ copied: copiedLegAddress === holding.asset }"
+                    :title="$t('copy')"
+                    :aria-label="$t('copy')"
+                    @click.stop="copyLegAddress(holding.asset)"
+                  >
+                    <svg v-if="copiedLegAddress === holding.asset" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="m5.5 10.5 3 3 6-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <svg v-else viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <rect x="6.5" y="6.5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.4" />
+                      <path d="M13.5 6.5V5.8a2.3 2.3 0 0 0-2.3-2.3H5.8a2.3 2.3 0 0 0-2.3 2.3v5.4a2.3 2.3 0 0 0 2.3 2.3h.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
             <div class="metric-cell" :data-label="$t('baskets.target')">
@@ -471,6 +504,12 @@ onUnmounted(() => {
 .asset-cell strong, .asset-cell span { display: block; }
 .asset-cell strong { overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; white-space: normal; }
 .asset-cell span { overflow: hidden; margin-top: 2px; color: var(--text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.asset-cell .asset-address { display: flex; min-width: 0; align-items: center; gap: 5px; }
+.asset-cell .asset-address span { min-width: 0; }
+.asset-address__copy { display: inline-grid; width: 18px; height: 18px; flex-shrink: 0; place-items: center; border-radius: 5px; color: var(--text-muted); transition: color 160ms ease, background 160ms ease; }
+.asset-address__copy:hover { background: var(--surface-2); color: var(--text-base); }
+.asset-address__copy.copied { color: #31b975; }
+.asset-address__copy svg { width: 13px; height: 13px; }
 .metric-cell { text-align: right; }
 	.metric-cell--strong { font-weight: 700; }
 	.weight-track { position: absolute; right: 24px; bottom: 10px; left: 24px; height: 2px; overflow: hidden; border-radius: 2px; background: var(--surface-2); }
