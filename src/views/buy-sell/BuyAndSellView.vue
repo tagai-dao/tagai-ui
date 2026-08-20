@@ -385,10 +385,12 @@ const updateBuyAmount = debounce(async (val: any) => {
   if (seq !== buyQuoteSeq) return
   receiveAmount.value = receive
   quoteSpotPrice.value = spot > 0 ? spot : null
- } catch (error) {
+  } catch (error) {
     if (seq !== buyQuoteSeq) return
-    console.log(33, error)
-    receiveAmount.value = 0n
+    console.warn('Buy quote failed', error)
+    // Empty means unavailable; zero is reserved for a successful quote that
+    // cannot cross the pool and must not mask RPC/encoding failures.
+    receiveAmount.value = ''
     quoteSpotPrice.value = null
   }finally {
   if (seq === buyQuoteSeq) calculating.value = false
@@ -491,7 +493,8 @@ const updateSellAmount = debounce(async (val: any) => {
     quoteSpotPrice.value = spot > 0 ? spot : null
   } catch (error) {
     if (seq !== sellQuoteSeq) return
-    receiveEth.value = 0n
+    console.warn('Sell quote failed', error)
+    receiveEth.value = ''
     quoteSpotPrice.value = null
   }finally {
     if (seq === sellQuoteSeq) calculating.value = false
