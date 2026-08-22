@@ -73,6 +73,7 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     communityBalance: 0n, miningBalance: 0n,
     mintAllowance: 0n, ammAllowance: 0n, miningAllowance: 0n,
     pendingCommunityRewards: 0n, poolOperationFee: 0n,
+    holderPoolDailyRewards: 0n,
     injectedRewards24h: 0n, distributedRewards24h: 0n, burnedMiningTotal: 0n,
     rewardSummaryAvailable: false, indexNativeQuote: 0n, miningNativeQuote: 0n,
     ammActive: false, inventoryCount: 0n, oldestTokenId: 0n,

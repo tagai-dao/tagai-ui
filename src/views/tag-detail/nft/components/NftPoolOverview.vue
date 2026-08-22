@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { formatEther } from 'viem'
 import type { NutboxIndexBrokerPool } from '@/types/nutbox'
 import { formatToken, type NutboxNftPoolModel } from '@/composables/useNutboxNftPool'
@@ -10,7 +10,6 @@ const props = defineProps<{ pool: NutboxIndexBrokerPool; model: NutboxNftPoolMod
 const emit = defineEmits<{ mining: []; rewards: [] }>()
 const { state } = props.model
 const communityStore = useCommunityStore()
-const holderAprBps = ref<bigint | null>(null)
 
 const isStake = computed(() => props.pool.miningMode === 'stake' || props.pool.nftTemplateKind === 'STAKE')
 const miningAprBps = computed<bigint | null>(() => {
@@ -30,9 +29,15 @@ const miningAprBps = computed<bigint | null>(() => {
 const formatApr = (value: bigint | null) => value === null
   ? '—'
   : `${(Number(value) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
+const holderAprBps = computed<bigint | null>(() => {
+  const levelOneWeight = state.levelRules[0]?.weight || 0n
+  if (state.holderPoolDailyRewards <= 0n || levelOneWeight <= 0n || state.totalWeight <= 0n || state.communityTokenPrice <= 0n) return null
+  const annualRewards = state.holderPoolDailyRewards * 365n * levelOneWeight / state.totalWeight
+  return annualRewards * 10_000n / state.communityTokenPrice
+})
 
 const loadHolderApr = async () => {
-  holderAprBps.value = null
+  state.holderPoolDailyRewards = 0n
   const community = communityStore.currentSelectedCommunity
   if (!community?.communityAddress || !community.socialPoolAddress || !state.totalWeight || !state.communityTokenPrice) return
   try {
@@ -53,12 +58,9 @@ const loadHolderApr = async () => {
     }
     const poolScale = await getNutboxPoolScale(community.communityAddress as `0x${string}`, props.pool.pool)
     const poolDailyRewards = communityDailyRewards * poolScale.scaleNumerator / poolScale.scaleDenominator
-    const levelOneWeight = state.levelRules[0]?.weight || 0n
-    if (poolDailyRewards <= 0n || levelOneWeight <= 0n) return
-    const annualRewards = poolDailyRewards * 365n * levelOneWeight / state.totalWeight
-    holderAprBps.value = annualRewards * 10_000n / state.communityTokenPrice
+    state.holderPoolDailyRewards = poolDailyRewards
   } catch {
-    holderAprBps.value = null
+    state.holderPoolDailyRewards = 0n
   }
 }
 

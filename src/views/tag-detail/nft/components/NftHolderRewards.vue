@@ -21,6 +21,14 @@ const copyReferral = async (tokenId: bigint) => {
 const claim = async () => {
   try { await claimCommunityRewards(); notify({ type: 'success', message: 'Community rewards claimed' }) } catch (reason) { handleErrorTip(reason) }
 }
+const levelApr = (weight: bigint) => {
+  if (state.holderPoolDailyRewards <= 0n || state.totalWeight <= 0n || state.communityTokenPrice <= 0n) return null
+  const annualRewards = state.holderPoolDailyRewards * 365n * weight / state.totalWeight
+  return annualRewards * 10_000n / state.communityTokenPrice
+}
+const formatApr = (value: bigint | null) => value === null
+  ? '—'
+  : `${(Number(value) / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
 </script>
 
 <template>
@@ -32,7 +40,8 @@ const claim = async () => {
       </div>
       <div class="mt-4 grid grid-cols-2 gap-2 web:grid-cols-4">
         <div v-for="rule in state.levelRules" :key="rule.level" class="rounded-xl border border-line p-3">
-          <b>Lv.{{ rule.level }}</b><span class="mt-1 block text-xs text-grey-3f">{{ rule.threshold.toString() }} referrals</span><span class="mt-2 block text-sm">Weight {{ rule.weight.toString() }}</span>
+          <div class="flex items-center justify-between gap-2"><b>Lv.{{ rule.level }}</b><span class="rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-600">APR {{ formatApr(levelApr(rule.weight)) }}</span></div>
+          <span class="mt-2 block text-xs text-grey-3f">{{ rule.threshold.toString() }} referrals</span><span class="mt-2 block text-sm">Weight {{ rule.weight.toString() }}</span>
         </div>
       </div>
     </div>
