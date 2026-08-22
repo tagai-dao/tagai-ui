@@ -644,7 +644,7 @@ const NUTBOX_SOCIAL_SCALE_DIVISOR = 100000000n
 const NUTBOX_POOL_RATIOS_STORAGE_SLOT = 10n
 
 /** 读取社交矿池在 Nutbox 社区中的 poolRatio（mapping 为 private，优先 storage） */
-async function readNutboxPoolRatio(community: `0x${string}`, pool: `0x${string}`): Promise<bigint> {
+export async function readNutboxPoolRatio(community: `0x${string}`, pool: `0x${string}`): Promise<bigint> {
     const slot = keccak256(encodeAbiParameters(
         [{ type: 'address' }, { type: 'uint256' }],
         [pool, NUTBOX_POOL_RATIOS_STORAGE_SLOT]
@@ -657,11 +657,11 @@ async function readNutboxPoolRatio(community: `0x${string}`, pool: `0x${string}`
     return NUTBOX_RATIO_BASE
 }
 
-/** Nutbox 社区奖励中实际进入社交矿池的比例：(10000 - feeRatio) * poolRatio / 100000000 */
-async function getNutboxSocialPoolScale(community: `0x${string}`, socialPool: `0x${string}`) {
+/** Return the net reward share allocated to any Nutbox pool. */
+export async function getNutboxPoolScale(community: `0x${string}`, pool: `0x${string}`) {
     const [feeRatio, poolRatio] = await Promise.all([
         readContract('NutboxCommunity', 'feeRatio', [], community).then(v => BigInt(v as number | bigint)),
-        readNutboxPoolRatio(community, socialPool),
+        readNutboxPoolRatio(community, pool),
     ])
     return {
         feeRatio,
@@ -669,6 +669,11 @@ async function getNutboxSocialPoolScale(community: `0x${string}`, socialPool: `0
         scaleNumerator: (NUTBOX_RATIO_BASE - feeRatio) * poolRatio,
         scaleDenominator: NUTBOX_SOCIAL_SCALE_DIVISOR,
     }
+}
+
+/** Nutbox 社区奖励中实际进入社交矿池的比例：(10000 - feeRatio) * poolRatio / 100000000 */
+async function getNutboxSocialPoolScale(community: `0x${string}`, socialPool: `0x${string}`) {
+    return getNutboxPoolScale(community, socialPool)
 }
 
 function applyNutboxSocialPoolScale(amount: bigint, scaleNumerator: bigint, scaleDenominator: bigint) {

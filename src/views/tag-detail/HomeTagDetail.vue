@@ -29,6 +29,9 @@ import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
+import TagNft from '@/views/tag-detail/nft/TagNft.vue'
+import { getNutboxCommunityByToken } from '@/apis/nutbox'
+import type { NutboxCommunityByTokenResponse } from '@/types/nutbox'
 import { OperateType, useTweet } from "@/composables/useTweet";
 import CreateTipCurateModal from "@/components/common/CreateTipCurateModal.vue";
 import emitter from "@/utils/emitter";
@@ -41,13 +44,43 @@ import { isAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useChainStore } from '@/stores/chain'
 
+const chainStore = useChainStore()
+const comStore = useCommunityStore()
+const nutboxCommunity = ref<NutboxCommunityByTokenResponse | null>(null)
+let nutboxResolveSequence = 0
+watch(
+  [() => chainStore.activeChainId, () => comStore.currentSelectedCommunity?.token],
+  async ([chainId, token]) => {
+    const sequence = ++nutboxResolveSequence
+    nutboxCommunity.value = null
+    if (chainId !== 56 || !token || !isAddress(token)) return
+    try {
+      const result = await getNutboxCommunityByToken(token)
+      if (sequence !== nutboxResolveSequence) return
+      const hasSupportedPool = result.pools?.some(pool => (
+        pool.status === 'OPENED'
+        && pool.poolType === 'INDEX_BROKER_NFT'
+        && pool.indexBroker?.pool
+      ))
+      nutboxCommunity.value = hasSupportedPool ? result : null
+    } catch {
+      if (sequence === nutboxResolveSequence) nutboxCommunity.value = null
+    }
+  },
+  { immediate: true },
+)
+
 const baseTabOptions = computed(() => {
   const predictTab = predictionEnabled.value
     ? [{label: 'Predict', key: 'predict'}]
     : []
+  const nftTab = nutboxCommunity.value
+    ? [{label: 'NFT', key: 'nft'}]
+    : []
   if (comStore.currentSelectedCommunity?.isImport) {
     return [
       {label: 'Square', key: 'content'},
+      ...nftTab,
       ...predictTab,
       {label: 'Credit', key: 'credit'},
       {label: 'Token', key: 'token'},
@@ -56,6 +89,7 @@ const baseTabOptions = computed(() => {
   }
   return [
     {label: 'Square', key: 'content'},
+    ...nftTab,
     ...predictTab,
     {label: 'Trades', key: 'trade'},
     {label: 'Credit', key: 'credit'},
@@ -95,13 +129,11 @@ const pageScroll = (ref: any, type: string) => {
   }
 }
 const activeTab = ref('content')
-const chainStore = useChainStore()
 const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 watch(predictionEnabled, enabled => {
   if (!enabled && activeTab.value === 'predict') activeTab.value = 'content'
 })
 const modalStore = useModalStore()
-const comStore = useCommunityStore()
 const tweetTypeRef = ref()
 const route = useRoute()
 const router = useRouter()
@@ -113,6 +145,8 @@ const selectTab = (key: string) => {
       tab: key === 'content' ? undefined : key,
       channel: key === 'ai' ? route.query.channel : undefined,
       quoteTweetId: key === 'ai' ? route.query.quoteTweetId : undefined,
+      section: key === 'nft' ? route.query.section : undefined,
+      referrerTokenId: key === 'nft' ? route.query.referrerTokenId : undefined,
     },
   })
 }
@@ -122,6 +156,8 @@ watch(
     const requested = typeof queryTab === 'string' ? queryTab : 'content'
     if (tabOptions.value.some((tab) => tab.key === requested)) {
       activeTab.value = requested
+    } else if (!tabOptions.value.some((tab) => tab.key === activeTab.value)) {
+      activeTab.value = 'content'
     }
   },
   { immediate: true },
@@ -594,6 +630,7 @@ onBeforeRouteLeave((to, from, next) => {
           >
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
             <TagContent v-if="activeTab==='content'"/>
+            <TagNft v-if="activeTab==='nft' && nutboxCommunity" :community="nutboxCommunity"/>
             <PredictIndex v-if="activeTab==='predict'"/>
             <TagTippedContent v-if="activeTab==='tipped'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
