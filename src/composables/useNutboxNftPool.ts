@@ -6,7 +6,7 @@ import type { NutboxIndexBrokerPool } from '@/types/nutbox'
 import { getNutboxNftRewardSummary } from '@/apis/nutbox'
 import {
   erc20NutboxAbi,
-  imageFromTokenUri,
+  imageCandidatesFromTokenUri,
   indexBrokerNftAbi,
   indexBrokerNftAmmAbi,
   indexBrokerNftRendererAbi,
@@ -22,6 +22,7 @@ import {
 export interface NutboxNftInfo {
   tokenId: bigint
   image: string
+  imageFallbacks: string[]
   owner: Address
   level: number
   referrerTokenId: bigint
@@ -99,9 +100,11 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
       safe(readNutboxContract<Address>(address, indexBrokerNftAbi, 'getApproved', [tokenId]), zeroAddress),
     ])
     if (!raw) return null
+    const imageCandidates = imageCandidatesFromTokenUri(uri, svg)
     return {
       tokenId,
-      image: imageFromTokenUri(uri) || svgDataUrl(svg),
+      image: imageCandidates[0] || '',
+      imageFallbacks: imageCandidates.slice(1),
       owner: raw.owner ?? raw[0],
       level: Number(raw.level ?? raw[1] ?? 0),
       referrerTokenId: toBigInt(raw.referrerTokenId ?? raw[2]),
@@ -314,6 +317,8 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     approveErc20, mint, reveal, approveNft, buy, sell, miningAction, claimCommunityRewards,
   }
 }
+
+export type NutboxNftPoolModel = ReturnType<typeof useNutboxNftPool>
 
 async function getReadOnlyClientBlock() {
   const { getReadOnlyClient } = await import('@/utils/wallets')

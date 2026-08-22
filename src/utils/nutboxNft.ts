@@ -137,24 +137,53 @@ export const writeNutboxContract = async (
 
 export const withFeeBuffer = (value: bigint) => value + value / 10n + 1n
 
-export const ipfsToHttp = (value: string) => value.startsWith('ipfs://')
-  ? `https://ipfs.io/ipfs/${value.slice(7)}`
-  : value
+const uniqueSources = (sources: string[]) => [...new Set(sources.filter(Boolean))]
+
+/**
+ * Return several public gateways instead of binding NFT artwork to one IPFS
+ * provider.  The subdomain gateway is first because it is the same path used
+ * by Nutbox and gives every CID its own origin/cache namespace.
+ */
+export const ipfsHttpCandidates = (value: string) => {
+  if (!value.startsWith('ipfs://')) return value ? [value] : []
+  const raw = value.slice(7).replace(/^ipfs\//, '')
+  const [cid, ...pathParts] = raw.split('/').filter(Boolean)
+  if (!cid) return []
+  const suffix = pathParts.length ? `/${pathParts.join('/')}` : ''
+  return uniqueSources([
+    `https://${cid}.ipfs.4everland.io${suffix}`,
+    `https://cloudflare-ipfs.com/ipfs/${cid}${suffix}`,
+    `https://ipfs.io/ipfs/${cid}${suffix}`,
+  ])
+}
+
+export const ipfsToHttp = (value: string) => ipfsHttpCandidates(value)[0] || ''
+
+const imageValueFromTokenUri = (uri: string) => {
+  if (uri.startsWith('data:application/json;base64,')) {
+    const json = JSON.parse(atob(uri.slice('data:application/json;base64,'.length)))
+    return String(json.image || '')
+  }
+  if (uri.startsWith('data:application/json,')) {
+    const json = JSON.parse(decodeURIComponent(uri.slice('data:application/json,'.length)))
+    return String(json.image || '')
+  }
+  return uri
+}
+
+/** Build an ordered image fallback chain from metadata and the on-chain SVG. */
+export const imageCandidatesFromTokenUri = (uri: string, svg = '') => {
+  try {
+    const image = imageValueFromTokenUri(uri)
+    const metadataSources = image.startsWith('ipfs://') ? ipfsHttpCandidates(image) : [image]
+    return uniqueSources([...metadataSources, svgDataUrl(svg)])
+  } catch {
+    return uniqueSources([svgDataUrl(svg)])
+  }
+}
 
 export const imageFromTokenUri = (uri: string) => {
-  try {
-    if (uri.startsWith('data:application/json;base64,')) {
-      const json = JSON.parse(atob(uri.slice('data:application/json;base64,'.length)))
-      return ipfsToHttp(String(json.image || ''))
-    }
-    if (uri.startsWith('data:application/json,')) {
-      const json = JSON.parse(decodeURIComponent(uri.slice('data:application/json,'.length)))
-      return ipfsToHttp(String(json.image || ''))
-    }
-    return ipfsToHttp(uri)
-  } catch {
-    return ''
-  }
+  return imageCandidatesFromTokenUri(uri)[0] || ''
 }
 
 export const svgDataUrl = (svg: string) => svg

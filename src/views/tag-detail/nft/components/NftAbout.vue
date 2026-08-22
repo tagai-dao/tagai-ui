@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, toRef } from 'vue'
+import { computed } from 'vue'
 import { formatEther } from 'viem'
 import type { NutboxIndexBrokerPool } from '@/types/nutbox'
-import { useNutboxNftPool, formatToken } from '@/composables/useNutboxNftPool'
+import { formatToken, type NutboxNftPoolModel } from '@/composables/useNutboxNftPool'
 import { useChainStore } from '@/stores/chain'
 
-const props = defineProps<{ pool: NutboxIndexBrokerPool }>()
-const { state, loading, error } = useNutboxNftPool(toRef(props, 'pool'))
+const props = defineProps<{ pool: NutboxIndexBrokerPool; model: NutboxNftPoolModel }>()
+const { state, loading, error } = props.model
 const chainStore = useChainStore()
 const explorer = computed(() => chainStore.browser.replace(/\/$/, ''))
 const utilization = computed(() => state.maxSupply > 0n ? Number(state.inventoryCount * 10_000n / state.maxSupply) / 100 : 0)

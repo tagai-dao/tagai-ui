@@ -1,17 +1,16 @@
 <script setup lang="ts">
-import { computed, reactive, toRef } from 'vue'
+import { computed, reactive } from 'vue'
 import { parseUnits } from 'viem'
 import type { NutboxIndexBrokerPool } from '@/types/nutbox'
-import { useNutboxNftPool, formatToken } from '@/composables/useNutboxNftPool'
+import { formatToken, type NutboxNftPoolModel } from '@/composables/useNutboxNftPool'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { handleErrorTip, notify } from '@/utils/notify'
 import NftArtwork from './NftArtwork.vue'
 
-const props = defineProps<{ pool: NutboxIndexBrokerPool }>()
-const poolRef = toRef(props, 'pool')
+const props = defineProps<{ pool: NutboxIndexBrokerPool; model: NutboxNftPoolModel }>()
 const modalStore = useModalStore()
-const { state, loading, error, action, connected, ownedNfts, approveErc20, miningAction } = useNutboxNftPool(poolRef)
+const { state, loading, error, action, connected, ownedNfts, approveErc20, miningAction } = props.model
 const amounts = reactive<Record<string, string>>({})
 const isStake = computed(() => props.pool.miningMode === 'stake' || props.pool.nftTemplateKind === 'STAKE')
 const miningToken = computed(() => props.pool.indexMiningToken || props.pool.communityToken)
@@ -86,7 +85,7 @@ const activateOrIncrease = (tokenId: bigint, active: boolean) => {
     <div v-else class="grid gap-3 web:grid-cols-2">
       <article v-for="nft in ownedNfts" :key="nft.tokenId.toString()" class="rounded-2xl bg-surface p-4">
         <div class="grid grid-cols-[112px_1fr] gap-4">
-          <NftArtwork :src="nft.image" :alt="`NFT #${nft.tokenId}`" />
+          <NftArtwork :src="nft.image" :sources="nft.imageFallbacks" :alt="`NFT #${nft.tokenId}`" />
           <div>
             <div class="flex justify-between"><b>{{ state.name }} #{{ nft.tokenId }}</b><span class="rounded-full px-2 py-0.5 text-xs" :class="nft.indexMiningActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'">{{ nft.indexMiningActive ? 'Active' : 'Inactive' }}</span></div>
             <dl class="mt-2 space-y-1 text-sm">

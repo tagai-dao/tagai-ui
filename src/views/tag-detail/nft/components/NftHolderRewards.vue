@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import { toRef } from 'vue'
 import type { NutboxIndexBrokerPool } from '@/types/nutbox'
-import { useNutboxNftPool, formatToken } from '@/composables/useNutboxNftPool'
+import { formatToken, type NutboxNftPoolModel } from '@/composables/useNutboxNftPool'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { handleErrorTip, notify } from '@/utils/notify'
 import NftArtwork from './NftArtwork.vue'
 
-const props = defineProps<{ pool: NutboxIndexBrokerPool }>()
-const { state, loading, error, action, connected, ownedNfts, claimCommunityRewards } = useNutboxNftPool(toRef(props, 'pool'))
+const props = defineProps<{ pool: NutboxIndexBrokerPool; model: NutboxNftPoolModel }>()
+const { state, loading, error, action, connected, ownedNfts, claimCommunityRewards } = props.model
 const modalStore = useModalStore()
 const connect = () => modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
 const copyReferral = async (tokenId: bigint) => {
@@ -50,7 +49,7 @@ const claim = async () => {
       <div v-else class="grid gap-3 web:grid-cols-2">
         <article v-for="nft in ownedNfts" :key="nft.tokenId.toString()" class="rounded-2xl bg-surface p-4">
           <div class="grid grid-cols-[112px_1fr] gap-4">
-            <NftArtwork :src="nft.image" :alt="`NFT #${nft.tokenId}`" />
+            <NftArtwork :src="nft.image" :sources="nft.imageFallbacks" :alt="`NFT #${nft.tokenId}`" />
             <div><div class="flex justify-between"><b>{{ state.name }} #{{ nft.tokenId }}</b><span>Lv.{{ nft.level }}</span></div><dl class="mt-2 space-y-1 text-sm"><div class="flex justify-between"><dt class="text-grey-3f">Referrals</dt><dd>{{ nft.referralCount }}</dd></div><div class="flex justify-between"><dt class="text-grey-3f">Community weight</dt><dd>{{ nft.miningWeight }}</dd></div><div class="flex justify-between"><dt class="text-grey-3f">Mining</dt><dd>{{ nft.miningActive ? 'Active' : 'Inactive' }}</dd></div></dl><button class="mt-3 rounded-lg border border-line px-3 py-2 text-sm" @click="copyReferral(nft.tokenId)">Copy referral link</button></div>
           </div>
         </article>
