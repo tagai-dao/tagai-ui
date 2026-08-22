@@ -53,9 +53,9 @@
                     battles.value = (data.battle as BattleData[]).map(battle => ({
                         ...battle,
                         winner: getWinner(battle),
-                        reserveA: marketInfos[battle.marketMaker + '-priceA'],
-                        reserveB: marketInfos[battle.marketMaker + '-priceB'],
-                        fee: marketInfos[battle.marketMaker + '-fee']
+                        reserveA: marketInfos[battle.marketMaker + '-priceA'] ?? 0,
+                        reserveB: marketInfos[battle.marketMaker + '-priceB'] ?? 0,
+                        fee: marketInfos[battle.marketMaker + '-fee'] ?? 0
                     }))
                 } else {
                     battles.value = []
@@ -106,9 +106,9 @@
                   battles.value = battles.value.concat((data.battle as BattleData[]).map(battle => ({
                       ...battle,
                       winner: getWinner(battle),
-                      reserveA: marketInfos[battle.marketMaker + '-priceA'],
-                      reserveB: marketInfos[battle.marketMaker + '-priceB'],
-                      fee: marketInfos[battle.marketMaker + '-fee']
+                      reserveA: marketInfos[battle.marketMaker + '-priceA'] ?? 0,
+                      reserveB: marketInfos[battle.marketMaker + '-priceB'] ?? 0,
+                      fee: marketInfos[battle.marketMaker + '-fee'] ?? 0
                   })))
                 }
                 if (!data.battle || data.battle.length < 16) {
@@ -116,14 +116,14 @@
                 }
             } else {
                  const data: any = await getUserJoinedEventMarkets(accStore.getAccountInfo?.twitterId, accStore.getAccountInfo?.ethAddr, Math.floor((events.value.length - 1) / 16) + 1) as EventPredictData[]
-                 if (data.battle && data.battle.length > 0) {
-                     const marketInfos = await getMarketInfos(data.battle as EventPredictData[])
-                     events.value = events.value.concat((data.battle as EventPredictData[]).map(event => ({
+                 if (data && data.length > 0) {
+                     const marketInfos = await getMarketInfos(data as EventPredictData[])
+                     events.value = events.value.concat((data as EventPredictData[]).map(event => ({
                         ...event,
                         ...applyMulticallInfosToEvent(event, marketInfos)
                     })))
                  }
-                 if (!data.battle || data.battle.length < 16) {
+                 if (!data || data.length < 16) {
                     finished.value = true
                 }
             }
