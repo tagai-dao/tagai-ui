@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { BasketSummary } from '@/utils/baskets/types'
 import { getBasketDeployment } from '@/config/baskets'
+import BasketTokenLogo from './BasketTokenLogo.vue'
 
 const props = defineProps<{
   basket: BasketSummary
@@ -82,15 +83,24 @@ const formatPerformance = (value: number | null | undefined) => {
     <span class="basket-card__glow basket-card__glow--right" aria-hidden="true" />
 
     <div class="relative z-10 flex items-start justify-between gap-3">
-      <div class="min-w-0">
-        <div class="flex items-center gap-2.5 min-w-0">
-          <h2 class="text-xl font-bold tracking-[-0.03em] text-content truncate">
-            {{ basket.symbol }}
-          </h2>
-          <span class="chain-badge"><i /> {{ networkLabel }}</span>
-          <span class="version-badge">V{{ basket.version }}</span>
+      <div class="flex min-w-0 items-center gap-3">
+        <BasketTokenLogo
+          :chain-id="basket.chainId"
+          :address="basket.address"
+          :symbol="basket.symbol"
+          :assets="basket.top"
+          :size="52"
+        />
+        <div class="min-w-0">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <h2 class="text-xl font-bold tracking-[-0.03em] text-content truncate">
+              {{ basket.symbol }}
+            </h2>
+            <span class="chain-badge"><i /> {{ networkLabel }}</span>
+            <span class="version-badge">V{{ basket.version }}</span>
+          </div>
+          <p class="mt-1 text-sm text-muted truncate">{{ basket.name }}</p>
         </div>
-        <p class="mt-1 text-sm text-muted truncate">{{ basket.name }}</p>
       </div>
       <span class="asset-count">
         {{ basket.basketLength }} {{ $t('baskets.assets') }}

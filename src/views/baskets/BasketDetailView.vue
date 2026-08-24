@@ -6,6 +6,8 @@ import BasketChainGate from './components/BasketChainGate.vue'
 import BasketTradePanel from './components/BasketTradePanel.vue'
 import BasketRebalanceAction from './components/BasketRebalanceAction.vue'
 import BasketPerformanceChart from './components/BasketPerformanceChart.vue'
+import BasketAssetLogo from './components/BasketAssetLogo.vue'
+import BasketTokenLogo from './components/BasketTokenLogo.vue'
 import { getBasketDeployment } from '@/config/baskets'
 import { formatUnits } from 'viem'
 import { getChainDeployment } from '@/config/chains'
@@ -232,11 +234,13 @@ onUnmounted(() => {
 
           <div class="relative z-10 flex flex-col web:flex-row web:items-start web:justify-between gap-6">
             <div class="flex items-start gap-4 min-w-0">
-              <div class="basket-mark">
-                <svg viewBox="0 0 42 42" fill="none" aria-hidden="true">
-                  <path d="M6 23h6l3-10 5 19 5-22 4 13h7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              </div>
+              <BasketTokenLogo
+                :chain-id="detail.chainId"
+                :address="detail.address"
+                :symbol="detail.symbol"
+                :assets="detail.holdings.map(holding => ({ address: holding.asset, symbol: holding.symbol, weightPct: holding.targetWeightPct }))"
+                :size="68"
+              />
               <div class="min-w-0 pt-1">
                 <div class="flex flex-wrap items-center gap-2.5">
                   <h1 class="text-[28px] web:text-[38px] leading-none font-bold tracking-[-0.05em] text-content truncate">
@@ -306,8 +310,13 @@ onUnmounted(() => {
             class="holdings-table holdings-table--row"
           >
             <div class="asset-cell">
-              <i :style="{ backgroundColor: legColors[index % legColors.length] }" />
-              <div class="min-w-0">
+              <BasketAssetLogo
+                :chain-id="detail.chainId"
+                :address="holding.asset"
+                :symbol="holding.symbol"
+                :size="34"
+              />
+              <div class="asset-cell__meta min-w-0">
                 <strong :title="holding.symbol">{{ holding.symbol }}</strong>
                 <div class="asset-address">
                   <span :title="holding.asset">{{ holding.asset.slice(0, 6) }}…{{ holding.asset.slice(-4) }}</span>
@@ -465,8 +474,6 @@ onUnmounted(() => {
 .basket-hero__grid { position: absolute; inset: 0; opacity: .055; background-image: linear-gradient(var(--text-base) 1px, transparent 1px), linear-gradient(90deg, var(--text-base) 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(to right, transparent, #000); }
 .basket-hero__glow { position: absolute; right: -90px; top: -150px; width: 420px; height: 420px; border-radius: 50%; background: conic-gradient(from 70deg, rgba(23,184,213,.26), rgba(112,76,232,.22), rgba(197,75,183,.18), rgba(23,184,213,.26)); filter: blur(38px); opacity: .55; }
 
-.basket-mark { display: grid; width: 62px; height: 62px; flex-shrink: 0; place-items: center; border-radius: 19px; background: linear-gradient(135deg, #bce950, #48e2ba 43%, #7d67ef); color: #0d1320; box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 12px 30px rgba(75,181,162,.2); }
-.basket-mark svg { width: 42px; height: 42px; }
 .symbol-badge, .chain-badge, .version-badge, .section-count { display: inline-flex; align-items: center; flex-shrink: 0; border: 1px solid var(--border-base); border-radius: 999px; }
 .symbol-badge { height: 25px; padding: 0 9px; color: var(--text-muted); font-size: 10px; font-weight: 700; }
 .chain-badge { gap: 6px; height: 25px; padding: 0 10px; border-color: rgba(167,218,0,.34); background: rgba(169,230,0,.08); color: #8eaf00; font-size: 10px; font-weight: 800; letter-spacing: .13em; }
@@ -500,10 +507,9 @@ onUnmounted(() => {
 .holdings-table--row { position: relative; min-height: 78px; padding: 14px 24px 18px; border-bottom: 1px solid var(--border-base); color: var(--text-base); font-size: 12px; }
 .holdings-table--row:last-child { border-bottom: 0; }
 .asset-cell { display: flex; min-width: 0; align-items: center; gap: 10px; }
-.asset-cell > i { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
-.asset-cell strong, .asset-cell span { display: block; }
-.asset-cell strong { overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; white-space: normal; }
-.asset-cell span { overflow: hidden; margin-top: 2px; color: var(--text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.asset-cell__meta strong, .asset-cell__meta span { display: block; }
+.asset-cell__meta strong { overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; white-space: normal; }
+.asset-cell__meta > span { overflow: hidden; margin-top: 2px; color: var(--text-muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .asset-cell .asset-address { display: flex; min-width: 0; align-items: center; gap: 5px; }
 .asset-cell .asset-address span { min-width: 0; }
 .asset-address__copy { display: inline-grid; width: 18px; height: 18px; flex-shrink: 0; place-items: center; border-radius: 5px; color: var(--text-muted); transition: color 160ms ease, background 160ms ease; }
@@ -556,8 +562,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 600px) {
-  .basket-mark { width: 48px; height: 48px; border-radius: 15px; }
-  .basket-mark svg { width: 34px; height: 34px; }
   .hero-metrics { width: 100%; }
   .hero-metrics > div { min-width: 0; flex: 1; }
   .holdings-table--head { display: none; }
