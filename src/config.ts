@@ -127,10 +127,10 @@ export const PumpContract8 = "0x88d495228E831b01D8Ae6d62f9633cBcC6d27De2"
 /** Pump9：Nutbox + HourlyTickCalculator + PCS V4，内盘开放交易 */
 export const PumpContract9 = "0x327a473c763bcf0d60CCd6811F832332939110D5"
 /** ImportHelper：导入外部代币到 Nutbox 社区 */
-export const ImportHelper = "0x18b639c7F0Ce51ED950cf6B6ad1550F72c6b8DE4"
+export const ImportHelper = "0xcCB0f9a9db22cCC29fDd315180F89747118ec296"
 export const TokenImplementation9 = "0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16"
 export const PUMP9_VERSION = 9
-/** Pump11：BSC 新代币默认发行版本；导入代币仍使用 ImportHelper V10。 */
+/** Pump11：BSC 新代币默认发行版本；导入代币使用当前 ImportHelper。 */
 export const PumpContract11 = "0x8fEF5b4c0f761a0cc447800e3019B089ac306F28"
 export const TokenImplementation11 = "0xfD40C112F39D372786265a032C546D05Feec4D66"
 export const PUMP11_VERSION = 11
