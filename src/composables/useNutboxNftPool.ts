@@ -82,6 +82,7 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     currentBlock: 0n,
   })
   let refreshTimer: number | undefined
+  let loadedPoolAddress = ''
   let previewTokenId = 0n
   const previewSeed = (() => {
     const bytes = new Uint8Array(32)
@@ -125,7 +126,11 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
   const load = async () => {
     const requestPool = pool.value
     if (!requestPool?.pool || !requestPool.amm) return
-    loading.value = true
+    const requestPoolAddress = requestPool.pool.toLowerCase()
+    // Keep the market interactive during the 15-second background refresh,
+    // wallet updates, and post-transaction reloads. A blocking loading state is
+    // only useful before this pool has rendered for the first time.
+    if (loadedPoolAddress !== requestPoolAddress) loading.value = true
     error.value = ''
     try {
       const poolAddress = normalizeAddress(requestPool.pool)
@@ -265,7 +270,10 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     } catch (reason: any) {
       error.value = reason?.shortMessage || reason?.message || 'Failed to load NFT data'
     } finally {
-      loading.value = false
+      if (pool.value?.pool?.toLowerCase() === requestPoolAddress) {
+        loadedPoolAddress = requestPoolAddress
+        loading.value = false
+      }
     }
   }
 
