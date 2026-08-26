@@ -1,5 +1,6 @@
 import { getChainIdFromSlug, getChainPath } from '@/config/chains'
 import { useChainStore } from '@/stores/chain'
+import { isNativePlatform } from '@/utils/native'
 
 /** 发帖跳转 Twitter 前补齐平台标签与社区标签 */
 const TAGAI_MENTION_RE = /@TagAIDAO/i
@@ -86,19 +87,57 @@ export const openTwitterRetweetIntent = (tweetId: string) => {
   window.open(`https://x.com/intent/retweet?tweet_id=${tweetId}`, '_blank')
 }
 
-/** 打开 Twitter 发帖页（新推 / 回复 / 引用） */
-export const openTwitterIntent = (options: TwitterIntentOptions) => {
+/** 构造 Twitter 发帖页 URL（新推 / 回复 / 引用） */
+export const buildTwitterIntentUrl = (options: TwitterIntentOptions) => {
   let text = prepareTwitterPostText(options.text, options.tick)
   text = appendCommerceUrl(text, options.commerceUrl)
-  let url: string
 
   if (options.replyToTweetId) {
-    url = `https://x.com/intent/tweet?in_reply_to=${options.replyToTweetId}&text=${encodeURIComponent(text)}`
-  } else if (options.quoteTweetId && options.quoteTweetUsername) {
-    url = `https://x.com/intent/tweet?url=${encodeURIComponent(`https://x.com/${options.quoteTweetUsername}/status/${options.quoteTweetId}`)}&text=${encodeURIComponent(text)}`
-  } else {
-    url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`
+    return `https://x.com/intent/tweet?in_reply_to=${options.replyToTweetId}&text=${encodeURIComponent(text)}`
+  }
+  if (options.quoteTweetId && options.quoteTweetUsername) {
+    return `https://x.com/intent/tweet?url=${encodeURIComponent(`https://x.com/${options.quoteTweetUsername}/status/${options.quoteTweetId}`)}&text=${encodeURIComponent(text)}`
+  }
+  return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`
+}
+
+/** 打开 Twitter 发帖页（新推 / 回复 / 引用） */
+export const openTwitterIntent = (options: TwitterIntentOptions) => {
+  window.open(buildTwitterIntentUrl(options), '_blank')
+}
+
+/**
+ * 在首次用户点击时预留浏览器窗口。
+ * Blink 需要先异步创建 commerce；若等请求完成后才 window.open，浏览器会当作弹窗拦截。
+ * Capacitor 使用原生 Browser 插件，不需要预留窗口。
+ */
+export const reserveTwitterIntentWindow = () => {
+  if (isNativePlatform()) return null
+  return window.open('about:blank', '_blank')
+}
+
+export const closeReservedTwitterIntentWindow = (reservedWindow: Window | null) => {
+  if (reservedWindow && !reservedWindow.closed) reservedWindow.close()
+}
+
+/**
+ * 可靠打开异步生成的 Twitter Intent。
+ * - App：通过 Capacitor Browser 打开系统浏览器；
+ * - Web/PWA：复用点击时同步预留的窗口，避免 popup blocker。
+ */
+export const openPreparedTwitterIntent = async (
+  options: TwitterIntentOptions,
+  reservedWindow: Window | null,
+) => {
+  const url = buildTwitterIntentUrl(options)
+
+  if (isNativePlatform()) {
+    const { Browser } = await import('@capacitor/browser')
+    await Browser.open({ url, presentationStyle: 'fullscreen' })
+    return true
   }
 
-  window.open(url, '_blank')
+  if (!reservedWindow || reservedWindow.closed) return false
+  reservedWindow.location.replace(url)
+  return true
 }
