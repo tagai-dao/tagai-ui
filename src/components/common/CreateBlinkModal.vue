@@ -3,11 +3,18 @@ import {useCreateTweet} from "@/composables/useCreateTweet";
 import { EmojiPicker } from 'vue3-twemoji-picker-final'
 import { ref } from "vue";
 import { OperateType, useTweet } from "@/composables/useTweet";
-import { handleErrorTip } from "@/utils/notify";
+import { handleErrorTip, notify } from "@/utils/notify";
 import { useCommunityStore } from "@/stores/community";
 import { useAccountStore } from "@/stores/web3";
 import { createTokenCommerce, tweet } from "@/apis/api";
-import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from "@/utils/twitterPost";
+import {
+  buildPlatformPostText,
+  closeReservedTwitterIntentWindow,
+  isNativeTwitterAccount,
+  openPreparedTwitterIntent,
+  reserveTwitterIntentWindow,
+} from "@/utils/twitterPost";
+import { isNativePlatform } from "@/utils/native";
 import { useAccount } from "@/composables/useAccount";
 import { OP_CONSUME } from "@/config";
 
@@ -33,19 +40,35 @@ const tweetLoading = ref(false)
 const emit = defineEmits(['close'])
 
 const onPostTweet = async () => {
+  let reservedTwitterWindow: Window | null = null
+  let twitterIntentOpened = false
   try{
     if (leftWordsLength.value < 0){
       return;
     }
     if (tweetLength.value === 0) return;
-    tweetLoading.value = true
-    if (!(await preCheckCuration(OperateType.BLINK))) {
-      return;
-    }
     const content = formatElToTextContent(contentRef.value)
     const community = comStore.currentSelectedCommunity
     const account = useAccountStore().getAccountInfo
     if (!community?.token || !account?.twitterId) return
+    const needsTwitterIntent = isNativeTwitterAccount(account.accountType)
+
+    // Web/PWA 必须在原始 click 调用栈内打开窗口，后续异步 commerce 请求完成后再导航。
+    if (needsTwitterIntent && !isNativePlatform()) {
+      reservedTwitterWindow = reserveTwitterIntentWindow()
+      if (!reservedTwitterWindow) {
+        notify({
+          type: 'error',
+          message: 'Unable to open X. Please allow pop-ups for TagAI and try again.',
+        })
+        return
+      }
+    }
+
+    tweetLoading.value = true
+    if (!(await preCheckCuration(OperateType.BLINK))) {
+      return;
+    }
 
     const res: any = await createTokenCommerce(account.twitterId, community.tick, community.token)
     if (res?.c !== 0 || !res?.d?.commerceUrl) {
@@ -53,12 +76,19 @@ const onPostTweet = async () => {
       return
     }
 
-    if (isNativeTwitterAccount(account.accountType)) {
-      openTwitterIntent({
+    if (needsTwitterIntent) {
+      twitterIntentOpened = await openPreparedTwitterIntent({
         text: content,
         tick: community.tick,
         commerceUrl: res.d.commerceUrl,
-      })
+      }, reservedTwitterWindow)
+      if (!twitterIntentOpened) {
+        notify({
+          type: 'error',
+          message: 'Unable to open X. Please allow pop-ups for TagAI and try again.',
+        })
+        return
+      }
     } else {
       const postText = buildPlatformPostText(content, {
         tick: community.tick,
@@ -71,6 +101,7 @@ const onPostTweet = async () => {
   } catch (e) {
     handleErrorTip(e)
   } finally {
+    if (!twitterIntentOpened) closeReservedTwitterIntentWindow(reservedTwitterWindow)
     tweetLoading.value = false
   }
 }
