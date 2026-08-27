@@ -67,6 +67,7 @@ export type ChainDeployment = {
     tokenImplementation11: `0x${string}`
     importHelper: `0x${string}`
     importedTokenSwapWrapper: `0x${string}`
+    spcxbSwapExecutor: `0x${string}`
     tagAiSwapWrapper: `0x${string}`
     tipTagSwapHook9: `0x${string}`
     tipTagSwapHook11: `0x${string}`
@@ -92,6 +93,10 @@ const RH_RPC_URLS = [
 /** Multicall3 在多数 EVM（含 Arbitrum Orbit）上为同一地址 */
 const MULTICALL3 = '0xcA11bde05977b3631167028862bE2a173976CA11' as const
 const ZERO = '0x0000000000000000000000000000000000000000' as const
+const configuredSpcxbExecutor = String(import.meta.env.VITE_SPCXB_SWAP_EXECUTOR ?? '').trim()
+const SPCXB_SWAP_EXECUTOR = (/^0x[0-9a-fA-F]{40}$/.test(configuredSpcxbExecutor)
+  ? configuredSpcxbExecutor
+  : ZERO) as `0x${string}`
 
 export const BSC_CHAIN: ChainDeployment = {
   key: 'bsc',
@@ -139,6 +144,7 @@ export const BSC_CHAIN: ChainDeployment = {
     tokenImplementation11: '0xfD40C112F39D372786265a032C546D05Feec4D66',
     importHelper: '0xcCB0f9a9db22cCC29fDd315180F89747118ec296',
     importedTokenSwapWrapper: '0xDfFc699FB095a693708E3c15e6F0a224cbbCc98F',
+    spcxbSwapExecutor: SPCXB_SWAP_EXECUTOR,
     tagAiSwapWrapper: '0x0000000000000000000000000000000000000000',
     tipTagSwapHook9: '0x78443e75aD3D70DAAab0De33d2D5Dea0cBae0cC1',
     tipTagSwapHook11: '0x9E38747072F326b4e614EfF6FdCA8529db090cc1',
@@ -201,6 +207,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     tokenImplementation11: ZERO,
     importHelper: '0xEC774DB6800B00BA1e87f0799cb29dEc21ACB4A9',
     importedTokenSwapWrapper: ZERO,
+    spcxbSwapExecutor: ZERO,
     tagAiSwapWrapper: '0xa12d998bff956c1034f863a4cd30f4403b6b2b4f',
     tipTagSwapHook9: '0x5e8e2D77ce0d2e04BA058bbcECC13C7C8aDB20Cc',
     tipTagSwapHook11: ZERO,

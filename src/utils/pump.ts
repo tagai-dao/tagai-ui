@@ -18,6 +18,7 @@ import { buyTokenV4, sellTokenV4, poolKeyToPoolId, resolveV4PoolId, resolveV4Poo
 import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice, resolveRhV4PoolKeyForTrade } from "./rhV4Swap";
 import { findPumpDeploySalt, getCreatePumpDeployment, verifyPumpSaltVanity } from "./pumpSalt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
+import { buySpcxbDeepRoute, isSpcxbToken, sellSpcxbDeepRoute } from './spcxbSwap';
 
 const pumpContract = [
     PumpContract1,
@@ -857,6 +858,10 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         sellsman = zeroAddress;
     }
     const activeDeployment = useChainStore().deployment
+    if (activeDeployment.key === 'bsc' && isSpcxbToken(token)) {
+        const minimumTokenOut = amount * BigInt(10000 - slippage) / 10000n
+        return buySpcxbDeepRoute(ethAmount, minimumTokenOut, sellsman)
+    }
     if (isImport && activeDeployment.key === 'bsc') {
         const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
         if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured on BSC')
@@ -983,6 +988,10 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         sellsman = zeroAddress;
     }
     const activeDeployment = useChainStore().deployment
+    if (activeDeployment.key === 'bsc' && isSpcxbToken(token)) {
+        const minimumNativeOut = receiveEth * BigInt(10000 - slippage) / 10000n
+        return sellSpcxbDeepRoute(amount, minimumNativeOut, sellsman)
+    }
     if (isImport && activeDeployment.key === 'bsc') {
         const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
         if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured on BSC')

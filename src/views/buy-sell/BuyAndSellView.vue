@@ -38,7 +38,7 @@ import errCode from "@/errCode";
 import { useAccount } from "@/composables/useAccount";
 import { OperateType, useTweet } from "@/composables/useTweet";
 import { buildPlatformPostText, isNativeTwitterAccount, openTwitterIntent } from "@/utils/twitterPost";
-import { OP_CONSUME, usesThirdPartyMarketCap } from "@/config";
+import { OP_CONSUME } from "@/config";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
@@ -47,6 +47,7 @@ import { getDexScreenerEmbedPath, usesDirectRhV4Trade, usesListedV4Quote } from 
 import { isAddress, parseEther, zeroAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useTheme } from "@/composables/useTheme";
+import { getSpcxbSpotBnbPerToken, isSpcxbToken, quoteSpcxbBuy, quoteSpcxbSell } from '@/utils/spcxbSwap'
 
 const { isDark } = useTheme()
 const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
@@ -190,9 +191,9 @@ const V9_TOTAL_FEE = V9_PLATFORM_FEE + V9_IPSHARE_FEE
 const BONDING_CURVE_FEE = 0.02   // 内盘 getBuyAmountByValue 使用 9800/10000
 const LISTED_V2_FEE = 0.02       // 上市后 Uniswap V2 路由 2% 手续费
 const IMPORTED_WRAPPER_FEE = 0.006 // 0.2% 推荐/部署者 BNB + 0.2% 平台 BNB + 0.2% Nutbox Token
+const SPCXB_EXECUTOR_FEE = 0.004 // 0.2% 创作者/IPShare + 0.2% TagAI
 /** V4 Hook 抽成，仅用于价格影响展示（询价结果已含 Hook，需还原池内成交价） */
 const V4_HOOK_FEE = 0.006
-const SPCXB_HOOK_FEE = 0.01
 
 const isV9OrV11FeeModel = computed(() => {
   const version = Number(comStore.currentSelectedCommunity?.version)
@@ -201,6 +202,7 @@ const isV9OrV11FeeModel = computed(() => {
 const tradeFeeRate = computed(() => {
   const c = comStore.currentSelectedCommunity
   if (!c) return BONDING_CURVE_FEE
+  if (chainStore.deployment.key === 'bsc' && isSpcxbToken(c.token)) return SPCXB_EXECUTOR_FEE
   if (c.isImport && chainStore.deployment.key === 'bsc') return IMPORTED_WRAPPER_FEE
   // v9/v11 内盘 0.6%；上市后走 V4，询价已扣 lpFee
   if ((c.version === 9 || c.version === 11) && !c.listed) return V9_TOTAL_FEE
@@ -209,12 +211,13 @@ const tradeFeeRate = computed(() => {
   return BONDING_CURVE_FEE
 })
 
-/** 价格影响展示用费率：V4 剥离 Hook 固定费（SPCXB 1%，其余 V4 0.6%） */
+/** 价格影响展示用费率：V4 剥离 Hook 固定费。 */
 const priceImpactFeeRate = computed(() => {
   const c = comStore.currentSelectedCommunity
+  if (chainStore.deployment.key === 'bsc' && isSpcxbToken(c?.token)) return SPCXB_EXECUTOR_FEE
   if (c?.isImport && chainStore.deployment.key === 'bsc') return IMPORTED_WRAPPER_FEE
   if (c && usesListedV4Quote(c)) {
-    return usesThirdPartyMarketCap(c.tick) ? SPCXB_HOOK_FEE : V4_HOOK_FEE
+    return V4_HOOK_FEE
   }
   return tradeFeeRate.value
 })
@@ -317,7 +320,10 @@ const updateBuyAmount = debounce(async (val: any) => {
   }
   let receive: bigint
   let spot = 0
-  if (community?.isImport && chainStore.deployment.key === 'bsc') {
+  if (chainStore.deployment.key === 'bsc' && isSpcxbToken(community?.token)) {
+    receive = await quoteSpcxbBuy(amount)
+    spot = await getSpcxbSpotBnbPerToken()
+  } else if (community?.isImport && chainStore.deployment.key === 'bsc') {
     const dexVersion = Number(community.dexVersion ?? 2)
     receive = await quoteImportedTokenBuy(community.token!, community.pair, dexVersion, amount)
     try {
@@ -431,7 +437,10 @@ const updateSellAmount = debounce(async (val: any) => {
     }
     let receive: bigint
     let spot = 0
-    if (community?.isImport && chainStore.deployment.key === 'bsc') {
+    if (chainStore.deployment.key === 'bsc' && isSpcxbToken(community?.token)) {
+      receive = await quoteSpcxbSell(amount)
+      spot = await getSpcxbSpotBnbPerToken()
+    } else if (community?.isImport && chainStore.deployment.key === 'bsc') {
       const dexVersion = Number(community.dexVersion ?? 2)
       receive = await quoteImportedTokenSell(community.token!, community.pair, dexVersion, amount)
       try {
@@ -612,7 +621,12 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (usesListedV4Quote(token) && listed.value && !(token.isImport && chainStore.deployment.key === 'bsc')) {
+      if (
+        usesListedV4Quote(token)
+        && listed.value
+        && !(token.isImport && chainStore.deployment.key === 'bsc')
+        && !(chainStore.deployment.key === 'bsc' && isSpcxbToken(token.token))
+      ) {
         const ethAmount = parseEther(payEth.value.toString());
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
@@ -651,7 +665,12 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (usesListedV4Quote(token) && listed.value && !(token.isImport && chainStore.deployment.key === 'bsc')) {
+      if (
+        usesListedV4Quote(token)
+        && listed.value
+        && !(token.isImport && chainStore.deployment.key === 'bsc')
+        && !(chainStore.deployment.key === 'bsc' && isSpcxbToken(token.token))
+      ) {
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
           if (!poolKey || !receiveEth.value) throw new Error('RH V4 PoolKey or quote is unavailable')
