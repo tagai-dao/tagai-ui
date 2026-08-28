@@ -5,6 +5,14 @@
   "Credit": "信用",
   "Token": "代币",
   "AI": "AI",
+  "Feed": "动态",
+  "Play": "玩法",
+  "Baskets": "指数篮子",
+  "creditTable": {
+    "tokenBalance": "代币余额",
+    "ipShareMarketCap": "IPShare 市值",
+    "twitterReputation": "Twitter 声誉"
+  },
   "Memory": "Memory",
   "buy": "购买",
   "sell": "出售",
@@ -1035,6 +1043,10 @@
     "dragRangeHint": "拖动手柄调整价格区间"
   },
   "baskets": {
+    "communityEyebrow": "该代币参与的指数",
+    "communityTitle": "包含 {token} 的 Baskets",
+    "communityEmpty": "目前没有包含 {token} 的 Basket。",
+    "communityLoadFailed": "无法加载相关 Baskets。",
     "menu": "资产篮",
     "title": "资产篮",
     "subtitle": "在 {network} 上发现并交易 Basket Token",

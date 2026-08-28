@@ -415,6 +415,9 @@ export type TokenHoldingList = {
 export type CommunityCredit = {
   credit: number,
   ethAddr: string,
+  tokenBalance?: number,
+  ipShareMarketCap?: number,
+  twitterReputation?: number | null,
   followers?: number | null | undefined,
   followings?: number | null | undefined,
   profile?: string | null | undefined,

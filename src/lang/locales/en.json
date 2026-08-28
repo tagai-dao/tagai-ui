@@ -5,6 +5,14 @@
   "Credit": "Credit",
   "Token": "Token",
   "AI": "AI",
+  "Feed": "Feed",
+  "Play": "Play",
+  "Baskets": "Baskets",
+  "creditTable": {
+    "tokenBalance": "Token Balance",
+    "ipShareMarketCap": "IPShare MCap",
+    "twitterReputation": "Twitter Reputation"
+  },
   "Memory": "Memory",
   "buy": "Buy",
   "sell": "Sell",
@@ -1032,6 +1040,10 @@
     "dragRangeHint": "Drag handles to adjust the price range"
   },
   "baskets": {
+    "communityEyebrow": "Included in index tokens",
+    "communityTitle": "Baskets containing {token}",
+    "communityEmpty": "No Basket currently contains {token}.",
+    "communityLoadFailed": "Unable to load related Baskets.",
     "menu": "Baskets",
     "title": "Baskets",
     "subtitle": "Discover and trade basket tokens on {network}",

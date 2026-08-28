@@ -23,13 +23,14 @@ import CreateSpaceModal from "@/components/common/CreateSpaceModal.vue";
 import CommunityMiniTagIndex from "@/views/tag-detail/communityMiniTags/Index.vue";
 import { useCurationStore } from "@/stores/curation";
 import { formatAmount, formatPrice } from "@/utils/helper";
-import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply, PUMP9_VERSION, PUMP11_VERSION, usesThirdPartyMarketCap } from '@/config'
+import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply, PUMP9_VERSION, PUMP11_VERSION } from '@/config'
 import IconLinks from "@/components/home/IconLinks.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
 import TagNft from '@/views/tag-detail/nft/TagNft.vue'
+import CommunityBaskets from '@/views/tag-detail/CommunityBaskets.vue'
 import { getNutboxCommunityByToken } from '@/apis/nutbox'
 import type { NutboxCommunityByTokenResponse } from '@/types/nutbox'
 import { OperateType, useTweet } from "@/composables/useTweet";
@@ -70,45 +71,22 @@ watch(
   { immediate: true },
 )
 
-const baseTabOptions = computed(() => {
-  const predictTab = predictionEnabled.value
-    ? [{label: 'Predict', key: 'predict'}]
-    : []
-  const nftTab = nutboxCommunity.value
-    ? [{label: 'NFT', key: 'nft'}]
-    : []
-  if (comStore.currentSelectedCommunity?.isImport) {
-    return [
-      {label: 'Square', key: 'content'},
-      ...nftTab,
-      ...predictTab,
-      {label: 'Credit', key: 'credit'},
-      {label: 'Token', key: 'token'},
-      {label: 'AI', key: 'ai'},
-    ]
-  }
-  return [
-    {label: 'Square', key: 'content'},
-    ...nftTab,
-    ...predictTab,
-    {label: 'Trades', key: 'trade'},
-    {label: 'Credit', key: 'credit'},
-    {label: 'Token', key: 'token'},
-    {label: 'AI', key: 'ai'},
-  ]
-})
-
-/** SPCXB 等第三方市值代币：Token Tab 后插入「流动性」Tab */
-const tabOptions = computed(() => {
-  const tabs = [...baseTabOptions.value]
-  if (usesThirdPartyMarketCap(comStore.currentSelectedCommunity?.tick)) {
-    const tokenIdx = tabs.findIndex(t => t.key === 'token')
-    if (tokenIdx >= 0) {
-      tabs.splice(tokenIdx + 1, 0, { label: 'liquidity.tab', key: 'liquidity' })
-    }
-  }
-  return tabs
-})
+const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
+const tabOptions = computed(() => [
+  { label: 'Feed', key: 'content' },
+  { label: 'Credit', key: 'credit' },
+  ...(!comStore.currentSelectedCommunity?.isImport && comStore.currentSelectedCommunity?.token
+    ? [{ label: 'Trades', key: 'trade' }]
+    : []),
+  { label: 'Play', key: 'play' },
+  { label: 'Token', key: 'token' },
+])
+const playTabOptions = computed(() => [
+  ...(nutboxCommunity.value ? [{ label: 'NFT', key: 'nft' }] : []),
+  { label: 'Baskets', key: 'baskets' },
+  { label: 'AI', key: 'ai' },
+  ...(predictionEnabled.value ? [{ label: 'Predict', key: 'predict' }] : []),
+])
 enum CurationType {
   TWEET,
   SPACE,
@@ -129,20 +107,38 @@ const pageScroll = (ref: any, type: string) => {
   }
 }
 const activeTab = ref('content')
-const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
-watch(predictionEnabled, enabled => {
-  if (!enabled && activeTab.value === 'predict') activeTab.value = 'content'
-})
+const activePlayTab = ref('baskets')
+const isAiActive = computed(() => activeTab.value === 'play' && activePlayTab.value === 'ai')
 const modalStore = useModalStore()
 const tweetTypeRef = ref()
 const route = useRoute()
 const router = useRouter()
+const legacyLiquidityActive = computed(() => route.query.tab === 'liquidity')
 const selectTab = (key: string) => {
+  if (key === 'play' && activeTab.value !== 'play') {
+    activePlayTab.value = playTabOptions.value[0]?.key ?? 'baskets'
+  }
   activeTab.value = key
   router.replace({
     query: {
       ...route.query,
       tab: key === 'content' ? undefined : key,
+      play: key === 'play' ? activePlayTab.value : undefined,
+      channel: key === 'play' && activePlayTab.value === 'ai' ? route.query.channel : undefined,
+      quoteTweetId: key === 'play' && activePlayTab.value === 'ai' ? route.query.quoteTweetId : undefined,
+      section: key === 'play' && activePlayTab.value === 'nft' ? route.query.section : undefined,
+      referrerTokenId: key === 'play' && activePlayTab.value === 'nft' ? route.query.referrerTokenId : undefined,
+    },
+  })
+}
+const selectPlayTab = (key: string) => {
+  activeTab.value = 'play'
+  activePlayTab.value = key
+  router.replace({
+    query: {
+      ...route.query,
+      tab: 'play',
+      play: key,
       channel: key === 'ai' ? route.query.channel : undefined,
       quoteTweetId: key === 'ai' ? route.query.quoteTweetId : undefined,
       section: key === 'nft' ? route.query.section : undefined,
@@ -151,13 +147,25 @@ const selectTab = (key: string) => {
   })
 }
 watch(
-  [() => route.query.tab, tabOptions],
-  ([queryTab]) => {
+  [() => route.query.tab, () => route.query.play, tabOptions, playTabOptions],
+  ([queryTab, queryPlay]) => {
     const requested = typeof queryTab === 'string' ? queryTab : 'content'
-    if (tabOptions.value.some((tab) => tab.key === requested)) {
+    const legacyPlayTab = playTabOptions.value.some((tab) => tab.key === requested) ? requested : undefined
+    if (legacyPlayTab) {
+      activeTab.value = 'play'
+      activePlayTab.value = legacyPlayTab
+    } else if (requested === 'liquidity') {
+      activeTab.value = 'token'
+    } else if (tabOptions.value.some((tab) => tab.key === requested)) {
       activeTab.value = requested
     } else if (!tabOptions.value.some((tab) => tab.key === activeTab.value)) {
       activeTab.value = 'content'
+    }
+    if (activeTab.value === 'play' && !legacyPlayTab) {
+      const requestedPlay = typeof queryPlay === 'string' ? queryPlay : activePlayTab.value
+      activePlayTab.value = playTabOptions.value.some((tab) => tab.key === requestedPlay)
+        ? requestedPlay
+        : (playTabOptions.value[0]?.key ?? 'baskets')
     }
   },
   { immediate: true },
@@ -403,9 +411,9 @@ onBeforeRouteLeave((to, from, next) => {
 <template>
   <div
        class="h-full mobile-scroll-container no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
-       :class="{ 'overflow-hidden': activeTab === 'ai' }"
+       :class="{ 'overflow-hidden': isAiActive }"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
-    <div v-if="activeTab !== 'ai'" class="grid grid-cols-1 web:hidden gap-3 " ref="topBannerContainerRef">
+    <div v-if="!isAiActive" class="grid grid-cols-1 web:hidden gap-3 " ref="topBannerContainerRef">
       <div v-if="deployTweetList.length>0"
            class="col-span-1 border-[1px] border-line bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide"
            ref="topBanner">
@@ -601,18 +609,18 @@ onBeforeRouteLeave((to, from, next) => {
     </div>
     <div
       class="min-h-0"
-      :class="{ 'flex-1 overflow-hidden': activeTab === 'ai' }"
+      :class="{ 'flex-1 overflow-hidden': isAiActive }"
     >
-      <BuyAndSellView v-if="activeTab !== 'ai' && (showTradeBox || width>800)" />
+      <BuyAndSellView v-if="!isAiActive && (showTradeBox || width>800)" />
       <div
         class="min-h-0 web:sticky web:top-[0px]"
-        :class="activeTab === 'ai' ? 'h-full' : 'web:h-full web:min-h-full'"
+        :class="isAiActive ? 'h-full' : 'web:h-full web:min-h-full'"
         ref="tabContainerRef"
       >
-      <div class="flex gap-2" :class="{ 'h-full': activeTab === 'ai' }">
+      <div class="flex gap-2" :class="{ 'h-full': isAiActive }">
         <div
           class="w-full flex flex-col gap-2"
-          :class="{ 'h-full overflow-hidden': activeTab === 'ai' }"
+          :class="{ 'h-full overflow-hidden': isAiActive }"
         >
           <div class="shrink-0 overflow-x-auto no-scroll-bar flex justify-between items-center gap-1 web:gap-2 bg-surface h-12 min-h-12 px-2 web:px-4 rounded-2xl mb-2">
             <button v-for="tab of tabOptions" :key="tab.key"
@@ -622,7 +630,7 @@ onBeforeRouteLeave((to, from, next) => {
           </div>
           <div
             class="min-h-0 web:flex-1"
-            :class="activeTab === 'ai'
+            :class="isAiActive
               ? 'flex-1 overflow-hidden'
               : 'web:overflow-auto no-scroll-bar'"
             ref="tabScrollRef"
@@ -630,15 +638,41 @@ onBeforeRouteLeave((to, from, next) => {
           >
             <!-- <TagGroup v-if="activeTab==='group'" class="flex-1 overflow-hidden"/> -->
             <TagContent v-if="activeTab==='content'"/>
-            <TagNft v-if="activeTab==='nft' && nutboxCommunity" :community="nutboxCommunity"/>
-            <PredictIndex v-if="activeTab==='predict'"/>
             <TagTippedContent v-if="activeTab==='tipped'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
             <CreditIndex v-if="activeTab==='credit'"/>
-            <TagToken v-if="activeTab==='token'"/>
-            <SpcxbLiquidity v-if="activeTab==='liquidity'"/>
-            <PostAI v-if="activeTab==='ai'"/>
+            <TagToken v-if="activeTab==='token' && !legacyLiquidityActive"/>
+            <SpcxbLiquidity v-if="activeTab==='token' && legacyLiquidityActive"/>
+            <div
+              v-if="activeTab==='play'"
+              class="min-h-0"
+              :class="activePlayTab === 'ai' ? 'h-full flex flex-col overflow-hidden' : ''"
+            >
+              <div class="shrink-0 overflow-x-auto no-scroll-bar flex items-center gap-2 bg-surface-2 rounded-2xl p-1.5 mb-3">
+                <button
+                  v-for="playTab of playTabOptions"
+                  :key="playTab.key"
+                  class="px-3.5 h-8 rounded-xl text-xs web:text-sm font-semibold whitespace-nowrap transition-colors"
+                  :class="playTab.key === activePlayTab
+                    ? 'bg-surface text-content shadow-sm'
+                    : 'text-grey-64 hover:text-content'"
+                  @click="selectPlayTab(playTab.key)"
+                >
+                  {{ $t(playTab.label) }}
+                </button>
+              </div>
+              <div class="min-h-0" :class="activePlayTab === 'ai' ? 'flex-1 overflow-hidden' : ''">
+                <TagNft v-if="activePlayTab==='nft' && nutboxCommunity" :community="nutboxCommunity"/>
+                <CommunityBaskets
+                  v-else-if="activePlayTab==='baskets'"
+                  :token="comStore.currentSelectedCommunity?.token"
+                  :tick="comStore.currentSelectedCommunity?.tick"
+                />
+                <PostAI v-else-if="activePlayTab==='ai'"/>
+                <PredictIndex v-else-if="activePlayTab==='predict' && predictionEnabled"/>
+              </div>
+            </div>
             <CommunityMiniTagIndex  v-if="activeTab==='activity'"/>
           </div>
         </div>
@@ -815,7 +849,7 @@ onBeforeRouteLeave((to, from, next) => {
             </div>
           </div>
           <div class="h-full sticky top-[0px]">
-            <PostAI v-if="activeTab !== 'ai'" compact/>
+            <PostAI v-if="!isAiActive" compact/>
           </div>
         </div>
         </Teleport>
