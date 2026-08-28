@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { getHolderList, getCommunityCredits } from '@/apis/api'
-import { useTools } from '@/composables/useTools';
+import { getCommunityCredits } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community';
 import { type CommunityCredit } from '@/types';
-import { formatAddress, formatAmount, sleep } from '@/utils/helper';
+import { formatAmount, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
 import {nextTick, onBeforeUnmount, onMounted, ref} from 'vue';
-import { useAccount } from '@/composables/useAccount';
 import VueApexCharts from 'vue3-apexcharts';
 import i18n from '@/lang';
 import type { ApexOptions } from 'apexcharts';
@@ -24,7 +22,6 @@ const showCreditChart = ref(false);
 const holdingList = ref<CommunityCredit[]>([]);
 const sentinelRef = ref<HTMLElement>();
 let observer: IntersectionObserver | null = null;
-const { onCopy } = useTools()
 const colors = ['#4E79A7',
 '#F28E2B',
 '#E15759',
@@ -222,16 +219,16 @@ onBeforeUnmount(() => {
   <!-- <div class="flex justify-end mb-2 mr-2">
     <img class="w-6 h-6 cursor-pointer" @click="showCreditChart = true" src="~@/assets/icons/icon-pie-chart.svg" alt="">
   </div> -->
-  <div class="bg-white rounded-2xl p-3 flex flex-col" v-if="comStore.currentSelectedCommunity?.tick">
-    <div class="grid grid-cols-8 gap-x-2 web:grid-cols-9 text-h5 h-10 items-center flex-shrink-0">
-      <span class="col-span-3 web:col-span-3 pl-8">{{ $t('account') }}</span>
-      <span class="col-span-3 web:col-span-3">{{ $t('address') }}</span>
-      <span class="col-span-2 web:col-span-3 text-right flex justify-end items-center cursor-pointer gap-1"
-        @click="showCreditChart = true">
+  <div class="bg-white rounded-2xl p-3 flex flex-col overflow-x-auto" v-if="comStore.currentSelectedCommunity?.tick">
+    <div class="credit-table-row credit-table-header text-h5 h-10 items-center flex-shrink-0">
+      <span class="pl-8">{{ $t('account') }}</span>
+      <span class="text-right flex justify-end items-center cursor-pointer gap-1" @click="showCreditChart = true">
         {{ $t('credit') }}
-        <img class="w-4 h-4" 
-        src="~@/assets/icons/icon-warning-gray.svg" alt="">
+        <img class="w-4 h-4" src="~@/assets/icons/icon-warning-gray.svg" alt="">
       </span>
+      <span class="text-right">{{ $t('creditTable.tokenBalance') }}</span>
+      <span class="text-right">{{ $t('creditTable.ipShareMarketCap') }}</span>
+      <span class="text-right">{{ $t('creditTable.twitterReputation') }}</span>
     </div>
     <van-pull-refresh
       v-model="refreshing"
@@ -250,11 +247,11 @@ onBeforeUnmount(() => {
         @load="onLoad"
       >
         <div
-          class="grid grid-cols-8 web:grid-cols-9 gap-x-2 h-8 items-center text-h4"
+          class="credit-table-row h-10 items-center text-h4"
           v-for="(holder, i) of holdingList"
           :key="i"
         >
-          <div class="col-span-3 truncate flex items-center gap-1">
+          <div class="truncate flex items-center gap-1">
             <span class="min-w-4">{{ i + 1 }}</span>
             <UserAvatar
               :profile-img="holder.profile"
@@ -287,8 +284,10 @@ onBeforeUnmount(() => {
         </UserAvatar>
             <span class="truncate font-mono cursor-pointer">{{ holder.twitterName }}</span>
           </div>
-          <span @click.stop="onCopy(holder.ethAddr ?? '')" class="col-span-3 cursor-pointer">{{ formatAddress(holder.ethAddr) }}</span>
-          <span class="col-span-2 web:col-span-3 text-right">{{ formatAmount(holder.credit) }}</span>
+          <span class="text-right">{{ formatAmount(holder.credit) }}</span>
+          <span class="text-right">{{ formatAmount(holder.tokenBalance ?? 0) }}</span>
+          <span class="text-right">{{ formatAmount(holder.ipShareMarketCap ?? 0) }}</span>
+          <span class="text-right">{{ formatAmount(holder.twitterReputation ?? 0) }}</span>
         </div>
         <div ref="sentinelRef" class="h-px w-full"></div>
       </van-list>
@@ -312,6 +311,17 @@ onBeforeUnmount(() => {
   </div>
 </template>
 
-<style scoped></style>
-
-
+<style scoped>
+.credit-table-row {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.7fr) repeat(4, minmax(118px, 1fr));
+  column-gap: 12px;
+  min-width: 720px;
+}
+.credit-table-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: white;
+}
+</style>
