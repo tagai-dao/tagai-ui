@@ -2,6 +2,7 @@
 import { getCommunityPredictionCredits } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community';
 import { type CommunityCredit } from '@/types';
+import AccountSourceBadges from './AccountSourceBadges.vue';
 import { formatAmount, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
 import {nextTick, onBeforeUnmount, onMounted, ref} from 'vue';
@@ -284,7 +285,8 @@ onBeforeUnmount(() => {
             />
           </template>
         </UserAvatar>
-            <span class="truncate font-mono cursor-pointer">{{ holder.twitterName }}</span>
+            <span class="truncate font-mono cursor-pointer">{{ holder.twitterName || holder.twitterUsername }}</span>
+            <AccountSourceBadges :sources="holder.accountSources" />
           </div>
           <span class="text-right">{{ formatAmount(holder.credit) }}</span>
           <span class="text-right">{{ formatAmount(holder.tokenBalance ?? 0) }}</span>
