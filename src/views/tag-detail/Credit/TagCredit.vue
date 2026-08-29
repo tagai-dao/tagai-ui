@@ -8,6 +8,7 @@ import {nextTick, onBeforeUnmount, onMounted, ref} from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
 import i18n from '@/lang';
 import type { ApexOptions } from 'apexcharts';
+import AccountSourceBadges from './AccountSourceBadges.vue';
 
 // 类型断言来解决 vue3-apexcharts 的类型问题
 const ApexCharts = VueApexCharts as any;
@@ -282,7 +283,8 @@ onBeforeUnmount(() => {
             />
           </template>
         </UserAvatar>
-            <span class="truncate font-mono cursor-pointer">{{ holder.twitterName }}</span>
+            <span class="truncate font-mono cursor-pointer">{{ holder.twitterName || holder.twitterUsername }}</span>
+            <AccountSourceBadges :sources="holder.accountSources" />
           </div>
           <span class="text-right">{{ formatAmount(holder.credit) }}</span>
           <span class="text-right">{{ formatAmount(holder.tokenBalance ?? 0) }}</span>
