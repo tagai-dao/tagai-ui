@@ -40,6 +40,13 @@ const traderAvatar = (trade: TokenTrade) =>
 const traderName = (trade: TokenTrade) =>
   trade.twitterUsername ? `@${trade.twitterUsername}` : (trade.username || formatAddress(trade.trader, 5, 4))
 
+const quoteSymbol = (trade: TokenTrade) => {
+  const symbol = trade.quoteSymbol || nativeSymbol.value
+  if (symbol === 'WBNB' && nativeSymbol.value === 'BNB') return 'BNB'
+  if (symbol === 'WETH' && nativeSymbol.value === 'ETH') return 'ETH'
+  return symbol
+}
+
 const replaceEmptyProfile = (event: Event) => {
   const image = event.target as HTMLImageElement
   image.onerror = null
@@ -102,7 +109,9 @@ onMounted(() => {
         <span class="col-span-1 text-left">{{$t('address')}}</span>
         <span class="col-span-1 text-center">{{ $t('buy') }}/{{$t('sell')}}</span>
         <span class="col-span-1 text-center">${{ comStore.currentSelectedCommunity?.tick }}</span>
-        <span class="col-span-1 text-right">${{ nativeSymbol }}</span>
+        <span class="col-span-1 text-right">
+          {{ comStore.currentSelectedCommunity?.isImport ? 'Quote' : `$${nativeSymbol}` }}
+        </span>
       </div>
       <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
                         :loading-text="$t('loading')"
@@ -136,7 +145,12 @@ onMounted(() => {
             {{ token.isBuy ? $t('buy') : $t('sell') }} {{ formatPastTime(token.timestamp as number) }}
           </span>
             <span class="col-span-1 text-center">{{ formatAmount((token.amount as any)) }}</span>
-            <span class="col-span-1 text-right">{{ formatAmount((token.ethAmount as any)) }}</span>
+            <span class="col-span-1 text-right">
+              {{ formatAmount((token.ethAmount as any)) }}
+              <span v-if="comStore.currentSelectedCommunity?.isImport" class="text-grey-64 text-xs">
+                {{ quoteSymbol(token) }}
+              </span>
+            </span>
           </div>
         </van-list>
       </van-pull-refresh>

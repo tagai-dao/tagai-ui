@@ -439,7 +439,9 @@ export type TokenTrade = {
   amount: string,
   timestamp: number | string | Date,
   ethAmount: string,
-  isBuy: boolean
+  isBuy: boolean,
+  quoteToken?: string,
+  quoteSymbol?: string,
 }
 
 export type SocialAccountTokens = {

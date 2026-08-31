@@ -75,7 +75,7 @@ const predictionEnabled = computed(() => chainStore.deployment.features.predicti
 const tabOptions = computed(() => [
   { label: 'Feed', key: 'content' },
   { label: 'Credit', key: 'credit' },
-  ...(!comStore.currentSelectedCommunity?.isImport && comStore.currentSelectedCommunity?.token
+  ...(comStore.currentSelectedCommunity?.token
     ? [{ label: 'Trades', key: 'trade' }]
     : []),
   { label: 'Play', key: 'play' },
