@@ -14,6 +14,7 @@ import { useStateStore } from '@/stores/common';
 import { useRouter } from 'vue-router';
 import { BACKEND_API_URL } from '@/config';
 import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
+import { externalSourceLogos } from '@/assets/externalSourceLogos'
 
 const router = useRouter();
 
@@ -142,6 +143,12 @@ onUnmounted(() => {
             <span>@{{tweet.twitterUsername}}</span>
             <span>{{ parseTimestamp(tweet.tweetTime) }}</span>
           </div>
+          <a v-if="tweet.externalSource && tweet.sourceUrl" :href="tweet.sourceUrl" target="_blank" rel="noopener noreferrer"
+             class="mt-1 inline-flex items-center gap-1 text-xs text-grey-64" @click.stop>
+            <img class="w-4 h-4 rounded" :src="externalSourceLogos[tweet.externalSource.toUpperCase() as 'GMGN' | 'FOMO' | 'PUMP']" alt="">
+            <span>{{ tweet.externalSource.toUpperCase() }} Callout</span>
+            <span v-if="tweet.mirrorClaimStatus === 'unclaimed'">· Unclaimed creator</span>
+          </a>
         </div>
         <el-popover v-if="tweet.amount && !tweet.isDeployTweet && showMarketCap" popper-class="c-arrow-popper rounded-sm" position="end"
                     trigger="click" :teleported="true" :persistent="false">

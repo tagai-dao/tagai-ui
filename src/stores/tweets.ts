@@ -20,6 +20,8 @@ export const useTweetsStore = defineStore("tweets", () => {
   const communitySpaceTweets = ref<CommunityTweets>();  
   const communityTrendingTweets = ref<CommunityTweets>();
   const communityTippedTweets = ref<CommunityTweets>();
+  /** Keyed by `${tick}:${source}` for GMGN/FOMO/Pump native callout feeds. */
+  const communityCalloutTweets = ref<CommunityTweets>();
   return {
     homeTweetType,
     newTweets,
@@ -28,6 +30,7 @@ export const useTweetsStore = defineStore("tweets", () => {
     communityTweets,
     communitySpaceTweets,
     communityTrendingTweets,
-    communityTippedTweets
+    communityTippedTweets,
+    communityCalloutTweets
   };
 });

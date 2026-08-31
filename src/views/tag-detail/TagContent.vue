@@ -5,7 +5,7 @@ import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
 import { useTweetsStore } from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
-import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets } from "@/apis/api";
+import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets, getCommunityCallouts, type ExternalCalloutSource } from "@/apis/api";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useCommunityStore } from "@/stores/community";
 import { sleep } from "@/utils/helper";
@@ -21,18 +21,24 @@ enum ListType {
   Trending = 'trending',
   New = 'new',
   Space = 'space',
-  Tipped = 'tipped'
+  Tipped = 'tipped',
+  Gmgn = 'gmgn',
+  Fomo = 'fomo',
+  Pump = 'pump',
 }
 const PAGE_SIZE = 30
 const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
 const refreshing = ref(false);
 const loading = ref(false);
-const finished = ref({
+const finished = ref<Record<ListType, boolean>>({
   'new': false,
   'space': false,
   'trending': false,
-  'tipped': false
+  'tipped': false,
+  'gmgn': false,
+  'fomo': false,
+  'pump': false,
 });
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
@@ -42,12 +48,19 @@ const nextPage = ref<Record<ListType, number>>({
   [ListType.Space]: 0,
   [ListType.Trending]: 0,
   [ListType.Tipped]: 0,
+  [ListType.Gmgn]: 0,
+  [ListType.Fomo]: 0,
+  [ListType.Pump]: 0,
 })
 const loadMoreSentinel = ref<HTMLElement | null>(null)
 let loadMoreObserver: IntersectionObserver | null = null
 const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
 const showFeedTokenSheet = ref(false)
 const showFeedTradeSheet = ref(false)
+
+const calloutTypes = new Set<ListType>([ListType.Gmgn, ListType.Fomo, ListType.Pump])
+const calloutSource = (type: ListType): ExternalCalloutSource => type as ExternalCalloutSource
+const calloutStoreKey = (tick: string, source: ExternalCalloutSource) => `${tick}:${source}`
 
 function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
   selectedFeedToken.value = asset
@@ -84,6 +97,10 @@ const showingTweets = computed(() => {
       }else if (listType.value === ListType.Trending &&
       tweetsStore.communityTrendingTweets) {
         return tweetsStore.communityTrendingTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
+      }else if (calloutTypes.has(listType.value) && tweetsStore.communityCalloutTweets) {
+        return tweetsStore.communityCalloutTweets[
+          calloutStoreKey(comStore.currentSelectedCommunity.tick, calloutSource(listType.value))
+        ] as Tweet[];
       }
     }
   return [] as Tweet[];
@@ -131,6 +148,12 @@ async function onRefresh() {
       }
       tweetsStore.communityTippedTweets[tick] = list as Tweet[];
       tweetsStore.communityTippedTweets[tick] = await getTokenInfoOfTweets(tweetsStore.communityTippedTweets[tick])
+    } else if (calloutTypes.has(activeListType)) {
+      const source = calloutSource(activeListType)
+      const key = calloutStoreKey(tick, source)
+      list = await getCommunityCallouts(tick, source, twitterId, 0)
+      if (!tweetsStore.communityCalloutTweets) tweetsStore.communityCalloutTweets = {}
+      tweetsStore.communityCalloutTweets[key] = await getTokenInfoOfTweets(list as Tweet[])
     }
 
     const receivedCount = Array.isArray(list) ? list.length : 0
@@ -194,6 +217,12 @@ async function onLoad() {
       ] = await getTokenInfoOfTweets(tweetsStore.communityTippedTweets![
         tick
       ])
+    } else if (calloutTypes.has(activeListType)) {
+      const source = calloutSource(activeListType)
+      const key = calloutStoreKey(tick, source)
+      list = await getCommunityCallouts(tick, source, twitterId, page)
+      if (!tweetsStore.communityCalloutTweets) tweetsStore.communityCalloutTweets = {}
+      tweetsStore.communityCalloutTweets[key] = await getTokenInfoOfTweets(showingTweets.value.concat(list as Tweet[]))
     }
     const receivedCount = Array.isArray(list) ? list.length : 0
     nextPage.value[activeListType] = page + 1
@@ -246,10 +275,22 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex justify-between mb-2">
-    <div class="flex items-center justify-between gap-2 ">
+    <div class="flex items-center gap-2 overflow-x-auto max-w-full">
       <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.New || listType === ListType.Trending) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
         @click="listType = ListType.Trending; onRefresh()">
         {{ $t('Tweets') }}
+      </button>
+      <button class="text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Gmgn ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+        @click="listType = ListType.Gmgn; onRefresh()">
+        GMGN Callout
+      </button>
+      <button class="text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Fomo ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+        @click="listType = ListType.Fomo; onRefresh()">
+        FOMO Callout
+      </button>
+      <button class="text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Pump ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+        @click="listType = ListType.Pump; onRefresh()">
+        Pump Fun Call Out
       </button>
       <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.Tipped) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
         @click="listType = ListType.Tipped; onRefresh()">
