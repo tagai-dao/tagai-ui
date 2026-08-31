@@ -91,7 +91,8 @@ export const usePost = (tweet: Tweet) => {
 
   const gotoTweet = (e: any) => {
     e.stopPropagation();
-    window.open(`https://twitter.com/${tweet.twitterUsername}/status/${tweet.tweetId}`)
+    const originalTweetId = tweet.originalXTweetId || tweet.tweetId;
+    window.open(`https://x.com/i/web/status/${originalTweetId}`, '_blank', 'noopener,noreferrer')
   }
 
   const clickContent = (e: any) => {

@@ -27,6 +27,21 @@ const props = defineProps({
   showMarketCap: {type: Boolean, required: false, default: true},
   textOnly: {type: Boolean, required: false, default: false}
 })
+const showXOriginalLink = computed(() => {
+  if (props.tweet.accountType == 0 || props.tweet.externalContentType === 'x_callout') return true
+
+  // Compatibility for X callouts returned by older endpoints which do not yet
+  // include externalContentType. Native mirrored callouts use a `co...` id.
+  return props.tweet.accountType == 4 && /^\d{15,22}$/.test(String(props.tweet.tweetId || ''))
+})
+type ExternalSourceKey = 'GMGN' | 'FOMO' | 'PUMP'
+const calloutSources = computed<ExternalSourceKey[]>(() => {
+  const sources = [props.tweet.externalSource, ...(props.tweet.discoveredSources || '').split(',')]
+    .map(source => String(source || '').trim().toUpperCase())
+    .filter((source): source is ExternalSourceKey => source === 'GMGN' || source === 'FOMO' || source === 'PUMP')
+
+  return [...new Set(sources)]
+})
 const emit = defineEmits<{ openTokenDetails: [asset: FeedTokenSheetAsset] }>()
 
 const {formatEmojiText} = useTweet()
@@ -133,9 +148,20 @@ onUnmounted(() => {
             <a class="font-bold text-lg"
                @click.stop="onUserAvatar()">{{ tweet.twitterName }}</a>
             <span class="mx-4px" v-if="tweet.accountType == 0"> · </span>
-            <button @click="gotoTweet($event)" v-if="tweet.accountType == 0">
+            <button v-if="showXOriginalLink" @click="gotoTweet($event)"
+                    aria-label="View original post on X" title="View original post on X">
               <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
             </button>
+            <template v-for="source in calloutSources" :key="source">
+              <a v-if="tweet.sourceUrl && source === tweet.externalSource?.toUpperCase()"
+                 :href="tweet.sourceUrl" target="_blank" rel="noopener noreferrer"
+                 :aria-label="`View ${source} callout`" :title="`${source} Callout`" @click.stop>
+                <img class="w-4 h-4 rounded" :src="externalSourceLogos[source]" :alt="source">
+              </a>
+              <span v-else class="inline-flex" :aria-label="`${source} callout source`" :title="`${source} Callout`">
+                <img class="w-4 h-4 rounded" :src="externalSourceLogos[source]" :alt="source">
+              </span>
+            </template>
 
             <img v-if="tweet.twitterId == '1846600810719072256'" class="w-12 h-12 -ml-2" src="~@/assets/icons/icon-ai.svg" alt="">
           </div>
@@ -145,7 +171,6 @@ onUnmounted(() => {
           </div>
           <a v-if="tweet.externalSource && tweet.sourceUrl" :href="tweet.sourceUrl" target="_blank" rel="noopener noreferrer"
              class="mt-1 inline-flex items-center gap-1 text-xs text-grey-64" @click.stop>
-            <img class="w-4 h-4 rounded" :src="externalSourceLogos[tweet.externalSource.toUpperCase() as 'GMGN' | 'FOMO' | 'PUMP']" alt="">
             <span>{{ tweet.externalSource.toUpperCase() }} Callout</span>
             <span v-if="tweet.mirrorClaimStatus === 'unclaimed'">· Unclaimed creator</span>
           </a>

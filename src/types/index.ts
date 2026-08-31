@@ -274,6 +274,7 @@ export type Tweet = OnchainTokenInfo & Space &
     isDeployTweet?: number;
     externalSource?: 'gmgn' | 'fomo' | 'pump';
     externalContentType?: 'x_callout' | 'native_callout';
+    originalXTweetId?: string;
     sourceUrl?: string;
     discoveredSources?: string;
     mirrorClaimStatus?: 'unclaimed' | 'claimed';
