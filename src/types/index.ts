@@ -272,6 +272,12 @@ export type Tweet = OnchainTokenInfo & Space &
     spaceCurateCount?: number;
     credit?: number;
     isDeployTweet?: number;
+    externalSource?: 'gmgn' | 'fomo' | 'pump';
+    externalContentType?: 'x_callout' | 'native_callout';
+    sourceUrl?: string;
+    discoveredSources?: string;
+    mirrorClaimStatus?: 'unclaimed' | 'claimed';
+    rewardEligible?: boolean | number;
   };
 
 export type CurateRecord = Account & {

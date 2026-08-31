@@ -131,6 +131,15 @@ export const getCommunitySpaceTweets = async (tick: string, twitterId?: string, 
 export const getCommunityTippedTweets = async (tick: string, twitterId?: string, pages?: number) =>
   get(BACKEND_API_URL + '/curation/communityTippedTweets', {tick, twitterId, pages})
 
+export type ExternalCalloutSource = 'gmgn' | 'fomo' | 'pump'
+
+export const getCommunityCallouts = async (
+  tick: string,
+  source: ExternalCalloutSource,
+  twitterId?: string,
+  pages?: number,
+) => get(BACKEND_API_URL + '/curation/communityCallouts', { tick, source, twitterId, pages })
+
 export const getAiChannels = async (
   tick: string,
   cursor?: string,
