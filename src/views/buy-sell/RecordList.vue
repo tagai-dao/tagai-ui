@@ -12,6 +12,7 @@ import { getDexScreenerEmbedPath } from '@/utils/pumpVersion'
 import { useTheme } from "@/composables/useTheme";
 import { useChainStore } from '@/stores/chain'
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 const { isDark } = useTheme()
 const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
@@ -140,6 +141,7 @@ onMounted(() => {
                 @error="replaceEmptyProfile"
               >
               <span class="truncate">{{ traderName(token) }}</span>
+              <AccountOriginBadges :sources="token.accountSources" :account-type="token.accountType" :wallet-type="token.walletType" :eth-addr="token.trader" />
             </div>
             <span class="col-span-1 text-center" :class="token.isBuy?'text-green-34':'text-red-normal'">
             {{ token.isBuy ? $t('buy') : $t('sell') }} {{ formatPastTime(token.timestamp as number) }}

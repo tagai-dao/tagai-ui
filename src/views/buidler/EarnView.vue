@@ -2,6 +2,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getRewardLeaderboard, type RewardCategory, type RewardPeriod } from '@/apis/api'
 import { formatUsd } from '@/utils/format'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 type RewardUser = {
   rank: number;
@@ -17,6 +18,9 @@ type RewardUser = {
   nftHoldingUsd: number | string;
   indexPoolUsd: number | string;
   stakingUsd: number | string;
+  accountSources?: string[] | string | null;
+  accountType?: number | null;
+  walletType?: number | null;
 }
 
 type LeaderboardPage = {
@@ -155,7 +159,10 @@ onBeforeUnmount(() => observer?.disconnect())
         <img v-if="user.profile" :src="user.profile.replace('normal', '200x200')" class="h-11 w-11 rounded-full object-cover" alt="">
         <div v-else class="h-11 w-11 flex-none rounded-full bg-grey-light-active" />
         <div class="min-w-0 flex-1">
-          <strong class="block truncate text-base text-content">{{ user.twitterName || user.twitterUsername || 'TagAI user' }}</strong>
+          <div class="flex items-center gap-1">
+            <strong class="truncate text-base text-content">{{ user.twitterName || user.twitterUsername || 'TagAI user' }}</strong>
+            <AccountOriginBadges :sources="user.accountSources" :account-type="user.accountType" :wallet-type="user.walletType" />
+          </div>
           <span class="block truncate text-xs text-grey-64">@{{ user.twitterUsername || user.twitterId }} · {{ user.assetCount }} assets</span>
           <div v-if="category === 'all'" class="mt-1 flex flex-wrap gap-x-2 text-[10px] text-grey-64">
             <span v-if="Number(user.socialUsd)">Social {{ formatUsd(Number(user.socialUsd)) }}</span>
