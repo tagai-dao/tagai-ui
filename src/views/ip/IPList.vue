@@ -11,6 +11,7 @@ import { handleErrorTip } from '@/utils/notify'
 import IPShareTradeModal from '@/components/ipshare/IPShareTradeModal.vue'
 import { isAddress } from 'viem'
 import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 type IPShareListItem = {
   twitterId?: string
@@ -21,6 +22,9 @@ type IPShareListItem = {
   followers?: number
   supply: number
   totalStaked: number
+  accountSources?: string[] | string | null
+  accountType?: number | null
+  walletType?: number | null
 }
 
 const PAGE_SIZE = 30
@@ -249,7 +253,10 @@ onBeforeUnmount(() => {
                 <div class="identity">
                   <img :src="profile(ip)" @error="replaceEmptyProfile" alt="">
                   <div>
-                    <strong>{{ ip.twitterName || 'Unknown' }}</strong>
+                    <div class="identity__name">
+                      <strong>{{ ip.twitterName || 'Unknown' }}</strong>
+                      <AccountOriginBadges :sources="ip.accountSources" :account-type="ip.accountType" :wallet-type="ip.walletType" :eth-addr="ip.ethAddr" />
+                    </div>
                     <span>@{{ ip.twitterUsername || 'unknown' }}</span>
                   </div>
                 </div>
@@ -418,6 +425,7 @@ onBeforeUnmount(() => {
 .identity { display: flex; min-width: 0; align-items: center; gap: 11px; }
 .identity img { width: 44px; height: 44px; flex: 0 0 44px; border: 1px solid var(--border-base); border-radius: 50%; object-fit: cover; }
 .identity div { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.identity .identity__name { flex-direction: row; align-items: center; gap: 4px; }
 .identity strong { overflow: hidden; color: var(--text-base); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .identity span { overflow: hidden; color: var(--text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .trade-button { height: 32px; padding: 0 15px; border: 1px solid #ff7a00; border-radius: 999px; color: #ff7a00; font-size: 12px; font-weight: 650; transition: color 160ms ease, background 160ms ease; }

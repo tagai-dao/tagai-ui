@@ -5,6 +5,7 @@ import { useStateStore } from '@/stores/common'
 import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
 import { parseTimestamp } from '@/utils/helper'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 const props = defineProps<{ trade: FeedTrade }>()
 const stateStore = useStateStore()
@@ -39,7 +40,13 @@ function openDetails() {
     <div class="flex items-center gap-3">
       <img v-if="trade.profile" :src="trade.profile.replace('normal', '200x200')" class="h-10 w-10 rounded-full object-cover" alt="">
       <div v-else class="h-10 w-10 rounded-full bg-grey-light-active" />
-      <div class="min-w-0 flex-1"><strong class="block truncate text-sm text-content">{{ trade.twitterName || trade.twitterUsername }}</strong><span class="text-xs text-grey-64">@{{ trade.twitterUsername }} · {{ parseTimestamp(trade.timestamp) }}</span></div>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-1">
+          <strong class="truncate text-sm text-content">{{ trade.twitterName || trade.twitterUsername }}</strong>
+          <AccountOriginBadges :sources="trade.accountSources" :account-type="trade.accountType" :wallet-type="trade.walletType" :eth-addr="trade.trader" />
+        </div>
+        <span class="text-xs text-grey-64">@{{ trade.twitterUsername }} · {{ parseTimestamp(trade.timestamp) }}</span>
+      </div>
       <span class="rounded-lg border px-3 py-1 text-sm font-semibold" :class="isBuy ? 'border-up text-up' : 'border-orange-normal text-orange-normal'">{{ isBuy ? 'Buy' : 'Sell' }}</span>
     </div>
     <button class="mt-3 flex w-full items-center justify-between rounded-xl border bg-surface-2 p-3" @click.stop="openDetails">

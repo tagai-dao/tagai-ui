@@ -14,7 +14,8 @@ import { useStateStore } from '@/stores/common';
 import { useRouter } from 'vue-router';
 import { BACKEND_API_URL } from '@/config';
 import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
-import { externalSourceLogos } from '@/assets/externalSourceLogos'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
+import type { AccountOrigin } from '@/assets/externalSourceLogos'
 
 const router = useRouter();
 
@@ -42,6 +43,19 @@ const calloutSources = computed<ExternalSourceKey[]>(() => {
 
   return [...new Set(sources)]
 })
+const accountOriginLinks = computed<Partial<Record<AccountOrigin, string>>>(() => {
+  const links: Partial<Record<AccountOrigin, string>> = {}
+  const primarySource = String(props.tweet.externalSource || '').toUpperCase() as AccountOrigin
+  if (props.tweet.sourceUrl && calloutSources.value.includes(primarySource as ExternalSourceKey)) {
+    links[primarySource] = props.tweet.sourceUrl
+  }
+
+  const originalTweetId = props.tweet.originalXTweetId || props.tweet.tweetId
+  if (showXOriginalLink.value && props.tweet.twitterUsername && originalTweetId) {
+    links.X = `https://x.com/${props.tweet.twitterUsername}/status/${originalTweetId}`
+  }
+  return links
+})
 const emit = defineEmits<{ openTokenDetails: [asset: FeedTokenSheetAsset] }>()
 
 const {formatEmojiText} = useTweet()
@@ -53,7 +67,6 @@ const {
   isIgnoreAccount,
   steemUrl,
   replaceEmptyImg,
-  gotoTweet,
   clickContent,
   clickLinkView,
   clickRetweetView
@@ -147,21 +160,14 @@ onUnmounted(() => {
           <div class="w-full flex items-center flex-wrap gap-x-2">
             <a class="font-bold text-lg"
                @click.stop="onUserAvatar()">{{ tweet.twitterName }}</a>
-            <span class="mx-4px" v-if="tweet.accountType == 0"> · </span>
-            <button v-if="showXOriginalLink" @click="gotoTweet($event)"
-                    aria-label="View original post on X" title="View original post on X">
-              <img class="w-4 h-4" src="~@/assets/icons/icon-x.svg" alt="">
-            </button>
-            <template v-for="source in calloutSources" :key="source">
-              <a v-if="tweet.sourceUrl && source === tweet.externalSource?.toUpperCase()"
-                 :href="tweet.sourceUrl" target="_blank" rel="noopener noreferrer"
-                 :aria-label="`View ${source} callout`" :title="`${source} Callout`" @click.stop>
-                <img class="w-4 h-4 rounded" :src="externalSourceLogos[source]" :alt="source">
-              </a>
-              <span v-else class="inline-flex" :aria-label="`${source} callout source`" :title="`${source} Callout`">
-                <img class="w-4 h-4 rounded" :src="externalSourceLogos[source]" :alt="source">
-              </span>
-            </template>
+            <AccountOriginBadges
+              :sources="calloutSources"
+              :account-type="tweet.accountType"
+              :wallet-type="tweet.walletType"
+              :eth-addr="tweet.ethAddr"
+              :x-collected="tweet.externalContentType === 'x_callout'"
+              :source-links="accountOriginLinks"
+            />
 
             <img v-if="tweet.twitterId == '1846600810719072256'" class="w-12 h-12 -ml-2" src="~@/assets/icons/icon-ai.svg" alt="">
           </div>

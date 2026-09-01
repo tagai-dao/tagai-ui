@@ -24,6 +24,7 @@ import { useI18n } from "vue-i18n";
 import { useTools } from "@/composables/useTools";
 import { useChainStore } from "@/stores/chain";
 import { useTheme } from "@/composables/useTheme";
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 const ApexCharts = VueApexCharts as any;
 const { t } = useI18n();
@@ -924,6 +925,7 @@ onBeforeUnmount(() => {
             </UserAvatar>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
             <span class="">{{ formatAddress(holder.ethAddr) }}</span>
+            <AccountOriginBadges :sources="holder.accountSources" :account-type="holder.accountType" :wallet-type="holder.walletType" :eth-addr="holder.ethAddr" />
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.contract') }}</span>
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.deployer') }}</span>
             <!-- v9：PCS V4 流动性合约 -->

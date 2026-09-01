@@ -124,6 +124,9 @@ export type FeedTrade = {
   version?: number;
   pair?: string;
   dexVersion?: number;
+  accountSources?: string[] | string | null;
+  accountType?: number | null;
+  walletType?: number | null;
 }
 
 /** Feed 代币详情 Bottom Sheet 使用的统一展示模型。 */
@@ -175,6 +178,7 @@ export type Account = {
   creditFactor?: string | null | undefined;
   walletType?: number | null | undefined; // 0: metamask, 1: privy
   accountType?: number | null | undefined; // 0: twitter, 1: email
+  accountSources?: string[] | string | null;
   isNew?: number | null | undefined; // 0: old, 1: new register
   ipShare?: string | null | undefined;
 };
@@ -417,6 +421,9 @@ export type TokenHoldingList = {
   twitterUsername?: string | null | undefined,
   steemId?: string | null | undefined,
   price?: number | null | undefined,
+  accountSources?: string[] | string | null,
+  accountType?: number | null,
+  walletType?: number | null,
 }
 
 export type CommunityCredit = {
@@ -449,6 +456,9 @@ export type TokenTrade = {
   isBuy: boolean,
   quoteToken?: string,
   quoteSymbol?: string,
+  accountSources?: string[] | string | null,
+  accountType?: number | null,
+  walletType?: number | null,
 }
 
 export type SocialAccountTokens = {
