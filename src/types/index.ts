@@ -110,6 +110,8 @@ export type FeedTrade = {
   logo?: string;
   amount: string | number;
   ethAmount: string | number;
+  amountUsd?: string | number;
+  quoteAmountUsd?: string | number;
   isBuy: boolean | number;
   trader: string;
   transHash: string;
@@ -117,6 +119,11 @@ export type FeedTrade = {
   twitterName: string;
   twitterUsername: string;
   profile?: string;
+  steemId?: string | null;
+  followers?: number | null;
+  followings?: number | null;
+  credit?: number | null;
+  creditFactor?: string | null;
   marketCap?: string | number;
   price?: number;
   priceChange24h?: number | null;
@@ -147,6 +154,13 @@ export type FeedTokenSheetAsset = {
   creatorName?: string;
   creatorUsername?: string;
   creatorProfile?: string;
+  creatorTwitterId?: string;
+  creatorSteemId?: string | null;
+  creatorFollowers?: number | null;
+  creatorFollowings?: number | null;
+  creatorCredit?: number | null;
+  creatorCreditFactor?: string | null;
+  creatorAccountType?: number | null;
   sellsman?: string;
 }
 
@@ -361,6 +375,13 @@ export type Community = OnchainTokenInfo & {
   feePath?: string | object | null | undefined,
   communityAddress?: string;  // v10: Nutbox Community 合约地址
   socialPoolAddress?: string; // v10: SocialCuration Pool 地址
+  /** Canonical external-asset category supplied by the chain API. */
+  assetCategory?: 'stock' | string;
+  /** True only when the contract address exists in Robinhood's official asset registry. */
+  isStockToken?: boolean;
+  stockSymbol?: string;
+  stockStatus?: string;
+  stockLogo?: string;
 };
 
 export type CommunityMember = {

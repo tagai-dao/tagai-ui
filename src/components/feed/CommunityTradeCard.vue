@@ -34,6 +34,13 @@ function openDetails() {
     creatorName: props.tweet.twitterName,
     creatorUsername: props.tweet.twitterUsername,
     creatorProfile: props.tweet.profile,
+    creatorTwitterId: props.tweet.twitterId,
+    creatorSteemId: props.tweet.steemId,
+    creatorFollowers: props.tweet.followers,
+    creatorFollowings: props.tweet.followings,
+    creatorCredit: props.tweet.credit,
+    creatorCreditFactor: props.tweet.creditFactor,
+    creatorAccountType: props.tweet.accountType,
     sellsman: props.tweet.ethAddr || undefined,
   })
 }
