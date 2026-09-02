@@ -60,6 +60,7 @@ const coinSubMenu = computed(() => stateStore.coinSubMenu)
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
 const bStocksLoaded = ref(false)
+const robinhoodStockTokens = ref<Set<string>>(new Set())
 const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: AccountOrigin }> = [
   { value: 'x', label: 'Feed', logo: 'X' },
   { value: 'fomo', label: 'FOMO', logo: 'FOMO' },
@@ -67,8 +68,13 @@ const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: Account
   { value: 'pump', label: 'Pump', logo: 'PUMP' },
 ]
 
-const isBStockCommunity = (community: Community) =>
-  isBscBStockToken(community.token)
+const isBStockCommunity = (community: Community) => {
+  if (Number(community.chainId) === 56 || chainStore.deployment.key === 'bsc') {
+    return isBscBStockToken(community.token)
+  }
+  const token = community.token?.toLowerCase()
+  return community.assetCategory === 'stock' || community.isStockToken === true || (!!token && robinhoodStockTokens.value.has(token))
+}
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -209,8 +215,11 @@ async function loadBStocks(force = false) {
   if (bStocksLoading.value || (bStocksLoaded.value && !force)) return
   try {
     bStocksLoading.value = true
-    const bStocks = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
-      .filter(isBStockCommunity)
+    const imported = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
+    const bStocks = imported.filter(isBStockCommunity)
+    if (chainStore.deployment.key === 'rh') {
+      robinhoodStockTokens.value = new Set(bStocks.map(community => community.token?.toLowerCase()).filter(Boolean) as string[])
+    }
     // 先展示 API 数据；链上补价失败时也不隐藏已识别的 bStocks。
     bStockCommunities.value = bStocks
     bStocksLoaded.value = true
@@ -237,6 +246,9 @@ async function refreshBStocks() {
 /** 仅在 Coin 列表可见时拉数据，避免 Tag 首页抢 RPC */
 function ensureCoinListLoaded() {
   if (activeMainMenu.value !== 'coin') return
+  // RH needs the official stock registry classification even while TagCoin is
+  // selected, so stock tokens are excluded from that sibling list as well.
+  if (chainStore.deployment.key === 'rh') void loadBStocks()
   if (coinSubMenu.value === 'bStocks') {
     void loadBStocks()
     return
@@ -299,6 +311,13 @@ onMounted(async () => {
 })
 
 watch([activeMainMenu, coinSubMenu], () => {
+  ensureCoinListLoaded()
+})
+
+watch(() => chainStore.activeChainId, () => {
+  bStockCommunities.value = []
+  robinhoodStockTokens.value = new Set()
+  bStocksLoaded.value = false
   ensureCoinListLoaded()
 })
 

@@ -361,6 +361,13 @@ export type Community = OnchainTokenInfo & {
   feePath?: string | object | null | undefined,
   communityAddress?: string;  // v10: Nutbox Community 合约地址
   socialPoolAddress?: string; // v10: SocialCuration Pool 地址
+  /** Canonical external-asset category supplied by the chain API. */
+  assetCategory?: 'stock' | string;
+  /** True only when the contract address exists in Robinhood's official asset registry. */
+  isStockToken?: boolean;
+  stockSymbol?: string;
+  stockStatus?: string;
+  stockLogo?: string;
 };
 
 export type CommunityMember = {
