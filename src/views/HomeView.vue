@@ -61,7 +61,7 @@ const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
 const bStocksLoaded = ref(false)
 const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: AccountOrigin }> = [
-  { value: 'x', label: 'X', logo: 'X' },
+  { value: 'x', label: 'Feed', logo: 'X' },
   { value: 'fomo', label: 'FOMO', logo: 'FOMO' },
   { value: 'gmgn', label: 'GMGN', logo: 'GMGN' },
   { value: 'pump', label: 'Pump', logo: 'PUMP' },

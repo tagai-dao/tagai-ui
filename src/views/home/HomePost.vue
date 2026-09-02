@@ -44,6 +44,10 @@ const finished = ref({
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
 const trades = ref<FeedTrade[]>([])
+const aggregatePostFinished = ref(false)
+const aggregateTradeFinished = ref(false)
+let aggregatePostPage = 0
+let aggregateTradePage = 0
 const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
 const showFeedTokenSheet = ref(false)
 const showFeedTradeSheet = ref(false)
@@ -82,13 +86,23 @@ watch(showFeedTokenSheet, visible => {
 
 const feedItems = computed(() => {
   if (tweetsStore.homeTweetType !== TweetListType.New || tweetsStore.homeNewSource !== 'x' || !trades.value.length) return showingTweets.value.map(tweet => ({ type: 'post' as const, tweet }))
-  const items: Array<{ type: 'post'; tweet: Tweet } | { type: 'trade'; trade: FeedTrade }> = []
-  let tradeIndex = 0
-  showingTweets.value.forEach((tweet, index) => {
-    items.push({ type: 'post', tweet })
-    if ((index + 1) % 3 === 0 && tradeIndex < trades.value.length) items.push({ type: 'trade', trade: trades.value[tradeIndex++]! })
+  const toMillis = (value: string | number | Date | undefined) => {
+    if (value === undefined || value === null || value === '') return 0
+    if (value instanceof Date) return value.getTime()
+    const numeric = Number(value)
+    if (Number.isFinite(numeric)) return numeric < 1e12 ? numeric * 1000 : numeric
+    const parsed = Date.parse(String(value))
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  const items: Array<{ type: 'post'; tweet: Tweet } | { type: 'trade'; trade: FeedTrade }> = [
+    ...showingTweets.value.map(tweet => ({ type: 'post' as const, tweet })),
+    ...trades.value.map(trade => ({ type: 'trade' as const, trade })),
+  ]
+  return items.sort((a, b) => {
+    const aTime = a.type === 'post' ? toMillis(a.tweet.tweetTime) : toMillis(a.trade.timestamp)
+    const bTime = b.type === 'post' ? toMillis(b.tweet.tweetTime) : toMillis(b.trade.timestamp)
+    return bTime - aTime
   })
-  return items
 })
 
 async function loadTrades(page = 0, replace = false) {
@@ -99,9 +113,11 @@ async function loadTrades(page = 0, replace = false) {
     const byToken = new Map(enriched.map(item => [item.token?.toLowerCase(), item]))
     const next = rows.map(row => ({ ...row, ...(byToken.get(row.token?.toLowerCase()) || {}) })) as FeedTrade[]
     trades.value = mergeUniqueTrades(replace ? [] : trades.value, next)
+    return rows.length
   } catch (error) {
     console.warn('[HomePost] trade feed unavailable', error)
     if (replace) trades.value = []
+    return -1
   }
 }
 
@@ -146,12 +162,27 @@ async function onRefresh() {
     finished.value[type] = false;
     let list: Tweet[] = []
     if (type === TweetListType.New) {
-      const [tweetRows] = source === 'x'
-        ? await Promise.all([getNewTweets(accStore.getAccountInfo?.twitterId, 0, source), loadTrades(0, true)])
-        : [await getNewTweets(accStore.getAccountInfo?.twitterId, 0, source)]
+      const [tweetRows, tradeCount] = source === 'x'
+        ? await Promise.all([
+            // Feed aggregates X, FOMO, GMGN and Pump callouts.
+            getNewTweets(accStore.getAccountInfo?.twitterId, 0),
+            loadTrades(0, true),
+          ])
+        : [await getNewTweets(accStore.getAccountInfo?.twitterId, 0, source), -1]
       list = tweetRows as Tweet[]
       if (seq !== enrichSeq || tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) return
-      if (source !== 'x') trades.value = []
+      if (source === 'x') {
+        aggregatePostPage = 1
+        aggregateTradePage = tradeCount >= 0 ? 1 : 0
+        aggregatePostFinished.value = list.length < 30
+        aggregateTradeFinished.value = tradeCount >= 0 && tradeCount < 30
+        finished.value[type] = aggregatePostFinished.value && aggregateTradeFinished.value
+      } else {
+        trades.value = []
+        aggregatePostFinished.value = false
+        aggregateTradeFinished.value = false
+        finished.value[type] = list.length < 30
+      }
       // API 一到先出列表，补价后台回填
       tweetsStore.newTweets = list
     } else if (type === TweetListType.Trending) {
@@ -160,7 +191,7 @@ async function onRefresh() {
       tweetsStore.trendingTweets = list
     }
 
-    if (list.length < 30) {
+    if (type !== TweetListType.New && list.length < 30) {
       finished.value[type] = true
     }
     // 转圈结束：内容已可见，不必等链上价
@@ -176,21 +207,48 @@ async function onLoad() {
   const type = tweetsStore.homeTweetType as TweetListType
   const source = tweetsStore.homeNewSource
   try{
-    if (refreshing.value || finished.value[type] || showingTweets.value.length === 0) {
+    if (refreshing.value || finished.value[type] || feedItems.value.length === 0) {
       return;
     }
     loading.value = true
-    const page = Math.floor((showingTweets.value.length - 1) / 30) + 1
     let list: Tweet[] = []
     if (type === TweetListType.New) {
-      list = await getNewTweets(accStore.getAccountInfo?.twitterId, page, source) as Tweet[]
-      if (tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
-        loading.value = false
-        return
+      if (source === 'x') {
+        const [tweetRows, tradeCount] = await Promise.all([
+          aggregatePostFinished.value
+            ? Promise.resolve([] as Tweet[])
+            : getNewTweets(accStore.getAccountInfo?.twitterId, aggregatePostPage),
+          aggregateTradeFinished.value
+            ? Promise.resolve(0)
+            : loadTrades(aggregateTradePage),
+        ])
+        list = tweetRows as Tweet[]
+        if (tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
+          loading.value = false
+          return
+        }
+        if (!aggregatePostFinished.value) {
+          aggregatePostPage += 1
+          aggregatePostFinished.value = list.length < 30
+          tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
+        }
+        if (!aggregateTradeFinished.value && tradeCount >= 0) {
+          aggregateTradePage += 1
+          aggregateTradeFinished.value = tradeCount < 30
+        }
+        finished.value[type] = aggregatePostFinished.value && aggregateTradeFinished.value
+      } else {
+        const page = Math.floor((showingTweets.value.length - 1) / 30) + 1
+        list = await getNewTweets(accStore.getAccountInfo?.twitterId, page, source) as Tweet[]
+        if (tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
+          loading.value = false
+          return
+        }
+        tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
+        if (list.length < 30) finished.value[type] = true
       }
-      tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
-      if (source === 'x') void loadTrades(page)
     } else if (type === TweetListType.Trending) {
+      const page = Math.floor((showingTweets.value.length - 1) / 30) + 1
       list = await getTrendingTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
       if (tweetsStore.homeTweetType !== type) {
         loading.value = false
@@ -198,7 +256,7 @@ async function onLoad() {
       }
       tweetsStore.trendingTweets = tweetsStore.trendingTweets.concat(list)
     }
-    if (list && list.length < 30) {
+    if (type === TweetListType.Trending && list && list.length < 30) {
       finished.value[type] = true
     }
     loading.value = false
@@ -268,7 +326,7 @@ onActivated(() => {
               @load="onLoad"
           >
             <!-- 用 template 包 v-for，避免与 v-if 同元素时 v-if 优先导致 tweet 被解析为 api.tweet 函数 -->
-            <template v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : item.trade.transHash">
+            <template v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : tradeIdentity(item.trade)">
               <div
                   class="mb-2"
               >

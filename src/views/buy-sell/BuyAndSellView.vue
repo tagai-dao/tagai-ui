@@ -14,7 +14,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   buyToken, sellToken, getUserTokenInfo,
   getBuyAmountUseEth, getSellAmountUseToken, getV3BuyAmountUseEth, getV3SellAmountUseToken,
   getImportedV2BuyAmountUseNative, getImportedV2SellAmountUseToken,
-  quoteImportedTokenBuy, quoteImportedTokenSell,
+  quoteImportedTokenBuy, quoteImportedTokenSell, simulateImportedTokenBuy,
   getBuyPriceAfterFee,
   getBondingCurveSpotPrice, getUniswapV2SpotPrice, getImportTokenPrice,
   resolveV2NativePair, resolveV3NativePool
@@ -319,7 +319,13 @@ const updateBuyAmount = debounce(async (val: any) => {
   let spot = 0
   if (community?.isImport && chainStore.deployment.key === 'bsc') {
     const dexVersion = Number(community.dexVersion ?? 2)
-    receive = await quoteImportedTokenBuy(community.token!, community.pair, dexVersion, amount)
+    const recipient = accStore.ethConnectAddress
+    const sellsman = stateStore.sellsman ?? community.ipshare
+    receive = isAddress(recipient ?? '')
+      ? await simulateImportedTokenBuy(
+          community.token!, community.pair, dexVersion, amount, recipient, sellsman,
+        )
+      : await quoteImportedTokenBuy(community.token!, community.pair, dexVersion, amount)
     try {
       let pricePair = community.pair!
       if (dexVersion === 4) {
@@ -631,7 +637,18 @@ async function confirm() {
       } else {
         // check list
         const tradePair = token.pair
-        hash = await buyToken(token!.token, token!.version ?? 2, willListing ? updatedReveiveAmount : receiveAmount.value, willListing ? updatedBuyValue : parseEther(payEth.value.toString()), (stateStore.sellsman ?? token.ipshare) as any, listed.value!, token!.isImport!, Math.ceil(maxSlippage.value * 100), token!.dexVersion ?? 2, tradePair);
+        const buyValue = willListing ? updatedBuyValue : parseEther(payEth.value.toString())
+        const sellsman = stateStore.sellsman ?? token.ipshare
+        // Re-simulate immediately before submission. Imported V2/V3 tokens may
+        // deduct a transfer fee that quoteBuy cannot predict; slippage must be
+        // applied to the actual net amount delivered by buyToken.
+        const expectedAmount = token.isImport && chainStore.deployment.key === 'bsc'
+          ? await simulateImportedTokenBuy(
+              token.token, tradePair, Number(token.dexVersion ?? 2), buyValue,
+              accStore.ethConnectAddress, sellsman,
+            )
+          : (willListing ? updatedReveiveAmount : receiveAmount.value)
+        hash = await buyToken(token.token, token.version ?? 2, expectedAmount, buyValue, sellsman as any, listed.value!, token.isImport!, Math.ceil(maxSlippage.value * 100), token.dexVersion ?? 2, tradePair);
       }
       if (hash) {
         payEth.value = ''

@@ -518,6 +518,49 @@ export const quoteImportedTokenBuy = (
     nativeAmountIn: bigint,
 ) => readImportedTokenQuote('quoteBuy', token, pair, dexVersion, nativeAmountIn)
 
+/**
+ * Simulate the complete imported-token buy and return the amount that reaches
+ * the recipient. The wrapper's quoteBuy result is theoretical for V2/V3
+ * transfer-tax tokens, so using it as the slippage baseline can make a valid
+ * swap revert after the token deducts its own fee.
+ */
+export const simulateImportedTokenBuy = async (
+    token: string,
+    pair: string | null | undefined,
+    dexVersion: number,
+    nativeAmountIn: bigint,
+    recipient?: string | null,
+    sellsman?: string | null,
+): Promise<bigint> => {
+    if (!isAddress(token) || nativeAmountIn <= 0n) throw errCode.PARAMS_ERROR
+    const account = recipient ?? useAccountStore().ethConnectAddress
+    if (!isAddress(account ?? '')) throw new Error('Connect a wallet to simulate trading')
+
+    const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
+    if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
+    const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
+    const resolvedSellsman = isAddress(sellsman ?? '') ? sellsman as `0x${string}` : zeroAddress
+    const { result } = await getReadOnlyClient().simulateContract({
+        address: wrapper,
+        abi: abis.ImportedTokenSwapWrapper,
+        functionName: 'buyToken',
+        args: [
+            token as `0x${string}`,
+            sourceType,
+            sourceData,
+            1n,
+            account as `0x${string}`,
+            BigInt(Math.floor(Date.now() / 1000) + 300),
+            resolvedSellsman,
+        ],
+        account: account as `0x${string}`,
+        value: nativeAmountIn,
+    } as any)
+    const amountOut = BigInt(result as bigint)
+    if (amountOut <= 0n) throw new Error('Imported-token simulation returned zero output')
+    return amountOut
+}
+
 export const quoteImportedTokenSell = (
     token: string,
     pair: string | null | undefined,

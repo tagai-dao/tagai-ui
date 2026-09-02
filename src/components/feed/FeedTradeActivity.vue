@@ -3,7 +3,7 @@ import type { FeedTokenSheetAsset, FeedTrade } from '@/types'
 import { computed } from 'vue'
 import { useStateStore } from '@/stores/common'
 import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
-import { parseTimestamp } from '@/utils/helper'
+import { formatAddress, parseTimestamp } from '@/utils/helper'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
@@ -13,6 +13,10 @@ const emit = defineEmits<{ openDetails: [asset: FeedTokenSheetAsset] }>()
 const isBuy = computed(() => props.trade.isBuy === true || Number(props.trade.isBuy) === 1)
 const usdAmount = computed(() => Number(props.trade.ethAmount || 0) * stateStore.ethPrice)
 const marketCap = computed(() => Number(props.trade.marketCap || 0) * stateStore.ethPrice)
+const traderLabel = computed(() => props.trade.twitterName || props.trade.twitterUsername || formatAddress(props.trade.trader, 5, 4))
+const traderHandle = computed(() => props.trade.twitterUsername
+  ? `@${props.trade.twitterUsername}`
+  : formatAddress(props.trade.trader, 5, 4))
 function openDetails() {
   emit('openDetails', {
     tick: props.trade.tick,
@@ -42,10 +46,10 @@ function openDetails() {
       <div v-else class="h-10 w-10 rounded-full bg-grey-light-active" />
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-1">
-          <strong class="truncate text-sm text-content">{{ trade.twitterName || trade.twitterUsername }}</strong>
+          <strong class="truncate text-sm text-content">{{ traderLabel }}</strong>
           <AccountOriginBadges :sources="trade.accountSources" :account-type="trade.accountType" :wallet-type="trade.walletType" :eth-addr="trade.trader" />
         </div>
-        <span class="text-xs text-grey-64">@{{ trade.twitterUsername }} · {{ parseTimestamp(trade.timestamp) }}</span>
+        <span class="text-xs text-grey-64">{{ traderHandle }} · {{ parseTimestamp(trade.timestamp) }}</span>
       </div>
       <span class="rounded-lg border px-3 py-1 text-sm font-semibold" :class="isBuy ? 'border-up text-up' : 'border-orange-normal text-orange-normal'">{{ isBuy ? 'Buy' : 'Sell' }}</span>
     </div>

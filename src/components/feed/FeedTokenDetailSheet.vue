@@ -108,6 +108,29 @@ const chartOptions = computed<ApexOptions>(() => ({
   tooltip: { x: { format: 'MMM dd, HH:mm' }, y: { formatter: (value: number) => formatUsd(value) } },
 }))
 
+function candleDurationForRange(rangeSeconds: number) {
+  if (rangeSeconds > 0 && rangeSeconds <= 4 * 3600) return 60
+  if (rangeSeconds > 0 && rangeSeconds <= 86400) return 300
+  if (rangeSeconds > 0 && rangeSeconds <= 7 * 86400) return 1800
+  return 3600
+}
+
+async function loadChartRows(asset: FeedTokenSheetAsset, rangeSeconds: number) {
+  // The TagAI API serves both native-token candles and Bitquery-backed imported-token
+  // candles. Keep GeckoTerminal only as a last-resort fallback because its public
+  // browser endpoint is rate-limited and can legitimately return 429.
+  const internalRows = await getTokenTradeData(
+    asset.tick,
+    undefined,
+    true,
+    candleDurationForRange(rangeSeconds),
+  ).catch(() => []) as CandleRow[]
+  if (internalRows?.length) return { rows: internalRows, external: false }
+
+  const fallbackRows = await getExternalTokenChartData(asset.token, rangeSeconds).catch(() => [])
+  return { rows: fallbackRows, external: fallbackRows.length > 0 }
+}
+
 async function loadData() {
   const asset = props.asset
   if (!props.modelValue || !asset?.tick || !asset.token) return
@@ -122,15 +145,7 @@ async function loadData() {
   try {
     const rangeSeconds = ranges.find(range => range.key === activeRange.value)?.seconds || 0
     const [chartResult, tradeRows] = await Promise.all([
-      (async () => {
-        if (asset.isImport) {
-          return { rows: await getExternalTokenChartData(asset.token, rangeSeconds).catch(() => []), external: true }
-        }
-        const internalRows = await getTokenTradeData(asset.tick, undefined, true).catch(() => []) as CandleRow[]
-        if (internalRows?.length) return { rows: internalRows, external: false }
-        const fallbackRows = await getExternalTokenChartData(asset.token, rangeSeconds).catch(() => [])
-        return { rows: fallbackRows, external: fallbackRows.length > 0 }
-      })(),
+      loadChartRows(asset, rangeSeconds),
       getTokenTradeList(asset.token, 0).catch(() => []),
     ])
     if (sequence !== loadSequence) return
@@ -146,15 +161,19 @@ async function loadData() {
 async function selectRange(range: RangeKey) {
   activeRange.value = range
   const asset = props.asset
-  if (!props.modelValue || !asset || (!asset.isImport && !externalChart.value) || !asset.token) return
+  if (!props.modelValue || !asset || !asset.token) return
+  // Native TagAI candles are already loaded in full and are filtered locally.
+  // Imported tokens are re-aggregated by the API for the requested range.
+  if (!asset.isImport && !externalChart.value) return
   const sequence = ++loadSequence
   loading.value = true
   const seconds = ranges.find(item => item.key === range)?.seconds || 0
   try {
-    const rows = await getExternalTokenChartData(asset.token, seconds)
+    const result = await loadChartRows(asset, seconds)
     if (sequence !== loadSequence) return
-    candlesInUsd.value = true
-    candles.value = rows
+    externalChart.value = result.external
+    candlesInUsd.value = result.external
+    candles.value = result.rows
   } finally {
     if (sequence === loadSequence) loading.value = false
   }
