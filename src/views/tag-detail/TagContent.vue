@@ -275,41 +275,41 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex justify-between mb-2">
-    <div class="flex items-center gap-2 overflow-x-auto max-w-full">
-      <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.New || listType === ListType.Trending) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+  <div class="flex items-center gap-1.5 mb-2 min-w-0">
+    <div class="flex flex-1 min-w-0 items-center gap-1 overflow-x-auto no-scroll-bar pr-1">
+      <button class="feed-filter-chip" :class="(listType === ListType.New || listType === ListType.Trending) ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
         @click="listType = ListType.Trending; onRefresh()">
         {{ $t('Tweets') }}
       </button>
-      <button class="inline-flex items-center gap-1.5 text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Fomo ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+      <button class="feed-filter-chip" :class="listType === ListType.Fomo ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
         @click="listType = ListType.Fomo; onRefresh()">
-        <img class="h-4 w-4 rounded-full object-contain" :src="externalSourceLogos.FOMO" alt="">
+        <img class="feed-filter-chip__icon" :src="externalSourceLogos.FOMO" alt="">
         <span>FOMO</span>
       </button>
-      <button class="inline-flex items-center gap-1.5 text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Gmgn ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+      <button class="feed-filter-chip" :class="listType === ListType.Gmgn ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
         @click="listType = ListType.Gmgn; onRefresh()">
-        <img class="h-4 w-4 rounded-full object-contain" :src="externalSourceLogos.GMGN" alt="">
+        <img class="feed-filter-chip__icon" :src="externalSourceLogos.GMGN" alt="">
         <span>GMGN</span>
       </button>
-      <button class="inline-flex items-center gap-1.5 text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Pump ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+      <button class="feed-filter-chip" :class="listType === ListType.Pump ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
         @click="listType = ListType.Pump; onRefresh()">
-        <img class="h-4 w-4 rounded-full object-contain" :src="externalSourceLogos.PUMP" alt="">
+        <img class="feed-filter-chip__icon" :src="externalSourceLogos.PUMP" alt="">
         <span>Pump</span>
       </button>
-      <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.Tipped) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+      <button class="feed-filter-chip" :class="(listType === ListType.Tipped) ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
         @click="listType = ListType.Tipped; onRefresh()">
         {{ $t('Tipped') }}
       </button>
-      <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.Space) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+      <button class="feed-filter-chip" :class="(listType === ListType.Space) ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
         @click="listType = ListType.Space; onRefresh()">
         {{ $t('Space') }}
       </button>
     </div>
-    <div>
+    <div class="flex-none">
       <el-select
         v-if="listType === ListType.Trending || listType === ListType.New"
         v-model="listType"
-        class="bg-white rounded-full overflow-hidden max-w-[100px] min-w-[100px] c-select h-10 flex items-center text-h3 text-black"
+        class="feed-filter-select bg-white rounded-full overflow-hidden c-select flex items-center text-black"
         popper-class="c-select-popper rounded-xl"
         :disabled="refreshing || loading"
         @change="onRefresh"
@@ -375,4 +375,78 @@ onBeforeUnmount(() => {
   <FeedTokenTradeSheet v-model="showFeedTradeSheet" :asset="selectedFeedToken" />
 </template>
 
-<style scoped></style>
+<style scoped>
+.feed-filter-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  height: 2rem;
+  padding: 0 0.625rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.feed-filter-chip__icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  object-fit: contain;
+}
+
+.feed-filter-select {
+  width: 5.25rem;
+  height: 2rem;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.feed-filter-select :deep(.el-select__wrapper) {
+  min-height: 2rem;
+  padding: 0 0.625rem;
+  box-shadow: none;
+}
+
+.feed-filter-select :deep(.el-select__selected-item) {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+@media (min-width: 804px) {
+  .feed-filter-chip {
+    gap: 0.375rem;
+    padding: 0 0.75rem;
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .feed-filter-select {
+    width: 6.25rem;
+    height: 2.5rem;
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 700;
+  }
+
+  .feed-filter-select :deep(.el-select__wrapper) {
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+  }
+
+  .feed-filter-select :deep(.el-select__selected-item) {
+    font-size: 16px;
+    line-height: 20px;
+    font-weight: 700;
+  }
+}
+</style>
