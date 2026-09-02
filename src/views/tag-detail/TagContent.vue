@@ -16,6 +16,7 @@ import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
 import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
+import { externalSourceLogos } from '@/assets/externalSourceLogos'
 
 enum ListType {
   Trending = 'trending',
@@ -280,17 +281,20 @@ onBeforeUnmount(() => {
         @click="listType = ListType.Trending; onRefresh()">
         {{ $t('Tweets') }}
       </button>
-      <button class="text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Gmgn ? 'bg-gradient-primary' : 'bg-grey-light-active'"
-        @click="listType = ListType.Gmgn; onRefresh()">
-        GMGN Callout
-      </button>
-      <button class="text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Fomo ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+      <button class="inline-flex items-center gap-1.5 text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Fomo ? 'bg-gradient-primary' : 'bg-grey-light-active'"
         @click="listType = ListType.Fomo; onRefresh()">
-        FOMO Callout
+        <img class="h-4 w-4 rounded-full object-contain" :src="externalSourceLogos.FOMO" alt="">
+        <span>FOMO</span>
       </button>
-      <button class="text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Pump ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+      <button class="inline-flex items-center gap-1.5 text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Gmgn ? 'bg-gradient-primary' : 'bg-grey-light-active'"
+        @click="listType = ListType.Gmgn; onRefresh()">
+        <img class="h-4 w-4 rounded-full object-contain" :src="externalSourceLogos.GMGN" alt="">
+        <span>GMGN</span>
+      </button>
+      <button class="inline-flex items-center gap-1.5 text-h3 h-8 rounded-full px-3 text-white whitespace-nowrap" :class="listType === ListType.Pump ? 'bg-gradient-primary' : 'bg-grey-light-active'"
         @click="listType = ListType.Pump; onRefresh()">
-        Pump Fun Call Out
+        <img class="h-4 w-4 rounded-full object-contain" :src="externalSourceLogos.PUMP" alt="">
+        <span>Pump</span>
       </button>
       <button class="text-h3 text-black h-8 rounded-full px-3 text-white" :class="(listType === ListType.Tipped) ? 'bg-gradient-primary' : 'bg-grey-light-active'"
         @click="listType = ListType.Tipped; onRefresh()">
