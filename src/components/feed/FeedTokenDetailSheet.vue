@@ -9,6 +9,10 @@ import { useStateStore } from '@/stores/common'
 import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
 import { formatAddress, formatPastTime } from '@/utils/helper'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
+import { useRouter } from 'vue-router'
+import { useChainStore } from '@/stores/chain'
+import { getChainPath } from '@/config/chains'
 
 type CandleRow = { timestamp: number | string; close: number | string }
 type RangeKey = '1H' | '4H' | '1D' | '7D' | '1M' | 'ALL'
@@ -23,6 +27,8 @@ const emit = defineEmits<{
 }>()
 
 const stateStore = useStateStore()
+const chainStore = useChainStore()
+const router = useRouter()
 const loading = ref(false)
 const candles = ref<CandleRow[]>([])
 const candlesInUsd = ref(false)
@@ -191,6 +197,13 @@ function close() {
 }
 function buy() { if (props.asset) emit('buy', props.asset) }
 
+function openCommunity() {
+  const tick = props.asset?.tick
+  if (!tick) return
+  close()
+  void router.push(getChainPath(chainStore.activeChainId, `/tag-detail/${encodeURIComponent(tick)}`))
+}
+
 function onTouchStart(event: TouchEvent) {
   if (event.touches.length !== 1) return
   touchStartY = event.touches[0]!.clientY
@@ -245,15 +258,34 @@ onUnmounted(() => { document.body.style.overflow = previousBodyOverflow })
         <section ref="sheetPanel" class="token-sheet-panel absolute inset-x-0 bottom-0 z-10 mx-auto flex max-h-[76dvh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-[28px] border border-grey-light-hover bg-surface shadow-2xl" :class="{ 'token-sheet-panel--dragging': sheetDragging }" :style="sheetOffset ? { transform: `translateY(${sheetOffset}px)` } : undefined" @click.stop @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchEnd">
           <div class="flex justify-center py-2"><span class="h-1 w-10 rounded-full bg-grey-light-active" /></div>
           <div ref="sheetScroller" class="min-h-0 flex-1 overflow-y-auto px-4 pb-3 no-scroll-bar">
-            <div v-if="asset.creatorName || asset.creatorUsername" class="flex items-center gap-2 border-b border-grey-light-hover/70 pb-3">
-              <img v-if="asset.creatorProfile" :src="asset.creatorProfile.replace('normal', '200x200')" class="h-9 w-9 rounded-full object-cover" alt="">
-              <div v-else class="h-9 w-9 rounded-full bg-grey-light-active" />
-              <div class="min-w-0"><strong class="block truncate text-base text-content">{{ asset.creatorName || asset.creatorUsername }}</strong><span v-if="asset.creatorUsername" class="text-xs text-grey-64">@{{ asset.creatorUsername }}</span></div>
-            </div>
+            <UserAvatar
+              v-if="asset.creatorName || asset.creatorUsername"
+              :twitter-id="asset.creatorTwitterId"
+              :profile-img="asset.creatorProfile"
+              :name="asset.creatorName"
+              :username="asset.creatorUsername"
+              :steem-id="asset.creatorSteemId"
+              :eth-addr="asset.sellsman"
+              :followers="asset.creatorFollowers"
+              :followings="asset.creatorFollowings"
+              :credit="asset.creatorCredit"
+              :credit-factor="asset.creatorCreditFactor"
+              :account-type="asset.creatorAccountType"
+              :teleported="true"
+              trigger="click"
+            >
+              <template #avatar-img>
+                <button type="button" class="flex w-full items-center gap-2 border-b border-grey-light-hover/70 pb-3 text-left" @click.stop>
+                  <img v-if="asset.creatorProfile" :src="asset.creatorProfile.replace('normal', '200x200')" class="h-9 w-9 min-w-9 rounded-full object-cover" alt="">
+                  <img v-else src="~@/assets/icons/icon-default-avatar.svg" class="h-9 w-9 min-w-9 rounded-full object-cover" alt="">
+                  <span class="min-w-0"><strong class="block truncate text-base text-content">{{ asset.creatorName || asset.creatorUsername }}</strong><span v-if="asset.creatorUsername" class="text-xs text-grey-64">@{{ asset.creatorUsername }}</span></span>
+                </button>
+              </template>
+            </UserAvatar>
 
             <div class="flex items-center gap-3 py-4">
               <CommunityLogo :logo="asset.logo" size="md" :shadow="false" class="!rounded-full" />
-              <div class="min-w-0 flex-1"><strong class="block truncate text-xl text-content">{{ asset.name || asset.tick }}</strong><span class="text-sm text-grey-64">{{ asset.listed ? 'Graduated' : 'Bonding' }}</span></div>
+              <div class="min-w-0 flex-1"><button type="button" class="block max-w-full truncate text-left text-xl font-bold text-content hover:text-orange-normal" :aria-label="`Open ${asset.tick} community`" @click.stop="openCommunity">{{ asset.name || asset.tick }}</button><span class="text-sm text-grey-64">{{ asset.listed ? 'Graduated' : 'Bonding' }}</span></div>
               <div class="text-right"><strong class="block text-xl tabular-nums text-content">{{ formatUsd(currentPrice) }}</strong><span class="text-sm font-semibold tabular-nums" :class="trendUp ? 'text-up' : 'text-down'">{{ trendUp ? '△ +' : '▽ ' }}{{ selectedChange.toFixed(2) }}%</span><span v-if="marketCapUsd" class="mt-0.5 block text-xs text-grey-64">{{ formatUsdCompact(marketCapUsd) }} MC</span></div>
             </div>
 

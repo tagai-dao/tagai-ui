@@ -40,6 +40,13 @@ function openDetails() {
     creatorName: props.trade.twitterName,
     creatorUsername: props.trade.twitterUsername,
     creatorProfile: props.trade.profile,
+    creatorTwitterId: props.trade.twitterId,
+    creatorSteemId: props.trade.steemId,
+    creatorFollowers: props.trade.followers,
+    creatorFollowings: props.trade.followings,
+    creatorCredit: props.trade.credit,
+    creatorCreditFactor: props.trade.creditFactor,
+    creatorAccountType: props.trade.accountType,
     sellsman: props.trade.trader,
   })
 }

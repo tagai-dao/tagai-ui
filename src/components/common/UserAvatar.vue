@@ -22,7 +22,8 @@ const props = withDefaults(defineProps<{
     followings: number | null | undefined,
     credit: number | null | undefined,
     creditFactor?: string | null | undefined,
-    accountType?: number | null | undefined
+    accountType?: number | null | undefined,
+    trigger?: 'hover' | 'click' | 'focus' | 'contextmenu'
 }>(), {
     profileImg: '',
     name: '',
@@ -32,7 +33,8 @@ const props = withDefaults(defineProps<{
     teleported: false,
     credit: 0,
     creditFactor: '',
-    accountType: 0
+    accountType: 0,
+    trigger: 'hover'
 })
 
 const creditJO = ref<any[]>([{
@@ -152,6 +154,7 @@ onMounted(() => {
 <template>
   <div class="h-full">
     <el-popover popper-class="c-popper"
+                :trigger="trigger"
                 :teleported="teleported"
                 :show-after="500"
                 :persistent="true"

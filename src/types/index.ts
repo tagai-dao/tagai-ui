@@ -154,6 +154,13 @@ export type FeedTokenSheetAsset = {
   creatorName?: string;
   creatorUsername?: string;
   creatorProfile?: string;
+  creatorTwitterId?: string;
+  creatorSteemId?: string | null;
+  creatorFollowers?: number | null;
+  creatorFollowings?: number | null;
+  creatorCredit?: number | null;
+  creatorCreditFactor?: string | null;
+  creatorAccountType?: number | null;
   sellsman?: string;
 }
 
