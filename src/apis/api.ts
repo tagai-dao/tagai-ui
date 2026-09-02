@@ -306,8 +306,12 @@ export const getTradeFeed = async (pages?: number) =>
 export const isTokenExist = async (tick: string) =>
   get(BACKEND_API_URL + '/community/isTokenExist', { tick, _: Date.now() })
 
-export const getTokenTradeData = async (tick: string, timestamp: number | undefined, isNew: boolean) =>
-  get(BACKEND_API_URL + '/community/getTokenTradeData', {tick, timestamp, isNew})
+export const getTokenTradeData = async (
+  tick: string,
+  timestamp: number | undefined,
+  isNew: boolean,
+  duration?: number,
+) => get(BACKEND_API_URL + '/community/getTokenTradeData', {tick, timestamp, isNew, duration})
 
 export const getConversationId = async (token: string) =>
   get(BACKEND_API_URL + '/community/getDeboxConversationIds', {token})
