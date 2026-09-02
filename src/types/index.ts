@@ -110,6 +110,8 @@ export type FeedTrade = {
   logo?: string;
   amount: string | number;
   ethAmount: string | number;
+  amountUsd?: string | number;
+  quoteAmountUsd?: string | number;
   isBuy: boolean | number;
   trader: string;
   transHash: string;

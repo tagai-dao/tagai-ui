@@ -5,20 +5,22 @@ import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
 import { useTweetsStore } from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
-import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets, getCommunityCallouts, type ExternalCalloutSource } from "@/apis/api";
+import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets, getCommunityCallouts, getTokenTradeList, type ExternalCalloutSource } from "@/apis/api";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useCommunityStore } from "@/stores/community";
 import { sleep } from "@/utils/helper";
-import type { FeedTokenSheetAsset, Tweet } from "@/types";
+import type { FeedTokenSheetAsset, FeedTrade, Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfoOfTweets } from "@/utils/pump";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
 import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
+import FeedTradeActivity from '@/components/feed/FeedTradeActivity.vue'
 import { externalSourceLogos } from '@/assets/externalSourceLogos'
 
 enum ListType {
+  All = 'all',
   Trending = 'trending',
   New = 'new',
   Space = 'space',
@@ -33,6 +35,7 @@ const accStore = useAccountStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const finished = ref<Record<ListType, boolean>>({
+  'all': false,
   'new': false,
   'space': false,
   'trending': false,
@@ -43,8 +46,9 @@ const finished = ref<Record<ListType, boolean>>({
 });
 const comStore = useCommunityStore();
 const curationStore = useCurationStore()
-const listType = ref<ListType>(ListType.New)
+const listType = ref<ListType>(ListType.All)
 const nextPage = ref<Record<ListType, number>>({
+  [ListType.All]: 0,
   [ListType.New]: 0,
   [ListType.Space]: 0,
   [ListType.Trending]: 0,
@@ -58,10 +62,35 @@ let loadMoreObserver: IntersectionObserver | null = null
 const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
 const showFeedTokenSheet = ref(false)
 const showFeedTradeSheet = ref(false)
+const allCommunityTweets = ref<Tweet[]>([])
+const communityTrades = ref<FeedTrade[]>([])
+const allPostFinished = ref(false)
+const allTradeFinished = ref(false)
+let allPostPage = 0
+let allTradePage = 0
+let activeCommunityTick = ''
 
 const calloutTypes = new Set<ListType>([ListType.Gmgn, ListType.Fomo, ListType.Pump])
 const calloutSource = (type: ListType): ExternalCalloutSource => type as ExternalCalloutSource
 const calloutStoreKey = (tick: string, source: ExternalCalloutSource) => `${tick}:${source}`
+
+function tradeIdentity(trade: FeedTrade) {
+  const hash = trade.transHash?.trim().toLowerCase()
+  if (hash) return `hash:${hash}`
+  return [trade.timestamp, trade.trader, trade.token, trade.isBuy, trade.amount, trade.ethAmount].join(':').toLowerCase()
+}
+
+function mergeUniqueTrades(existing: FeedTrade[], incoming: FeedTrade[]) {
+  const unique = new Map<string, FeedTrade>()
+  for (const trade of [...existing, ...incoming]) unique.set(tradeIdentity(trade), trade)
+  return [...unique.values()]
+}
+
+function mergeUniqueTweets(existing: Tweet[], incoming: Tweet[]) {
+  const unique = new Map<string, Tweet>()
+  for (const tweet of [...existing, ...incoming]) unique.set(tweet.tweetId, tweet)
+  return [...unique.values()]
+}
 
 function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
   selectedFeedToken.value = asset
@@ -86,7 +115,9 @@ watch(showFeedTokenSheet, visible => {
 const showingTweets = computed(() => {
   if (comStore.currentSelectedCommunity?.tick &&
     tweetsStore) {
-      if (listType.value === ListType.New &&
+      if (listType.value === ListType.All) {
+        return allCommunityTweets.value
+      }else if (listType.value === ListType.New &&
       tweetsStore.communityTweets) {
         return tweetsStore.communityTweets[comStore.currentSelectedCommunity.tick] as Tweet[];
       }else if (listType.value === ListType.Space &&
@@ -107,6 +138,57 @@ const showingTweets = computed(() => {
   return [] as Tweet[];
 });
 
+const feedItems = computed(() => {
+  const posts = showingTweets.value.map(tweet => ({ type: 'post' as const, tweet }))
+  if (listType.value !== ListType.All) return posts
+  const toMillis = (value: string | number | Date | undefined) => {
+    if (value === undefined || value === null || value === '') return 0
+    if (value instanceof Date) return value.getTime()
+    const numeric = Number(value)
+    if (Number.isFinite(numeric)) return numeric < 1e12 ? numeric * 1000 : numeric
+    const parsed = Date.parse(String(value))
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  const items: Array<{ type: 'post'; tweet: Tweet } | { type: 'trade'; trade: FeedTrade }> = [
+    ...posts,
+    ...communityTrades.value.map(trade => ({ type: 'trade' as const, trade })),
+  ]
+  return items.sort((a, b) => {
+    const aTime = a.type === 'post' ? toMillis(a.tweet.tweetTime) : toMillis(a.trade.timestamp)
+    const bTime = b.type === 'post' ? toMillis(b.tweet.tweetTime) : toMillis(b.trade.timestamp)
+    return bTime - aTime
+  })
+})
+
+async function loadCommunityTrades(page = 0, replace = false) {
+  try {
+    const community = comStore.currentSelectedCommunity
+    if (!community?.token) return 0
+    const requestedToken = community.token
+    const rows = (await getTokenTradeList(community.token, page) || []) as FeedTrade[]
+    if (comStore.currentSelectedCommunity?.token !== requestedToken) return -1
+    const next = rows.map(row => ({
+      ...row,
+      tick: row.tick || community.tick,
+      token: row.token || community.token,
+      name: row.name || community.name,
+      logo: row.logo || community.logo,
+      marketCap: row.marketCap ?? community.marketCap,
+      price: row.price ?? community.price,
+      isImport: row.isImport ?? community.isImport,
+      version: row.version ?? community.version ?? undefined,
+      pair: row.pair ?? community.pair,
+      dexVersion: row.dexVersion ?? community.dexVersion ?? undefined,
+    }))
+    communityTrades.value = mergeUniqueTrades(replace ? [] : communityTrades.value, next)
+    return rows.length
+  } catch (error) {
+    console.warn('[TagContent] community trade feed unavailable', error)
+    if (replace) communityTrades.value = []
+    return -1
+  }
+}
+
 async function onRefresh() {
   const activeListType = listType.value
   try {
@@ -116,7 +198,20 @@ async function onRefresh() {
     let list: any;
     const tick = comStore.currentSelectedCommunity!.tick;
     const twitterId = accStore.getAccountInfo?.twitterId;
-    if (activeListType === ListType.New) {
+    if (activeListType === ListType.All) {
+      const [postRows, tradeCount] = await Promise.all([
+        getCommunityNewTweets(tick, twitterId, 0),
+        loadCommunityTrades(0, true),
+      ])
+      if (comStore.currentSelectedCommunity?.tick !== tick) return
+      list = postRows as Tweet[]
+      allCommunityTweets.value = await getTokenInfoOfTweets(list)
+      allPostPage = 1
+      allTradePage = tradeCount >= 0 ? 1 : 0
+      allPostFinished.value = list.length < PAGE_SIZE
+      allTradeFinished.value = tradeCount >= 0 && tradeCount < PAGE_SIZE
+      finished.value[ListType.All] = allPostFinished.value && allTradeFinished.value
+    } else if (activeListType === ListType.New) {
       list = await getCommunityNewTweets(tick, twitterId, 0);
 
       if (!tweetsStore.communityTweets) {
@@ -157,9 +252,11 @@ async function onRefresh() {
       tweetsStore.communityCalloutTweets[key] = await getTokenInfoOfTweets(list as Tweet[])
     }
 
-    const receivedCount = Array.isArray(list) ? list.length : 0
-    nextPage.value[activeListType] = receivedCount > 0 ? 1 : 0
-    finished.value[activeListType] = receivedCount < PAGE_SIZE
+    if (activeListType !== ListType.All) {
+      const receivedCount = Array.isArray(list) ? list.length : 0
+      nextPage.value[activeListType] = receivedCount > 0 ? 1 : 0
+      finished.value[activeListType] = receivedCount < PAGE_SIZE
+    }
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -170,7 +267,7 @@ async function onRefresh() {
 async function onLoad() {
   const activeListType = listType.value
   try{
-    if (loading.value || refreshing.value || finished.value[activeListType] || showingTweets.value.length === 0) {
+    if (loading.value || refreshing.value || finished.value[activeListType] || feedItems.value.length === 0) {
       return;
     }
     loading.value = true
@@ -178,7 +275,29 @@ async function onLoad() {
     const tick = comStore.currentSelectedCommunity!.tick;
     const twitterId = accStore.getAccountInfo?.twitterId;
     const page = nextPage.value[activeListType]
-    if (activeListType === ListType.New) {
+    if (activeListType === ListType.All) {
+      const [postRows, tradeCount] = await Promise.all([
+        allPostFinished.value
+          ? Promise.resolve([] as Tweet[])
+          : getCommunityNewTweets(tick, twitterId, allPostPage),
+        allTradeFinished.value
+          ? Promise.resolve(0)
+          : loadCommunityTrades(allTradePage),
+      ])
+      if (comStore.currentSelectedCommunity?.tick !== tick) return
+      list = postRows as Tweet[]
+      if (!allPostFinished.value) {
+        const enriched = list.length ? await getTokenInfoOfTweets(list) : []
+        allCommunityTweets.value = mergeUniqueTweets(allCommunityTweets.value, enriched)
+        allPostPage += 1
+        allPostFinished.value = list.length < PAGE_SIZE
+      }
+      if (!allTradeFinished.value && tradeCount >= 0) {
+        allTradePage += 1
+        allTradeFinished.value = tradeCount < PAGE_SIZE
+      }
+      finished.value[ListType.All] = allPostFinished.value && allTradeFinished.value
+    } else if (activeListType === ListType.New) {
       list = await getCommunityNewTweets(tick, twitterId, page)
       tweetsStore.communityTweets![
         tick
@@ -225,9 +344,11 @@ async function onLoad() {
       if (!tweetsStore.communityCalloutTweets) tweetsStore.communityCalloutTweets = {}
       tweetsStore.communityCalloutTweets[key] = await getTokenInfoOfTweets(showingTweets.value.concat(list as Tweet[]))
     }
-    const receivedCount = Array.isArray(list) ? list.length : 0
-    nextPage.value[activeListType] = page + 1
-    finished.value[activeListType] = receivedCount < PAGE_SIZE
+    if (activeListType !== ListType.All) {
+      const receivedCount = Array.isArray(list) ? list.length : 0
+      nextPage.value[activeListType] = page + 1
+      finished.value[activeListType] = receivedCount < PAGE_SIZE
+    }
   } catch (e) {
     handleErrorTip(e)
   } finally {
@@ -255,10 +376,30 @@ async function observeLoadMoreSentinel() {
   loadMoreObserver.observe(loadMoreSentinel.value)
 }
 
+function resetAllFeed() {
+  allCommunityTweets.value = []
+  communityTrades.value = []
+  allPostFinished.value = false
+  allTradeFinished.value = false
+  allPostPage = 0
+  allTradePage = 0
+  finished.value[ListType.All] = false
+  nextPage.value[ListType.All] = 0
+  closeFeedSheets()
+}
+
+watch(() => comStore.currentSelectedCommunity?.tick, tick => {
+  if (!tick || tick === activeCommunityTick) return
+  activeCommunityTick = tick
+  resetAllFeed()
+  void onRefresh()
+})
+
 onMounted(async () => {
   while (!comStore.currentSelectedCommunity?.tick) {
     await sleep(0.5);
   }
+  activeCommunityTick = comStore.currentSelectedCommunity.tick
   await onRefresh();
   await observeLoadMoreSentinel()
   emitter.on('tweeted', onRefresh);
@@ -277,9 +418,10 @@ onBeforeUnmount(() => {
 <template>
   <div class="flex items-center gap-1.5 mb-2 min-w-0">
     <div class="flex flex-1 min-w-0 items-center gap-1 overflow-x-auto no-scroll-bar pr-1">
-      <button class="feed-filter-chip" :class="(listType === ListType.New || listType === ListType.Trending) ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
-        @click="listType = ListType.Trending; onRefresh()">
-        {{ $t('Tweets') }}
+      <button class="feed-filter-chip" :class="listType === ListType.All ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
+        @click="listType = ListType.All; onRefresh()">
+        <img class="feed-filter-chip__icon" :src="externalSourceLogos.X" alt="">
+        <span>All</span>
       </button>
       <button class="feed-filter-chip" :class="listType === ListType.Fomo ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
         @click="listType = ListType.Fomo; onRefresh()">
@@ -305,19 +447,6 @@ onBeforeUnmount(() => {
         {{ $t('Space') }}
       </button>
     </div>
-    <div class="flex-none">
-      <el-select
-        v-if="listType === ListType.Trending || listType === ListType.New"
-        v-model="listType"
-        class="feed-filter-select bg-white rounded-full overflow-hidden c-select flex items-center text-black"
-        popper-class="c-select-popper rounded-xl"
-        :disabled="refreshing || loading"
-        @change="onRefresh"
-      >
-        <el-option :value="ListType.Trending" :label="$t('trending')" />
-        <el-option :value="ListType.New" :label="$t('new')" />
-      </el-select>
-    </div>
   </div>
   <div class="flex-1">
     <van-pull-refresh class="h-full min-h-full"
@@ -334,35 +463,40 @@ onBeforeUnmount(() => {
         :finished-text="$t('noMore')"
         :offset="50"
       >
-        <div v-for="tweet of showingTweets" :key="tweet.tweetId" class="mb-2">
+        <div v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : tradeIdentity(item.trade)" class="mb-2">
+          <FeedTradeActivity
+            v-if="item.type === 'trade'"
+            :trade="item.trade"
+            @open-details="openFeedTokenSheet"
+          />
           <SpaceItem
-            v-if="tweet.spaceId"
+            v-else-if="item.tweet.spaceId"
             class="bg-white rounded-2xl"
-            :tweet="tweet"
+            :tweet="item.tweet"
             @open-token-details="openFeedTokenSheet"
-            @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/space-detail/${tweet.tweetId}`)"
+            @click.stop="curationStore.currentSelectedTweet = item.tweet;$router.push(`/space-detail/${item.tweet.tweetId}`)"
           >
             <template #tweet-action-bar>
               <PostButtonGroup
                 @click.stop
-                :tweet="tweet"
+                :tweet="item.tweet"
               />
             </template>
           </SpaceItem>
           <TweetItem
             v-else
             class="bg-white rounded-2xl"
-            :tweet="tweet"
+            :tweet="item.tweet"
             @open-token-details="openFeedTokenSheet"
-            @click.stop="curationStore.currentSelectedTweet = tweet;$router.push(`/post-detail/${tweet.tweetId}`)"
+            @click.stop="curationStore.currentSelectedTweet = item.tweet;$router.push(`/post-detail/${item.tweet.tweetId}`)"
           >
-            <template #tweet-trade v-if="tweet.commerceId">
-              <CommerceBtn :tweet="tweet"/>
+            <template #tweet-trade v-if="item.tweet.commerceId">
+              <CommerceBtn :tweet="item.tweet"/>
             </template>
             <template #tweet-action-bar>
               <PostButtonGroup
                 @click.stop
-                :tweet="tweet"
+                :tweet="item.tweet"
               />
             </template>
           </TweetItem>

@@ -11,7 +11,12 @@ const props = defineProps<{ trade: FeedTrade }>()
 const stateStore = useStateStore()
 const emit = defineEmits<{ openDetails: [asset: FeedTokenSheetAsset] }>()
 const isBuy = computed(() => props.trade.isBuy === true || Number(props.trade.isBuy) === 1)
-const usdAmount = computed(() => Number(props.trade.ethAmount || 0) * stateStore.ethPrice)
+const usdAmount = computed(() => {
+  const indexedUsd = Number(props.trade.amountUsd ?? props.trade.quoteAmountUsd)
+  return Number.isFinite(indexedUsd) && indexedUsd > 0
+    ? indexedUsd
+    : Number(props.trade.ethAmount || 0) * stateStore.ethPrice
+})
 const marketCap = computed(() => Number(props.trade.marketCap || 0) * stateStore.ethPrice)
 const traderLabel = computed(() => props.trade.twitterName || props.trade.twitterUsername || formatAddress(props.trade.trader, 5, 4))
 const traderHandle = computed(() => props.trade.twitterUsername
