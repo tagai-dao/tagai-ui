@@ -119,6 +119,11 @@ export type FeedTrade = {
   twitterName: string;
   twitterUsername: string;
   profile?: string;
+  steemId?: string | null;
+  followers?: number | null;
+  followings?: number | null;
+  credit?: number | null;
+  creditFactor?: string | null;
   marketCap?: string | number;
   price?: number;
   priceChange24h?: number | null;

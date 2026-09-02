@@ -6,6 +6,7 @@ import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
 import { formatAddress, parseTimestamp } from '@/utils/helper'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
+import UserAvatar from '@/components/common/UserAvatar.vue'
 
 const props = defineProps<{ trade: FeedTrade }>()
 const stateStore = useStateStore()
@@ -47,8 +48,36 @@ function openDetails() {
 <template>
   <article class="rounded-2xl bg-white px-4 py-3">
     <div class="flex items-center gap-3">
-      <img v-if="trade.profile" :src="trade.profile.replace('normal', '200x200')" class="h-10 w-10 rounded-full object-cover" alt="">
-      <div v-else class="h-10 w-10 rounded-full bg-grey-light-active" />
+      <UserAvatar
+        :twitter-id="trade.twitterId"
+        :profile-img="trade.profile"
+        :name="trade.twitterName || traderLabel"
+        :username="trade.twitterUsername"
+        :steem-id="trade.steemId"
+        :eth-addr="trade.trader"
+        :followers="trade.followers"
+        :followings="trade.followings"
+        :credit="trade.credit"
+        :credit-factor="trade.creditFactor"
+        :account-type="trade.accountType"
+        :teleported="true"
+      >
+        <template #avatar-img>
+          <img
+            v-if="trade.profile"
+            :src="trade.profile.replace('normal', '200x200')"
+            class="h-10 w-10 min-w-10 cursor-pointer rounded-full bg-color2A object-cover"
+            referrerpolicy="no-referrer"
+            alt=""
+          >
+          <img
+            v-else
+            class="h-10 w-10 min-w-10 cursor-pointer rounded-full bg-color2A object-cover"
+            src="~@/assets/icons/icon-default-avatar.svg"
+            alt=""
+          >
+        </template>
+      </UserAvatar>
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-1">
           <strong class="truncate text-sm text-content">{{ traderLabel }}</strong>
