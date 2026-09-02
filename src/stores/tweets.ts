@@ -11,8 +11,11 @@ export enum TweetListType {
   New = 'new'
 }
 
+export type HomeNewSource = 'x' | 'fomo' | 'gmgn' | 'pump'
+
 export const useTweetsStore = defineStore("tweets", () => {
-  const homeTweetType = ref<TweetListType>(TweetListType.Trending)
+  const homeTweetType = ref<TweetListType>(TweetListType.New)
+  const homeNewSource = ref<HomeNewSource>('x')
   const newTweets = ref<Tweet[]>([]);
   const trendingTweets = ref<Tweet[]>([]);
   const currentSelectedTweet = ref<Tweet | null>(null);
@@ -24,6 +27,7 @@ export const useTweetsStore = defineStore("tweets", () => {
   const communityCalloutTweets = ref<CommunityTweets>();
   return {
     homeTweetType,
+    homeNewSource,
     newTweets,
     trendingTweets,
     currentSelectedTweet,

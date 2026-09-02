@@ -232,8 +232,11 @@ export const newReply = async (twitterId: string, tweetId: string, text: string,
 export const newQuote = async (twitterId: string, tweetId: string, text: string, tick: string) =>
   post(BACKEND_API_URL + '/curation/quote', { twitterId, tweetId, text, tick })
 
-export const getNewTweets = async (twitterId: string | null | undefined, pages?: number) =>
-    get(BACKEND_API_URL + '/tweets/byTime', {pages, twitterId})
+export const getNewTweets = async (
+  twitterId: string | null | undefined,
+  pages?: number,
+  source?: 'x' | 'fomo' | 'gmgn' | 'pump'
+) => get(BACKEND_API_URL + '/tweets/byTime', {pages, twitterId, source})
 
 export const getTrendingTweets = async (twitterId: string | null | undefined, pages?: number) =>
     get(BACKEND_API_URL + '/tweets/byTrending', {pages, twitterId})

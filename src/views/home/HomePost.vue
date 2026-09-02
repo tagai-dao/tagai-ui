@@ -81,7 +81,7 @@ watch(showFeedTokenSheet, visible => {
 })
 
 const feedItems = computed(() => {
-  if (tweetsStore.homeTweetType !== TweetListType.New || !trades.value.length) return showingTweets.value.map(tweet => ({ type: 'post' as const, tweet }))
+  if (tweetsStore.homeTweetType !== TweetListType.New || tweetsStore.homeNewSource !== 'x' || !trades.value.length) return showingTweets.value.map(tweet => ({ type: 'post' as const, tweet }))
   const items: Array<{ type: 'post'; tweet: Tweet } | { type: 'trade'; trade: FeedTrade }> = []
   let tradeIndex = 0
   showingTweets.value.forEach((tweet, index) => {
@@ -139,18 +139,24 @@ const enrichHomeTweets = async (type: TweetListType, batch: Tweet[], seq: number
 
 async function onRefresh() {
   const type = tweetsStore.homeTweetType as TweetListType
+  const source = tweetsStore.homeNewSource
   const seq = ++enrichSeq
   try {
     refreshing.value = true;
     finished.value[type] = false;
     let list: Tweet[] = []
     if (type === TweetListType.New) {
-      const [tweetRows] = await Promise.all([getNewTweets(accStore.getAccountInfo?.twitterId), loadTrades(0, true)])
+      const [tweetRows] = source === 'x'
+        ? await Promise.all([getNewTweets(accStore.getAccountInfo?.twitterId, 0, source), loadTrades(0, true)])
+        : [await getNewTweets(accStore.getAccountInfo?.twitterId, 0, source)]
       list = tweetRows as Tweet[]
+      if (seq !== enrichSeq || tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) return
+      if (source !== 'x') trades.value = []
       // API 一到先出列表，补价后台回填
       tweetsStore.newTweets = list
     } else if (type === TweetListType.Trending) {
       list = await getTrendingTweets(accStore.getAccountInfo?.twitterId) as Tweet[]
+      if (seq !== enrichSeq || tweetsStore.homeTweetType !== type) return
       tweetsStore.trendingTweets = list
     }
 
@@ -168,6 +174,7 @@ async function onRefresh() {
 
 async function onLoad() {
   const type = tweetsStore.homeTweetType as TweetListType
+  const source = tweetsStore.homeNewSource
   try{
     if (refreshing.value || finished.value[type] || showingTweets.value.length === 0) {
       return;
@@ -176,11 +183,19 @@ async function onLoad() {
     const page = Math.floor((showingTweets.value.length - 1) / 30) + 1
     let list: Tweet[] = []
     if (type === TweetListType.New) {
-      list = await getNewTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
+      list = await getNewTweets(accStore.getAccountInfo?.twitterId, page, source) as Tweet[]
+      if (tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
+        loading.value = false
+        return
+      }
       tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
-      void loadTrades(page)
+      if (source === 'x') void loadTrades(page)
     } else if (type === TweetListType.Trending) {
       list = await getTrendingTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
+      if (tweetsStore.homeTweetType !== type) {
+        loading.value = false
+        return
+      }
       tweetsStore.trendingTweets = tweetsStore.trendingTweets.concat(list)
     }
     if (list && list.length < 30) {
@@ -206,7 +221,8 @@ onUnmounted(() => {
   emitter.off('mainTabNavigate', closeFeedSheets)
 })
 
-watch([() => tweetsStore.homeTweetType], () => {
+watch([() => tweetsStore.homeTweetType, () => tweetsStore.homeNewSource], ([type, source], [, previousSource]) => {
+  if (type === TweetListType.New && source !== previousSource) tweetsStore.newTweets = []
   void onRefresh()
 })
 

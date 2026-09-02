@@ -24,9 +24,10 @@ import {useAccountStore} from "@/stores/web3";
 import {useChainStore} from "@/stores/chain";
 import Predict from "@/views/predict/Index.vue";
 import BasketsListView from '@/views/baskets/BasketsListView.vue'
-import {TweetListType, useTweetsStore} from "@/stores/tweets";
+import {type HomeNewSource, TweetListType, useTweetsStore} from "@/stores/tweets";
 import {filterByActiveChain} from "@/utils/chainFilter";
 import {isBscBStockToken} from '@/config/bstocks'
+import {externalSourceLogos, type AccountOrigin} from '@/assets/externalSourceLogos'
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
@@ -59,6 +60,12 @@ const coinSubMenu = computed(() => stateStore.coinSubMenu)
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
 const bStocksLoaded = ref(false)
+const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: AccountOrigin }> = [
+  { value: 'x', label: 'X', logo: 'X' },
+  { value: 'fomo', label: 'FOMO', logo: 'FOMO' },
+  { value: 'gmgn', label: 'GMGN', logo: 'GMGN' },
+  { value: 'pump', label: 'Pump', logo: 'PUMP' },
+]
 
 const isBStockCommunity = (community: Community) =>
   isBscBStockToken(community.token)
@@ -412,22 +419,36 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- Tag 菜单：Trending 和 New 按钮 -->
-    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center">
+    <!-- Home Feed：New 优先，并在 New 下按内容来源筛选 -->
+    <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex flex-col gap-2">
       <div class="flex gap-2">
-        <button 
+        <button
+          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
+          :class="tweetsStore.homeTweetType === TweetListType.New ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
+          @click="tweetsStore.homeTweetType = TweetListType.New"
+        >
+          {{ $t('new') || 'New' }}
+        </button>
+        <button
           class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
           :class="tweetsStore.homeTweetType === TweetListType.Trending ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
           @click="tweetsStore.homeTweetType = TweetListType.Trending"
         >
           {{ $t('trending') || 'Trending' }}
         </button>
-        <button 
-          class="h-9 px-5 rounded-full text-h3 whitespace-nowrap transition-colors"
-          :class="tweetsStore.homeTweetType === TweetListType.New ? 'bg-gradient-primary text-white' : 'bg-white text-black hover:bg-gray-50'"
-          @click="tweetsStore.homeTweetType = TweetListType.New"
+      </div>
+      <div v-if="tweetsStore.homeTweetType === TweetListType.New" class="flex gap-1 overflow-x-auto no-scroll-bar">
+        <button
+          v-for="source in homeNewSources"
+          :key="source.value"
+          class="h-8 px-3 rounded-full inline-flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap border transition-colors"
+          :class="tweetsStore.homeNewSource === source.value
+            ? 'border-orange-normal bg-orange-normal/10 text-orange-normal'
+            : 'border-grey-light bg-white text-grey-5a hover:border-orange-normal/40'"
+          @click="tweetsStore.homeNewSource = source.value"
         >
-          {{ $t('new') || 'New' }}
+          <img :src="externalSourceLogos[source.logo]" :alt="`${source.label} logo`" class="w-4 h-4 rounded-full object-contain" />
+          <span>{{ source.label }}</span>
         </button>
       </div>
     </div>
