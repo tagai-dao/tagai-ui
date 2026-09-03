@@ -7,6 +7,7 @@ import { formatAddress, parseTimestamp } from '@/utils/helper'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
 
 const props = defineProps<{ trade: FeedTrade }>()
 const stateStore = useStateStore()
@@ -77,12 +78,8 @@ function openDetails() {
             referrerpolicy="no-referrer"
             alt=""
           >
-          <img
-            v-else
-            class="h-10 w-10 min-w-10 cursor-pointer rounded-full bg-color2A object-cover"
-            src="~@/assets/icons/icon-default-avatar-v2.png"
-            alt=""
-          >
+          <TagaiDefaultAvatar v-else :seed="trade.twitterId || trade.twitterUsername || trade.trader"
+            class="h-10 w-10 min-w-10 cursor-pointer" />
         </template>
       </UserAvatar>
       <div class="min-w-0 flex-1">

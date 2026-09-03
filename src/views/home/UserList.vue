@@ -5,6 +5,7 @@ import {handleErrorTip} from "@/utils/notify";
 import {onMounted, ref} from "vue";
 import {formatAmount, formatPrice} from "@/utils/helper";
 import UserAvatar from "@/components/common/UserAvatar.vue";
+import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
 import { useRouter } from "vue-router";
 import { calculateIPsharePriceLocal } from "@/utils/ipshare";
 import { useStateStore } from "@/stores/common";
@@ -94,9 +95,8 @@ onMounted(async () => {
             <template #avatar-img>
               <img v-if="profile(following)" class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
                    :src="profile(following) ?? ''" alt="">
-              <img v-else
-                   class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-                   src="~@/assets/icons/icon-default-avatar-v2.png" alt="">
+              <TagaiDefaultAvatar v-else :seed="following.twitterId || following.twitterUsername || following.ethAddr"
+                class="h-10 w-10 min-w-10 cursor-pointer" />
             </template>
           </UserAvatar>
           <div class="flex-1 max-w-[2/3] truncate">

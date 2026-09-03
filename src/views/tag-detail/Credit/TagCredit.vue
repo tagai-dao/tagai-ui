@@ -9,6 +9,7 @@ import VueApexCharts from 'vue3-apexcharts';
 import i18n from '@/lang';
 import type { ApexOptions } from 'apexcharts';
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue';
+import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue';
 
 // 类型断言来解决 vue3-apexcharts 的类型问题
 const ApexCharts = VueApexCharts as any;
@@ -274,13 +275,8 @@ onBeforeUnmount(() => {
               :src="holder.profile"
               alt=""
             />
-            <img
-              v-else
-              class="w-5 h-5 min-w-5 rounded-full cursor-pointer bg-color2A"
-              @click.stop="onUserAvatar"
-              src="~@/assets/icons/icon-default-avatar-v2.png"
-              alt=""
-            />
+            <TagaiDefaultAvatar v-else :seed="holder.twitterId || holder.twitterUsername || holder.ethAddr"
+              class="h-5 w-5 min-w-5 cursor-pointer" @click.stop="onUserAvatar" />
           </template>
         </UserAvatar>
             <span class="truncate font-mono cursor-pointer">{{ holder.twitterName || holder.twitterUsername }}</span>

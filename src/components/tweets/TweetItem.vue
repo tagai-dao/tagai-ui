@@ -15,6 +15,7 @@ import { useRouter } from 'vue-router';
 import { BACKEND_API_URL } from '@/config';
 import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
+import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
 import type { AccountOrigin } from '@/assets/externalSourceLogos'
 
 const router = useRouter();
@@ -151,9 +152,8 @@ onUnmounted(() => {
                  class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
                  @click.stop="onUserAvatar" @error="replaceEmptyImg" :src="profileImg"
                  referrerpolicy="no-referrer" alt="">
-            <img v-else
-                 class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-                 @click.stop="onUserAvatar" src="~@/assets/icons/icon-default-avatar-v2.png" alt="">
+            <TagaiDefaultAvatar v-else :seed="tweet.twitterId || tweet.twitterUsername || tweet.ethAddr"
+              class="h-10 w-10 min-w-10 cursor-pointer" @click.stop="onUserAvatar" />
           </template>
         </UserAvatar>
         <div class="flex-1">

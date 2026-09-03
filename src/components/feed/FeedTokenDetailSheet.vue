@@ -10,6 +10,7 @@ import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
 import { formatAddress, formatPastTime } from '@/utils/helper'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
+import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
 import { useRouter } from 'vue-router'
 import { useChainStore } from '@/stores/chain'
 import { getChainPath } from '@/config/chains'
@@ -277,7 +278,8 @@ onUnmounted(() => { document.body.style.overflow = previousBodyOverflow })
               <template #avatar-img>
                 <button type="button" class="flex w-full items-center gap-2 border-b border-grey-light-hover/70 pb-3 text-left" @click.stop>
                   <img v-if="asset.creatorProfile" :src="asset.creatorProfile.replace('normal', '200x200')" class="h-9 w-9 min-w-9 rounded-full object-cover" alt="">
-                  <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="h-9 w-9 min-w-9 rounded-full object-cover" alt="">
+                  <TagaiDefaultAvatar v-else :seed="asset.creatorTwitterId || asset.creatorUsername || asset.sellsman"
+                    class="h-9 w-9 min-w-9" />
                   <span class="min-w-0"><strong class="block truncate text-base text-content">{{ asset.creatorName || asset.creatorUsername }}</strong><span v-if="asset.creatorUsername" class="text-xs text-grey-64">@{{ asset.creatorUsername }}</span></span>
                 </button>
               </template>
