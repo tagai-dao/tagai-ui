@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
+import emptyAvatar from "@/assets/icons/icon-default-avatar-v2.png";
 import { useTools } from "@/composables/useTools";
 import { computed, onMounted, ref } from "vue";
 import { formatAddress, formatAmount, formatPrice } from "@/utils/helper";
@@ -76,8 +76,8 @@ const creditType = ref([
 ])
 
 const profile = computed(() => {
-    if (!props.profileImg) return ''
-    return props.profileImg?.replace('normal', '200x200')
+    if (!props.profileImg) return emptyAvatar
+    return props.profileImg.replace('normal', '200x200')
 })
 
 const creditFactors = computed((): number[] => {

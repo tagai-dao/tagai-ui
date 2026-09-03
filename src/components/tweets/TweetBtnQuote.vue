@@ -147,7 +147,7 @@ const quote = async () => {
             <img v-if="profileImg" class="w-8 h-8 min-w-8 min-h-8 rounded-full"
                  :src="profileImg" alt=""/>
             <img v-else class="w-8 h-8 min-w-8 min-h-8 rounded-full"
-                 src="~@/assets/icons/icon-default-avatar.svg" alt="">
+                 src="~@/assets/icons/icon-default-avatar-v2.png" alt="">
             <div class="flex-1">
               <div class="text-base font-semibold leading-4">
                 {{ tweet.twitterName??'Username' }}

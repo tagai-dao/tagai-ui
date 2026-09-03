@@ -280,7 +280,7 @@ onBeforeUnmount(() => {
               v-else
               class="w-5 h-5 min-w-5 rounded-full cursor-pointer bg-color2A"
               @click.stop="onUserAvatar"
-              src="~@/assets/icons/icon-default-avatar.svg"
+              src="~@/assets/icons/icon-default-avatar-v2.png"
               alt=""
             />
           </template>

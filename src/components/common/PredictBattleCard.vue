@@ -283,9 +283,7 @@ const confirmBuy = async () => {
                         :alt="tweets[battle.predictAID]?.twitterName"
                         class="w-full h-full object-cover"
                       >
-                      <div v-else class="w-full h-full bg-red-normal flex items-center justify-center">
-                        <i-ep-avatar class="text-white text-lg sm:text-2xl" />
-                      </div>
+                      <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="w-full h-full object-cover" alt="">
                     </div>
                   </template>
                 </UserAvatar>
@@ -351,9 +349,7 @@ const confirmBuy = async () => {
                         :alt="tweets[battle.predictBID]?.twitterName"
                         class="w-full h-full object-cover"
                       >
-                      <div v-else class="w-full h-full bg-blue-600 flex items-center justify-center">
-                        <i-ep-avatar class="text-white text-lg sm:text-2xl" />
-                      </div>
+                      <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="w-full h-full object-cover" alt="">
                     </div>
                   </template>
                 </UserAvatar>
@@ -479,7 +475,7 @@ const confirmBuy = async () => {
       min-height: 100vh;
       background-color: #f8f9fa;
     }
-    
+
     .battle-card {
       /* hover 不再位移/缩放：translateY+scale 会被滚动容器 overflow-hidden 裁切，
          且与 backdrop-filter 组合在部分 GPU 上引发整卡闪烁（窄屏尤甚）。
@@ -938,4 +934,3 @@ const confirmBuy = async () => {
       transition: transform 0.3s ease;
     }
     </style>
-    

@@ -107,9 +107,7 @@ watch(() => props.market.marketMaker, () => {
                   <template #avatar-img>
                     <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-100 border border-gray-100">
                       <img v-if="item.profile" :src="item.profile" class="w-full h-full object-cover" :alt="item.twitterName || item.twitterUsername">
-                      <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
-                        <i-ep-avatar class="text-gray-400 text-lg" />
-                      </div>
+                      <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="w-full h-full object-cover" alt="">
                     </div>
                   </template>
                 </UserAvatar>

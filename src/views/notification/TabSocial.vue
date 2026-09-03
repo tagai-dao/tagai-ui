@@ -4,6 +4,7 @@ import { useAccountStore } from "@/stores/web3";
 import type { SocialMessage } from "@/types";
 import { parseTimestamp, formatDate } from "@/utils/helper";
 import { onMounted, onUnmounted, ref, computed } from "vue";
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 const refreshing = ref(false);
 const loading = ref(false);
@@ -24,7 +25,7 @@ function unread(message: SocialMessage) {
 }
 
 function updatedProfile(profile: string) {
-  return profile?.replace("normal", "200x200");
+  return profile?.replace("normal", "200x200") || defaultAvatar;
 }
 
 onMounted(() => {

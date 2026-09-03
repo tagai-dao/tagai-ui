@@ -101,7 +101,7 @@ onMounted(async () => {
             <img
               v-else
               class="w-7 h-7 min-w-7 min-h-7 rounded-full cursor-pointer bg-color2A"
-              src="~@/assets/icons/icon-default-avatar.svg"
+              src="~@/assets/icons/icon-default-avatar-v2.png"
               alt=""
             />
           </template>

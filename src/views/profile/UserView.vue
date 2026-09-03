@@ -11,7 +11,7 @@ import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType, type Account } from "@/types";
 import { useRoute, useRouter } from "vue-router";
-import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
+import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
 import { getUserProfile, getIPShareFee, getCapturedFee } from '@/apis/api'
 import TipTokenRecord from "@/views/wallet/TipTokenRecord.vue";
 import { calculateIPsharePriceLocal } from "@/utils/ipshare";

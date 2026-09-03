@@ -5,6 +5,7 @@ import { getFPMMUserHoldings } from '@/apis/api'
 import { handleErrorTip } from '@/utils/notify'
 import { formatAddress } from '@/utils/helper';
 import UserAvatar from '@/components/common/UserAvatar.vue';
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 const props = defineProps<{
   market: MarketData
@@ -139,7 +140,7 @@ onActivated(() => {
                       v-show="holder.ethAddr != market.battle.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100">
                            <div class="relative">
-                              <img :src="holder.profile" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
+                              <img :src="holder.profile || defaultAvatar" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
                               <!-- <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center rounded-full font-bold border border-white">
                                   {{ idx + 1 }}
                               </div> -->
@@ -164,7 +165,7 @@ onActivated(() => {
                        v-show="holder.ethAddr != market.battle.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
                           <div class="relative">
-                              <img :src="holder.profile" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
+                              <img :src="holder.profile || defaultAvatar" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
                               <!-- <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center rounded-full font-bold border border-white">
                                   {{ idx + 1 }}
                               </div> -->
@@ -203,4 +204,3 @@ onActivated(() => {
   background-color: transparent;
 }
 </style>
-
