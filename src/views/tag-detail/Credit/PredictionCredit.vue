@@ -3,7 +3,7 @@ import { getCommunityPredictionCredits } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community';
 import { type CommunityCredit } from '@/types';
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue';
-import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue';
+import SafeAvatar from '@/components/common/SafeAvatar.vue';
 import { formatAmount, sleep } from '@/utils/helper';
 import { handleErrorTip } from '@/utils/notify';
 import {nextTick, onBeforeUnmount, onMounted, ref} from 'vue';
@@ -270,15 +270,12 @@ onBeforeUnmount(() => {
           :teleported="true"
         >
           <template #avatar-img>
-            <img
-              v-if="holder.profile"
+            <SafeAvatar
+              :src="holder.profile"
+              :seed="holder.twitterId || holder.twitterUsername || holder.ethAddr"
               class="w-5 h-5 min-w-5 rounded-full cursor-pointer bg-color2A"
               @click.stop="onUserAvatar"
-              :src="holder.profile"
-              alt=""
             />
-            <TagaiDefaultAvatar v-else :seed="holder.twitterId || holder.twitterUsername || holder.ethAddr"
-              class="h-5 w-5 min-w-5 cursor-pointer" @click.stop="onUserAvatar" />
           </template>
         </UserAvatar>
             <span class="truncate font-mono cursor-pointer">{{ holder.twitterName || holder.twitterUsername }}</span>
