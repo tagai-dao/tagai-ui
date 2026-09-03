@@ -598,6 +598,14 @@ export const getRewardLeaderboard = async (
   size = 30,
 ) => get(BACKEND_API_URL + '/rewards/leaderboard', { category, period, page, size })
 
+export type PnlPeriod = '1d' | '7d' | '30d' | 'all'
+
+export const getPnlLeaderboard = async (
+  period: PnlPeriod = '7d',
+  page = 0,
+  size = 30,
+) => get(BACKEND_API_URL + '/pnl/leaderboard', { period, page, size })
+
 export const getUserClaimPredictRewardSignature = async (twitterId: string, tick: string) =>
   post(BACKEND_API_URL + '/predict/getUserClaimPredictRewardSignature', { twitterId, tick })
 
