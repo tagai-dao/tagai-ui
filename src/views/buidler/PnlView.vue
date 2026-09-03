@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { getPnlLeaderboard, type PnlPeriod } from '@/apis/api'
 import { formatUsd } from '@/utils/format'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
-import defaultAvatar from '@/assets/icons/icon-default-avatar.svg'
+import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
 
 type PnlUser = {
   accountId: number
@@ -174,8 +174,10 @@ onBeforeUnmount(() => observer?.disconnect())
         :class="{ 'cursor-pointer hover:border-orange-normal/40': user.twitterUsername }"
         @click="openProfile(user)">
         <div class="rank" :class="user.rank <= 3 ? `rank--${user.rank}` : ''">{{ user.rank }}</div>
-        <img :src="user.profile ? user.profile.replace('normal', '200x200') : defaultAvatar"
+        <img v-if="user.profile" :src="user.profile.replace('normal', '200x200')"
           class="h-11 w-11 flex-none rounded-full object-cover" alt="">
+        <TagaiDefaultAvatar v-else :seed="user.twitterId || user.twitterUsername || user.accountId"
+          class="h-11 w-11" />
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1">
             <strong class="truncate text-base text-content">{{ user.twitterName || user.twitterUsername || 'TagAI account' }}</strong>

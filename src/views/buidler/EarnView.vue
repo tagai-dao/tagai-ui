@@ -3,6 +3,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getRewardLeaderboard, type RewardCategory, type RewardPeriod } from '@/apis/api'
 import { formatUsd } from '@/utils/format'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
+import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
 
 type RewardUser = {
   rank: number;
@@ -157,7 +158,7 @@ onBeforeUnmount(() => observer?.disconnect())
       <article v-for="user in users" :key="user.twitterId" class="reward-user">
         <div class="rank" :class="user.rank <= 3 ? `rank--${user.rank}` : ''">{{ user.rank }}</div>
         <img v-if="user.profile" :src="user.profile.replace('normal', '200x200')" class="h-11 w-11 rounded-full object-cover" alt="">
-        <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="h-11 w-11 flex-none rounded-full object-cover" alt="">
+        <TagaiDefaultAvatar v-else :seed="user.twitterId || user.twitterUsername" class="h-11 w-11" />
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1">
             <strong class="truncate text-base text-content">{{ user.twitterName || user.twitterUsername || 'TagAI user' }}</strong>
