@@ -11,7 +11,7 @@ import Kline from "@/views/buy-sell/Kline.vue";
 import { getDexScreenerEmbedPath } from '@/utils/pumpVersion'
 import { useTheme } from "@/composables/useTheme";
 import { useChainStore } from '@/stores/chain'
-import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
+import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 const { isDark } = useTheme()

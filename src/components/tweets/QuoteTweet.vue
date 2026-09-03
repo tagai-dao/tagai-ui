@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
+import emptyAvatar from "@/assets/icons/icon-default-avatar-v2.png";
 import { parseTimestamp } from '@/utils/helper';
 
 const props = defineProps<{
@@ -44,7 +44,7 @@ onMounted(() => {
              @error="replaceEmptyImg" :src="tweet.author.profile_image_url"
              referrerpolicy="no-referrer" alt="">
         <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-             src="@/assets/icons/icon-default-avatar.svg" v-else alt="">
+             src="@/assets/icons/icon-default-avatar-v2.png" v-else alt="">
         <div class="flex-1">
           <div class="w-full flex items-center flex-wrap gap-x-2">
             <span class="font-bold text-lg">{{ tweet.author.name }}</span>

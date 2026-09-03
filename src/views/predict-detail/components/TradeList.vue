@@ -12,6 +12,7 @@ import {
   getLpRemoveOutcomes,
   parseLpPoolAmounts,
 } from '@/composables/useFpmmLpTradeDisplay'
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png'
 
 const { t } = useI18n()
 
@@ -105,7 +106,7 @@ onActivated(() => {
             class="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer text-sm"
           >
             <!-- Avatar -->
-            <img :src="item.profile" class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0">
+            <img :src="item.profile || defaultAvatar" class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 object-cover">
             
             <!-- Main Content -->
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 1">

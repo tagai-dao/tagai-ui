@@ -96,7 +96,7 @@ const toggleReaction = (reaction: AiChannelReactionType) => {
       >
       <img
         v-else
-        src="~@/assets/icons/icon-default-avatar.svg"
+        src="~@/assets/icons/icon-default-avatar-v2.png"
         class="w-9 h-9 rounded-full bg-grey-f0"
         alt=""
       >

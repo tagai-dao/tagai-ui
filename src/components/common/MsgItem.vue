@@ -26,9 +26,7 @@ const userInfo = ref<{userName: string}>({
          :class="userInfo.userName===msgData.sendUserName?'flex-row-reverse':''">
       <div class="">
         <img class="min-w-9" v-if="msgData.profileImg" :src="msgData.profileImg" alt="">
-        <div v-else class="bg-grey-light-hover h-9 w-9 min-w-9 rounded-full flex items-center justify-center">
-          <i-ep-avatar/>
-        </div>
+        <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="h-9 w-9 min-w-9 rounded-full object-cover" alt="">
         <div class="text-xs text-grey-8e text-center">{{userInfo.userName}}</div>
       </div>
       <div class="rounded-t-2xl p-2.5 min-h-9 break-all"

@@ -505,9 +505,7 @@ const selectedBuyColor = computed(() => {
                   class="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-red-normal shadow-md">
                   <img v-if="market?.profile" :src="market?.profile" :alt="market?.twitterName"
                     class="w-full h-full object-cover">
-                  <div v-else class="w-full h-full bg-red-normal flex items-center justify-center">
-                    <i-ep-avatar class="text-white text-lg sm:text-2xl" />
-                  </div>
+                  <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="w-full h-full object-cover" alt="">
                 </div>
               </template>
             </UserAvatar>

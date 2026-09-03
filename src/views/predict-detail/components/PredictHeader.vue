@@ -6,6 +6,7 @@ import TweetBtnCurate from '@/components/tweets/TweetBtnCurate.vue'
 import type { BattleData, MarketData, Tweet } from '@/types'
 import { useClipboard } from '@vueuse/core'
 import { useRouter } from 'vue-router'
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png'
 
 const props = defineProps<{
   market: MarketData
@@ -69,7 +70,7 @@ const totalCuration = computed(() => {
           Winner
         </div>
         <div class="flex items-center gap-3 mb-3">
-          <img :src="(market.tweets[market.battle.predictAID] as Tweet).profile" class="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm">
+          <img :src="(market.tweets[market.battle.predictAID] as Tweet).profile || defaultAvatar" class="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm object-cover">
           <div>
             <div class="font-bold text-sm text-gray-900">{{ (market.tweets[market.battle.predictAID] as Tweet).twitterName }}</div>
             <div class="text-xs text-gray-500">{{ (market.tweets[market.battle.predictAID] as Tweet).twitterUsername }}</div>
@@ -117,7 +118,7 @@ const totalCuration = computed(() => {
           Winner
         </div>
         <div class="flex items-center gap-3 mb-3">
-          <img :src="market.tweets[market.battle.predictBID]?.profile" class="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm">
+          <img :src="market.tweets[market.battle.predictBID]?.profile || defaultAvatar" class="w-10 h-10 rounded-full bg-gray-200 border-2 border-white shadow-sm object-cover">
           <div>
             <div class="font-bold text-sm text-gray-900">{{ market.tweets[market.battle.predictBID]?.twitterName }}</div>
             <div class="text-xs text-gray-500">{{ market.tweets[market.battle.predictBID]?.twitterUsername }}</div>
@@ -166,4 +167,3 @@ const totalCuration = computed(() => {
     </div> -->
   </div>
 </template>
-

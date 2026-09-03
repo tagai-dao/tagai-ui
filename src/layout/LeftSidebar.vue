@@ -208,9 +208,9 @@ const handleWalletClick = (e?: Event) => {
             alt=""
           >
           <img 
-            v-else-if="isActive('/profile')"
-            class="w-6 h-6 transition-all" 
-            src="~@/assets/icons/icon-tabbar-profile-active.svg" 
+            v-else-if="accStore.getAccountInfo"
+            class="w-6 h-6 rounded-full object-cover transition-all"
+            src="~@/assets/icons/icon-default-avatar-v2.png"
             alt=""
           >
           <img 
