@@ -96,7 +96,7 @@ onMounted(async () => {
                    :src="profile(following) ?? ''" alt="">
               <img v-else
                    class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-                   src="~@/assets/icons/icon-default-avatar.svg" alt="">
+                   src="~@/assets/icons/icon-default-avatar-v2.png" alt="">
             </template>
           </UserAvatar>
           <div class="flex-1 max-w-[2/3] truncate">

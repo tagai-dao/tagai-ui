@@ -6,6 +6,7 @@ import { getReplyOfTweet } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import type { Reply } from "@/types";
 import emitter from "@/utils/emitter";
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -85,7 +86,7 @@ onMounted(async () => {
         <div v-for="reply of listData" :key="reply.replyId" class="bg-white px-5 py-4 rounded-2xl">
           <div class="flex gap-2" @click="gotoReply(reply)">
             <img class="h-10 w-10 min-w-10 rounded-full"
-                 :src="reply.profile" alt="">
+                 :src="reply.profile || defaultAvatar" alt="">
             <div class="flex-1 min-h-10 flex flex-col">
               <div class="text-h3">{{ reply.twitterName }}</div>
               <div class="w-full flex items-center flex-wrap gap-x-2 text-sm font-normal">

@@ -4,6 +4,7 @@ import {computed, onMounted, ref, type PropType} from "vue";
 import { getSpaceCurationList } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { formatAmount } from "@/utils/helper";
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 const refreshing = ref(false)
 const finished = ref(false)
@@ -69,7 +70,7 @@ onMounted(async () => {
          v-if="props.curationType === 1"
          class="bg-white rounded-2xl py-3 px-3.5 flex items-center gap-3 mb-2">
       <div class="relative">
-        <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">
+        <img class="w-10 h-10 min-w-10 min-h-10 rounded-full object-cover" :src="curate.profile || defaultAvatar" alt="">
         <div class="bg-gradient-primary text-white text-xs font-medium rounded-full h-4 flex justify-center items-center
                     px-2 absolute transform -translate-x-1/2 -translate-y-1/2 left-2 top-1 rotate-[-30deg]">{{$t('postView.host')}}</div>
       </div>
@@ -82,7 +83,7 @@ onMounted(async () => {
          v-if="props.curationType === 2"
          class="bg-white rounded-2xl py-3 px-3.5 flex items-center gap-3 mb-2">
       <div class="relative">
-        <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">
+        <img class="w-10 h-10 min-w-10 min-h-10 rounded-full object-cover" :src="curate.profile || defaultAvatar" alt="">
         <div class="bg-gradient-primary text-white text-xs font-medium rounded-full h-4 flex justify-center items-center
                     px-2 absolute transform -translate-x-1/2 -translate-y-1/2 left-2 top-1 rotate-[-30deg]">{{$t('postView.co-host')}}</div>
       </div>
@@ -95,7 +96,7 @@ onMounted(async () => {
          v-if="props.curationType === 3"
          class="bg-white rounded-2xl py-3 px-3.5 flex items-center gap-3 mb-2">
       <div class="relative">
-        <img class="w-10 h-10 min-w-10 min-h-10 rounded-full" :src="curate.profile" alt="">
+        <img class="w-10 h-10 min-w-10 min-h-10 rounded-full object-cover" :src="curate.profile || defaultAvatar" alt="">
         <div class="bg-gradient-primary text-white text-xs font-medium rounded-full h-4 flex justify-center items-center
                     px-2 absolute transform -translate-x-1/2 -translate-y-1/2 left-2 top-1 rotate-[-30deg]">Speaker</div>
       </div>

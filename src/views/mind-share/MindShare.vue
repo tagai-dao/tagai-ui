@@ -6,6 +6,7 @@ import {onMounted, ref, watch } from "vue";
 import {getDayNumber} from "@/utils/helper";
 import ChartItem from "@/views/mind-share/ChartItem.vue";
 import { useRouter } from "vue-router";
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 const refreshing = ref(false);
 const loading = ref(false);
@@ -141,7 +142,7 @@ onMounted(() => {
               <div class="min-w-[50px] web:min-w-[80px] text-sm hidden web:block">{{index+1}}</div>
               <div class="min-w-[150px] max-w-[150px] web:min-w-[150px] web:max-w-full web:flex-1 flex gap-2 items-center">
                 <div class="w-6 h-6 min-w-6 web:w-8 web:h-8 web:min-w-8 web:min-h-8 bg-grey-light rounded-lg overflow-hidden">
-                  <img class="w-6 h-6 web:w-8 web:h-8" :src="item.profile" alt="">
+                  <img class="w-6 h-6 web:w-8 web:h-8 object-cover" :src="item.profile || defaultAvatar" alt="">
                 </div>
                 <div class="flex flex-col">
                   <span class="text-sm web:text-h4 font-medium break-words">{{ item.twitterName }}</span>

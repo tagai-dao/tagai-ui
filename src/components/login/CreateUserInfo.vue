@@ -6,9 +6,8 @@
       <div class="flex justify-center items-center gap-2">
         <img v-if="createUserInfo.profile" :src="createUserInfo.profile"
              class="w-20 h-20 min-w-20 min-h-20 rounded-full" alt=""/>
-        <div v-else class="w-20 h-20 min-w-20 min-h-20 bg-grey-f0 rounded-full flex items-center justify-center">
-          <img class="w-3 h-3" src="~@/assets/icons/icon-img.svg" alt="" />
-        </div>
+        <img v-else class="w-20 h-20 min-w-20 min-h-20 rounded-full object-cover"
+             src="~@/assets/icons/icon-default-avatar-v2.png" alt="" />
         <el-upload class="avatar-uploader w-10 h-10 min-w-10 min-h-10 bg-grey-f0 rounded-full flex items-center justify-center"
                    action="#"
                    :http-request="(options: any)=> openImageCropper(options)"

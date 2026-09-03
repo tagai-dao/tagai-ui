@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png'
 import { ref, onMounted, computed, reactive, ErrorCodes } from "vue";
 import BondEthModal from "@/components/login/BondEthModal.vue";
 import { useAccountStore } from "@/stores/web3";
@@ -428,7 +429,7 @@ onMounted(async () => {
         <img src="~@/assets/icons/icon-back.svg" alt="">
       </button>
         <div class="flex justify-center items-center mt-6">
-          <img :src="accStore.farcasterUser?.avatar" alt="" style="object-fit: cover" class="w-16 h-16 rounded-full">
+          <img :src="accStore.farcasterUser?.avatar || defaultAvatar" alt="" style="object-fit: cover" class="w-16 h-16 rounded-full">
         </div>
         <div class="text-h3 text-black text-center">
             {{ accStore.farcasterUser?.name }}@{{ accStore.farcasterUser?.username }}

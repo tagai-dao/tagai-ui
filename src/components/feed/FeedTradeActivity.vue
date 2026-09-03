@@ -80,7 +80,7 @@ function openDetails() {
           <img
             v-else
             class="h-10 w-10 min-w-10 cursor-pointer rounded-full bg-color2A object-cover"
-            src="~@/assets/icons/icon-default-avatar.svg"
+            src="~@/assets/icons/icon-default-avatar-v2.png"
             alt=""
           >
         </template>

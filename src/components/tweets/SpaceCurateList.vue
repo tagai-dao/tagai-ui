@@ -4,6 +4,7 @@ import {onMounted, ref} from "vue";
 import { getSpaceCurateList } from '@/apis/api'
 import { handleErrorTip } from "@/utils/notify";
 import { formatAmount, parseTimestamp } from "@/utils/helper";
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -81,7 +82,7 @@ onMounted(async () => {
           <div class="flex-1">
             <div class="flex-1 justify-between items-center flex">
               <div class="flex-1 items-center gap-2">
-                <img class="w-6 h-6 min-w-6 min-h-6 rounded-full" :src="curate.profile" alt="">
+                <img class="w-6 h-6 min-w-6 min-h-6 rounded-full object-cover" :src="curate.profile || defaultAvatar" alt="">
 <!--                <span class="font-normal text-grey-normal">@{{ curate.twitterUsername }}</span>-->
               </div>
               <div class="flex flex-row items-center mr-2">

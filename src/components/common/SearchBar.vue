@@ -6,6 +6,7 @@ import { type Community, type MindShare, type Tweet } from "@/types";
 import TagListItem from "../home/TagListItem.vue";
 import { useCommunityStore } from "@/stores/community";
 import { useRouter } from "vue-router";
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 type SearchResult = {
   type: 'tweet' | 'space' | 'user' | 'community' | 'ca'
@@ -172,7 +173,7 @@ function gotoProfile(username: string) {
                  v-for="(item, index) of mindShareList" :key="item.twitterName">
               <button @click="gotoProfile(item.twitterUsername)" class="min-w-[140px] max-w-[120px] web:min-w-[140px] web:max-w-full web:flex-1 flex gap-2 items-center overflow-hidden">
                 <div class="w-6 h-6 min-w-6 web:w-8 web:h-8 web:min-w-8 web:min-h-8 bg-grey-light rounded-lg overflow-hidden">
-                  <img class="w-6 h-6 web:w-8 web:h-8" :src="item.profile" alt="">
+                  <img class="w-6 h-6 web:w-8 web:h-8 object-cover" :src="item.profile || defaultAvatar" alt="">
                 </div>
                 <div class="flex flex-col">
                   <span class="text-sm web:text-h4 font-medium text-start break-words">{{ item.twitterName }}</span>

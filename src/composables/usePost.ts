@@ -1,7 +1,7 @@
 import { ref, computed, onMounted } from "vue";
 import { IgnoreAuthor } from "@/config";
 import type { Tweet } from "@/types";
-import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
+import emptyAvatar from "@/assets/icons/icon-default-avatar-v2.png";
 import { escapeHtml } from "@/utils/sanitize";
 export const usePost = (tweet: Tweet) => {
   const urlReg =

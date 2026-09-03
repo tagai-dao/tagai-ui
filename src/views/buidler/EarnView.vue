@@ -157,7 +157,7 @@ onBeforeUnmount(() => observer?.disconnect())
       <article v-for="user in users" :key="user.twitterId" class="reward-user">
         <div class="rank" :class="user.rank <= 3 ? `rank--${user.rank}` : ''">{{ user.rank }}</div>
         <img v-if="user.profile" :src="user.profile.replace('normal', '200x200')" class="h-11 w-11 rounded-full object-cover" alt="">
-        <div v-else class="h-11 w-11 flex-none rounded-full bg-grey-light-active" />
+        <img v-else src="~@/assets/icons/icon-default-avatar-v2.png" class="h-11 w-11 flex-none rounded-full object-cover" alt="">
         <div class="min-w-0 flex-1">
           <div class="flex items-center gap-1">
             <strong class="truncate text-base text-content">{{ user.twitterName || user.twitterUsername || 'TagAI user' }}</strong>

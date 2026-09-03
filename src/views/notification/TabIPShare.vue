@@ -9,7 +9,7 @@ import { useRouter } from 'vue-router'
 import { handleErrorTip } from '@/utils/notify'
 import IPShareTradeModal from '@/components/ipshare/IPShareTradeModal.vue'
 import { isAddress } from 'viem'
-import emptyProfile from '@/assets/icons/icon-default-avatar.svg'
+import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
 
 const router = useRouter()
 const stateStore = useStateStore()

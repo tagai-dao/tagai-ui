@@ -8,7 +8,7 @@ import { getHolderList, getHolderListOfImportToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, PUMP11_VERSION, TipTagSwapHook9, TipTagSwapHook11, PCSCLPoolManager, PCSVault } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
-import emptyAvatar from "@/assets/icons/icon-default-avatar.svg";
+import emptyAvatar from "@/assets/icons/icon-default-avatar-v2.png";
 import { getBlockNumber } from "@/utils/wallets";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract5, PumpContract6, PumpContract7 } from "@/config";
 import { getV9DailyRewards, getV10DistributionInfo, type V10DistributionInfo, injectTokens } from "@/utils/pump";
@@ -920,10 +920,10 @@ onBeforeUnmount(() => {
                  alt="">
             <img v-else
                  class="w-4 h-4 min-w-4 rounded-full cursor-pointer bg-color2A"
-                 @click.stop="onUserAvatar" src="~@/assets/icons/icon-default-avatar.svg" alt="">
+                 @click.stop="onUserAvatar" src="~@/assets/icons/icon-default-avatar-v2.png" alt="">
               </template>
             </UserAvatar>
-            <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar.svg" alt=""> -->
+            <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar-v2.png" alt=""> -->
             <span class="">{{ formatAddress(holder.ethAddr) }}</span>
             <AccountOriginBadges :sources="holder.accountSources" :account-type="holder.accountType" :wallet-type="holder.walletType" :eth-addr="holder.ethAddr" />
             <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.contract') }}</span>

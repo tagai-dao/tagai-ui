@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import TagListItem from '../home/TagListItem.vue';
 import { useCommunityStore } from '@/stores/community';
 import { useRouter } from 'vue-router';
+import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 const emit = defineEmits(['onClose'])
 const list = ref<Community[]>([])
@@ -120,7 +121,7 @@ function gotoProfile(username: string) {
       <div class="bg-white p-4 rounded-2xl shadow-popper-tip flex items-center gap-1.5 mb-2"
            v-for="i of 2" :key="i">
         <img class="h-10 w-10 min-h-10 rounded-full"
-             src="~@/assets/icons/icon-default-avatar.svg" alt="">
+             src="~@/assets/icons/icon-default-avatar-v2.png" alt="">
         <div class="flex-1">
           <div>@username</div>
           <div class="text-grey-light-active">ipShare: 895</div>
@@ -165,7 +166,7 @@ function gotoProfile(username: string) {
               <div class="min-w-[50px] web:min-w-[80px] text-sm hidden web:block">{{index+1}}</div>
               <button @click="gotoProfile(item.twitterUsername)" class="w-1/2 flex gap-2 items-center">
                 <div class="w-6 h-6 min-w-6 web:w-8 web:h-8 web:min-w-8 web:min-h-8 bg-grey-light rounded-lg overflow-hidden">
-                  <img class="w-6 h-6 web:w-8 web:h-8" :src="item.profile" alt="">
+                  <img class="w-6 h-6 web:w-8 web:h-8 object-cover" :src="item.profile || defaultAvatar" alt="">
                 </div>
                 <div class="flex flex-col justify-start">
                   <span class="text-sm web:text-h4 font-medium break-words text-start">{{ item.twitterName }}</span>
