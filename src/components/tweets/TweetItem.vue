@@ -15,7 +15,7 @@ import { useRouter } from 'vue-router';
 import { BACKEND_API_URL } from '@/config';
 import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
-import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import type { AccountOrigin } from '@/assets/externalSourceLogos'
 
 const router = useRouter();
@@ -67,7 +67,6 @@ const {
   content,
   isIgnoreAccount,
   steemUrl,
-  replaceEmptyImg,
   clickContent,
   clickLinkView,
   clickRetweetView
@@ -148,12 +147,9 @@ onUnmounted(() => {
                     :eth-addr="tweet.ethAddr" :twitter-id="tweet.twitterId" :account-type="tweet.accountType"
                     :steem-id="tweet.steemId" :teleported="true" :credit="tweet.credit">
           <template #avatar-img>
-            <img v-if="profileImg"
-                 class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-                 @click.stop="onUserAvatar" @error="replaceEmptyImg" :src="profileImg"
-                 referrerpolicy="no-referrer" alt="">
-            <TagaiDefaultAvatar v-else :seed="tweet.twitterId || tweet.twitterUsername || tweet.ethAddr"
-              class="h-10 w-10 min-w-10 cursor-pointer" @click.stop="onUserAvatar" />
+            <SafeAvatar :src="profileImg" :seed="tweet.twitterId || tweet.twitterUsername || tweet.ethAddr"
+              class="h-10 w-10 min-w-10 rounded-full cursor-pointer object-cover bg-color2A"
+              @click.stop="onUserAvatar" />
           </template>
         </UserAvatar>
         <div class="flex-1">

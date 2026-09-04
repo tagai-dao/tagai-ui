@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import emptyAvatar from "@/assets/icons/icon-default-avatar-v2.png";
-import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import { useTools } from "@/composables/useTools";
 import { computed, onMounted, ref } from "vue";
 import { formatAddress, formatAmount, formatPrice } from "@/utils/helper";
@@ -76,11 +75,6 @@ const creditType = ref([
   "Net buy"
 ])
 
-const profile = computed(() => {
-    if (!props.profileImg) return emptyAvatar
-    return props.profileImg.replace('normal', '200x200')
-})
-
 const creditFactors = computed((): number[] => {
   if (!props.creditFactor) return []
   if (typeof props.creditFactor === 'string') {
@@ -105,10 +99,6 @@ function gotoTwitter() {
           "https://twitter.com/" + props.username,
           "__blank"
       );
-}
-
-function replaceEmptyImg(e: any) {
-    e.target.src = emptyAvatar;
 }
 
 function gotoUser() {
@@ -165,12 +155,8 @@ onMounted(() => {
             Address not registed
         </div>
         <div v-else class="flex items-center gap-x-1">
-          <img v-if="props.profileImg" class="w-9 h-9 object-cover rounded-full cursor-pointer"
-              @click.stop="gotoUser"
-               @error="replaceEmptyImg"
-               :src="profile" referrerpolicy="no-referrer" alt="">
-          <TagaiDefaultAvatar v-else :seed="props.twitterId || props.username || props.ethAddr"
-            class="h-9 w-9 cursor-pointer" @click.stop="gotoUser" />
+          <SafeAvatar :src="props.profileImg" :seed="props.twitterId || props.username || props.ethAddr"
+            class="h-9 w-9 object-cover rounded-full cursor-pointer" @click.stop="gotoUser" />
           <div class="flex-1 flex flex-col gap-y-4px">
             <div class="flex items-end whitespace-nowrap items-center gap-2">
               <span class="font-semibold text-black text-lg">{{(props.name??'').substring(0, 10)}}</span>

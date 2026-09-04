@@ -8,8 +8,7 @@ import { getHolderList, getHolderListOfImportToken } from "@/apis/api";
 import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, PUMP11_VERSION, TipTagSwapHook9, TipTagSwapHook11, PCSCLPoolManager, PCSVault } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
-import TagaiDefaultAvatar from '@/components/common/TagaiDefaultAvatar.vue'
-import emptyAvatar from "@/assets/icons/icon-default-avatar-v2.png";
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import { getBlockNumber } from "@/utils/wallets";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract5, PumpContract6, PumpContract7 } from "@/config";
 import { getV9DailyRewards, getV10DistributionInfo, type V10DistributionInfo, injectTokens } from "@/utils/pump";
@@ -668,10 +667,6 @@ async function onLoad() {
 const onUserAvatar = () => {
 
 }
-function replaceEmptyImg(e: any) {
-    e.target.src = emptyAvatar;
-}
-
 // 判断是否为当前进行中的周期
 function isCurrentPeriod(start: number, end: number) {
   // v10 block：用区块号近似判断（BSC ~3s/block）
@@ -915,12 +910,10 @@ onBeforeUnmount(() => {
                     :eth-addr="holder.ethAddr" :credit="0"
                     :steem-id="holder.steemId" :teleported="true">
               <template #avatar-img>
-                <img v-if="holder.profile"
+                <SafeAvatar :src="holder.profile"
+                 :seed="holder.twitterId || holder.twitterUsername || holder.ethAddr"
                  class="w-4 h-4 min-w-4 rounded-full cursor-pointer bg-color2A"
-                 @click.stop="onUserAvatar" @error="replaceEmptyImg" :src="holder.profile"
-                 alt="">
-            <TagaiDefaultAvatar v-else :seed="holder.twitterId || holder.twitterUsername || holder.ethAddr"
-              class="h-4 w-4 min-w-4 cursor-pointer" @click.stop="onUserAvatar" />
+                 @click.stop="onUserAvatar" />
               </template>
             </UserAvatar>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar-v2.png" alt=""> -->
