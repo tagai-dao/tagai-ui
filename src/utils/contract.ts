@@ -12,7 +12,7 @@ import { useAccountStore } from "@/stores/web3";
 import { getChainById } from "./privy";
 import { useChainStore } from "@/stores/chain";
 import { getChainDeployment } from "@/config/chains";
-import { zeroAddress } from "viem";
+import { zeroAddress, type Abi } from "viem";
 
 /** BSC 默认地址表；多链时由 resolveContractAddress 覆盖关键合约 */
 const ContractAddress = {
@@ -223,13 +223,16 @@ export const writeContract = async ({
     functionName, 
     args,
     address,
-    value = 0n
+    value = 0n,
+    abi: abiOverride,
 }: {
     contractName: string, 
     functionName: string, 
     args: any,
     address?: `0x${string}`,
-    value?: bigint | string
+    value?: bigint | string,
+    /** Restrict overloaded deployments to the exact callable surface for this write. */
+    abi?: Abi,
 }): Promise<string> => {
     const client = getWalletClient();
     const publicClient = getReadOnlyClient();
@@ -245,7 +248,7 @@ export const writeContract = async ({
     if (!address || address === zeroAddress) {
         throw new Error(`Contract ${contractName} not deployed on current chain`)
     }
-    const abi = resolveContractAbi(contractName)
+    const abi = abiOverride ?? resolveContractAbi(contractName)
     // 交易目标链必须与产品当前链一致（Privy 钱包 chain 也要对齐）
     const chain = getChainById(useChainStore().activeChainId)
 
@@ -262,7 +265,9 @@ export const writeContract = async ({
     const { request } = await publicClient.simulateContract({
         account: useAccountStore().ethConnectAddress as `0x${string}`,
         address,
-        abi,
+        // Runtime ABIs can be narrowed per deployment (for overloaded helpers),
+        // so viem cannot infer a single payable function type here.
+        abi: abi as any,
         functionName,
         args,
         chain,
