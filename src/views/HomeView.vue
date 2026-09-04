@@ -26,7 +26,7 @@ import Predict from "@/views/predict/Index.vue";
 import BasketsListView from '@/views/baskets/BasketsListView.vue'
 import {type HomeNewSource, TweetListType, useTweetsStore} from "@/stores/tweets";
 import {filterByActiveChain} from "@/utils/chainFilter";
-import {isBscBStockToken} from '@/config/bstocks'
+import {isBStockCommunity, refreshRobinhoodBStockRegistry} from '@/config/bstocks'
 import {externalSourceLogos, type AccountOrigin} from '@/assets/externalSourceLogos'
 
 const listType = ref(ListType.Trending)
@@ -60,7 +60,6 @@ const coinSubMenu = computed(() => stateStore.coinSubMenu)
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
 const bStocksLoaded = ref(false)
-const robinhoodStockTokens = ref<Set<string>>(new Set())
 const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: AccountOrigin }> = [
   { value: 'x', label: 'Feed', logo: 'X' },
   { value: 'fomo', label: 'FOMO', logo: 'FOMO' },
@@ -68,13 +67,8 @@ const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: Account
   { value: 'pump', label: 'Pump', logo: 'PUMP' },
 ]
 
-const isBStockCommunity = (community: Community) => {
-  if (Number(community.chainId) === 56 || chainStore.deployment.key === 'bsc') {
-    return isBscBStockToken(community.token)
-  }
-  const token = community.token?.toLowerCase()
-  return community.assetCategory === 'stock' || community.isStockToken === true || (!!token && robinhoodStockTokens.value.has(token))
-}
+const isActiveChainBStock = (community: Community) =>
+  isBStockCommunity(community, chainStore.activeChainId)
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
@@ -210,16 +204,21 @@ async function getNewCommunities() {
   }
 }
 
-/** bStocks 按 BNB Chain 代币 CA 白名单分类，社区显示符号不参与判断。 */
+/** BSC 使用 CA 白名单；RH 以当前 NutboxRouter 路由为准。 */
 async function loadBStocks(force = false) {
   if (bStocksLoading.value || (bStocksLoaded.value && !force)) return
   try {
     bStocksLoading.value = true
     const imported = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
-    const bStocks = imported.filter(isBStockCommunity)
     if (chainStore.deployment.key === 'rh') {
-      robinhoodStockTokens.value = new Set(bStocks.map(community => community.token?.toLowerCase()).filter(Boolean) as string[])
+      try {
+        await refreshRobinhoodBStockRegistry(imported.map((community) => community.token), { force })
+      } catch (error) {
+        // API stock metadata remains a temporary fallback when an RH RPC is unavailable.
+        console.error('Load RH Router-supported stocks error:', error)
+      }
     }
+    const bStocks = imported.filter(isActiveChainBStock)
     // 先展示 API 数据；链上补价失败时也不隐藏已识别的 bStocks。
     bStockCommunities.value = bStocks
     bStocksLoaded.value = true
@@ -286,7 +285,7 @@ function filterDust(list: Community[]) {
 
 /** TagCoin 排除 CA 已识别为 bStocks 的导入社区。 */
 function filterTagCoins(list: Community[]) {
-  return filterDust(list).filter((community) => !isBStockCommunity(community))
+  return filterDust(list).filter((community) => !isActiveChainBStock(community))
 }
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
@@ -316,7 +315,6 @@ watch([activeMainMenu, coinSubMenu], () => {
 
 watch(() => chainStore.activeChainId, () => {
   bStockCommunities.value = []
-  robinhoodStockTokens.value = new Set()
   bStocksLoaded.value = false
   ensureCoinListLoaded()
 })

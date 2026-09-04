@@ -9,10 +9,12 @@ import { getCommunityByMarketCap } from '@/apis/api'
 import { getTokenInfo } from '@/utils/pump'
 import { handleErrorTip } from '@/utils/notify'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
-import { isBscBStockToken } from '@/config/bstocks'
+import { isBStockCommunity, refreshRobinhoodBStockRegistry } from '@/config/bstocks'
+import { useChainStore } from '@/stores/chain'
 
 const comStore = useCommunityStore()
 const stateStore = useStateStore()
+const chainStore = useChainStore()
 const router = useRouter()
 
 const loading = ref(false)
@@ -38,7 +40,7 @@ const sortedTagCoins = computed(() => {
   }
   // 按市值排序
   return comStore.marketCapCommunities
-    .filter((community) => !isBscBStockToken(community.token))
+    .filter((community) => !isBStockCommunity(community, chainStore.activeChainId))
     .slice()
     .sort((a, b) => {
       const marketCapA = parseFloat(a.marketCap as any) || 0
@@ -86,6 +88,11 @@ onMounted(async () => {
       const communities = await getCommunityByMarketCap() as Array<Community>
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = communities
+        if (chainStore.deployment.key === 'rh') {
+          refreshRobinhoodBStockRegistry(communities.map((community) => community.token)).catch((error) => {
+            console.error('Load RH Router-supported stocks error:', error)
+          })
+        }
         getTokenInfo(communities).then((tokenInfo) => {
           comStore.marketCapCommunities = tokenInfo
         }).catch((e) => {

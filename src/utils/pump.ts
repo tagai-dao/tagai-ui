@@ -460,36 +460,25 @@ export const buildImportedTokenSwapSource = async (
         if (!pair || !isAddress(pair)) throw new Error('Imported V2 pair is unavailable')
         return {
             sourceType: 0,
-            sourceData: deployment.key === 'rh'
-                ? encodeAbiParameters(
-                    [{ type: 'address' }, { type: 'address' }],
-                    [deployment.dex.v2Factory, pair as `0x${string}`],
-                )
-                : encodeAbiParameters(V2_SOURCE_PARAMETERS, [{
-                    router: deployment.dex.v2Router,
-                    pair: pair as `0x${string}`,
-                }]),
+            sourceData: encodeAbiParameters(V2_SOURCE_PARAMETERS, [{
+                router: deployment.dex.v2Router,
+                pair: pair as `0x${string}`,
+            }]),
         }
     }
 
     if (dexVersion === 3) {
         if (!pair || !isAddress(pair)) throw new Error('Imported V3 pool is unavailable')
-        if (deployment.key === 'bsc' &&
-            (deployment.dex.v3SmartRouter === zeroAddress || deployment.dex.v3Quoter === zeroAddress)) {
+        if (deployment.dex.v3SmartRouter === zeroAddress || deployment.dex.v3Quoter === zeroAddress) {
             throw new Error('Imported V3 router or quoter is unavailable')
         }
         return {
             sourceType: 1,
-            sourceData: deployment.key === 'rh'
-                ? encodeAbiParameters(
-                    [{ type: 'address' }, { type: 'address' }],
-                    [deployment.dex.v3Factory, pair as `0x${string}`],
-                )
-                : encodeAbiParameters(V3_SOURCE_PARAMETERS, [{
-                    router: deployment.dex.v3SmartRouter,
-                    quoter: deployment.dex.v3Quoter,
-                    pool: pair as `0x${string}`,
-                }]),
+            sourceData: encodeAbiParameters(V3_SOURCE_PARAMETERS, [{
+                router: deployment.dex.v3SmartRouter,
+                quoter: deployment.dex.v3Quoter,
+                pool: pair as `0x${string}`,
+            }]),
         }
     }
 
@@ -932,7 +921,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         sellsman = zeroAddress;
     }
     const activeDeployment = useChainStore().deployment
-    if (isImport && (activeDeployment.key === 'bsc' || Number(version) >= 11)) {
+    if (isImport && Number(version) === 10) {
         const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
         if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
         const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
@@ -1060,7 +1049,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         sellsman = zeroAddress;
     }
     const activeDeployment = useChainStore().deployment
-    if (isImport && (activeDeployment.key === 'bsc' || Number(version) >= 11)) {
+    if (isImport && Number(version) === 10) {
         const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
         if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
         const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)

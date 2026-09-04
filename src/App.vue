@@ -6,15 +6,19 @@ import { EthWalletState, useAccountStore } from "./stores/web3";
 import { onMounted, onUnmounted } from "vue";
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
-import { getEthPrice, getUserProfile, resolveCommerce } from "@/apis/api"
+import { getEthPrice, getImportedCommunityInfo, getUserProfile, resolveCommerce } from "@/apis/api"
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useInterval } from "./composables/useTools";
 import { useAccount } from "./composables/useAccount";
 import emitter from "./utils/emitter";
 import { isAddress } from "viem";
 import { useDocumentTitle } from "./composables/useDocumentTitle";
+import { useChainStore } from "./stores/chain";
+import { refreshRobinhoodBStockRegistry } from "./config/bstocks";
+import type { Community } from "./types";
 
 const stateStore = useStateStore();
+const chainStore = useChainStore();
 const route = useRoute();
 const router = useRouter();
 const { setInter } = useInterval();
@@ -53,6 +57,15 @@ onMounted(async () => {
   await router.isReady();
   
   initPlugin();
+  if (chainStore.deployment.key === 'rh') {
+    // Preload the Router-backed stock registry without blocking first paint.
+    getImportedCommunityInfo().then((communities) => {
+      const rows = (communities || []) as Community[]
+      return refreshRobinhoodBStockRegistry(rows.map((community) => community.token))
+    }).catch((error) => {
+      console.error('Preload RH Router-supported stocks error:', error)
+    })
+  }
   const { referee } = route.query;
   const account = useAccountStore().getAccountInfo
   if (referee) {

@@ -1,5 +1,12 @@
+import { reactive } from 'vue'
+import { isAddress, parseAbi, zeroAddress, type Address } from 'viem'
+import { getChainDeployment } from '@/config/chains'
+import { getReadOnlyClient } from '@/utils/wallets'
+
 /**
- * Canonical BNB Chain bStocks contract addresses.
+ * Canonical BNB Chain bStocks contract addresses. RH is intentionally not
+ * hard-coded: its supported set is read from the active ImportedTokenSwapWrapper
+ * and NutboxRouter when the app starts.
  *
  * Community classification must use the token contract address, never the
  * community tick: imported communities may choose a different display symbol.
@@ -29,3 +36,152 @@ const BSC_BSTOCK_TOKEN_ADDRESS_SET = new Set<string>(
 
 export const isBscBStockToken = (address?: string | null): boolean =>
   !!address && BSC_BSTOCK_TOKEN_ADDRESS_SET.has(address.toLowerCase())
+
+const ROBINHOOD_CHAIN_ID = 4663
+const importedTokenSwapWrapperAbi = parseAbi([
+  'function nutboxRouter() view returns (address)',
+])
+const nutboxRouterAbi = parseAbi([
+  'function wrappedNative() view returns (address)',
+  'function hasRoute(address tokenIn, address tokenOut) view returns (bool)',
+])
+
+export type RobinhoodBStockRegistryStatus = 'idle' | 'loading' | 'loaded' | 'error'
+
+/**
+ * Mutable snapshots are replaced instead of edited so Vue computed values that
+ * call isBStockCommunity() are invalidated after the on-chain reads complete.
+ */
+export const robinhoodBStockRegistry = reactive({
+  status: 'idle' as RobinhoodBStockRegistryStatus,
+  supportedTokens: new Set<string>(),
+})
+
+const checkedRobinhoodTokens = new Set<string>()
+let pendingRobinhoodRefresh: Promise<ReadonlySet<string>> | null = null
+
+const normalizeAddresses = (addresses: Iterable<string | null | undefined>): Address[] => {
+  const unique = new Map<string, Address>()
+  for (const address of addresses) {
+    if (!address || !isAddress(address)) continue
+    const normalized = address.toLowerCase()
+    if (normalized === zeroAddress) continue
+    unique.set(normalized, address as Address)
+  }
+  return [...unique.values()]
+}
+
+/**
+ * Resolve which candidate RH tokens are currently supported by the Router.
+ *
+ * NutboxRouter does not expose an enumerable route list, so the frontend asks
+ * hasRoute(token, wrappedNative) in one multicall for the imported communities
+ * returned by the API. The Router address itself is read from the deployed
+ * wrapper, keeping classification aligned with the contract used for trading.
+ */
+export async function refreshRobinhoodBStockRegistry(
+  addresses: Iterable<string | null | undefined>,
+  options: { force?: boolean } = {},
+): Promise<ReadonlySet<string>> {
+  const candidates = normalizeAddresses(addresses)
+
+  if (pendingRobinhoodRefresh) {
+    await pendingRobinhoodRefresh
+    return refreshRobinhoodBStockRegistry(candidates, options)
+  }
+
+  const targets = options.force
+    ? candidates
+    : candidates.filter((address) => !checkedRobinhoodTokens.has(address.toLowerCase()))
+
+  if (!targets.length) {
+    if (robinhoodBStockRegistry.status === 'idle') robinhoodBStockRegistry.status = 'loaded'
+    return robinhoodBStockRegistry.supportedTokens
+  }
+
+  robinhoodBStockRegistry.status = 'loading'
+  pendingRobinhoodRefresh = (async () => {
+    const deployment = getChainDeployment(ROBINHOOD_CHAIN_ID)
+    const client = getReadOnlyClient(ROBINHOOD_CHAIN_ID)
+    const router = await client.readContract({
+      address: deployment.contracts.importedTokenSwapWrapper,
+      abi: importedTokenSwapWrapperAbi,
+      functionName: 'nutboxRouter',
+    })
+    if (!isAddress(router) || router === zeroAddress) {
+      throw new Error('RH ImportedTokenSwapWrapper returned an invalid NutboxRouter')
+    }
+
+    const wrappedNative = await client.readContract({
+      address: router,
+      abi: nutboxRouterAbi,
+      functionName: 'wrappedNative',
+    })
+    if (!isAddress(wrappedNative) || wrappedNative === zeroAddress) {
+      throw new Error('RH NutboxRouter returned an invalid wrapped-native token')
+    }
+
+    const results = await client.multicall({
+      allowFailure: true,
+      contracts: targets.map((token) => ({
+        address: router,
+        abi: nutboxRouterAbi,
+        functionName: 'hasRoute' as const,
+        args: [token, wrappedNative] as const,
+      })),
+    })
+
+    const nextSupported = new Set(robinhoodBStockRegistry.supportedTokens)
+    targets.forEach((token, index) => {
+      const normalized = token.toLowerCase()
+      checkedRobinhoodTokens.add(normalized)
+      if (results[index]?.status === 'success' && results[index].result === true) {
+        nextSupported.add(normalized)
+      } else if (options.force) {
+        nextSupported.delete(normalized)
+      }
+    })
+    robinhoodBStockRegistry.supportedTokens = nextSupported
+    robinhoodBStockRegistry.status = 'loaded'
+    return nextSupported
+  })()
+
+  try {
+    return await pendingRobinhoodRefresh
+  } catch (error) {
+    robinhoodBStockRegistry.status = 'error'
+    throw error
+  } finally {
+    pendingRobinhoodRefresh = null
+  }
+}
+
+export const isRobinhoodBStockToken = (address?: string | null): boolean =>
+  !!address && robinhoodBStockRegistry.supportedTokens.has(address.toLowerCase())
+
+type BStockCommunityLike = {
+  token?: string | null
+  chainId?: number | string | null
+  assetCategory?: string | null
+  isStockToken?: boolean | null
+}
+
+/** Chain-aware bStock classification shared by the main and sidebar lists. */
+export const isBStockCommunity = (
+  community: BStockCommunityLike,
+  fallbackChainId: number,
+): boolean => {
+  const declaredChainId = Number(community.chainId)
+  const chainId = Number.isFinite(declaredChainId) && declaredChainId > 0
+    ? declaredChainId
+    : fallbackChainId
+
+  if (chainId === 56) return isBscBStockToken(community.token)
+  if (chainId !== ROBINHOOD_CHAIN_ID) return false
+
+  const isRouterSupported = isRobinhoodBStockToken(community.token)
+  if (robinhoodBStockRegistry.status === 'loaded') return isRouterSupported
+
+  // Avoid briefly leaking stocks into TagCoin while the startup multicall is in flight.
+  return isRouterSupported || community.assetCategory === 'stock' || community.isStockToken === true
+}
