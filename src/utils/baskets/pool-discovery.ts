@@ -30,7 +30,7 @@ const tokenSymbolAbi = parseAbi(['function symbol() view returns (string)'])
 export type BasketPoolCandidate = {
   id: string
   venue: 0 | 1 | 3
-  label: 'Uniswap V4' | 'Uniswap V3' | 'Pancake Infinity' | 'Pancake V3' | 'Pancake V2'
+  label: 'Uniswap V4' | 'Uniswap V3' | 'Uniswap V2' | 'Pancake Infinity' | 'Pancake V3' | 'Pancake V2'
   pairLabel: string
   fee: number
   tickSpacing: number | null
@@ -70,23 +70,13 @@ const poolCompatibilityIssue = (pool: DexPoolInfo, asset: Address, chainId: numb
   const tokens = [pool.baseToken, pool.quoteToken]
   if (!tokens.some((token) => sameAddress(token, asset))) return rejection('metadataTokenMismatch')
   if (pool.dexVersion === 4) {
-    if (chainId === 56) return null
-    if (tokens.some((token) => sameAddress(token, zeroAddress))) return null
-    return rejection('directRouteRequired', {
-      venue: chainId === 56 ? 'Infinity' : 'V4',
-      quotes: chainId === 56 ? 'BNB or USDT' : deployment.nativeSymbol,
-    })
+    return null
   }
   if (pool.dexVersion === 3) {
     if (!isAddress(pool.pairAddress)) return rejection('invalidPoolAddress', { venue: 'V3' })
-    if (chainId === 56) return null
-    if (tokens.some((token) => sameAddress(token, deployment.contracts.wrappedNative))) return null
-    return rejection('directRouteRequired', {
-      venue: 'V3',
-      quotes: chainId === 56 ? 'WBNB or USDT' : deployment.wrappedNativeSymbol,
-    })
+    return null
   }
-  if (pool.dexVersion === 2 && chainId === 56 && isAddress(pool.pairAddress)) return null
+  if (pool.dexVersion === 2 && isAddress(pool.pairAddress)) return null
   return rejection('v2Unsupported')
 }
 
@@ -126,15 +116,11 @@ const resolveCandidate = async (
       : Number(key.tickSpacing)
     let poolQuoteToken: Address | undefined
     let poolQuoteSymbol: string = deployment.nativeSymbol
-    if (chainId === 56) {
-      if (!sameAddress(key.currency0, asset) && !sameAddress(key.currency1, asset)) {
-        failDiscovery('poolTokenMismatch', { venue: 'Infinity' })
-      }
-      poolQuoteToken = otherToken(key.currency0, key.currency1, asset)
-      poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId)
-    } else if (!sameAddress(key.currency0, zeroAddress) || !sameAddress(key.currency1, asset)) {
-      failDiscovery('directRouteRequired', { venue: 'V4', quotes: deployment.nativeSymbol })
+    if (!sameAddress(key.currency0, asset) && !sameAddress(key.currency1, asset)) {
+      failDiscovery('poolTokenMismatch', { venue: chainId === 56 ? 'Infinity' : 'V4' })
     }
+    poolQuoteToken = otherToken(key.currency0, key.currency1, asset)
+    poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId)
     const route = buildCustomRoute({
       asset,
       venue: 0,
@@ -142,7 +128,7 @@ const resolveCandidate = async (
       fee: key.fee,
       tickSpacing,
       hooks: key.hooks,
-      ...(chainId === 56 ? { poolKey: { ...key, tickSpacing } } : {}),
+      poolKey: { ...key, tickSpacing },
     })
     await assertBasketRouteUsable(route, asset, chainId)
     return {
@@ -171,19 +157,14 @@ const resolveCandidate = async (
     const tokens = [token0.toLowerCase(), token1.toLowerCase()]
     if (!tokens.includes(asset.toLowerCase())) failDiscovery('poolTokenMismatch', { venue: 'V3' })
     const poolQuoteToken = otherToken(token0, token1, asset)
-    if (chainId !== 56 && !sameAddress(poolQuoteToken, deployment.contracts.wrappedNative)) {
-      failDiscovery('directRouteRequired', { venue: 'V3', quotes: deployment.wrappedNativeSymbol })
-    }
-    if (chainId === 56) {
-      const factory = getBasketProtocol(chainId, 3).v3Factory
-      if (!factory) failDiscovery('v3NotConfigured')
-      const canonical = await client.readContract({
-        address: factory!, abi: v3FactoryAbi, functionName: 'getPool', args: [asset, poolQuoteToken, fee],
-      })
-      if (!sameAddress(canonical, poolAddress)) failDiscovery('unsupportedFactory', { venue: 'V3' })
-    }
+    const factory = getBasketProtocol(chainId, 3).v3Factory
+    if (!factory) failDiscovery('v3NotConfigured')
+    const canonical = await client.readContract({
+      address: factory!, abi: v3FactoryAbi, functionName: 'getPool', args: [asset, poolQuoteToken, fee],
+    })
+    if (!sameAddress(canonical, poolAddress)) failDiscovery('unsupportedFactory', { venue: 'V3' })
     const poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId)
-    const route = buildCustomRoute({ asset, venue: 1, poolQuoteToken: chainId === 56 ? poolQuoteToken : undefined, fee: Number(fee) })
+    const route = buildCustomRoute({ asset, venue: 1, poolQuoteToken, fee: Number(fee) })
     await assertBasketRouteUsable(route, asset, chainId)
     return {
       id: poolAddress,
@@ -200,7 +181,7 @@ const resolveCandidate = async (
       route,
     }
   }
-  if (pool.dexVersion === 2 && chainId === 56 && isAddress(pool.pairAddress)) {
+  if (pool.dexVersion === 2 && isAddress(pool.pairAddress)) {
     const pairAddress = getAddress(pool.pairAddress)
     const client = getReadOnlyClient(chainId)
     const [token0, token1] = await Promise.all([
@@ -220,7 +201,7 @@ const resolveCandidate = async (
     return {
       id: pairAddress,
       venue: 3,
-      label: 'Pancake V2',
+      label: chainId === 56 ? 'Pancake V2' : 'Uniswap V2',
       pairLabel: `${assetSymbol || 'TOKEN'}/${poolQuoteSymbol}`,
       fee: 2_500,
       tickSpacing: null,

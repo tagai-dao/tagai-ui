@@ -317,7 +317,7 @@ const updateBuyAmount = debounce(async (val: any) => {
   }
   let receive: bigint
   let spot = 0
-  if (community?.isImport && chainStore.deployment.key === 'bsc') {
+  if (community?.isImport && (chainStore.deployment.key === 'bsc' || Number(community.version) >= 11)) {
     const dexVersion = Number(community.dexVersion ?? 2)
     const recipient = accStore.ethConnectAddress
     const sellsman = stateStore.sellsman ?? community.ipshare
@@ -339,7 +339,8 @@ const updateBuyAmount = debounce(async (val: any) => {
       if (chainStore.deployment.dex.kind !== 'pancake') {
         const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
         if (!poolKey) throw new Error('invalid RH V4 PoolKey')
-        receive = await quoteRhV4(poolKey, amount, true, !usesDirectRhV4Trade(community))
+        receive = await quoteRhV4(poolKey, amount, true, !usesDirectRhV4Trade(community),
+          Boolean(community.isImport && Number(community.version) < 11))
         const poolId = resolveV4PoolId(community!.pair)
         try { spot = poolId ? await getRhV4SpotPrice(poolId) : 0 } catch (e) { console.warn('getRhV4SpotPrice failed', e) }
       } else {
@@ -437,7 +438,7 @@ const updateSellAmount = debounce(async (val: any) => {
     }
     let receive: bigint
     let spot = 0
-    if (community?.isImport && chainStore.deployment.key === 'bsc') {
+    if (community?.isImport && (chainStore.deployment.key === 'bsc' || Number(community.version) >= 11)) {
       const dexVersion = Number(community.dexVersion ?? 2)
       receive = await quoteImportedTokenSell(community.token!, community.pair, dexVersion, amount)
       try {
@@ -453,7 +454,8 @@ const updateSellAmount = debounce(async (val: any) => {
         if (chainStore.deployment.dex.kind !== 'pancake') {
           const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
           if (!poolKey) throw new Error('invalid RH V4 PoolKey')
-          receive = await quoteRhV4(poolKey, amount, false, !usesDirectRhV4Trade(community))
+          receive = await quoteRhV4(poolKey, amount, false, !usesDirectRhV4Trade(community),
+            Boolean(community.isImport && Number(community.version) < 11))
           const poolId = resolveV4PoolId(community!.pair)
           try { spot = poolId ? await getRhV4SpotPrice(poolId) : 0 } catch (e) { console.warn('getRhV4SpotPrice failed', e) }
         } else {
@@ -618,7 +620,7 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (usesListedV4Quote(token) && listed.value && !(token.isImport && chainStore.deployment.key === 'bsc')) {
+      if (usesListedV4Quote(token) && listed.value && !(token.isImport && (chainStore.deployment.key === 'bsc' || Number(token.version) >= 11))) {
         const ethAmount = parseEther(payEth.value.toString());
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
@@ -627,7 +629,8 @@ async function confirm() {
           hash = usesDirectRhV4Trade(token)
             ? await buyTokenV4RhDirect(poolKey, ethAmount, receiveAmount.value, sellsman,
                 Math.ceil(maxSlippage.value * 100))
-            : await buyTokenV4Rh(poolKey, ethAmount, receiveAmount.value, sellsman)
+            : await buyTokenV4Rh(poolKey, ethAmount, receiveAmount.value, sellsman,
+                Boolean(token.isImport && Number(token.version) < 11))
         } else {
           const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
           if (!poolKey) throw new Error('invalid V4 pool')
@@ -642,7 +645,7 @@ async function confirm() {
         // Re-simulate immediately before submission. Imported V2/V3 tokens may
         // deduct a transfer fee that quoteBuy cannot predict; slippage must be
         // applied to the actual net amount delivered by buyToken.
-        const expectedAmount = token.isImport && chainStore.deployment.key === 'bsc'
+        const expectedAmount = token.isImport && (chainStore.deployment.key === 'bsc' || Number(token.version) >= 11)
           ? await simulateImportedTokenBuy(
               token.token, tradePair, Number(token.dexVersion ?? 2), buyValue,
               accStore.ethConnectAddress, sellsman,
@@ -668,7 +671,7 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (usesListedV4Quote(token) && listed.value && !(token.isImport && chainStore.deployment.key === 'bsc')) {
+      if (usesListedV4Quote(token) && listed.value && !(token.isImport && (chainStore.deployment.key === 'bsc' || Number(token.version) >= 11))) {
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
           if (!poolKey || !receiveEth.value) throw new Error('RH V4 PoolKey or quote is unavailable')
@@ -677,7 +680,7 @@ async function confirm() {
             ? await sellTokenV4RhDirect(poolKey, token.token as `0x${string}`, finalSellAmount,
                 receiveEth.value, sellsman, Math.ceil(maxSlippage.value * 100))
             : await sellTokenV4Rh(poolKey, token.token as `0x${string}`, finalSellAmount,
-                receiveEth.value, sellsman)
+                receiveEth.value, sellsman, Boolean(token.isImport && Number(token.version) < 11))
         } else {
           const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
           if (!poolKey) throw new Error('invalid V4 pool')

@@ -3,7 +3,7 @@ import { getBasketDeployment, toContractPoolKey } from '@/config/baskets'
 import type { BasketLegRoute } from './types'
 
 export const isBscBasketV3 = (chainId: number, version?: number): boolean =>
-  chainId === 56 && Number(version) >= 3
+  (chainId === 56 || chainId === 4663) && Number(version) >= 3
 
 export const getPoolQuoteToken = (
   route: BasketLegRoute,
@@ -12,7 +12,7 @@ export const getPoolQuoteToken = (
 ): Address => {
   const deployment = getBasketDeployment(chainId)
   if (isBscBasketV3(chainId, version)) {
-    if (!route.poolQuoteToken) throw new Error('BSC Basket V3 route is missing its direct pool quote token')
+    if (!route.poolQuoteToken) throw new Error('Basket V3 route is missing its direct pool quote token')
     return route.poolQuoteToken
   }
   if (chainId === 56) {
@@ -29,7 +29,7 @@ export const toContractLegRoute = (
   version?: number,
 ) => {
   if (isBscBasketV3(chainId, version)) {
-    if (!route.poolQuoteToken) throw new Error('BSC Basket V3 route is missing its direct pool quote token')
+    if (!route.poolQuoteToken) throw new Error('Basket V3 route is missing its direct pool quote token')
     return {
       venue: route.venue,
       poolQuoteToken: route.poolQuoteToken,

@@ -104,14 +104,15 @@ const normalizePool = (raw: any, chainId: number): BasketPoolKey => chainId === 
       hooks: (raw?.hooks ?? raw?.[4]) as Address,
     }
 
-const normalizeRoute = (raw: any, chainId: number, version = 0): BasketLegRoute => chainId === 56
-  ? isBscBasketV3(chainId, version) ? {
+const normalizeRoute = (raw: any, chainId: number, version = 0): BasketLegRoute => isBscBasketV3(chainId, version)
+  ? {
       venue: Number(raw?.venue ?? raw?.[0] ?? 0),
       poolQuoteToken: (raw?.poolQuoteToken ?? raw?.[1] ?? zeroAddress) as Address,
       v4Pool: normalizePool(raw?.v4Pool ?? raw?.[2], chainId),
       v3Fee: Number(raw?.v3Fee ?? raw?.[3] ?? 0),
       defaultMaxExecutionLossBps: Number(raw?.defaultMaxExecutionLossBps ?? raw?.[4] ?? 0),
-    } : {
+    }
+  : chainId === 56 ? {
       venue: Number(raw?.venue ?? raw?.[0] ?? 0),
       quoteToken: Number(raw?.quoteToken ?? raw?.[1] ?? 0) === 1 ? 1 : 0,
       v4Pool: normalizePool(raw?.v4Pool ?? raw?.[2], chainId),
@@ -290,7 +291,7 @@ export const getBasketDetail = async (
   }
 
   if (registered) {
-    const contractsConfig = getBasketProtocol(chainId, chainId === 56 ? registered.version : undefined)
+    const contractsConfig = getBasketProtocol(chainId, registered.version)
     const tokenAbi = getBasketTokenAbi(chainId, registered.version)
     const executorAbi = getRebalanceExecutorAbi(chainId, registered.version)
     const bscV3 = isBscBasketV3(chainId, registered.version)
@@ -446,7 +447,7 @@ export const getBasketDetail = async (
   const effectiveSupplyRaw = ok<bigint>(meta[9]) ?? 0n
   const creator = ok<Address>(meta[10])
   const version = Number(ok<number>(meta[11]) ?? 0)
-  const contractsConfig = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
+  const contractsConfig = getBasketProtocol(chainId, version)
   const tokenAbi = getBasketTokenAbi(chainId, version)
   const executorAbi = getRebalanceExecutorAbi(chainId, version)
   const bscV3 = isBscBasketV3(chainId, version)
@@ -634,7 +635,7 @@ export const listBaskets = async (
   }
 
   registered.forEach((basket, basketIndex) => {
-    const contractsConfig = getBasketProtocol(chainId, chainId === 56 ? basket.version : undefined)
+    const contractsConfig = getBasketProtocol(chainId, basket.version)
     const tokenAbi = getBasketTokenAbi(chainId, basket.version)
     const executorAbi = getRebalanceExecutorAbi(chainId, basket.version)
     const bscV3 = isBscBasketV3(chainId, basket.version)

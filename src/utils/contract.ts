@@ -54,7 +54,7 @@ const ContractAddress = {
 
 /** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
 const CHAIN_SCOPED_CONTRACTS = new Set([
-    'Pump9', 'Pump11', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'Pump9', 'Pump11', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
     'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
 ])
 
@@ -80,6 +80,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
         ImportHelper: c.importHelper,
         ImportedTokenSwapWrapper: c.importedTokenSwapWrapper,
         TagAISwapWrapper: c.tagAiSwapWrapper,
+        LegacyTagAISwapWrapper: c.legacyTagAiSwapWrapper,
         WrapSwaper: c.tagAiSwapWrapper,
         WrapSwaper2: c.tagAiSwapWrapper,
         HourlyTickCalculator: c.hourlyTickCalculator,

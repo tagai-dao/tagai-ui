@@ -45,7 +45,7 @@ const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: numb
     if ((sellMask & (1 << index)) === 0) continue
     const holding = detail.holdings[index]
     maxAssetIn[index] = applyInputCeiling(assetIn[index], slippageBps)
-    const quoted = await quoteBscV3AssetToSettlement(holding.route, holding.asset, assetIn[index])
+    const quoted = await quoteBscV3AssetToSettlement(holding.route, holding.asset, assetIn[index], detail.chainId)
     minSettlementOut[index] = applySlippage(quoted, slippageBps)
   }
 
@@ -65,7 +65,7 @@ const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: numb
     allocated += protectedIn
     maxSettlementIn[index] = applyInputCeiling(settlementIn[index], slippageBps)
     const holding = detail.holdings[index]
-    const quoted = await quoteBscV3SettlementToAsset(holding.route, holding.asset, protectedIn)
+    const quoted = await quoteBscV3SettlementToAsset(holding.route, holding.asset, protectedIn, detail.chainId)
     minAssetOut[index] = applySlippage(quoted, slippageBps)
   }
 
@@ -98,7 +98,7 @@ export const buildRebalanceLimits = async (detail: BasketDetail, slippageBps: nu
     }
   }
   const deployment = getBasketDeployment(detail.chainId)
-  const protocol = getBasketProtocol(detail.chainId, detail.chainId === 56 ? detail.version : undefined)
+  const protocol = getBasketProtocol(detail.chainId, detail.version)
   const tokenAbi = getBasketTokenAbi(detail.chainId, detail.version)
   const executorAbi = getRebalanceExecutorAbi(detail.chainId, detail.version)
   const quoteAssetFunction = detail.chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'

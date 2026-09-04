@@ -66,6 +66,6 @@ export const usesListedV4Quote = (community?: ListedV4Community | null): boolean
     return trimmed.startsWith('0x') && trimmed.length === 66
 }
 
-/** RH Pump9 上市币直接走 Uniswap V4 Universal Router，不经过 TagAISwapWrapper。 */
+/** RH Pump9/V11 官方上市币直接走 Uniswap V4 Universal Router。 */
 export const usesDirectRhV4Trade = (community?: ListedV4Community | null): boolean =>
-    !!community?.listed && normalizePumpVersion(community.version) === 9 && !community.isImport
+    !!community?.listed && [9, 11].includes(normalizePumpVersion(community.version)) && !community.isImport

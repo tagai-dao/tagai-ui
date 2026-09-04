@@ -184,10 +184,10 @@ export const resolveRhV4PoolKeyForTrade = async (pair: string | null | undefined
   return null
 }
 
-const requireRhV4 = () => {
+const requireRhV4 = (legacyWrapper = false) => {
   const deployment = useChainStore().deployment
   if (deployment.dex.kind !== 'uniswap') throw new Error('RH V4 called outside an Uniswap chain')
-  const wrapper = resolveContractAddress('TagAISwapWrapper')
+  const wrapper = resolveContractAddress(legacyWrapper ? 'LegacyTagAISwapWrapper' : 'TagAISwapWrapper')
   if (!wrapper || deployment.dex.v4PoolManager === zeroAddress) {
     throw new Error(`RH V4 contracts are not configured on ${deployment.name}`)
   }
@@ -213,10 +213,11 @@ const requireConnectedAddress = (): `0x${string}` => {
   return address
 }
 
-export const getRhWrapperFeeBps = async (): Promise<number> => {
+export const getRhWrapperFeeBps = async (legacyWrapper = false): Promise<number> => {
+  const { wrapper } = requireRhV4(legacyWrapper)
   const [sellsman, tagai] = await Promise.all([
-    readContract('TagAISwapWrapper', 'sellsmanRatio', []) as Promise<number>,
-    readContract('TagAISwapWrapper', 'tagaiRatio', []) as Promise<number>,
+    readContract('TagAISwapWrapper', 'sellsmanRatio', [], wrapper) as Promise<number>,
+    readContract('TagAISwapWrapper', 'tagaiRatio', [], wrapper) as Promise<number>,
   ])
   return Number(sellsman) + Number(tagai)
 }
@@ -241,10 +242,11 @@ export const quoteRhV4 = async (
   amountIn: bigint,
   buying: boolean,
   includeWrapperFee = true,
+  legacyWrapper = false,
 ): Promise<bigint> => {
-  const { deployment } = requireRhV4()
+  const { deployment } = requireRhV4(legacyWrapper)
   if (deployment.dex.v4Quoter === zeroAddress) throw new Error(`Uniswap V4 Quoter is not configured on ${deployment.name}`)
-  const feeBps = includeWrapperFee ? await getRhWrapperFeeBps() : 0
+  const feeBps = includeWrapperFee ? await getRhWrapperFeeBps(legacyWrapper) : 0
   const quotedInput = buying ? amountIn * BigInt(10_000 - feeBps) / 10_000n : amountIn
   const nativeIs0 = poolKey.currency0 === zeroAddress || poolKey.currency0.toLowerCase() === deployment.wrappedNative.toLowerCase()
   const zeroForOne = buying ? nativeIs0 : !nativeIs0
@@ -441,14 +443,16 @@ export const buyTokenV4Rh = async (
   ethAmount: bigint,
   amountOutMin: bigint,
   sellsman?: string | null,
+  legacyWrapper = false,
 ) => {
-  const { deployment } = requireRhV4()
+  const { deployment, wrapper } = requireRhV4(legacyWrapper)
   const recipient = requireConnectedAddress()
   return writeContract({
     contractName: 'TagAISwapWrapper', functionName: 'buyTokenV4',
     args: [normalizeSellsman(sellsman), amountOutMin, poolKey, recipient,
       deployment.dex.v4PoolManager, 0n],
     value: ethAmount,
+    address: wrapper,
   })
 }
 
@@ -458,8 +462,9 @@ export const sellTokenV4Rh = async (
   amountIn: bigint,
   amountOutMin: bigint,
   sellsman?: string | null,
+  legacyWrapper = false,
 ) => {
-  const { deployment, wrapper } = requireRhV4()
+  const { deployment, wrapper } = requireRhV4(legacyWrapper)
   const owner = requireConnectedAddress()
   const normalizedSellsman = normalizeSellsman(sellsman)
   const allowance = await readContract('Token1', 'allowance', [owner, wrapper], token) as bigint
@@ -469,5 +474,6 @@ export const sellTokenV4Rh = async (
   return writeContract({
     contractName: 'TagAISwapWrapper', functionName: 'sellTokenV4',
     args: [amountIn, amountOutMin, poolKey, owner, normalizedSellsman, deployment.dex.v4PoolManager, 0n],
+    address: wrapper,
   })
 }
