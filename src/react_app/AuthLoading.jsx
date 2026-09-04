@@ -1,4 +1,4 @@
-import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy, useSignMessage} from "@privy-io/react-auth";
+import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy, useSignMessage, useCreateWallet} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
 import {useEffect, useRef, useState} from "react";
@@ -12,23 +12,124 @@ export default function AuthLoading() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
     const {wallets, ready} = useWallets()
     const { getAccessToken } = usePrivy();
+    const { createWallet } = useCreateWallet();
     const { signMessage } = useSignMessage();
     const accStore = useAccountStore();
     const privyStore = usePrivyStore();
     const [ bondingAddress, setBondingAddress ] = useState(false);
+    const walletsRef = useRef(wallets);
+    walletsRef.current = wallets;
 
     /** 最近一次 Twitter OAuth + privyLogin 返回的 userInfo，用于钱包就绪后补绑 */
     const [oauthTwitterSession, setOauthTwitterSession] = useState(null);
+    /** Email login modal unmounts after authSuccess, so its pending wallet work lives here. */
+    const [pendingEmailWalletBinding, setPendingEmailWalletBinding] = useState(null);
+    const emailWalletBindingInFlightRef = useRef(false);
     /** 本会话是否已处理过「钱包就绪后的绑定点」（避免 StrictMode / 重复 effect 二次提交） */
     const oauthTwitterBondConsumedRef = useRef(false);
     const nativeWalletSmokeConsumedRef = useRef(false);
 
     const findEmbeddedEthWallet = () =>
-        wallets.find((w) =>
-            w.walletClientType === 'privy' &&
+        walletsRef.current.find((w) =>
             w.type === 'ethereum' &&
-            w.connectorType === 'embedded'
+            (w.walletClientType === 'privy' || w.connectorType === 'embedded')
         );
+
+    useEffect(() => {
+        const handleWalletBindingRequest = (request) => {
+            if (!request?.identity || request?.accountType !== 1) return;
+            privyStore.walletBinding = true;
+            setPendingEmailWalletBinding(request);
+        };
+
+        emitter.on('privyWalletBindingRequested', handleWalletBindingRequest);
+        return () => emitter.off('privyWalletBindingRequested', handleWalletBindingRequest);
+    }, []);
+
+    /**
+     * Email login is rendered inside a modal, but wallet creation can complete
+     * after that modal closes. Keep the whole create -> provider -> verified
+     * backend binding sequence in this persistent component.
+     */
+    useEffect(() => {
+        if (!pendingEmailWalletBinding || !ready || emailWalletBindingInFlightRef.current) {
+            return;
+        }
+
+        emailWalletBindingInFlightRef.current = true;
+        (async () => {
+            try {
+                let wallet = findEmbeddedEthWallet();
+                if (!wallet) {
+                    // Give createOnLogin a short opportunity to publish its
+                    // result before invoking the explicit fallback, avoiding
+                    // two concurrent wallet-creation requests.
+                    await new Promise(resolve => window.setTimeout(resolve, 750));
+                    wallet = findEmbeddedEthWallet();
+                }
+                if (!wallet) {
+                    // createOnLogin normally handles this. Explicit creation is
+                    // required for accounts whose automatic creation is delayed
+                    // or was interrupted by the login modal closing.
+                    wallet = await createWallet();
+                }
+
+                if (!wallet?.address) {
+                    throw new Error('Privy did not return an embedded Ethereum wallet');
+                }
+
+                const provider = await wallet.getEthereumProvider();
+                privyStore.ethersProvider = provider;
+                emitter.emit('walletProvider', provider);
+
+                const { identity, accountType, userInfo } = pendingEmailWalletBinding;
+                const backendAddr = userInfo?.ethAddr
+                    ? String(userInfo.ethAddr).toLowerCase()
+                    : '';
+                const needsBinding = backendAddr !== wallet.address.toLowerCase();
+
+                if (needsBinding) {
+                    const privyAccessToken = await getAccessToken();
+                    if (!privyAccessToken) {
+                        throw new Error('Failed to get Privy access token for wallet binding');
+                    }
+
+                    // Privy's client wallet can be ready shortly before the
+                    // Admin API linked_accounts view. Retry that propagation
+                    // window while keeping the binding server-verified.
+                    let bindingError;
+                    for (let attempt = 0; attempt < 5; attempt += 1) {
+                        try {
+                            await bondEthByPrivyAccToken(identity, wallet.address, privyAccessToken);
+                            bindingError = null;
+                            break;
+                        } catch (error) {
+                            bindingError = error;
+                            if (attempt < 4) {
+                                await new Promise(resolve => window.setTimeout(resolve, 500 * (attempt + 1)));
+                            }
+                        }
+                    }
+                    if (bindingError) throw bindingError;
+                }
+
+                accStore.setAccount({
+                    ...accStore.getAccountInfo,
+                    ethAddr: wallet.address,
+                    walletType: 1,
+                    accountType,
+                });
+                await privyStore.initWallet();
+            } catch (error) {
+                console.error('Failed to create or bind email embedded wallet:', error);
+                emitter.emit('walletError', error);
+            } finally {
+                privyStore.walletBinding = false;
+                emailWalletBindingInFlightRef.current = false;
+                setPendingEmailWalletBinding(null);
+            }
+        })();
+    }, [pendingEmailWalletBinding, ready, wallets, getAccessToken, createWallet]);
 
     /**
      * createOnLogin 完成后 wallets 才出现；在此阶段按需 bond（替代原来的 createWallet + onSuccess）
@@ -135,7 +236,7 @@ export default function AuthLoading() {
                 // This effect reruns when bondingAddress becomes false. Waiting
                 // in-place would capture the old true value and loop forever.
                 if (bondingAddress) return;
-                const wallet = wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
+                const wallet = findEmbeddedEthWallet()
 
                 if (!wallet) {
                     return;
