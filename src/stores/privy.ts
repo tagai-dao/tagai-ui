@@ -13,10 +13,12 @@ export const usePrivyStore = defineStore("privy", () => {
   const viemWalletClient = ref<WalletClient | null>(null);
   const ethersProvider = ref<any>(null);
   const currentChain = ref<Chain>(customBsc);
+  const walletBinding = ref(false);
 
   async function logout() {
     viemWalletClient.value = null;
     ethersProvider.value = null;
+    walletBinding.value = false;
     currentChain.value = getChainById(useChainStore().activeChainId);
   }
 
@@ -96,8 +98,12 @@ export const usePrivyStore = defineStore("privy", () => {
       accStore.ethWalletType = 'privy';
       accStore.chainId = chain.id
     } catch (error) {
-      // logout
-      useAccountStore().clear();
+      // Wallet readiness is independent from the application login session.
+      // A temporarily unavailable provider must never sign the user out.
+      const accStore = useAccountStore();
+      accStore.ethConnectState = EthWalletState.Disconnect;
+      accStore.ethConnectAddress = '';
+      accStore.ethWalletType = 'none';
       console.error('Error initializing wallet:', error);
       throw error;
     }
@@ -107,6 +113,7 @@ export const usePrivyStore = defineStore("privy", () => {
     viemWalletClient: Ref<WalletClient | null>;
     ethersProvider: Ref<any>;
     currentChain: Ref<Chain>;
+    walletBinding: Ref<boolean>;
     initWallet: () => Promise<void>;
     logout: () => Promise<void>;
     switchChain: (chainId: number) => Promise<void>;
@@ -117,6 +124,7 @@ export const usePrivyStore = defineStore("privy", () => {
     viemWalletClient,
     ethersProvider,
     currentChain,
+    walletBinding,
     initWallet,
     logout,
     switchChain,

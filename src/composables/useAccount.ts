@@ -26,6 +26,10 @@ export enum AccountAuthType {
     IPSHARE
   }
 
+// Layout and WalletView can both observe provider/account readiness at nearly
+// the same time. Share one binding operation so they cannot submit twice.
+let bondEthAddressInFlight: Promise<boolean> | null = null
+
 export const useAccount = () => {
     const accountMismatch = computed(() => {
         const accStore = useAccountStore()
@@ -42,35 +46,50 @@ export const useAccount = () => {
 
     const { ethPrice } = useStateStore()
 
-    const bondEthAddress = async () => {
-        try {
-          const accStore = useAccountStore()
-          const privyStore = usePrivyStore()
-          const accInfo = accStore.getAccountInfo;
-          await privyStore.initWallet()
-      
-          accStore.setAccount({
-            ...accInfo,
-            walletType: 1
-          })
-      
-          // bind ethAddr for new login user
-          let signature = await signMessage(BondEthMessage);
-          if (!signature) {
-            throw new Error('Signature is null')
+    const bondEthAddress = async (): Promise<boolean> => {
+        if (bondEthAddressInFlight) return bondEthAddressInFlight
+
+        bondEthAddressInFlight = (async () => {
+          try {
+            const accStore = useAccountStore()
+            const privyStore = usePrivyStore()
+            const accInfo = accStore.getAccountInfo;
+
+            // Privy publishes the embedded-wallet provider asynchronously. The
+            // caller will retry when it becomes available.
+            if (!accInfo?.twitterId || !privyStore.ethersProvider) return false
+
+            await privyStore.initWallet()
+
+            accStore.setAccount({
+              ...accInfo,
+              walletType: 1
+            })
+
+            // bind ethAddr for new login user
+            const signature = await signMessage(BondEthMessage);
+            if (!signature) {
+              throw new Error('Signature is null')
+            }
+
+            console.log('new bond address')
+            await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
+
+            accStore.setAccount({
+              ...accInfo,
+              ethAddr: accStore.ethConnectAddress,
+              walletType: 1
+            })
+            return true
+          } catch (error) {
+            handleErrorTip(error)
+            return false
+          } finally {
+            bondEthAddressInFlight = null
           }
-          
-          console.log('new bond address')
-          await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
-      
-          accStore.setAccount({
-            ...accInfo,
-            ethAddr: accStore.ethConnectAddress,
-            walletType: 1
-          })
-        } catch (error) {
-          handleErrorTip(error)
-        }
+        })()
+
+        return bondEthAddressInFlight
       }
 
     const replaceEmptyProfile = (e: any) => {

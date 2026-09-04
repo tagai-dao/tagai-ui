@@ -6,6 +6,7 @@ import { bondEthByPrivyAccToken } from '@/apis/api.ts';
 import { sleep } from "@/utils/helper";
 import { useAccountStore } from "@/stores/web3";
 import {isNativePlatform} from "@/utils/native.ts";
+import {usePrivyStore} from "@/stores/privy";
 
 /** PrivyProvider 已配置 createOnLogin: 'all-users'，嵌入式钱包由 SDK 创建；此处仅在后端仍需绑定时调用 bond API */
 export default function AuthLoading() {
@@ -14,10 +15,11 @@ export default function AuthLoading() {
     const { getAccessToken } = usePrivy();
     const { signMessage } = useSignMessage();
     const accStore = useAccountStore();
+    const privyStore = usePrivyStore();
     const [ bondingAddress, setBondingAddress ] = useState(false);
 
     /** 最近一次 Twitter OAuth + privyLogin 返回的 userInfo，用于钱包就绪后补绑 */
-    const oauthTwitterSessionRef = useRef(null);
+    const [oauthTwitterSession, setOauthTwitterSession] = useState(null);
     /** 本会话是否已处理过「钱包就绪后的绑定点」（避免 StrictMode / 重复 effect 二次提交） */
     const oauthTwitterBondConsumedRef = useRef(false);
     const nativeWalletSmokeConsumedRef = useRef(false);
@@ -33,7 +35,7 @@ export default function AuthLoading() {
      * createOnLogin 完成后 wallets 才出现；在此阶段按需 bond（替代原来的 createWallet + onSuccess）
      */
     useEffect(() => {
-        const sessionInfo = oauthTwitterSessionRef.current;
+        const sessionInfo = oauthTwitterSession;
         if (!sessionInfo || oauthTwitterBondConsumedRef.current || !ready) {
             return;
         }
@@ -57,6 +59,7 @@ export default function AuthLoading() {
             (!sessionInfo.ethAddr || backendAddr !== wallet.address.toLowerCase());
 
         if (!needBond) {
+            privyStore.walletBinding = false;
             return;
         }
 
@@ -79,12 +82,13 @@ export default function AuthLoading() {
                 });
             } catch (error) {
                 console.error('Failed to bond twitter embedded wallet:', error);
-                emitter.emit('authError', error);
+                emitter.emit('walletError', error);
             } finally {
+                privyStore.walletBinding = false;
                 setBondingAddress(false);
             }
         })();
-    }, [ready, wallets, getAccessToken]);
+    }, [ready, wallets, getAccessToken, oauthTwitterSession]);
 
     // useEffect(() => {
     //     async function checkMfa() {
@@ -123,6 +127,9 @@ export default function AuthLoading() {
                     return;
                 }
                 const provider = await wallet.getEthereumProvider()
+                // Persist provider state directly as well as emitting the legacy
+                // event, so Vue initialization cannot miss a one-shot event.
+                privyStore.ethersProvider = provider
                 emitter.emit('walletProvider', provider)
 
                 if (isNativePlatform() && !nativeWalletSmokeConsumedRef.current) {
@@ -192,8 +199,9 @@ export default function AuthLoading() {
                 
                 console.log('Login success, userInfo:', userInfo)
                 // 嵌入式钱包由 Privy createOnLogin 创建；wallet 就绪后由 effect 决定是否 bondEthByPrivyAccToken
-                oauthTwitterSessionRef.current = userInfo;
                 oauthTwitterBondConsumedRef.current = false;
+                privyStore.walletBinding = true;
+                setOauthTwitterSession(userInfo);
                 emitter.emit('authSuccess', userInfo)
             } catch (error) {
                 console.error('Twitter OAuth token grant error:', error)
