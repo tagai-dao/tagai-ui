@@ -5252,7 +5252,14 @@ export const abis = {
     ],
     "ImportHelper": [
       {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"existingCommunity","type":"address"}],"name":"createCommunityAndPool","outputs":[{"internalType":"address","name":"community","type":"address"},{"internalType":"address","name":"pool","type":"address"}],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"calculator","type":"address"},{"internalType":"bytes","name":"distributionPolicy","type":"bytes"}],"name":"createCommunityAndPool","outputs":[{"internalType":"address","name":"community","type":"address"},{"internalType":"address","name":"pool","type":"address"}],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"calculator","type":"address"},{"internalType":"bytes","name":"distributionPolicy","type":"bytes"},{"internalType":"address","name":"existingCommunity","type":"address"}],"name":"createCommunityAndPool","outputs":[{"internalType":"address","name":"community","type":"address"},{"internalType":"address","name":"pool","type":"address"}],"stateMutability":"payable","type":"function"},
+      {"inputs":[{"internalType":"address","name":"token","type":"address"}],"name":"importerOf","outputs":[{"internalType":"address","name":"importer","type":"address"}],"stateMutability":"view","type":"function"},
       {"inputs":[],"name":"InsufficientFee","type":"error"},
+      {"inputs":[],"name":"InvalidCommunity","type":"error"},
+      {"inputs":[],"name":"InvalidRewardCalculator","type":"error"},
+      {"inputs":[],"name":"InvalidToken","type":"error"},
+      {"inputs":[],"name":"PumpTokenNotImportable","type":"error"},
       {"inputs":[],"name":"TokenAlreadyImported","type":"error"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"token","type":"address"},{"indexed":true,"internalType":"address","name":"community","type":"address"},{"indexed":true,"internalType":"address","name":"pool","type":"address"},{"indexed":false,"internalType":"address","name":"creator","type":"address"},{"indexed":false,"internalType":"address","name":"calculator","type":"address"}],"name":"CommunityCreated","type":"event"},
       {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"token","type":"address"},{"indexed":true,"internalType":"address","name":"community","type":"address"},{"indexed":true,"internalType":"address","name":"creator","type":"address"}],"name":"ImportedCommunityRecorded","type":"event"}
