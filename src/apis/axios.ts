@@ -15,7 +15,12 @@ axios.interceptors.request.use(
     const accountInfo = accStore.getAccountInfo;
     if (accountInfo && accountInfo.accessToken) {
       config.headers['AccessToken'] = accountInfo.accessToken;
-      config.headers['Authorization'] = `Bearer ${accountInfo.accessToken}`;
+      // Some unauthenticated bootstrap calls carry a dedicated bearer token
+      // (for example Privy's token during email login). Do not overwrite it
+      // with a possibly stale TagAI session.
+      if (!config.headers['Authorization']) {
+        config.headers['Authorization'] = `Bearer ${accountInfo.accessToken}`;
+      }
     }
     // 登录身份与链无关；网关仅用显式 chainId 将业务请求路由到对应实例。
     config.headers['X-Chain-Id'] = String(useChainStore().activeChainId);

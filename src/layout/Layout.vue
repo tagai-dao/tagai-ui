@@ -55,9 +55,13 @@ const handleReactLoginSuccess = async (accInfo: any) => {
     // api 获取用户信息，如果是新用户（username为空），则创建用户，弹出login/CreateUserInfo组件
     // 如果用户已创建，将用户信息accStore.setAccount，并调用setWallet
     modalStore.setModalVisible(true, GlobalModalType.CreateUserInfo)
+    finishNewLoginIfNeeded()
     return;
   }
-  
+
+  // Application authentication must not wait for an embedded-wallet provider.
+  // Wallet initialization continues reactively when Privy publishes it.
+  finishNewLoginIfNeeded()
 }
 
 /** 用户已用 MetaMask 等插件连上（非 Privy） */

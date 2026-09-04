@@ -37,7 +37,7 @@
     <div class="flex justify-center mt-4">
       <button class="px-5 h-11 bg-gradient-primary rounded-full
                        flex justify-center items-center space-x-2 disabled:opacity-30"
-              :disabled="uploading || loading"
+              :disabled="uploading || loading || !createUserInfo.username.trim()"
               @click="onConfirm">
         <span class="text-white font-bold text-lg">{{$t('confirm')}}</span>
         <i-ep-loading v-if="loading" class="text-white animate-spin"/>
@@ -95,12 +95,15 @@ const beforeUpload = (file: any) => {
 }
 
 const onConfirm = async () => {
+  const username = createUserInfo.username.trim()
+  if (!username) return
+
   try {
     loading.value = true;
-    await updateEmailProfile(accStore.getAccountInfo.twitterId, createUserInfo.username, createUserInfo.profile);
+    await updateEmailProfile(accStore.getAccountInfo.twitterId, username, createUserInfo.profile);
     accStore.setAccount({
       ...accStore.getAccountInfo,
-      twitterName: createUserInfo.username,
+      twitterName: username,
       profile: createUserInfo.profile
     });
     useModalStore().setModalVisible(false);

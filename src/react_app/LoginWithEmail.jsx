@@ -118,6 +118,25 @@ export default function LoginWithEmail() {
     })();
   }, [ready, wallets, getAccessToken, emailLoginSession]);
 
+  // Authentication is valid even when Privy takes longer to publish the
+  // embedded wallet. Release the UI after a bounded wait; a later wallet-list
+  // update can still complete the verified bond.
+  useEffect(() => {
+    if (!emailLoginSession) return undefined;
+
+    const timer = window.setTimeout(() => {
+      if (!emailLoginBondConsumedRef.current) {
+        privyStore.walletBinding = false;
+        emitter.emit(
+          "walletError",
+          new Error("Embedded wallet is still initializing. Please retry from Wallet.")
+        );
+      }
+    }, 15000);
+
+    return () => window.clearTimeout(timer);
+  }, [emailLoginSession]);
+
   const handleSendCode = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -162,12 +181,16 @@ export default function LoginWithEmail() {
     }
 
     const accessToken = await getAccessToken();
+    if (!accessToken) {
+      throw new Error("Failed to get Privy access token");
+    }
 
-    const userInfo = await privyEmailLogin(accessToken, email);
+    const loginEmail = email.trim().toLowerCase();
+    const userInfo = await privyEmailLogin(accessToken, loginEmail);
 
     emailLoginBondConsumedRef.current = false;
     privyStore.walletBinding = true;
-    setEmailLoginSession({ userInfo, email });
+    setEmailLoginSession({ userInfo, email: loginEmail });
 
     emitter.emit("authSuccess", userInfo);
     // 嵌入式钱包由 Privy createOnLogin 创建；walletProvider 由 AuthLoading 监听 wallets 统一派发
@@ -180,7 +203,7 @@ export default function LoginWithEmail() {
 
   const debounceEmailInput = useMemo(() => debounce((value) => {
     const regex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-    if(regex.test(value)) setEmail(value)
+    if(regex.test(value)) setEmail(value.trim().toLowerCase())
     else setEmail('')
   }, 1000), []);
 

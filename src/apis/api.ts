@@ -58,7 +58,11 @@ export const privyLogin = async (privyAccessToken: string, accessToken: string, 
   get(BACKEND_API_URL + '/auth/login', { privyAccessToken, accessToken, refreshToken })
 
 export const privyEmailLogin = async (accessToken: string, email: string) => 
-  get(BACKEND_API_URL + '/auth/loginEmail', {accessToken, email})
+  post(
+    BACKEND_API_URL + '/auth/loginEmail',
+    { email },
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  )
 
 export const twitterLogout = async (twitterId: string) =>
   get(BACKEND_API_URL + '/auth/logout', {twitterId})
