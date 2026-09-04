@@ -352,7 +352,7 @@ export const getImportCommunityFee = async (importer: `0x${string}`): Promise<Im
         createFee,
         settingsFee,
         ipshareCreateFee,
-        total: createFee + (settingsFee * 2n) + ipshareCreateFee,
+        total: createFee + settingsFee + ipshareCreateFee,
         createsIPShare: !hasIPShare,
     };
 }
@@ -363,11 +363,16 @@ export const deployNutboxCommunity = async (
 ): Promise<{ community: string; pool: string; txHash: string }> => {
     const importer = useAccountStore().ethConnectAddress as `0x${string}`;
     const fee = await getImportCommunityFee(importer);
+    const deployment = useChainStore().deployment;
+    const args = deployment.features.enhancedImportHelper
+        ? [token, deployment.contracts.hourlyTickCalculator, '0x']
+        : [token, zeroAddress];
     const hash = await writeContract({
         contractName: 'ImportHelper',
         functionName: 'createCommunityAndPool',
-        // 用户导入始终创建新 Community；已有 Community 复用入口仅供线下操作。
-        args: [token, zeroAddress],
+        // BSC deploys the fixed-calculator two-argument helper. Robinhood's
+        // enhanced helper requires the calculator and distribution policy.
+        args,
         value: fee.total
     });
     if (!hash) {
