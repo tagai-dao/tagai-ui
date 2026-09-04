@@ -4,7 +4,7 @@ import BackHeader from "@/layout/BackHeader.vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import Comments from "@/components/tweets/Comments.vue";
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import CuratorsList from "@/components/tweets/CuratorsList.vue";
 import { useCurationStore } from "@/stores/curation"
 import { useCommunityStore } from "@/stores/community"
@@ -13,14 +13,34 @@ import { getCommunityDetail, getTweetById } from "@/apis/api";
 import { useAccountStore } from "@/stores/web3";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import { getTokenInfoOfTweets } from "@/utils/pump";
+import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
+import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
+import type { FeedTokenSheetAsset } from '@/types'
 
 const curatorsModalVisible = ref(false)
+const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
+const showFeedTokenSheet = ref(false)
+const showFeedTradeSheet = ref(false)
 const router = useRouter()
 const route = useRoute()
 
 const curationStore = useCurationStore()
 const accStore = useAccountStore()
 const comStore = useCommunityStore()
+
+function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
+  selectedFeedToken.value = asset
+  showFeedTradeSheet.value = false
+  showFeedTokenSheet.value = true
+}
+
+function openBuy() {
+  showFeedTradeSheet.value = true
+}
+
+watch(showFeedTokenSheet, visible => {
+  if (!visible) showFeedTradeSheet.value = false
+})
 
 onMounted(async () => {
   const tweetId = route.params.id;
@@ -65,7 +85,11 @@ onMounted(async () => {
         </div>
       </div> -->
       <div class="bg-white rounded-2xl py-2">
-        <TweetItem :tweet="curationStore.currentSelectedTweet" :multiline="true">
+        <TweetItem
+          :tweet="curationStore.currentSelectedTweet"
+          :multiline="true"
+          @open-token-details="openFeedTokenSheet"
+        >
           <template #tweet-action-bar>
             <PostButtonGroup :tweet="curationStore.currentSelectedTweet"/>
           </template>
@@ -106,6 +130,8 @@ onMounted(async () => {
                width="90%" :show-close="false" align-center destroy-on-close>
       <CuratorsList :tweet="curationStore.currentSelectedTweet"/>
     </el-dialog>
+    <FeedTokenDetailSheet v-model="showFeedTokenSheet" :asset="selectedFeedToken" @buy="openBuy" />
+    <FeedTokenTradeSheet v-model="showFeedTradeSheet" :asset="selectedFeedToken" />
   </div>
 </template>
 

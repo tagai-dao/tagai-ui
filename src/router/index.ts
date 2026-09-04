@@ -183,7 +183,14 @@ router.beforeEach(async (to, from, next) => {
     const chainId = isProductChain(queryChainId) ? queryChainId : chainStore.activeChainId
     const query = { ...to.query }
     delete query.chainId
-    next({ path: getChainPath(chainId, to.path), query, hash: to.hash, replace: true })
+    // Initial deep links should be canonicalized in place. Internal navigation must
+    // remain a push so the browser Back action returns to the page that opened it.
+    next({
+      path: getChainPath(chainId, to.path),
+      query,
+      hash: to.hash,
+      replace: !from.name,
+    })
     return
   }
 
