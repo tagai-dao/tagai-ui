@@ -23,6 +23,7 @@ import IPShareTradeModal from "@/components/ipshare/IPShareTradeModal.vue";
 import IPShareStakeModal from "@/components/ipshare/IPShareStakeModal.vue";
 import { isAddress } from "viem";
 import { useChainStore } from "@/stores/chain";
+import ProfileFinancePanel from '@/components/profile/ProfileFinancePanel.vue'
 
 const ReactLogoutOAuth = applyPureReactInVue(LogoutOAuth);
 
@@ -278,8 +279,10 @@ onMounted(() => {
       </div> -->
     </div>
     
-    <!-- IPShare Section -->
-    <div v-if="donutEth" class="bg-white py-3 px-3 rounded-2xl mx-3">
+    <ProfileFinancePanel :twitter-id="accStore.getAccountInfo.twitterId"
+      :username="accStore.getAccountInfo.twitterUsername">
+      <template #ipshare>
+      <div v-if="donutEth">
       <!-- Create IPShare Button -->
       <button v-if="!isCreatedIPshare"
               class="h-12 w-full bg-gradient-primary text-white rounded-full shadow-sm"
@@ -344,7 +347,10 @@ onMounted(() => {
           </div>
         </el-collapse-transition>
       </template>
-    </div>
+      </div>
+      <div v-else class="py-8 text-center text-sm text-grey-8d">IPShare is unavailable until this profile has an EVM wallet.</div>
+      </template>
+    </ProfileFinancePanel>
     
     <div class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
       <button v-for="tab of tabOptions" :key="tab"
