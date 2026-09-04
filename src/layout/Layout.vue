@@ -17,7 +17,7 @@ import CreatePredictModal from "@/components/common/CreatePredictModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
 import PredictTradeModal from "@/components/common/PredictTradeModal.vue";
 import PredictLiquidityModal from "@/components/common/PredictLiquidityModal.vue";
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import emitter from "@/utils/emitter";
 import {applyPureReactInVue} from "veaury";
 import ReactApp from "@/react_app/App.jsx";
@@ -50,7 +50,6 @@ const handleReactLoginSuccess = async (accInfo: any) => {
   emitter.emit('login', true);
 
   newLogin.value = true;
-  await setWallet()
   console.log('login account info', accInfo);
   if (accInfo.accountType === 1 && accInfo.isNew === 1) {
     // api 获取用户信息，如果是新用户（username为空），则创建用户，弹出login/CreateUserInfo组件
@@ -119,7 +118,11 @@ const setWallet = async () => {
     if (isPluginWalletConnected()) return
 
     const connectedAddr = accounts[0];
-    if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
+    if (privyStore.walletBinding) {
+      // Email/Twitter login is binding through its Privy access token. Only
+      // initialize the client here; the binding effect owns the backend write.
+      await privyStore.initWallet()
+    } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
       await useAccount().bondEthAddress()
     } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr !== connectedAddr) {
       await useAccount().bondEthAddress();
@@ -155,13 +158,28 @@ const handleReactLoginError = async (error?: any) => {
 const handleWalletProvider = async (provider: any) => {
   console.log('init privy provider', provider)
   usePrivyStore().ethersProvider = provider
-  await setWallet()
 }
+
+const handleWalletError = (error?: any) => {
+  console.error('Embedded wallet setup failed:', error)
+  handleErrorTip(error)
+}
+
+// Account data and the embedded-wallet provider arrive independently. Drive
+// initialization from their shared reactive state so neither event can be lost.
+watch(
+  () => [accStore.getAccountInfo?.twitterId, privyStore.ethersProvider, privyStore.walletBinding] as const,
+  ([twitterId, provider]) => {
+    if (twitterId && provider) void setWallet()
+  },
+  { immediate: true, flush: 'post' }
+)
 
 const cachedComponents = ref(['HomeView'])
 onMounted( () => {
   emitter.on('authSuccess', handleReactLoginSuccess);
   emitter.on('authError', handleReactLoginError);
+  emitter.on('walletError', handleWalletError);
   emitter.on('walletProvider', handleWalletProvider);
   emitter.on('setPageAliveState', async (params: any) => {
     if(params.isAlive) cachedComponents.value.push(params.pageName)

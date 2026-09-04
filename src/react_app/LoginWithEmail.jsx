@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useLoginWithEmail, useWallets, usePrivy } from "@privy-io/react-auth";
 import { privyEmailLogin, bondEthByPrivyAccToken } from "../apis/api.ts";
 import { useAccountStore } from "@/stores/web3";
+import { usePrivyStore } from "@/stores/privy";
 
 import emitter from "@/utils/emitter.ts";
 import debounce from "lodash.debounce";
@@ -13,9 +14,10 @@ export default function LoginWithEmail() {
   const [isLoading, setIsLoading] = useState(false);
   const { logout, getAccessToken } = usePrivy();
   const accStore = useAccountStore();
+  const privyStore = usePrivyStore();
 
   /** privyEmailLogin 完成后等待嵌入式钱包（createOnLogin）；再决定是否 bond */
-  const emailLoginSessionRef = useRef(null);
+  const [emailLoginSession, setEmailLoginSession] = useState(null);
   const emailLoginBondConsumedRef = useRef(false);
   
   const { sendCode, loginWithCode, state } = useLoginWithEmail({
@@ -65,7 +67,7 @@ export default function LoginWithEmail() {
 
   // PrivyProvider createOnLogin 会创建钱包；此处仅在列表就绪后按需 bond（与 AuthLoading 推特流一致）
   useEffect(() => {
-    const session = emailLoginSessionRef.current;
+    const session = emailLoginSession;
     if (!session || emailLoginBondConsumedRef.current || !ready) {
       return;
     }
@@ -88,6 +90,7 @@ export default function LoginWithEmail() {
       (!userInfo.ethAddr || backendAddr !== wallet.address.toLowerCase());
 
     if (!needBond) {
+      privyStore.walletBinding = false;
       return;
     }
 
@@ -108,10 +111,12 @@ export default function LoginWithEmail() {
         });
       } catch (error) {
         console.error("Failed to bond email embedded wallet:", error);
-        emitter.emit("authError", error);
+        emitter.emit("walletError", error);
+      } finally {
+        privyStore.walletBinding = false;
       }
     })();
-  }, [ready, wallets, getAccessToken]);
+  }, [ready, wallets, getAccessToken, emailLoginSession]);
 
   const handleSendCode = useCallback(async () => {
     setIsLoading(true);
@@ -160,8 +165,9 @@ export default function LoginWithEmail() {
 
     const userInfo = await privyEmailLogin(accessToken, email);
 
-    emailLoginSessionRef.current = { userInfo, email };
     emailLoginBondConsumedRef.current = false;
+    privyStore.walletBinding = true;
+    setEmailLoginSession({ userInfo, email });
 
     emitter.emit("authSuccess", userInfo);
     // 嵌入式钱包由 Privy createOnLogin 创建；walletProvider 由 AuthLoading 监听 wallets 统一派发

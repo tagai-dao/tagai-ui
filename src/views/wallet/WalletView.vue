@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, ref, computed, watch} from "vue";
+import {ref, computed, watch} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import TabPrediction from "@/views/profile/TabPrediction.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -32,7 +32,7 @@ watch(tabOptions, options => {
   if (!options.includes(activeTab.value)) activeTab.value = 'holding'
 })
 const showPrivyModal = ref(false)
-const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
+const { profile, replaceEmptyProfile, gotoTwitter, updateBalance, bondEthAddress } = useAccount();
 const { onCopy } = useTools()
 
 const chainName = computed(() => chainStore.deployment.name)
@@ -49,14 +49,37 @@ async function showPrivy() {
   showPrivyModal.value = true
 }
 
-onMounted(() => {
-  // 切链走整页 reload，此处按当前链拉余额即可
-  if (!accStore.getAccountInfo?.ethAddr || !isAddress(accStore.getAccountInfo?.ethAddr)) {
-    useAccount().bondEthAddress()
+let walletSetupInFlight = false
+const ensureWalletReady = async () => {
+  const address = accStore.getAccountInfo?.ethAddr
+  if (address && isAddress(address)) {
+    updateBalance()
     return
   }
-  updateBalance()
-})
+
+  // Do not attempt to bind until Privy's embedded-wallet provider is ready.
+  // The watcher below retries automatically when the provider arrives.
+  if (
+    !accStore.getAccountInfo?.twitterId ||
+    !privyStore.ethersProvider ||
+    privyStore.walletBinding ||
+    walletSetupInFlight
+  ) return
+
+  walletSetupInFlight = true
+  try {
+    const bonded = await bondEthAddress()
+    if (bonded && accStore.getAccountInfo?.ethAddr) updateBalance()
+  } finally {
+    walletSetupInFlight = false
+  }
+}
+
+watch(
+  () => [accStore.getAccountInfo?.ethAddr, privyStore.ethersProvider, privyStore.walletBinding] as const,
+  () => { void ensureWalletReady() },
+  { immediate: true }
+)
 
 </script>
 
