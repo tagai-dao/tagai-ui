@@ -21,6 +21,7 @@ import IPShareTradeModal from "@/components/ipshare/IPShareTradeModal.vue";
 import IPShareStakeModal from "@/components/ipshare/IPShareStakeModal.vue";
 import { isAddress } from "viem";
 import { useChainStore } from "@/stores/chain";
+import ProfileFinancePanel from '@/components/profile/ProfileFinancePanel.vue'
 
 const accStore = useAccountStore()
 const ipshareStore = useIpshareData()
@@ -180,8 +181,9 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- IPShare Section -->
-    <div v-if="userEthAddr && isCreatedIPshare" class="bg-white py-3 px-3 rounded-2xl mx-3">
+    <ProfileFinancePanel :twitter-id="userInfo?.twitterId" :username="userInfo?.twitterUsername">
+      <template #ipshare>
+      <div v-if="userEthAddr && isCreatedIPshare">
       <div class="border-1 border-orange-normal rounded-xl px-4 py-3">
         <div class="text-base font-bold text-grey-8d">{{ $t('ipshare.totalSupply') || 'IPShare Supply' }}</div>
         <div class="text-center">
@@ -222,7 +224,10 @@ onMounted(async () => {
           </el-tooltip>
         </div>
       </div>
-    </div>
+      </div>
+      <div v-else class="py-8 text-center text-sm text-grey-8d">This profile has not created IPShare yet.</div>
+      </template>
+    </ProfileFinancePanel>
 
     <div v-if="supportsTips" class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
       <button v-for="tab of tabOptions" :key="tab"

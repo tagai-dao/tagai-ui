@@ -600,11 +600,43 @@ export const getRewardLeaderboard = async (
 
 export type PnlPeriod = '1d' | '7d' | '30d' | 'all'
 
+export type AccountPnlPoint = {
+  timestamp: string;
+  capturedAt: string;
+  pnlUsd: number;
+}
+
+export type AccountPnl = {
+  chainId: number;
+  chain: string;
+  period: PnlPeriod;
+  accountId?: number;
+  twitterId?: string;
+  twitterUsername?: string;
+  hasData: boolean;
+  source?: 'fomo' | 'gmgn' | 'pump' | 'tagai';
+  pnlUsd?: number;
+  pnlChangeUsd?: number;
+  roiPercent?: number | null;
+  volumeUsd?: number | null;
+  winRate?: number | null;
+  tradeCount?: number | null;
+  sourceRank?: number | null;
+  capturedAt?: string;
+  historyIntervalHours?: number;
+  points: AccountPnlPoint[];
+}
+
 export const getPnlLeaderboard = async (
   period: PnlPeriod = '7d',
   page = 0,
   size = 30,
 ) => get(BACKEND_API_URL + '/pnl/leaderboard', { period, page, size })
+
+export const getAccountPnl = async (
+  period: PnlPeriod,
+  identity: { accountId?: number; twitterId?: string; username?: string },
+) => get(BACKEND_API_URL + '/pnl/account', { period, ...identity }) as Promise<AccountPnl>
 
 export const getUserClaimPredictRewardSignature = async (twitterId: string, tick: string) =>
   post(BACKEND_API_URL + '/predict/getUserClaimPredictRewardSignature', { twitterId, tick })
