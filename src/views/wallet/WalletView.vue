@@ -15,6 +15,7 @@ import { isAddress } from "viem";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useChainStore } from "@/stores/chain";
+import emitter from "@/utils/emitter";
 
 const ReactWallet = applyPureReactInVue(Wallet);
 
@@ -50,10 +51,29 @@ async function showPrivy() {
 }
 
 let walletSetupInFlight = false
+let privyRepairRequested = false
 const ensureWalletReady = async () => {
   const address = accStore.getAccountInfo?.ethAddr
   if (address && isAddress(address)) {
     updateBalance()
+    return
+  }
+
+  // Recover email accounts created by an older client that authenticated
+  // successfully but lost the asynchronous Privy wallet-binding task when the
+  // login modal closed. This keeps them on the embedded-wallet path instead of
+  // asking them to bind an unrelated external address.
+  if (
+    accStore.getAccountInfo?.accountType === 1 &&
+    accStore.getAccountInfo?.twitterId &&
+    !privyRepairRequested
+  ) {
+    privyRepairRequested = true
+    emitter.emit('privyWalletBindingRequested', {
+      identity: accStore.getAccountInfo.twitterId,
+      accountType: 1,
+      userInfo: accStore.getAccountInfo,
+    })
     return
   }
 
