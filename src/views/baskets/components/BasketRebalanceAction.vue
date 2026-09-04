@@ -18,7 +18,7 @@ const accountStore = useAccountStore()
 const chainStore = useChainStore()
 const protocol = computed(() => getBasketProtocol(
   props.detail.chainId,
-  props.detail.chainId === 56 ? props.detail.version : undefined,
+  props.detail.version,
 ))
 const executorAbi = computed(() => getRebalanceExecutorAbi(props.detail.chainId, props.detail.version))
 const { t } = useI18n()

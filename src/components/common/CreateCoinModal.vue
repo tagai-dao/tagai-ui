@@ -83,16 +83,6 @@ const validateImportPools = async (token: string, result: TokenDexResult) => {
     { status: 'checking' as const },
   ]))
 
-  // ImportedTokenSwapWrapper is currently the BSC imported-token executor.
-  if (chainStore.deployment.key !== 'bsc') {
-    poolValidation.value = Object.fromEntries(result.pools.map(pool => [
-      poolValidationKey(pool),
-      { status: 'supported' as const },
-    ]))
-    selectedPoolIndex.value = result.pools.length ? 0 : -1
-    return
-  }
-
   let cursor = 0
   const workerCount = Math.min(3, result.pools.length)
   await Promise.all(Array.from({ length: workerCount }, async () => {

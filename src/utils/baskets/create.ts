@@ -133,13 +133,13 @@ export const validateCustomBasketAsset = async ({
   if (chainId === 56 && isUsdBasketLegSymbol(symbol)) {
     throw new Error('USD stablecoins cannot be used as BSC basket constituents')
   }
-  if (chainId === 56 && !route.poolQuoteToken) {
-    throw new Error('The selected BSC route has no quote token')
+  if (!route.poolQuoteToken) {
+    throw new Error('The selected Basket V3 route has no quote token')
   }
   try {
     await assertBasketRouteUsable(route, address, chainId)
-    const quote = chainId === 56
-      ? await quoteBscV3SettlementToAsset(route, address, 1_000_000_000_000_000n)
+    const quote = Number(getBasketDeployment(chainId).creationVersion) >= 3
+      ? await quoteBscV3SettlementToAsset(route, address, 1_000_000_000_000_000n, chainId)
       : await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n, chainId)
     if (quote <= 0n) throw new Error('The selected route has no usable price or liquidity')
   } catch (error) {
@@ -159,8 +159,8 @@ export const createBasketAndBuy = async (
   if (!wallet) throw new Error('Wallet not connected')
   const deployment = getBasketDeployment(input.chainId)
   const creationVersion = deployment.creationVersion
-  if (input.chainId === 56 && creationVersion !== 3) {
-    throw new Error('New BSC Basket creation requires protocol V3')
+  if (creationVersion !== 3) {
+    throw new Error('New Basket creation requires protocol V3')
   }
   const creationProtocol = getBasketCreationProtocol(input.chainId)
   const presets = deployment.assetPresets
@@ -174,14 +174,14 @@ export const createBasketAndBuy = async (
     (input.chainId === 56 && isUsdBasketLegSymbol(leg.asset.symbol)))) {
     throw new Error('USD stablecoins cannot be used as BSC basket constituents')
   }
-  if (input.chainId === 56 && input.legs.some((leg) => !leg.route.poolQuoteToken)) {
-    throw new Error('Every BSC constituent route must include its direct pool quote token')
+  if (input.legs.some((leg) => !leg.route.poolQuoteToken)) {
+    throw new Error('Every Basket V3 constituent route must include its direct pool quote token')
   }
   if (input.legs.reduce((sum, leg) => sum + leg.weightBps, 0) !== 10_000) {
     throw new Error('Asset weights must add up to 100%')
   }
 
-  if (input.chainId === 56) {
+  if (creationVersion >= 3) {
     const registryClient = getReadOnlyClient(input.chainId)
     const [registrarApproved, forwarderApproved] = await Promise.all([
       registryClient.readContract({
@@ -227,8 +227,8 @@ export const createBasketAndBuy = async (
 
   const routes = await Promise.all(input.legs.map(async (leg) => ({
     ...leg.route,
-    defaultMaxExecutionLossBps: input.chainId === 56
-      ? await getBscV3DefaultExecutionLossBps(leg.route, BASKET_DEFAULT_SLIPPAGE_BPS)
+    defaultMaxExecutionLossBps: creationVersion >= 3
+      ? await getBscV3DefaultExecutionLossBps(leg.route, BASKET_DEFAULT_SLIPPAGE_BPS, input.chainId)
       : leg.route.defaultMaxExecutionLossBps,
   })))
   const createParams = {

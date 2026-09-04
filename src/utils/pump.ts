@@ -398,7 +398,7 @@ export const deployNutboxCommunity = async (
 }
 
 type ImportedSwapSource = {
-    sourceType: 0 | 1 | 3
+    sourceType: 0 | 1 | 2 | 3
     sourceData: Hex
 }
 
@@ -438,14 +438,24 @@ const PANCAKE_V4_SOURCE_PARAMETERS = [{
     ],
 }] as const
 
+const RH_V4_SOURCE_PARAMETERS = [{
+    type: 'tuple',
+    components: [
+        { type: 'address', name: 'poolManager' },
+        { type: 'address', name: 'currency0' },
+        { type: 'address', name: 'currency1' },
+        { type: 'uint24', name: 'fee' },
+        { type: 'int24', name: 'tickSpacing' },
+        { type: 'address', name: 'hooks' },
+    ],
+}] as const
+
 /** Encode the backend-selected imported-token pool for one Wrapper quote/trade. */
 export const buildImportedTokenSwapSource = async (
     dexVersion: number,
     pair: string | null | undefined,
 ): Promise<ImportedSwapSource> => {
     const deployment = useChainStore().deployment
-    if (deployment.key !== 'bsc') throw new Error('ImportedTokenSwapWrapper is only deployed on BSC')
-
     if (dexVersion === 2) {
         if (!pair || !isAddress(pair)) throw new Error('Imported V2 pair is unavailable')
         return {
@@ -473,6 +483,17 @@ export const buildImportedTokenSwapSource = async (
     }
 
     if (dexVersion === 4) {
+        if (deployment.key === 'rh') {
+            const pool = await resolveRhV4PoolKeyForTrade(pair)
+            if (!pool) throw new Error('Imported V4 PoolKey is unavailable')
+            return {
+                sourceType: 2,
+                sourceData: encodeAbiParameters(RH_V4_SOURCE_PARAMETERS, [{
+                    poolManager: deployment.dex.v4PoolManager,
+                    ...pool,
+                }]),
+            }
+        }
         const pool = await resolveV4PoolKeyForTrade(pair)
         if (!pool) throw new Error('Imported V4 PoolKey is unavailable')
         if (deployment.dex.v4Quoter === zeroAddress) throw new Error('Imported V4 quoter is unavailable')
@@ -900,9 +921,9 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
         sellsman = zeroAddress;
     }
     const activeDeployment = useChainStore().deployment
-    if (isImport && activeDeployment.key === 'bsc') {
+    if (isImport && Number(version) === 10) {
         const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
-        if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured on BSC')
+        if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
         const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
         const minimumTokenOut = amount * BigInt(10000 - slippage) / 10000n
         return writeContract({
@@ -932,7 +953,9 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
             if (dexVersion === 2) await resolveV2NativePair(token)
             if (deployment.dex.kind === 'uniswap' || dexVersion === 3) {
                 const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
+                const wrapper = resolveContractAddress(deployment.key === 'rh' ? 'LegacyTagAISwapWrapper' : 'TagAISwapWrapper')
                 if (router === zeroAddress) throw new Error(`Uniswap V${dexVersion} router is not configured on ${deployment.name}`)
+                if (!wrapper) throw new Error(`Legacy imported-token wrapper is not configured on ${deployment.name}`)
                 if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
                 const poolFee = dexVersion === 3
                     ? (await resolveV3NativePool(token, pair)).fee
@@ -941,7 +964,7 @@ export const buyToken = async (token: string, version: number, amount: bigint, e
                 const args = dexVersion === 3
                     ? [sellsman, amount * BigInt(10000 - slippage) / 10000n, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router, poolFee]
                     : [sellsman, amount * BigInt(10000 - slippage) / 10000n, [deployment.wrappedNative, token], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, router]
-                return writeContract({ contractName: 'TagAISwapWrapper', functionName, args, value: ethAmount })
+                return writeContract({ contractName: 'TagAISwapWrapper', functionName, args, value: ethAmount, address: wrapper })
             }
             // BSC V2 legacy path.
             const amountOut = await getImportedV2BuyAmountUseNative(token, ethAmount * 9800n / 10000n);
@@ -1026,9 +1049,9 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
         sellsman = zeroAddress;
     }
     const activeDeployment = useChainStore().deployment
-    if (isImport && activeDeployment.key === 'bsc') {
+    if (isImport && Number(version) === 10) {
         const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
-        if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured on BSC')
+        if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
         const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
         const user = useAccountStore().ethConnectAddress as `0x${string}`
         const allowance = await readContract('Token1', 'allowance', [user, wrapper], token as `0x${string}`) as bigint
@@ -1068,7 +1091,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
             if (dexVersion === 2) await resolveV2NativePair(token)
             if (deployment.dex.kind === 'uniswap' || dexVersion === 3) {
                 const router = dexVersion === 3 ? deployment.dex.v3Router : deployment.dex.v2Router
-                const wrapper = resolveContractAddress('TagAISwapWrapper')
+                const wrapper = resolveContractAddress(deployment.key === 'rh' ? 'LegacyTagAISwapWrapper' : 'TagAISwapWrapper')
                 if (!wrapper || router === zeroAddress) throw new Error(`Uniswap V${dexVersion} trading is not configured on ${deployment.name}`)
                 if (dexVersion !== 2 && dexVersion !== 3) throw new Error(`Unsupported imported-token DEX version: ${dexVersion}`)
                 const poolFee = dexVersion === 3
@@ -1083,7 +1106,7 @@ export const sellToken = async (token: string, version: number, amount: bigint, 
                 const args = dexVersion === 3
                     ? [amount, minOut, token, useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router, poolFee]
                     : [amount, minOut, [token, deployment.wrappedNative], useAccountStore().ethConnectAddress, Math.floor(Date.now() / 1000) + 300, sellsman, router]
-                return writeContract({ contractName: 'TagAISwapWrapper', functionName, args })
+                return writeContract({ contractName: 'TagAISwapWrapper', functionName, args, address: wrapper })
             }
             // BSC V2 legacy path.
             const allowance: any = await readContract('Token1', 'allowance', [useAccountStore().ethConnectAddress, wrappedUniswapV2ForTagAI2], token)

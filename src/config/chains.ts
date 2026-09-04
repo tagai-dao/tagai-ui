@@ -44,6 +44,7 @@ export type ChainDeployment = {
     v2Router: `0x${string}`
     v2Factory: `0x${string}`
     v3Router: `0x${string}`
+    v3Factory: `0x${string}`
     /** V3 SmartRouter；ImportedTokenSwapWrapper 使用不带 deadline 的 exactInputSingle。 */
     v3SmartRouter: `0x${string}`
     /** V3 QuoterV2；用于按真实流动性计算成交输出，而不是仅使用池现价。 */
@@ -68,6 +69,8 @@ export type ChainDeployment = {
     importHelper: `0x${string}`
     importedTokenSwapWrapper: `0x${string}`
     tagAiSwapWrapper: `0x${string}`
+    /** RH V9/V10 imported-token wrapper kept for historical pools. */
+    legacyTagAiSwapWrapper: `0x${string}`
     tipTagSwapHook9: `0x${string}`
     tipTagSwapHook11: `0x${string}`
     hourlyTickCalculator: `0x${string}`
@@ -124,6 +127,7 @@ export const BSC_CHAIN: ChainDeployment = {
     // Legacy SwapRouter keeps the deadline-bearing exactInputSingle ABI used by
     // TagAI's deployed BSC wrapper. Pancake SmartRouter (0x13f4...) omits it.
     v3Router: '0x1b81D678ffb9C0263b24A97847620C99d213eB14',
+    v3Factory: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
     v3SmartRouter: '0x13f4EA83D0bd40E75C8222255bc855a974568Dd4',
     v3Quoter: '0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997',
     permit2: '0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768',
@@ -140,6 +144,7 @@ export const BSC_CHAIN: ChainDeployment = {
     importHelper: '0xcCB0f9a9db22cCC29fDd315180F89747118ec296',
     importedTokenSwapWrapper: '0xDfFc699FB095a693708E3c15e6F0a224cbbCc98F',
     tagAiSwapWrapper: '0x0000000000000000000000000000000000000000',
+    legacyTagAiSwapWrapper: '0x0000000000000000000000000000000000000000',
     tipTagSwapHook9: '0x78443e75aD3D70DAAab0De33d2D5Dea0cBae0cC1',
     tipTagSwapHook11: '0x9E38747072F326b4e614EfF6FdCA8529db090cc1',
     hourlyTickCalculator: '0x6cCEC02E7D371FED954D7D16eCb7F2f57cccF54d',
@@ -161,7 +166,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
   key: 'rh',
   name: 'Robinhood',
   chainId: 4663,
-  latestPumpVersion: 9,
+  latestPumpVersion: 11,
   symbol: 'ETH',
   decimals: 18,
   browser: 'https://robinhoodchain.blockscout.com/',
@@ -186,8 +191,9 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     v2Router: '0x89e5DB8B5aA49aA85AC63f691524311AEB649eba',
     v2Factory: '0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f',
     v3Router: '0xCaf681a66D020601342297493863E78C959E5cb2',
-    v3SmartRouter: ZERO,
-    v3Quoter: ZERO,
+    v3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA',
+    v3SmartRouter: '0xCaf681a66D020601342297493863E78C959E5cb2',
+    v3Quoter: '0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7',
     permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
     universalRouter: '0x8876789976decbfcbbbe364623c63652db8c0904',
     v4PoolManager: '0x8366a39CC670B4001A1121B8F6A443A643e40951',
@@ -197,13 +203,14 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
   contracts: {
     pump9: '0x6C75E165E52E9c1661a75041650be2D919eE02A1',
     tokenImplementation9: '0x95c62F6A3AC1A3b7D08d866eeBDc74700aB954D6',
-    pump11: ZERO,
-    tokenImplementation11: ZERO,
-    importHelper: '0xEC774DB6800B00BA1e87f0799cb29dEc21ACB4A9',
-    importedTokenSwapWrapper: ZERO,
-    tagAiSwapWrapper: '0xa12d998bff956c1034f863a4cd30f4403b6b2b4f',
+    pump11: '0x7686CbaF2dFc7000eb9b0D6DE81E48c1211d2655',
+    tokenImplementation11: '0xcE00643B77695AD9A7a4EaBdC5b479cA0c22C016',
+    importHelper: '0xD0baaF8D314b0C6AB6bebd24ddbC86157c9c7b09',
+    importedTokenSwapWrapper: '0x53e65DE68A0eB7f3662579F44Eb9849Ae5cA44ab',
+    tagAiSwapWrapper: '0x53e65DE68A0eB7f3662579F44Eb9849Ae5cA44ab',
+    legacyTagAiSwapWrapper: '0xa12d998bff956c1034f863a4cd30f4403b6b2b4f',
     tipTagSwapHook9: '0x5e8e2D77ce0d2e04BA058bbcECC13C7C8aDB20Cc',
-    tipTagSwapHook11: ZERO,
+    tipTagSwapHook11: '0x841dcAD307A4444dC9E65F5709B2DC5e054C20cC',
     hourlyTickCalculator: '0x3DC52C69C3C8be568372E16d50E9F3FEc796610c',
     nutboxCommittee: '0x7B0ddC305C32AAEbabc0FE372a4460e9903e95D0',
     ipshare3: '0x8A7b0d80FA92699CE3e5bB2c8fE404D6733796d1',

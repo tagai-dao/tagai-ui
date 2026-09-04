@@ -88,7 +88,6 @@ export default function AuthLoading() {
             }
         })();
     }, [ready, wallets, getAccessToken, oauthTwitterSession]);
-
     useEffect(() => {
         if (!oauthTwitterSession) return undefined;
 

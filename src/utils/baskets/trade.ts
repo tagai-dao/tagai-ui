@@ -89,7 +89,7 @@ export const getTradeAllowance = async (
   chainId: number,
   version?: number,
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
+  const protocol = getBasketProtocol(chainId, version)
   return getReadOnlyClient(chainId).readContract({
     address: token,
     abi: erc20Abi,
@@ -105,7 +105,7 @@ export const approveBasketTrade = async (
   chainId: number,
   version?: number,
 ): Promise<Hex> => {
-  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
+  const protocol = getBasketProtocol(chainId, version)
   const wallet = getWalletClient()
   if (!wallet) throw new Error('Wallet not connected')
   const publicClient = getReadOnlyClient(chainId)
@@ -129,11 +129,11 @@ export const quoteWethToAsset = (
   chainId: number,
   version?: number,
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
+  const protocol = getBasketProtocol(chainId, version)
   return getReadOnlyClient(chainId).readContract({
     address: protocol.rebalanceExecutor,
     abi: getRebalanceExecutorAbi(chainId, version) as any,
-    functionName: chainId === 56 && Number(version) >= 3 ? 'quoteQuoteToAsset' : chainId === 56 ? 'quoteQuoteToAsset' : 'quoteWethToAsset',
+    functionName: Number(version) >= 3 ? 'quoteQuoteToAsset' : chainId === 56 ? 'quoteQuoteToAsset' : 'quoteWethToAsset',
     args: [toContractLegRoute(route, chainId, version), asset, amount],
   } as any) as Promise<bigint>
 }
@@ -214,7 +214,7 @@ export const quoteAssetToWethForSwap = (
 
 const selfPoolKey = async (basket: Address, chainId: number, version?: number): Promise<BasketPoolKey> => {
   const deployment = getBasketDeployment(chainId)
-  const protocol = getBasketProtocol(chainId, chainId === 56 ? version : undefined)
+  const protocol = getBasketProtocol(chainId, version)
   if (chainId === 56) {
     const raw: any = await getReadOnlyClient(chainId).readContract({
       address: protocol.hook,
@@ -255,7 +255,7 @@ export const quoteBasketBuyLegOutputs = async ({
   legs: { route: BasketLegRoute; asset: Address; weightBps: number }[]
 }): Promise<bigint[]> => {
   const deployment = getBasketDeployment(chainId)
-  if (chainId !== 56) {
+  if (chainId !== 56 && !isBscBasketV3(chainId, version)) {
     const grossWeth = await quoteV4ExactInput(
       deployment.hubPool,
       deployment.contracts.settlementToken,
@@ -288,7 +288,7 @@ export const quoteBasketBuyLegOutputs = async ({
         ? netSettlement - allocated
         : netSettlement * BigInt(leg.weightBps) / 10_000n
       allocated += amountIn
-      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn))
+      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn, chainId))
     }
     return outputs
   }
@@ -452,7 +452,7 @@ export const executeBasketSwap = async ({
     firstMint,
     legMins: quote.legMins,
   })
-  const protocol = getBasketProtocol(detail.chainId, detail.chainId === 56 ? detail.version : undefined)
+  const protocol = getBasketProtocol(detail.chainId, detail.version)
   const functionName = side === 'buy'
     ? (detail.chainId === 56 ? 'buyExactSettlement' : 'buyExactUsdg')
     : 'sellExactBasket'

@@ -88,7 +88,7 @@ const emptyPool = (pancakePoolManager?: Address): BasketPoolKey => ({
   ...(pancakePoolManager ? { poolManager: zeroAddress, parameters: `0x${'0'.repeat(64)}` as Hex } : {}),
 })
 
-const rhContracts = {
+const rhContractsV1 = {
   registry: '0x1f997dEb6C8Ac7Bb4134Bc7c6bF23F623Cda25C6',
   routeRegistry: '0x1aE3E64F51CCDC87Ff05E8E8242890e7964FF297',
   feeAuction: '0xC2526404423ED03Ce8D2608F5b94300F0AafA1A2',
@@ -103,6 +103,24 @@ const rhContracts = {
   bidToken: '0x6419cE35e915Fd62199C472a41e34dB55b56b89d',
 } as const satisfies BasketContracts
 
+const rhContractsV3 = {
+  registry: '0x1f997dEb6C8Ac7Bb4134Bc7c6bF23F623Cda25C6',
+  routeRegistry: '0x1aE3E64F51CCDC87Ff05E8E8242890e7964FF297',
+  feeAuction: '0xC2526404423ED03Ce8D2608F5b94300F0AafA1A2',
+  tokenDeployer: '0xF29faEc2428376d650d84471B4c41499342c6C5a',
+  rebalanceExecutor: '0x1bca8A39021f6C65b62bbe79A59e41215cF19264',
+  hook: '0x7103AA53a7de0Af737d1dC1A257838f6f488aA88',
+  swapRouter: '0x9b5e6b7CC3661737e6A118e0D4f0F89fB1034653',
+  feeBatchClaimer: '0x98F020aBB37cF90895A6e08aE430eCcDB369374b',
+  poolManager: '0x8366a39CC670B4001A1121B8F6A443A643e40951',
+  settlementToken: '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168',
+  wrappedNative: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
+  bidToken: '0x90d2cCA000Dc36fA8401632C67faFDa7D7860C07',
+  nutboxRouter: '0x200115D733106ecA3954EAA5d1fCbc6D0EfB78AE',
+  v2Factory: '0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f',
+  v3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA',
+} as const satisfies BasketContracts
+
 const rhV4Asset = (
   address: Address,
   symbol: string,
@@ -115,8 +133,10 @@ const rhV4Asset = (
   address, symbol, name, ...options,
   route: {
     venue: 0,
+    poolQuoteToken: zeroAddress,
     v4Pool: { currency0: zeroAddress, currency1: address, fee, tickSpacing, hooks },
     v3Fee: 0,
+    defaultMaxExecutionLossBps: 100,
   },
 })
 
@@ -132,9 +152,9 @@ const rhAssets: BasketAssetPreset[] = [
     { category: 'platform', logoUrl: '/images/basket-assets/tagagent.jpg' },
   ),
   {
-    address: rhContracts.wrappedNative, symbol: 'WETH', name: 'Wrapped Ether', category: 'platform',
+    address: rhContractsV3.wrappedNative, symbol: 'WETH', name: 'Wrapped Ether', category: 'platform',
     logoUrl: '/images/basket-assets/weth.svg',
-    route: { venue: 2, v4Pool: emptyPool(), v3Fee: 0 },
+    route: { venue: 2, poolQuoteToken: rhContractsV3.wrappedNative, v4Pool: emptyPool(), v3Fee: 0, defaultMaxExecutionLossBps: 100 },
   },
   rhStock('0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC', 'NVDA', 'NVIDIA', 10_000, 200),
   rhStock('0xe93237C50D904957Cf27E7B1133b510C669c2e74', 'MSFT', 'Microsoft', 10_000, 200),
@@ -296,11 +316,12 @@ export const BASKET_DEPLOYMENTS: Record<BasketChainId, BasketDeployment> = {
     settlementDecimals: 6,
     wrappedNativeSymbol: 'WETH',
     nativeSymbol: 'ETH',
-    contracts: rhContracts,
-    creationVersion: 1,
+    contracts: rhContractsV3,
+    creationVersion: 3,
+    protocols: { 1: rhContractsV1, 3: rhContractsV3 },
     hubPool: {
       currency0: zeroAddress,
-      currency1: rhContracts.settlementToken,
+      currency1: rhContractsV3.settlementToken,
       fee: 500,
       tickSpacing: 10,
       hooks: zeroAddress,

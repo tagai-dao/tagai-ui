@@ -117,7 +117,6 @@ export default function LoginWithEmail() {
       }
     })();
   }, [ready, wallets, getAccessToken, emailLoginSession]);
-
   // Authentication is valid even when Privy takes longer to publish the
   // embedded wallet. Release the UI after a bounded wait; a later wallet-list
   // update can still complete the verified bond.

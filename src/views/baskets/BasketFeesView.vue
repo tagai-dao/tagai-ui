@@ -24,7 +24,7 @@ const { detail, isLoading, hasError, errorMessage, load } = useBasketDetail()
 const deployment = computed(() => getBasketDeployment(detail.value?.chainId ?? chainStore.activeChainId))
 const contracts = computed(() => getBasketProtocol(
   deployment.value.chainId,
-  deployment.value.chainId === 56 ? detail.value?.version ?? deployment.value.creationVersion : undefined,
+  detail.value?.version ?? deployment.value.creationVersion,
 ))
 const tokenAbi = computed(() => getBasketTokenAbi(deployment.value.chainId, detail.value?.version))
 const auctionAbi = computed(() => getBasketFeeAuctionAbi(deployment.value.chainId))
