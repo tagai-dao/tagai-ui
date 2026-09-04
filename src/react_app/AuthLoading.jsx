@@ -3,7 +3,6 @@ import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
 import {useEffect, useRef, useState} from "react";
 import { bondEthByPrivyAccToken } from '@/apis/api.ts';
-import { sleep } from "@/utils/helper";
 import { useAccountStore } from "@/stores/web3";
 import {isNativePlatform} from "@/utils/native.ts";
 import {usePrivyStore} from "@/stores/privy";
@@ -89,6 +88,21 @@ export default function AuthLoading() {
             }
         })();
     }, [ready, wallets, getAccessToken, oauthTwitterSession]);
+    useEffect(() => {
+        if (!oauthTwitterSession) return undefined;
+
+        const timer = window.setTimeout(() => {
+            if (!oauthTwitterBondConsumedRef.current) {
+                privyStore.walletBinding = false;
+                emitter.emit(
+                    'walletError',
+                    new Error('Embedded wallet is still initializing. Please retry from Wallet.')
+                );
+            }
+        }, 15000);
+
+        return () => window.clearTimeout(timer);
+    }, [oauthTwitterSession]);
 
     // useEffect(() => {
     //     async function checkMfa() {
@@ -118,45 +132,51 @@ export default function AuthLoading() {
                     return;
                 }
                 console.log('wallets2', wallets)
-                while(bondingAddress) {
-                    await sleep(0.5)
-                }
+                // This effect reruns when bondingAddress becomes false. Waiting
+                // in-place would capture the old true value and loop forever.
+                if (bondingAddress) return;
                 const wallet = wallets.find((wallet) => wallet.walletClientType === 'privy' && wallet.type === 'ethereum' && wallet.connectorType === 'embedded')
 
                 if (!wallet) {
                     return;
                 }
-                const provider = await wallet.getEthereumProvider()
-                // Persist provider state directly as well as emitting the legacy
-                // event, so Vue initialization cannot miss a one-shot event.
-                privyStore.ethersProvider = provider
-                emitter.emit('walletProvider', provider)
+                try {
+                    const provider = await wallet.getEthereumProvider()
+                    // Persist provider state directly as well as emitting the legacy
+                    // event, so Vue initialization cannot miss a one-shot event.
+                    privyStore.ethersProvider = provider
+                    emitter.emit('walletProvider', provider)
 
-                if (isNativePlatform() && !nativeWalletSmokeConsumedRef.current) {
-                    nativeWalletSmokeConsumedRef.current = true;
-                    try {
-                        const chainId = await provider.request({ method: 'eth_chainId' });
-                        const { signature } = await signMessage(
-                            { message: `TagAI embedded wallet smoke: ${wallet.address}` },
-                            { address: wallet.address }
-                        );
-                        emitter.emit('walletSmoke', {
-                            address: wallet.address,
-                            chainId,
-                            signature
-                        });
-                        console.log('Native embedded wallet smoke passed', {
-                            address: wallet.address,
-                            chainId,
-                            signature
-                        });
-                    } catch (error) {
-                        nativeWalletSmokeConsumedRef.current = false;
-                        console.error('Native embedded wallet smoke failed:', error);
+                    if (isNativePlatform() && !nativeWalletSmokeConsumedRef.current) {
+                        nativeWalletSmokeConsumedRef.current = true;
+                        try {
+                            const chainId = await provider.request({ method: 'eth_chainId' });
+                            const { signature } = await signMessage(
+                                { message: `TagAI embedded wallet smoke: ${wallet.address}` },
+                                { address: wallet.address }
+                            );
+                            emitter.emit('walletSmoke', {
+                                address: wallet.address,
+                                chainId,
+                                signature
+                            });
+                            console.log('Native embedded wallet smoke passed', {
+                                address: wallet.address,
+                                chainId,
+                                signature
+                            });
+                        } catch (error) {
+                            nativeWalletSmokeConsumedRef.current = false;
+                            console.error('Native embedded wallet smoke failed:', error);
+                        }
                     }
-                }
 
-                console.log(provider)
+                    console.log(provider)
+                } catch (error) {
+                    privyStore.walletBinding = false
+                    console.error('Failed to initialize embedded wallet provider:', error)
+                    emitter.emit('walletError', error)
+                }
             }
 
         }
