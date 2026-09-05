@@ -14,6 +14,18 @@ import { VueQrcodeReader } from 'vue-qrcode-reader';
 import { initTheme } from '@/composables/useTheme'
 import { initNativeApp } from '@/utils/native'
 
+if ('serviceWorker' in navigator) {
+    let refreshing = false
+    // The generated worker calls skipWaiting(), but an already-open page keeps
+    // executing its old contract ABI until it reloads. Refresh exactly once
+    // when the new worker takes control so releases cannot leave stale writes.
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return
+        refreshing = true
+        window.location.reload()
+    })
+}
+
 // 在挂载前应用主题，避免暗/亮闪烁
 initTheme()
 

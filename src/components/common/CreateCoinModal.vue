@@ -130,6 +130,12 @@ const injectAmount = ref<number | undefined>(undefined);
 const injectLoading = ref(false);
 const tokenBalance = ref<bigint>(0n);
 
+type PendingImport = { chainId: number; form: CreateCommunity }
+const savePendingImport = () => localStorage.setItem('importTokenForm', JSON.stringify({
+  chainId: chainStore.activeChainId,
+  form: { ...importForm },
+} satisfies PendingImport))
+
 const accStore = useAccountStore();
 const inputTag = ref("");
 const addTagTip = ref("");
@@ -321,12 +327,6 @@ const importTokenStepClick = async () => {
     } else if (importStep.value === 3) {
       // 链上部署 Nutbox Community + 后端入库
       useModalStore().setModalCloseEnable(false);
-      const result = await deployNutboxCommunity(importForm.token as `0x${string}`)
-      communityAddress.value = result.community
-      socialPoolAddress.value = result.pool
-      importForm.createHash = result.txHash
-      importForm.communityAddress = result.community
-      importForm.socialPoolAddress = result.pool
       importForm.ethAddr = accStore.ethConnectAddress;
 
       // 设置 logo 和 desc（从 GeckoTerminal 获取的信息）
@@ -339,6 +339,22 @@ const importTokenStepClick = async () => {
         }
       }
 
+      // A successful ImportHelper transaction is irreversible. Persist its
+      // receipt before calling the API so a timeout, API validation failure, or
+      // browser restart can resume registration without sending a second tx.
+      if (!importForm.createHash || !importForm.communityAddress || !importForm.socialPoolAddress) {
+        const result = await deployNutboxCommunity(importForm.token as `0x${string}`)
+        communityAddress.value = result.community
+        socialPoolAddress.value = result.pool
+        importForm.createHash = result.txHash
+        importForm.communityAddress = result.community
+        importForm.socialPoolAddress = result.pool
+        savePendingImport()
+      } else {
+        communityAddress.value = importForm.communityAddress
+        socialPoolAddress.value = importForm.socialPoolAddress
+      }
+
       // 调用后端 API 入库
       try {
         await importCommunity(importForm, accStore.ethConnectAddress, '', '')
@@ -348,7 +364,6 @@ const importTokenStepClick = async () => {
         return
       }
       useModalStore().setModalCloseEnable(true);
-      localStorage.setItem('importTokenForm', JSON.stringify(importForm))
       importStep.value = 4
 
     } else if (importStep.value === 4) {
@@ -452,7 +467,22 @@ watch(() => createLoading.value, () => {
 })
 
 onMounted(async () => {
-  localStorage.removeItem('importTokenForm')
+  const pendingImport = localStorage.getItem('importTokenForm')
+  if (pendingImport) {
+    try {
+      const parsed = JSON.parse(pendingImport) as PendingImport
+      if (parsed.chainId === chainStore.activeChainId && parsed.form?.createHash) {
+        Object.assign(importForm, parsed.form)
+        communityAddress.value = parsed.form.communityAddress ?? ''
+        socialPoolAddress.value = parsed.form.socialPoolAddress ?? ''
+        importStep.value = 3
+      } else {
+        localStorage.removeItem('importTokenForm')
+      }
+    } catch (_) {
+      localStorage.removeItem('importTokenForm')
+    }
+  }
   let prevForm:any  = localStorage.getItem('createTokenForm')
   if (prevForm){
     prevForm = JSON.parse(prevForm)

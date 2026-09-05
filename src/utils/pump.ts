@@ -332,6 +332,44 @@ export const getCreatePumpFee = async (userAddress: `0x${string}`): Promise<bigi
 
 export type ImportCommunityFee = { createFee: bigint; settingsFee: bigint; ipshareCreateFee: bigint; total: bigint; createsIPShare: boolean }
 
+const LEGACY_IMPORT_CREATE_ABI = [{
+    type: 'function',
+    name: 'createCommunityAndPool',
+    stateMutability: 'payable',
+    inputs: [
+        { name: 'token', type: 'address' },
+        { name: 'existingCommunity', type: 'address' },
+    ],
+    outputs: [
+        { name: 'community', type: 'address' },
+        { name: 'pool', type: 'address' },
+    ],
+}] as const
+
+/** Robinhood does not implement the legacy two-address selector. */
+const ENHANCED_IMPORT_CREATE_ABI = [{
+    type: 'function',
+    name: 'createCommunityAndPool',
+    stateMutability: 'payable',
+    inputs: [
+        { name: 'token', type: 'address' },
+        { name: 'calculator', type: 'address' },
+        { name: 'distributionPolicy', type: 'bytes' },
+    ],
+    outputs: [
+        { name: 'community', type: 'address' },
+        { name: 'pool', type: 'address' },
+    ],
+}, {
+    type: 'error',
+    name: 'InsufficientFee',
+    inputs: [],
+}, {
+    type: 'error',
+    name: 'TokenAlreadyImported',
+    inputs: [],
+}] as const
+
 /** 与 ImportHelper 的链上费用算法保持一致；tick 仍由 API/DB 保证全局唯一。 */
 export const getImportCommunityFee = async (importer: `0x${string}`): Promise<ImportCommunityFee> => {
     const { features } = useChainStore().deployment;
@@ -367,13 +405,20 @@ export const deployNutboxCommunity = async (
     const args = deployment.features.enhancedImportHelper
         ? [token, deployment.contracts.hourlyTickCalculator, '0x']
         : [token, zeroAddress];
+    // Restrict the ABI as well as the arguments. The deployed Robinhood helper
+    // rejects the legacy selector with empty revert data, which otherwise
+    // surfaces as the unhelpful generic "contract function reverted" message.
+    const createAbi = deployment.features.enhancedImportHelper
+        ? ENHANCED_IMPORT_CREATE_ABI
+        : LEGACY_IMPORT_CREATE_ABI;
     const hash = await writeContract({
         contractName: 'ImportHelper',
         functionName: 'createCommunityAndPool',
         // BSC deploys the fixed-calculator two-argument helper. Robinhood's
         // enhanced helper requires the calculator and distribution policy.
         args,
-        value: fee.total
+        value: fee.total,
+        abi: createAbi,
     });
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
