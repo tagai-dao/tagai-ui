@@ -9,7 +9,7 @@ import { useAccount } from "@/composables/useAccount";
 import { bytesToHex, formatPrice } from "@/utils/helper";
 import { createCoin, calculateInitEth, checkTickUsed, getCreatePumpFee, getTokenDexPools, getTokenERC20Info, deployNutboxCommunity, injectTokens, validateImportedTokenPool, type TokenDexResult, type DexPoolInfo } from "@/utils/pump";
 import { handleErrorTip, notify } from "@/utils/notify";
-import { createCommunity, importCommunity } from '@/apis/api'
+import { createCommunity, importCommunity, validateImportPool } from '@/apis/api'
 import { getTagStyle } from '@/composables/useTags'
 import emitter from '@/utils/emitter'
 import {useUploadImg} from "@/composables/useUploadImg";
@@ -343,6 +343,15 @@ const importTokenStepClick = async () => {
       // receipt before calling the API so a timeout, API validation failure, or
       // browser restart can resume registration without sending a second tx.
       if (!importForm.createHash || !importForm.communityAddress || !importForm.socialPoolAddress) {
+        // Match the server's routed-pool policy before paying the creation fee.
+        // Existing chain receipts skip creation and continue idempotent recovery.
+        const validation = await validateImportPool(
+          importForm.token, importForm.pair!, Number(importForm.dexVersion), accStore.ethConnectAddress,
+        )
+        if (!validation?.valid) {
+          importErrTip.value = validation?.error || 'Selected pool is not supported by the import API'
+          return
+        }
         const result = await deployNutboxCommunity(importForm.token as `0x${string}`)
         communityAddress.value = result.community
         socialPoolAddress.value = result.pool

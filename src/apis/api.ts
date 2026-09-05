@@ -253,6 +253,9 @@ export const createCommunity = async (params: CreateCommunity) =>
 export const importCommunity = async (importInfo: CreateCommunity, ethAddr: string, signature: string, infoStr: string) =>
   post(BACKEND_API_URL + '/community/importCommunity', {importInfo, ethAddr, signature, infoStr})
 
+export const validateImportPool = async (token: string, pair: string, dexVersion: number, ethAddr: string): Promise<any> =>
+  post(BACKEND_API_URL + '/community/validateImportPool', { token, pair, dexVersion, ethAddr })
+
 export const checkImportTokenDeployed = async (transferHash: string) =>
   get(BACKEND_API_URL + '/community/checkImportTokenDeployed', {transferHash})
 
