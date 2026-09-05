@@ -45,6 +45,7 @@ const finished = reactive({
   [ListType.Trending]: false,
   [ListType.New]: false,
 })
+const nextNewPage = ref(1)
 const { setInter } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
@@ -98,6 +99,7 @@ async function refresh() {
       finished[ListType.New] = false
       let communities = await getCommunitiesByNew() as Array<Community>;
       if (communities && communities.length > 0) {
+        nextNewPage.value = 1
         // comStore.newCommunities = communities
         getTokenInfo(communities).then((res) => {
           comStore.newCommunities = [...res]
@@ -144,10 +146,15 @@ async function loadMore() {
         return;
       }
       if (finished[ListType.New]) return;
-      let communities = await getCommunitiesByNew(Math.floor((comStore.newCommunities.length - 1) / 30) + 1) as Array<Community>;
+      let communities = await getCommunitiesByNew(nextNewPage.value) as Array<Community>;
       if (communities && communities.length > 0) {
-        comStore.newCommunities = comStore.newCommunities.concat(await getTokenInfo(communities))
+        const hydrated = await getTokenInfo(communities)
+        const existingTokens = new Set(comStore.newCommunities.map((community) => community.token?.toLowerCase()).filter(Boolean))
+        comStore.newCommunities = comStore.newCommunities.concat(
+          hydrated.filter((community) => !existingTokens.has(community.token?.toLowerCase()))
+        )
       }
+      nextNewPage.value += 1
       if (communities.length < 30) {
         finished[ListType.New] = true
       }
@@ -190,11 +197,18 @@ async function getNewCommunities() {
     let communities = await getCommunitiesByNew() as Array<Community>;
     if (communities && communities.length > 0) {
       // 先用 API 数据填滚动条；只给可见的前 10 条做链上补价，减轻与 Feed 抢 RPC
-      comStore.newCommunities = communities
+      const loaded = comStore.newCommunities || []
+      const loadedTokens = new Set(communities.map((community) => community.token?.toLowerCase()).filter(Boolean))
+      // Keep pages the user has already loaded. The minute refresh only
+      // replaces page 0 and must not make older imported tokens disappear
+      // while the user is scrolling toward them.
+      comStore.newCommunities = communities.concat(
+        loaded.filter((community) => !loadedTokens.has(community.token?.toLowerCase()))
+      )
       const head = communities.slice(0, 10)
       getTokenInfo(head).then((res) => {
         const byToken = new Map(res.map((c) => [c.token?.toLowerCase(), c]))
-        comStore.newCommunities = communities.map((c) => byToken.get(c.token?.toLowerCase() ?? '') ?? c)
+        comStore.newCommunities = comStore.newCommunities.map((c) => byToken.get(c.token?.toLowerCase() ?? '') ?? c)
       })
     } else {
       finished[ListType.New] = true
@@ -314,6 +328,16 @@ watch([activeMainMenu, coinSubMenu], () => {
 })
 
 watch(() => chainStore.activeChainId, () => {
+  // Stores are shared between routes, but list data is chain-specific. Clear
+  // them before stale async hydration can be rendered or used to calculate
+  // the next page index for the newly selected chain.
+  comStore.marketCapCommunities = []
+  comStore.newCommunities = []
+  comStore.trendingCommunities = []
+  finished[ListType.MarketCap] = false
+  finished[ListType.New] = false
+  finished[ListType.Trending] = false
+  nextNewPage.value = 1
   bStockCommunities.value = []
   bStocksLoaded.value = false
   ensureCoinListLoaded()
