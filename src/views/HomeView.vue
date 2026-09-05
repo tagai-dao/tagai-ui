@@ -26,7 +26,7 @@ import Predict from "@/views/predict/Index.vue";
 import BasketsListView from '@/views/baskets/BasketsListView.vue'
 import {type HomeNewSource, TweetListType, useTweetsStore} from "@/stores/tweets";
 import {filterByActiveChain} from "@/utils/chainFilter";
-import {isBStockCommunity, refreshRobinhoodBStockRegistry} from '@/config/bstocks'
+import {isBStockCommunity, refreshRobinhoodBStockRegistry, registerRobinhoodStockCommunities} from '@/config/bstocks'
 import {externalSourceLogos, type AccountOrigin} from '@/assets/externalSourceLogos'
 
 const listType = ref(ListType.Trending)
@@ -218,17 +218,18 @@ async function getNewCommunities() {
   }
 }
 
-/** BSC 使用 CA 白名单；RH 以当前 NutboxRouter 路由为准。 */
+/** 两条链均按官方 CA 元数据分类；本地快照和 RH 路由只用于容灾。 */
 async function loadBStocks(force = false) {
   if (bStocksLoading.value || (bStocksLoaded.value && !force)) return
   try {
     bStocksLoading.value = true
     const imported = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
     if (chainStore.deployment.key === 'rh') {
+      registerRobinhoodStockCommunities(imported)
       try {
         await refreshRobinhoodBStockRegistry(imported.map((community) => community.token), { force })
       } catch (error) {
-        // API stock metadata remains a temporary fallback when an RH RPC is unavailable.
+        // API official-stock metadata remains authoritative when RH RPC is unavailable.
         console.error('Load RH Router-supported stocks error:', error)
       }
     }

@@ -9,7 +9,7 @@ import { getCommunityByMarketCap } from '@/apis/api'
 import { getTokenInfo } from '@/utils/pump'
 import { handleErrorTip } from '@/utils/notify'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
-import { isBStockCommunity, refreshRobinhoodBStockRegistry } from '@/config/bstocks'
+import { isBStockCommunity, refreshRobinhoodBStockRegistry, registerRobinhoodStockCommunities } from '@/config/bstocks'
 import { useChainStore } from '@/stores/chain'
 
 const comStore = useCommunityStore()
@@ -89,6 +89,7 @@ onMounted(async () => {
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = communities
         if (chainStore.deployment.key === 'rh') {
+          registerRobinhoodStockCommunities(communities)
           refreshRobinhoodBStockRegistry(communities.map((community) => community.token)).catch((error) => {
             console.error('Load RH Router-supported stocks error:', error)
           })

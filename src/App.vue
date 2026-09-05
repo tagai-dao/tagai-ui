@@ -14,7 +14,7 @@ import emitter from "./utils/emitter";
 import { isAddress } from "viem";
 import { useDocumentTitle } from "./composables/useDocumentTitle";
 import { useChainStore } from "./stores/chain";
-import { refreshRobinhoodBStockRegistry } from "./config/bstocks";
+import { refreshRobinhoodBStockRegistry, registerRobinhoodStockCommunities } from "./config/bstocks";
 import type { Community } from "./types";
 
 const stateStore = useStateStore();
@@ -61,6 +61,7 @@ onMounted(async () => {
     // Preload the Router-backed stock registry without blocking first paint.
     getImportedCommunityInfo().then((communities) => {
       const rows = (communities || []) as Community[]
+      registerRobinhoodStockCommunities(rows)
       return refreshRobinhoodBStockRegistry(rows.map((community) => community.token))
     }).catch((error) => {
       console.error('Preload RH Router-supported stocks error:', error)
