@@ -667,7 +667,7 @@ export const validateImportedTokenPool = async (
     try {
         const account = useAccountStore().ethConnectAddress
         if (!isAddress(account ?? '')) throw new Error('Connect a wallet to validate trading')
-        const validationNativeIn = 1_000_000_000_000n // 0.000001 BNB; eth_call only.
+        const validationNativeIn = 1_000_000_000_000n // 0.000001 native token; eth_call only.
         const buyAmountOut = await quoteImportedTokenBuy(token, pair, dexVersion, validationNativeIn)
         if (buyAmountOut <= 0n) throw new Error('Buy quote returned zero output')
         const sellAmountOut = await quoteImportedTokenSell(token, pair, dexVersion, buyAmountOut)
@@ -676,6 +676,7 @@ export const validateImportedTokenPool = async (
         const wrapper = resolveContractAddress('ImportedTokenSwapWrapper')
         if (!wrapper) throw new Error('ImportedTokenSwapWrapper is not configured')
         const { sourceType, sourceData } = await buildImportedTokenSwapSource(Number(dexVersion), pair)
+        const isRobinhood = useChainStore().deployment.key === 'rh'
         await getReadOnlyClient().simulateContract({
             address: wrapper,
             abi: abis.ImportedTokenSwapWrapper,
@@ -691,6 +692,17 @@ export const validateImportedTokenPool = async (
             ],
             account: account as `0x${string}`,
             value: validationNativeIn,
+            // eth_call still checks that `from` can afford value + gas. Pool
+            // validation must not depend on the connected wallet already
+            // holding native gas on this chain, so fund it only inside the
+            // simulated state. This neither changes chain state nor relaxes
+            // the balance check when the user submits a real swap.
+            ...(isRobinhood ? {
+                stateOverride: [{
+                    address: account as `0x${string}`,
+                    balance: 1_000_000_000_000_000_000n,
+                }],
+            } : {}),
         } as any)
         return { supported: true, buyAmountOut, sellAmountOut }
     } catch (error) {
