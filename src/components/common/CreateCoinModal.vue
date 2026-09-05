@@ -16,7 +16,7 @@ import {useUploadImg} from "@/composables/useUploadImg";
 import ImageCropper from "@/components/common/ImageCropper.vue";
 import { useTools } from "@/composables/useTools";
 import debounce from "lodash.debounce";
-import { parseEther, isAddress, checksumAddress, parseUnits } from "viem";
+import { parseEther, isAddress, checksumAddress, parseUnits, zeroAddress } from "viem";
 import { useI18n } from "vue-i18n";
 import { useChainStore } from '@/stores/chain'
 
@@ -52,6 +52,10 @@ const importStep = ref(1);
 const importErrTip = ref('');
 const tokenDexResult = ref<TokenDexResult | null>(null);
 const selectedPoolIndex = ref(-1);
+const showCustomPool = ref(false);
+const customPoolId = ref('');
+const customPoolLoading = ref(false);
+const customPoolError = ref('');
 type PoolValidationState = { status: 'checking' | 'supported' | 'unsupported'; error?: string }
 const poolValidation = ref<Record<string, PoolValidationState>>({});
 const createLoading = ref(false);
@@ -77,11 +81,84 @@ const selectImportPool = (index: number) => {
   importErrTip.value = ''
 }
 
+const addCustomImportPool = async () => {
+  const poolId = customPoolId.value.trim()
+  customPoolError.value = ''
+  if (!/^0x[0-9a-fA-F]{64}$/.test(poolId)) {
+    customPoolError.value = 'Enter a valid V4 Pool ID (0x followed by 64 hex characters)'
+    return
+  }
+  if (!tokenDexResult.value || !isAddress(importForm.token) || !isAddress(accStore.ethConnectAddress)) {
+    customPoolError.value = 'Token or wallet address is unavailable'
+    return
+  }
+
+  customPoolLoading.value = true
+  try {
+    // The API deliberately validates custom pools on-chain. Indexer discovery
+    // is optional, but the exact Wrapper quote and buy simulation must pass.
+    const validation = await validateImportPool(importForm.token, poolId, 4, accStore.ethConnectAddress)
+    if (!validation?.valid) {
+      customPoolError.value = validation?.error || 'Custom pool does not support quoting and trading'
+      return
+    }
+
+    const info = validation.poolInfo ?? {}
+    const quoteToken = isAddress(info.quoteToken ?? '') ? info.quoteToken : zeroAddress
+    const customPool: DexPoolInfo = {
+      pairAddress: poolId,
+      baseToken: importForm.token,
+      quoteToken,
+      baseTokenSymbol: tokenDexResult.value.tokenSymbol,
+      quoteTokenSymbol: quoteToken.toLowerCase() === zeroAddress ? nativeSymbol.value : '',
+      pairedToken: quoteToken,
+      pairedTokenSymbol: quoteToken.toLowerCase() === zeroAddress ? nativeSymbol.value : '',
+      dexVersion: 4,
+      dexLabel: `${dexName.value} v4`,
+      bnbReserves: 0,
+      tokenReserves: 0,
+      priceNative: '0',
+      priceUsd: tokenDexResult.value.tokenPrice,
+      liquidityUsd: Number(info.liquidityUsd ?? 0),
+      logoUrl: '',
+      volume24h: Number(info.volume24h ?? 0),
+      txCount24h: Number(info.txCount24h ?? 0),
+      createdAt: '',
+      feeTier: 'Custom',
+    }
+
+    let index = tokenDexResult.value.pools.findIndex(pool =>
+      pool.pairAddress.toLowerCase() === poolId.toLowerCase()
+    )
+    if (index < 0) {
+      tokenDexResult.value.pools.push(customPool)
+      index = tokenDexResult.value.pools.length - 1
+    }
+    poolValidation.value = {
+      ...poolValidation.value,
+      [poolId.toLowerCase()]: { status: 'supported' },
+    }
+    selectedPoolIndex.value = index
+    importErrTip.value = ''
+    showCustomPool.value = false
+    customPoolId.value = ''
+  } catch (error: any) {
+    customPoolError.value = error?.message || 'Failed to validate custom pool'
+  } finally {
+    customPoolLoading.value = false
+  }
+}
+
 const validateImportPools = async (token: string, result: TokenDexResult) => {
   poolValidation.value = Object.fromEntries(result.pools.map(pool => [
     poolValidationKey(pool),
     { status: 'checking' as const },
   ]))
+
+  if (result.pools.length === 0) {
+    selectedPoolIndex.value = -1
+    return
+  }
 
   let cursor = 0
   const workerCount = Math.min(3, result.pools.length)
@@ -99,9 +176,11 @@ const validateImportPools = async (token: string, result: TokenDexResult) => {
     }
   }))
 
-  selectedPoolIndex.value = result.pools.findIndex(pool =>
-    getPoolValidation(pool).status === 'supported'
-  )
+  if (selectedPoolIndex.value < 0) {
+    selectedPoolIndex.value = result.pools.findIndex(pool =>
+      getPoolValidation(pool).status === 'supported'
+    )
+  }
   if (selectedPoolIndex.value < 0) {
     importErrTip.value = 'No pool passed both quote and trade validation'
   }
@@ -267,17 +346,13 @@ const importTokenStepClick = async () => {
       }
       importForm.token = checksumAddress(importForm.token)
 
-      // get dex pools + token info
-      const result = await getTokenDexPools(importForm.token)
-      if (!result || result.pools.length === 0) {
-        importErrTip.value = `No ${dexName.value} pool found for this token`
-        return
-      }
-      tokenDexResult.value = result
-      selectedPoolIndex.value = -1
-
-      // get ERC20 info from chain
-      const erc20Info = await getTokenERC20Info(importForm.token)
+      // Fetch indexed pools and canonical ERC20 metadata in parallel. An empty
+      // indexer result is allowed because step 2 offers on-chain custom PoolId
+      // validation.
+      const [indexedResult, erc20Info] = await Promise.all([
+        getTokenDexPools(importForm.token),
+        getTokenERC20Info(importForm.token),
+      ])
       if (erc20Info.decimals != 18) {
         importErrTip.value = `Decimals: ${erc20Info.decimals} is not supported now`
         return;
@@ -302,6 +377,19 @@ const importTokenStepClick = async () => {
       }
       importForm.tick = tick
       importForm.decimals = erc20Info.decimals
+      const result: TokenDexResult = indexedResult ?? {
+        tokenName: erc20Info.symbol,
+        tokenSymbol: erc20Info.symbol,
+        tokenLogo: '',
+        tokenPrice: '0',
+        fdv: 0,
+        pools: [],
+      }
+      tokenDexResult.value = result
+      selectedPoolIndex.value = -1
+      showCustomPool.value = false
+      customPoolId.value = ''
+      customPoolError.value = ''
       importStep.value = 2
       await validateImportPools(importForm.token, result)
 
@@ -820,6 +908,40 @@ onMounted(async () => {
               </div>
             </div>
           </div>
+
+          <button
+            type="button"
+            class="custom-pool-toggle"
+            :disabled="createLoading || customPoolLoading"
+            @click="showCustomPool = !showCustomPool; customPoolError = ''"
+          >
+            <span>＋ Add custom</span>
+            <span class="text-xs font-normal">V4 Pool ID</span>
+          </button>
+
+          <div v-if="showCustomPool" class="custom-pool-form">
+            <label for="customPoolId" class="text-sm font-semibold text-black">Custom V4 Pool ID</label>
+            <p class="text-xs text-grey-normal">
+              The pool can be added before GeckoTerminal or DexScreener indexes it. Quote and trade execution are verified on-chain.
+            </p>
+            <div class="custom-pool-input-row">
+              <input
+                id="customPoolId"
+                v-model="customPoolId"
+                type="text"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="0x… (64 hex characters)"
+                :disabled="customPoolLoading"
+                @keyup.enter="addCustomImportPool"
+              />
+              <button type="button" :disabled="customPoolLoading" @click="addCustomImportPool">
+                <i-ep-loading v-if="customPoolLoading" class="animate-spin" />
+                <span v-else>Add</span>
+              </button>
+            </div>
+            <p v-if="customPoolError" class="text-red-e6 text-xs break-words">{{ customPoolError }}</p>
+          </div>
         </div>
         <p v-show="importErrTip.length > 0" class="text-red-e6 text-sm">
           {{ importErrTip }}
@@ -1087,6 +1209,80 @@ textarea.field-control { min-height: 90px; resize: vertical; align-items: flex-s
 
 .import-pool-card--selected .text-grey-normal {
   color: var(--text-muted) !important;
+}
+
+.custom-pool-toggle {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 15px;
+  border: 1px dashed rgba(254, 145, 63, .65);
+  border-radius: 12px;
+  background: rgba(254, 145, 63, .06);
+  color: #e77a27;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.custom-pool-toggle:hover {
+  border-color: #fe913f;
+  background: rgba(254, 145, 63, .1);
+}
+
+.custom-pool-toggle:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+.custom-pool-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px;
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.custom-pool-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.custom-pool-input-row input {
+  min-width: 0;
+  flex: 1;
+  height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--border-base);
+  border-radius: 9px;
+  outline: none;
+  background: var(--surface);
+  color: var(--text-base);
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.custom-pool-input-row input:focus {
+  border-color: #fe913f;
+  box-shadow: 0 0 0 3px rgba(254, 145, 63, .08);
+}
+
+.custom-pool-input-row button {
+  display: grid;
+  width: 64px;
+  place-items: center;
+  border-radius: 9px;
+  background: #fe913f;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.custom-pool-input-row button:disabled {
+  opacity: .5;
+  cursor: wait;
 }
 
 .selected-pool-summary {
