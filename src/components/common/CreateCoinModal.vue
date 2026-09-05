@@ -100,7 +100,7 @@ const validateImportPools = async (token: string, result: TokenDexResult) => {
   }))
 
   selectedPoolIndex.value = result.pools.findIndex(pool =>
-    getPoolValidation(pool).status === 'supported' && pool.bnbReserves >= 1
+    getPoolValidation(pool).status === 'supported'
   )
   if (selectedPoolIndex.value < 0) {
     importErrTip.value = 'No pool passed both quote and trade validation'
@@ -314,10 +314,6 @@ const importTokenStepClick = async () => {
       const pool = tokenDexResult.value.pools[selectedPoolIndex.value]
       if (getPoolValidation(pool).status !== 'supported') {
         importErrTip.value = 'Selected pool does not support quoting and trading'
-        return
-      }
-      if (pool.bnbReserves < 1) {
-        importErrTip.value = `Selected pool liquidity must be greater than 1 ${nativeSymbol.value}`
         return
       }
       importForm.pair = pool.pairAddress
@@ -802,6 +798,12 @@ onMounted(async () => {
               class="text-red-e6 text-xs mb-2 break-words"
             >
               {{ getPoolValidation(pool).error }}
+            </p>
+            <p
+              v-else-if="pool.bnbReserves < 1"
+              class="text-red-e6 text-xs mb-2 break-words"
+            >
+              Low liquidity — you can import now and add more liquidity later.
             </p>
             <div class="grid grid-cols-3 gap-2 text-xs">
               <div>
