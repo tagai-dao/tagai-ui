@@ -216,7 +216,7 @@ onMounted(async () => {
           <span class="font-medium text-black">{{ subjectFee }}</span>
           <el-tooltip popper-class="c-arrow-popper">
             <template #content>
-              <div class="text-gray-700 p-2 max-w-200px text-xs">{{ $t('profileView.feeIncomeDesc') || 'Users buy/sell IPShare will cost BNB for fee. 4.5% is to the KOL, 2.5% is to protocol.' }}</div>
+              <div class="text-gray-700 p-2 max-w-200px text-xs">{{ $t('profileView.feeIncomeDesc', { symbol: nativeSymbol }) || `Users buy/sell IPShare pay fees in ${nativeSymbol}. 4.5% goes to the KOL and 2.5% to the protocol.` }}</div>
             </template>
             <button>
               <img class="w-4 h-4" src="~@/assets/icons/icon-tip.svg" alt="">

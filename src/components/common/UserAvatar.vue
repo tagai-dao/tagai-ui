@@ -6,10 +6,13 @@ import { formatAddress, formatAmount, formatPrice } from "@/utils/helper";
 import { useRouter } from 'vue-router';
 import { useCommunityStore } from "@/stores/community";
 import { useStateStore } from "@/stores/common";
+import { useChainStore } from '@/stores/chain'
 
 const router = useRouter()
 const comStore = useCommunityStore()
 const stateStore = useStateStore()
+const chainStore = useChainStore()
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 const props = withDefaults(defineProps<{
     twitterId?: string | null | undefined,
     profileImg: string | null | undefined,
@@ -124,7 +127,7 @@ onMounted(() => {
         case 3:
           return "Net buy"
         case 4:
-          return "BNB Balance"
+          return `${nativeSymbol.value} Balance`
         case 5:
           return "IPShare MCap"
         case 6:
@@ -195,7 +198,7 @@ onMounted(() => {
         </div>
         <div v-if="props.ethAddr" class="pl-10 mt-2 text-grey-normal">
           <div class="flex gap-x-2 whitespace-nowrap" @click="onCopy(props.ethAddr ?? '')">
-            <span>BNB Address</span>
+            <span>{{ chainStore.deployment.name }} Address</span>
             <span class="text-gradient bg-gradient-primary">{{ formatAddress(props.ethAddr ?? '') }}</span>
           </div>
         </div>

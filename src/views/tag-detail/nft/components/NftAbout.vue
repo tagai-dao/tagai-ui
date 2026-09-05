@@ -9,6 +9,7 @@ const props = defineProps<{ pool: NutboxIndexBrokerPool; model: NutboxNftPoolMod
 const { state, loading, error } = props.model
 const chainStore = useChainStore()
 const explorer = computed(() => chainStore.browser.replace(/\/$/, ''))
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 const utilization = computed(() => state.maxSupply > 0n ? Number(state.inventoryCount * 10_000n / state.maxSupply) / 100 : 0)
 const short = (value?: string) => value ? `${value.slice(0, 8)}…${value.slice(-6)}` : '—'
 const contracts = computed(() => [
@@ -27,8 +28,8 @@ const contracts = computed(() => [
         <div class="mt-4 grid grid-cols-2 gap-2 web:grid-cols-4">
           <div class="rounded-xl bg-surface-2 p-3"><span class="text-xs text-grey-3f">Queue trade fee</span><b class="mt-1 block">{{ (state.normalFeeBps / 100).toFixed(2) }}%</b></div>
           <div class="rounded-xl bg-surface-2 p-3"><span class="text-xs text-grey-3f">Specific NFT fee</span><b class="mt-1 block">{{ (state.specificFeeBps / 100).toFixed(2) }}%</b></div>
-          <div class="rounded-xl bg-surface-2 p-3"><span class="text-xs text-grey-3f">Platform fee quote</span><b class="mt-1 block">{{ formatEther(state.platformFee) }} BNB</b></div>
-          <div class="rounded-xl bg-surface-2 p-3"><span class="text-xs text-grey-3f">Queue BNB fee</span><b class="mt-1 block">{{ formatEther(state.normalFee) }} BNB</b></div>
+          <div class="rounded-xl bg-surface-2 p-3"><span class="text-xs text-grey-3f">Platform fee quote</span><b class="mt-1 block">{{ formatEther(state.platformFee) }} {{ nativeSymbol }}</b></div>
+          <div class="rounded-xl bg-surface-2 p-3"><span class="text-xs text-grey-3f">Queue {{ nativeSymbol }} fee</span><b class="mt-1 block">{{ formatEther(state.normalFee) }} {{ nativeSymbol }}</b></div>
         </div>
       </div>
 
@@ -39,7 +40,7 @@ const contracts = computed(() => [
           <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">AMM inventory</span><b class="mt-1 block">{{ state.inventoryCount }} NFTs</b></div>
           <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">AMM utilization</span><b class="mt-1 block">{{ utilization.toFixed(2) }}%</b></div>
           <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">Mint cost</span><b class="mt-1 block">{{ formatToken(state.communityTokenPrice, state.communityDecimals) }} {{ state.communitySymbol }}</b></div>
-          <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">Public mint</span><b class="mt-1 block">{{ formatEther(state.nativePrice) }} BNB</b></div>
+          <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">Public mint</span><b class="mt-1 block">{{ formatEther(state.nativePrice) }} {{ nativeSymbol }}</b></div>
           <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">Referral</span><b class="mt-1 block">{{ (state.referralBps / 100).toFixed(2) }}%</b></div>
           <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">Community weight</span><b class="mt-1 block">{{ state.totalWeight }}</b></div>
           <div class="rounded-xl border border-line p-3"><span class="text-xs text-grey-3f">Active index weight</span><b class="mt-1 block">{{ formatToken(state.totalActiveIndexWeight, state.miningDecimals) }}</b></div>

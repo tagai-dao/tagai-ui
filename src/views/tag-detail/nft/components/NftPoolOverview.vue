@@ -4,12 +4,15 @@ import { formatEther } from 'viem'
 import type { NutboxIndexBrokerPool } from '@/types/nutbox'
 import { formatToken, type NutboxNftPoolModel } from '@/composables/useNutboxNftPool'
 import { useCommunityStore } from '@/stores/community'
+import { useChainStore } from '@/stores/chain'
 import { getNutboxPoolScale, getV10DistributionInfo } from '@/utils/pump'
 
 const props = defineProps<{ pool: NutboxIndexBrokerPool; model: NutboxNftPoolModel }>()
 const emit = defineEmits<{ mining: []; rewards: [] }>()
 const { state } = props.model
 const communityStore = useCommunityStore()
+const chainStore = useChainStore()
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 
 const isStake = computed(() => props.pool.miningMode === 'stake' || props.pool.nftTemplateKind === 'STAKE')
 const miningAprBps = computed<bigint | null>(() => {
@@ -87,7 +90,7 @@ watch(
     </div>
     <div><span class="block text-xs text-grey-3f">NFT supply</span><b class="mt-2 block">{{ state.totalSupply }} / {{ state.maxSupply }}</b></div>
     <div><span class="block text-xs text-grey-3f">Mint cost per NFT</span><b class="mt-2 block">{{ formatToken(state.communityTokenPrice, state.communityDecimals) }} {{ state.communitySymbol }}</b></div>
-    <div><span class="block text-xs text-grey-3f">Public mint price</span><b class="mt-2 block">{{ formatEther(state.nativePrice) }} BNB</b></div>
+    <div><span class="block text-xs text-grey-3f">Public mint price</span><b class="mt-2 block">{{ formatEther(state.nativePrice) }} {{ nativeSymbol }}</b></div>
     <div><span class="block text-xs text-grey-3f">Public mint referral</span><b class="mt-2 block">{{ (state.referralBps / 100).toFixed(2) }}%</b></div>
   </div>
 </template>

@@ -11,6 +11,7 @@ import { transferEthTo } from '@/utils/wallets'
 import { parseEther } from 'viem'
 import { notify } from '@/utils/notify'
 import { useRouter } from 'vue-router'
+import { useChainStore } from '@/stores/chain'
 
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
 const { onCopy } = useTools()
@@ -21,6 +22,9 @@ const emit = defineEmits(['close'])
 const modalStore = useModalStore()
 const accStore = useAccountStore()
 const router = useRouter()
+const chainStore = useChainStore()
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
+const chainName = computed(() => chainStore.deployment.name)
 
 // 响应式数据
 const isLoading = ref(false)
@@ -180,7 +184,7 @@ onUnmounted(() => {
               <div class="flex items-center gap-2">
                 <span class="text-grey-normal text-md">{{ $t('balance') }}:</span>
               </div>
-              <span class="text-grey-normal-hover font-semibold">{{ formatAmount(accStore?.ethBalance ?? 0) }} BNB</span>
+              <span class="text-grey-normal-hover font-semibold">{{ formatAmount(accStore?.ethBalance ?? 0) }} {{ nativeSymbol }}</span>
             </div>
           </div>
 
@@ -247,7 +251,7 @@ onUnmounted(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h2 class="text-h2 text-grey-normal-hover">{{ $t('web3.recharge') }} BNB</h2>
+            <h2 class="text-h2 text-grey-normal-hover">{{ $t('web3.recharge') }} {{ nativeSymbol }}</h2>
             <div class="w-8"></div>
           </div>
 
@@ -258,7 +262,7 @@ onUnmounted(() => {
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
               </svg>
             </div>
-            <span class="text-grey-normal text-sm">{{ $t('web3.availableBalance') }}: {{ formatAmount(accStore.ethBalance) }} BNB</span>
+            <span class="text-grey-normal text-sm">{{ $t('web3.availableBalance') }}: {{ formatAmount(accStore.ethBalance) }} {{ nativeSymbol }}</span>
           </div>
 
           <!-- 二维码区域 -->
@@ -298,9 +302,9 @@ onUnmounted(() => {
             <div class="flex items-center justify-between">
               <span class="text-grey-normal text-sm">{{ $t('web3.network') }}</span>
               <div class="flex items-center gap-2">
-                <span class="text-grey-normal-hover text-sm">BSC Mainnet</span>
+                <span class="text-grey-normal-hover text-sm">{{ chainName }}</span>
                 <div class="w-5 h-5 bg-orange-normal rounded-full flex items-center justify-center">
-                  <img src="~@/assets/bnb-logo.svg" alt="">
+                  <img :src="chainStore.nativeCurrency.icon" :alt="nativeSymbol">
                 </div>
               </div>
             </div>
@@ -326,7 +330,7 @@ onUnmounted(() => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h2 class="text-h2 text-grey-normal-hover">{{ $t('web3.withdraw') }} BNB</h2>
+            <h2 class="text-h2 text-grey-normal-hover">{{ $t('web3.withdraw') }} {{ nativeSymbol }}</h2>
             <div class="w-8"></div>
           </div>
 
@@ -337,7 +341,7 @@ onUnmounted(() => {
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
               </svg>
             </div>
-            <span class="text-grey-normal text-sm">{{ $t('web3.availableBalance') }}: {{ formatAmount(accStore.ethBalance) }} BNB</span>
+            <span class="text-grey-normal text-sm">{{ $t('web3.availableBalance') }}: {{ formatAmount(accStore.ethBalance) }} {{ nativeSymbol }}</span>
           </div>
 
           <!-- 目标地址输入 -->
@@ -356,7 +360,7 @@ onUnmounted(() => {
 
           <!-- 数量输入 -->
           <div class="mb-6">
-            <label class="block text-grey-normal text-sm mb-2">Amount(BNB):</label>
+            <label class="block text-grey-normal text-sm mb-2">Amount ({{ nativeSymbol }}):</label>
               <input
                 v-model="withdrawAmount"
                 type="number"

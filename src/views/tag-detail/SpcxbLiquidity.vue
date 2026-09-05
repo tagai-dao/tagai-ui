@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useCommunityStore } from '@/stores/community'
 import { useStateStore } from '@/stores/common'
 import { useAccountStore, EthWalletState } from '@/stores/web3'
+import { useChainStore } from '@/stores/chain'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { getPoolTvl, invalidateClPositionsCache } from '@/apis/api'
@@ -38,6 +39,8 @@ const comStore = useCommunityStore()
 const stateStore = useStateStore()
 const accStore = useAccountStore()
 const modalStore = useModalStore()
+const chainStore = useChainStore()
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 
 const subTab = ref<SubTab>('add')
 const loading = ref(false)
@@ -462,8 +465,8 @@ onMounted(async () => {
           <span class="text-h5 text-black-19 tabular-nums">{{ formatBnbPriceWithUsd(priceBnb) }}</span>
         </div>
         <div class="flex justify-between items-center h-6">
-          <span class="text-h4 text-grey-93">{{ $t('liquidity.bnbReserve') }}</span>
-          <span class="text-h5 text-black-19">{{ formatAmount(Number(formatUnits(reserveBnb, 18))) }} BNB</span>
+          <span class="text-h4 text-grey-93">{{ $t('liquidity.bnbReserve', { symbol: nativeSymbol }) }}</span>
+          <span class="text-h5 text-black-19">{{ formatAmount(Number(formatUnits(reserveBnb, 18))) }} {{ nativeSymbol }}</span>
         </div>
         <div class="flex justify-between items-center h-6">
           <span class="text-h4 text-grey-93">{{ $t('liquidity.tokenReserve', { tick }) }}</span>
@@ -612,7 +615,7 @@ onMounted(async () => {
 
           <div class="flex flex-col gap-1">
             <div class="flex justify-between items-center">
-              <label class="text-h5 text-grey-93">BNB</label>
+              <label class="text-h5 text-grey-93">{{ nativeSymbol }}</label>
               <div v-if="isWalletConnected" class="flex items-center gap-2 text-sm text-grey-6f tabular-nums">
                 <span>{{ $t('balance') }}: {{ formatAmount(ethBalance) }}</span>
                 <button
@@ -661,7 +664,7 @@ onMounted(async () => {
           <p
             v-if="depositBalanceIssue === 'bnb'"
             class="text-sm text-red-e6 leading-snug"
-          >{{ $t('liquidity.insufficientBnb') }}</p>
+          >{{ $t('liquidity.insufficientBnb', { symbol: nativeSymbol }) }}</p>
           <p
             v-else-if="depositBalanceIssue === 'token'"
             class="text-sm text-red-e6 leading-snug"
@@ -715,9 +718,9 @@ onMounted(async () => {
           <span class="text-h4 font-medium">#{{ pos.tokenId.toString() }}</span>
           <span class="text-xs px-2 py-0.5 rounded-full" :class="pos.inRange ? 'bg-green-51/20 text-green-34' : 'bg-grey-e7 text-grey-6f'">{{ pos.inRange ? $t('liquidity.inRange') : $t('liquidity.outOfRange') }}</span>
         </div>
-        <div class="text-h5 text-grey-93">{{ $t('liquidity.priceRange') }}: {{ formatPositionPriceRange(pos) }} BNB/{{ tick }}</div>
+        <div class="text-h5 text-grey-93">{{ $t('liquidity.priceRange') }}: {{ formatPositionPriceRange(pos) }} {{ nativeSymbol }}/{{ tick }}</div>
         <div class="flex justify-between text-h5">
-          <span>{{ formatAmount(Number(formatUnits(pos.amount0, 18))) }} BNB</span>
+          <span>{{ formatAmount(Number(formatUnits(pos.amount0, 18))) }} {{ nativeSymbol }}</span>
           <span>{{ formatAmount(Number(formatUnits(pos.amount1, 18))) }} {{ tick }}</span>
         </div>
         <div class="flex items-center gap-2 mt-1">

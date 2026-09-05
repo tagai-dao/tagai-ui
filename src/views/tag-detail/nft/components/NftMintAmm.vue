@@ -49,6 +49,7 @@ const mintNeedsApproval = computed(() => state.mintAllowance < state.communityTo
 const buyNeedsApproval = computed(() => state.ammAllowance < state.tokensPerNft)
 const selectedOwnedApproved = computed(() => selectedOwned.value?.approved?.toLowerCase() === props.pool.amm.toLowerCase())
 const explorer = computed(() => chainStore.browser.replace(/\/$/, ''))
+const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 
 const connect = () => modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
 const run = async (fn: () => Promise<unknown>, success: string) => {
@@ -153,7 +154,7 @@ onBeforeUnmount(() => socket?.close())
           </div>
           <div>
             <span class="text-sm text-grey-3f">Mint price</span>
-            <strong class="mt-2 block text-xl text-content">{{ formatToken(state.communityTokenPrice, state.communityDecimals) }} {{ state.communitySymbol }}<template v-if="state.whitelistRemaining === 0n"> + {{ formatEther(state.nativePrice) }} BNB</template></strong>
+            <strong class="mt-2 block text-xl text-content">{{ formatToken(state.communityTokenPrice, state.communityDecimals) }} {{ state.communitySymbol }}<template v-if="state.whitelistRemaining === 0n"> + {{ formatEther(state.nativePrice) }} {{ nativeSymbol }}</template></strong>
               <small v-if="referrerTokenId" class="mt-1 block text-grey-3f">Referrer NFT #{{ referrerTokenId }}</small>
             <button v-if="!connected" class="mt-5 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" @click="connect">Connect wallet to mint and manage NFTs.</button>
             <button v-else-if="mintNeedsApproval" class="mt-5 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" :disabled="!!action" @click="run(() => approveErc20(pool.communityToken, pool.pool, state.communityTokenPrice, 'approve-mint'), 'Mint token approved')">Approve {{ state.communitySymbol }}</button>
@@ -183,7 +184,7 @@ onBeforeUnmount(() => socket?.close())
             <div v-else class="rounded-xl border border-dashed border-line p-6 text-center text-grey-3f">AMM inventory is empty</div>
           </div>
         </div>
-        <div class="mt-4 grid gap-2 text-sm web:grid-cols-2"><div class="flex justify-between"><span class="text-grey-3f">Exchange rate</span><b>1 NFT = {{ formatToken(state.tokensPerNft, state.communityDecimals) }} {{ state.communitySymbol }}</b></div><div class="flex justify-between"><span class="text-grey-3f">Maximum BNB fee</span><b>{{ formatNative(state.normalFee) }} BNB</b></div></div>
+        <div class="mt-4 grid gap-2 text-sm web:grid-cols-2"><div class="flex justify-between"><span class="text-grey-3f">Exchange rate</span><b>1 NFT = {{ formatToken(state.tokensPerNft, state.communityDecimals) }} {{ state.communitySymbol }}</b></div><div class="flex justify-between"><span class="text-grey-3f">Maximum {{ nativeSymbol }} fee</span><b>{{ formatNative(state.normalFee) }} {{ nativeSymbol }}</b></div></div>
         <button v-if="!connected" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" @click="connect">Connect wallet</button>
         <button v-else-if="side === 'buy' && buyNeedsApproval" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" :disabled="!!action" @click="run(() => approveErc20(pool.communityToken, pool.amm, state.tokensPerNft, 'approve-buy'), 'AMM token approved')">Approve {{ state.communitySymbol }}</button>
         <button v-else-if="side === 'buy'" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !state.ammActive || inventory.length === 0" @click="executeBuy">Buy queue head</button>
@@ -199,7 +200,7 @@ onBeforeUnmount(() => socket?.close())
         <div v-if="inventory.length === 0" class="py-8 text-center text-grey-3f">AMM inventory is empty</div>
         <div class="mt-4 rounded-xl bg-surface-2 p-3 text-sm">
           <div class="flex justify-between"><span>Community token</span><b>{{ formatToken(state.tokensPerNft, state.communityDecimals) }} {{ state.communitySymbol }}</b></div>
-          <div class="mt-2 flex justify-between"><span>Maximum BNB fee</span><b>{{ formatNative(mode === 'snipe' ? state.specificFee : state.normalFee) }} BNB</b></div>
+          <div class="mt-2 flex justify-between"><span>Maximum {{ nativeSymbol }} fee</span><b>{{ formatNative(mode === 'snipe' ? state.specificFee : state.normalFee) }} {{ nativeSymbol }}</b></div>
         </div>
         <button v-if="!connected" class="mt-3 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" @click="connect">Connect wallet</button>
         <button v-else-if="buyNeedsApproval" class="mt-3 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" :disabled="!!action" @click="run(() => approveErc20(pool.communityToken, pool.amm, state.tokensPerNft, 'approve-buy'), 'AMM token approved')">Approve {{ state.communitySymbol }}</button>
@@ -225,7 +226,7 @@ onBeforeUnmount(() => socket?.close())
             <tr v-for="event in transactions" :key="event.id" class="border-t border-line">
               <td class="py-3">{{ timestamp(event.blockTimestamp) }}</td><td>{{ eventLabel(event) }}</td><td>#{{ event.tokenId }}</td>
               <td>{{ formatToken(BigInt(event.amount || 0), state.communityDecimals) }} {{ state.communitySymbol }}</td>
-              <td>{{ formatNative(BigInt(event.secondaryAmount || 0) + BigInt(event.tertiaryAmount || 0)) }} BNB</td>
+              <td>{{ formatNative(BigInt(event.secondaryAmount || 0) + BigInt(event.tertiaryAmount || 0)) }} {{ nativeSymbol }}</td>
               <td><a :href="`${explorer}/address/${event.account}`" target="_blank" class="text-primary">{{ short(event.account) }}</a></td>
               <td><a :href="`${explorer}/tx/${event.transactionHash}`" target="_blank" class="text-primary">{{ short(event.transactionHash) }}</a></td>
             </tr>
