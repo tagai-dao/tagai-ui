@@ -1,7 +1,7 @@
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, NutboxCommittee, usesThirdPartyMarketCap } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, USD_CONTRACTS, OracleDistributor, OracleDistributorV2, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, OracleDistributor, OracleDistributorV2, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregateWithRpcFallback } from './multicall'
@@ -18,6 +18,7 @@ import { buyTokenV4, sellTokenV4, poolKeyToPoolId, resolveV4PoolId, resolveV4Poo
 import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice, resolveRhV4PoolKeyForTrade } from "./rhV4Swap";
 import { findPumpDeploySalt, getCreatePumpDeployment, verifyPumpSaltVanity } from "./pumpSalt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
+import { CHAINS } from '@/config/chains'
 
 const pumpContract = [
     PumpContract1,
@@ -42,8 +43,6 @@ const getActivePumpAddress = (version: number): string | undefined => {
 
 const Q192 = 2n ** 192n;
 const SPOT_PRICE_SCALE = 10n ** 36n;
-const USD_QUOTE_ADDRESSES = new Set(Object.keys(USD_CONTRACTS).map(address => address.toLowerCase()))
-
 type PoolCurrencies = { token0: string; token1: string }
 type QuoteKind = 'native' | 'usd'
 const isValidNativeUsdPrice = (value: number) => Number.isFinite(value) && value > 0
@@ -68,9 +67,8 @@ const getPoolQuoteToken = (
 
 const getQuoteKind = (quote: string, wrappedNative: string, chainId: number): QuoteKind | undefined => {
     if (sameToken(quote, zeroAddress) || sameToken(quote, wrappedNative)) return 'native'
-    // USD_CONTRACTS is the BSC deployment table (USDT/USD1). Do not classify
-    // the same numeric addresses as stablecoins on another product chain.
-    if (chainId === 56 && USD_QUOTE_ADDRESSES.has(quote.toLowerCase())) return 'usd'
+    const usdQuotes = CHAINS[chainId]?.usdQuoteTokens ?? []
+    if (usdQuotes.some(address => sameToken(quote, address))) return 'usd'
     return undefined
 }
 
@@ -186,8 +184,7 @@ type CurrencyDecimalsRead = { address: string; returnKey: string }
 
 const getSupportedErc20QuoteAddresses = (): string[] => {
     const deployment = useChainStore().deployment
-    const addresses: string[] = [deployment.wrappedNative]
-    if (deployment.chainId === 56) addresses.push(...Object.keys(USD_CONTRACTS))
+    const addresses: string[] = [deployment.wrappedNative, ...deployment.usdQuoteTokens]
     return Array.from(new Map(addresses
         .filter(address => isAddress(address) && !sameToken(address, zeroAddress))
         .map(address => [address.toLowerCase(), address])).values())
@@ -1471,7 +1468,6 @@ const fetchGeckoTokenAttributes = async (token: string): Promise<Record<string, 
 type ImportedTokenMetadata = {
     logo?: string
     priceUsd?: number
-    fdvUsd?: number
 }
 
 /**
@@ -1498,7 +1494,6 @@ const fetchImportedTokenMetadataMap = async (
             result[token] = {
                 logo: attrs.image_url || undefined,
                 priceUsd: Number(attrs.price_usd) || undefined,
-                fdvUsd: Number(attrs.fdv_usd) || undefined,
             }
         } else {
             missing.push(token)
@@ -1528,7 +1523,6 @@ const fetchImportedTokenMetadataMap = async (
                 result[token] = {
                     logo: attrs.image_url || undefined,
                     priceUsd: Number(attrs.price_usd) || undefined,
-                    fdvUsd: Number(attrs.fdv_usd) || undefined,
                 }
             }
         } catch (error) {
@@ -1539,7 +1533,7 @@ const fetchImportedTokenMetadataMap = async (
 }
 
 const applyImportedTokenMetadata = (
-    item: { token?: string; isImport?: boolean | number; logo?: string; price?: number; marketCap?: number },
+    item: { token?: string; isImport?: boolean | number; logo?: string; price?: number; marketCap?: number; totalSupply?: number },
     metadataMap: Record<string, ImportedTokenMetadata>,
     nativeUsdPrice: number,
     onchainPriceSucceeded: boolean,
@@ -1549,14 +1543,19 @@ const applyImportedTokenMetadata = (
     if (!metadata) return
     if (!item.logo && metadata.logo) item.logo = metadata.logo
     const validNativeUsdPrice = isValidNativeUsdPrice(nativeUsdPrice)
-    // When the selected on-chain pool cannot be normalized, Gecko is the
-    // fallback even if the API item still carries an older, wrongly-scaled
-    // value. If Gecko is unavailable, leave that API value untouched.
-    if (!onchainPriceSucceeded && validNativeUsdPrice && metadata.priceUsd) {
+    const hasPrice = Number.isFinite(Number(item.price)) && Number(item.price) > 0
+    const hasMarketCap = Number.isFinite(Number(item.marketCap)) && Number(item.marketCap) > 0
+    // Preserve the API's anchored price graph when direct browser RPC cannot
+    // normalize the selected pool. Gecko is only a last-resort gap filler.
+    if (!onchainPriceSucceeded && !hasPrice && validNativeUsdPrice && metadata.priceUsd) {
         item.price = metadata.priceUsd / nativeUsdPrice
     }
-    if (!onchainPriceSucceeded && validNativeUsdPrice && metadata.fdvUsd) {
-        item.marketCap = metadata.fdvUsd / nativeUsdPrice
+    // Never copy provider FDV: bridged assets can expose a global supply and
+    // TOKEN/TOKEN pools can inherit an inflated quote valuation. Use the
+    // current chain's supply whenever a market-cap fallback is needed.
+    if (!onchainPriceSucceeded && !hasMarketCap && validNativeUsdPrice
+        && metadata.priceUsd && item.totalSupply && item.totalSupply > 0) {
+        item.marketCap = metadata.priceUsd * item.totalSupply / nativeUsdPrice
     }
 }
 

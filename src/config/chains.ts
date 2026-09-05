@@ -38,6 +38,8 @@ export type ChainDeployment = {
   }
   /** 包装原生币（BSC=WBNB，RH=WETH） */
   wrappedNative: `0x${string}`
+  /** USD-denominated quote assets accepted for imported-token spot pricing. */
+  usdQuoteTokens: readonly `0x${string}`[]
   /** DEX / 基础设施（RH 为 Uniswap；BSC 为 Pancake） */
   dex: {
     kind: 'pancake' | 'uniswap'
@@ -120,6 +122,10 @@ export const BSC_CHAIN: ChainDeployment = {
   // BSC ImportHelper 创建固定 HourlyTickCalculator 社区；不创建 IPShare 或 importerOf。
   features: { prediction: true, predictionMainEntry: false, auPay: true, enhancedImportHelper: false },
   wrappedNative: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+  usdQuoteTokens: [
+    '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d',
+    '0x55d398326f99059ff775485246999027B3197955',
+  ],
   dex: {
     kind: 'pancake',
     v2Router: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
@@ -186,6 +192,8 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
   features: { prediction: false, predictionMainEntry: false, auPay: false, enhancedImportHelper: true },
   // Uniswap UR constructor 确认的 WETH9
   wrappedNative: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
+  // Global Dollar is the settlement asset used by Robinhood stock-token pools.
+  usdQuoteTokens: ['0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168'],
   dex: {
     kind: 'uniswap',
     v2Router: '0x89e5DB8B5aA49aA85AC63f691524311AEB649eba',
