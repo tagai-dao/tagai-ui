@@ -92,6 +92,9 @@ const finishNewLoginIfNeeded = () => {
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
 const setWallet = async () => {
   if (!accStore.getAccountInfo?.twitterId || !privyStore.ethersProvider) return
+  // The login coordinator creates and verifies the embedded wallet before
+  // publishing its address. Do not start a competing signature-based bind.
+  if (privyStore.walletBinding) return
 
   // 插件已连上：Privy walletProvider 回调绝不能改连接态，否则交易又弹 ChoseWallet
   if (isPluginWalletConnected()) {
@@ -128,7 +131,7 @@ const setWallet = async () => {
       await privyStore.initWallet()
     } else if (accStore.getAccountInfo.walletType === 0 && !accStore.getAccountInfo.ethAddr) {
       await useAccount().bondEthAddress()
-    } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr !== connectedAddr) {
+    } else if (accStore.getAccountInfo.walletType === 1 && accStore.getAccountInfo.ethAddr?.toLowerCase() !== connectedAddr?.toLowerCase()) {
       await useAccount().bondEthAddress();
     } else {
       await privyStore.initWallet()
