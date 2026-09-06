@@ -1,4 +1,4 @@
-import { createPublicClient, fallback, http, parseAbi, type Abi, type Address } from 'viem'
+import { createPublicClient, fallback, http, parseAbi, type Abi, type Address, type PublicClient } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
@@ -96,8 +96,10 @@ export const nutboxRouterAbi = parseAbi([
 
 // NFT screens read dozens of independent fields. JSON-RPC batching avoids a
 // burst of HTTP connections; this does not require a Multicall deployment.
-const nftClients = new Map<number, ReturnType<typeof createPublicClient>>()
-export const getNutboxReadClient = (chainId = useChainStore().activeChainId) => {
+// Keep exported declarations portable: inferred client actions can reference
+// viem internal types that cannot be named during composite declaration emit.
+const nftClients = new Map<number, PublicClient>()
+export const getNutboxReadClient = (chainId = useChainStore().activeChainId): PublicClient => {
   let client = nftClients.get(chainId)
   if (!client) {
     const deployment = getChainDeployment(chainId)
