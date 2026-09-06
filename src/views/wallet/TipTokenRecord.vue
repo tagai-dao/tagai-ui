@@ -25,6 +25,7 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const props = defineProps({
+  pageScroll: { type: Boolean, default: false },
   userInfo: {
     type: Object as PropType<Account>,
     required: false
@@ -98,7 +99,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full overflow-hidden flex flex-col gap-3">
+  <div class="flex flex-col gap-3" :class="pageScroll ? '' : 'h-full overflow-hidden'">
     <BackHeader v-if="route.path.includes('tip-record')" class="px-3">
       <template #title>
         <div class="text-lg font-semibold text-black-19 ">{{$t('profileView.tipRecord')}}</div>
@@ -108,7 +109,7 @@ onMounted(() => {
                       :loading-text="$t('loading')"
                       :lpulling-text="$t('pullToRefreshData')"
                       :loosing-text="$t('releaseToRefresh')"
-                      class="flex-1 overflow-y-auto">
+                      :class="pageScroll ? '' : 'flex-1 overflow-y-auto'">
       <van-list class="px-3"
                 :loading="loading"
                 :finished="finished"

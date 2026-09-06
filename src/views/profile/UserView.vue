@@ -22,6 +22,7 @@ import IPShareStakeModal from "@/components/ipshare/IPShareStakeModal.vue";
 import { isAddress } from "viem";
 import { useChainStore } from "@/stores/chain";
 import ProfileFinancePanel from '@/components/profile/ProfileFinancePanel.vue'
+import { useProfileScroll } from '@/composables/useProfileScroll'
 
 const accStore = useAccountStore()
 const ipshareStore = useIpshareData()
@@ -31,6 +32,7 @@ const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 const supportsTips = computed(() => chainStore.deployment.features.auPay)
 const tabOptions = ['post', 'tipRecord']
 const activeTab = ref('post')
+const { profileScroller, profileTabs, profileContent } = useProfileScroll(activeTab)
 const vp = ref(0)
 const op = ref(0)
 const userInfo = ref<Account | null>(null);
@@ -157,7 +159,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
+  <div ref="profileScroller" class="profile-scroll-page" data-testid="profile-scroll">
     <div class="bg-white py-3 px-3 rounded-2xl mx-3">
       <div class="flex gap-2 items-center">
         <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
@@ -229,15 +231,14 @@ onMounted(async () => {
       </template>
     </ProfileFinancePanel>
 
-    <div v-if="supportsTips" class="flex justify-between gap-2 bg-white rounded-xl py-3 mx-3">
+    <div v-if="supportsTips" ref="profileTabs" class="profile-content-tabs" role="tablist" aria-label="Profile content">
       <button v-for="tab of tabOptions" :key="tab"
-              class="px-3 rounded-full h-6 text-h3 whitespace-nowrap"
-              :class="tab===activeTab?'text-gradient bg-gradient-primary':'text-grey-normal'"
+              role="tab" :aria-selected="tab === activeTab"
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
     </div>
-    <div v-if="userInfo?.twitterId" class="flex-1 overflow-auto " id="profile-tab-scroller">
+    <div v-if="userInfo?.twitterId" ref="profileContent" class="profile-scroll-content">
       <TabPost v-if="!supportsTips || activeTab==='post'" :userInfo="userInfo"/>
-      <TipTokenRecord v-if="supportsTips && activeTab==='tipRecord'" :userInfo="userInfo"/>
+      <TipTokenRecord v-if="supportsTips && activeTab==='tipRecord'" :userInfo="userInfo" page-scroll/>
     </div>
 
     <!-- IPShare Modals -->

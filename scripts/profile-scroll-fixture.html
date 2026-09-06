@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Profile scroll regression fixture</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#faf4ef;color:#171a30;font:14px system-ui}#app{height:100dvh;display:flex;flex-direction:column}header,footer{flex:none;background:white;padding:16px}main{flex:1;min-height:0}.card{margin:0 12px;padding:20px;background:white;border-radius:16px}.finance{height:320px}.row{min-height:100px;margin-bottom:12px;padding:20px;background:white;border-radius:16px}.content-list{padding:0 12px}button{background:none;border:0;color:inherit}.hidden{display:none}
+</style></head><body><div id="app"></div>
+<script type="module">
+import { createApp, defineComponent, ref } from 'vue'
+import { List } from 'vant'
+import 'vant/lib/index.css'
+import { useProfileScroll, useProfileScrollParent } from '/src/composables/useProfileScroll.ts'
+const Posts = defineComponent({components:{VanList:List},setup(){
+  const scroller=useProfileScrollParent(),rows=ref(15),loading=ref(false)
+  function load(){rows.value+=5;loading.value=false}
+  return{scroller,rows,loading,load}
+},template:`<div class="content-list"><van-list v-model:loading="loading" :finished="rows>=25" :scroller="scroller" :immediate-check="false" @load="load"><article class="row" v-for="i in rows" :key="i">Twitter / Space record {{i}}</article></van-list></div>`})
+const Profile = defineComponent({components:{Posts},setup(){
+  const activeTab=ref('Twitter/Space')
+  return{activeTab,...useProfileScroll(activeTab)}
+},template:`<div ref="profileScroller" class="profile-scroll-page" data-testid="profile-scroll"><section class="card">TagAI profile summary</section><section class="card finance">PnL / IPShare — layout fixture (not account data)</section><nav ref="profileTabs" class="profile-content-tabs"><button v-for="tab in ['Twitter/Space','Blinks Tweet','Created TagCoins']" :aria-selected="activeTab===tab" @click="activeTab=tab">{{tab}}</button></nav><section ref="profileContent" class="profile-scroll-content"><Posts v-if="activeTab==='Twitter/Space'"/><article v-else class="card">{{activeTab}} — empty tab</article></section></div>`})
+createApp({components:{Profile},template:`<header>TAG · Profile scroll verification</header><main><div class="hidden"><Profile/></div><Profile/></main><footer>Home · Token · BUIDLer · Wallet · Profile</footer>`}).mount('#app')
+</script></body></html>

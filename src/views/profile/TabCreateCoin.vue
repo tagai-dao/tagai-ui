@@ -10,13 +10,14 @@ import { GlobalModalType } from "@/types";
 import { formatAmount } from "@/utils/helper";
 import { redeemIxoReward } from '@/apis/api'
 import { isAddress } from "viem";
+import { useProfileScrollParent } from '@/composables/useProfileScroll'
 
 const accStore = useAccountStore()
 
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const scroller = document.querySelector('#profile-tab-scroller')
+const scroller = useProfileScrollParent()
 let aiBalance: any = {}
 const capturedFee = ref(0)
 
@@ -89,9 +90,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-full h-full">
+  <div>
     <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
-                      class="min-h-full h-full overflow-auto"
                       :loading-text="$t('loading')"
                       :lpulling-text="$t('pullToRefreshData')"
                       :loosing-text="$t('releaseToRefresh')">
