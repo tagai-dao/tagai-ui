@@ -199,23 +199,12 @@ export default function AuthLoading() {
     const {reauthorize} = useOAuthTokens({
         onOAuthTokenGrant: async ({oAuthTokens, user}) => {
             try {
-                console.log(
-                    'Twitter auth success',
-                    oAuthTokens,
-                    user
-                );
                 const privyAccessToken = await getAccessToken()
                 if (!privyAccessToken) {
                     console.error('Failed to get Privy access token')
                     emitter.emit('authError', 'Failed to get Privy access token')
                     return
                 }
-                
-                console.log('Calling privyLogin with:', {
-                    privyAccessToken: privyAccessToken.substring(0, 20) + '...',
-                    accessToken: oAuthTokens.accessToken?.substring(0, 20) + '...',
-                    refreshToken: oAuthTokens.refreshToken?.substring(0, 20) + '...'
-                })
                 
                 const userInfo = await privyLogin(privyAccessToken, oAuthTokens.accessToken, oAuthTokens.refreshToken)
                 
@@ -225,7 +214,6 @@ export default function AuthLoading() {
                     return
                 }
                 
-                console.log('Login success, userInfo:', userInfo)
                 // 嵌入式钱包由 Privy createOnLogin 创建；wallet 就绪后由 effect 决定是否 bondEthByPrivyAccToken
                 if (!userInfo.ethAddr || Number(userInfo.walletType) === 1) {
                     if (!/^\d+$/.test(String(userInfo.twitterId ?? ''))) {
