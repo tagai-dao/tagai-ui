@@ -1,11 +1,13 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, type Ref } from 'vue'
 import { formatUnits, getAddress, zeroAddress, type Address } from 'viem'
 import { useAccountStore } from '@/stores/web3'
+import { useChainStore } from '@/stores/chain'
 import { resolveContractAddress } from '@/utils/contract'
 import type { NutboxIndexBrokerPool } from '@/types/nutbox'
 import { getNutboxNftRewardSummary } from '@/apis/nutbox'
 import {
   erc20NutboxAbi,
+  getNutboxReadClient,
   imageCandidatesFromTokenUri,
   indexBrokerNftAbi,
   indexBrokerNftAmmAbi,
@@ -57,6 +59,7 @@ const normalizeAddress = (value: string) => getAddress(value.toLowerCase())
 export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: NutboxIndexBrokerPool }) {
   const accountStore = useAccountStore()
   const loading = ref(true)
+  const ready = ref(false)
   const error = ref('')
   const action = ref('')
   const ownedNfts = ref<NutboxNftInfo[]>([])
@@ -81,7 +84,10 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     normalFee: 0n, specificFee: 0n, platformFee: 0n, nativeValue: 0n,
     currentBlock: 0n,
   })
+  const initialState = { ...state }
   let refreshTimer: number | undefined
+  let pendingLoad: Promise<void> | undefined
+  let disposed = false
   let loadedPoolAddress = ''
   let previewTokenId = 0n
   const previewSeed = (() => {
@@ -123,14 +129,26 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     }
   }
 
-  const load = async () => {
+  const loadOnce = async () => {
     const requestPool = pool.value
     if (!requestPool?.pool || !requestPool.amm) return
-    const requestPoolAddress = requestPool.pool.toLowerCase()
-    // Keep the market interactive during the 15-second background refresh,
+    const requestAccount = account.value
+    const requestChain = useChainStore().activeChainId
+    const isCurrent = () => !disposed && pool.value?.pool === requestPool.pool
+      && account.value === requestAccount && useChainStore().activeChainId === requestChain
+    const requestPoolAddress = `${requestChain}:${requestPool.pool.toLowerCase()}`
+    // Keep the market interactive during the background refresh,
     // wallet updates, and post-transaction reloads. A blocking loading state is
     // only useful before this pool has rendered for the first time.
-    if (loadedPoolAddress !== requestPoolAddress) loading.value = true
+    if (loadedPoolAddress !== requestPoolAddress) {
+      loading.value = true
+      ready.value = false
+      previewTokenId = 0n
+      mintPreviewImage.value = ''
+      ownedNfts.value = []
+      inventory.value = []
+      Object.assign(state, initialState)
+    }
     error.value = ''
     try {
       const poolAddress = normalizeAddress(requestPool.pool)
@@ -142,12 +160,12 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
       const reads = await Promise.all([
         safe(readNutboxContract<string>(poolAddress, indexBrokerNftAbi, 'name'), requestPool.name || 'NFT'),
         safe(readNutboxContract<string>(poolAddress, indexBrokerNftAbi, 'symbol'), requestPool.symbol || 'NFT'),
-        safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'communityTokenPrice'), toBigInt(requestPool.communityTokenPrice)),
+        safe<bigint | null>(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'communityTokenPrice'), null),
         safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'indexMiningActivationTokenAmount'), toBigInt(requestPool.indexMiningActivationTokenAmount)),
         safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'minimumIndexMiningWeight'), toBigInt(requestPool.minimumIndexMiningWeight)),
-        safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'nativePrice'), toBigInt(requestPool.nativePrice)),
-        safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'maxSupply'), toBigInt(requestPool.maxSupply)),
-        safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'totalSupply'), toBigInt(requestPool.totalSupply)),
+        safe<bigint | null>(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'nativePrice'), null),
+        safe<bigint | null>(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'maxSupply'), null),
+        safe<bigint | null>(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'totalSupply'), null),
         safe(readNutboxContract<number>(poolAddress, indexBrokerNftAbi, 'referralBps'), requestPool.referralBps || 0),
         safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'getTotalStakedAmount'), 0n),
         safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'totalActiveIndexMiningWeight'), toBigInt(requestPool.totalActiveIndexMiningWeight)),
@@ -171,14 +189,20 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
         safe(readNutboxContract<bigint>(ammAddress, indexBrokerNftAmmAbi, 'quoteSpecificNativeFee'), 0n),
         safe(readNutboxContract<bigint>(ammAddress, indexBrokerNftAmmAbi, 'quotePlatformNativeFee'), 0n),
         safe(readNutboxContract<bigint>(ammAddress, indexBrokerNftAmmAbi, 'quoteNativeValue'), 0n),
-        getReadOnlyClientBlock(),
+        // Block height is only used for reveal eligibility, not pool pricing.
+        safe(getNutboxReadClient(requestChain).getBlockNumber(), 0n),
       ])
-      const rewardSummary = await safe(getNutboxNftRewardSummary(poolAddress), null)
+      if (!isCurrent()) return
       const [name, symbol, communityTokenPrice, activationPrice, minimumWeight, nativePrice,
         maxSupply, totalSupply, referralBps, totalWeight, totalActiveIndexWeight, queuedRewards,
         remainingPaidMints, rendererAddress, levelCount, communitySymbol, communityDecimals, miningSymbol,
         miningDecimals, indexSymbol, indexDecimals, ammActive, inventoryCount, oldestTokenId, tokensPerNft, normalFeeBps,
         specificFeeBps, normalFee, specificFee, platformFee, nativeValue, currentBlock] = reads
+      if (communityTokenPrice === null || nativePrice === null || maxSupply === null || totalSupply === null) {
+        throw new Error(ready.value
+          ? 'NFT network temporarily unavailable. Showing the last loaded data; retry to refresh.'
+          : 'NFT network temporarily unavailable. Please retry loading the market.')
+      }
       Object.assign(state, {
         name, symbol, communityTokenPrice, activationPrice, minimumWeight, nativePrice,
         maxSupply, totalSupply, referralBps: Number(referralBps), totalWeight,
@@ -188,29 +212,41 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
         ammActive, inventoryCount, oldestTokenId, tokensPerNft, normalFeeBps: Number(normalFeeBps),
         specificFeeBps: Number(specificFeeBps), normalFee, specificFee, platformFee, nativeValue,
         currentBlock,
-        injectedRewards24h: toBigInt(rewardSummary?.injectedAmount),
-        distributedRewards24h: toBigInt(rewardSummary?.distributedAmount),
-        burnedMiningTotal: toBigInt(rewardSummary?.totalBurnedMiningAmount),
-        rewardSummaryAvailable: Boolean(rewardSummary),
+      })
+      ready.value = true
+      loading.value = false
+      // An optional reward API must not hold prices/preview behind its timeout.
+      void safe(getNutboxNftRewardSummary(poolAddress), null).then(rewardSummary => {
+        if (!isCurrent() || !rewardSummary) return
+        Object.assign(state, {
+          injectedRewards24h: toBigInt(rewardSummary.injectedAmount),
+          distributedRewards24h: toBigInt(rewardSummary.distributedAmount),
+          burnedMiningTotal: toBigInt(rewardSummary.totalBurnedMiningAmount),
+          rewardSummaryAvailable: true,
+        })
       })
 
       if (requestPool.nutboxRouter) {
         const routerAddress = normalizeAddress(requestPool.nutboxRouter)
-        const [indexNativeQuote, miningNativeQuote] = await Promise.all([
+        // APR conversion quotes are optional and must not delay NFT artwork.
+        void Promise.all([
           safe(readNutboxContract<bigint>(routerAddress, nutboxRouterAbi, 'quoteNative', [indexToken, 10n ** BigInt(Number(indexDecimals))]), 0n),
           safe(readNutboxContract<bigint>(routerAddress, nutboxRouterAbi, 'quoteNative', [miningToken, 10n ** BigInt(Number(miningDecimals))]), 0n),
-        ])
-        Object.assign(state, { indexNativeQuote, miningNativeQuote })
+        ]).then(([indexNativeQuote, miningNativeQuote]) => {
+          if (isCurrent()) Object.assign(state, { indexNativeQuote, miningNativeQuote })
+        })
       } else {
         Object.assign(state, { indexNativeQuote: 0n, miningNativeQuote: 0n })
       }
 
       const count = Math.min(Number(levelCount), 16)
-      state.levelRules = await Promise.all(Array.from({ length: count }, async (_, index) => ({
+      const levelRules = await Promise.all(Array.from({ length: count }, async (_, index) => ({
         level: index + 1,
         threshold: await safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'levelThresholds', [BigInt(index)]), toBigInt(requestPool.levelThresholds?.[index])),
         weight: await safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'levelWeights', [BigInt(index)]), toBigInt(requestPool.levelWeights?.[index])),
       })))
+      if (!isCurrent()) return
+      state.levelRules = levelRules
 
       const nextTokenId = totalSupply + 1n
       if (rendererAddress !== zeroAddress && nextTokenId !== previewTokenId) {
@@ -234,10 +270,11 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
               indexMiningActive: false,
             }],
           )
+          if (!isCurrent()) return
           mintPreviewImage.value = svgDataUrl(svg)
         } catch {
           previewTokenId = 0n
-          mintPreviewImage.value = ''
+          // Keep an existing preview during a transient RPC outage.
         }
       }
 
@@ -254,8 +291,11 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
           safe(readNutboxContract<bigint>(normalizeAddress(requestPool.community), nutboxCommunityAbi, 'getPoolPendingRewards', [poolAddress, account.value]), 0n),
           committee ? safe(readNutboxContract<bigint>(committee, nutboxCommitteeAbi, 'getPoolOperationFee'), 0n) : 0n,
         ])
+        if (!isCurrent()) return
         Object.assign(state, { whitelistRemaining: whitelist, communityBalance, miningBalance, mintAllowance, ammAllowance, miningAllowance, pendingCommunityRewards, poolOperationFee })
-        ownedNfts.value = (await Promise.all(ids.map(nftInfo))).filter(Boolean) as NutboxNftInfo[]
+        const owned = (await Promise.all(ids.map(nftInfo))).filter(Boolean) as NutboxNftInfo[]
+        if (!isCurrent()) return
+        ownedNfts.value = owned
       } else {
         ownedNfts.value = []
       }
@@ -266,21 +306,32 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
         inventoryIds.push(cursor)
         cursor = await safe(readNutboxContract<bigint>(ammAddress, indexBrokerNftAmmAbi, 'nextInventoryToken', [cursor]), 0n)
       }
-      inventory.value = (await Promise.all(inventoryIds.map(nftInfo))).filter(Boolean) as NutboxNftInfo[]
+      const items = (await Promise.all(inventoryIds.map(nftInfo))).filter(Boolean) as NutboxNftInfo[]
+      if (!isCurrent()) return
+      inventory.value = items
     } catch (reason: any) {
-      error.value = reason?.shortMessage || reason?.message || 'Failed to load NFT data'
+      if (isCurrent()) error.value = reason?.shortMessage || reason?.message || 'Failed to load NFT data'
     } finally {
-      if (pool.value?.pool?.toLowerCase() === requestPoolAddress) {
+      if (isCurrent()) {
         loadedPoolAddress = requestPoolAddress
         loading.value = false
       }
     }
   }
 
+  const load = (): Promise<void> => {
+    if (pendingLoad) return pendingLoad
+    pendingLoad = loadOnce().finally(() => { pendingLoad = undefined })
+    return pendingLoad
+  }
+
   const execute = async (key: string, fn: () => Promise<unknown>) => {
     action.value = key
     try {
       const result = await fn()
+      // A read started before the transaction must not stand in for a refresh
+      // of its confirmed result.
+      await pendingLoad
       await load()
       return result
     } finally {
@@ -291,20 +342,27 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
   const approveErc20 = (token: Address, spender: Address, amount: bigint, key = 'approve') =>
     execute(key, () => writeNutboxContract(normalizeAddress(token), erc20NutboxAbi, 'approve', [normalizeAddress(spender), amount]))
   const mint = (referrerTokenId = 0n) => execute('mint', async () => {
-    const value = state.whitelistRemaining > 0n ? 0n : state.nativePrice
+    const address = normalizeAddress(pool.value.pool)
+    const [whitelist, nativePrice] = await Promise.all([
+      readNutboxContract<bigint>(address, indexBrokerNftAbi, 'remainingWhitelistMints', [account.value]),
+      readNutboxContract<bigint>(address, indexBrokerNftAbi, 'nativePrice'),
+    ])
+    const value = whitelist > 0n ? 0n : nativePrice
     return writeNutboxContract(normalizeAddress(pool.value.pool), indexBrokerNftAbi, 'mint', [referrerTokenId], value)
   })
   const reveal = (tokenId: bigint) => execute(`reveal-${tokenId}`, () => writeNutboxContract(normalizeAddress(pool.value.pool), indexBrokerNftAbi, 'reveal', [tokenId]))
   const approveNft = (tokenId: bigint) => execute(`approve-nft-${tokenId}`, () => writeNutboxContract(normalizeAddress(pool.value.pool), indexBrokerNftAbi, 'approve', [normalizeAddress(pool.value.amm), tokenId]))
-  const buy = (tokenId?: bigint) => execute(`buy-${tokenId || 'next'}`, () => writeNutboxContract(
+  const buy = (tokenId?: bigint) => execute(`buy-${tokenId || 'next'}`, async () => writeNutboxContract(
     normalizeAddress(pool.value.amm),
     indexBrokerNftAmmAbi,
     tokenId ? 'buySpecificNFT' : 'buyNextNFT',
     tokenId ? [tokenId] : [],
-    withFeeBuffer(tokenId ? state.specificFee : state.normalFee),
+    withFeeBuffer(await readNutboxContract<bigint>(normalizeAddress(pool.value.amm), indexBrokerNftAmmAbi,
+      tokenId ? 'quoteSpecificNativeFee' : 'quoteNormalNativeFee')),
   ))
-  const sell = (tokenId: bigint) => execute(`sell-${tokenId}`, () => writeNutboxContract(
-    normalizeAddress(pool.value.amm), indexBrokerNftAmmAbi, 'sellNFT', [tokenId], withFeeBuffer(state.normalFee),
+  const sell = (tokenId: bigint) => execute(`sell-${tokenId}`, async () => writeNutboxContract(
+    normalizeAddress(pool.value.amm), indexBrokerNftAmmAbi, 'sellNFT', [tokenId],
+    withFeeBuffer(await readNutboxContract<bigint>(normalizeAddress(pool.value.amm), indexBrokerNftAmmAbi, 'quoteNormalNativeFee')),
   ))
   const miningAction = (functionName: string, tokenId: bigint, amount?: bigint) => execute(
     `${functionName}-${tokenId}`,
@@ -314,22 +372,25 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     normalizeAddress(pool.value.community), nutboxCommunityAbi, 'withdrawPoolsRewards', [[normalizeAddress(pool.value.pool)]], state.poolOperationFee,
   ))
 
-  watch([() => pool.value.pool, account], load)
+  watch([() => pool.value?.pool, account, () => useChainStore().activeChainId], async () => {
+    await pendingLoad
+    if (!disposed) await load()
+  })
   onMounted(() => {
     load()
-    refreshTimer = window.setInterval(load, 15_000)
+    refreshTimer = window.setInterval(() => {
+      if (!document.hidden && !action.value) void load()
+    }, 30_000)
   })
-  onBeforeUnmount(() => refreshTimer && window.clearInterval(refreshTimer))
+  onBeforeUnmount(() => {
+    disposed = true
+    if (refreshTimer) window.clearInterval(refreshTimer)
+  })
 
   return {
-    state, loading, error, action, account, connected, ownedNfts, inventory, mintPreviewImage, load,
+    state, loading, ready, error, action, account, connected, ownedNfts, inventory, mintPreviewImage, load,
     approveErc20, mint, reveal, approveNft, buy, sell, miningAction, claimCommunityRewards,
   }
 }
 
 export type NutboxNftPoolModel = ReturnType<typeof useNutboxNftPool>
-
-async function getReadOnlyClientBlock() {
-  const { getReadOnlyClient } = await import('@/utils/wallets')
-  return getReadOnlyClient().getBlockNumber()
-}

@@ -23,7 +23,8 @@ axios.interceptors.request.use(
       }
     }
     // 登录身份与链无关；网关仅用显式 chainId 将业务请求路由到对应实例。
-    config.headers['X-Chain-Id'] = String(useChainStore().activeChainId);
+    // Preserve the caller's captured chain across delayed requests/retries.
+    if (!config.headers['X-Chain-Id']) config.headers['X-Chain-Id'] = String(useChainStore().activeChainId);
     return config;
   },
   error => {
@@ -36,6 +37,7 @@ export function get(url: string, params?: Object, config?: any) {
     axios
       .get(url, {
         params: params,
+        headers: { 'X-Chain-Id': String(useChainStore().activeChainId), ...config?.headers },
         ...config
       })
       .then(res => {

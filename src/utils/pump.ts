@@ -1508,7 +1508,7 @@ const fetchImportedTokenMetadataMap = async (
     for (let offset = 0; offset < missing.length; offset += 30) {
         const chunk = missing.slice(offset, offset + 30)
         try {
-            const response = await fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/multi/${chunk.join(',')}`)
+            const response = await fetch(`https://api.geckoterminal.com/api/v2/networks/${network}/tokens/multi/${chunk.join(',')}`, { signal: AbortSignal.timeout(8000) })
             if (response.status === 429) {
                 geckoRateLimitedUntil = Date.now() + GECKO_RATE_LIMIT_BACKOFF_MS
                 break
@@ -1605,13 +1605,13 @@ export const getTokenInfo = async (communities: Community[]) => {
     if (communities.length === 0) return communities;
     // 只处理当前产品链上的社区，避免 BSC 地址打到 RH RPC
     const { filterByActiveChain } = await import('@/utils/chainFilter')
-    communities = filterByActiveChain(communities)
+    communities = filterByActiveChain(communities).map(community => ({ ...community }))
     if (communities.length === 0) return communities;
     // marketCap 在这里以原生币计价；详情页展示 USD 时会乘该价格。
     // 不能只在第三方市值币种时加载，否则普通币首次打开详情会显示 $0.00。
     const stateStore = useStateStore()
     if (!isValidNativeUsdPrice(stateStore.ethPrice)) {
-        const price: any = await getEthPrice()
+        const price: any = await getEthPrice().catch(() => stateStore.ethPrice)
         const parsed = parseFloat(price)
         stateStore.ethPrice = isValidNativeUsdPrice(parsed) ? parsed : 0
     }
@@ -1628,11 +1628,12 @@ export const getTokenInfo = async (communities: Community[]) => {
         }
     }
     // 链上补价 / 导入币 / 第三方市值并行，缩短墙钟时间
+    const missingImportedMetrics = communities.filter(com => com.isImport && !(Number(com.price) > 0 && Number(com.marketCap) > 0))
     const [thirdPartyMarketCapMap, importedMetadataMap, result, importResult] = await Promise.all([
-        fetchThirdPartyMarketCapMap(communities),
-        fetchImportedTokenMetadataMap(communities),
-        getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap),
-        getImportTokenOnchainInfo(communities.filter(com => com.isImport), pairMap),
+        fetchThirdPartyMarketCapMap(communities).catch(() => ({})),
+        fetchImportedTokenMetadataMap(communities.filter(com => com.isImport && (!com.logo || missingImportedMetrics.includes(com)))).catch(() => ({})),
+        getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap).catch(() => ({})),
+        getImportTokenOnchainInfo(missingImportedMetrics, pairMap).catch(() => ({} as Awaited<ReturnType<typeof getImportTokenOnchainInfo>>)),
     ])
 
     for (let community of communities) {
@@ -1677,7 +1678,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
     if (tweets.length === 0) return tweets;
     try {
         const { filterByActiveChain } = await import('@/utils/chainFilter')
-        tweets = filterByActiveChain(tweets)
+        tweets = filterByActiveChain(tweets).map(tweet => ({ ...tweet }))
         if (tweets.length === 0) return tweets;
         let tokens = tweets.filter(t => !t.isImport).map(t => t.token ?? '')
         let versions: Record<string, number> = {}
@@ -1695,15 +1696,15 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
         const stateStore = useStateStore()
         // 链上补价 / 导入币 / 第三方市值 / ETH 价并行
         const [thirdPartyMarketCapMap, importedMetadataMap, result, importResult] = await Promise.all([
-            fetchThirdPartyMarketCapMap(tweets),
-            fetchImportedTokenMetadataMap(tweets),
-            getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap),
-            getImportTokenOnchainInfo(tweets.filter(t => t.isImport), pairMap),
+            fetchThirdPartyMarketCapMap(tweets).catch(() => ({})),
+            fetchImportedTokenMetadataMap(tweets.filter(t => t.isImport && (!t.logo || !(Number(t.price) > 0 && Number(t.marketCap) > 0)))).catch(() => ({})),
+            getTokenOnchainInfo(tokens, versions, pairMap, socialPoolMap).catch(() => ({})),
+            getImportTokenOnchainInfo(tweets.filter(t => t.isImport && !(Number(t.price) > 0 && Number(t.marketCap) > 0)), pairMap).catch(() => ({} as Awaited<ReturnType<typeof getImportTokenOnchainInfo>>)),
             !isValidNativeUsdPrice(stateStore.ethPrice)
                 ? getEthPrice().then((price: any) => {
                     const parsed = parseFloat(price)
                     stateStore.ethPrice = isValidNativeUsdPrice(parsed) ? parsed : 0
-                })
+                }).catch(() => undefined)
                 : Promise.resolve(),
         ])
         
@@ -1720,7 +1721,7 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
                     tweet.marketCap = importInfo.price * importInfo.totalSupply;
                     tweet.totalSupply = importInfo.totalSupply;
                 }
-            }else {
+            }else if (tokenInfo) {
                 tweet.listed = tokenInfo.listed;
                 tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
                 tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
@@ -2305,7 +2306,7 @@ export const getImportTokenOnchainInfo = async (
     communities: OnchainTokenInfo[],
     pairMap: Record<string, string> = {},
 ) => {
-    if (communities.length === 0) return {} as Record<string, { price: number; totalSupply: number }>
+    if (communities.length === 0) return {} as Record<string, { price: number; totalSupply: number; decimals: number }>
 
     const stateStore = useStateStore()
     if (!isValidNativeUsdPrice(stateStore.ethPrice)) {
@@ -2469,7 +2470,7 @@ export const getImportTokenOnchainInfo = async (
     }
     cacheQuoteDecimalsReads(quoteDecimalsReads, data)
 
-    const result: Record<string, { price: number; totalSupply: number }> = {}
+    const result: Record<string, { price: number; totalSupply: number; decimals: number }> = {}
     for (const m of metas) {
         const { token, dexVersion } = m
         const decimals = normalizeTokenDecimals(data[`${token}-decimals`])
@@ -2527,7 +2528,7 @@ export const getImportTokenOnchainInfo = async (
         }
 
         if (price !== undefined && Number.isFinite(price) && price > 0 && Number.isFinite(totalSupply) && totalSupply > 0) {
-            result[token.toLowerCase()] = { price, totalSupply }
+            result[token.toLowerCase()] = { price, totalSupply, decimals }
         }
     }
 

@@ -18,6 +18,7 @@ import { handleErrorTip } from "@/utils/notify";
 import { getTokenOnchainInfo } from "@/utils/pump";
 import { useChainStore } from "@/stores/chain";
 import { getChainDeployment } from "@/config/chains";
+import { calculateWalletUsd } from '@/utils/walletValue.mjs'
 
 export enum AccountAuthType {
     TWITTER,
@@ -44,7 +45,6 @@ export const useAccount = () => {
         return account?.profile?.replace('normal', '200x200')
     })
 
-    const { ethPrice } = useStateStore()
 
     const bondEthAddress = async (): Promise<boolean> => {
         if (bondEthAddressInFlight) return bondEthAddressInFlight
@@ -349,6 +349,7 @@ export const useAccount = () => {
             }
 
            aggregate(calls, deployment.multiConfig).then((res: any) => {
+            if (deployment.chainId !== useChainStore().activeChainId || ethAddr !== useAccountStore().getAccountInfo?.ethAddr) return
             useAccountStore().ethBalance = res.results.transformed.ethBalance ?? 0;
             if (!isZero) {
                 useAccountStore().socialBalance = res.results.transformed.socialBalance ?? 0;
@@ -357,18 +358,16 @@ export const useAccount = () => {
             }
            }).catch((e: unknown) => {
             console.warn('[updateBalance] failed on', deployment.name, e)
-            useAccountStore().ethBalance = 0
+            // A transient RPC failure does not mean the account has no funds.
            })
         }
     }
 
     const updateHoldingValue = async (list: any) => {
         const accStore = useAccountStore();
-        if (accStore.tokenHoldingList.length === 0) return 0;
-        const tokenValue = accStore.tokenHoldingList.reduce((acc, item) => acc + (item.price ?? 0) * (item.amount?.toString() as any) * ethPrice / 1e18, 0)
-        const bnbValue = ethPrice * accStore.ethBalance;
-        accStore.holdingValue = tokenValue + bnbValue;
-        return tokenValue + bnbValue;
+        const total = calculateWalletUsd(accStore.ethBalance, useStateStore().ethPrice, list ?? accStore.tokenHoldingList)
+        if (total !== null) accStore.holdingValue = total
+        return total
     }
 
     const logout = () => {

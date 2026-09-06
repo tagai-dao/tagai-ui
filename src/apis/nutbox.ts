@@ -20,7 +20,8 @@ export const getNutboxNftTransactions = (
 ) as Promise<NutboxTransactionPage>
 
 export const getNutboxNftRewardSummary = (pool: string) =>
-  get(api(`/mining/index-broker-nft-pools/${encodeURIComponent(pool)}/index-rewards/24h`)) as Promise<NutboxRewardSummary>
+  get(api(`/mining/index-broker-nft-pools/${encodeURIComponent(pool)}/index-rewards/24h`), undefined,
+    { timeout: 10_000 }) as Promise<NutboxRewardSummary>
 
 export const getNutboxNftTransactionsWebSocketUrl = (pool: string) => {
   const url = new URL(BACKEND_API_URL, window.location.origin)

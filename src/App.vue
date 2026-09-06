@@ -114,13 +114,13 @@ onMounted(async () => {
   }
 
   getEthPrice().then((p: any) => {
-      stateStore.ethPrice = p
-    }).catch();
+      if (Number(p) > 0) stateStore.ethPrice = Number(p)
+    }).catch(error => console.warn('[price] initial native price unavailable', error));
   let count = 0
   setInter(() => {
     getEthPrice().then((p: any) => {
-      stateStore.ethPrice = parseFloat(p)
-    }).catch();
+      if (Number(p) > 0) stateStore.ethPrice = Number(p)
+    }).catch(error => console.warn('[price] refresh failed; retaining last native price', error));
     updateVPOP();
     if (count++ % 6 == 0)
       updateUnreadMessageCount();

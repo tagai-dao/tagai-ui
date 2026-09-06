@@ -1,6 +1,23 @@
 import { get, post, put } from "./axios"
 import { BACKEND_API_URL, VP_CONSUME } from '@/config'
 import type { Community, CreateCommunity } from '@/types'
+import { useChainStore } from '@/stores/chain'
+
+// Coalesce duplicate public reads from header, ticker, Token and Wallet.
+// No account data or trading quotes are cached here.
+const publicReads = new Map<string, Promise<unknown>>()
+function publicRead(path: string) {
+  const chainId = useChainStore().activeChainId
+  const key = `${chainId}:${path}`
+  if (!publicReads.has(key)) {
+    const request = get(BACKEND_API_URL + path, undefined, {
+      headers: { 'X-Chain-Id': String(chainId) },
+      timeout: 15000,
+    }).finally(() => publicReads.delete(key))
+    publicReads.set(key, request)
+  }
+  return publicReads.get(key)!.then(value => structuredClone(value))
+}
 
 import type { PoolTvlResponse, ClPositionsIndexResponse } from '@/types/liquidity'
 import type {
@@ -15,7 +32,7 @@ import type {
 
 /************************************ common **********************************/
 export const getEthPrice = async () =>
-  get(BACKEND_API_URL + '/tiptag/getETHPrice')
+  publicRead('/tiptag/getETHPrice')
 
 /** PCS Infinity 池储备（The Graph 代理，12s 缓存） */
 export const getPoolTvl = async (poolId: string) =>
@@ -302,7 +319,7 @@ export const getHolderListOfImportToken = async (token: string, pages?: number) 
   get(BACKEND_API_URL + '/community/holderListOfImported', { token, pages })
 
 export const getImportedCommunityInfo = async () =>
-  get(BACKEND_API_URL + '/community/getImportedCommunityInfo')
+  publicRead('/community/getImportedCommunityInfo')
 
 export const getTokenTradeList = async (token: string, pages?: number) =>
   get(BACKEND_API_URL + '/community/tradeList', { token, pages })
