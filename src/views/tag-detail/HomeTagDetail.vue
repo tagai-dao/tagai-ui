@@ -44,6 +44,7 @@ import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import { isAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useChainStore } from '@/stores/chain'
+import { isSupportedNutboxNftPool } from '@/utils/nutboxPool.mjs'
 
 const chainStore = useChainStore()
 const comStore = useCommunityStore()
@@ -60,11 +61,7 @@ watch(
     try {
       const result = await getNutboxCommunityByToken(token)
       if (sequence !== nutboxResolveSequence) return
-      const hasSupportedPool = result.pools?.some(pool => (
-        pool.status === 'OPENED'
-        && pool.poolType === 'INDEX_BROKER_NFT'
-        && pool.indexBroker?.pool
-      ))
+      const hasSupportedPool = result.pools?.some(isSupportedNutboxNftPool)
       nutboxCommunity.value = hasSupportedPool ? result : null
     } catch {
       if (sequence === nutboxResolveSequence) nutboxCommunity.value = null
