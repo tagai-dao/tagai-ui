@@ -1,0 +1,48 @@
+.profile-scroll-page {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+.profile-scroll-page > * { flex-shrink: 0; }
+.profile-content-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 56px;
+  margin: 0 12px;
+  padding: 4px;
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 0 rgb(0 0 0 / 6%);
+  scrollbar-width: none;
+}
+.profile-content-tabs::-webkit-scrollbar { display: none; }
+.profile-content-tabs > button {
+  flex: 1 0 auto;
+  min-height: 44px;
+  padding: 0 12px;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+}
+.profile-content-tabs > button[aria-selected='true'] {
+  color: #ff8919;
+  border-bottom-color: #ff8919;
+}
+.profile-scroll-content {
+  /* Short and empty tabs still let the summary scroll away. */
+  min-height: calc(100% - 68px);
+}

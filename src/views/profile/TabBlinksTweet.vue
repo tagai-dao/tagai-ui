@@ -14,6 +14,7 @@ import { useCurationStore } from "@/stores/curation";
 import { useRouter } from "vue-router";
 import { isAddress } from "viem";
 import type { Tweet } from "@/types";
+import { useProfileScrollParent } from '@/composables/useProfileScroll'
 
 const accStore = useAccountStore()
 const stateStore = useStateStore()
@@ -24,7 +25,7 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const blinksList = ref<Tweet[]>([])
-const scroller = document.querySelector('#profile-tab-scroller')
+const scroller = useProfileScrollParent()
 const capturedFee = ref(0)
 
 const valueCaptured = computed(() => {
@@ -97,8 +98,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-full h-full">
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh" class="min-h-full h-full overflow-auto"
+  <div>
+    <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
       :loading-text="$t('loading')" :lpulling-text="$t('pullToRefreshData')" :loosing-text="$t('releaseToRefresh')">
       <van-list :loading="loading" :finished="finished" :immediate-check="false" :finished-text="$t('noMore')"
         :scroller="scroller" :offset="50" @load="onLoad">

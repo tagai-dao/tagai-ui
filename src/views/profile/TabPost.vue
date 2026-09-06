@@ -17,6 +17,7 @@ import emitter from "@/utils/emitter";
 import { DefaultCommunityTick } from "@/config";
 import { type Account } from "@/types";
 import { isPcsV4Version } from '@/utils/pumpVersion'
+import { useProfileScrollParent } from '@/composables/useProfileScroll'
 
 const accStore = useAccountStore()
 const stateStore = useStateStore()
@@ -26,7 +27,7 @@ const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
 const tweetsList = ref<Tweet[]>([])
-const scroller = document.querySelector('#profile-tab-scroller')
+const scroller = useProfileScrollParent()
 const claimableRewards = ref<CurationReward[]>([])
 const unclaimableRewards = ref<CurationReward[]>([])
 
@@ -181,8 +182,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-full h-full">
-    <van-pull-refresh v-model="refreshing" @refresh="onRefresh" class="min-h-full h-full overflow-auto"
+  <div>
+    <van-pull-refresh v-model="refreshing" @refresh="onRefresh"
       :loading-text="$t('loading')" :lpulling-text="$t('pullToRefreshData')" :loosing-text="$t('releaseToRefresh')">
       <van-list :loading="loading" :finished="finished" :immediate-check="false" :finished-text="$t('noMore')"
         :scroller="scroller" :offset="50" @load="onLoad">
