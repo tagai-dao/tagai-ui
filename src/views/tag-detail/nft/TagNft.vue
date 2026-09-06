@@ -8,6 +8,7 @@ import NftActivateMining from './components/NftActivateMining.vue'
 import NftHolderRewards from './components/NftHolderRewards.vue'
 import NftAbout from './components/NftAbout.vue'
 import NftPoolOverview from './components/NftPoolOverview.vue'
+import { isSupportedNutboxNftPool } from '@/utils/nutboxPool.mjs'
 
 const props = defineProps<{
   community: NutboxCommunityByTokenResponse
@@ -24,7 +25,7 @@ const sections = [
 type Section = typeof sections[number]['key']
 
 const nftPools = computed(() => props.community.pools
-  .filter(pool => pool.status === 'OPENED' && pool.poolType === 'INDEX_BROKER_NFT' && pool.indexBroker)
+  .filter(isSupportedNutboxNftPool)
   .sort((a, b) => Number(b.ratio || 0) - Number(a.ratio || 0)))
 const selectedPoolAddress = ref('')
 const selectedPool = computed<NutboxIndexBrokerPool | null>(() => {
