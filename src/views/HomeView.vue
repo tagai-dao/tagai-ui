@@ -441,7 +441,7 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
     
-    <!-- Space 滚动条 - 仅在移动端显示，PC 端在右侧 Live Spaces 框中显示 -->
+    <!-- Space 滚动条 - 仅在移动端显示 -->
     <div v-if="activeMainMenu==='tag'" class="web:hidden px-3">
       <div class="relative flex overflow-hidden">
         <div class="w-full overflow-x-hidden whitespace-nowrap relative">
