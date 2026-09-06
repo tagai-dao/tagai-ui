@@ -8,10 +8,17 @@ import SpaceItem from "@/components/tweets/SpaceItem.vue";
 import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets, getCommunityCallouts, getTokenTradeList, type ExternalCalloutSource } from "@/apis/api";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useCommunityStore } from "@/stores/community";
-import { sleep } from "@/utils/helper";
 import type { FeedTokenSheetAsset, FeedTrade, Tweet } from "@/types";
 import { handleErrorTip } from "@/utils/notify";
-import { getTokenInfoOfTweets } from "@/utils/pump";
+import { getTokenInfoOfTweets as enrichTweetTokens } from "@/utils/pump";
+
+async function getTokenInfoOfTweets(rows: Tweet[]) {
+  try { return await enrichTweetTokens(rows) }
+  catch (error) {
+    console.warn('[TagContent] optional token metrics unavailable', error)
+    return rows
+  }
+}
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
@@ -34,6 +41,8 @@ const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
 const refreshing = ref(false);
 const loading = ref(false);
+const loadFailed = ref(false);
+const tradesLoading = ref(false);
 const finished = ref<Record<ListType, boolean>>({
   'all': false,
   'new': false,
@@ -69,6 +78,7 @@ const allTradeFinished = ref(false)
 let allPostPage = 0
 let allTradePage = 0
 let activeCommunityTick = ''
+let refreshSequence = 0
 
 const calloutTypes = new Set<ListType>([ListType.Gmgn, ListType.Fomo, ListType.Pump])
 const calloutSource = (type: ListType): ExternalCalloutSource => type as ExternalCalloutSource
@@ -161,12 +171,14 @@ const feedItems = computed(() => {
 })
 
 async function loadCommunityTrades(page = 0, replace = false) {
+  const sequence = refreshSequence
+  tradesLoading.value = true
   try {
     const community = comStore.currentSelectedCommunity
     if (!community?.token) return 0
     const requestedToken = community.token
     const rows = (await getTokenTradeList(community.token, page) || []) as FeedTrade[]
-    if (comStore.currentSelectedCommunity?.token !== requestedToken) return -1
+    if (sequence !== refreshSequence || comStore.currentSelectedCommunity?.token !== requestedToken) return -1
     const next = rows.map(row => ({
       ...row,
       tick: row.tick || community.tick,
@@ -184,12 +196,16 @@ async function loadCommunityTrades(page = 0, replace = false) {
     return rows.length
   } catch (error) {
     console.warn('[TagContent] community trade feed unavailable', error)
-    if (replace) communityTrades.value = []
+    if (sequence === refreshSequence) loadFailed.value = true
     return -1
+  } finally {
+    if (sequence === refreshSequence) tradesLoading.value = false
   }
 }
 
 async function onRefresh() {
+  const sequence = ++refreshSequence
+  loadFailed.value = false
   const activeListType = listType.value
   try {
     refreshing.value = true;
@@ -199,17 +215,24 @@ async function onRefresh() {
     const tick = comStore.currentSelectedCommunity!.tick;
     const twitterId = accStore.getAccountInfo?.twitterId;
     if (activeListType === ListType.All) {
-      const [postRows, tradeCount] = await Promise.all([
-        getCommunityNewTweets(tick, twitterId, 0),
-        loadCommunityTrades(0, true),
-      ])
-      if (comStore.currentSelectedCommunity?.tick !== tick) return
+      allTradeFinished.value = false
+      void loadCommunityTrades(0, true).then(tradeCount => {
+        if (sequence !== refreshSequence || comStore.currentSelectedCommunity?.tick !== tick) return
+        allTradePage = tradeCount >= 0 ? 1 : 0
+        allTradeFinished.value = tradeCount >= 0 && tradeCount < PAGE_SIZE
+        finished.value[ListType.All] = allPostFinished.value && allTradeFinished.value
+      })
+      const postRows = await getCommunityNewTweets(tick, twitterId, 0)
+      if (sequence !== refreshSequence || comStore.currentSelectedCommunity?.tick !== tick) return
       list = postRows as Tweet[]
-      allCommunityTweets.value = await getTokenInfoOfTweets(list)
+      allCommunityTweets.value = list
+      void getTokenInfoOfTweets(list).then(rows => {
+        if (sequence === refreshSequence && comStore.currentSelectedCommunity?.tick === tick && allCommunityTweets.value.length === list.length) {
+          allCommunityTweets.value = rows
+        }
+      })
       allPostPage = 1
-      allTradePage = tradeCount >= 0 ? 1 : 0
       allPostFinished.value = list.length < PAGE_SIZE
-      allTradeFinished.value = tradeCount >= 0 && tradeCount < PAGE_SIZE
       finished.value[ListType.All] = allPostFinished.value && allTradeFinished.value
     } else if (activeListType === ListType.New) {
       list = await getCommunityNewTweets(tick, twitterId, 0);
@@ -258,16 +281,18 @@ async function onRefresh() {
       finished.value[activeListType] = receivedCount < PAGE_SIZE
     }
   } catch (e) {
+    if (sequence !== refreshSequence) return
+    loadFailed.value = true
     handleErrorTip(e)
   } finally {
-    refreshing.value = false;
+    if (sequence === refreshSequence) refreshing.value = false;
   }
 }
 
 async function onLoad() {
   const activeListType = listType.value
   try{
-    if (loading.value || refreshing.value || finished.value[activeListType] || feedItems.value.length === 0) {
+    if (loadFailed.value || tradesLoading.value || loading.value || refreshing.value || finished.value[activeListType] || feedItems.value.length === 0) {
       return;
     }
     loading.value = true
@@ -350,6 +375,7 @@ async function onLoad() {
       finished.value[activeListType] = receivedCount < PAGE_SIZE
     }
   } catch (e) {
+    loadFailed.value = true
     handleErrorTip(e)
   } finally {
     loading.value = false;
@@ -393,14 +419,9 @@ watch(() => comStore.currentSelectedCommunity?.tick, tick => {
   activeCommunityTick = tick
   resetAllFeed()
   void onRefresh()
-})
+}, { immediate: true })
 
 onMounted(async () => {
-  while (!comStore.currentSelectedCommunity?.tick) {
-    await sleep(0.5);
-  }
-  activeCommunityTick = comStore.currentSelectedCommunity.tick
-  await onRefresh();
   await observeLoadMoreSentinel()
   emitter.on('tweeted', onRefresh);
   emitter.on('login', onRefresh);
@@ -408,6 +429,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  refreshSequence++
   loadMoreObserver?.disconnect()
   emitter.off('tweeted', onRefresh)
   emitter.off('login', onRefresh)
@@ -458,11 +480,15 @@ onBeforeUnmount(() => {
     >
       <van-list
         :loading="loading"
+        :error="loadFailed"
         :finished="finished[listType]"
         :immediate-check="false"
         :finished-text="$t('noMore')"
         :offset="50"
       >
+        <template #error>
+          <button class="px-4 py-3 text-orange-normal" @click.stop="onRefresh">{{ $t('network.retry') }}</button>
+        </template>
         <div v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : tradeIdentity(item.trade)" class="mb-2">
           <FeedTradeActivity
             v-if="item.type === 'trade'"
