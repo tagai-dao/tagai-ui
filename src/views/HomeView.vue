@@ -38,6 +38,7 @@ const tweetsStore = useTweetsStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const loadFailed = ref(false);
+const listLoaded = ref(false);
 const router = useRouter();
 const stateStore = useStateStore();
 const chainStore = useChainStore();
@@ -62,6 +63,7 @@ const tagSubMenu = computed(() => stateStore.tagSubMenu)
 const coinSubMenu = computed(() => stateStore.coinSubMenu)
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
+const bStocksFailed = ref(false)
 const bStocksLoaded = ref(false)
 let bStocksLoadedAt = 0
 const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: AccountOrigin }> = [
@@ -98,6 +100,7 @@ async function refresh() {
     const communities = await (type === ListType.MarketCap ? getCommunityByMarketCap() : type === ListType.New ? getCommunitiesByNew() : getCommunitiesByTrending()) as Community[]
     if (!isCurrent()) return
     comStore[key] = communities || []
+    listLoaded.value = true
     finished[type] = communities.length < 30
     if (type === ListType.New) nextNewPage.value = 1
     void getTokenInfo(communities).then(rows => {
@@ -219,6 +222,7 @@ async function loadBStocks(force = false) {
   const chainId = chainStore.activeChainId
   try {
     bStocksLoading.value = true
+    bStocksFailed.value = false
     const imported = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
     if (chainId !== chainStore.activeChainId) return
     if (chainStore.deployment.key === 'rh') {
@@ -248,6 +252,7 @@ async function loadBStocks(force = false) {
       }
     }
   } catch (e) {
+    bStocksFailed.value = true
     handleErrorTip(e)
   } finally {
     bStocksLoading.value = false
@@ -256,6 +261,7 @@ async function loadBStocks(force = false) {
 }
 
 async function refreshBStocks() {
+  bStocksFailed.value = false
   refreshing.value = true
   await loadBStocks(true)
 }
@@ -275,6 +281,12 @@ function ensureCoinListLoaded() {
   if (!list || list.length === 0) {
     void refresh()
   }
+}
+
+function retryVisibleList() {
+  if (activeMainMenu.value !== 'coin') return
+  if (coinSubMenu.value === 'bStocks') void refreshBStocks()
+  else if (coinSubMenu.value === 'tagCoin') void refresh()
 }
 
 function gotoDetail(com: Community) {
@@ -318,6 +330,7 @@ function switchCoinTab(tab: 'tagCoin' | 'baskets' | 'bStocks') {
 
 
 onMounted(async () => {
+  window.addEventListener('online', retryVisibleList)
   // Tag 首页不立刻打 Coin 列表的 getTokenInfo；切到 Coin 再拉
   ensureCoinListLoaded()
   getSpaces();
@@ -351,11 +364,13 @@ watch(() => chainStore.activeChainId, () => {
 })
 
 onActivated(() => {
+  ensureCoinListLoaded()
   if(pageScrollRef.value)
   pageScrollTo(pageScrollRef.value)
 })
 
 onUnmounted(() => {
+  window.removeEventListener('online', retryVisibleList)
   listRefreshSequence++
   emitter.off('newCommunity', refresh)
   if (newCommunitiesInterval) {
@@ -569,7 +584,11 @@ const onCreate = (type: GlobalModalType) => {
               <button class="px-4 py-3 text-orange-normal" @click.stop="refresh">{{ $t('network.retry') }}</button>
             </template>
 
-            <div v-if="filterTagCoins(comStore.trendingCommunities).length == 0 && !loading && listType == ListType.Trending"
+            <div v-if="refreshing && currentCoinList.length === 0" class="flex justify-center py-10" role="status">
+              <i-ep-loading class="animate-spin w-7 h-7 text-orange-normal" />
+              <span class="ml-2">{{ $t('loading') }}</span>
+            </div>
+            <div v-if="listLoaded && !refreshing && !loadFailed && filterTagCoins(comStore.trendingCommunities).length == 0 && !loading && listType == ListType.Trending"
                  class="flex justify-center py-6 w-full">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
@@ -577,7 +596,7 @@ const onCreate = (type: GlobalModalType) => {
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
               <TagListItem v-for="community of filterTagCoins(comStore.trendingCommunities)" :community :key="community.tick" @click="gotoDetail(community)" />
             </div>
-            <div v-if="filterTagCoins(comStore.newCommunities).length == 0 && !loading && listType == ListType.New"
+            <div v-if="listLoaded && !refreshing && !loadFailed && filterTagCoins(comStore.newCommunities).length == 0 && !loading && listType == ListType.New"
                  class="flex justify-center py-6 w-full">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
@@ -585,7 +604,7 @@ const onCreate = (type: GlobalModalType) => {
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
               <TagListItem v-for="community of filterTagCoins(comStore.newCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
-            <div v-if="filterTagCoins(comStore.marketCapCommunities).length == 0 && !loading && listType == ListType.MarketCap"
+            <div v-if="listLoaded && !refreshing && !loadFailed && filterTagCoins(comStore.marketCapCommunities).length == 0 && !loading && listType == ListType.MarketCap"
                  class="flex justify-center py-6 w-full">
               <img src="~@/assets/images/empty-data.svg" alt="">
             </div>
@@ -610,7 +629,8 @@ const onCreate = (type: GlobalModalType) => {
           <div v-if="bStocksLoading && bStockCommunities.length === 0" class="flex justify-center py-10 w-full">
             <i-ep-loading class="animate-spin w-7 h-7 text-orange-normal" />
           </div>
-          <div v-else-if="bStockCommunities.length === 0" class="flex justify-center py-6 w-full">
+          <button v-else-if="bStocksFailed" class="w-full py-6 text-orange-normal" @click="refreshBStocks">{{ $t('network.retry') }}</button>
+          <div v-else-if="bStocksLoaded && bStockCommunities.length === 0" class="flex justify-center py-6 w-full">
             <img src="~@/assets/images/empty-data.svg" alt="">
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">

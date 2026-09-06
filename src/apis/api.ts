@@ -6,11 +6,11 @@ import { useChainStore } from '@/stores/chain'
 // Coalesce duplicate public reads from header, ticker, Token and Wallet.
 // No account data or trading quotes are cached here.
 const publicReads = new Map<string, Promise<unknown>>()
-function publicRead(path: string) {
+function publicRead(path: string, params?: Record<string, unknown>) {
   const chainId = useChainStore().activeChainId
-  const key = `${chainId}:${path}`
+  const key = `${chainId}:${path}:${JSON.stringify(params ?? {})}`
   if (!publicReads.has(key)) {
-    const request = get(BACKEND_API_URL + path, undefined, {
+    const request = get(BACKEND_API_URL + path, params, {
       headers: { 'X-Chain-Id': String(chainId) },
       timeout: 15000,
     }).finally(() => publicReads.delete(key))
@@ -295,13 +295,13 @@ export const searchTick = async (tick: string) =>
   get(BACKEND_API_URL + '/community/searchTickOnly', { tick })
 
 export const getCommunityByMarketCap = async (pages?: number) =>
-  get(BACKEND_API_URL + '/community/communityByMarketCap', { pages })
+  publicRead('/community/communityByMarketCap', { pages: pages ?? 0 })
 
 export const getCommunitiesByTrending = async (pages?: number) =>
-  get(BACKEND_API_URL + '/community/communitiesByTrending', { pages })
+  publicRead('/community/communitiesByTrending', { pages: pages ?? 0 })
 
 export const getCommunitiesByNew = async (pages?: number) =>
-  get(BACKEND_API_URL + '/community/communitiesByNew', { pages })
+  publicRead('/community/communitiesByNew', { pages: pages ?? 0 })
 
 export const getCommunityDetail = async (tick: string) =>
   get(BACKEND_API_URL + '/community/detail', { tick })
