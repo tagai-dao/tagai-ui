@@ -36,6 +36,7 @@ const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
 const refreshing = ref(false);
 const loading = ref(false);
+const loadFailed = ref(false);
 const finished = ref({
   'new': false,
   'trending': false
@@ -125,6 +126,7 @@ async function loadTrades(page = 0, replace = false) {
     return rows.length
   } catch (error) {
     console.warn('[HomePost] trade feed unavailable', error)
+    if (seq === enrichSeq) loadFailed.value = true
     return -1
   } finally {
     if (seq === enrichSeq) tradeLoading.value = false
@@ -164,6 +166,7 @@ const enrichHomeTweets = async (type: TweetListType, batch: Tweet[], seq: number
 }
 
 async function onRefresh() {
+  loadFailed.value = false
   const type = tweetsStore.homeTweetType as TweetListType
   const source = tweetsStore.homeNewSource
   const seq = ++enrichSeq
@@ -211,6 +214,7 @@ async function onRefresh() {
     void enrichHomeTweets(type, list, seq)
   } catch (e) {
     if (seq !== enrichSeq) return
+    loadFailed.value = true
     handleErrorTip(e)
     refreshing.value = false
   }
@@ -221,7 +225,7 @@ async function onLoad() {
   const type = tweetsStore.homeTweetType as TweetListType
   const source = tweetsStore.homeNewSource
   try{
-    if (loading.value || refreshing.value || finished.value[type] || feedItems.value.length === 0 || (source === 'x' && tradeLoading.value)) {
+    if (loadFailed.value || loading.value || refreshing.value || finished.value[type] || feedItems.value.length === 0 || (source === 'x' && tradeLoading.value)) {
       return;
     }
     loading.value = true
@@ -277,6 +281,8 @@ async function onLoad() {
     // 分页同样：先追加再补价
     void enrichHomeTweets(type, list, enrichSeq)
   } catch (e) {
+    if (seq !== enrichSeq) return
+    loadFailed.value = true
     handleErrorTip(e)
     loading.value = false
   }
@@ -334,12 +340,16 @@ onActivated(() => {
           </div>
           <van-list
               :loading="loading"
+              :error="loadFailed"
               :finished="finished[tweetsStore.homeTweetType]"
               :immediate-check="false"
               :finished-text="$t('noMore')"
               :offset="50"
               @load="onLoad"
           >
+            <template #error>
+              <button class="px-4 py-3 text-orange-normal" @click.stop="onRefresh">{{ $t('network.retry') }}</button>
+            </template>
             <!-- 用 template 包 v-for，避免与 v-if 同元素时 v-if 优先导致 tweet 被解析为 api.tweet 函数 -->
             <template v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : tradeIdentity(item.trade)">
               <div
