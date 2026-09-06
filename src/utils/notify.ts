@@ -7,6 +7,9 @@ import { useAccount } from "@/composables/useAccount";
 import { decodeErrorResult } from 'viem';
 import { ContractFunctionExecutionError, decodeAbiParameters } from 'viem';
 import { getWalletClient } from "./wallets";
+import { createNetworkNoticeGate, isNetworkFailure } from './networkNotice';
+
+const networkNoticeGate = createNetworkNoticeGate();
 
 const t = i18n.global.t;
 
@@ -172,6 +175,7 @@ export function parseViemRevertReason(error: any): string {
 }
 
 export const handleErrorTip = (e: any) => {
+  if (e?.code === 'ERR_CANCELED' || e?.name === 'AbortError') return;
   if (!e) {
     console.log("Null error");
     return;
@@ -186,6 +190,10 @@ export const handleErrorTip = (e: any) => {
     return e
   }
 
+  if (isNetworkFailure(e.message)) {
+    notify({ message: e.message, type: 'warning' });
+    return e.message;
+  }
   const revertReason = parseViemRevertReason(e);
   return revertReason;
   
@@ -403,10 +411,13 @@ export const notify = (options: Partial<NotifyOptions> = {}) => {
     type = defaultType,
     duration,
   } = options;
+  const networkFailure = isNetworkFailure(message);
+  if (networkFailure && !networkNoticeGate.acquire()) return;
   ElNotification({
     title,
-    message,
+    message: networkFailure ? t('network.unavailable') : message,
     type,
     duration,
+    onClose: networkFailure ? () => networkNoticeGate.release() : undefined,
   });
 };

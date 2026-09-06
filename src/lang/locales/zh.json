@@ -1,4 +1,8 @@
 {
+  "network": {
+    "unavailable": "网络连接暂时不可用，请检查网络后重试。",
+    "retry": "加载失败，点击重试"
+  },
   "Square": "广场",
   "Proposal": "提议",
   "Trades": "交易",

@@ -1,4 +1,8 @@
 {
+  "network": {
+    "unavailable": "Connection temporarily unavailable. Check your network and retry.",
+    "retry": "Loading failed. Tap to retry."
+  },
   "Square": "Square",
   "Proposal": "Proposal",
   "Trades": "Trades",

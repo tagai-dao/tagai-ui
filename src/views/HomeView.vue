@@ -37,6 +37,7 @@ const curationStore = useCurationStore();
 const tweetsStore = useTweetsStore();
 const refreshing = ref(false);
 const loading = ref(false);
+const loadFailed = ref(false);
 const router = useRouter();
 const stateStore = useStateStore();
 const chainStore = useChainStore();
@@ -85,6 +86,8 @@ watch(activeTab, (val) => {
 
 let listRefreshSequence = 0
 async function refresh() {
+  loadFailed.value = false
+  refreshing.value = true
   const sequence = ++listRefreshSequence
   const chainId = chainStore.activeChainId
   const type = listType.value
@@ -103,14 +106,17 @@ async function refresh() {
       comStore[key] = comStore[key].map(row => byToken.get(row.token.toLowerCase()) ?? row)
     }).catch(error => console.warn('[Token] optional metrics unavailable', error))
   } catch (error) {
-    if (isCurrent()) handleErrorTip(error)
+    if (isCurrent()) {
+      loadFailed.value = true
+      handleErrorTip(error)
+    }
   } finally {
     if (isCurrent()) refreshing.value = false
   }
 }
 
 async function loadMore() {
-  if (loading.value || refreshing.value) return
+  if (loading.value || refreshing.value || loadFailed.value) return
   try{
     loading.value = true
     if (listType.value == ListType.MarketCap) {
@@ -156,6 +162,7 @@ async function loadMore() {
       }
     }
   } catch (e) {
+    loadFailed.value = true
     handleErrorTip(e)
   } finally {
     loading.value = false
@@ -551,12 +558,16 @@ const onCreate = (type: GlobalModalType) => {
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
           <van-list :loading="loading"
+                    :error="loadFailed"
                     :finished="finished[listType]"
                     :immediate-check="false"
                     :loading-text="$t('loading')"
                     :finished-text="filterTagCoins(currentCoinList).length==0?'':$t('noMore')"
                     :offset="50"
                     @load="loadMore">
+            <template #error>
+              <button class="px-4 py-3 text-orange-normal" @click.stop="refresh">{{ $t('network.retry') }}</button>
+            </template>
 
             <div v-if="filterTagCoins(comStore.trendingCommunities).length == 0 && !loading && listType == ListType.Trending"
                  class="flex justify-center py-6 w-full">
