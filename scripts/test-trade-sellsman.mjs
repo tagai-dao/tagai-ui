@@ -6,9 +6,22 @@ import ts from 'typescript'
 const source = await readFile(new URL('../src/utils/tradeSellsman.ts', import.meta.url), 'utf8')
 const code = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } }).outputText
   .replace(/from 'viem'/g, `from '${import.meta.resolve('viem')}'`)
-const { resolveTradeSellsman: resolve, DEFAULT_TRADE_SELLSMAN: defaults } =
+const {
+  resolveListedTradeSellsman: resolveListed,
+  resolveTradeSellsman: resolve,
+  DEFAULT_TRADE_SELLSMAN: defaults,
+} =
   await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
 const creator = '0x1111111111111111111111111111111111111111'
+
+test('listed trades preserve a valid address without requiring IPShare', () => {
+  assert.equal(resolveListed(creator), creator)
+})
+test('listed trades normalize only missing or malformed addresses', () => {
+  for (const candidate of [null, undefined, '', 'bad']) {
+    assert.equal(resolveListed(candidate), `0x${'0'.repeat(40)}`)
+  }
+})
 
 test('retain a creator with IPShare on either chain', async () => {
   for (const chain of [56, 4663]) assert.equal(await resolve(chain, creator, async () => true), creator)
@@ -32,4 +45,5 @@ test('trade component uses the same resolver in quotes and all Buy/Sell branches
   assert.doesNotMatch(view, /stateStore\.sellsman\s*\?\?/)
   assert.match(view, /const resolvedSellsman = await getTradeSellsman\(\)/)
   assert.match(view, /props\.sellsman \|\| routeSellsman/)
+  assert.match(view, /currentSelectedCommunity\?\.listed[\s\S]*resolveListedTradeSellsman\(candidate\)/)
 })

@@ -6,6 +6,17 @@ export const DEFAULT_TRADE_SELLSMAN: Record<number, Address> = {
   4663: '0xcb3A8062935b1C3f2C8eA4965eD490623aa186AD',
 }
 
+/**
+ * Listed trades resolve referral fallback in the wrapper or swap hook.
+ * Preserve any caller-supplied address, including one without an IPShare;
+ * only values that cannot be ABI-encoded are normalized to the zero address.
+ */
+export function resolveListedTradeSellsman(
+  candidate: string | null | undefined,
+): Address {
+  return candidate && isAddress(candidate) ? candidate : zeroAddress
+}
+
 export async function resolveTradeSellsman(
   chainId: number,
   candidate: string | null | undefined,

@@ -20,7 +20,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   resolveV2NativePair, resolveV3NativePool
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
-import { resolveTradeSellsman } from '@/utils/tradeSellsman'
+import { resolveListedTradeSellsman, resolveTradeSellsman } from '@/utils/tradeSellsman'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
 import {
   buyTokenV4Rh,
@@ -61,9 +61,15 @@ const comStore = useCommunityStore()
 const chainStore = useChainStore()
 const getTradeSellsman = async () => {
   const chainId = chainStore.activeChainId
-  const ipshare = chainStore.deployment.contracts.ipshare3
   const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
-  const result = await resolveTradeSellsman(chainId, props.sellsman || routeSellsman,
+  const candidate = props.sellsman || routeSellsman
+  // Listed wrappers and V4 hooks already own referral fallback. In particular,
+  // wrappers may pay a non-IPShare address directly or select the token deployer/importer.
+  if (comStore.currentSelectedCommunity?.listed) {
+    return resolveListedTradeSellsman(candidate)
+  }
+  const ipshare = chainStore.deployment.contracts.ipshare3
+  const result = await resolveTradeSellsman(chainId, candidate,
     async (address) => (await readContract('IPShare3', 'ipshareCreated', [address], ipshare)) === true)
   if (chainStore.activeChainId !== chainId) throw new Error('Network changed. Please retry the quote.')
   return result
