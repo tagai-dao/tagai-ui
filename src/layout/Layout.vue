@@ -17,7 +17,7 @@ import CreatePredictModal from "@/components/common/CreatePredictModal.vue";
 import ModifyCoinModal from "@/components/common/ModifyCoinModal.vue";
 import PredictTradeModal from "@/components/common/PredictTradeModal.vue";
 import PredictLiquidityModal from "@/components/common/PredictLiquidityModal.vue";
-import {onMounted, ref, watch} from "vue";
+import {onMounted, onUnmounted, ref, watch} from "vue";
 import emitter from "@/utils/emitter";
 import {applyPureReactInVue} from "veaury";
 import ReactApp from "@/react_app/App.jsx";
@@ -44,13 +44,10 @@ const modalStore = useModalStore()
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
 const handleReactLoginSuccess = async (accInfo: any) => {
-  console.log('accInfo', accInfo)
   accStore.setAccount(accInfo)
-  console.log('login')
   emitter.emit('login', true);
 
   newLogin.value = true;
-  console.log('login account info', accInfo);
   if (accInfo.accountType === 1 && accInfo.isNew === 1) {
     // api 获取用户信息，如果是新用户（username为空），则创建用户，弹出login/CreateUserInfo组件
     // 如果用户已创建，将用户信息accStore.setAccount，并调用setWallet
@@ -183,11 +180,19 @@ watch(
 )
 
 const cachedComponents = ref(['HomeView'])
+// Subscribe before mounting the React child: an existing Privy session can
+// complete OAuth during child mount, before this parent's onMounted runs.
+emitter.on('authSuccess', handleReactLoginSuccess);
+emitter.on('authError', handleReactLoginError);
+emitter.on('walletError', handleWalletError);
+emitter.on('walletProvider', handleWalletProvider);
+onUnmounted(() => {
+  emitter.off('authSuccess', handleReactLoginSuccess);
+  emitter.off('authError', handleReactLoginError);
+  emitter.off('walletError', handleWalletError);
+  emitter.off('walletProvider', handleWalletProvider);
+});
 onMounted( () => {
-  emitter.on('authSuccess', handleReactLoginSuccess);
-  emitter.on('authError', handleReactLoginError);
-  emitter.on('walletError', handleWalletError);
-  emitter.on('walletProvider', handleWalletProvider);
   emitter.on('setPageAliveState', async (params: any) => {
     if(params.isAlive) cachedComponents.value.push(params.pageName)
     else {
