@@ -54,7 +54,9 @@ watch(
   async ([chainId, token]) => {
     const sequence = ++nutboxResolveSequence
     nutboxCommunity.value = null
-    if (chainId !== 56 || !token || !isAddress(token)) return
+    // Nutbox Index Broker NFT pools are indexed on BSC and Robinhood.
+    // The API request and contract clients already follow the active chain.
+    if (![56, 4663].includes(chainId) || !token || !isAddress(token)) return
     try {
       const result = await getNutboxCommunityByToken(token)
       if (sequence !== nutboxResolveSequence) return
