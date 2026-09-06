@@ -29,7 +29,8 @@ const router = useRouter()
 const currentHolding = ref<any>(null)
 const showModal = ref(false)
 const modalType = ref(ModalType.transfer)
-const { ethPrice } = useStateStore()
+const stateStore = useStateStore()
+const ethPrice = computed(() => stateStore.ethPrice)
 const showingNoEth = computed(() => {
   return !accStore.getAccountInfo.ethAddr
 })
@@ -87,6 +88,8 @@ const onRefresh = async () => {
     let importedBalanceList: any = importedCommunities.length
       ? await getTokenBalances(importedCommunities.map((item: any) => item.token))
       : {};
+    const balances = Object.fromEntries(Object.entries(importedBalanceList).map(([address, value]) => [address.toLowerCase(), value]))
+    importedCommunities = importedCommunities.filter(item => Number(balances[item.token.toLowerCase()] ?? 0) > 0)
     let importedPriceList: any = importedCommunities.length
       ? await getImportTokenOnchainInfo(importedCommunities)
       : {};
@@ -94,7 +97,8 @@ const onRefresh = async () => {
     importedCommunities = importedCommunities.map((item: any) => ({
       community: item,
       account: accStore.getAccountInfo.ethAddr,
-      amount: importedBalanceList[item.token],
+      amount: balances[item.token.toLowerCase()],
+      decimals: importedPriceList[item.token.toLowerCase()]?.decimals ?? item.decimals ?? 18,
       token: item.token,
       tick: item.tick,
       chainId: item.chainId ?? item.chain_id,
@@ -115,14 +119,14 @@ const onRefresh = async () => {
         price: priceList[item.token]?.price
       })).concat(importedCommunities.map((item: any) => ({
         ...item,
-        price: importedPriceList[item.token.toLowerCase()]?.price
+        price: importedPriceList[item.token.toLowerCase()]?.price ?? item.community?.price
       }))).sort((a: any, b: any) => (b.amount?.toString() as any) * b.price - (a.amount?.toString() as any) * a.price)
     
       updateHoldingValue(accStore.tokenHoldingList);
     } else {
       accStore.tokenHoldingList = importedCommunities.map((item: any) => ({
         ...item,
-        price: importedPriceList[item.token.toLowerCase()]?.price
+        price: importedPriceList[item.token.toLowerCase()]?.price ?? item.community?.price
       }))
       updateHoldingValue(accStore.tokenHoldingList);
       finished.value = true
@@ -237,12 +241,12 @@ onMounted(async () => {
               <span class="text-grey-normal text-h3 leading-5">{{ holding.community?.tick }}</span>
             </div>
             <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary opacity-70">
-              {{ formatAmount((holding.amount?.toString() as any) / 1e18) }}
+              {{ formatAmount((holding.amount?.toString() as any) / 10 ** (holding.decimals ?? 18)) }}
             </div>
           </div>
           <div class="flex flex-col justify-center items-end">
             <div class="text-grey-normal text-h3">
-              {{ formatPrice((holding.price ?? 0) * (holding.amount?.toString() as any) * ethPrice / 1e18) }}
+              {{ formatPrice((holding.price ?? 0) * (holding.amount?.toString() as any) * ethPrice / 10 ** (holding.decimals ?? 18)) }}
             </div>
             <div class="whitespace-nowrap text-h5 leading-4 text-gradient bg-gradient-primary opacity-70">
               {{ formatPrice((holding.price ?? 0) * ethPrice) }}

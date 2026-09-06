@@ -16,7 +16,7 @@ const route = useRoute()
 const modalStore = useModalStore()
 const chainStore = useChainStore()
 const {
-  state, loading, error, action, connected, ownedNfts, inventory,
+  state, loading, ready, error, action, connected, ownedNfts, inventory,
   mintPreviewImage, approveErc20, mint, reveal, approveNft, buy, sell,
 } = props.model
 
@@ -126,10 +126,12 @@ onBeforeUnmount(() => socket?.close())
 
 <template>
   <div class="flex flex-col gap-3">
-    <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">{{ error }}</div>
+    <div v-if="error" class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+      {{ error }} <button class="ml-2 underline disabled:opacity-50" :disabled="loading" @click="model.load()">Retry</button>
+    </div>
     <div v-if="loading" class="rounded-2xl bg-surface p-8 text-center text-grey-3f">Loading NFT market…</div>
 
-    <div v-else class="overflow-hidden rounded-2xl border border-line bg-surface">
+    <div v-else-if="ready" class="overflow-hidden rounded-2xl border border-line bg-surface">
       <div v-if="side === 'buy'" class="grid grid-cols-3 border-b border-line" role="tablist" aria-label="Buy NFT">
         <button
           v-for="item in buyModes"

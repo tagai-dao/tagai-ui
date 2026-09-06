@@ -619,6 +619,12 @@ export const listBaskets = async (
     listCache.set(chainId, { at: Date.now(), data: shells })
     return shells
   }
+  // Independent API snapshots and RPC valuation run in parallel.
+  const performanceRequest = getBasketPerformances(registered.map(basket => basket.address), chainId)
+    .catch(error => {
+      console.warn('[baskets] performance API unavailable', error)
+      return []
+    })
 
   type ListRead =
     | { kind: 'effectiveSupply'; basketIndex: number }
@@ -677,7 +683,10 @@ export const listBaskets = async (
     { kind: 'hubPrice' },
   )
 
-  const results = await multicall(client, contracts)
+  const results = await multicall(client, contracts).catch(error => {
+    console.warn('[baskets] live valuation unavailable; using API snapshots', error)
+    return [] as MulticallRow[]
+  })
   const effectiveSupplies = registered.map(() => 0n)
   const reserves = registered.map((basket) => basket.assets.map(() => 0n))
   const unitQuotes = registered.map((basket) => basket.assets.map(() => 0n))
@@ -723,7 +732,7 @@ export const listBaskets = async (
     }
   })
   try {
-    const performance = await getBasketPerformances(baskets.map((basket) => basket.address), chainId)
+    const performance = await performanceRequest
     const byAddress = new Map(performance.map((item) => [item.address.toLowerCase(), item]))
     baskets.forEach((basket) => {
       const item = byAddress.get(basket.address.toLowerCase())

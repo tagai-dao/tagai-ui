@@ -431,6 +431,7 @@ export type CreateCommunity = {
 }
 
 export type TokenHoldingList = {
+  decimals?: number,
   community: Community,
   ethAddr: string,
   amount: number | bigint,

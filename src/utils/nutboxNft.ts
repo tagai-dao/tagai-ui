@@ -1,4 +1,5 @@
-import { parseAbi, type Abi, type Address } from 'viem'
+import { createPublicClient, fallback, http, parseAbi, type Abi, type Address } from 'viem'
+import { getChainDeployment } from '@/config/chains'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { getChainById } from '@/utils/privy'
@@ -93,12 +94,32 @@ export const nutboxRouterAbi = parseAbi([
   'function quoteNative(address token,uint256 amount) view returns (uint256)',
 ])
 
+// NFT screens read dozens of independent fields. JSON-RPC batching avoids a
+// burst of HTTP connections; this does not require a Multicall deployment.
+const nftClients = new Map<number, ReturnType<typeof createPublicClient>>()
+export const getNutboxReadClient = (chainId = useChainStore().activeChainId) => {
+  let client = nftClients.get(chainId)
+  if (!client) {
+    const deployment = getChainDeployment(chainId)
+    client = createPublicClient({
+      chain: getChainById(chainId),
+      transport: fallback(
+        (deployment.rpcUrls?.length ? deployment.rpcUrls : [deployment.rpc]).map(url =>
+          http(url, { batch: { batchSize: 8, wait: 20 }, timeout: 8_000, retryCount: 0 })),
+        { rank: false, retryCount: 1 },
+      ),
+    })
+    nftClients.set(chainId, client)
+  }
+  return client
+}
+
 export const readNutboxContract = async <T = unknown>(
   address: Address,
   abi: Abi,
   functionName: string,
   args: readonly unknown[] = [],
-): Promise<T> => getReadOnlyClient().readContract({
+): Promise<T> => getNutboxReadClient().readContract({
   address,
   abi,
   functionName,

@@ -46,6 +46,7 @@ const curationStore = useCurationStore()
 const trades = ref<FeedTrade[]>([])
 const aggregatePostFinished = ref(false)
 const aggregateTradeFinished = ref(false)
+const tradeLoading = ref(false)
 let aggregatePostPage = 0
 let aggregateTradePage = 0
 const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
@@ -106,18 +107,28 @@ const feedItems = computed(() => {
 })
 
 async function loadTrades(page = 0, replace = false) {
+  const seq = enrichSeq
+  tradeLoading.value = true
   try {
     const rows = (await getTradeFeed(page) || []) as FeedTrade[]
+    if (seq !== enrichSeq || tweetsStore.homeNewSource !== 'x') return -1
+    trades.value = mergeUniqueTrades(replace ? [] : trades.value, rows)
     const pseudo = rows.map(row => ({ ...row, description: '', name: row.name || row.tick, logo: row.logo || '' })) as unknown as Community[]
-    const enriched = pseudo.length ? await getTokenInfo(pseudo) : []
-    const byToken = new Map(enriched.map(item => [item.token?.toLowerCase(), item]))
-    const next = rows.map(row => ({ ...row, ...(byToken.get(row.token?.toLowerCase()) || {}) })) as FeedTrade[]
-    trades.value = mergeUniqueTrades(replace ? [] : trades.value, next)
+    // Publish API rows immediately; optional RPC metadata must not block posts.
+    void getTokenInfo(pseudo).then(enriched => {
+      if (seq !== enrichSeq) return
+      const byToken = new Map(enriched.map(item => [item.token?.toLowerCase(), item]))
+      trades.value = trades.value.map(row => {
+        const metrics = byToken.get(row.token?.toLowerCase())
+        return metrics ? { ...row, price: metrics.price, marketCap: metrics.marketCap, totalSupply: metrics.totalSupply, logo: row.logo || metrics.logo } : row
+      })
+    }).catch(error => console.warn('[HomePost] trade enrichment unavailable', error))
     return rows.length
   } catch (error) {
     console.warn('[HomePost] trade feed unavailable', error)
-    if (replace) trades.value = []
     return -1
+  } finally {
+    if (seq === enrichSeq) tradeLoading.value = false
   }
 }
 
@@ -162,20 +173,22 @@ async function onRefresh() {
     finished.value[type] = false;
     let list: Tweet[] = []
     if (type === TweetListType.New) {
-      const [tweetRows, tradeCount] = source === 'x'
-        ? await Promise.all([
-            // Feed aggregates X, FOMO, GMGN and Pump callouts.
-            getNewTweets(accStore.getAccountInfo?.twitterId, 0),
-            loadTrades(0, true),
-          ])
-        : [await getNewTweets(accStore.getAccountInfo?.twitterId, 0, source), -1]
+      if (source === 'x') {
+        aggregatePostFinished.value = false
+        aggregateTradeFinished.value = false
+        void loadTrades(0, true).then(count => {
+          if (seq !== enrichSeq) return
+          aggregateTradePage = count >= 0 ? 1 : 0
+          aggregateTradeFinished.value = count >= 0 && count < 30
+          finished.value[type] = aggregatePostFinished.value && aggregateTradeFinished.value
+        })
+      }
+      const tweetRows = await getNewTweets(accStore.getAccountInfo?.twitterId, 0, source === 'x' ? undefined : source)
       list = tweetRows as Tweet[]
       if (seq !== enrichSeq || tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) return
       if (source === 'x') {
         aggregatePostPage = 1
-        aggregateTradePage = tradeCount >= 0 ? 1 : 0
         aggregatePostFinished.value = list.length < 30
-        aggregateTradeFinished.value = tradeCount >= 0 && tradeCount < 30
         finished.value[type] = aggregatePostFinished.value && aggregateTradeFinished.value
       } else {
         trades.value = []
@@ -198,16 +211,18 @@ async function onRefresh() {
     refreshing.value = false
     void enrichHomeTweets(type, list, seq)
   } catch (e) {
+    if (seq !== enrichSeq) return
     handleErrorTip(e)
     refreshing.value = false
   }
 }
 
 async function onLoad() {
+  const seq = enrichSeq
   const type = tweetsStore.homeTweetType as TweetListType
   const source = tweetsStore.homeNewSource
   try{
-    if (refreshing.value || finished.value[type] || feedItems.value.length === 0) {
+    if (loading.value || refreshing.value || finished.value[type] || feedItems.value.length === 0 || (source === 'x' && tradeLoading.value)) {
       return;
     }
     loading.value = true
@@ -223,7 +238,7 @@ async function onLoad() {
             : loadTrades(aggregateTradePage),
         ])
         list = tweetRows as Tweet[]
-        if (tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
+        if (seq !== enrichSeq || tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
           loading.value = false
           return
         }
@@ -240,7 +255,7 @@ async function onLoad() {
       } else {
         const page = Math.floor((showingTweets.value.length - 1) / 30) + 1
         list = await getNewTweets(accStore.getAccountInfo?.twitterId, page, source) as Tweet[]
-        if (tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
+        if (seq !== enrichSeq || tweetsStore.homeTweetType !== type || tweetsStore.homeNewSource !== source) {
           loading.value = false
           return
         }
@@ -250,7 +265,7 @@ async function onLoad() {
     } else if (type === TweetListType.Trending) {
       const page = Math.floor((showingTweets.value.length - 1) / 30) + 1
       list = await getTrendingTweets(accStore.getAccountInfo?.twitterId, page) as Tweet[]
-      if (tweetsStore.homeTweetType !== type) {
+      if (seq !== enrichSeq || tweetsStore.homeTweetType !== type) {
         loading.value = false
         return
       }
@@ -275,6 +290,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  enrichSeq++
   emitter.off('login', onRefresh)
   emitter.off('mainTabNavigate', closeFeedSheets)
 })

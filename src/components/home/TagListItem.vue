@@ -35,7 +35,10 @@ const createTimeText = computed(() => {
 // App/PWA mobile compact card values.
 const marketCapUsd = computed(() => Number(props.community.marketCap || 0) * stateStore.ethPrice)
 const priceUsd = computed(() => Number(props.community.price || 0) * stateStore.ethPrice)
-const change = computed(() => Number(props.community.priceChange24h || 0))
+const change = computed(() => {
+  const value = props.community.priceChange24h
+  return value != null && String(value) !== '' && Number.isFinite(Number(value)) ? Number(value) : null
+})
 </script>
 
 <template>
@@ -46,12 +49,12 @@ const change = computed(() => Number(props.community.priceChange24h || 0))
         <CommunityLogo :logo="community.logo" size="md" :shadow="false" class="!rounded-full" />
         <div class="min-w-0">
           <h3 class="truncate text-base font-semibold text-content">{{ community.name || community.tick }}</h3>
-          <p class="mt-0.5 text-sm font-medium text-grey-64">{{ formatUsdCompact(marketCapUsd) }} MC</p>
+          <p class="mt-0.5 text-sm font-medium text-grey-64">{{ marketCapUsd > 0 ? formatUsdCompact(marketCapUsd) : '—' }} MC</p>
         </div>
       </div>
       <div class="ml-3 text-right">
-        <strong class="block text-base font-semibold tabular-nums text-content">{{ formatUsd(priceUsd) }}</strong>
-        <span v-if="typeof community.priceChange24h === 'number'" class="mt-0.5 block text-sm font-semibold tabular-nums" :class="change >= 0 ? 'text-up' : 'text-down'">
+        <strong class="block text-base font-semibold tabular-nums text-content">{{ priceUsd > 0 ? formatUsd(priceUsd) : '—' }}</strong>
+        <span v-if="change !== null" class="mt-0.5 block text-sm font-semibold tabular-nums" :class="change >= 0 ? 'text-up' : 'text-down'">
           {{ change >= 0 ? '△ +' : '▽ ' }}{{ change.toFixed(2) }}%
         </span>
         <span v-else class="mt-0.5 block text-sm text-grey-64">24H —</span>
@@ -72,14 +75,15 @@ const change = computed(() => Number(props.community.priceChange24h || 0))
         <div class="flex gap-x-2 items-end flex-wrap">
           <span class="text-grey-normal text-h2 font-bold leading-6" :class="community.listed ? 'text-orange-normal' : ''">{{ community.tick }}</span>
           <div class="flex-1 flex justify-end mt-1">
-            <div v-if="community.marketCap" class="flex items-end gap-1.5">
+            <div class="flex items-end gap-1.5">
               <span class="font-normal italic text-grey-64 leading-5 text-sm">{{ $t('marketCap') }}</span>
               <span class="font-medium italic text-orange-normal leading-5 text-sm">
-                {{ formatUsdCompact(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}
+                {{ marketCapUsd > 0 ? formatUsdCompact(marketCapUsd) : '—' }}
               </span>
-              <span v-if="typeof community.priceChange24h === 'number'" class="font-semibold leading-5 text-sm whitespace-nowrap" :class="community.priceChange24h >= 0 ? 'text-up' : 'text-down'">
-                {{ community.priceChange24h >= 0 ? '+' : '' }}{{ community.priceChange24h.toFixed(1) }}%
+              <span v-if="change !== null" class="font-semibold leading-5 text-sm whitespace-nowrap" :class="change >= 0 ? 'text-up' : 'text-down'">
+                {{ change >= 0 ? '+' : '' }}{{ change.toFixed(1) }}%
               </span>
+              <span v-else class="text-grey-64 text-sm whitespace-nowrap">24H —</span>
             </div>
           </div>
         </div>

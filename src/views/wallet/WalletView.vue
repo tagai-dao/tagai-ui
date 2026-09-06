@@ -12,7 +12,8 @@ import { usePrivyStore } from "@/stores/privy";
 import {applyPureReactInVue} from "veaury";
 import Wallet from "@/react_app/Wallet.jsx";
 import { isAddress } from "viem";
-import { useModalStore } from "@/stores/common";
+import { useModalStore, useStateStore } from "@/stores/common";
+import { calculateWalletUsd } from '@/utils/walletValue.mjs'
 import { GlobalModalType } from "@/types";
 import { useChainStore } from "@/stores/chain";
 import emitter from "@/utils/emitter";
@@ -21,6 +22,9 @@ const ReactWallet = applyPureReactInVue(Wallet);
 
 const accStore = useAccountStore()
 const chainStore = useChainStore()
+const stateStore = useStateStore()
+const walletUsd = computed(() => calculateWalletUsd(accStore.ethBalance, stateStore.ethPrice, accStore.tokenHoldingList))
+watch(walletUsd, value => { if (value !== null) accStore.holdingValue = value }, { immediate: true })
 const privyStore = usePrivyStore()
 const tabOptions = computed(() => [
   'holding',
@@ -140,7 +144,7 @@ watch(
       </div>
       <div class="text-xl bg-gradient-primary rounded-full px-3 py-2
        mt-1 flex justify-center items-center text-white mx-12">
-        {{ formatPrice(accStore.holdingValue) }}
+        {{ walletUsd === null ? '—' : formatPrice(walletUsd) }}
       </div>
       <!-- <div v-if="useAccountStore().ethConnectState === EthWalletState.Connected" class="pl-12 flex justify-between items-center gap-3a mt-1">
         <div @click="onCopy(useAccountStore().ethConnectAddress)" 

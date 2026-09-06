@@ -47,6 +47,7 @@ const finished = reactive({
 })
 const nextNewPage = ref(1)
 const { setInter } = useInterval()
+const { setInter: setStockInterval } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
 const pageScrollRef = ref()
 const activeTab = computed({
@@ -61,6 +62,7 @@ const coinSubMenu = computed(() => stateStore.coinSubMenu)
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
 const bStocksLoaded = ref(false)
+let bStocksLoadedAt = 0
 const homeNewSources: Array<{ value: HomeNewSource; label: string; logo: AccountOrigin }> = [
   { value: 'x', label: 'Feed', logo: 'X' },
   { value: 'fomo', label: 'FOMO', logo: 'FOMO' },
@@ -81,52 +83,34 @@ watch(activeTab, (val) => {
   console.log('Active tab changed to:', val)
 })
 
+let listRefreshSequence = 0
 async function refresh() {
-  try{
-    console.log('refresh')
-    if (listType.value == ListType.MarketCap) {
-      finished[ListType.MarketCap] = false
-      let communities = await getCommunityByMarketCap() as Array<Community>;
-      if (communities && communities.length > 0) {
-        comStore.marketCapCommunities = communities
-        getTokenInfo(communities).then((res) => {
-          comStore.marketCapCommunities = [...res]
-        })
-      } else {
-        finished[ListType.MarketCap] = true
-      }
-    } else if (listType.value == ListType.New) {
-      finished[ListType.New] = false
-      let communities = await getCommunitiesByNew() as Array<Community>;
-      if (communities && communities.length > 0) {
-        nextNewPage.value = 1
-        // comStore.newCommunities = communities
-        getTokenInfo(communities).then((res) => {
-          comStore.newCommunities = [...res]
-        })
-      } else {
-        finished[ListType.New] = true
-      }
-    }else if(listType.value == ListType.Trending) {
-      finished[ListType.Trending] = false
-      let communities = await getCommunitiesByTrending() as Array<Community>;
-      if (communities && communities.length > 0) {
-        comStore.trendingCommunities = communities
-        getTokenInfo(communities).then((res) => {
-          comStore.trendingCommunities = [...res]
-        })
-      } else {
-        finished[ListType.Trending] = true
-      }
-    }
-  } catch (e) {
-    handleErrorTip(e)
+  const sequence = ++listRefreshSequence
+  const chainId = chainStore.activeChainId
+  const type = listType.value
+  const key = type === ListType.MarketCap ? 'marketCapCommunities' : type === ListType.New ? 'newCommunities' : 'trendingCommunities'
+  const isCurrent = () => sequence === listRefreshSequence && chainId === chainStore.activeChainId
+  try {
+    finished[type] = false
+    const communities = await (type === ListType.MarketCap ? getCommunityByMarketCap() : type === ListType.New ? getCommunitiesByNew() : getCommunitiesByTrending()) as Community[]
+    if (!isCurrent()) return
+    comStore[key] = communities || []
+    finished[type] = communities.length < 30
+    if (type === ListType.New) nextNewPage.value = 1
+    void getTokenInfo(communities).then(rows => {
+      if (!isCurrent()) return
+      const byToken = new Map(rows.map(row => [row.token.toLowerCase(), row]))
+      comStore[key] = comStore[key].map(row => byToken.get(row.token.toLowerCase()) ?? row)
+    }).catch(error => console.warn('[Token] optional metrics unavailable', error))
+  } catch (error) {
+    if (isCurrent()) handleErrorTip(error)
   } finally {
-    refreshing.value = false
+    if (isCurrent()) refreshing.value = false
   }
 }
 
 async function loadMore() {
+  if (loading.value || refreshing.value) return
   try{
     loading.value = true
     if (listType.value == ListType.MarketCap) {
@@ -193,8 +177,10 @@ async function getSpaces() {
 }
 
 async function getNewCommunities() {
+  const chainId = chainStore.activeChainId
   try{
     let communities = await getCommunitiesByNew() as Array<Community>;
+    if (chainId !== chainStore.activeChainId) return
     if (communities && communities.length > 0) {
       // 先用 API 数据填滚动条；只给可见的前 10 条做链上补价，减轻与 Feed 抢 RPC
       const loaded = comStore.newCommunities || []
@@ -207,39 +193,49 @@ async function getNewCommunities() {
       )
       const head = communities.slice(0, 10)
       getTokenInfo(head).then((res) => {
+        if (chainId !== chainStore.activeChainId) return
         const byToken = new Map(res.map((c) => [c.token?.toLowerCase(), c]))
         comStore.newCommunities = comStore.newCommunities.map((c) => byToken.get(c.token?.toLowerCase() ?? '') ?? c)
-      })
+      }).catch(error => console.warn('[Token] ticker metrics unavailable', error))
     } else {
       finished[ListType.New] = true
     }
   } catch(e) {
-    handleErrorTip(e)
+    if (!comStore.newCommunities.length) handleErrorTip(e)
+    else console.warn('[Token] background refresh failed; retaining last list', e)
   }
 }
 
 /** 两条链均按官方 CA 元数据分类；本地快照和 RH 路由只用于容灾。 */
 async function loadBStocks(force = false) {
-  if (bStocksLoading.value || (bStocksLoaded.value && !force)) return
+  if (bStocksLoading.value || (bStocksLoaded.value && !force && Date.now() - bStocksLoadedAt < 60_000)) return
+  const chainId = chainStore.activeChainId
   try {
     bStocksLoading.value = true
     const imported = filterByActiveChain((await getImportedCommunityInfo() || []) as Community[])
+    if (chainId !== chainStore.activeChainId) return
     if (chainStore.deployment.key === 'rh') {
       registerRobinhoodStockCommunities(imported)
-      try {
-        await refreshRobinhoodBStockRegistry(imported.map((community) => community.token), { force })
-      } catch (error) {
+      void refreshRobinhoodBStockRegistry(imported.map((community) => community.token), { force }).then(() => {
+        if (chainId !== chainStore.activeChainId) return
+        const current = new Map(bStockCommunities.value.map(row => [row.token.toLowerCase(), row]))
+        bStockCommunities.value = imported.filter(isActiveChainBStock).map(row => current.get(row.token.toLowerCase()) ?? row)
+      }).catch(error => {
         // API official-stock metadata remains authoritative when RH RPC is unavailable.
         console.error('Load RH Router-supported stocks error:', error)
-      }
+      })
     }
     const bStocks = imported.filter(isActiveChainBStock)
     // 先展示 API 数据；链上补价失败时也不隐藏已识别的 bStocks。
     bStockCommunities.value = bStocks
     bStocksLoaded.value = true
+    bStocksLoadedAt = Date.now()
     if (bStocks.length) {
       try {
-        bStockCommunities.value = await getTokenInfo(bStocks)
+        const enriched = await getTokenInfo(bStocks)
+        if (chainId !== chainStore.activeChainId) return
+        const current = new Map(enriched.map(row => [row.token.toLowerCase(), row]))
+        bStockCommunities.value = bStockCommunities.value.map(row => current.get(row.token.toLowerCase()) ?? row)
       } catch (e) {
         console.error('Hydrate bStocks on-chain data failed:', e)
       }
@@ -319,6 +315,9 @@ onMounted(async () => {
   ensureCoinListLoaded()
   getSpaces();
   setInter(getSpaces, 20000);
+  setStockInterval(() => {
+    if (activeMainMenu.value === 'coin' && coinSubMenu.value === 'bStocks') void loadBStocks()
+  }, 60000)
   getNewCommunities();
   newCommunitiesInterval = setInterval(getNewCommunities, 60000);
   emitter.on('newCommunity', refresh);
@@ -350,6 +349,8 @@ onActivated(() => {
 })
 
 onUnmounted(() => {
+  listRefreshSequence++
+  emitter.off('newCommunity', refresh)
   if (newCommunitiesInterval) {
     clearInterval(newCommunitiesInterval)
   }
