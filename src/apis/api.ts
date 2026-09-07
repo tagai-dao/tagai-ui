@@ -294,14 +294,16 @@ export const searchCommunity = async (tick: string) =>
 export const searchTick = async (tick: string) =>
   get(BACKEND_API_URL + '/community/searchTickOnly', { tick })
 
-export const getCommunityByMarketCap = async (pages?: number) =>
-  publicRead('/community/communityByMarketCap', { pages: pages ?? 0 })
+export type TagCoinSourceFilter = 'all' | 'import' | 'launch'
 
-export const getCommunitiesByTrending = async (pages?: number) =>
-  publicRead('/community/communitiesByTrending', { pages: pages ?? 0 })
+export const getCommunityByMarketCap = async (pages?: number, source: TagCoinSourceFilter = 'all') =>
+  publicRead('/community/communityByMarketCap', { pages: pages ?? 0, source })
 
-export const getCommunitiesByNew = async (pages?: number) =>
-  publicRead('/community/communitiesByNew', { pages: pages ?? 0 })
+export const getCommunitiesByTrending = async (pages?: number, source: TagCoinSourceFilter = 'all') =>
+  publicRead('/community/communitiesByTrending', { pages: pages ?? 0, source })
+
+export const getCommunitiesByNew = async (pages?: number, source: TagCoinSourceFilter = 'all') =>
+  publicRead('/community/communitiesByNew', { pages: pages ?? 0, source })
 
 export const getCommunityDetail = async (tick: string) =>
   get(BACKEND_API_URL + '/community/detail', { tick })
