@@ -218,11 +218,11 @@ onMounted( () => {
             <TopBar v-show="$route.meta.topBar"/>
           </div>
           <!-- PC 端顶部栏：搜索框和语言切换 - 根据路由 meta 控制显示 -->
-          <div v-if="$route.meta.topBar !== false" class="hidden web:flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-surface">
-            <div class="flex-1 max-w-[360px] focus-within:max-w-[480px] transition-all duration-200">
+          <div v-if="$route.meta.topBar !== false" class="hidden web:flex min-h-[72px] items-center gap-6 px-6 py-3 border-b border-gray-200 bg-surface">
+            <div class="min-w-0 flex-1 max-w-[720px] xl:max-w-[800px]">
               <SearchBar />
             </div>
-            <div class="ml-4 flex items-center gap-2">
+            <div class="ml-auto flex shrink-0 items-center gap-2">
               <ChainSwitcher variant="compact" />
               <LanguageSwitcher />
             </div>
