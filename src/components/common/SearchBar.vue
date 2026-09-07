@@ -125,13 +125,13 @@ function gotoProfile(username: string) {
 </script>
 
 <template>
-  <div class="relative flex-1 flex justify-end" ref="searchRef">
-    <div class="search-bar relative w-full bg-white flex items-center rounded-full px-4 gap-3 ">
-      <img src="~@/assets/icons/icon-search-grey.svg" alt="">
+  <div class="relative flex min-w-0 flex-1 justify-end" ref="searchRef" role="search">
+    <div class="search-bar relative flex h-12 w-full items-center gap-3 rounded-full border border-line bg-white px-5 shadow-sm transition-shadow focus-within:border-orange-normal focus-within:shadow-[0_0_0_3px_rgba(254,145,63,0.12)] dark:bg-surface-2">
+      <img class="h-5 w-5 shrink-0" src="~@/assets/icons/icon-search-grey.svg" alt="">
       <input type="text" :placeholder="$t('search')"
              v-model="searchText"
              @input="onInput"
-             class="flex-1 bg-transparent relative rounded-full text-base" >
+             class="relative h-full min-w-0 flex-1 rounded-full bg-transparent text-base outline-none" >
       <button v-if="searchText.trim().length>0"
               @click="clearSearchList"
               class="absolute right-4 bg-grey-light rounded-full">
@@ -140,7 +140,7 @@ function gotoProfile(username: string) {
     </div>
     <el-collapse-transition>
       <div v-show="showSearchList"
-           class="absolute top-14 bg-white left-0 right-0 rounded-2xl px-4 py-6 z-[999]">
+           class="absolute top-14 left-0 right-0 z-[999] rounded-2xl border border-line bg-white px-4 py-6 shadow-popper-tip dark:bg-surface-2">
 
         <div v-if="searchResult.type === 'community' || searchResult.type === 'ca'" class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
           <TagListItem v-for="community of list" :community :key="community.tick" @click="gotoDetail(community)"/>
