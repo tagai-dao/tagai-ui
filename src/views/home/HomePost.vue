@@ -21,6 +21,8 @@ import FeedTradeActivity from '@/components/feed/FeedTradeActivity.vue'
 import { getTokenInfo } from '@/utils/pump'
 import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
 import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
+import { useChainStore } from '@/stores/chain'
+import { readPublicSnapshot, writePublicSnapshot } from '@/utils/publicSnapshot'
 
 // 新手引导卡：可关闭，关闭后持久记忆
 const ONBOARD_KEY = 'onboard-card-dismissed'
@@ -37,6 +39,7 @@ const accStore = useAccountStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const loadFailed = ref(false);
+const usingSnapshot = ref(false)
 const finished = ref({
   'new': false,
   'trending': false
@@ -47,6 +50,7 @@ const trades = ref<FeedTrade[]>([])
 const aggregatePostFinished = ref(false)
 const aggregateTradeFinished = ref(false)
 const tradeLoading = ref(false)
+const chainStore = useChainStore()
 let aggregatePostPage = 0
 let aggregateTradePage = 0
 const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
@@ -63,6 +67,36 @@ function mergeUniqueTrades(existing: FeedTrade[], incoming: FeedTrade[]) {
   const unique = new Map<string, FeedTrade>()
   for (const trade of [...existing, ...incoming]) unique.set(tradeIdentity(trade), trade)
   return [...unique.values()]
+}
+
+const homeSnapshotScope = (type: TweetListType, source: string) =>
+  `${chainStore.activeChainId}:home:${type}:${source}`
+const tradeSnapshotScope = () => `${chainStore.activeChainId}:home:new:x:trades`
+
+function publicTweets(rows: Tweet[]) {
+  return rows.slice(0, 120).map(row => {
+    const tweet = { ...row } as Partial<Tweet> & Record<string, unknown>
+    for (const field of ['liked', 'retweeted', 'replied', 'quoted', 'curated', 'accessToken', 'expiresAt', 'authLike', 'authPost', 'lastReadMessageTime']) {
+      delete tweet[field]
+    }
+    return tweet as Tweet
+  })
+}
+
+function saveHomeSnapshot(type: TweetListType, source: string, rows: Tweet[]) {
+  if (rows.length) writePublicSnapshot(homeSnapshotScope(type, source), publicTweets(rows))
+}
+
+function restoreHomeSnapshot(type: TweetListType, source: string) {
+  const rows = readPublicSnapshot<Tweet[]>(homeSnapshotScope(type, source))
+  if (!rows?.length) return false
+  if (type === TweetListType.New) tweetsStore.newTweets = rows
+  else tweetsStore.trendingTweets = rows
+  if (type === TweetListType.New && source === 'x') {
+    trades.value = readPublicSnapshot<FeedTrade[]>(tradeSnapshotScope()) ?? []
+  }
+  usingSnapshot.value = true
+  return true
 }
 
 function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
@@ -113,6 +147,7 @@ async function loadTrades(page = 0, replace = false) {
     const rows = (await getTradeFeed(page) || []) as FeedTrade[]
     if (seq !== enrichSeq || tweetsStore.homeNewSource !== 'x') return -1
     trades.value = mergeUniqueTrades(replace ? [] : trades.value, rows)
+    if (trades.value.length) writePublicSnapshot(tradeSnapshotScope(), trades.value.slice(0, 120))
     const pseudo = rows.map(row => ({ ...row, description: '', name: row.name || row.tick, logo: row.logo || '' })) as unknown as Community[]
     // Publish API rows immediately; optional RPC metadata must not block posts.
     void getTokenInfo(pseudo).then(enriched => {
@@ -126,7 +161,9 @@ async function loadTrades(page = 0, replace = false) {
     return rows.length
   } catch (error) {
     console.warn('[HomePost] trade feed unavailable', error)
-    if (seq === enrichSeq) loadFailed.value = true
+    if (seq === enrichSeq && replace && trades.value.length === 0) {
+      trades.value = readPublicSnapshot<FeedTrade[]>(tradeSnapshotScope()) ?? []
+    }
     return -1
   } finally {
     if (seq === enrichSeq) tradeLoading.value = false
@@ -209,13 +246,17 @@ async function onRefresh() {
     if (type !== TweetListType.New && list.length < 30) {
       finished.value[type] = true
     }
+    saveHomeSnapshot(type, source, list)
+    usingSnapshot.value = false
     // 转圈结束：内容已可见，不必等链上价
     refreshing.value = false
     void enrichHomeTweets(type, list, seq)
   } catch (e) {
     if (seq !== enrichSeq) return
-    loadFailed.value = true
-    handleErrorTip(e)
+    const retained = showingTweets.value.length > 0 || restoreHomeSnapshot(type, source)
+    usingSnapshot.value = retained
+    loadFailed.value = !retained
+    if (!retained) handleErrorTip(e)
     refreshing.value = false
   }
 }
@@ -249,6 +290,7 @@ async function onLoad() {
           aggregatePostPage += 1
           aggregatePostFinished.value = list.length < 30
           tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
+          saveHomeSnapshot(type, source, tweetsStore.newTweets)
         }
         if (!aggregateTradeFinished.value && tradeCount >= 0) {
           aggregateTradePage += 1
@@ -263,6 +305,7 @@ async function onLoad() {
           return
         }
         tweetsStore.newTweets = tweetsStore.newTweets.concat(list)
+        saveHomeSnapshot(type, source, tweetsStore.newTweets)
         if (list.length < 30) finished.value[type] = true
       }
     } else if (type === TweetListType.Trending) {
@@ -273,6 +316,7 @@ async function onLoad() {
         return
       }
       tweetsStore.trendingTweets = tweetsStore.trendingTweets.concat(list)
+      saveHomeSnapshot(type, source, tweetsStore.trendingTweets)
     }
     if (type === TweetListType.Trending && list && list.length < 30) {
       finished.value[type] = true
@@ -282,8 +326,9 @@ async function onLoad() {
     void enrichHomeTweets(type, list, enrichSeq)
   } catch (e) {
     if (seq !== enrichSeq) return
-    loadFailed.value = true
-    handleErrorTip(e)
+    usingSnapshot.value = showingTweets.value.length > 0
+    loadFailed.value = !usingSnapshot.value
+    if (!usingSnapshot.value) handleErrorTip(e)
     loading.value = false
   }
 }
@@ -323,6 +368,11 @@ onActivated(() => {
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
+          <button
+            v-if="usingSnapshot"
+            class="w-full mb-2 rounded-xl bg-orange-normal/10 px-3 py-2 text-sm text-orange-normal"
+            @click.stop="onRefresh"
+          >{{ $t('network.cached') }}</button>
           <!-- 新手三步引导卡（可关闭） -->
           <div v-if="!onboardDismissed" class="bg-white rounded-2xl p-4 mb-2 border-[1px] border-orange-normal/20">
             <div class="flex items-center justify-between mb-2">

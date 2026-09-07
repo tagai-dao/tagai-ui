@@ -25,6 +25,8 @@ import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
 import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
 import FeedTradeActivity from '@/components/feed/FeedTradeActivity.vue'
 import { externalSourceLogos } from '@/assets/externalSourceLogos'
+import { useChainStore } from '@/stores/chain'
+import { readPublicSnapshot, writePublicSnapshot } from '@/utils/publicSnapshot'
 
 enum ListType {
   All = 'all',
@@ -42,6 +44,7 @@ const accStore = useAccountStore();
 const refreshing = ref(false);
 const loading = ref(false);
 const loadFailed = ref(false);
+const usingSnapshot = ref(false)
 const tradesLoading = ref(false);
 const finished = ref<Record<ListType, boolean>>({
   'all': false,
@@ -54,6 +57,7 @@ const finished = ref<Record<ListType, boolean>>({
   'pump': false,
 });
 const comStore = useCommunityStore();
+const chainStore = useChainStore()
 const curationStore = useCurationStore()
 const listType = ref<ListType>(ListType.All)
 const nextPage = ref<Record<ListType, number>>({
@@ -83,6 +87,56 @@ let refreshSequence = 0
 const calloutTypes = new Set<ListType>([ListType.Gmgn, ListType.Fomo, ListType.Pump])
 const calloutSource = (type: ListType): ExternalCalloutSource => type as ExternalCalloutSource
 const calloutStoreKey = (tick: string, source: ExternalCalloutSource) => `${tick}:${source}`
+const communitySnapshotScope = (tick: string, type: ListType) =>
+  `${chainStore.activeChainId}:community:${tick.toLowerCase()}:feed:${type}`
+const communityTradeSnapshotScope = (tick: string) =>
+  `${chainStore.activeChainId}:community:${tick.toLowerCase()}:trades`
+
+function publicTweets(rows: Tweet[]) {
+  return rows.slice(0, 120).map(row => {
+    const tweet = { ...row } as Partial<Tweet> & Record<string, unknown>
+    for (const field of ['liked', 'retweeted', 'replied', 'quoted', 'curated', 'accessToken', 'expiresAt', 'authLike', 'authPost', 'lastReadMessageTime']) {
+      delete tweet[field]
+    }
+    return tweet as Tweet
+  })
+}
+
+function assignCommunityTweets(type: ListType, tick: string, rows: Tweet[]) {
+  if (type === ListType.All) {
+    allCommunityTweets.value = rows
+  } else if (type === ListType.New) {
+    if (!tweetsStore.communityTweets) tweetsStore.communityTweets = {}
+    tweetsStore.communityTweets[tick] = rows
+  } else if (type === ListType.Trending) {
+    if (!tweetsStore.communityTrendingTweets) tweetsStore.communityTrendingTweets = {}
+    tweetsStore.communityTrendingTweets[tick] = rows
+  } else if (type === ListType.Space) {
+    if (!tweetsStore.communitySpaceTweets) tweetsStore.communitySpaceTweets = {}
+    tweetsStore.communitySpaceTweets[tick] = rows
+  } else if (type === ListType.Tipped) {
+    if (!tweetsStore.communityTippedTweets) tweetsStore.communityTippedTweets = {}
+    tweetsStore.communityTippedTweets[tick] = rows
+  } else if (calloutTypes.has(type)) {
+    if (!tweetsStore.communityCalloutTweets) tweetsStore.communityCalloutTweets = {}
+    tweetsStore.communityCalloutTweets[calloutStoreKey(tick, calloutSource(type))] = rows
+  }
+}
+
+function saveCommunitySnapshot(type: ListType, tick: string, rows: Tweet[]) {
+  if (rows.length) writePublicSnapshot(communitySnapshotScope(tick, type), publicTweets(rows))
+}
+
+function restoreCommunitySnapshot(type: ListType, tick: string) {
+  const rows = readPublicSnapshot<Tweet[]>(communitySnapshotScope(tick, type))
+  if (!rows?.length) return false
+  assignCommunityTweets(type, tick, rows)
+  if (type === ListType.All) {
+    communityTrades.value = readPublicSnapshot<FeedTrade[]>(communityTradeSnapshotScope(tick)) ?? []
+  }
+  usingSnapshot.value = true
+  return true
+}
 
 function tradeIdentity(trade: FeedTrade) {
   const hash = trade.transHash?.trim().toLowerCase()
@@ -193,10 +247,16 @@ async function loadCommunityTrades(page = 0, replace = false) {
       dexVersion: row.dexVersion ?? community.dexVersion ?? undefined,
     }))
     communityTrades.value = mergeUniqueTrades(replace ? [] : communityTrades.value, next)
+    if (communityTrades.value.length) {
+      writePublicSnapshot(communityTradeSnapshotScope(community.tick), communityTrades.value.slice(0, 120))
+    }
     return rows.length
   } catch (error) {
     console.warn('[TagContent] community trade feed unavailable', error)
-    if (sequence === refreshSequence) loadFailed.value = true
+    if (sequence === refreshSequence && replace && communityTrades.value.length === 0) {
+      const tick = comStore.currentSelectedCommunity?.tick
+      if (tick) communityTrades.value = readPublicSnapshot<FeedTrade[]>(communityTradeSnapshotScope(tick)) ?? []
+    }
     return -1
   } finally {
     if (sequence === refreshSequence) tradesLoading.value = false
@@ -207,12 +267,13 @@ async function onRefresh() {
   const sequence = ++refreshSequence
   loadFailed.value = false
   const activeListType = listType.value
+  const tick = comStore.currentSelectedCommunity?.tick
+  if (!tick) return
   try {
     refreshing.value = true;
     finished.value[activeListType] = false;
     nextPage.value[activeListType] = 0
     let list: any;
-    const tick = comStore.currentSelectedCommunity!.tick;
     const twitterId = accStore.getAccountInfo?.twitterId;
     if (activeListType === ListType.All) {
       allTradeFinished.value = false
@@ -280,10 +341,14 @@ async function onRefresh() {
       nextPage.value[activeListType] = receivedCount > 0 ? 1 : 0
       finished.value[activeListType] = receivedCount < PAGE_SIZE
     }
+    saveCommunitySnapshot(activeListType, tick, showingTweets.value)
+    usingSnapshot.value = false
   } catch (e) {
     if (sequence !== refreshSequence) return
-    loadFailed.value = true
-    handleErrorTip(e)
+    const retained = showingTweets.value.length > 0 || restoreCommunitySnapshot(activeListType, tick)
+    usingSnapshot.value = retained
+    loadFailed.value = !retained
+    if (!retained) handleErrorTip(e)
   } finally {
     if (sequence === refreshSequence) refreshing.value = false;
   }
@@ -374,9 +439,11 @@ async function onLoad() {
       nextPage.value[activeListType] = page + 1
       finished.value[activeListType] = receivedCount < PAGE_SIZE
     }
+    saveCommunitySnapshot(activeListType, tick, showingTweets.value)
   } catch (e) {
-    loadFailed.value = true
-    handleErrorTip(e)
+    usingSnapshot.value = showingTweets.value.length > 0
+    loadFailed.value = !usingSnapshot.value
+    if (!usingSnapshot.value) handleErrorTip(e)
   } finally {
     loading.value = false;
   }
@@ -470,6 +537,11 @@ onBeforeUnmount(() => {
       </button>
     </div>
   </div>
+  <button
+    v-if="usingSnapshot"
+    class="w-full mb-2 rounded-xl bg-orange-normal/10 px-3 py-2 text-sm text-orange-normal"
+    @click.stop="onRefresh"
+  >{{ $t('network.cached') }}</button>
   <div class="flex-1">
     <van-pull-refresh class="h-full min-h-full"
       v-model="refreshing"

@@ -28,6 +28,7 @@ import {type HomeNewSource, TweetListType, useTweetsStore} from "@/stores/tweets
 import {filterByActiveChain} from "@/utils/chainFilter";
 import {isBStockCommunity, refreshRobinhoodBStockRegistry, registerRobinhoodStockCommunities} from '@/config/bstocks'
 import {externalSourceLogos, type AccountOrigin} from '@/assets/externalSourceLogos'
+import { readPublicSnapshot, writePublicSnapshot } from '@/utils/publicSnapshot'
 
 const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
@@ -39,6 +40,7 @@ const refreshing = ref(false);
 const loading = ref(false);
 const loadFailed = ref(false);
 const listLoaded = ref(false);
+const usingListSnapshot = ref(false)
 const router = useRouter();
 const stateStore = useStateStore();
 const chainStore = useChainStore();
@@ -87,6 +89,12 @@ watch(activeTab, (val) => {
 })
 
 let listRefreshSequence = 0
+const coinListSnapshotScope = (chainId: number, type: ListType) => `${chainId}:token-list:${type}`
+
+function saveCoinListSnapshot(chainId: number, type: ListType, rows: Community[]) {
+  if (rows.length) writePublicSnapshot(coinListSnapshotScope(chainId, type), rows.slice(0, 120))
+}
+
 async function refresh() {
   loadFailed.value = false
   refreshing.value = true
@@ -100,6 +108,8 @@ async function refresh() {
     const communities = await (type === ListType.MarketCap ? getCommunityByMarketCap() : type === ListType.New ? getCommunitiesByNew() : getCommunitiesByTrending()) as Community[]
     if (!isCurrent()) return
     comStore[key] = communities || []
+    saveCoinListSnapshot(chainId, type, comStore[key])
+    usingListSnapshot.value = false
     listLoaded.value = true
     finished[type] = communities.length < 30
     if (type === ListType.New) nextNewPage.value = 1
@@ -110,8 +120,16 @@ async function refresh() {
     }).catch(error => console.warn('[Token] optional metrics unavailable', error))
   } catch (error) {
     if (isCurrent()) {
-      loadFailed.value = true
-      handleErrorTip(error)
+      const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type))
+      if (cached?.length) {
+        comStore[key] = cached
+        listLoaded.value = true
+        usingListSnapshot.value = true
+        loadFailed.value = false
+      } else {
+        loadFailed.value = true
+        handleErrorTip(error)
+      }
     }
   } finally {
     if (isCurrent()) refreshing.value = false
@@ -130,6 +148,7 @@ async function loadMore() {
       let communities = await getCommunityByMarketCap(Math.floor((comStore.marketCapCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
+        saveCoinListSnapshot(chainStore.activeChainId, ListType.MarketCap, comStore.marketCapCommunities)
       }
       if (communities.length < 30) {
         finished[ListType.MarketCap] = true
@@ -146,6 +165,7 @@ async function loadMore() {
         comStore.newCommunities = comStore.newCommunities.concat(
           hydrated.filter((community) => !existingTokens.has(community.token?.toLowerCase()))
         )
+        saveCoinListSnapshot(chainStore.activeChainId, ListType.New, comStore.newCommunities)
       }
       nextNewPage.value += 1
       if (communities.length < 30) {
@@ -159,6 +179,7 @@ async function loadMore() {
       let communities = await getCommunitiesByTrending(Math.floor((comStore.trendingCommunities.length - 1) / 30) + 1) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
+        saveCoinListSnapshot(chainStore.activeChainId, ListType.Trending, comStore.trendingCommunities)
       }
       if (communities.length < 30) {
         finished[ListType.Trending] = true
@@ -300,6 +321,18 @@ const currentCoinList = computed(() => {
   if (listType.value == ListType.New) return comStore.newCommunities
   return comStore.trendingCommunities
 })
+
+const coinListTypeOptions = computed(() => [
+  { value: ListType.MarketCap, labelKey: 'marketCap' },
+  { value: ListType.Trending, labelKey: 'trending' },
+  { value: ListType.New, labelKey: 'new' },
+])
+const currentCoinListTypeLabelKey = computed(() =>
+  coinListTypeOptions.value.find(option => option.value === listType.value)?.labelKey ?? 'marketCap',
+)
+function selectCoinListType(value: ListType) {
+  if (coinListTypeOptions.value.some(option => option.value === value)) listType.value = value
+}
 
 // 隐藏小市值（垃圾/测试币）：official / listed / 已导入 / 市值≥$4,200 的保留
 const HIDE_DUST_KEY = 'hide-dust-coins'
@@ -550,16 +583,32 @@ const onCreate = (type: GlobalModalType) => {
           <el-switch v-model="hideDust" size="small" style="--el-switch-on-color: #FE913F" />
           <span class="hidden web:inline">{{ $t('hideDust') }}</span>
         </label>
-        <el-select
+        <el-dropdown
           v-if="coinSubMenu==='tagCoin'"
-          v-model="listType"
-          class="bg-white rounded-full overflow-hidden max-w-[100px] c-select h-8 web:h-9 flex items-center text-xs web:text-sm text-black"
+          trigger="click"
+          placement="bottom-end"
           popper-class="c-select-popper rounded-xl"
+          @command="selectCoinListType"
         >
-          <el-option :value="ListType.MarketCap" :label="$t('marketCap')" />
-          <el-option :value="ListType.Trending" :label="$t('trending')" />
-          <el-option :value="ListType.New" :label="$t('new')" />
-        </el-select>
+          <button
+            type="button"
+            class="h-8 web:h-9 min-w-[92px] max-w-[120px] rounded-full bg-white px-3 inline-flex items-center justify-between gap-2 text-xs web:text-sm text-black"
+            aria-haspopup="menu"
+          >
+            <span class="truncate">{{ $t(currentCoinListTypeLabelKey) }}</span>
+            <i-ep-arrow-down class="w-3.5 h-3.5 shrink-0" />
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item
+                v-for="option in coinListTypeOptions"
+                :key="option.value"
+                :command="option.value"
+                :class="option.value === listType ? 'font-bold bg-surface' : ''"
+              >{{ $t(option.labelKey) }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
     </div>
     
@@ -572,6 +621,11 @@ const onCreate = (type: GlobalModalType) => {
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
+          <button
+            v-if="usingListSnapshot"
+            class="w-full mb-2 rounded-xl bg-orange-normal/10 px-3 py-2 text-sm text-orange-normal"
+            @click.stop="refresh"
+          >{{ $t('network.cached') }}</button>
           <van-list :loading="loading"
                     :error="loadFailed"
                     :finished="finished[listType]"

@@ -45,6 +45,7 @@ import { isAddress } from "viem";
 import { getIPShareSupply } from "@/utils/ipshare";
 import { useChainStore } from '@/stores/chain'
 import { isSupportedNutboxNftPool } from '@/utils/nutboxPool.mjs'
+import { readPublicSnapshot, writePublicSnapshot } from '@/utils/publicSnapshot'
 
 const chainStore = useChainStore()
 const comStore = useCommunityStore()
@@ -329,24 +330,41 @@ onMounted(async () => {
       router.replace('/')
       return;
     }
-    comStore.currentSelectedCommunity = null
-    comStore.currentSelectedCommunity = await getCommunityDetail(tick) as any
-    if (!comStore.currentSelectedCommunity?.tick) {
-      router.replace('/')
+    const scope = `${chainStore.activeChainId}:community:${tick.toLowerCase()}:detail`
+    try {
+      const community = await getCommunityDetail(tick) as any
+      if (!community?.tick) {
+        router.replace('/')
+        return
+      }
+      comStore.currentSelectedCommunity = community
+      writePublicSnapshot(scope, community)
+    } catch (error) {
+      const cached = readPublicSnapshot<any>(scope)
+      if (cached?.tick) {
+        comStore.currentSelectedCommunity = cached
+      } else {
+        handleErrorTip(error)
+        return
+      }
     }
   }
 
   deployTweetList.value = [];
   // get deploy tweet
   if (comStore.currentSelectedCommunity?.createdByAi) {
-    const deployTweet = await getCommunityDeployTweet(comStore.currentSelectedCommunity?.tick, accStore.getAccountInfo?.twitterId)
-    const ipshare = await getCommunityDeployerIpshare(comStore.currentSelectedCommunity?.tick)
-    console.log('ipshare:', ipshare)
-    if (ipshare) {
-      comStore.currentSelectedCommunity.ipshare = ipshare as string
+    try {
+      const [deployTweet, ipshare] = await Promise.all([
+        getCommunityDeployTweet(comStore.currentSelectedCommunity.tick, accStore.getAccountInfo?.twitterId),
+        getCommunityDeployerIpshare(comStore.currentSelectedCommunity.tick),
+      ])
+      if (ipshare) comStore.currentSelectedCommunity.ipshare = ipshare as string
+      // @ts-ignore
+      deployTweetList.value = deployTweet as Tweet[]
+    } catch (error) {
+      // Optional metadata must not prevent the community feed from rendering.
+      console.warn('[HomeTagDetail] optional deploy metadata unavailable', error)
     }
-    // @ts-ignore
-    deployTweetList.value = deployTweet as Tweet[]
   }
 
   updateProgress();
