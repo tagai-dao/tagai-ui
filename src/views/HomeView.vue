@@ -61,6 +61,12 @@ const activeTab = computed({
 const activeMainMenu = computed(() => stateStore.activeMainMenu)
 const tagSubMenu = computed(() => stateStore.tagSubMenu)
 const coinSubMenu = computed(() => stateStore.coinSubMenu)
+type TagCoinSource = 'import' | 'launch'
+const tagCoinSource = ref<TagCoinSource>('import')
+const tagCoinSourceTabs: Array<{ value: TagCoinSource; label: string }> = [
+  { value: 'import', label: 'Import Token' },
+  { value: 'launch', label: 'TagAI Launch' },
+]
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
 const bStocksFailed = ref(false)
@@ -313,9 +319,22 @@ function filterDust(list: Community[]) {
   )
 }
 
-/** TagCoin 排除 CA 已识别为 bStocks 的导入社区。 */
+const isImportedToken = (community: Community) =>
+  community.isImport === true || Number(community.isImport) === 1
+
+/** TagCoin 排除股票，并按外部导入 / TagAI 发行来源分组。 */
 function filterTagCoins(list: Community[]) {
-  return filterDust(list).filter((community) => !isActiveChainBStock(community))
+  return filterDust(list).filter((community) => {
+    if (isActiveChainBStock(community)) return false
+    return tagCoinSource.value === 'import'
+      ? isImportedToken(community)
+      : !isImportedToken(community)
+  })
+}
+
+function switchTagCoinSource(source: TagCoinSource) {
+  tagCoinSource.value = source
+  pageScrollRef.value?.scrollTo?.({ top: 0, behavior: 'smooth' })
 }
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
@@ -560,6 +579,29 @@ const onCreate = (type: GlobalModalType) => {
           <el-option :value="ListType.Trending" :label="$t('trending')" />
           <el-option :value="ListType.New" :label="$t('new')" />
         </el-select>
+      </div>
+    </div>
+
+    <!-- TagCoin 来源筛选：外部导入代币 / TagAI 原生发行代币 -->
+    <div
+      v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'"
+      class="w-full px-3 pb-2 pt-1 web:mx-auto web:max-w-[1240px] web:pb-3 web:pt-2"
+    >
+      <div class="flex gap-2 overflow-x-auto no-scroll-bar" role="tablist" aria-label="TagCoin source">
+        <button
+          v-for="source in tagCoinSourceTabs"
+          :key="source.value"
+          type="button"
+          role="tab"
+          :aria-selected="tagCoinSource === source.value"
+          class="h-9 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors web:h-10 web:px-5"
+          :class="tagCoinSource === source.value
+            ? 'border-orange-normal bg-orange-normal text-white shadow-sm'
+            : 'border-line bg-white text-content hover:border-orange-normal/50 hover:text-orange-normal dark:bg-surface-2'"
+          @click="switchTagCoinSource(source.value)"
+        >
+          {{ source.label }}
+        </button>
       </div>
     </div>
     
