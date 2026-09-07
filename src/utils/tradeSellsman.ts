@@ -6,8 +6,20 @@ export const DEFAULT_TRADE_SELLSMAN: Record<number, Address> = {
   4663: '0xcb3A8062935b1C3f2C8eA4965eD490623aa186AD',
 }
 
+/** Match the legacy WrapSwaper branch in pump.buyToken/sellToken, not just listed state. */
+export function requiresIPShareSellsman(community: {
+  listed?: boolean
+  isImport?: boolean | number | null
+  version?: number | string | null
+}): boolean {
+  if (!community.listed) return true
+  // Imported wrappers and V4 hooks have their own referral policy. Legacy
+  // issued-token WrapSwaper instead reverts for nonzero subjects without IPShare.
+  return !community.isImport && ![7, 8, 9, 11].includes(Number(community.version))
+}
+
 /**
- * Listed trades resolve referral fallback in the wrapper or swap hook.
+ * Modern listed trades resolve referral fallback in the wrapper or swap hook.
  * Preserve any caller-supplied address, including one without an IPShare;
  * only values that cannot be ABI-encoded are normalized to the zero address.
  */
