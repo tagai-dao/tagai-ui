@@ -86,7 +86,12 @@ const isActiveChainBStock = (community: Community) =>
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
-watch(listType, (val) => {
+let skipNextListTypeRefresh = false
+watch(listType, () => {
+  if (skipNextListTypeRefresh) {
+    skipNextListTypeRefresh = false
+    return
+  }
   refresh()
 })
 watch(activeTab, (val) => {
@@ -101,17 +106,66 @@ function saveCoinListSnapshot(chainId: number, type: ListType, rows: Community[]
   if (rows.length) writePublicSnapshot(coinListSnapshotScope(chainId, type), rows.slice(0, 120))
 }
 
+const coinListKey = (type: ListType) =>
+  type === ListType.MarketCap ? 'marketCapCommunities' : type === ListType.New ? 'newCommunities' : 'trendingCommunities'
+
+const fetchCoinList = (type: ListType) =>
+  type === ListType.MarketCap
+    ? getCommunityByMarketCap()
+    : type === ListType.New
+      ? getCommunitiesByNew()
+      : getCommunitiesByTrending()
+
+function showCoinList(type: ListType, chainId: number, rows: Community[], snapshot: boolean) {
+  comStore[coinListKey(type)] = rows
+  if (!snapshot) saveCoinListSnapshot(chainId, type, rows)
+  finished[type] = rows.length < 30
+  if (type === ListType.New) nextNewPage.value = 1
+  listLoaded.value = true
+  loadFailed.value = false
+  usingListSnapshot.value = snapshot
+}
+
+/** Keep the Token page useful when one independent ranking endpoint is down. */
+async function showAvailableSiblingRanking(failedType: ListType, chainId: number, isCurrent: () => boolean) {
+  const fallbackOrder = [ListType.MarketCap, ListType.New, ListType.Trending]
+    .filter(type => type !== failedType)
+
+  for (const type of fallbackOrder) {
+    const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type))
+    if (cached?.length && isCurrent()) {
+      showCoinList(type, chainId, cached, true)
+      skipNextListTypeRefresh = true
+      listType.value = type
+      return true
+    }
+
+    try {
+      const rows = (await fetchCoinList(type) || []) as Community[]
+      if (!isCurrent()) return true
+      if (!rows.length) continue
+      showCoinList(type, chainId, rows, false)
+      skipNextListTypeRefresh = true
+      listType.value = type
+      return true
+    } catch (error) {
+      console.warn(`[Token] ${ListType[type]} fallback unavailable`, error)
+    }
+  }
+  return false
+}
+
 async function refresh() {
   loadFailed.value = false
   refreshing.value = true
   const sequence = ++listRefreshSequence
   const chainId = chainStore.activeChainId
   const type = listType.value
-  const key = type === ListType.MarketCap ? 'marketCapCommunities' : type === ListType.New ? 'newCommunities' : 'trendingCommunities'
+  const key = coinListKey(type)
   const isCurrent = () => sequence === listRefreshSequence && chainId === chainStore.activeChainId
   try {
     finished[type] = false
-    const communities = await (type === ListType.MarketCap ? getCommunityByMarketCap() : type === ListType.New ? getCommunitiesByNew() : getCommunitiesByTrending()) as Community[]
+    const communities = await fetchCoinList(type) as Community[]
     if (!isCurrent()) return
     comStore[key] = communities || []
     saveCoinListSnapshot(chainId, type, comStore[key])
@@ -126,15 +180,24 @@ async function refresh() {
     }).catch(error => console.warn('[Token] optional metrics unavailable', error))
   } catch (error) {
     if (isCurrent()) {
+      const existing = comStore[key]
       const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type))
-      if (cached?.length) {
+      if (existing?.length) {
+        listLoaded.value = true
+        usingListSnapshot.value = false
+        loadFailed.value = false
+        console.warn(`[Token] ${ListType[type]} refresh failed; retaining current list`, error)
+      } else if (cached?.length) {
         comStore[key] = cached
         listLoaded.value = true
         usingListSnapshot.value = true
         loadFailed.value = false
       } else {
-        loadFailed.value = true
-        handleErrorTip(error)
+        const recovered = await showAvailableSiblingRanking(type, chainId, isCurrent)
+        if (!recovered && isCurrent()) {
+          loadFailed.value = true
+          handleErrorTip(error)
+        }
       }
     }
   } finally {
