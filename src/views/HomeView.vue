@@ -4,7 +4,7 @@ import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
-import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getImportedCommunityInfo, getOnlineSpaces} from "@/apis/api";
+import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getImportedCommunityInfo, getOnlineSpaces, type TagCoinSourceFilter} from "@/apis/api";
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
 import {handleErrorTip} from '@/utils/notify'
@@ -63,9 +63,10 @@ const activeTab = computed({
 const activeMainMenu = computed(() => stateStore.activeMainMenu)
 const tagSubMenu = computed(() => stateStore.tagSubMenu)
 const coinSubMenu = computed(() => stateStore.coinSubMenu)
-type TagCoinSource = 'import' | 'launch'
-const tagCoinSource = ref<TagCoinSource>('import')
+type TagCoinSource = TagCoinSourceFilter
+const tagCoinSource = ref<TagCoinSource>('all')
 const tagCoinSourceTabs: Array<{ value: TagCoinSource; label: string }> = [
+  { value: 'all', label: 'All' },
   { value: 'import', label: 'Import Token' },
   { value: 'launch', label: 'TagAI Launch' },
 ]
@@ -100,25 +101,26 @@ watch(activeTab, (val) => {
 })
 
 let listRefreshSequence = 0
-const coinListSnapshotScope = (chainId: number, type: ListType) => `${chainId}:token-list:${type}`
+const coinListSnapshotScope = (chainId: number, type: ListType, source: TagCoinSource) =>
+  `${chainId}:token-list:${type}:${source}`
 
-function saveCoinListSnapshot(chainId: number, type: ListType, rows: Community[]) {
-  if (rows.length) writePublicSnapshot(coinListSnapshotScope(chainId, type), rows.slice(0, 120))
+function saveCoinListSnapshot(chainId: number, type: ListType, source: TagCoinSource, rows: Community[]) {
+  if (rows.length) writePublicSnapshot(coinListSnapshotScope(chainId, type, source), rows.slice(0, 120))
 }
 
 const coinListKey = (type: ListType) =>
   type === ListType.MarketCap ? 'marketCapCommunities' : type === ListType.New ? 'newCommunities' : 'trendingCommunities'
 
-const fetchCoinList = (type: ListType) =>
+const fetchCoinList = (type: ListType, pages = 0, source: TagCoinSource = tagCoinSource.value) =>
   type === ListType.MarketCap
-    ? getCommunityByMarketCap()
+    ? getCommunityByMarketCap(pages, source)
     : type === ListType.New
-      ? getCommunitiesByNew()
-      : getCommunitiesByTrending()
+      ? getCommunitiesByNew(pages, source)
+      : getCommunitiesByTrending(pages, source)
 
-function showCoinList(type: ListType, chainId: number, rows: Community[], snapshot: boolean) {
+function showCoinList(type: ListType, chainId: number, source: TagCoinSource, rows: Community[], snapshot: boolean) {
   comStore[coinListKey(type)] = rows
-  if (!snapshot) saveCoinListSnapshot(chainId, type, rows)
+  if (!snapshot) saveCoinListSnapshot(chainId, type, source, rows)
   finished[type] = rows.length < 30
   if (type === ListType.New) nextNewPage.value = 1
   listLoaded.value = true
@@ -127,24 +129,24 @@ function showCoinList(type: ListType, chainId: number, rows: Community[], snapsh
 }
 
 /** Keep the Token page useful when one independent ranking endpoint is down. */
-async function showAvailableSiblingRanking(failedType: ListType, chainId: number, isCurrent: () => boolean) {
+async function showAvailableSiblingRanking(failedType: ListType, chainId: number, source: TagCoinSource, isCurrent: () => boolean) {
   const fallbackOrder = [ListType.MarketCap, ListType.New, ListType.Trending]
     .filter(type => type !== failedType)
 
   for (const type of fallbackOrder) {
-    const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type))
+    const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type, source))
     if (cached?.length && isCurrent()) {
-      showCoinList(type, chainId, cached, true)
+      showCoinList(type, chainId, source, cached, true)
       skipNextListTypeRefresh = true
       listType.value = type
       return true
     }
 
     try {
-      const rows = (await fetchCoinList(type) || []) as Community[]
+      const rows = (await fetchCoinList(type, 0, source) || []) as Community[]
       if (!isCurrent()) return true
       if (!rows.length) continue
-      showCoinList(type, chainId, rows, false)
+      showCoinList(type, chainId, source, rows, false)
       skipNextListTypeRefresh = true
       listType.value = type
       return true
@@ -161,14 +163,17 @@ async function refresh() {
   const sequence = ++listRefreshSequence
   const chainId = chainStore.activeChainId
   const type = listType.value
+  const source = tagCoinSource.value
   const key = coinListKey(type)
-  const isCurrent = () => sequence === listRefreshSequence && chainId === chainStore.activeChainId
+  const isCurrent = () => sequence === listRefreshSequence
+    && chainId === chainStore.activeChainId
+    && source === tagCoinSource.value
   try {
     finished[type] = false
-    const communities = await fetchCoinList(type) as Community[]
+    const communities = await fetchCoinList(type, 0, source) as Community[]
     if (!isCurrent()) return
     comStore[key] = communities || []
-    saveCoinListSnapshot(chainId, type, comStore[key])
+    saveCoinListSnapshot(chainId, type, source, comStore[key])
     usingListSnapshot.value = false
     listLoaded.value = true
     finished[type] = communities.length < 30
@@ -181,7 +186,7 @@ async function refresh() {
   } catch (error) {
     if (isCurrent()) {
       const existing = comStore[key]
-      const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type))
+      const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type, source))
       if (existing?.length) {
         listLoaded.value = true
         usingListSnapshot.value = false
@@ -193,7 +198,7 @@ async function refresh() {
         usingListSnapshot.value = true
         loadFailed.value = false
       } else {
-        const recovered = await showAvailableSiblingRanking(type, chainId, isCurrent)
+        const recovered = await showAvailableSiblingRanking(type, chainId, source, isCurrent)
         if (!recovered && isCurrent()) {
           loadFailed.value = true
           handleErrorTip(error)
@@ -214,10 +219,13 @@ async function loadMore() {
       if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length == 0) {
         return;
       }
-      let communities = await getCommunityByMarketCap(Math.floor((comStore.marketCapCommunities.length - 1) / 30) + 1) as Array<Community>;
+      let communities = await getCommunityByMarketCap(
+        Math.floor((comStore.marketCapCommunities.length - 1) / 30) + 1,
+        tagCoinSource.value,
+      ) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
-        saveCoinListSnapshot(chainStore.activeChainId, ListType.MarketCap, comStore.marketCapCommunities)
+        saveCoinListSnapshot(chainStore.activeChainId, ListType.MarketCap, tagCoinSource.value, comStore.marketCapCommunities)
       }
       if (communities.length < 30) {
         finished[ListType.MarketCap] = true
@@ -227,14 +235,14 @@ async function loadMore() {
         return;
       }
       if (finished[ListType.New]) return;
-      let communities = await getCommunitiesByNew(nextNewPage.value) as Array<Community>;
+      let communities = await getCommunitiesByNew(nextNewPage.value, tagCoinSource.value) as Array<Community>;
       if (communities && communities.length > 0) {
         const hydrated = await getTokenInfo(communities)
         const existingTokens = new Set(comStore.newCommunities.map((community) => community.token?.toLowerCase()).filter(Boolean))
         comStore.newCommunities = comStore.newCommunities.concat(
           hydrated.filter((community) => !existingTokens.has(community.token?.toLowerCase()))
         )
-        saveCoinListSnapshot(chainStore.activeChainId, ListType.New, comStore.newCommunities)
+        saveCoinListSnapshot(chainStore.activeChainId, ListType.New, tagCoinSource.value, comStore.newCommunities)
       }
       nextNewPage.value += 1
       if (communities.length < 30) {
@@ -245,10 +253,13 @@ async function loadMore() {
         return;
       }
       if (finished[ListType.Trending]) return;
-      let communities = await getCommunitiesByTrending(Math.floor((comStore.trendingCommunities.length - 1) / 30) + 1) as Array<Community>;
+      let communities = await getCommunitiesByTrending(
+        Math.floor((comStore.trendingCommunities.length - 1) / 30) + 1,
+        tagCoinSource.value,
+      ) as Array<Community>;
       if (communities && communities.length > 0) {
         comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
-        saveCoinListSnapshot(chainStore.activeChainId, ListType.Trending, comStore.trendingCommunities)
+        saveCoinListSnapshot(chainStore.activeChainId, ListType.Trending, tagCoinSource.value, comStore.trendingCommunities)
       }
       if (communities.length < 30) {
         finished[ListType.Trending] = true
@@ -278,8 +289,13 @@ async function getSpaces() {
 
 async function getNewCommunities() {
   const chainId = chainStore.activeChainId
+  const source = activeMainMenu.value === 'coin'
+    && coinSubMenu.value === 'tagCoin'
+    && listType.value === ListType.New
+    ? tagCoinSource.value
+    : 'all'
   try{
-    let communities = await getCommunitiesByNew() as Array<Community>;
+    let communities = await getCommunitiesByNew(0, source) as Array<Community>;
     if (chainId !== chainStore.activeChainId) return
     if (communities && communities.length > 0) {
       // 先用 API 数据填滚动条；只给可见的前 10 条做链上补价，减轻与 Feed 抢 RPC
@@ -422,6 +438,7 @@ const isImportedToken = (community: Community) =>
 function filterTagCoins(list: Community[]) {
   return filterDust(list).filter((community) => {
     if (isActiveChainBStock(community)) return false
+    if (tagCoinSource.value === 'all') return true
     return tagCoinSource.value === 'import'
       ? isImportedToken(community)
       : !isImportedToken(community)
@@ -429,8 +446,19 @@ function filterTagCoins(list: Community[]) {
 }
 
 function switchTagCoinSource(source: TagCoinSource) {
+  if (tagCoinSource.value === source) return
   tagCoinSource.value = source
+  const key = coinListKey(listType.value)
+  const cached = readPublicSnapshot<Community[]>(
+    coinListSnapshotScope(chainStore.activeChainId, listType.value, source)
+  )
+  comStore[key] = cached ?? []
+  listLoaded.value = !!cached?.length
+  usingListSnapshot.value = !!cached?.length
+  loadFailed.value = false
+  finished[listType.value] = false
   pageScrollRef.value?.scrollTo?.({ top: 0, behavior: 'smooth' })
+  void refresh()
 }
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
