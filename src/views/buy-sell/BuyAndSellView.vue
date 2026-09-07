@@ -20,7 +20,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   resolveV2NativePair, resolveV3NativePool
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
-import { resolveListedTradeSellsman, resolveTradeSellsman } from '@/utils/tradeSellsman'
+import { requiresIPShareSellsman, resolveListedTradeSellsman, resolveTradeSellsman } from '@/utils/tradeSellsman'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
 import {
   buyTokenV4Rh,
@@ -63,9 +63,9 @@ const getTradeSellsman = async () => {
   const chainId = chainStore.activeChainId
   const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
   const candidate = props.sellsman || routeSellsman
-  // Listed wrappers and V4 hooks already own referral fallback. In particular,
-  // wrappers may pay a non-IPShare address directly or select the token deployer/importer.
-  if (comStore.currentSelectedCommunity?.listed) {
+  // Only modern wrappers/hooks own fallback. Legacy listed issued tokens
+  // (including BUIDL) still require an existing IPShare subject.
+  if (!requiresIPShareSellsman(comStore.currentSelectedCommunity ?? {})) {
     return resolveListedTradeSellsman(candidate)
   }
   const ipshare = chainStore.deployment.contracts.ipshare3

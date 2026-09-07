@@ -10,9 +10,31 @@ const {
   resolveListedTradeSellsman: resolveListed,
   resolveTradeSellsman: resolve,
   DEFAULT_TRADE_SELLSMAN: defaults,
+  requiresIPShareSellsman: requiresIPShare,
 } =
   await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
 const creator = '0x1111111111111111111111111111111111111111'
+
+test('legacy listed issued tokens require IPShare, including BUIDL v4', () => {
+  for (const version of [1, 2, 3, 4, 5, 6, '4', undefined]) {
+    assert.equal(requiresIPShare({ listed: true, isImport: 0, version }), true)
+  }
+})
+test('modern listed routing retains contract referral policy; bonding curves validate', () => {
+  for (const version of [7, 8, 9, 11, '11']) {
+    assert.equal(requiresIPShare({ listed: true, isImport: 0, version }), false)
+    assert.equal(requiresIPShare({ listed: false, isImport: 0, version }), true)
+  }
+  for (const version of [4, 10, 11]) {
+    assert.equal(requiresIPShare({ listed: true, isImport: 1, version }), false)
+  }
+})
+test('legacy post/trade author without IPShare resolves to default on both chains', async () => {
+  for (const chain of [56, 4663]) {
+    assert.equal(requiresIPShare({ listed: true, version: 4 }), true)
+    assert.equal(await resolve(chain, creator, async address => address === defaults[chain]), defaults[chain])
+  }
+})
 
 test('listed trades preserve a valid address without requiring IPShare', () => {
   assert.equal(resolveListed(creator), creator)
@@ -45,5 +67,5 @@ test('trade component uses the same resolver in quotes and all Buy/Sell branches
   assert.doesNotMatch(view, /stateStore\.sellsman\s*\?\?/)
   assert.match(view, /const resolvedSellsman = await getTradeSellsman\(\)/)
   assert.match(view, /props\.sellsman \|\| routeSellsman/)
-  assert.match(view, /currentSelectedCommunity\?\.listed[\s\S]*resolveListedTradeSellsman\(candidate\)/)
+  assert.match(view, /!requiresIPShareSellsman\(comStore.currentSelectedCommunity \?\? \{\}\)/)
 })
