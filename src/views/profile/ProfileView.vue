@@ -8,7 +8,7 @@ import TabBlinksTweet from "@/views/profile/TabBlinksTweet.vue";
 import { useAccountStore, useIpshareData } from "@/stores/web3";
 import { useAccount } from "@/composables/useAccount";
 import { MAX_OP, MAX_VP, VP_CONSUME, OP_CONSUME } from "@/config";
-import { getIPShareSupply, calculateIPsharePriceLocal } from "@/utils/ipshare";
+import { getIPShareSupply, ipshareCreated, calculateIPsharePriceLocal } from "@/utils/ipshare";
 import { useInterval, useTools } from "@/composables/useTools";
 import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore, useStateStore } from "@/stores/common";
@@ -47,6 +47,8 @@ const showStakeModal = ref(false)
 const kolFee = ref(0)
 const capturedFee = ref(0)
 const loadingIPShare = ref(false)
+const checkingIPShare = ref(false)
+const ipshareCreationStatus = ref<boolean | null>(null)
 const ipshareExpanded = ref(false) // IPShare Section 折叠/展开状态
 
 const profileTableData = ref([
@@ -61,7 +63,7 @@ const profileTableData = ref([
 const donutEth = computed(() => accStore.getAccountInfo?.ethAddr)
 const isCreatedIPshare = computed(() => {
   const supply = ipshareStore.ipshareSupplies[donutEth.value || ''] ?? 0;
-  return supply > 0;
+  return ipshareCreationStatus.value === true || supply > 0;
 })
 
 const ipsharePrice = computed(() => {
@@ -89,20 +91,24 @@ async function updateIPShare() {
 
   try {
     if (acc.ethAddr && isAddress(acc.ethAddr)) {
+      checkingIPShare.value = true;
       updateBalance();
+      const created = await ipshareCreated(acc.ethAddr);
+      ipshareCreationStatus.value = created;
+      if (!created) return;
       const supply: any = await getIPShareSupply(acc.ethAddr);
-      if (supply >= 10) {
-        useAccountStore().ipshare = {
-          ethAddr: acc.ethAddr,
-          shareSupply: supply,
-          created: true
-        };
-        // 更新 IPShare 数据
-        await loadIPShareData(acc.ethAddr);
-      }
+      useAccountStore().ipshare = {
+        ethAddr: acc.ethAddr,
+        shareSupply: supply,
+        created: true
+      };
+      // 更新 IPShare 数据
+      await loadIPShareData(acc.ethAddr);
     }
   } catch (error) {
     console.error('Update IPShare error:', error);
+  } finally {
+    checkingIPShare.value = false;
   }
 }
 
@@ -171,6 +177,7 @@ function onStakeSuccess() {
 
 // 监听账户信息变化，加载 IPShare 数据
 watch(() => accStore.getAccountInfo?.ethAddr, (newAddr) => {
+  ipshareCreationStatus.value = null;
   if (newAddr && isAddress(newAddr)) {
     loadIPShareData(newAddr);
   }
@@ -286,7 +293,7 @@ onMounted(() => {
       <template #ipshare>
       <div v-if="donutEth">
       <!-- Create IPShare Button -->
-      <button v-if="!isCreatedIPshare"
+      <button v-if="ipshareCreationStatus === false && !isCreatedIPshare && !checkingIPShare"
               class="h-12 w-full bg-gradient-primary text-white rounded-full shadow-sm"
               @click="useModalStore().setModalVisible(true, GlobalModalType.CreateIPShare)">
         <span class="text-lg font-bold">
@@ -349,6 +356,10 @@ onMounted(() => {
           </div>
         </el-collapse-transition>
       </template>
+      <div v-else class="h-12 flex items-center justify-center text-orange-normal">
+        <i-ep-loading v-if="checkingIPShare" class="animate-spin" />
+        <button v-else @click="updateIPShare">{{ $t('network.retry') }}</button>
+      </div>
       </div>
       <div v-else class="py-8 text-center text-sm text-grey-8d">IPShare is unavailable until this profile has an EVM wallet.</div>
       </template>
