@@ -1,6 +1,6 @@
 import { aggregate } from '@makerdao/multicall'
 import { formatUnits, isAddress } from "viem";
-import { readContract, writeContract } from "./contract";
+import { readContract, SubmittedTransactionError, writeContract } from "./contract";
 import errCode from "@/errCode";
 import { useAccountStore } from "@/stores/web3";
 import { useChainStore } from "@/stores/chain";
@@ -9,6 +9,20 @@ import { getChainDeployment } from "@/config/chains";
 /** 当前链 IPShare 合约地址（部署后填入 chains.ts） */
 const getIpshareAddress = () =>
     getChainDeployment(useChainStore().activeChainId).contracts.ipshare3
+
+const waitForCreatedIPShare = async (ethAddr: string): Promise<boolean> => {
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+        try {
+            if (await ipshareCreated(ethAddr)) return true
+        } catch (error) {
+            console.warn('Failed to reconcile IPShare creation:', error)
+        }
+        if (attempt < 5) {
+            await new Promise(resolve => setTimeout(resolve, 1_500))
+        }
+    }
+    return false
+}
 
 export const create = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) return;
@@ -19,18 +33,26 @@ export const create = async (ethAddr: string) => {
     if (created) {
         throw new Error('IPShare already created')
     }
-    const hash = await writeContract({
-        contractName: 'IPShare3',
-        functionName: 'createShare',
-        args: [ethAddr],
-        address: getIpshareAddress(),
-        value: createFee,
-        simulationTimeout: 20_000,
-        // Embedded wallets submit without a manual confirmation dialog. Keep
-        // extension wallets unbounded so a user can review the transaction.
-        requestTimeout: useAccountStore().getWalletType === 'privy' ? 30_000 : 0,
-        receiptTimeout: 45_000,
-    })
+    let hash: string
+    try {
+        hash = await writeContract({
+            contractName: 'IPShare3',
+            functionName: 'createShare',
+            args: [ethAddr],
+            address: getIpshareAddress(),
+            value: createFee,
+            simulationTimeout: 20_000,
+            // Embedded wallets submit without a manual confirmation dialog. Keep
+            // extension wallets unbounded so a user can review the transaction.
+            requestTimeout: useAccountStore().getWalletType === 'privy' ? 30_000 : 0,
+            receiptTimeout: 45_000,
+        })
+    } catch (error) {
+        if (error instanceof SubmittedTransactionError && await waitForCreatedIPShare(ethAddr)) {
+            return error.transactionHash
+        }
+        throw error
+    }
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
     }
