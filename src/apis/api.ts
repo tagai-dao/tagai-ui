@@ -1,3 +1,4 @@
+import { registerV13 } from '@/utils/v13/creation'
 import { get, post, put } from "./axios"
 import { BACKEND_API_URL, VP_CONSUME } from '@/config'
 import type { Community, CreateCommunity } from '@/types'
@@ -265,7 +266,7 @@ export const getTrendingTweets = async (twitterId: string | null | undefined, pa
 
 /************************************ community **********************************/
 export const createCommunity = async (params: CreateCommunity) => 
-  post(BACKEND_API_URL + '/community/createCommunity', params)
+  Number(params.version) === 13 ? registerV13(params) : post(BACKEND_API_URL + '/community/createCommunity', params)
 
 export const importCommunity = async (importInfo: CreateCommunity, ethAddr: string, signature: string, infoStr: string) =>
   post(BACKEND_API_URL + '/community/importCommunity', {importInfo, ethAddr, signature, infoStr})

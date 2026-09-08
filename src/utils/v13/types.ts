@@ -72,6 +72,7 @@ export type Metadata = {
     }>;
 };
 export type PoolState = {
+    totalSupply?: bigint;
     reserve0?: bigint;
     reserve1?: bigint;
     balance0?: bigint;

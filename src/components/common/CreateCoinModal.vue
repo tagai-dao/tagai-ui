@@ -4,6 +4,10 @@ import { computed, reactive, ref, watch, onMounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
 import { BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
+import { getReadOnlyClient } from '@/utils/wallets'
+import CreateV13Fields from './CreateV13Fields.vue'
+import { creationOptions, creationFee, validateIndexConfig, type CreationOptions } from '@/utils/v13/creation'
+import type { V13IndexConfig } from '@/types'
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
 import { bytesToHex, formatPrice } from "@/utils/helper";
@@ -194,6 +198,34 @@ const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
 const activeTab = ref('token');
 const chainStore = useChainStore();
+const isV13Creation = computed(() => chainStore.activeChainId === 56 && chainStore.deployment.latestPumpVersion === 13)
+const indexTickTooLong = computed(() => isV13Creation.value && new TextEncoder().encode(createForm.tick).length > 16)
+const indexForm = ref<V13IndexConfig>({ name:'',symbol:'',constituentAssets:[],targetWeights:[],basketFeeBps:100,creatorShareBps:0,retainCommunityOwnership:false })
+watch(() => createForm.tick, tick => {
+  indexForm.value = { ...indexForm.value, name: tick, symbol: tick }
+}, { immediate: true, flush: 'sync' })
+const v13Options = ref<CreationOptions>()
+const v13OptionsError = ref('')
+const v13OptionsLoading = ref(false)
+const v13Pending = ref(false)
+const pendingKey = () => `createTokenForm:${chainStore.activeChainId}:${accStore.ethConnectAddress?.toLowerCase()}`
+let optionsSequence = 0
+async function loadV13Options() {
+  const seq = ++optionsSequence
+  v13Options.value = undefined; v13OptionsError.value = ''
+  if (!isV13Creation.value || !isAddress(accStore.ethConnectAddress)) { v13OptionsLoading.value = false; return }
+  v13OptionsLoading.value = true
+  try {
+    const value = await creationOptions(accStore.ethConnectAddress)
+    if (seq !== optionsSequence) return
+    v13Options.value = value
+    if (!indexForm.value.constituentAssets.length && value.assets.length) {
+      indexForm.value.constituentAssets = [value.assets[0].address]
+      indexForm.value.targetWeights = [10000]
+    }
+  } catch (e) { if (seq === optionsSequence) v13OptionsError.value = String(e) }
+  finally { if (seq === optionsSequence) v13OptionsLoading.value = false }
+}
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol);
 const dexName = computed(() => chainStore.deployment.dex.kind === 'pancake' ? 'PancakeSwap' : 'Uniswap');
 const showAiDeployTab = computed(() => chainStore.deployment.key !== 'rh');
@@ -248,6 +280,10 @@ async function refreshCreateFee() {
     return
   }
   try {
+    if (isV13Creation.value) {
+      showingCreateFee.value = v13Options.value ? `~ ${formatPrice(Number(creationFee(v13Options.value,indexForm.value.constituentAssets.length))/1e18)}` : '--'
+      return
+    }
     const fee = await getCreatePumpFee(addr as `0x${string}`)
     showingCreateFee.value = `~ ${formatPrice(Number(fee) / 1e18)}`
   } catch (e) {
@@ -255,7 +291,11 @@ async function refreshCreateFee() {
   }
 }
 
-watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], () => refreshCreateFee(), { immediate: true })
+watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], () => {
+  v13Pending.value = !!localStorage.getItem(pendingKey())
+  void loadV13Options(); void refreshCreateFee()
+}, { immediate: true })
+watch([v13Options, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
 
 watch(() => showingInitAmount.value, debounce(async (val: number) => {
   if (val && val > 0) {
@@ -314,6 +354,7 @@ const onFocusTagInput = () => {
 };
 
 const testTick = async () => {
+  if (indexTickTooLong.value) return false
   showInvalidName.value = false;
   showTickUsed.value = false;
   showTagForbidden.value = false;
@@ -494,6 +535,22 @@ const create = async () => {
   const connetctedEthAddr = accStore.ethConnectAddress;
   try {
     createLoading.value = true;
+    // Retry registration before considering another on-chain creation.
+    const key = pendingKey()
+    const pending = isV13Creation.value && localStorage.getItem(key)
+    if (pending) {
+      const saved = JSON.parse(pending)
+      const receipt = await getReadOnlyClient(56).getTransactionReceipt({hash:saved.createHash})
+      if(receipt.status==='reverted'){
+        localStorage.removeItem(key);v13Pending.value=false
+        throw new Error(t('v13Create.reverted'))
+      }
+      const registered = await createCommunity(saved)
+      localStorage.removeItem(key); v13Pending.value = false
+      emitter.emit('newCommunity', {...saved, ...registered})
+      modalStore.setModalCloseEnable(true); modalStore.setModalVisible(false)
+      return
+    }
     // check params
     showInvalidName.value = false
     showLongDesc.value = false
@@ -530,17 +587,36 @@ const create = async () => {
       showLongDesc.value = true;
       return;
     }
-    // create token
-    const {createHash, token, version} = await createCoin(createForm);
+    if (isV13Creation.value) {
+      if (!v13Options.value?.assets.length || v13OptionsLoading.value) throw new Error(t('v13Create.loadError'))
+      indexForm.value = { ...indexForm.value, name: createForm.tick, symbol: createForm.tick }
+      validateIndexConfig(indexForm.value)
+      if (indexForm.value.constituentAssets.some(asset => !v13Options.value!.assets.some(a=>a.address.toLowerCase()===asset.toLowerCase()))) throw new Error(t('v13Create.loadError'))
+      createForm.indexConfig = JSON.parse(JSON.stringify(indexForm.value))
+    } else { delete createForm.indexConfig }
+    if (showMaxAmount.value) return
+    createForm.chainId = chainStore.activeChainId
+    createForm.ethAddr = connetctedEthAddr
+    const registrationKey = pendingKey()
+    const submittedForm = {...createForm, indexConfig:createForm.indexConfig ? JSON.parse(JSON.stringify(createForm.indexConfig)) : undefined}
+    const {createHash, token, version} = await createCoin(submittedForm, (hash, version) => {
+      if (version !== 13) return
+      const {initAmount,initEth,...saved} = submittedForm
+      localStorage.setItem(registrationKey, JSON.stringify({...saved,createHash:hash,version,token:''}))
+      v13Pending.value = true
+    });
+    Object.assign(createForm, submittedForm)
     createForm.createHash = createHash as string;
     createForm.token = token;
     createForm.version = version;
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth
-    localStorage.setItem('createTokenForm', JSON.stringify(createForm))
-    await createCommunity(createForm);
-    localStorage.removeItem('createTokenForm')
+    const storageKey = version === 13 ? registrationKey : 'createTokenForm'
+    localStorage.setItem(storageKey, JSON.stringify(createForm))
+    const registered = await createCommunity(createForm);
+    if (registered?.token) createForm.token = registered.token
+    localStorage.removeItem(storageKey); v13Pending.value = false
 
     // created token: prepair local data
     emitter.emit('newCommunity', createForm);
@@ -669,6 +745,7 @@ onMounted(async () => {
                   :placeholder="$t('createCommunity.tagTick')"
                 >
               </div>
+              <div v-if="indexTickTooLong" class="field-error">{{ t('v13Create.tickTooLong') }}</div>
               <div v-show="showInvalidName" class="field-error">{{ $t('createCommunity.invalidTickTip') }}</div>
               <div v-show="showTickUsed" class="field-error">{{ $t('createCommunity.tickUsed') }}</div>
               <div v-show="showTagForbidden" class="field-error">{{ $t('createCommunity.tagForbidden') }}</div>
@@ -715,14 +792,16 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section class="form-section">
-          <div class="section-title">
-            <span>02</span>
+        <CreateV13Fields v-if="isV13Creation" v-model="indexForm" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading || v13Pending" @reload="loadV13Options" />
+        <details class="form-section social-section">
+          <summary class="section-title">
+            <span>{{ isV13Creation ? '03' : '02' }}</span>
             <div>
               <h3>{{ $t('createCommunity.socialLinks') }}</h3>
               <p>{{ $t('optional') }}</p>
             </div>
-          </div>
+            <span class="social-chevron" aria-hidden="true">⌄</span>
+          </summary>
 
           <div class="field-group">
             <label class="field-label" for="coin-tags">
@@ -768,11 +847,12 @@ onMounted(async () => {
               <div class="field-control field-control--icon"><span>⌘</span><input id="docs" v-model="createForm.docs" type="text" :placeholder="$t('createCommunity.docsUrl')"></div>
             </div>
           </div>
-        </section>
+        </details>
 
+        <p v-if="v13Pending" role="status">{{ t('v13Create.pending') }}</p>
         <section class="form-section purchase-section">
           <div class="section-title">
-            <span>03</span>
+            <span>{{ isV13Creation ? '04' : '03' }}</span>
             <div>
               <h3>{{ $t('createCommunity.buyTip') }}</h3>
               <p>{{ $t('optional') }}</p>
@@ -795,7 +875,7 @@ onMounted(async () => {
         </section>
 
         <div class="create-submit">
-          <button type="button" :disabled="createLoading" @click="create">
+          <button type="button" :disabled="createLoading || (isV13Creation && !v13Pending && (!v13Options?.assets.length || v13OptionsLoading))" @click="create">
             <span>{{ $t('createCommunity.create') }}</span>
             <svg v-if="!createLoading" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -1122,6 +1202,11 @@ onMounted(async () => {
 .create-tabs button.active { background: var(--surface); color: var(--text-base); box-shadow: 0 6px 20px rgba(10,12,20,.08); }
 
 .create-modal__scroll { min-height: 0; overflow-y: auto; padding: 22px 26px 26px; }
+.social-section > summary { cursor: pointer; list-style: none; margin-bottom: 0; }
+.social-section > summary::-webkit-details-marker { display: none; }
+.social-section[open] > summary { margin-bottom: 18px; }
+.social-section .social-chevron { margin-left: auto; background: none; border: 0; font-size: 18px; color: var(--text-muted); transition: transform .15s; }
+.social-section[open] .social-chevron { transform: rotate(180deg); }
 .token-form { display: flex; flex-direction: column; gap: 14px; }
 .form-section { padding: 20px; border: 1px solid var(--border-base); border-radius: 20px; background: color-mix(in srgb, var(--surface) 94%, transparent); }
 .section-title { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 18px; }

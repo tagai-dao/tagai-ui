@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { quoteCurve, executeCurve, type CurveQuote } from '@/utils/v13/lifecycle'
 import { createQuoteSession, executeQuote, type Quote } from '@/utils/v13/client'
 import BackHeader from "@/layout/BackHeader.vue";
 import {computed, nextTick, onActivated, onMounted, onUnmounted, provide, ref, shallowRef, watch} from "vue";
@@ -81,6 +82,7 @@ const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 const isV13 = computed(() => chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 13)
 const v13Session = createQuoteSession()
 const v13Quote = shallowRef<Quote>()
+const curveQuote = shallowRef<CurveQuote>()
 const v13Error = ref('')
 const v13Message = computed(() => {
   if (v13Error.value === 'V13_LISTING_PENDING') return t('v13Trade.pending')
@@ -106,7 +108,7 @@ const isWalletConnected = computed(() =>
   isAddress(accStore.ethConnectAddress ?? '')
 )
 watch([() => comStore.currentSelectedCommunity?.token, () => chainStore.activeChainId, () => accStore.ethConnectAddress], () => {
-  v13Session.reset(); v13Quote.value = undefined; v13Error.value = ''
+  v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''
   buyQuoteSeq++; sellQuoteSeq++; receiveAmount.value = ''; receiveEth.value = ''; calculating.value = false
 })
 const tradeType = ref('buy')
@@ -194,18 +196,18 @@ watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value]
 watch(() => tradeType.value, () => {
   percentage.value = 0
   quoteSpotPrice.value = null
-  if (isV13.value) { v13Session.cancel(); v13Quote.value = undefined; v13Error.value = ''; receiveAmount.value = ''; receiveEth.value = ''; tradeType.value === 'buy' ? updateBuyAmount(payEth.value) : updateSellAmount(sellAmount.value) }
+  if (isV13.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''; receiveAmount.value = ''; receiveEth.value = ''; tradeType.value === 'buy' ? updateBuyAmount(payEth.value) : updateSellAmount(sellAmount.value) }
 })
 
 watch(payEth, (val: any) => {
-  if (isV13.value) { buyQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; v13Error.value = '' }
+  if (isV13.value) { buyQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
   calculating.value = true
   willListing = false
   updateBuyAmount(val)
 })
 
 watch(sellAmount, (val: any) => {
-  if (isV13.value) { sellQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; v13Error.value = '' }
+  if (isV13.value) { sellQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
   // 手动改数量后脱离进度条比例，避免余额刷新时覆盖输入
   if (!sellAmountSyncingFromPercent.value && percentage.value > 0) {
     percentage.value = 0
@@ -362,9 +364,16 @@ const updateBuyAmount = debounce(async (val: any) => {
   let receive: bigint
   let spot = 0
   if (isV13.value) {
-    const q = await v13Session.quote(community!.token as `0x${string}`, true, amount)
-    if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
-    v13Quote.value = q; v13Error.value = ''; receive = q.plan.amountOut
+    try {
+      const q = await v13Session.quote(community!.token as `0x${string}`, true, amount)
+      if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
+      v13Quote.value = q; curveQuote.value = undefined; v13Error.value = ''; receive = q.plan.amountOut
+    } catch (e) {
+      if ((e as Error).message !== 'V13_NOT_LISTED') throw e
+      const q = await quoteCurve(community!.token as `0x${string}`,true,amount)
+      if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
+      curveQuote.value=q; v13Quote.value=undefined; v13Error.value=''; receive=q.amountOut
+    }
   } else if (community?.isImport && Number(community.version) === 10) {
     const dexVersion = Number(community.dexVersion ?? 2)
     const recipient = accStore.ethConnectAddress
@@ -443,7 +452,7 @@ const updateBuyAmount = debounce(async (val: any) => {
   } catch (error) {
     if (seq !== buyQuoteSeq) return
     if ((error as Error)?.message === 'V13_QUOTE_CANCELLED') return
-    if (isV13.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined }
+    if (isV13.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined; curveQuote.value = undefined }
     console.warn('Buy quote failed', error)
     // Empty means unavailable; zero is reserved for a successful quote that
     // cannot cross the pool and must not mask RPC/encoding failures.
@@ -489,9 +498,16 @@ const updateSellAmount = debounce(async (val: any) => {
     let receive: bigint
     let spot = 0
     if (isV13.value) {
-      const q = await v13Session.quote(community!.token as `0x${string}`, false, amount)
-      if (seq !== sellQuoteSeq || sellAmount.value.trim() !== str || tradeType.value !== 'sell') return
-      v13Quote.value = q; v13Error.value = ''; receive = q.plan.amountOut
+      try {
+        const q = await v13Session.quote(community!.token as `0x${string}`, false, amount)
+        if (seq !== sellQuoteSeq || sellAmount.value.trim() !== str || tradeType.value !== 'sell') return
+        v13Quote.value = q; curveQuote.value=undefined; v13Error.value = ''; receive = q.plan.amountOut
+      } catch (e) {
+        if ((e as Error).message !== 'V13_NOT_LISTED') throw e
+        const q=await quoteCurve(community!.token as `0x${string}`,false,amount)
+        if (seq !== sellQuoteSeq || sellAmount.value.trim() !== str || tradeType.value !== 'sell') return
+        curveQuote.value=q;v13Quote.value=undefined;v13Error.value='';receive=q.amountOut
+      }
     } else if (community?.isImport && Number(community.version) === 10) {
       const dexVersion = Number(community.dexVersion ?? 2)
       receive = await quoteImportedTokenSell(community.token!, community.pair, dexVersion, amount)
@@ -556,7 +572,7 @@ const updateSellAmount = debounce(async (val: any) => {
   } catch (error) {
     if (seq !== sellQuoteSeq) return
     if ((error as Error)?.message === 'V13_QUOTE_CANCELLED') return
-    if (isV13.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined }
+    if (isV13.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined; curveQuote.value = undefined }
     console.warn('Sell quote failed', error)
     receiveEth.value = ''
     quoteSpotPrice.value = null
@@ -677,7 +693,11 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (isV13.value) {
+      if (isV13.value && curveQuote.value) {
+        const q=curveQuote.value
+        if (!q.isBuy || q.amountIn!==parseEther(payEth.value)) throw new Error(t('v13Trade.refresh'))
+        hash=await executeCurve(q,resolvedSellsman as `0x${string}`,Math.ceil(maxSlippage.value*100))
+      } else if (isV13.value) {
         const q = v13Quote.value
         if (!q || !q.plan.isBuy || q.plan.amountIn !== parseEther(payEth.value)) throw new Error(t('v13Trade.refresh'))
         hash = await executeQuote(q, resolvedSellsman as `0x${string}`, Math.ceil(maxSlippage.value * 100))
@@ -717,7 +737,7 @@ async function confirm() {
       if (hash) {
         payEth.value = ''
         receiveAmount.value = undefined
-        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined }
+        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
         recordCommunityTrade(hash)
         emitter.emit('newTrade')
         updateUserTokenInfo()
@@ -733,7 +753,11 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (isV13.value) {
+      if (isV13.value && curveQuote.value) {
+        const q=curveQuote.value
+        if (q.isBuy || q.amountIn!==finalSellAmount) throw new Error(t('v13Trade.refresh'))
+        hash=await executeCurve(q,resolvedSellsman as `0x${string}`,Math.ceil(maxSlippage.value*100))
+      } else if (isV13.value) {
         const q = v13Quote.value
         if (!q || q.plan.isBuy || q.plan.amountIn !== finalSellAmount) throw new Error(t('v13Trade.refresh'))
         hash = await executeQuote(q, resolvedSellsman as `0x${string}`, Math.ceil(maxSlippage.value * 100))
@@ -761,7 +785,7 @@ async function confirm() {
       if (hash) {
         sellAmount.value = ''
         receiveEth.value = undefined
-        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined }
+        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
         recordCommunityTrade(hash)
 
         emitter.emit('newTrade')
@@ -785,7 +809,7 @@ async function confirm() {
 
 function refreshV13Quote() {
   v13Session.reset()
-  v13Quote.value = undefined
+  v13Quote.value = undefined; curveQuote.value = undefined
   v13Error.value = ''
   receiveAmount.value = ''
   receiveEth.value = ''
@@ -1076,7 +1100,7 @@ onMounted(async () => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="(isWalletConnected && isV13 && (!v13Quote || !v13Quote.snapshot.executable)) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :disabled="(isWalletConnected && isV13 && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
             !isWalletConnected

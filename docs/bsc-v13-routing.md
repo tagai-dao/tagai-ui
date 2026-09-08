@@ -69,3 +69,6 @@ npm run build-only
 覆盖单次 multicall、未知 tick 无补读、失败读取/路线变更隔离、共享池顺序、税费舍入、
 跨 tick SDK 双向对照、gas 选择、报价异步取消、账号/链切换拦截、授权金额及 subject。
 测试中的毫秒数只反映本机 Node 计算耗时，不是浏览器/手机/网络性能承诺。
+
+
+创建、内盘、Basket V4 和 LP 矿池的后续接入详见 [bsc-v13-lifecycle.md](./bsc-v13-lifecycle.md)。

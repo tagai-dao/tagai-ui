@@ -1,3 +1,5 @@
+import { readLifecycle } from './v13/lifecycle'
+import { validateIndexConfig, creationOptions, creationFee } from './v13/creation'
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, NutboxCommittee, usesThirdPartyMarketCap } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
@@ -36,6 +38,7 @@ const pumpContract = [
 const getActivePumpAddress = (version: number): string | undefined => {
     const deployment = useChainStore().deployment
     if (version === 9) return deployment.contracts.pump9
+    if (version === 13) return deployment.contracts.pump13
     if (version === 11) return deployment.contracts.pump11
     if (deployment.key !== 'bsc') return undefined
     return pumpContract[version - 1]
@@ -284,19 +287,24 @@ export const checkTickUsed = async (tick: string) => {
     return created
 }
 
-export const createCoin = async (createParms: CreateCommunity) => {
+export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (hash: string, version: number) => void) => {
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
     const createPump = getCreatePumpDeployment();
+    if (createPump.version === 13) validateIndexConfig(createParms.indexConfig);
     const salt = await findPumpDeploySalt(userAddress);
     // 部署前链上二次校验，防止本地缓存 salt 或 predict 偏差导致非靓号地址
     await verifyPumpSaltVanity(userAddress, salt);
-    const createFee = await getCreatePumpFee(userAddress);
+    const createFee = await getCreatePumpFee(userAddress, createParms.indexConfig?.constituentAssets.length ?? 1);
+    const initEth = createParms.initAmount ? await calculateInitEth(createParms.initAmount) : 0n;
+    if (useChainStore().activeChainId !== createPump.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Wallet or chain changed');
 
     let hash = await writeContract({
         contractName: createPump.contractName,
         functionName: 'createToken',
-        args: [createParms.tick, salt],
-        value: (createParms.initEth ?? 0n) + createFee
+        args: createPump.version === 13 ? [createParms.tick, salt, createParms.indexConfig] : [createParms.tick, salt],
+        value: initEth + createFee,
+        beforeWrite: () => { if (useChainStore().activeChainId !== createPump.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Wallet or chain changed') },
+        onSubmitted: hash => onSubmitted?.(hash, createPump.version),
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
@@ -310,7 +318,11 @@ export const createCoin = async (createParms: CreateCommunity) => {
 }
 
 /** 当前链最新 Pump 创建固定费用：Pump + Nutbox Committee + 可选 IPShare 创建费。 */
-export const getCreatePumpFee = async (userAddress: `0x${string}`): Promise<bigint> => {
+export const getCreatePumpFee = async (userAddress: `0x${string}`, componentCount = 1): Promise<bigint> => {
+    if (getCreatePumpDeployment().version === 13) {
+        if (!Number.isInteger(componentCount) || componentCount < 1 || componentCount > 4) throw new Error('Choose 1–4 components');
+        return creationFee(await creationOptions(userAddress), componentCount);
+    }
     const { contractName } = getCreatePumpDeployment();
     const [pumpFee, commFee, settingsFee, ipshareCreated] = await Promise.all([
         readContract(contractName, 'createFee', []) as Promise<bigint>,
@@ -1748,8 +1760,25 @@ export const getTokenOnchainInfo = async (
     socialPoolMap: Record<string, string> = {},
 ) => {
     if (tokens.length === 0) return []
-    tokens = _.union(tokens).filter(token => !(useChainStore().activeChainId === 56 && Number(versions[token]) === 13))
-    if (tokens.length === 0) return {}
+    const v13Info: Record<string, any> = {}
+    const v13Tokens = _.union(tokens).filter(token => useChainStore().activeChainId === 56 && Number(versions[token]) === 13)
+    await Promise.all(v13Tokens.map(async token => {
+        try {
+            const state = await readLifecycle(token as `0x${string}`)
+            let price: number | undefined
+            if (!state.listed) {
+                const raw = await readContract('Pump13','getPrice',[state.supply,parseEther('1')]) as bigint
+                price = Number(raw)/1e18
+            } else {
+                const poolId = await readContract('Token13','v4PoolId',[],token as `0x${string}`) as `0x${string}`
+                const slot = await readContract('PCSCLPoolManager','getSlot0',[poolId]) as any
+                price = sqrtPriceX96ToBnbPerToken(BigInt(slot[0]))
+            }
+            v13Info[token] = {bondingCurveSupply:state.supply,listed:state.listed,listingPending:state.pending,price}
+        } catch { /* Preserve the last known indexed state when RPC is unavailable. */ }
+    }))
+    tokens = _.union(tokens).filter(token => !v13Tokens.includes(token))
+    if (tokens.length === 0) return v13Info
     let calls: any[] = []
     const loadBaseInfosByFallback = async () => {
         const entries = await Promise.all(tokens.map(async token => {
@@ -2123,7 +2152,7 @@ export const getTokenOnchainInfo = async (
                     console.warn('getTokenOnchainInfo price fallback failed', token, err)
                 }
             }
-            return result
+            return { ...result, ...v13Info }
         }
         for (let [key, value] of Object.entries(result)) {
             const version = versions[key] ?? 4;
@@ -2155,7 +2184,7 @@ export const getTokenOnchainInfo = async (
         }
     }
 
-    return result
+    return { ...result, ...v13Info }
 }
 
 /** 根据 dexVersion 获取导入代币价格 */
@@ -2579,7 +2608,7 @@ const getCreateTokenEventByHash = (tx: { logs: Log[] }, version: number) => {
     try {
       const events = parseEventLogs({
         abi: abis.Pump1,
-        logs,
+        logs: logs.filter(log => log.address.toLowerCase() === getActivePumpAddress(version)?.toLowerCase()),
         // 如果你确定只关心某个合约地址：
         // strict: true,
         // args: [可选],

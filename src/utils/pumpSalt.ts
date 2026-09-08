@@ -15,8 +15,8 @@ const MAX_SEARCH = 500_000
 
 type CreatePumpDeployment = {
     chainId: number
-    version: 9 | 11
-    contractName: 'Pump9' | 'Pump11'
+    version: 9 | 11 | 13
+    contractName: 'Pump9' | 'Pump11' | 'Pump13'
     pump: `0x${string}`
     tokenImplementation: `0x${string}`
 }
@@ -24,20 +24,20 @@ type CreatePumpDeployment = {
 export function getCreatePumpDeployment(): CreatePumpDeployment {
     const deployment = useChainStore().deployment
     const version = deployment.latestPumpVersion
-    const pump = version === 11
+    const pump = version === 13 ? deployment.contracts.pump13 : version === 11
         ? deployment.contracts.pump11
         : deployment.contracts.pump9
-    const tokenImplementation = version === 11
+    const tokenImplementation = version === 13 ? deployment.contracts.tokenImplementation13 : version === 11
         ? deployment.contracts.tokenImplementation11
         : deployment.contracts.tokenImplementation9
 
-    if (pump === zeroAddress || tokenImplementation === zeroAddress) {
+    if (!pump || !tokenImplementation || pump === zeroAddress || tokenImplementation === zeroAddress) {
         throw new Error(`Pump V${version} is not deployed on ${deployment.name}`)
     }
     return {
         chainId: deployment.chainId,
         version,
-        contractName: `Pump${version}` as 'Pump9' | 'Pump11',
+        contractName: `Pump${version}` as 'Pump9' | 'Pump11' | 'Pump13',
         pump,
         tokenImplementation,
     }

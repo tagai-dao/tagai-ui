@@ -1,7 +1,10 @@
+import { useAccountStore } from '@/stores/web3'
+import { useChainStore } from '@/stores/chain'
 import { isAddress, keccak256, parseEventLogs, parseUnits, stringToHex, zeroAddress, type Address, type Hex } from 'viem'
 import {
   BASKET_DEFAULT_SLIPPAGE_BPS,
   getBasketCreationProtocol,
+  getBasketProtocol,
   getBasketDeployment,
   isBscBasketLegAssetBlocked,
   isUsdBasketLegSymbol,
@@ -139,7 +142,7 @@ export const validateCustomBasketAsset = async ({
   try {
     await assertBasketRouteUsable(route, address, chainId)
     const quote = Number(getBasketDeployment(chainId).creationVersion) >= 3
-      ? await quoteBscV3SettlementToAsset(route, address, 1_000_000_000_000_000n, chainId)
+      ? await quoteBscV3SettlementToAsset(route, address, 1_000_000_000_000_000n, chainId, deployment.creationVersion)
       : await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n, chainId)
     if (quote <= 0n) throw new Error('The selected route has no usable price or liquidity')
   } catch (error) {
@@ -154,13 +157,16 @@ export const createBasketAndBuy = async (
   account: Address,
   onApproving?: () => void,
   onApproved?: () => void,
+  onSubmitted?: (hash: `0x${string}`) => void,
 ): Promise<CreateBasketResult> => {
+  const checkAccount=()=>{if(useChainStore().activeChainId!==input.chainId||useAccountStore().ethConnectAddress?.toLowerCase()!==account.toLowerCase())throw new Error('Wallet or chain changed')}
+  checkAccount()
   const wallet = getWalletClient()
   if (!wallet) throw new Error('Wallet not connected')
   const deployment = getBasketDeployment(input.chainId)
   const creationVersion = deployment.creationVersion
-  if (creationVersion !== 3) {
-    throw new Error('New Basket creation requires protocol V3')
+  if (![3,4].includes(creationVersion)) {
+    throw new Error('New Basket creation requires protocol V3 or V4')
   }
   const creationProtocol = getBasketCreationProtocol(input.chainId)
   const presets = deployment.assetPresets
@@ -219,6 +225,7 @@ export const createBasketAndBuy = async (
   )
   if (allowance < usdgIn) {
     onApproving?.()
+    checkAccount()
     await approveBasketTrade(deployment.contracts.settlementToken, usdgIn, account, input.chainId, creationVersion)
     // Approval is confirmed on-chain. Immediately continue to simulation and
     // open the creation transaction in the wallet without another UI click.
@@ -228,7 +235,7 @@ export const createBasketAndBuy = async (
   const routes = await Promise.all(input.legs.map(async (leg) => ({
     ...leg.route,
     defaultMaxExecutionLossBps: creationVersion >= 3
-      ? await getBscV3DefaultExecutionLossBps(leg.route, BASKET_DEFAULT_SLIPPAGE_BPS, input.chainId)
+      ? await getBscV3DefaultExecutionLossBps(leg.route, BASKET_DEFAULT_SLIPPAGE_BPS, input.chainId, creationVersion)
       : leg.route.defaultMaxExecutionLossBps,
   })))
   const createParams = {
@@ -282,13 +289,15 @@ export const createBasketAndBuy = async (
       functionName: input.chainId === 56 ? 'createAndBuyExactSettlement' : 'createAndBuyExactUsdg',
       args,
     } as any)
+    checkAccount()
     const hash = await wallet.writeContract(request as any)
+    onSubmitted?.(hash)
     const confirmed = await waitForTx(hash)
     if (!confirmed) throw new Error('Creation transaction failed')
     const receipt = await publicClient.getTransactionReceipt({ hash })
     const events = parseEventLogs({
       abi: getBasketSwapRouterAbi(input.chainId, creationVersion),
-      logs: receipt.logs,
+      logs: receipt.logs.filter(log=>log.address.toLowerCase()===creationProtocol.swapRouter.toLowerCase()),
       eventName: 'BasketCreatedAndBought',
     } as any)
     const basket = (events[0] as any)?.args?.basket as Address | undefined
@@ -297,4 +306,14 @@ export const createBasketAndBuy = async (
   } catch (error) {
     throw new Error(friendlyBasketError(error))
   }
+}
+
+export async function recoverBasketCreation(hash: `0x${string}`,chainId:number,version:number):Promise<Address> {
+ const protocol=getBasketProtocol(chainId,version)
+ const receipt=await getReadOnlyClient(chainId).getTransactionReceipt({hash})
+ if(receipt.status!=='success')throw new Error('Creation transaction reverted')
+ const events=parseEventLogs({abi:getBasketSwapRouterAbi(chainId,version),logs:receipt.logs.filter(log=>log.address.toLowerCase()===protocol.swapRouter.toLowerCase()),eventName:'BasketCreatedAndBought'} as any)
+ const basket=(events[0] as any)?.args?.basket as Address|undefined
+ if(!basket)throw new Error('Basket creation event unavailable')
+ return basket
 }

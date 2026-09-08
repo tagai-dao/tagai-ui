@@ -204,6 +204,17 @@ const bscContractsV3 = {
   v3Factory: '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865',
 } as const satisfies BasketContracts
 
+const bscContractsV4 = {
+  ...bscContractsV3,
+  routeRegistry: '0xE8C56D5243c9b170287cEfB6E8CEceA56113c366',
+  feeAuction: '0xfCF8C3cd5dCACb7b911149D1bc5bBCf275975396',
+  tokenDeployer: '0xe538ADbC310a6E1FD1eECE844FFc9745A35ED793',
+  rebalanceExecutor: '0x7EC7bd135C611f5c103bC4264D7E4Ad04dc3e86e',
+  hook: '0x76983475f199C58d7BbA975220593c1c8B25f75e',
+  swapRouter: '0x538e4B82D4A9E671B9358E1BAc3F7b74Bd663544',
+  nutboxRouter: '0x72dc4F38A7E4159e97d826a6ab594748C6b68f17',
+} as const satisfies BasketContracts
+
 export const BSC_USDC: Address = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d'
 export const BSC_USD1: Address = '0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d'
 
@@ -291,9 +302,9 @@ export const BASKET_DEPLOYMENTS: Record<BasketChainId, BasketDeployment> = {
     settlementDecimals: 18,
     wrappedNativeSymbol: 'WBNB',
     nativeSymbol: 'BNB',
-    contracts: bscContractsV3,
-    creationVersion: 3,
-    protocols: { 2: bscContractsV2, 3: bscContractsV3 },
+    contracts: bscContractsV4,
+    creationVersion: 4,
+    protocols: { 2: bscContractsV2, 3: bscContractsV3, 4: bscContractsV4 },
     hubPool: {
       currency0: zeroAddress,
       currency1: bscContractsV3.settlementToken,

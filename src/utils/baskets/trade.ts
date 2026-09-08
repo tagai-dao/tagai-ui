@@ -288,7 +288,7 @@ export const quoteBasketBuyLegOutputs = async ({
         ? netSettlement - allocated
         : netSettlement * BigInt(leg.weightBps) / 10_000n
       allocated += amountIn
-      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn, chainId))
+      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn, chainId, version))
     }
     return outputs
   }

@@ -9,7 +9,7 @@ import { performance } from 'node:perf_hooks';
 import { parseAbi, decodeFunctionData, encodeFunctionResult, zeroAddress, encodeAbiParameters, keccak256 } from 'viem';
 const dir = await mkdtemp(join(tmpdir(), 'v13-routing-'));
 await build({ stdin: { contents: "export * from './src/utils/v13/math.ts'; export * from './src/utils/v13/snapshot.ts';", resolveDir: process.cwd() }, bundle: true, platform: 'node', format: 'cjs', outfile: join(dir, 'core.cjs'), logLevel: 'silent' });
-const { optimize, simulatePlan, loadSnapshot, routeHash } = createRequire(import.meta.url)(join(dir, 'core.cjs'));
+const { optimize, simulatePlan, optimizeZap, simulateZap, loadSnapshot, routeHash } = createRequire(import.meta.url)(join(dir, 'core.cjs'));
 await rm(dir, { recursive: true, force: true });
 const address = n => '0x' + n.toString(16).padStart(40, '0'), hash = n => '0x' + n.toString(16).padStart(64, '0');
 const token = address(1), wrapped = address(2), asset = address(3), E = 10n ** 18n;
@@ -313,4 +313,51 @@ test('ticks beyond API coverage are ignored without fetching them', async () => 
     assert.equal(count(), 1);
     assert.equal(s.pools.main.lower, -60);
     assert.equal(s.pools.main.upper, 60);
+});
+
+function zapFixture() {
+ const {m,s}=fixture()
+ m.pools=[{...pool(0,zeroAddress,token),kind:'v4',hookFeeBps:90,tickSpacing:60},pool(1,wrapped,asset),{...pool(2,token,asset),taxedToken:token}]
+ m.routes=[{index:0,asset:token,pools:[0],registry:[]},{index:1,asset,pools:[1,2],registry:[]}]
+ s.routes=m.routes;s.pools={0:{valid:true,sqrtPrice:2n**96n,tick:0,liquidity:10000n*E,feePips:0,protocolFee:0,ticks:[],lower:-600,upper:600},1:{valid:true,reserve0:100n*E,reserve1:100n*E},2:{valid:true,reserve0:10000n*E,reserve1:10000n*E,totalSupply:1000n*E}}
+ return {m,s}
+}
+test('BNB zap optimizes LP output while preserving the shared snapshot',()=>{
+ const {m,s}=zapFixture(),copy=structuredClone(s)
+ const q=optimizeZap(m,s,2n*E,0)
+ assert.equal(q.tokenBnb+q.assetBnb,2n*E);assert.ok(q.lp>0n);assert.ok(q.assetOut>0n)
+ const baseline=simulateZap(m,s,simulatePlan(m,s,true,[{index:0,amount:E}]),0,E)
+ assert.ok(q.lp>=baseline.lp);assert.deepEqual(s,copy)
+ assert.deepEqual(q.plan.legs.map(l=>l.index),[0]);assert.ok(q.tokenRefundRateX128>0n);assert.ok(q.assetRefundRateX128>0n)
+})
+test('zap cannot use a component outside API metadata or missing LP state',()=>{
+ const {m,s}=zapFixture()
+ assert.throws(()=>optimizeZap(m,s,E,3),/V13_LIQUIDITY_LIMIT/)
+ delete s.pools[2].totalSupply
+ assert.throws(()=>optimizeZap(m,s,E,0),/V13_LIQUIDITY_LIMIT/)
+})
+
+test('zap will not fall back to component swaps when the main V4 pool is unavailable',()=>{
+ const {m,s}=zapFixture();s.pools[0].valid=false;
+ assert.throws(()=>optimizeZap(m,s,E,0),/V13_LIQUIDITY_LIMIT/);
+});
+test('zap rejects a component purchase plan even when it quotes more T',()=>{
+ const {m,s}=zapFixture();const plan=simulatePlan(m,s,true,[{index:1,amount:E}]);
+ assert.throws(()=>simulateZap(m,s,plan,0,E),/V13_INVALID_ZAP_ROUTE/);
+});
+test('zap quotes sellback of either surplus using state after the buys',()=>{
+ const {m,s}=zapFixture();
+ for(const tokenBnb of [E/5n,E*4n/5n]){
+  const plan=simulatePlan(m,s,true,[{index:0,amount:tokenBnb}]);
+  const q=simulateZap(m,s,plan,0,E-tokenBnb);
+  assert.ok(q.refundBnb>0n);assert.ok(q.refundBnb<E);
+  assert.ok(q.tokenRefund>0n||q.assetRefund>0n);
+ }
+});
+test('zap LP estimate accounts for exact tax inversion when asset limited',()=>{
+ const {m,s}=zapFixture();const amount=E;
+ const q=simulateZap(m,s,simulatePlan(m,s,true,[{index:0,amount}]),0,E/10n);
+ const net=q.assetOut*10000n*E/(10000n*E),gross=net+(net-1n)/999n;
+ assert.equal(q.tokenRefund,q.plan.amountOut-gross);assert.equal(q.assetRefund,0n);
+ assert.equal(q.lp,net*1000n*E/(10000n*E));
 });

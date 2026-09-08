@@ -34,7 +34,7 @@ export function createQuoteSession() {
             snapshot = undefined;
             previous = undefined;
         }
-        if (!metadata || Date.now() - metadata.generatedAt > 60000) {
+        if (!metadata || Date.now() - metadata.generatedAt > (metadata.listed ? 60000 : 3000)) {
             const key = token.toLowerCase();
             if (metadataPending?.key !== key)
                 metadataPending = { key, promise: (async () => {

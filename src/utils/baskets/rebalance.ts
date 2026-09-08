@@ -45,7 +45,7 @@ const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: numb
     if ((sellMask & (1 << index)) === 0) continue
     const holding = detail.holdings[index]
     maxAssetIn[index] = applyInputCeiling(assetIn[index], slippageBps)
-    const quoted = await quoteBscV3AssetToSettlement(holding.route, holding.asset, assetIn[index], detail.chainId)
+    const quoted = await quoteBscV3AssetToSettlement(holding.route, holding.asset, assetIn[index], detail.chainId, detail.version)
     minSettlementOut[index] = applySlippage(quoted, slippageBps)
   }
 
@@ -65,7 +65,7 @@ const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: numb
     allocated += protectedIn
     maxSettlementIn[index] = applyInputCeiling(settlementIn[index], slippageBps)
     const holding = detail.holdings[index]
-    const quoted = await quoteBscV3SettlementToAsset(holding.route, holding.asset, protectedIn, detail.chainId)
+    const quoted = await quoteBscV3SettlementToAsset(holding.route, holding.asset, protectedIn, detail.chainId, detail.version)
     minAssetOut[index] = applySlippage(quoted, slippageBps)
   }
 

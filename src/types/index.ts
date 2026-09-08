@@ -398,7 +398,14 @@ export type ClankerToken = OnchainTokenInfo & {
   totalSupply?: number
 }
 
+export type V13IndexConfig = {
+  name: string; symbol: string; constituentAssets: `0x${string}`[]; targetWeights: number[];
+  basketFeeBps: number; creatorShareBps: number; retainCommunityOwnership: boolean;
+}
+
 export type CreateCommunity = {
+  indexConfig?: V13IndexConfig,
+  chainId?: number,
   desc: string,
   logoUrl: string,
   tick: string,

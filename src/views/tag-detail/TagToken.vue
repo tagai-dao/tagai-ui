@@ -26,6 +26,8 @@ import { useChainStore } from "@/stores/chain";
 import { useTheme } from "@/composables/useTheme";
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
+defineProps<{ holdersOnly?: boolean }>()
+
 const ApexCharts = VueApexCharts as any;
 const { t } = useI18n();
 const { onCopy } = useTools();
@@ -771,7 +773,7 @@ onBeforeUnmount(() => {
                 :class="activeTab===tab?'bg-white shadow-tab':'text-grey-6f'">{{tab}}</button>
       </div>
     </div> -->
-    <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
+    <div v-if="!holdersOnly" class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
       <div class="text-h2 mb-2">{{$t('postView.tokenInfo')}}</div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{ $t('postView.price') }}</span>

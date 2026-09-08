@@ -6,6 +6,7 @@ import {GlobalModalType, type Tweet} from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import PredictIndex from '@/views/tag-detail/Prediction/Index.vue';
 import CreditIndex from "@/views/tag-detail/Credit/Index.vue";
+import V13TokenPanel from './V13TokenPanel.vue'
 import TagToken from "@/views/tag-detail/TagToken.vue";
 import SpcxbLiquidity from "@/views/tag-detail/SpcxbLiquidity.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
@@ -71,6 +72,7 @@ watch(
   { immediate: true },
 )
 
+const isV13Token = computed(()=>chainStore.activeChainId===56 && Number(comStore.currentSelectedCommunity?.version)===13)
 const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 const tabOptions = computed(() => [
   { label: 'Feed', key: 'content' },
@@ -82,6 +84,7 @@ const tabOptions = computed(() => [
   { label: 'Token', key: 'token' },
 ])
 const playTabOptions = computed(() => [
+  ...(isV13Token.value ? [{ label: 'v13Page.pools', key: 'lp' }] : []),
   ...(nutboxCommunity.value ? [{ label: 'NFT', key: 'nft' }] : []),
   { label: 'Baskets', key: 'baskets' },
   { label: 'AI', key: 'ai' },
@@ -659,7 +662,8 @@ onBeforeRouteLeave((to, from, next) => {
             <TagProposal v-if="activeTab==='proposal'"/>
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
             <CreditIndex v-if="activeTab==='credit'"/>
-            <TagToken v-if="activeTab==='token' && !legacyLiquidityActive"/>
+            <template v-if="activeTab==='token' && isV13Token"><V13TokenPanel/><TagToken holders-only/></template>
+            <TagToken v-else-if="activeTab==='token' && !legacyLiquidityActive"/>
             <SpcxbLiquidity v-if="activeTab==='token' && legacyLiquidityActive"/>
             <div
               v-if="activeTab==='play'"
@@ -680,7 +684,8 @@ onBeforeRouteLeave((to, from, next) => {
                 </button>
               </div>
               <div class="min-h-0" :class="activePlayTab === 'ai' ? 'flex-1 overflow-hidden' : ''">
-                <TagNft v-if="activePlayTab==='nft' && nutboxCommunity" :community="nutboxCommunity"/>
+                <V13TokenPanel v-if="activePlayTab==='lp' && isV13Token" mining/>
+                <TagNft v-else-if="activePlayTab==='nft' && nutboxCommunity" :community="nutboxCommunity"/>
                 <CommunityBaskets
                   v-else-if="activePlayTab==='baskets'"
                   :token="comStore.currentSelectedCommunity?.token"

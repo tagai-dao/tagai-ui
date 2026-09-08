@@ -5,7 +5,7 @@ const ABI = parseAbi([
     'function getBlockNumber() view returns(uint256)', 'function getCurrentBlockTimestamp() view returns(uint256)',
     'function listed() view returns(bool)', 'function listingPending() view returns(bool)',
     'function pump() view returns(address)', 'function nutboxRouter() view returns(address)',
-    'function balanceOf(address) view returns(uint256)',
+    'function balanceOf(address) view returns(uint256)', 'function totalSupply() view returns(uint256)',
     'function getReserves() view returns(uint112,uint112,uint32)',
     'function slot0() view returns(uint160,int24,uint16,uint16,uint16,uint32,bool)',
     'function liquidity() view returns(uint128)',
@@ -55,6 +55,7 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
     for (const p of m.pools) {
         if (p.kind === 'v2') {
             add(p.id, p.address, 'getReserves');
+            add(p.id + ':supply', p.address, 'totalSupply');
             add(p.id + ':b0', p.token0, 'balanceOf', [p.address]);
             add(p.id + ':b1', p.token1, 'balanceOf', [p.address]);
         }
@@ -99,7 +100,7 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
         let state: PoolState = { valid: false };
         if (v) {
             if (p.kind === 'v2')
-                state = { reserve0: v[0], reserve1: v[1], balance0: values[p.id + ':b0'], balance1: values[p.id + ':b1'], valid: v[0] > 0n && v[1] > 0n && values[p.id + ':b0'] >= v[0] && values[p.id + ':b1'] >= v[1] };
+                state = { totalSupply: values[p.id + ':supply'], reserve0: v[0], reserve1: v[1], balance0: values[p.id + ':b0'], balance1: values[p.id + ':b1'], valid: v[0] > 0n && v[1] > 0n && values[p.id + ':b0'] >= v[0] && values[p.id + ':b1'] >= v[1] };
             else {
                 const spacing = p.tickSpacing!, ticks: Array<{
                     index: number;

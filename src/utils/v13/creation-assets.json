@@ -1,0 +1,98 @@
+[
+  {
+    "symbol": "ETH",
+    "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/eth.svg"
+  },
+  {
+    "symbol": "BTCB",
+    "address": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/btc.svg"
+  },
+  {
+    "symbol": "QQQB",
+    "address": "0x205812CdBed920aFf76C6580abD681a46D11efc7",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/qqq.png"
+  },
+  {
+    "symbol": "SPCXB",
+    "address": "0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/spcx.svg"
+  },
+  {
+    "symbol": "AAPLB",
+    "address": "0x431a3BEE82E2ca41e49895CbECE5bB0F76A89b7A",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/aapl.png"
+  },
+  {
+    "symbol": "SKHYB",
+    "address": "0xCA750eF65f295BBECd685Abf54e82CAf297BDB61",
+    "decimals": 18,
+    "logoUrl": "https://cdn.dexscreener.com/cms/images/Dv6-VNcUq4Lxx9yf?width=800&height=800&quality=95&format=auto"
+  },
+  {
+    "symbol": "SPYB",
+    "address": "0x7138b48df7D98D7e3cc221BfE7192D0a178182D8",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/spy.png"
+  },
+  {
+    "symbol": "XAUt",
+    "address": "0x21cAef8A43163Eea865baeE23b9C2E327696A3bf",
+    "decimals": 6,
+    "logoUrl": "https://assets.coingecko.com/coins/images/10481/standard/logo.png?1774627372="
+  },
+  {
+    "symbol": "NVDAB",
+    "address": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/nvda.png"
+  },
+  {
+    "symbol": "TSLAB",
+    "address": "0x5b1910eAaD6450E50f816082Aa078C41F10C292f",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/tsla.png"
+  },
+  {
+    "symbol": "MSFTB",
+    "address": "0x80106cb3EAD06659A5ad19DF39D9b4733863B9b0",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/msft.png"
+  },
+  {
+    "symbol": "HOODB",
+    "address": "0xA394dCEa3fd3847fD793afBFd163E2e3858B7c65",
+    "decimals": 18,
+    "logoUrl": "https://assets.parqet.com/logos/symbol/HOOD?format=png"
+  },
+  {
+    "symbol": "BABAB",
+    "address": "0x4eF9d3062c7F6ebA4AAE4990c5036598C6eff4ec",
+    "decimals": 18,
+    "logoUrl": "https://assets.parqet.com/logos/symbol/BABA?format=png"
+  },
+  {
+    "symbol": "GMEB",
+    "address": "0x46cEeFDa28Dd7207059ed19B0acdc026955bb15C",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/gme.png"
+  },
+  {
+    "symbol": "GOOGLB",
+    "address": "0x3F53De71c126BdaBAe20f9cD64848d317f6C3238",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/googl.png"
+  },
+  {
+    "symbol": "CRCLB",
+    "address": "0x80f3D493EBCe97e343c53D29a137942416B4ffC0",
+    "decimals": 18,
+    "logoUrl": "https://cdn.prod.website-files.com/67116d0daddc92483c812e88/683f238c7540ce089af2ff6f_Favicon32x32.png"
+  }
+]

@@ -95,8 +95,8 @@ function swap(pool: Pool, s: PoolState, input: string, amount: bigint, m: Metada
 export function simulatePlan(m: Metadata, snapshot: Snapshot, isBuy: boolean, allocations: Array<{
     index: number;
     amount: bigint;
-}>): Plan {
-    const states = Object.fromEntries(Object.entries(snapshot.pools).map(([k, v]) => [k, { ...v }]));
+}>, sharedStates?: Record<string, PoolState>): Plan {
+    const states = sharedStates ?? Object.fromEntries(Object.entries(snapshot.pools).map(([k, v]) => [k, { ...v }]));
     const pools = new Map(m.pools.map(p => [p.id, p])), routes = new Map(snapshot.routes.map(r => [r.index, r]));
     let total = 0n, out = 0n, gas = 55000n;
     const legs = [];
@@ -220,5 +220,74 @@ export function optimize(m: Metadata, s: Snapshot, isBuy: boolean, amount: bigin
                 break;
         }
     }
+    return best;
+}
+
+
+export type ZapPlan = {
+    plan: Plan; tokenBnb: bigint; assetBnb: bigint; assetOut: bigint; lp: bigint; gas: bigint;
+    tokenRefund: bigint; assetRefund: bigint; refundBnb: bigint;
+    tokenRefundRateX128: bigint; assetRefundRateX128: bigint;
+}
+const Q128 = 1n << 128n;
+const cloneStates = (states: Record<string, PoolState>) => Object.fromEntries(Object.entries(states).map(([k,v])=>[k,{...v}]));
+// Fixed path: main V4 buy, registered asset buy, mint, main V4 sell of surplus T,
+// registered reverse asset route. Every step shares the same simulated state.
+export function simulateZap(m: Metadata, s: Snapshot, plan: Plan, component: number, assetBnb: bigint): ZapPlan {
+    const main = s.routes.find(r=>r.index===0);
+    if (!main || main.pools.length!==1 || m.pools.find(p=>p.id===main.pools[0])?.kind!=='v4'
+        || plan.legs.length!==1 || plan.legs[0].index!==0 || !plan.isBuy) throw new QuoteError('V13_INVALID_ZAP_ROUTE');
+    const states=cloneStates(s.pools);
+    const executed=simulatePlan(m,s,true,[{index:0,amount:plan.amountIn}],states);
+    const route=s.routes.find(r=>r.index===component+1);
+    if(!route)throw new QuoteError('V13_ROUTE_UNAVAILABLE');
+    const bridge=route.pools.slice(0,-1);
+    const exchange=(input:string,amount:bigint,path:string[],target:Record<string,PoolState>)=>{
+        let gas=0n;
+        for(const id of path){const p=m.pools.find(p=>p.id===id)!;const step=swap(p,target[id],input,amount,m);input=step.token;amount=step.amount;gas+=step.gas}
+        return {amount,token:input,gas};
+    };
+    const bought=exchange(zeroAddress,assetBnb,bridge,states);
+    if(!eq(normalize(bought.token,m),normalize(route.asset,m)))throw new QuoteError('V13_INVALID_ROUTE');
+    const pair=m.pools.find(p=>p.id===route.pools.at(-1))!,state=states[pair.id];
+    const supply=state.totalSupply;
+    if(!supply||supply<=0n||!state.valid)throw new QuoteError('V13_STATE_UNAVAILABLE');
+    const t0=eq(pair.token0,m.token),rt=t0?state.reserve0!:state.reserve1!,ra=t0?state.reserve1!:state.reserve0!;
+    let gross=executed.amountOut,net=gross-gross/1000n,usedAsset=net*ra/rt;
+    if(usedAsset>bought.amount){usedAsset=bought.amount;net=usedAsset*rt/ra;if(net<=0n)throw new QuoteError('V13_LIQUIDITY_LIMIT');gross=net+(net-1n)/999n}
+    net=gross-gross/1000n;
+    const lp=min(net*supply/rt,usedAsset*supply/ra);
+    if(lp<=0n)throw new QuoteError('V13_LIQUIDITY_LIMIT');
+    state.reserve0=(state.balance0??state.reserve0!)+(t0?net:usedAsset);
+    state.reserve1=(state.balance1??state.reserve1!)+(t0?usedAsset:net);
+    state.balance0=state.reserve0;state.balance1=state.reserve1;state.totalSupply=supply+lp;
+    // A full-balance reverse quote provides a conservative rate even if the quoted
+    // remainder is zero but execution later leaves a nonzero remainder.
+    const tokenRate=simulatePlan(m,s,false,[{index:0,amount:executed.amountOut}],cloneStates(states)).amountOut*Q128/executed.amountOut;
+    const assetRate=exchange(route.asset,bought.amount,[...bridge].reverse(),cloneStates(states)).amount*Q128/bought.amount;
+    if(!tokenRate||!assetRate)throw new QuoteError('V13_LIQUIDITY_LIMIT');
+    const tokenRefund=executed.amountOut-gross,assetRefund=bought.amount-usedAsset;
+    let refundBnb=0n,gas=executed.gas+bought.gas+150000n;
+    if(tokenRefund*tokenRate/Q128>0n){const sold=simulatePlan(m,s,false,[{index:0,amount:tokenRefund}],states);refundBnb+=sold.amountOut;gas+=sold.gas+45000n}
+    if(assetRefund*assetRate/Q128>0n){const sold=exchange(route.asset,assetRefund,[...bridge].reverse(),states);refundBnb+=sold.amount;gas+=sold.gas+45000n}
+    return {plan:executed,tokenBnb:plan.amountIn,assetBnb,assetOut:bought.amount,lp,gas,tokenRefund,assetRefund,refundBnb,tokenRefundRateX128:tokenRate,assetRefundRateX128:assetRate};
+}
+export function optimizeZap(m:Metadata,s:Snapshot,amount:bigint,component:number):ZapPlan {
+    let best:ZapPlan|undefined,score=-1n,bestBps=5000;
+    const seen=new Set<number>();
+    const evaluate=(bps:number)=>{
+        if(seen.has(bps)||bps<1||bps>9999)return;
+        seen.add(bps);
+        try{
+            const tokenBnb=amount*BigInt(bps)/10000n;
+            const plan=simulatePlan(m,s,true,[{index:0,amount:tokenBnb}]);
+            const q=simulateZap(m,s,plan,component,amount-tokenBnb);
+            const cost=q.gas*s.gasPrice,net=cost<amount?q.lp*(amount-cost)/amount:0n;
+            if(net>score||(net===score&&q.refundBnb>(best?.refundBnb??-1n))){best=q;score=net;bestBps=bps}
+        }catch{/* A fixed path outside API coverage cannot be replaced with a component swap. */}
+    };
+    for(let b=1000;b<=9000;b+=1000)evaluate(b);
+    for(const step of [100,10,1]){const center=bestBps;for(let b=center-9*step;b<=center+9*step;b+=step)evaluate(b)}
+    if(!best||score<=0n)throw new QuoteError('V13_LIQUIDITY_LIMIT');
     return best;
 }
