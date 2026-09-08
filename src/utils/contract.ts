@@ -14,6 +14,21 @@ import { useChainStore } from "@/stores/chain";
 import { getChainDeployment } from "@/config/chains";
 import { zeroAddress, type Abi } from "viem";
 
+export class SubmittedTransactionError extends Error {
+    transactionHash: `0x${string}`
+    originalError: unknown
+
+    constructor(transactionHash: `0x${string}`, cause: unknown) {
+        const confirmationDelayed = (cause as any)?.name === 'WaitForTransactionReceiptTimeoutError'
+        super(confirmationDelayed
+            ? `Transaction submitted but confirmation is delayed: ${transactionHash}`
+            : `Transaction submitted but its status could not be confirmed: ${transactionHash}`)
+        this.name = 'SubmittedTransactionError'
+        this.transactionHash = transactionHash
+        this.originalError = cause
+    }
+}
+
 /** BSC 默认地址表；多链时由 resolveContractAddress 覆盖关键合约 */
 const ContractAddress = {
     Pump1: PumpContract1,
@@ -318,11 +333,10 @@ export const writeContract = async ({
     let hash: string | null
     try {
         hash = await waitForTx(tx, receiptTimeout);
-    } catch (error: any) {
-        if (error?.name === 'WaitForTransactionReceiptTimeoutError') {
-            throw new Error(`Transaction submitted but confirmation is delayed: ${tx}`)
-        }
-        throw error
+    } catch (error) {
+        // Preserve the hash so flows with an observable on-chain postcondition
+        // can reconcile success even when the receipt RPC times out.
+        throw new SubmittedTransactionError(tx, error)
     }
     console.log('hash1', hash)
     if (!hash) {
