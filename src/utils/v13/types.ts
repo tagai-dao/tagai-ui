@@ -48,6 +48,7 @@ export type Metadata = {
     pump: Address;
     nutboxRouter: Address;
     wrappedNative: Address;
+    /** Populated from frontend chain config after fetching API metadata. */
     executor: Address | null;
     multicall: Address;
     listed: boolean;

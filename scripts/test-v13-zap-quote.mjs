@@ -7,6 +7,7 @@ import {join} from 'node:path'
 import {createRequire} from 'node:module'
 const dir=await mkdtemp(join(tmpdir(),'v13-zap-quote-'))
 await build({entryPoints:['src/utils/v13/zap.ts'],bundle:true,platform:'node',format:'cjs',outfile:join(dir,'quote.cjs'),define:{'import.meta.url':JSON.stringify('file:///test/zap.ts')},logLevel:'silent',plugins:[{name:'fixtures',setup(b){
+ b.onResolve({filter:/^@\/config\/chains$/},()=>({path:join(process.cwd(),'src/config/chains.ts')}))
  b.onResolve({filter:/^(@\/apis\/axios|@\/config\/api|@\/utils\/wallets|\.\/snapshot|\.\/pools)$/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export const API_BASE_URL='http://test';export const get=(...args)=>globalThis.__zap.get(...args);
@@ -57,3 +58,13 @@ test('failed Worker frees resources without returning a usable quote',async()=>{
  const promise=quoteZap(token,0,1n),rejected=assert.rejects(promise,/QUOTE_FAILED/),worker=await ready.promise;
  worker.onerror();await rejected;assert.equal(worker.terminated,true);
 })
+
+for(const executor of [undefined,'0x9999999999999999999999999999999999999999']){
+ test(`zap uses frontend trade router when API executor is ${executor?'different':'missing'}`,async()=>{
+  globalThis.__zap.get=async()=>({c:0,d:{token,executor}});
+  const promise=quoteZap(token,0,123n),worker=await ready.promise;
+  assert.equal(worker.data.metadata.executor,'0x7D5480C10A98b0Feb4e5fA77aF3F01aE3a5E86F4');
+  worker.onmessage({data:{plan:{lp:456n,plan:{amountIn:100n}}}});
+  assert.equal((await promise).quote.metadata.executor,worker.data.metadata.executor);
+ })
+}

@@ -50,7 +50,7 @@ UI 与 API 的 BSC 默认创建版本为 4；V2/V3 地址映射保留。V4 的�
 发布前需要完成：
 
 1. 部署并核验含 subject 的 TagAITradeRouter，再部署 TagAILiquidityRouter；脚本分别为 `DeployBSCTagAITradeRouter.s.sol` 与 `DeployBSCTagAILiquidityRouter.s.sol`。两者均在 TagAI-contract-V2/script。
-2. API 配置 `BSC_V13_TRADE_ROUTER` 和 `BSC_V13_LIQUIDITY_ROUTER`。前端从 API 读取地址。未配置时对应操作保持禁用，已存在的质押操作不依赖辅助合约。
+2. 两个执行器直接配置在前端 `src/config/chains.ts` 的 BSC `contracts` 中：`tradeRouter13=0x7D5480C10A98b0Feb4e5fA77aF3F01aE3a5E86F4`、`liquidityRouter13=0x2868FDdf7F86041557257c55a79A382536401752`。API 只提供代币、池子和路径数据；旧响应的 `executor` / `liquidityRouter` 不决定钱包调用地址，不需要配置 API 的这两个环境变量。前端仍核对链上的 Pump/NutboxRouter 及流动性执行器绑定的交易路由。
 3. 核验 Basket V4 Registry/Hook/Router 链上授权，再发布 API 与 UI。不要将历史部署 JSON 中的授权状态当作当前链上状态。
 4. 在可控环境完成钱包全流程：创建 → 索引前可见 → 内盘买卖 → listing pending → 上市交易 → BNB/双资产加池 → 质押/领取/解押/移除，同时回归旧 Token/Basket 和 RH。
 

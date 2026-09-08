@@ -1,3 +1,4 @@
+import {getChainDeployment} from '@/config/chains'
 import {get} from '@/apis/axios'
 import {API_BASE_URL} from '@/config/api'
 import {getReadOnlyClient} from '@/utils/wallets'
@@ -15,7 +16,7 @@ export async function quoteZap(token:Address,component:number,amount:bigint,sign
  const result:any=await get(`${API_BASE_URL}/pump/v13/metadata/${token}`,{},{headers:{'X-Chain-Id':'56'},signal})
  check()
  if(result?.c!==0)throw new Error('V13_METADATA_UNAVAILABLE')
- const m=result.d as Metadata,client=getReadOnlyClient(56)
+ const m={...result.d,executor:getChainDeployment(56).contracts.tradeRouter13??null} as Metadata,client=getReadOnlyClient(56)
  const gas=await client.getGasPrice()
  check()
  const s=await loadSnapshot(client,m,gas)
@@ -38,7 +39,7 @@ export async function quoteZap(token:Address,component:number,amount:bigint,sign
 }
 export async function executeZap(q:ZapQuote,router:Address,subject:Address,bps:number){
  const guard=walletGuard();await validateLiquidityRouter(router)
- if(!q.quote.snapshot.executable||!q.quote.metadata.executor)throw new Error('V13_EXECUTOR_UNAVAILABLE')
+ if(!q.quote.snapshot.executable||!q.quote.metadata.executor||q.quote.metadata.executor.toLowerCase()!==getChainDeployment(56).contracts.tradeRouter13?.toLowerCase())throw new Error('V13_EXECUTOR_UNAVAILABLE')
  if(!Number.isInteger(bps)||bps<1||bps>1000)throw new Error('Invalid slippage')
  const bound=await getReadOnlyClient(56).readContract({address:router,abi:abi as Abi,functionName:'tradeRouter'})
  if(String(bound).toLowerCase()!==q.quote.metadata.executor.toLowerCase())throw new Error('V13_EXECUTOR_MISMATCH')

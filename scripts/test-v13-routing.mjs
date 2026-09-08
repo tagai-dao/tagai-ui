@@ -73,7 +73,7 @@ test('V13 main fee is three separately rounded portions, on BNB side both direct
     assert.equal(simulatePlan(m, s, false, [{ index: 0, amount: E }]).amountOut, gross - 3n * (gross * 30n / 10000n));
 });
 const reads = parseAbi([
-    'function getBlockNumber() view returns(uint256)', 'function getCurrentBlockTimestamp() view returns(uint256)',
+    'function pump() view returns(address)', 'function nutboxRouter() view returns(address)', 'function getBlockNumber() view returns(uint256)', 'function getCurrentBlockTimestamp() view returns(uint256)',
     'function listed() view returns(bool)', 'function listingPending() view returns(bool)',
     'function getReserves() view returns(uint112,uint112,uint32)',
     'function getSlot0(bytes32) view returns(uint160,int24,uint24,uint24)',
@@ -112,6 +112,8 @@ function snapshotFixture({ unknown = false, failed = false, changed = false, pen
                     case 'getSlot0':
                         result = [2n ** 96n, 0, 0, 0];
                         break;
+                    case 'pump': result=m.pump; break;
+                    case 'nutboxRouter': result=m.nutboxRouter; break;
                     case 'getLiquidity':
                         result = 10000n * E;
                         break;
@@ -217,6 +219,7 @@ await build({ entryPoints: ['src/utils/v13/client.ts'], bundle: true, platform: 
                 b.onLoad({ filter: /.*/, namespace: 'test-io' }, args => ({ contents: ({
                         '@/apis/axios': 'export const get=(...a)=>globalThis.__v13Deps.get(...a)',
                         '@/config/api': "export const API_BASE_URL='http://test'",
+                        '@/config/chains': "export const getChainDeployment=()=>({contracts:{tradeRouter13:'0x000000000000000000000000000000000000005a'}})",
                         '@/utils/wallets': 'export const getReadOnlyClient=()=>globalThis.__v13Deps.client; export const getWalletClient=()=>globalThis.__v13Deps.wallet; export const setup=async()=>{}',
                         '@/stores/chain': 'export const useChainStore=()=>globalThis.__v13Deps.chain',
                         '@/stores/web3': 'export const useAccountStore=()=>globalThis.__v13Deps.account',

@@ -9,7 +9,7 @@ import { type Address,type Abi,parseAbi,zeroAddress } from 'viem'
 import staking from './ERC20Staking.json'
 import tokenAbi from './Token13.json'
 export type Component = {asset:Address;pair:Address;staking_pool:Address;position:number;target_weight:number;asset_decimals:number|null;asset_symbol?:string|null;pool_status:string|null}
-export type V13Detail = {buyback:{bnb_reserve:string;total_bnb_spent:string;total_index_bought:string;total_index_claimed:string}|null;liquidityRouter:Address|null;config:{name:string;symbol:string;community:Address;index_token:Address|null;basket_fee_bps:number;creator_share_bps:number;retain_community_ownership:number;source_block:string};components:Component[]}
+export type V13Detail = {buyback:{bnb_reserve:string;total_bnb_spent:string;total_index_bought:string;total_index_claimed:string}|null;config:{name:string;symbol:string;community:Address;index_token:Address|null;basket_fee_bps:number;creator_share_bps:number;retain_community_ownership:number;source_block:string};components:Component[]}
 export const erc20=parseAbi(['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function approve(address,uint256) returns(bool)','function symbol() view returns(string)','function decimals() view returns(uint8)','function totalSupply() view returns(uint256)'])
 export const pairAbi=parseAbi(['function token0() view returns(address)','function token1() view returns(address)','function getReserves() view returns(uint112,uint112,uint32)','function totalSupply() view returns(uint256)'])
 export const communityAbi=parseAbi(['function getPoolPendingRewards(address,address) view returns(uint256)','function withdrawPoolsRewards(address[]) payable','function getCommittee() view returns(address)','function poolActived(address) view returns(bool)','function poolRatios(address) view returns(uint256)'])
@@ -59,8 +59,11 @@ export async function operatePool(token:Address,community:Address,c:Component,ac
 }
 export const afterPairTax=(amount:bigint)=>amount-amount/1000n
 export async function validateLiquidityRouter(address:Address) {
- const pump=await getReadOnlyClient(56).readContract({address,abi:liquidityAbi as Abi,functionName:'pump'})
- if(String(pump).toLowerCase()!==getChainDeployment(56).contracts.pump13?.toLowerCase())throw new Error('V13 liquidity deployment mismatch')
+ const contracts=getChainDeployment(56).contracts
+ if(address.toLowerCase()!==contracts.liquidityRouter13?.toLowerCase())throw new Error('V13 liquidity deployment mismatch')
+ const client=getReadOnlyClient(56)
+ const [pump,trade]=await Promise.all([client.readContract({address,abi:liquidityAbi as Abi,functionName:'pump'}),client.readContract({address,abi:liquidityAbi as Abi,functionName:'tradeRouter'})])
+ if(String(pump).toLowerCase()!==contracts.pump13?.toLowerCase()||String(trade).toLowerCase()!==contracts.tradeRouter13?.toLowerCase())throw new Error('V13 liquidity deployment mismatch')
 }
 export async function liquidity(token:Address,community:Address,c:Component,action:'add'|'remove',amount:bigint,bps:number,router:Address) {
  const guard=walletGuard();await validateLiquidityRouter(router)

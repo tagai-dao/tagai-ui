@@ -1,3 +1,4 @@
+import { getChainDeployment } from '@/config/chains';
 import { get } from '@/apis/axios';
 import { API_BASE_URL } from '@/config/api';
 import { getReadOnlyClient, getWalletClient, setup } from '@/utils/wallets';
@@ -41,7 +42,7 @@ export function createQuoteSession() {
                         const r: any = await get(`${API_BASE_URL}/pump/v13/metadata/${token}`, {}, { headers: { 'X-Chain-Id': '56' } });
                         if (r?.c !== 0 || !r?.d || r.d.token.toLowerCase() !== key)
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
-                        return r.d as Metadata;
+                        return { ...r.d, executor: getChainDeployment(56).contracts.tradeRouter13 ?? null } as Metadata;
                     })() };
             const pending = metadataPending;
             let value: Metadata;
@@ -124,7 +125,8 @@ export async function executeQuote(q: Quote, subject: Address, slippageBps: numb
             throw new QuoteError('V13_ACCOUNT_CHANGED');
         if (Date.now() - q.snapshot.fetchedAt > 60000)
             throw new QuoteError('V13_QUOTE_EXPIRED');
-        if (!q.snapshot.executable || !q.metadata.executor || q.metadata.executor === zeroAddress)
+        if (!q.snapshot.executable || !q.metadata.executor || q.metadata.executor === zeroAddress
+            || q.metadata.executor.toLowerCase() !== getChainDeployment(56).contracts.tradeRouter13?.toLowerCase())
             throw new QuoteError('V13_EXECUTOR_UNAVAILABLE');
     };
     guard();

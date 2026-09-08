@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {getChainDeployment} from '@/config/chains'
 import {ref,computed,watch,onUnmounted} from 'vue'
 import {useI18n} from 'vue-i18n'
 import {type Address,type Abi,formatUnits,zeroAddress} from 'viem'
@@ -11,6 +12,7 @@ import {readLifecycle,CURVE_CAP} from '@/utils/v13/lifecycle'
 import {getReadOnlyClient} from '@/utils/wallets'
 import tokenAbi from '@/utils/v13/Token13.json'
 import V13PoolCard from './V13PoolCard.vue'
+const liquidityRouter=getChainDeployment(56).contracts.liquidityRouter13??null
 const props=defineProps<{mining?:boolean}>()
 const {t}=useI18n(),store=useCommunityStore(),account=useAccountStore(),chain=useChainStore()
 const token=computed(()=>store.currentSelectedCommunity?.token as Address),symbol=computed(()=>store.currentSelectedCommunity?.tick||'Token')
@@ -56,7 +58,7 @@ onUnmounted(()=>{disposed=true;seq++;clearInterval(timer)})
     <div>{{ t('v13Page.indexBought') }}: {{ formatUnits(BigInt(data.buyback.total_index_bought),18) }} {{ data.config.symbol }}</div>
     <p>{{ t('v13Page.indexDelay') }}</p>
    </section>
-   <div v-if="mining" class="pool-grid"><V13PoolCard v-for="leg in data.components" :key="leg.staking_pool" :token="token" :community="data.config.community" :leg="leg" :symbol="symbol" :liquidity-router="data.liquidityRouter" /></div>
+   <div v-if="mining" class="pool-grid"><V13PoolCard v-for="leg in data.components" :key="leg.staking_pool" :token="token" :community="data.config.community" :leg="leg" :symbol="symbol" :liquidity-router="liquidityRouter" /></div>
    <section v-else class="summary"><h3>{{ t('v13Page.components') }}</h3><div v-for="leg in data.components" :key="leg.asset" class="component"><a :href="`https://bscscan.com/address/${leg.asset}`" target="_blank" rel="noopener">{{ leg.asset_symbol || `${leg.asset.slice(0,8)}…${leg.asset.slice(-6)}` }}</a><span>{{ t('v13Create.weight') }} {{ leg.target_weight/100 }}%</span><a :href="`https://bscscan.com/address/${leg.pair}`" target="_blank" rel="noopener">V2 ↗</a></div><p>{{ t('v13Page.poolsHelp') }}</p></section>
   </template>
  </div>

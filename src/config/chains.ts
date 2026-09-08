@@ -66,6 +66,9 @@ export type ChainDeployment = {
   contracts: {
     pump9: `0x${string}`
     tokenImplementation9: `0x${string}`
+    /** V13 executors are configured by the frontend, never selected by API responses. */
+    tradeRouter13?: `0x${string}`
+    liquidityRouter13?: `0x${string}`
     pump13?: `0x${string}`
     tokenImplementation13?: `0x${string}`
     pump11: `0x${string}`
@@ -148,6 +151,8 @@ export const BSC_CHAIN: ChainDeployment = {
     pump9: '0x327a473c763bcf0d60CCd6811F832332939110D5',
     tokenImplementation9: '0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16',
     pump13: '0x2c2f4e8D85c02a065f109c74d9b27186AE65Adfa',
+    tradeRouter13: '0x7D5480C10A98b0Feb4e5fA77aF3F01aE3a5E86F4',
+    liquidityRouter13: '0x2868FDdf7F86041557257c55a79A382536401752',
     tokenImplementation13: '0xcC8f585593feAb2a27f9e699a6b578d46446c88C',
     pump11: '0x8fEF5b4c0f761a0cc447800e3019B089ac306F28',
     tokenImplementation11: '0xfD40C112F39D372786265a032C546D05Feec4D66',
