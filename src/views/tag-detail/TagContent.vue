@@ -90,7 +90,7 @@ const calloutStoreKey = (tick: string, source: ExternalCalloutSource) => `${tick
 const communitySnapshotScope = (tick: string, type: ListType) =>
   `${chainStore.activeChainId}:community:${tick.toLowerCase()}:feed:${type}`
 const communityTradeSnapshotScope = (tick: string) =>
-  `${chainStore.activeChainId}:community:${tick.toLowerCase()}:trades`
+  `${chainStore.activeChainId}:community:${tick.toLowerCase()}:account-trades-v1`
 
 function publicTweets(rows: Tweet[]) {
   return rows.slice(0, 120).map(row => {
@@ -233,7 +233,10 @@ async function loadCommunityTrades(page = 0, replace = false) {
     const requestedToken = community.token
     const rows = (await getTokenTradeList(community.token, page) || []) as FeedTrade[]
     if (sequence !== refreshSequence || comStore.currentSelectedCommunity?.token !== requestedToken) return -1
-    const next = rows.map(row => ({
+    // The token trade endpoint also serves full market history. Community
+    // Feed includes only identities verified by the API (including imports).
+    // Keep the raw row count below for pagination: a filtered page is not EOF.
+    const next = rows.filter(row => row.isPlatformAccount === true).map(row => ({
       ...row,
       tick: row.tick || community.tick,
       token: row.token || community.token,

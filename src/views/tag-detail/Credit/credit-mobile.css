@@ -1,0 +1,65 @@
+/* Match the application's web breakpoint. Desktop retains all five columns. */
+@media (max-width: 803px) {
+  .credit-table {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    overflow-x: clip;
+  }
+
+  .credit-table-row {
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.7fr) minmax(0, 1fr);
+    column-gap: 8px;
+    min-height: 52px;
+    height: auto;
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .credit-table-row > :nth-child(n + 4) {
+    display: none;
+  }
+
+  .credit-table-row > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .credit-table-header {
+    min-height: 40px;
+    font-size: 11px;
+    line-height: 14px;
+  }
+
+  .credit-table-header > :first-child {
+    padding-left: 0;
+  }
+
+  .credit-table-header img {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Keep the name readable and all source badges visible under the account,
+     instead of letting multiple badges squeeze the other numeric columns. */
+  .credit-table-row > div:first-child {
+    display: grid;
+    grid-template-columns: 16px 20px minmax(0, 1fr);
+    gap: 2px 4px;
+    min-width: 0;
+    white-space: normal;
+    padding-block: 6px;
+  }
+
+  .credit-table-row > div:first-child > :nth-child(4) {
+    grid-column: 2 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+}
