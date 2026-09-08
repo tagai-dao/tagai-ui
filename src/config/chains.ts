@@ -84,10 +84,13 @@ export type ChainDeployment = {
 }
 
 const BSC_RPC_URLS = [
-  'https://bsc-dataseed.binance.org',
-  'https://rpc.ankr.com/bsc',
+  // Keep endpoints that work without API keys first.  The previous primary
+  // endpoint is frequently unreachable on mobile networks, while Ankr's
+  // public URL now rejects unauthenticated requests.
+  'https://bsc-rpc.publicnode.com',
   'https://bsc.rpc.blxrbdn.com',
   'https://56.rpc.thirdweb.com',
+  'https://bsc-dataseed.binance.org',
 ]
 
 const RH_RPC_URLS = [

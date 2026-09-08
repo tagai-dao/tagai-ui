@@ -1,5 +1,5 @@
 import { aggregate } from '@makerdao/multicall'
-import { isAddress } from "viem";
+import { formatUnits, isAddress } from "viem";
 import { readContract, writeContract } from "./contract";
 import errCode from "@/errCode";
 import { useAccountStore } from "@/stores/web3";
@@ -12,11 +12,24 @@ const getIpshareAddress = () =>
 
 export const create = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) return;
+    const [created, createFee] = await Promise.all([
+        readContract('IPShare3', 'ipshareCreated', [ethAddr]) as Promise<boolean>,
+        readContract('IPShare3', 'createFee', []) as Promise<bigint>,
+    ])
+    if (created) {
+        throw new Error('IPShare already created')
+    }
     const hash = await writeContract({
         contractName: 'IPShare3',
         functionName: 'createShare',
         args: [ethAddr],
         address: getIpshareAddress(),
+        value: createFee,
+        simulationTimeout: 20_000,
+        // Embedded wallets submit without a manual confirmation dialog. Keep
+        // extension wallets unbounded so a user can review the transaction.
+        requestTimeout: useAccountStore().getWalletType === 'privy' ? 30_000 : 0,
+        receiptTimeout: 45_000,
     })
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
@@ -26,42 +39,17 @@ export const create = async (ethAddr: string) => {
 
 export const getIPShareSupply = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) {
-        return {}
+        return 0
     }
-    const deployment = getChainDeployment(useChainStore().activeChainId)
-
-    let calls = [{
-        target: deployment.contracts.ipshare3,
-        call: [
-            'ipshareSupply(address)(uint256)',
-            ethAddr
-        ],
-        returns: [
-            ['supply', (val: any) => val / 1e18]
-        ]
-    }]
-    const res = await aggregate(calls, deployment.multiConfig);
-    return res.results.transformed.supply;
+    const supply = await readContract('IPShare3', 'ipshareSupply', [ethAddr]) as bigint
+    return Number(formatUnits(supply, 18))
 }
 
 export const ipshareCreated = async (ethAddr: string) => {
     if (!isAddress(ethAddr)) {
-        return {}
+        return false
     }
-    const deployment = getChainDeployment(useChainStore().activeChainId)
-
-    let calls = [{
-        target: deployment.contracts.ipshare3,
-        call: [
-                'ipshareCreated(address)(bool)',
-                ethAddr
-            ],
-            returns: [
-                ['created']
-            ]
-        }]
-        const res = await aggregate(calls, deployment.multiConfig);
-    return res.results.transformed.created;
+    return await readContract('IPShare3', 'ipshareCreated', [ethAddr]) as boolean
 }
 
 export const calculateIPsharePriceLocal = (supply: number | string | undefined) => {

@@ -225,6 +225,9 @@ export const writeContract = async ({
     address,
     value = 0n,
     abi: abiOverride,
+    simulationTimeout = 0,
+    requestTimeout = 0,
+    receiptTimeout = 120_000,
 }: {
     contractName: string, 
     functionName: string, 
@@ -233,6 +236,12 @@ export const writeContract = async ({
     value?: bigint | string,
     /** Restrict overloaded deployments to the exact callable surface for this write. */
     abi?: Abi,
+    /** Bound each read-only preflight request before opening the wallet. */
+    simulationTimeout?: number,
+    /** Bound wallet submission for flows backed by embedded wallets. */
+    requestTimeout?: number,
+    /** Stop waiting for a receipt while leaving the submitted transaction intact. */
+    receiptTimeout?: number,
 }): Promise<string> => {
     const client = getWalletClient();
     const publicClient = getReadOnlyClient();
@@ -262,7 +271,7 @@ export const writeContract = async ({
         value: typeof value === 'string' ? BigInt(value) : value
     })
     
-    const { request } = await publicClient.simulateContract({
+    const simulation = publicClient.simulateContract({
         account: useAccountStore().ethConnectAddress as `0x${string}`,
         address,
         // Runtime ABIs can be narrowed per deployment (for overloaded helpers),
@@ -273,22 +282,65 @@ export const writeContract = async ({
         chain,
         value: typeof value === 'string' ? BigInt(value) : value
     });
+    const { request } = simulationTimeout > 0
+        ? await withTimeout(
+            simulation,
+            simulationTimeout,
+            'Network preflight timed out. Please check your connection and retry.',
+        )
+        : await simulation
 
     // Reuse the same RPC that successfully simulated the call to estimate gas.
     // Supplying the buffered limit prevents the wallet from having to perform a
     // separate gas estimation, which can fail for complex multi-hop swaps.
-    const estimatedGas = await publicClient.estimateContractGas(request)
+    const gasEstimate = publicClient.estimateContractGas(request)
+    const estimatedGas = simulationTimeout > 0
+        ? await withTimeout(
+            gasEstimate,
+            simulationTimeout,
+            'Gas estimation timed out. Please check your connection and retry.',
+        )
+        : await gasEstimate
     const gas = estimatedGas * 120n / 100n
 
-    const tx = await client.writeContract({
+    const writeRequest = client.writeContract({
         ...request,
         gas
     });
+    const tx = requestTimeout > 0
+        ? await withTimeout(
+            writeRequest,
+            requestTimeout,
+            'Wallet did not submit the transaction in time. Please retry.',
+        )
+        : await writeRequest
     console.log('tx', tx)
-    const hash = await waitForTx(tx);
+    let hash: string | null
+    try {
+        hash = await waitForTx(tx, receiptTimeout);
+    } catch (error: any) {
+        if (error?.name === 'WaitForTransactionReceiptTimeoutError') {
+            throw new Error(`Transaction submitted but confirmation is delayed: ${tx}`)
+        }
+        throw error
+    }
     console.log('hash1', hash)
     if (!hash) {
         throw 'transaction failed'
     }
     return hash;
+}
+
+const withTimeout = async <T>(promise: Promise<T>, timeout: number, message: string): Promise<T> => {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    try {
+        return await Promise.race([
+            promise,
+            new Promise<never>((_, reject) => {
+                timer = setTimeout(() => reject(new Error(message)), timeout)
+            }),
+        ])
+    } finally {
+        if (timer) clearTimeout(timer)
+    }
 }

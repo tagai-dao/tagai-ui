@@ -9,6 +9,7 @@ import { create } from "@/utils/ipshare";
 import { getIPshareSupplies, getIPshareBalances } from "@/utils/ipshareAsset";
 import { handleErrorTip } from "@/utils/notify";
 import errCode from "@/errCode";
+import { usePrivyStore } from "@/stores/privy";
 
 const acc = useAccountStore().getAccountInfo;
 const modalStore = useModalStore();
@@ -21,6 +22,16 @@ const creating = ref(false)
 async function createIPShare() {
   try{
     creating.value = true;
+    const accountStore = useAccountStore();
+    if (accountStore.getWalletType === 'privy') {
+      const privyStore = usePrivyStore();
+      if (!privyStore.viemWalletClient) {
+        if (!privyStore.ethersProvider) {
+          throw new Error('Wallet is still initializing. Please wait a moment and retry.');
+        }
+        await privyStore.initWallet();
+      }
+    }
     const hash = await create(acc.ethAddr!);
     if (!hash) {
       handleErrorTip(errCode.PARAMS_ERROR)
