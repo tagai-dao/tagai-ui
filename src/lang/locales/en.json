@@ -1213,5 +1213,16 @@
     "feeCenter": "Fee center", "feeCenterTitle": "Fees and buyback auctions", "feeCenterSubtitle": "Review fee allocation, execute public claims, and participate in TagAgent buyback auctions.", "buidlFeeCenterSubtitle": "Review fee allocation, execute public claims, and participate in bUIDL buyback auctions.", "feeComposition": "Where each trading fee goes", "feeBuybackDescription": "Funds the TagAgent buyback auction; acquired tokens are sent to the dead address.", "buidlFeeBuybackDescription": "Funds the bUIDL buyback auction; acquired tokens are sent to the dead address.", "feeFrontendDescription": "Rewards the referral address supplied with the trade. If absent, this share goes to the launcher.", "feeLauncherDescription": "Protocol launcher allocation and unassigned referral rewards.", "feeCreatorDescription": "Accrues to the basket creator payout address.", "feeHoldersDescription": "Distributed pro rata to eligible basket holders.",
     "feeClaims": "Claimable fees", "connectWallet": "Connect wallet", "publicClaimHint": "Anyone may execute a claim. Funds always go to the beneficiary recorded by the contract.", "holderClaim": "Your holder fees", "frontendClaim": "Your referral rewards", "creatorClaim": "Creator fees", "launcherClaim": "Launcher fees", "claiming": "Claiming…", "claim": "Claim", "executeClaim": "Execute claim",
     "buybackAuction": "TagAgent buyback pool", "buidlBuybackPool": "BUIDL buyback pool", "liveOnChain": "Live on-chain", "availableBuybackPool": "Available auction funds", "auctionRange": "Lot range", "basketFeeReserve": "Unallocated basket reserve", "activeAuction": "Active auction", "readyToSettle": "Ready to settle", "endsAt": "Ends {time}", "ethLot": "ETH lot", "highestBid": "Highest bid", "highestBidder": "Highest bidder", "settling": "Settling…", "settleAuction": "Settle auction", "bidding": "Bidding…", "placeBid": "Place bid", "startAuction": "Start auction", "startAuctionHint": "Estimated opening bid: {amount} {symbol}. The contract applies spot price and the 90% opening ratio.", "startingAuction": "Starting…", "bidTokenBalance": "Wallet balance", "refundableBid": "Refundable bid balance", "claimableAuctionEth": "Claimable auction ETH", "withdrawAmount": "Amount (blank = max)", "withdrawBid": "Withdraw bid tokens", "claimAuctionEth": "Claim ETH", "auctionHistory": "Auction history", "noAuctions": "No auctions have been created yet.", "winningBid": "Final / current bid", "winner": "Winner / leader", "settled": "Settled", "awaitingSettlement": "Awaiting settlement", "active": "Active"
-  }
+  },
+  "v13Trade": {
+    "pending": "Waiting for listing; trading is unavailable",
+    "notListed": "This trading entry is for listed tokens",
+    "unavailable": "No complete quote is available. Refresh or reduce the amount.",
+    "notDeployed": "Trading is not enabled yet. Quotes are available.",
+    "main": "Main pool",
+    "component": "Component pool {n}",
+    "routes": "Trade routes",
+    "estimatedGas": "Estimated network fee",
+    "refresh": "Refresh quote"
+}
 }

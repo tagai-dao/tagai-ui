@@ -1748,7 +1748,8 @@ export const getTokenOnchainInfo = async (
     socialPoolMap: Record<string, string> = {},
 ) => {
     if (tokens.length === 0) return []
-    tokens = _.union(tokens)
+    tokens = _.union(tokens).filter(token => !(useChainStore().activeChainId === 56 && Number(versions[token]) === 13))
+    if (tokens.length === 0) return {}
     let calls: any[] = []
     const loadBaseInfosByFallback = async () => {
         const entries = await Promise.all(tokens.map(async token => {
