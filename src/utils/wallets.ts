@@ -12,6 +12,7 @@ import { useModalStore } from '@/stores/common';
 import { GlobalModalType } from '@/types';
 import { reportLog } from './helper';
 import { useChainStore } from '@/stores/chain';
+import { confirmTransaction } from './transactionConfirmation';
 
 
 // this.ethWalletType = 'none' // metamask, okx, none
@@ -340,15 +341,8 @@ export const transferEthTo = async (to: string, value: bigint) => {
 }
 
 export const waitForTx = async (hash: `0x${string}`, timeout = 120_000) => {
-    let wallet = getReadOnlyClient();
-    const receipt = await wallet.waitForTransactionReceipt({
-        hash,
-        timeout,
-    });
-    if (receipt.status === 'success') {
-        return hash;
-    }
-    return null;
+    const wallet = getReadOnlyClient();
+    return confirmTransaction(hash, () => wallet.getTransactionReceipt({ hash }), timeout);
 }
 
 export async function initPlugin() {
