@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import BasketCard from '@/views/baskets/components/BasketCard.vue'
 import { listBaskets } from '@/utils/baskets/data'
 import type { BasketSummary } from '@/utils/baskets/types'
@@ -28,20 +28,18 @@ const load = async () => {
   const token = props.token
   baskets.value = []
   error.value = ''
+  loading.value = false
   if (!token) return
   loading.value = true
   try {
     const rows = await listBaskets(chainStore.activeChainId, {
       onShell: (shell) => {
-        if (sequence !== requestSequence) return
-        baskets.value = matchingBaskets(shell, token)
+        if (sequence === requestSequence) baskets.value = matchingBaskets(shell, token)
       },
     })
-    if (sequence !== requestSequence) return
-    baskets.value = matchingBaskets(rows, token)
-  } catch (cause) {
-    if (sequence !== requestSequence) return
-    error.value = cause instanceof Error ? cause.message : 'Failed to load baskets'
+    if (sequence === requestSequence) baskets.value = matchingBaskets(rows, token)
+  } catch {
+    if (sequence === requestSequence) error.value = 'Failed to load baskets'
   } finally {
     if (sequence === requestSequence) loading.value = false
   }
@@ -52,6 +50,7 @@ watch(
   () => { void load() },
   { immediate: true },
 )
+onUnmounted(() => { requestSequence++ })
 </script>
 
 <template>

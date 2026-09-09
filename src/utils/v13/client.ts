@@ -39,7 +39,14 @@ export function createQuoteSession() {
             const key = token.toLowerCase();
             if (metadataPending?.key !== key)
                 metadataPending = { key, promise: (async () => {
-                        const r: any = await get(`${API_BASE_URL}/pump/v13/metadata/${token}`, {}, { headers: { 'X-Chain-Id': '56' } });
+                        let r: any;
+                        try {
+                            r = await get(`${API_BASE_URL}/pump/v13/metadata/${token}`, {}, {
+                                headers: { 'X-Chain-Id': '56' }, timeout: 10_000, 'axios-retry': { retries: 0 },
+                            });
+                        } catch {
+                            throw new QuoteError('V13_METADATA_UNAVAILABLE');
+                        }
                         if (r?.c !== 0 || !r?.d || r.d.token.toLowerCase() !== key)
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
                         return { ...r.d, executor: getChainDeployment(56).contracts.tradeRouter13 ?? null } as Metadata;

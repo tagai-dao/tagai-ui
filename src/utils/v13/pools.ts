@@ -8,11 +8,13 @@ import { useChainStore } from '@/stores/chain'
 import { type Address,type Abi,parseAbi,zeroAddress } from 'viem'
 import staking from './ERC20Staking.json'
 import tokenAbi from './Token13.json'
-export type Component = {asset:Address;pair:Address;staking_pool:Address;position:number;target_weight:number;asset_decimals:number|null;asset_symbol?:string|null;pool_status:string|null}
+import {afterPairTax,previewLiquidityAdd} from './liquidity-preview'
+export {afterPairTax,previewLiquidityAdd} from './liquidity-preview'
+export type Component = {asset:Address;pair:Address;staking_pool:Address;position:number;target_weight:number;asset_decimals:number|null;asset_symbol?:string|null;staking_reward_ratio?:number|null;pool_status:string|null}
 export type V13Detail = {buyback:{bnb_reserve:string;total_bnb_spent:string;total_index_bought:string;total_index_claimed:string}|null;config:{name:string;symbol:string;community:Address;index_token:Address|null;basket_fee_bps:number;creator_share_bps:number;retain_community_ownership:number;source_block:string};components:Component[]}
 export const erc20=parseAbi(['function balanceOf(address) view returns(uint256)','function allowance(address,address) view returns(uint256)','function approve(address,uint256) returns(bool)','function symbol() view returns(string)','function decimals() view returns(uint8)','function totalSupply() view returns(uint256)'])
 export const pairAbi=parseAbi(['function token0() view returns(address)','function token1() view returns(address)','function getReserves() view returns(uint112,uint112,uint32)','function totalSupply() view returns(uint256)'])
-export const communityAbi=parseAbi(['function getPoolPendingRewards(address,address) view returns(uint256)','function withdrawPoolsRewards(address[]) payable','function getCommittee() view returns(address)','function poolActived(address) view returns(bool)','function poolRatios(address) view returns(uint256)'])
+export const communityAbi=parseAbi(['function getPoolPendingRewards(address,address) view returns(uint256)','function withdrawPoolsRewards(address[]) payable','function getCommittee() view returns(address)','function poolActived(address) view returns(bool)'])
 export const committeeAbi=parseAbi(['function getPoolOperationFee() view returns(uint256)'])
 export async function getV13Detail(token:Address):Promise<V13Detail> {
  const r:any=await get(`${API_BASE_URL}/pump/v13/detail/${token}`,{},{headers:{'X-Chain-Id':'56'}})
@@ -24,13 +26,13 @@ export async function readPool(token:Address,community:Address,c:Component,accou
  const [component,stakeToken,poolCommunity]=await Promise.all([read(token,tokenAbi as Abi,'componentAt',[BigInt(c.position)]),read(c.staking_pool,staking as Abi,'stakeToken'),read(c.staking_pool,staking as Abi,'community')])
  const tuple=component as [Address,bigint,Address]
  if(tuple[0].toLowerCase()!==c.asset.toLowerCase()||tuple[2].toLowerCase()!==c.pair.toLowerCase()||String(stakeToken).toLowerCase()!==c.pair.toLowerCase()||String(poolCommunity).toLowerCase()!==community.toLowerCase())throw new Error('V13_POOL_MISMATCH')
- const [staked,total,pending,lpBalance,tokenBalance,assetBalance,symbol,decimals,reserves,token0,supply,active,committee,rewardRatio]=await Promise.all([
+ const [staked,total,pending,lpBalance,tokenBalance,assetBalance,symbol,decimals,reserves,token0,supply,active,committee,nativeBalance]=await Promise.all([
  read(c.staking_pool,staking as Abi,'getUserStakedAmount',[account]),read(c.staking_pool,staking as Abi,'getTotalStakedAmount'),read(community,communityAbi,'getPoolPendingRewards',[c.staking_pool,account]),
  read(c.pair,erc20,'balanceOf',[account]),read(token,erc20,'balanceOf',[account]),read(c.asset,erc20,'balanceOf',[account]),read(c.asset,erc20,'symbol'),read(c.asset,erc20,'decimals'),
- read(c.pair,pairAbi,'getReserves'),read(c.pair,pairAbi,'token0'),read(c.pair,pairAbi,'totalSupply'),read(community,communityAbi,'poolActived',[c.staking_pool]),read(community,communityAbi,'getCommittee'),read(community,communityAbi,'poolRatios',[c.staking_pool])])
+ read(c.pair,pairAbi,'getReserves'),read(c.pair,pairAbi,'token0'),read(c.pair,pairAbi,'totalSupply'),read(community,communityAbi,'poolActived',[c.staking_pool]),read(community,communityAbi,'getCommittee'),account===zeroAddress?Promise.resolve(0n):client.getBalance({address:account})])
  const fee=await read(committee as Address,committeeAbi,'getPoolOperationFee') as bigint
  const r=reserves as [bigint,bigint,number], t0=String(token0).toLowerCase()===token.toLowerCase()
- return {staked:staked as bigint,total:total as bigint,pending:pending as bigint,lpBalance:lpBalance as bigint,tokenBalance:tokenBalance as bigint,assetBalance:assetBalance as bigint,symbol:String(symbol),decimals:Number(decimals),reserveToken:t0?r[0]:r[1],reserveAsset:t0?r[1]:r[0],supply:supply as bigint,active:Boolean(active),rewardRatio:Number(rewardRatio),fee}
+ return {staked:staked as bigint,total:total as bigint,pending:pending as bigint,lpBalance:lpBalance as bigint,tokenBalance:tokenBalance as bigint,assetBalance:assetBalance as bigint,nativeBalance,symbol:String(symbol),decimals:Number(decimals),reserveToken:t0?r[0]:r[1],reserveAsset:t0?r[1]:r[0],supply:supply as bigint,active:Boolean(active),rewardRatio:c.staking_reward_ratio == null ? null : Number(c.staking_reward_ratio),fee}
 }
 export function walletGuard(){
  const account=useAccountStore().ethConnectAddress as Address
@@ -57,7 +59,27 @@ export async function operatePool(token:Address,community:Address,c:Component,ac
  if(action==='deposit'){if(!state.active)throw new Error('Pool closed');await approve(c.pair,c.staking_pool,amount,guard)}
  return send(c.staking_pool,staking as Abi,action,[amount],state.fee,guard)
 }
-export const afterPairTax=(amount:bigint)=>amount-amount/1000n
+export async function claimAllPoolRewards(token:Address,community:Address,components:Component[]) {
+ const guard=walletGuard(),client=getReadOnlyClient(56)
+ const pools=[...new Map(components.map(c=>[c.staking_pool.toLowerCase(),c])).values()]
+ if(!pools.length)return null
+ const rows=await client.multicall({allowFailure:false,contracts:pools.flatMap(c=>[
+  {address:token,abi:tokenAbi as Abi,functionName:'componentAt',args:[BigInt(c.position)]},
+  {address:c.staking_pool,abi:staking as Abi,functionName:'stakeToken'},
+  {address:c.staking_pool,abi:staking as Abi,functionName:'community'},
+  {address:community,abi:communityAbi,functionName:'getPoolPendingRewards',args:[c.staking_pool,guard.account]},
+ ])})
+ const eligible=pools.filter((c,i)=>{
+  const [asset,,pair]=rows[i*4] as [Address,bigint,Address]
+  if(asset.toLowerCase()!==c.asset.toLowerCase()||pair.toLowerCase()!==c.pair.toLowerCase()||String(rows[i*4+1]).toLowerCase()!==c.pair.toLowerCase()||String(rows[i*4+2]).toLowerCase()!==community.toLowerCase())throw new Error('V13_POOL_MISMATCH')
+  return (rows[i*4+3] as bigint)>0n
+ }).map(c=>c.staking_pool)
+ guard.check()
+ if(!eligible.length)return null
+ const committee=await client.readContract({address:community,abi:communityAbi,functionName:'getCommittee'})
+ const fee=await client.readContract({address:committee,abi:committeeAbi,functionName:'getPoolOperationFee'})
+ return send(community,communityAbi,'withdrawPoolsRewards',[eligible],fee,guard)
+}
 export async function validateLiquidityRouter(address:Address) {
  const contracts=getChainDeployment(56).contracts
  if(address.toLowerCase()!==contracts.liquidityRouter13?.toLowerCase())throw new Error('V13 liquidity deployment mismatch')
@@ -65,7 +87,7 @@ export async function validateLiquidityRouter(address:Address) {
  const [pump,trade]=await Promise.all([client.readContract({address,abi:liquidityAbi as Abi,functionName:'pump'}),client.readContract({address,abi:liquidityAbi as Abi,functionName:'tradeRouter'})])
  if(String(pump).toLowerCase()!==contracts.pump13?.toLowerCase()||String(trade).toLowerCase()!==contracts.tradeRouter13?.toLowerCase())throw new Error('V13 liquidity deployment mismatch')
 }
-export async function liquidity(token:Address,community:Address,c:Component,action:'add'|'remove',amount:bigint,bps:number,router:Address) {
+export async function liquidity(token:Address,community:Address,c:Component,action:'add'|'remove',amount:bigint,bps:number,router:Address,assetLimit?:bigint) {
  const guard=walletGuard();await validateLiquidityRouter(router)
  const s=await readPool(token,community,c,guard.account)
  if(amount<=0n||!s.reserveToken||!s.reserveAsset||!s.supply)throw new Error('Pool has no liquidity')
@@ -74,10 +96,16 @@ export async function liquidity(token:Address,community:Address,c:Component,acti
  if(action==='remove'){
   if(amount>s.lpBalance)throw new Error('Insufficient LP balance')
   await approve(c.pair,router,amount,guard)
-  return send(router,liquidityAbi as Abi,'remove',[token,BigInt(c.position),amount,min(afterPairTax(amount*s.reserveToken/s.supply)),min(amount*s.reserveAsset/s.supply),BigInt(Math.floor(Date.now()/1000)+120)],0n,guard)
+  const deadline=(await getReadOnlyClient(56).getBlock({blockTag:'latest'})).timestamp+120n
+  return send(router,liquidityAbi as Abi,'remove',[token,BigInt(c.position),amount,min(afterPairTax(amount*s.reserveToken/s.supply)),min(amount*s.reserveAsset/s.supply),deadline],0n,guard)
  }
- const net=afterPairTax(amount),assetAmount=(net*s.reserveAsset+s.reserveToken-1n)/s.reserveToken
+ const preview=previewLiquidityAdd(amount,s)
+ if(!preview||preview.lp<=0n)throw new Error('Amount is too small to mint LP')
+ const {assetAmount}=preview
+ if(assetLimit!==undefined&&assetAmount>assetLimit)throw new Error('V13_LIQUIDITY_RATIO_CHANGED')
  if(amount>s.tokenBalance||assetAmount>s.assetBalance)throw new Error('Insufficient token balance')
  await approve(token,router,amount,guard);await approve(c.asset,router,assetAmount,guard)
- return send(router,liquidityAbi as Abi,'add',[token,BigInt(c.position),amount,assetAmount,min(net*s.supply/s.reserveToken),BigInt(Math.floor(Date.now()/1000)+120)],0n,guard)
+ // Read chain time after approvals: wallet confirmations may take time, and a fork can be ahead of the browser clock.
+ const deadline=(await getReadOnlyClient(56).getBlock({blockTag:'latest'})).timestamp+120n
+ return send(router,liquidityAbi as Abi,'add',[token,BigInt(c.position),amount,assetAmount,min(preview.lp),deadline],0n,guard)
 }

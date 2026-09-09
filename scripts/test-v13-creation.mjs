@@ -8,7 +8,7 @@ import {createRequire} from 'node:module'
 import {toFunctionSelector} from 'viem'
 const dir=await mkdtemp(join(tmpdir(),'v13-creation-'))
 await build({stdin:{contents:"export * from './src/utils/v13/index-config.ts';export * from './src/config/chains.ts';",resolveDir:process.cwd()},bundle:true,platform:'node',format:'cjs',outfile:join(dir,'test.cjs'),logLevel:'silent'})
-const {validateIndexConfig,getChainDeployment}=createRequire(import.meta.url)(join(dir,'test.cjs'))
+const {validateIndexConfig,IndexConfigValidationError,getChainDeployment}=createRequire(import.meta.url)(join(dir,'test.cjs'))
 await rm(dir,{recursive:true,force:true})
 const config=()=>({name:'测试指数',symbol:'TIDX',constituentAssets:['0x'+ '12'.repeat(20),'0x'+'34'.repeat(20)],targetWeights:[5000,5000],basketFeeBps:100,creatorShareBps:3000,retainCommunityOwnership:true})
 test('BSC uses V13 while RH stays on V11 and legacy addresses are retained',()=>{
@@ -19,6 +19,16 @@ test('BSC uses V13 while RH stays on V11 and legacy addresses are retained',()=>
  assert.equal(rh.contracts.pump13,undefined)
 })
 test('valid index config accepts exact bps sum',()=>assert.doesNotThrow(()=>validateIndexConfig(config())))
+test('5% fee produces a localizable field error; 1% and 3% remain valid',async()=>{
+ const c=config();c.basketFeeBps=500
+ assert.throws(()=>validateIndexConfig(c),e=>e instanceof IndexConfigValidationError&&e.messageKey==='v13Create.validation.fee')
+ for(const locale of ['en','zh','es','hi','id','ja','ko']){
+  const messages=JSON.parse(await readFile(`src/lang/locales/${locale}.json`,'utf8'))
+  assert.ok(messages.v13Create.validation.fee.includes('1%'))
+  assert.ok(messages.v13Create.validation.fee.includes('3%'))
+ }
+ for(const fee of [100,300]){c.basketFeeBps=fee;assert.doesNotThrow(()=>validateIndexConfig(c))}
+})
 test('UTF-8 byte limits apply to multibyte names',()=>{const c=config();c.name='中'.repeat(22);assert.throws(()=>validateIndexConfig(c))})
 for(const [name,patch]of [['duplicate assets',c=>c.constituentAssets[1]=c.constituentAssets[0]],['bad weight sum',c=>c.targetWeights=[5000,4999]],['zero weight',c=>c.targetWeights=[10000,0]],['invalid fee',c=>c.basketFeeBps=99],['invalid share',c=>c.creatorShareBps=3001]])test(name,()=>{const c=config();patch(c);assert.throws(()=>validateIndexConfig(c))})
 test('creation ABI distinguishes V13 tuple overload from disabled legacy selector',async()=>{

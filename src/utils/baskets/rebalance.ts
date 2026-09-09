@@ -1,5 +1,5 @@
 import { zeroAddress, type Address } from 'viem'
-import { getBasketDeployment, getBasketProtocol } from '@/config/baskets'
+import { BASKET_MAX_SLIPPAGE_BPS, getBasketDeployment, getBasketProtocol } from '@/config/baskets'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { getBasketTokenAbi, getRebalanceExecutorAbi, pancakePoolManagerStateAbi } from './abis'
 import { applySlippage } from './hook-data'
@@ -72,7 +72,8 @@ const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: numb
   return {
     expectedSellMask: sellMask,
     expectedBuyMask: buyMask,
-    deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+    // Quote RPC calls may take time; anchor the final deadline to the latest chain block.
+    deadline: (await client.getBlock({ blockTag: 'latest' })).timestamp + 600n,
     maxAssetIn,
     minSettlementOut,
     maxSettlementIn,
@@ -87,6 +88,7 @@ const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: numb
  * even when every sell leg lands exactly on its caller-provided floor.
  */
 export const buildRebalanceLimits = async (detail: BasketDetail, slippageBps: number) => {
+  if (!Number.isInteger(slippageBps) || slippageBps < 1 || slippageBps > BASKET_MAX_SLIPPAGE_BPS) throw new Error('Invalid slippage')
   if (isBscBasketV3(detail.chainId, detail.version)) {
     const v3Limits = await buildBscV3RebalanceLimits(detail, slippageBps)
     return {

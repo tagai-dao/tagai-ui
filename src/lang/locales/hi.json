@@ -1,4 +1,56 @@
 {
+  "v13Index": {
+    "totalBought": "कुल पुनर्खरीदा सूचकांक",
+    "rewardBalance": "सूचकांक पुरस्कार भंडार",
+    "walletBalance": "मेरा सूचकांक बैलेंस",
+    "rewardHelp": "पुनर्खरीदे सूचकांक समुदाय टोकन होल्डिंग नियमों के अनुसार बाँटे जाते हैं और क्लेम पर आपके वॉलेट में आते हैं।",
+    "claimReward": "पुरस्कार क्लेम करें",
+    "buybackTitle": "सूचकांक पुनर्खरीद",
+    "buybackHelp": "प्रोटोकॉल के संचित BNB भंडार का उपयोग होता है। आरंभकर्ता केवल नेटवर्क गैस देता है।",
+    "estimatedIndex": "अनुमानित पुनर्खरीद",
+    "minimumIndex": "न्यूनतम प्राप्ति",
+    "preview": "पुनर्खरीद अनुमान",
+    "execute": "पुनर्खरीद करें",
+    "pending": "लिस्टिंग के बाद पुनर्खरीद और पुरस्कार क्लेम उपलब्ध होंगे।",
+    "emptyReserve": "पुनर्खरीद के लिए BNB भंडार नहीं है।",
+    "expired": "भंडार या कोट बदल गया है। फिर से अनुमान लें।",
+    "routerUnavailable": "पुनर्खरीद मार्ग तैयार नहीं है। बाद में प्रयास करें।",
+    "tooSmall": "वैध न्यूनतम प्राप्ति के लिए भंडार बहुत कम है।",
+    "cancelled": "कार्य रद्द हुआ।",
+    "operationFailed": "कार्य पूरा नहीं हुआ। रीफ़्रेश करके फिर प्रयास करें।",
+    "buybackDone": "पुनर्खरीद पूरी हुई और सूचकांक पुरस्कार जमा हुए।",
+    "claimDone": "पुरस्कार आपके वॉलेट में भेज दिए गए।"
+},
+  "v13Page": {
+    "poolBurnDescription": "घटक पूल के ट्रेड में {symbol} का 0.1% काटकर सीधे बर्न किया जाता है।",
+    "totalBurned": "कुल बर्न",
+    "burnSource": "बर्न पते पर मौजूद समुदाय टोकन का बैलेंस।",
+    "liquidityRatioChanged": "पूल अनुपात बदल गया है। अपडेट की गई मात्रा जाँचकर फिर प्रयास करें।",
+    "linkedIndex": "संबद्ध सूचकांक",
+    "holderV4Vault": "V4 लिक्विडिटी वॉल्ट",
+    "holderV4Manager": "V4 पूल प्रबंधक",
+    "holderComponentPool": "{asset} लिक्विडिटी पूल",
+    "holderStakingPool": "{asset} LP स्टेकिंग",
+    "rewardReserve": "माइनिंग पुरस्कार भंडार",
+    "dailyRewardsHelp": "ऑन-चेन वर्तमान घंटे से 24 घंटों के लिए सभी LP पूलों के अनुमानित पुरस्कार, प्रोटोकॉल शुल्क काटने के बाद।",
+    "apr": "APR",
+    "aprHint": "अगले 24 घंटे के शुद्ध पुरस्कार × 365 / स्टेक किए गए LP का T में मूल्य (उसका T रिज़र्व × 2)। पुरस्कार और स्टेक के साथ APR बदलता है।",
+    "aprEmpty": "अभी कोई स्टेक नहीं है; APR की गणना नहीं हो सकती।",
+    "aprUnavailable": "APR अपडेट उपलब्ध नहीं है। पिछला मान दिखाया गया है।",
+
+    "poolAction": "पूल कार्रवाई",
+    "dualAdd": "दोनों टोकन से तरलता जोड़ें",
+    "requiredAsset": "आवश्यक {symbol}",
+    "assetRatioHelp": "मौजूदा पूल अनुपात से गणना की गई है। तरलता जोड़ने के लिए दोनों टोकन दें।",
+    "insufficientBalance": "{symbol} बैलेंस अपर्याप्त है",
+
+    "active": "सक्रिय",
+    "inactive": "बंद",
+    "collapse": "कार्रवाइयाँ समेटें"
+  },
+  "v13Trade": {
+    "metadataUnavailable": "पूल डेटा अभी उपलब्ध नहीं है। थोड़ी देर बाद कोट रीफ़्रेश करें; राशि घटाने की ज़रूरत नहीं है।"
+  },
   "Square": "स्क्वायर",
   "Proposal": "प्रस्ताव",
   "Trades": "ट्रेड",
@@ -354,6 +406,7 @@
   },
   "community": {
     "distributionTip": "कुल टोकन तीन भागों में बँटते हैं: 15% सोशल वितरण, 65% बॉन्डिंग कर्व बिक्री, 20% लिक्विडिटी पूल",
+    "distributionTipV13": "कुल आपूर्ति 1 अरब टोकन है: 65% बॉन्डिंग कर्व बिक्री के लिए, 15% मुख्य V4 पूल की लिक्विडिटी के लिए, 5% घटक टोकनों के V2 पूलों की लिक्विडिटी के लिए और 15% समुदाय पुरस्कारों के लिए, जिनमें LP स्टेकिंग पुरस्कार भी शामिल हैं। प्रगति पट्टी केवल बॉन्डिंग कर्व बिक्री की प्रगति दिखाती है।",
     "spaceHasCreated": "इस स्पेस की क्यूरेशन पहले से बनी है।",
     "spaceInvalidLink": "यह मान्य स्पेस लिंक नहीं है",
     "spaceNotYours": "यह स्पेस आपने नहीं बनाया",
@@ -1025,6 +1078,10 @@
     "dragRangeHint": "मूल्य सीमा समायोजित करने के लिए हैंडल खींचें"
   },
   "baskets": {
+    "rebalancePlanChanged": "पूल की स्थिति से पुनर्संतुलन योजना बदल गई। फिर प्रयास करें।",
+    "rebalanceSlippageRange": "स्लिपेज 0.01% से {max}% के बीच दर्ज करें।",
+    "tradeEnterAmount": "मात्रा दर्ज करें और कोट की प्रतीक्षा करें।",
+    "tradeSlippageRange": "स्लिपेज 1 से {max} bps दर्ज करें (100 bps = 1%)।",
     "menu": "Baskets",
     "title": "Baskets",
     "subtitle": "Discover and trade basket tokens on {network}",
@@ -1174,5 +1231,36 @@
     "rebalanceUnavailable":"अपग्रेड आवश्यक","rebalanceHighFeeBlocked":"{assets} का शुल्क Executor की 3% सीमा के बराबर या अधिक है। कॉन्ट्रैक्ट अपग्रेड आवश्यक है।","rebalanceSlippageError":"एक घटक ने ऑन-चेन स्लिपेज सीमा पार की।","rebalanceCooldownError":"एक घंटे का कूलडाउन पूरा नहीं हुआ।","rebalanceNotNeededError":"ऑन-चेन विचलन अब सीमा से अधिक नहीं है।","rebalanceToleranceError":"अंतिम वेट आवश्यक सहनशीलता तक नहीं पहुँचे।","rebalanceNavLossError":"अनुमानित NAV हानि 3% से अधिक है।","rebalanceCreatorError":"केवल Basket creator wallet रीबैलेंस कर सकता है।",
     "backToBasket":"Basket पर वापस","viewFeeDetails":"शुल्क विवरण","maxWeightDeviation":"अधिकतम वेट विचलन","rebalanceAvailable":"3% रीबैलेंस सीमा पार हो गई है।","weightsHealthy":"वेट सीमा के भीतर हैं।","rebalanceCooldown":"{minutes} मिनट में उपलब्ध","rebalance":"रीबैलेंस","rebalancing":"रीबैलेंस हो रहा है…","feeCenter":"शुल्क केंद्र","feeCenterTitle":"शुल्क और बायबैक नीलामी","feeCenterSubtitle":"आवंटन देखें, शुल्क क्लेम करें और TagAgent बायबैक नीलामी में भाग लें।","feeComposition":"ट्रेडिंग शुल्क का आवंटन","feeBuybackDescription":"TagAgent बायबैक को फंड करता है; खरीदे टोकन dead address पर भेजे जाते हैं।","feeFrontendDescription":"निर्दिष्ट रेफ़रल पते को मिलता है; न होने पर launcher को।","feeLauncherDescription":"प्रोटोकॉल launcher आवंटन।","feeCreatorDescription":"Basket creator payout पते पर जमा होता है।","feeHoldersDescription":"योग्य holders को अनुपात में वितरित होता है।","feeClaims":"क्लेम योग्य शुल्क","connectWallet":"वॉलेट कनेक्ट करें","publicClaimHint":"कोई भी क्लेम चला सकता है; धन हमेशा दर्ज beneficiary को जाता है।","holderClaim":"आपका holder शुल्क","frontendClaim":"आपकी रेफ़रल आय","creatorClaim":"Creator शुल्क","launcherClaim":"Launcher शुल्क","claiming":"क्लेम हो रहा है…","claim":"क्लेम","executeClaim":"क्लेम चलाएँ","buybackAuction":"TagAgent बायबैक पूल","liveOnChain":"लाइव ऑन-चेन","availableBuybackPool":"उपलब्ध फंड","auctionRange":"लॉट सीमा","basketFeeReserve":"Basket शुल्क रिज़र्व","activeAuction":"सक्रिय नीलामी","readyToSettle":"सेटलमेंट के लिए तैयार","endsAt":"समाप्ति {time}","ethLot":"ETH लॉट","highestBid":"सबसे ऊँची बोली","highestBidder":"सबसे ऊँचा bidder","settling":"सेटल हो रहा है…","settleAuction":"नीलामी सेटल करें","bidding":"बोली लग रही है…","placeBid":"बोली लगाएँ","startAuction":"नीलामी शुरू करें","startAuctionHint":"अनुमानित शुरुआती बोली: {amount} {symbol}; कॉन्ट्रैक्ट spot price का 90% उपयोग करता है।","startingAuction":"शुरू हो रही है…","bidTokenBalance":"वॉलेट बैलेंस","refundableBid":"वापस लेने योग्य बोली","claimableAuctionEth":"क्लेम योग्य ETH","withdrawAmount":"राशि (खाली = सभी)","withdrawBid":"Bid टोकन निकालें","claimAuctionEth":"ETH क्लेम करें","auctionHistory":"नीलामी इतिहास","noAuctions":"अभी कोई नीलामी नहीं है।","winningBid":"अंतिम / मौजूदा बोली","winner":"विजेता / अग्रणी","settled":"सेटल","awaitingSettlement":"सेटलमेंट लंबित","active":"सक्रिय"
     ,"buidlBuybackPool":"BUIDL बायबैक पूल"
-  }
+  },
+  "v13Create": {
+    "validation": {
+      "required": "बनाने से पहले इंडेक्स की सेटिंग भरें।",
+      "name": "इंडेक्स का नाम 1–64 बाइट और टिकर 1–16 बाइट का होना चाहिए।",
+      "assets": "1–4 अलग-अलग मान्य घटक एसेट चुनें।",
+      "weights": "हर एसेट का आवंटन 0% से अधिक और कुल आवंटन 100% होना चाहिए।",
+      "fee": "इंडेक्स ट्रेडिंग शुल्क 1% से 3% के बीच होना चाहिए।",
+      "creatorShare": "निर्माता का हिस्सा 0% से 30% के बीच होना चाहिए।"
+    }
+  },
+  "v13Operation": {
+    "title": "ऑपरेशन सूचना",
+    "cancelled": "ऑपरेशन रद्द कर दिया गया।",
+    "expired": "लेनदेन की समय सीमा समाप्त हो गई। फिर से प्रयास करें।",
+    "slippage": "कीमत बदलने से स्लिपेज सुरक्षा सक्रिय हुई। कोट रीफ्रेश करके फिर प्रयास करें।",
+    "balance": "बैलेंस अपर्याप्त है। टोकन और BNB बैलेंस जाँचें।",
+    "transfer": "टोकन ट्रांसफर विफल रहा। बैलेंस और अनुमति जाँचकर फिर प्रयास करें।",
+    "wallet": "वॉलेट या नेटवर्क बदल गया है। BSC वॉलेट फिर से कनेक्ट करें।",
+    "pool": "यह पूल अभी उपलब्ध नहीं है। रीफ्रेश करके फिर प्रयास करें।",
+    "amount": "मात्रा अमान्य या बहुत कम है। इसे बदलकर फिर प्रयास करें।",
+    "network": "नेटवर्क अभी उपलब्ध नहीं है। बाद में प्रयास करें।",
+    "failed": "ऑपरेशन पूरा नहीं हो सका। बाद में प्रयास करें।"
+  },
+  "auctionCountdown": {
+    "remaining": "नीलामी समाप्त होने में",
+    "lastMinute": "अंतिम मिनट",
+    "hours": "घंटे",
+    "minutes": "मिनट",
+    "seconds": "सेकंड"
+  },
+  "v13ClaimAll": {"button": "सभी पुरस्कार लें", "pending": "प्राप्त कर रहे हैं…", "success": "पूल पुरस्कार प्राप्त हुए", "empty": "अभी कोई पूल पुरस्कार उपलब्ध नहीं है"}
 }

@@ -30,7 +30,7 @@ export async function creationOptions(creator: string): Promise<CreationOptions>
 }
 export const creationFee = (o: CreationOptions, count: number) => BigInt(o.pumpFee)+BigInt(o.ipshareFee)+BigInt(o.communityFee)+BigInt(o.settingsFee)*BigInt(count)
 export async function registerV13(form: object) {
-  const r: any = await post(`${API_BASE_URL}/pump/v13/register`, form, {headers:{'X-Chain-Id':'56'}})
-  if (r?.c !== 0 || !r.d) throw new Error('V13 registration failed; retry the same transaction')
+  const r: any = await post(`${API_BASE_URL}/pump/v13/register`, form, {headers:{'X-Chain-Id':'56'}, timeout: 10_000, 'axios-retry': { retries: 0 }})
+  if (r?.c !== 0 || !r.d) throw new Error('V13 registration unavailable')
   return r.d
 }

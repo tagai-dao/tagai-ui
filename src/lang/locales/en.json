@@ -350,6 +350,7 @@
   },
   "community": {
     "distributionTip": "The total amount of tokens is distributed through three parts, including 15% for social distribution, 65% for bonding curve sales, and 20% for entering the liquidity pool",
+    "distributionTipV13": "Total supply is 1 billion tokens: 65% for bonding curve sales, 15% for liquidity in the main V4 pool, 5% for liquidity in constituent-token V2 pools, and 15% for community rewards, including LP staking rewards. The progress bar shows bonding curve sales only.",
     "spaceHasCreated": "This space has been created curation.",
     "spaceInvalidLink": "It's not a valid space link",
     "spaceNotYours": "This space is not created by yourself",
@@ -1045,6 +1046,10 @@
     "dragRangeHint": "Drag handles to adjust the price range"
   },
   "baskets": {
+    "rebalancePlanChanged": "Pool conditions changed the rebalance plan. Please try again.",
+    "rebalanceSlippageRange": "Enter slippage from 0.01% to {max}%.",
+    "tradeEnterAmount": "Enter an amount and wait for a quote.",
+    "tradeSlippageRange": "Enter slippage from 1 to {max} bps (100 bps = 1%).",
     "communityEyebrow": "Included in index tokens",
     "communityTitle": "Baskets containing {token}",
     "communityEmpty": "No Basket currently contains {token}.",
@@ -1282,6 +1287,7 @@
     "active": "Active"
   },
   "v13Trade": {
+    "metadataUnavailable": "Pool data is temporarily unavailable. Refresh the quote shortly; there is no need to reduce the amount.",
     "pending": "Waiting for listing; trading is unavailable",
     "notListed": "This trading entry is for listed tokens",
     "unavailable": "No complete quote is available. Refresh or reduce the amount.",
@@ -1293,6 +1299,14 @@
     "refresh": "Refresh quote"
   },
   "v13Create": {
+    "validation": {
+      "required": "Please configure the index before creating.",
+      "name": "Enter an index name of 1–64 bytes and a ticker of 1–16 bytes.",
+      "assets": "Choose 1–4 distinct, valid constituent assets.",
+      "weights": "Each asset allocation must be greater than 0%, with a total of 100%.",
+      "fee": "Index trading fee must be between 1% and 3%.",
+      "creatorShare": "Creator share must be between 0% and 30%."
+    },
     "tickTooLong": "This token ticker is too long to use as the index ticker. Please shorten it before creating.",
     "reverted": "The previous creation reverted. Its recovery record was cleared. Review the form before creating again.",
     "title": "Index & liquidity rewards",
@@ -1353,7 +1367,48 @@
     "totalFeeRange": "Enter a total trading fee of 1%–3%.",
     "allocationRules": "Percentages refer to the total trading fee and are displayed to one decimal place. Actual proceeds follow contract settlement. The platform share funds auctions; the rest is allocated to the creator, holders, frontend and launcher. Missing frontend recipients, no holders, and fees allocated to burned tokens redirect proceeds to the launcher according to the contract."
   },
+  "v13Index": {
+    "totalBought": "Total index bought",
+    "rewardBalance": "Index reward reserve",
+    "walletBalance": "My index balance",
+    "rewardHelp": "Repurchased index tokens are allocated under the community token holding rules and sent to your wallet when claimed.",
+    "claimReward": "Claim rewards",
+    "buybackTitle": "Index buyback",
+    "buybackHelp": "Uses accumulated protocol BNB reserves. The caller only pays network gas.",
+    "estimatedIndex": "Estimated buyback",
+    "minimumIndex": "Minimum received",
+    "preview": "Preview buyback",
+    "execute": "Execute buyback",
+    "pending": "Buybacks and reward claims open after listing.",
+    "emptyReserve": "No BNB reserve available for buyback.",
+    "expired": "The reserve or quote changed. Preview the buyback again.",
+    "routerUnavailable": "The buyback route is not ready. Please retry later.",
+    "tooSmall": "The reserve is too small to set a valid minimum output.",
+    "cancelled": "Operation cancelled.",
+    "operationFailed": "Operation did not complete. Refresh and try again.",
+    "buybackDone": "Buyback completed and index rewards credited.",
+    "claimDone": "Rewards sent to your wallet."
+},
   "v13Page": {
+    "poolBurnDescription": "Component pool trades deduct 0.1% of {symbol} and burn it directly.",
+    "totalBurned": "Total burned",
+    "burnSource": "Community token balance held at the burn address.",
+    "liquidityRatioChanged": "The pool ratio changed. Review the updated amounts and try again.",
+    "linkedIndex": "Linked index",
+    "holderV4Vault": "V4 liquidity vault",
+    "holderV4Manager": "V4 pool manager",
+    "holderComponentPool": "{asset} liquidity pool",
+    "holderStakingPool": "{asset} LP staking",
+    "rewardReserve": "Mining reward reserve",
+    "dailyRewardsHelp": "Estimated rewards across all LP pools for 24 hours from the current on-chain hour, after protocol fees.",
+    "apr": "APR",
+    "aprHint": "Next 24h net rewards × 365 / staked LP value in T (its T reserves × 2). APR changes with rewards and stake.",
+    "aprEmpty": "No stake yet; APR cannot be calculated.",
+    "aprUnavailable": "APR update unavailable. Any displayed value is from the previous update.",
+
+    "active": "Active",
+    "inactive": "Closed",
+    "collapse": "Collapse actions",
     "quotingLp": "Estimating LP…",
     "estimatedLp": "Estimated LP received",
     "minimumLp": "Minimum LP received (after slippage)",
@@ -1402,8 +1457,34 @@
     "index": "View linked index",
     "dividend": "Pending index dividends",
     "poolsHelp": "Manage liquidity and staking under Play → LP pools.",
+    "poolAction": "Pool action",
+    "dualAdd": "Add both tokens",
+    "requiredAsset": "Required {symbol}",
+    "assetRatioHelp": "Calculated from the current pool ratio. Supply both tokens to add liquidity.",
+    "insufficientBalance": "Insufficient {symbol} balance",
     "bnbAdd": "Add liquidity with BNB",
     "routerPending": "Liquidity router is not configured. Existing LP can still be staked or withdrawn.",
     "quote": "Calculate liquidity plan"
-  }
+  },
+  "v13Operation": {
+    "title": "Operation notice",
+    "cancelled": "Operation cancelled.",
+    "expired": "The transaction expired. Please try again.",
+    "slippage": "The price changed and slippage protection was triggered. Refresh the quote and try again.",
+    "balance": "Insufficient balance. Check your token and BNB balances.",
+    "transfer": "Token transfer failed. Check your balance and approval, then try again.",
+    "wallet": "Your wallet or network changed. Reconnect your BSC wallet.",
+    "pool": "This pool is currently unavailable. Refresh and try again.",
+    "amount": "The amount is invalid or too small. Adjust it and try again.",
+    "network": "The network is temporarily unavailable. Please try again later.",
+    "failed": "The operation could not be completed. Please try again later."
+  },
+  "auctionCountdown": {
+    "remaining": "Auction ends in",
+    "lastMinute": "Final minute",
+    "hours": "HRS",
+    "minutes": "MIN",
+    "seconds": "SEC"
+  },
+  "v13ClaimAll": {"button": "Claim all rewards", "pending": "Claiming…", "success": "Pool rewards claimed", "empty": "No pool rewards available to claim"}
 }

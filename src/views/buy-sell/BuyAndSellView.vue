@@ -87,14 +87,11 @@ const v13Error = ref('')
 const v13Message = computed(() => {
   if (v13Error.value === 'V13_LISTING_PENDING') return t('v13Trade.pending')
   if (v13Error.value === 'V13_NOT_LISTED') return t('v13Trade.notListed')
+  if (v13Error.value === 'V13_METADATA_UNAVAILABLE') return t('v13Trade.metadataUnavailable')
   if (v13Error.value) return t('v13Trade.unavailable')
   if (v13Quote.value && !v13Quote.value.snapshot.executable) return t('v13Trade.notDeployed')
   return ''
 })
-const v13Allocation = computed(() => v13Quote.value?.plan.legs.map(l => ({
-  name: l.index === 0 ? t('v13Trade.main') : t('v13Trade.component', { n: l.index }),
-  percent: Number(l.amount * 10000n / v13Quote.value!.plan.amountIn) / 100,
-})) ?? [])
 
 onUnmounted(() => v13Session.reset())
 /** 有 tick 且非嵌入模式时展示桌面 K 线：未 list 用自建图，已 list 用 DexScreener */
@@ -1091,8 +1088,6 @@ onMounted(async () => {
         <div v-if="isV13" class="text-sm space-y-1">
           <p v-if="v13Message" role="status" class="text-orange-normal">{{ v13Message }}</p>
           <template v-if="v13Quote">
-            <div class="flex justify-between"><span>{{ $t('v13Trade.routes') }}</span><span>{{ v13Allocation.length }}</span></div>
-            <div v-for="leg in v13Allocation" :key="leg.name" class="flex justify-between text-grey-64"><span>{{ leg.name }}</span><span>{{ leg.percent }}%</span></div>
             <div class="flex justify-between text-grey-64"><span>{{ $t('v13Trade.estimatedGas') }}</span><span>{{ Number(v13Quote.plan.gas * v13Quote.snapshot.gasPrice) / 1e18 }} BNB</span></div>
           </template>
           <button class="underline" :disabled="calculating" @click="refreshV13Quote">{{ $t('v13Trade.refresh') }}</button>

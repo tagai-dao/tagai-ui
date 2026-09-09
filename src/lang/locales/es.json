@@ -1,4 +1,56 @@
 {
+  "v13Index": {
+    "totalBought": "Total de índice recomprado",
+    "rewardBalance": "Reserva de recompensas",
+    "walletBalance": "Mi saldo de índice",
+    "rewardHelp": "Los índices recomprados se distribuyen según las reglas de tenencia del token comunitario y llegan a tu cartera al reclamarlos.",
+    "claimReward": "Reclamar recompensas",
+    "buybackTitle": "Recompra de índice",
+    "buybackHelp": "Usa las reservas BNB del protocolo. Quien la activa solo paga gas.",
+    "estimatedIndex": "Recompra estimada",
+    "minimumIndex": "Mínimo recibido",
+    "preview": "Estimar recompra",
+    "execute": "Ejecutar recompra",
+    "pending": "Las recompras y reclamaciones se habilitan tras el listado.",
+    "emptyReserve": "No hay reservas BNB para recomprar.",
+    "expired": "La reserva o cotización cambió. Vuelve a estimar.",
+    "routerUnavailable": "La ruta de recompra aún no está lista. Reintenta más tarde.",
+    "tooSmall": "La reserva es insuficiente para fijar una salida mínima válida.",
+    "cancelled": "Operación cancelada.",
+    "operationFailed": "La operación no se completó. Actualiza y reintenta.",
+    "buybackDone": "Recompra completada y recompensas acreditadas.",
+    "claimDone": "Recompensas enviadas a tu cartera."
+},
+  "v13Page": {
+    "poolBurnDescription": "Las operaciones de los pools de componentes descuentan el 0,1% de {symbol} y lo queman directamente.",
+    "totalBurned": "Total quemado",
+    "burnSource": "Saldo del token de la comunidad en la dirección de quema.",
+    "liquidityRatioChanged": "La proporción del pool cambió. Revisa los importes actualizados y reintenta.",
+    "linkedIndex": "Índice vinculado",
+    "holderV4Vault": "Bóveda de liquidez V4",
+    "holderV4Manager": "Gestor de pools V4",
+    "holderComponentPool": "Pool de liquidez {asset}",
+    "holderStakingPool": "Staking LP {asset}",
+    "rewardReserve": "Reserva de recompensas",
+    "dailyRewardsHelp": "Recompensas estimadas de todos los pools LP durante 24 horas desde la hora actual en cadena, descontando las comisiones del protocolo.",
+    "apr": "APR",
+    "aprHint": "Recompensas netas de las próximas 24 h × 365 / valor de los LP en staking en T (su reserva de T × 2). La APR varía con las recompensas y el staking.",
+    "aprEmpty": "Sin staking; aún no se puede calcular la APR.",
+    "aprUnavailable": "No se pudo actualizar la APR. Se conserva el valor anterior.",
+
+    "poolAction": "Operación del pool",
+    "dualAdd": "Añadir ambos tokens",
+    "requiredAsset": "{symbol} necesario",
+    "assetRatioHelp": "Calculado según la proporción actual del pool. Aporta ambos tokens para añadir liquidez.",
+    "insufficientBalance": "Saldo de {symbol} insuficiente",
+
+    "active": "Activo",
+    "inactive": "Cerrado",
+    "collapse": "Contraer acciones"
+  },
+  "v13Trade": {
+    "metadataUnavailable": "Los datos de los pools no están disponibles temporalmente. Actualiza la cotización en breve; no hace falta reducir el importe."
+  },
   "Square": "Plaza",
   "Proposal": "Propuesta",
   "Trades": "Operaciones",
@@ -354,6 +406,7 @@
   },
   "community": {
     "distributionTip": "El suministro total se distribuye en tres partes: 15% distribución social, 65% venta por bonding curve y 20% al pool de liquidez",
+    "distributionTipV13": "El suministro total es de 1.000 millones de tokens: 65% para ventas en la curva de vinculación, 15% para liquidez en el pool principal V4, 5% para liquidez en los pools V2 de tokens componentes y 15% para recompensas de la comunidad, incluidas las de staking de LP. La barra solo muestra el progreso de las ventas en la curva.",
     "spaceHasCreated": "Este space ya tiene curación creada.",
     "spaceInvalidLink": "No es un enlace de space válido",
     "spaceNotYours": "Este space no fue creado por ti",
@@ -1025,6 +1078,10 @@
     "dragRangeHint": "Arrastra los controles para ajustar el rango de precios"
   },
   "baskets": {
+    "rebalancePlanChanged": "El estado del pool cambió el plan de reequilibrio. Inténtalo de nuevo.",
+    "rebalanceSlippageRange": "Introduce un deslizamiento entre 0,01% y {max}%.",
+    "tradeEnterAmount": "Introduce una cantidad y espera la cotización.",
+    "tradeSlippageRange": "Introduce un deslizamiento entre 1 y {max} bps (100 bps = 1%).",
     "menu": "Baskets",
     "title": "Baskets",
     "subtitle": "Descubre y opera basket tokens en {network}",
@@ -1174,5 +1231,36 @@
     "rebalanceUnavailable":"Requiere actualización","rebalanceHighFeeBlocked":"{assets} usa una comisión igual o superior al límite del 3% del executor. Requiere actualizar el contrato.","rebalanceSlippageError":"Un componente superó el límite de deslizamiento on-chain.","rebalanceCooldownError":"El período de espera de una hora aún no terminó.","rebalanceNotNeededError":"La desviación on-chain ya no supera el umbral.","rebalanceToleranceError":"Los pesos resultantes no alcanzan la tolerancia requerida.","rebalanceNavLossError":"La pérdida NAV prevista supera el 3%.","rebalanceCreatorError":"Solo la wallet del creador puede rebalancear.",
     "backToBasket": "Volver al basket", "viewFeeDetails": "Detalles de comisiones", "maxWeightDeviation": "Desviación máxima", "rebalanceAvailable": "Se superó el umbral de rebalanceo del 3%.", "weightsHealthy": "Los pesos están dentro del umbral.", "rebalanceCooldown": "Disponible en {minutes} min", "rebalance": "Rebalancear", "rebalancing": "Rebalanceando…", "feeCenter": "Centro de comisiones", "feeCenterTitle": "Comisiones y subastas de recompra", "feeCenterSubtitle": "Consulta la distribución, reclama y participa en recompras de TagAgent.", "feeComposition": "Destino de cada comisión", "feeBuybackDescription": "Financia recompras de TagAgent y envía los tokens adquiridos a la dirección muerta.", "feeFrontendDescription": "Recompensa a la dirección de referido indicada; si falta, se asigna al launcher.", "feeLauncherDescription": "Asignación del launcher del protocolo.", "feeCreatorDescription": "Se acumula para el creador del basket.", "feeHoldersDescription": "Se distribuye proporcionalmente a los holders elegibles.", "feeClaims": "Comisiones reclamables", "connectWallet": "Conectar wallet", "publicClaimHint": "Cualquiera puede ejecutar el reclamo; los fondos siempre van al beneficiario.", "holderClaim": "Tus comisiones de holder", "frontendClaim": "Tus recompensas por referidos", "creatorClaim": "Comisiones del creador", "launcherClaim": "Comisiones del launcher", "claiming": "Reclamando…", "claim": "Reclamar", "executeClaim": "Ejecutar reclamo", "buybackAuction": "Fondo de recompra TagAgent", "liveOnChain": "Datos on-chain", "availableBuybackPool": "Fondos disponibles", "auctionRange": "Rango del lote", "basketFeeReserve": "Reserva del basket", "activeAuction": "Subasta activa", "readyToSettle": "Lista para liquidar", "endsAt": "Termina {time}", "ethLot": "Lote ETH", "highestBid": "Oferta más alta", "highestBidder": "Mejor postor", "settling": "Liquidando…", "settleAuction": "Liquidar subasta", "bidding": "Ofertando…", "placeBid": "Hacer oferta", "startAuction": "Iniciar subasta", "startAuctionHint": "Oferta inicial estimada: {amount} {symbol}; el contrato usa el 90% del precio spot.", "startingAuction": "Iniciando…", "bidTokenBalance": "Saldo de wallet", "refundableBid": "Saldo reembolsable", "claimableAuctionEth": "ETH reclamable", "withdrawAmount": "Cantidad (vacío = máximo)", "withdrawBid": "Retirar tokens", "claimAuctionEth": "Reclamar ETH", "auctionHistory": "Historial de subastas", "noAuctions": "Todavía no hay subastas.", "winningBid": "Oferta final / actual", "winner": "Ganador / líder", "settled": "Liquidada", "awaitingSettlement": "Pendiente de liquidación", "active": "Activa"
     ,"buidlBuybackPool":"Fondo de recompra BUIDL"
-  }
+  },
+  "v13Create": {
+    "validation": {
+      "required": "Configura el índice antes de crearlo.",
+      "name": "Introduce un nombre de índice de 1–64 bytes y un símbolo de 1–16 bytes.",
+      "assets": "Elige entre 1 y 4 activos válidos y distintos.",
+      "weights": "La asignación de cada activo debe ser mayor que 0% y sumar un total de 100%.",
+      "fee": "La comisión de negociación del índice debe estar entre 1% y 3%.",
+      "creatorShare": "La participación del creador debe estar entre 0% y 30%."
+    }
+  },
+  "v13Operation": {
+    "title": "Aviso de operación",
+    "cancelled": "Operación cancelada.",
+    "expired": "La transacción ha caducado. Inténtalo de nuevo.",
+    "slippage": "El precio cambió y se activó la protección de deslizamiento. Actualiza la cotización y vuelve a intentarlo.",
+    "balance": "Saldo insuficiente. Comprueba tus saldos de tokens y BNB.",
+    "transfer": "La transferencia falló. Comprueba el saldo y la autorización e inténtalo de nuevo.",
+    "wallet": "Tu billetera o red ha cambiado. Vuelve a conectar tu billetera BSC.",
+    "pool": "Este pool no está disponible. Actualiza e inténtalo de nuevo.",
+    "amount": "La cantidad no es válida o es demasiado pequeña. Ajústala e inténtalo de nuevo.",
+    "network": "La red no está disponible temporalmente. Inténtalo más tarde.",
+    "failed": "No se pudo completar la operación. Inténtalo más tarde."
+  },
+  "auctionCountdown": {
+    "remaining": "La subasta termina en",
+    "lastMinute": "Último minuto",
+    "hours": "H",
+    "minutes": "MIN",
+    "seconds": "SEG"
+  },
+  "v13ClaimAll": {"button": "Reclamar recompensas", "pending": "Reclamando…", "success": "Recompensas recibidas", "empty": "No hay recompensas disponibles"}
 }

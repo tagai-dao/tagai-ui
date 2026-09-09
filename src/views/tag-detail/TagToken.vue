@@ -25,6 +25,8 @@ import { useTools } from "@/composables/useTools";
 import { useChainStore } from "@/stores/chain";
 import { useTheme } from "@/composables/useTheme";
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
+import { readCommunityDailyRewards } from '@/utils/v13/community-rewards'
+import { readV13HolderLabels, type HolderLabel } from '@/utils/v13/holder-labels'
 
 defineProps<{ holdersOnly?: boolean }>()
 
@@ -33,6 +35,43 @@ const { t } = useI18n();
 const { onCopy } = useTools();
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
+const isV13 = computed(() => chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 13)
+const v13HolderLabels = ref<Record<string, HolderLabel>>({})
+let v13HolderRequest = 0
+const v13HolderLabel = (address: string) => {
+  const label = isV13.value ? v13HolderLabels.value[address.toLowerCase()] : undefined
+  return label ? t(label.key, { asset: label.asset ?? '' }) : ''
+}
+async function refreshV13HolderLabels() {
+  const token = comStore.currentSelectedCommunity?.token
+  if (!isV13.value || !token || !isAddress(token)) return
+  const request = ++v13HolderRequest
+  const labels = await readV13HolderLabels(token)
+  if (request === v13HolderRequest) v13HolderLabels.value = { ...v13HolderLabels.value, ...labels }
+}
+watch([() => comStore.currentSelectedCommunity?.token, isV13], () => {
+  v13HolderRequest++
+  v13HolderLabels.value = {}
+  void refreshV13HolderLabels()
+}, { immediate: true })
+watch(() => comStore.currentSelectedCommunity?.listed, () => { void refreshV13HolderLabels() })
+const v13DailyRewards = ref<bigint>()
+let v13RewardRequest = 0
+async function refreshV13Rewards() {
+  const token = comStore.currentSelectedCommunity?.token
+  if (!isV13.value || !token || !isAddress(token)) return
+  const request = ++v13RewardRequest
+  try {
+    const daily = await readCommunityDailyRewards(token)
+    if (request === v13RewardRequest) v13DailyRewards.value = daily
+  } catch { /* Keep the last successful value during temporary RPC failures. */ }
+}
+watch([() => comStore.currentSelectedCommunity?.token, isV13], () => {
+  v13RewardRequest++
+  v13DailyRewards.value = undefined
+  void refreshV13Rewards()
+}, { immediate: true })
+const v13RewardTimer = setInterval(() => { void refreshV13Rewards() }, 30000)
 const { isDark } = useTheme()
 const modalStore = useModalStore()
 const accountStore = useAccountStore()
@@ -612,6 +651,7 @@ function mapHolderRows(list: any[]) {
 }
 
 async function onRefresh() {
+  void refreshV13HolderLabels()
   if (holderRequesting) {
     refreshing.value = false
     return
@@ -750,6 +790,9 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
 })
 
 onBeforeUnmount(() => {
+  v13HolderRequest++
+  v13RewardRequest++
+  clearInterval(v13RewardTimer)
   holderObserver?.disconnect()
 })
 </script>
@@ -785,7 +828,7 @@ onBeforeUnmount(() => {
       </div>
       <div v-show="!comStore.currentSelectedCommunity.isImport" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">
-          {{ $t(isPumpNutboxVersion ? 'postView.v4HookTransactionDistribution' : 'postView.socialSupply') }}
+          {{ $t(isV13 ? 'v13Page.rewardReserve' : isPumpNutboxVersion ? 'postView.v4HookTransactionDistribution' : 'postView.socialSupply') }}
         </span>
         <span class="text-h5 text-black-19">{{ formatAmount(SocialSupply) }}</span>
       </div>
@@ -830,7 +873,11 @@ onBeforeUnmount(() => {
           <span v-else class="text-h5 text-black-19">--</span>
         </div>
       </template>
-      <div v-show="showNutboxInfo || rewardPerDay>-1" class="flex justify-between items-center h-6">
+      <div v-if="isV13" class="flex justify-between items-center h-6">
+        <span class="text-h4 text-grey-93">{{$t('postView.rewardPerDay')}}</span>
+        <span class="text-h5 font-medium text-orange-normal" :title="$t('v13Page.dailyRewardsHelp')">{{ v13DailyRewards === undefined ? '—' : formatAmount(Number(formatUnits(v13DailyRewards, 18))) }}</span>
+      </div>
+      <div v-else v-show="showNutboxInfo || rewardPerDay>-1" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.rewardPerDay')}}</span>
         <div class="flex items-center gap-2">
           <span class="text-h5 font-medium italic text-orange-normal underline cursor-pointer"
@@ -846,6 +893,7 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
+      <slot name="info-footer" />
     </div>
     <!-- <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
       <div class="text-h2 mb-2">Tweet Pool</div>
@@ -903,9 +951,9 @@ onBeforeUnmount(() => {
         :offset="50"
         @load="onLoad"
       >
-      <div class="grid grid-cols-5 gap-x-2 h-8 items-center text-h4"
+      <div class="grid grid-cols-5 gap-x-2 min-h-8 py-1 items-center text-h4"
            v-for="(holder, i) of holdingList" :key="i">
-          <div class="col-span-3 truncate flex items-center gap-1">
+          <div class="col-span-3 min-w-0 flex flex-wrap items-center gap-1">
             <span class="min-w-4">{{i + 1}}</span>
             <UserAvatar :profile-img="holder.profile" :name="holder.twitterName" :username="holder.twitterUsername"
                     :followers="holder.followers" :followings="holder.followings"
@@ -919,10 +967,11 @@ onBeforeUnmount(() => {
               </template>
             </UserAvatar>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar-v2.png" alt=""> -->
-            <span class="">{{ formatAddress(holder.ethAddr) }}</span>
+            <span class="whitespace-nowrap">{{ formatAddress(holder.ethAddr) }}</span>
+            <span v-if="v13HolderLabel(holder.ethAddr)" class="max-w-full truncate text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full" :title="v13HolderLabel(holder.ethAddr)">{{ v13HolderLabel(holder.ethAddr) }}</span>
             <AccountOriginBadges :sources="holder.accountSources" :account-type="holder.accountType" :wallet-type="holder.walletType" :eth-addr="holder.ethAddr" />
-            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.token" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.contract') }}</span>
-            <span v-show="holder.ethAddr == comStore.currentSelectedCommunity.creator" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.deployer') }}</span>
+            <span v-show="isSameAddr(holder.ethAddr, comStore.currentSelectedCommunity.token)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.contract') }}</span>
+            <span v-show="isSameAddr(holder.ethAddr, comStore.currentSelectedCommunity.creator)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.deployer') }}</span>
             <!-- v9：PCS V4 流动性合约 -->
             <span v-show="isNativePumpNutbox && isPcsV4Holder(holder.ethAddr)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.pcsV4') }}</span>
             <!-- 旧版 Uniswap V2 pair -->

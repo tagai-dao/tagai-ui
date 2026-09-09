@@ -4,9 +4,11 @@ import { computed, reactive, ref, watch, onMounted } from "vue";
 import { GlobalModalType, type CreateCommunity } from "@/types";
 import { BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
-import { getReadOnlyClient } from '@/utils/wallets'
 import CreateV13Fields from './CreateV13Fields.vue'
 import { creationOptions, creationFee, validateIndexConfig, type CreationOptions } from '@/utils/v13/creation'
+import { enqueueV13Registration } from '@/utils/v13/registration-sync'
+import { IndexConfigValidationError } from '@/utils/v13/index-config'
+import { preparePumpDeploySalt } from '@/utils/pumpSalt'
 import type { V13IndexConfig } from '@/types'
 import ChoseWallet from "../login/ChoseWallet.vue";
 import { useAccount } from "@/composables/useAccount";
@@ -201,14 +203,14 @@ const chainStore = useChainStore();
 const isV13Creation = computed(() => chainStore.activeChainId === 56 && chainStore.deployment.latestPumpVersion === 13)
 const indexTickTooLong = computed(() => isV13Creation.value && new TextEncoder().encode(createForm.tick).length > 16)
 const indexForm = ref<V13IndexConfig>({ name:'',symbol:'',constituentAssets:[],targetWeights:[],basketFeeBps:100,creatorShareBps:0,retainCommunityOwnership:false })
+const createValidationKey = ref('')
+watch(indexForm, () => { createValidationKey.value = '' }, { deep: true, flush: 'sync' })
 watch(() => createForm.tick, tick => {
   indexForm.value = { ...indexForm.value, name: tick, symbol: tick }
 }, { immediate: true, flush: 'sync' })
 const v13Options = ref<CreationOptions>()
 const v13OptionsError = ref('')
 const v13OptionsLoading = ref(false)
-const v13Pending = ref(false)
-const pendingKey = () => `createTokenForm:${chainStore.activeChainId}:${accStore.ethConnectAddress?.toLowerCase()}`
 let optionsSequence = 0
 async function loadV13Options() {
   const seq = ++optionsSequence
@@ -248,6 +250,9 @@ const savePendingImport = () => localStorage.setItem('importTokenForm', JSON.str
 } satisfies PendingImport))
 
 const accStore = useAccountStore();
+watch(() => [accStore.ethConnectAddress, chainStore.activeChainId, chainStore.deployment.latestPumpVersion], () => {
+  if (isAddress(accStore.ethConnectAddress)) void preparePumpDeploySalt(accStore.ethConnectAddress as `0x${string}`).catch(() => {})
+}, {immediate:true})
 const inputTag = ref("");
 const addTagTip = ref("");
 
@@ -292,7 +297,6 @@ async function refreshCreateFee() {
 }
 
 watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], () => {
-  v13Pending.value = !!localStorage.getItem(pendingKey())
   void loadV13Options(); void refreshCreateFee()
 }, { immediate: true })
 watch([v13Options, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
@@ -533,30 +537,15 @@ const clear = () => {
 
 const create = async () => {
   const connetctedEthAddr = accStore.ethConnectAddress;
+  createValidationKey.value = ''
   try {
     createLoading.value = true;
-    // Retry registration before considering another on-chain creation.
-    const key = pendingKey()
-    const pending = isV13Creation.value && localStorage.getItem(key)
-    if (pending) {
-      const saved = JSON.parse(pending)
-      const receipt = await getReadOnlyClient(56).getTransactionReceipt({hash:saved.createHash})
-      if(receipt.status==='reverted'){
-        localStorage.removeItem(key);v13Pending.value=false
-        throw new Error(t('v13Create.reverted'))
-      }
-      const registered = await createCommunity(saved)
-      localStorage.removeItem(key); v13Pending.value = false
-      emitter.emit('newCommunity', {...saved, ...registered})
-      modalStore.setModalCloseEnable(true); modalStore.setModalVisible(false)
-      return
-    }
     // check params
     showInvalidName.value = false
     showLongDesc.value = false
 
     let prevForm:any  = localStorage.getItem('createTokenForm')
-    if (prevForm){
+    if (prevForm && Number(JSON.parse(prevForm).version) !== 13){
       prevForm = JSON.parse(prevForm)
       console.log('prevForm', prevForm)
       if(await checkTickUsed(prevForm.tick)){
@@ -597,13 +586,11 @@ const create = async () => {
     if (showMaxAmount.value) return
     createForm.chainId = chainStore.activeChainId
     createForm.ethAddr = connetctedEthAddr
-    const registrationKey = pendingKey()
     const submittedForm = {...createForm, indexConfig:createForm.indexConfig ? JSON.parse(JSON.stringify(createForm.indexConfig)) : undefined}
     const {createHash, token, version} = await createCoin(submittedForm, (hash, version) => {
       if (version !== 13) return
       const {initAmount,initEth,...saved} = submittedForm
-      localStorage.setItem(registrationKey, JSON.stringify({...saved,createHash:hash,version,token:''}))
-      v13Pending.value = true
+      enqueueV13Registration({...saved,createHash:hash,chainId:56,version:13,token:''})
     });
     Object.assign(createForm, submittedForm)
     createForm.createHash = createHash as string;
@@ -612,17 +599,27 @@ const create = async () => {
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth
-    const storageKey = version === 13 ? registrationKey : 'createTokenForm'
-    localStorage.setItem(storageKey, JSON.stringify(createForm))
+    if (version === 13) {
+      // Submission already persisted the metadata. API retries belong to the
+      // app worker, and must never turn a successful creation into a form error.
+      modalStore.setModalCloseEnable(true)
+      modalStore.setModalVisible(false)
+      return
+    }
+    localStorage.setItem('createTokenForm', JSON.stringify(createForm))
     const registered = await createCommunity(createForm);
     if (registered?.token) createForm.token = registered.token
-    localStorage.removeItem(storageKey); v13Pending.value = false
+    localStorage.removeItem('createTokenForm')
 
     // created token: prepair local data
     emitter.emit('newCommunity', createForm);
     modalStore.setModalCloseEnable(true)
     modalStore.setModalVisible(false)
   } catch (e) {
+    if (e instanceof IndexConfigValidationError) {
+      createValidationKey.value = e.messageKey
+      return
+    }
     const res = handleErrorTip(e)
     console.error('create community fail', res)
 
@@ -653,7 +650,7 @@ onMounted(async () => {
     }
   }
   let prevForm:any  = localStorage.getItem('createTokenForm')
-  if (prevForm){
+  if (prevForm && Number(JSON.parse(prevForm).version) !== 13){
     prevForm = JSON.parse(prevForm)
     console.log('prevForm', prevForm)
     if(await checkTickUsed(prevForm.tick)){
@@ -792,7 +789,7 @@ onMounted(async () => {
           </div>
         </section>
 
-        <CreateV13Fields v-if="isV13Creation" v-model="indexForm" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading || v13Pending" @reload="loadV13Options" />
+        <CreateV13Fields v-if="isV13Creation" v-model="indexForm" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />
         <details class="form-section social-section">
           <summary class="section-title">
             <span>{{ isV13Creation ? '03' : '02' }}</span>
@@ -849,7 +846,6 @@ onMounted(async () => {
           </div>
         </details>
 
-        <p v-if="v13Pending" role="status">{{ t('v13Create.pending') }}</p>
         <section class="form-section purchase-section">
           <div class="section-title">
             <span>{{ isV13Creation ? '04' : '03' }}</span>
@@ -875,13 +871,14 @@ onMounted(async () => {
         </section>
 
         <div class="create-submit">
-          <button type="button" :disabled="createLoading || (isV13Creation && !v13Pending && (!v13Options?.assets.length || v13OptionsLoading))" @click="create">
+          <button type="button" :aria-describedby="createValidationKey ? 'create-validation-error' : undefined" :disabled="createLoading || (isV13Creation && (!v13Options?.assets.length || v13OptionsLoading))" @click="create">
             <span>{{ $t('createCommunity.create') }}</span>
             <svg v-if="!createLoading" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <i-ep-loading v-else class="animate-spin" />
           </button>
+          <p v-if="createValidationKey" id="create-validation-error" class="create-validation-error" role="alert">{{ t(createValidationKey) }}</p>
         </div>
       </div>
 
@@ -1254,6 +1251,7 @@ textarea.field-control { min-height: 90px; resize: vertical; align-items: flex-s
 .purchase-summary em { margin-left: 5px; color: var(--text-base); font-style: normal; font-weight: 750; }
 
 .create-submit { padding: 4px 2px 0; }
+.create-validation-error { margin: 10px 0 0; color: #ef4444; font-size: 12px; line-height: 1.6; }
 .create-submit button { display: flex; width: 100%; height: 50px; align-items: center; justify-content: center; gap: 8px; border-radius: 15px; background: linear-gradient(115deg, #ff9d47, #f0782a 58%, #e96d1d); color: #fff; font-size: 13px; font-weight: 750; box-shadow: 0 14px 30px rgba(240,120,42,.24); transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease; }
 .create-submit button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 17px 36px rgba(240,120,42,.3); }
 .create-submit button:disabled { opacity: .45; cursor: wait; }

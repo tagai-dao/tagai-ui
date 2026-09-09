@@ -344,6 +344,7 @@ export type OnchainTokenInfo = {
   holderCount?: number | null;
   listed?: boolean;
   bondingCurveSupply?: number;
+  listingPending?: boolean;
   totalSupply?: number;
   totalClaimedSocialRewards?: number;
   isImport?: boolean;

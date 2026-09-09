@@ -350,6 +350,7 @@
   },
   "community": {
     "distributionTip": "代币的总量通过三部分进行分配，其中包括：15%用于社交分配，65%用于曲线销售，20%用于进入流动性池。",
+    "distributionTipV13": "代币总量为10亿枚：65%用于内盘曲线销售，15%用于V4主池流动性，5%用于成分代币V2池流动性，15%用于社区奖励（含LP质押挖矿）。进度条仅表示内盘销售进度。",
     "spaceHasCreated": "这个直播space已经被创建并进行策展。",
     "spaceInvalidLink": "这不是一个有效的Space链接",
     "spaceNotYours": "这个Space不是由您创建的",
@@ -1048,6 +1049,10 @@
     "dragRangeHint": "拖动手柄调整价格区间"
   },
   "baskets": {
+    "rebalancePlanChanged": "再平衡方案已随池子状态变化，请重试。",
+    "rebalanceSlippageRange": "滑点请输入 0.01%–{max}%。",
+    "tradeEnterAmount": "请输入数量并等待报价。",
+    "tradeSlippageRange": "滑点请输入 1–{max} bps（100 bps = 1%）。",
     "communityEyebrow": "该代币参与的指数",
     "communityTitle": "包含 {token} 的 Baskets",
     "communityEmpty": "目前没有包含 {token} 的 Basket。",
@@ -1285,6 +1290,7 @@
     "active": "进行中"
   },
   "v13Trade": {
+    "metadataUnavailable": "池子数据暂时无法读取，请稍后刷新报价，无需降低交易金额。",
     "pending": "等待上市，暂不可交易",
     "notListed": "此交易入口仅用于已上市代币",
     "unavailable": "当前路线无法完成报价，请刷新或降低金额",
@@ -1296,6 +1302,14 @@
     "refresh": "刷新报价"
   },
   "v13Create": {
+    "validation": {
+      "required": "请先填写指数配置。",
+      "name": "指数名称须为 1–64 字节，指数简称须为 1–16 字节。",
+      "assets": "请选择 1–4 种有效且不重复的成分资产。",
+      "weights": "每种成分资产的占比须大于 0%，合计为 100%。",
+      "fee": "指数交易费率须在 1%–3% 之间。",
+      "creatorShare": "创建者分配比例须在 0%–30% 之间。"
+    },
     "tickTooLong": "代币 tick 过长，无法同时用作指数简称，请缩短后再创建。",
     "reverted": "上次创建交易已回滚，恢复记录已清除。请检查参数后重新创建。",
     "title": "指数与流动性奖励",
@@ -1356,7 +1370,48 @@
     "totalFeeRange": "总费率请填写 1%–3%。",
     "allocationRules": "图中比例按总手续费计算，显示至一位小数，实际收益以合约结算为准。平台份额用于拍卖，其余按创建者、持有者、前端和发行方分配。未指定前端、没有持有者或销毁地址对应的收益，会按合约规则转给发行方。"
   },
+  "v13Index": {
+    "totalBought": "累计回购指数",
+    "rewardBalance": "指数奖励储备",
+    "walletBalance": "我的指数余额",
+    "rewardHelp": "回购的指数按社区代币持仓规则分配，领取后进入你的钱包。",
+    "claimReward": "领取奖励",
+    "buybackTitle": "指数回购",
+    "buybackHelp": "使用协议累计的 BNB 储备回购，触发者仅支付网络 Gas。",
+    "estimatedIndex": "预计回购",
+    "minimumIndex": "最低收到",
+    "preview": "预估回购",
+    "execute": "执行回购",
+    "pending": "上市完成后开放指数回购和奖励领取。",
+    "emptyReserve": "暂无可回购的 BNB 储备。",
+    "expired": "储备或报价已更新，请重新预估回购。",
+    "routerUnavailable": "回购路由尚未就绪，请稍后重试。",
+    "tooSmall": "当前储备太少，无法生成有效的最低到账。",
+    "cancelled": "已取消操作。",
+    "operationFailed": "操作未完成，请刷新后重试。",
+    "buybackDone": "回购完成，指数奖励已入账。",
+    "claimDone": "奖励已领取到你的钱包。"
+},
   "v13Page": {
+    "poolBurnDescription": "成分池交易会扣除 0.1% 的 {symbol}，并直接销毁。",
+    "totalBurned": "累计销毁",
+    "burnSource": "按销毁地址持有的社区代币余额统计。",
+    "liquidityRatioChanged": "池子比例已变化，请确认更新后的数量后重试。",
+    "linkedIndex": "关联指数",
+    "holderV4Vault": "V4 主池金库",
+    "holderV4Manager": "V4 池管理器",
+    "holderComponentPool": "{asset} 流动性池",
+    "holderStakingPool": "{asset} LP 质押池",
+    "rewardReserve": "矿池奖励储备",
+    "dailyRewardsHelp": "按链上当前小时起的 24 小时计算，扣除协议费，包含所有 LP 矿池。",
+    "apr": "APR",
+    "aprHint": "以未来 24 小时净奖励 × 365 年化，除以质押 LP 的 T 等值（对应 T 数量 × 2）。奖励和质押量变化时 APR 会变化。",
+    "aprEmpty": "暂无质押，APR 暂不可计算。",
+    "aprUnavailable": "APR 更新暂不可用，已有数值为上次结果。",
+
+    "active": "运行中",
+    "inactive": "已关闭",
+    "collapse": "收起操作",
     "quotingLp": "正在计算预计 LP…",
     "estimatedLp": "预计获得",
     "minimumLp": "最低获得（已计滑点）",
@@ -1405,8 +1460,34 @@
     "index": "查看关联指数",
     "dividend": "待领取指数分红",
     "poolsHelp": "LP 质押与流动性操作位于社区“玩法 → LP 矿池”。",
+    "poolAction": "矿池操作",
+    "dualAdd": "双代币添加流动性",
+    "requiredAsset": "需提供的 {symbol}",
+    "assetRatioHelp": "根据当前池子比例自动计算，添加流动性需要同时提供这两种代币。",
+    "insufficientBalance": "{symbol} 余额不足",
     "bnbAdd": "使用 BNB 添加流动性",
     "routerPending": "流动性合约尚未配置。已有 LP 可继续质押或解除质押。",
     "quote": "计算加池方案"
-  }
+  },
+  "v13Operation": {
+    "title": "操作提示",
+    "cancelled": "已取消操作。",
+    "expired": "交易已过期，请重试。",
+    "slippage": "价格已变化，触发滑点保护。请刷新报价后重试。",
+    "balance": "余额不足，请检查代币及 BNB 余额。",
+    "transfer": "代币转账未完成，请检查余额和授权后重试。",
+    "wallet": "钱包或网络已变化，请重新连接 BSC 钱包。",
+    "pool": "当前池子暂不可用，请刷新后重试。",
+    "amount": "数量无效或过小，请调整后重试。",
+    "network": "网络暂时不可用，请稍后重试。",
+    "failed": "操作未完成，请稍后重试。"
+  },
+  "auctionCountdown": {
+    "remaining": "距拍卖结束",
+    "lastMinute": "最后 1 分钟",
+    "hours": "时",
+    "minutes": "分",
+    "seconds": "秒"
+  },
+  "v13ClaimAll": {"button": "一键领取奖励", "pending": "领取中…", "success": "矿池奖励已领取", "empty": "当前没有可领取的矿池奖励"}
 }

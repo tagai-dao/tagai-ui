@@ -18,7 +18,7 @@ import { useChainStore } from '@/stores/chain';
 import { getReadOnlyClient } from "./wallets";
 import { buyTokenV4, sellTokenV4, poolKeyToPoolId, resolveV4PoolId, resolveV4PoolKeyForTrade, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
 import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice, resolveRhV4PoolKeyForTrade } from "./rhV4Swap";
-import { findPumpDeploySalt, getCreatePumpDeployment, verifyPumpSaltVanity } from "./pumpSalt";
+import { findPumpDeploySalt, getCreatePumpDeployment } from "./pumpSalt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
 import { CHAINS } from '@/config/chains'
 
@@ -291,11 +291,13 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
     const createPump = getCreatePumpDeployment();
     if (createPump.version === 13) validateIndexConfig(createParms.indexConfig);
-    const salt = await findPumpDeploySalt(userAddress);
-    // 部署前链上二次校验，防止本地缓存 salt 或 predict 偏差导致非靓号地址
-    await verifyPumpSaltVanity(userAddress, salt);
-    const createFee = await getCreatePumpFee(userAddress, createParms.indexConfig?.constituentAssets.length ?? 1);
-    const initEth = createParms.initAmount ? await calculateInitEth(createParms.initAmount) : 0n;
+    // Salt search verifies the predicted suffix and current on-chain occupancy.
+    // Independent fee / initial-buy reads need not wait for that computation.
+    const [salt, createFee, initEth] = await Promise.all([
+        findPumpDeploySalt(userAddress),
+        getCreatePumpFee(userAddress, createParms.indexConfig?.constituentAssets.length ?? 1),
+        createParms.initAmount ? calculateInitEth(createParms.initAmount) : Promise.resolve(0n),
+    ]);
     if (useChainStore().activeChainId !== createPump.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Wallet or chain changed');
 
     let hash = await writeContract({
@@ -1660,7 +1662,9 @@ export const getTokenInfo = async (communities: Community[]) => {
         if (tokenInfo) {
             community.listed = tokenInfo.listed;
             community.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
-            community.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
+            // V13 has no legacy fixed social-distribution counter.
+            community.totalClaimedSocialRewards = Number(tokenInfo.totalClaimedSocialRewards ?? 0n) / 1e18;
+            if (tokenInfo.listingPending !== undefined) community.listingPending = tokenInfo.listingPending;
             community.price = tokenInfo.price;
             community.marketCap = ((community.price ?? 0) * TotalSupply);
             if (!isPcsV4Version(community.version ?? 2)) {
@@ -1736,7 +1740,8 @@ export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
             }else if (tokenInfo) {
                 tweet.listed = tokenInfo.listed;
                 tweet.bondingCurveSupply = tokenInfo.bondingCurveSupply.toString() / 1e18;
-                tweet.totalClaimedSocialRewards = tokenInfo.totalClaimedSocialRewards.toString() / 1e18;
+                tweet.totalClaimedSocialRewards = Number(tokenInfo.totalClaimedSocialRewards ?? 0n) / 1e18;
+                if (tokenInfo.listingPending !== undefined) tweet.listingPending = tokenInfo.listingPending;
                 tweet.price = tokenInfo.byUSD ? tokenInfo.price / stateStore.ethPrice : tokenInfo.price;
                 tweet.marketCap = ((tweet.price ?? 0) * TotalSupply);
                 if (!isPcsV4Version(tweet.version ?? 2)) {

@@ -1,4 +1,56 @@
 {
+  "v13Index": {
+    "totalBought": "Total indeks dibeli kembali",
+    "rewardBalance": "Cadangan imbalan indeks",
+    "walletBalance": "Saldo indeks saya",
+    "rewardHelp": "Indeks hasil pembelian kembali dibagikan sesuai aturan kepemilikan token komunitas dan masuk ke dompet setelah diklaim.",
+    "claimReward": "Klaim imbalan",
+    "buybackTitle": "Pembelian kembali indeks",
+    "buybackHelp": "Menggunakan cadangan BNB protokol. Pemicu hanya membayar gas jaringan.",
+    "estimatedIndex": "Estimasi pembelian kembali",
+    "minimumIndex": "Minimum diterima",
+    "preview": "Pratinjau pembelian",
+    "execute": "Jalankan pembelian",
+    "pending": "Pembelian kembali dan klaim dibuka setelah listing.",
+    "emptyReserve": "Belum ada cadangan BNB untuk pembelian kembali.",
+    "expired": "Cadangan atau kuotasi berubah. Buat estimasi lagi.",
+    "routerUnavailable": "Rute belum siap. Coba lagi nanti.",
+    "tooSmall": "Cadangan terlalu kecil untuk minimum keluaran yang valid.",
+    "cancelled": "Operasi dibatalkan.",
+    "operationFailed": "Operasi belum selesai. Segarkan dan coba lagi.",
+    "buybackDone": "Pembelian kembali selesai dan imbalan dikreditkan.",
+    "claimDone": "Imbalan dikirim ke dompet Anda."
+},
+  "v13Page": {
+    "poolBurnDescription": "Transaksi pool komponen memotong 0,1% {symbol} dan langsung membakarnya.",
+    "totalBurned": "Total dibakar",
+    "burnSource": "Saldo token komunitas di alamat pembakaran.",
+    "liquidityRatioChanged": "Rasio pool berubah. Periksa jumlah terbaru dan coba lagi.",
+    "linkedIndex": "Indeks terkait",
+    "holderV4Vault": "Vault likuiditas V4",
+    "holderV4Manager": "Pengelola pool V4",
+    "holderComponentPool": "Pool likuiditas {asset}",
+    "holderStakingPool": "Staking LP {asset}",
+    "rewardReserve": "Cadangan imbalan mining",
+    "dailyRewardsHelp": "Estimasi imbalan semua pool LP selama 24 jam dari jam on-chain saat ini, setelah biaya protokol.",
+    "apr": "APR",
+    "aprHint": "Imbalan bersih 24 jam berikutnya × 365 / nilai LP yang di-stake dalam T (cadangan T-nya × 2). APR berubah sesuai imbalan dan stake.",
+    "aprEmpty": "Belum ada stake; APR belum dapat dihitung.",
+    "aprUnavailable": "Pembaruan APR tidak tersedia. Nilai sebelumnya tetap ditampilkan.",
+
+    "poolAction": "Tindakan pool",
+    "dualAdd": "Tambah kedua token",
+    "requiredAsset": "{symbol} yang diperlukan",
+    "assetRatioHelp": "Dihitung dari rasio pool saat ini. Sediakan kedua token untuk menambah likuiditas.",
+    "insufficientBalance": "Saldo {symbol} tidak cukup",
+
+    "active": "Aktif",
+    "inactive": "Ditutup",
+    "collapse": "Tutup tindakan"
+  },
+  "v13Trade": {
+    "metadataUnavailable": "Data pool sementara tidak tersedia. Segarkan kuotasi sebentar lagi; jumlah transaksi tidak perlu dikurangi."
+  },
   "Square": "Beranda",
   "Proposal": "Proposal",
   "Trades": "Perdagangan",
@@ -354,6 +406,7 @@
   },
   "community": {
     "distributionTip": "Total suplai token didistribusikan dalam tiga bagian: 15% distribusi sosial, 65% penjualan bonding curve, dan 20% masuk pool likuiditas",
+    "distributionTipV13": "Total pasokan adalah 1 miliar token: 65% untuk penjualan melalui bonding curve, 15% untuk likuiditas pool utama V4, 5% untuk likuiditas pool V2 token konstituen, dan 15% untuk imbalan komunitas, termasuk imbalan staking LP. Bilah progres hanya menunjukkan kemajuan penjualan melalui bonding curve.",
     "spaceHasCreated": "Space ini sudah memiliki kurasi.",
     "spaceInvalidLink": "Bukan tautan space yang valid",
     "spaceNotYours": "Space ini bukan buatanmu",
@@ -1025,6 +1078,10 @@
     "dragRangeHint": "Seret handle untuk menyesuaikan rentang harga"
   },
   "baskets": {
+    "rebalancePlanChanged": "Kondisi pool mengubah rencana penyeimbangan. Silakan coba lagi.",
+    "rebalanceSlippageRange": "Masukkan slippage 0,01%–{max}%.",
+    "tradeEnterAmount": "Masukkan jumlah dan tunggu penawaran.",
+    "tradeSlippageRange": "Masukkan slippage 1–{max} bps (100 bps = 1%).",
     "menu": "Baskets",
     "title": "Baskets",
     "subtitle": "Temukan dan perdagangkan basket token di {network}",
@@ -1174,5 +1231,36 @@
     "rebalanceUnavailable":"Perlu upgrade","rebalanceHighFeeBlocked":"Fee {assets} sama dengan atau di atas batas 3% executor. Kontrak perlu di-upgrade.","rebalanceSlippageError":"Salah satu aset melewati batas slippage on-chain.","rebalanceCooldownError":"Cooldown satu jam belum selesai.","rebalanceNotNeededError":"Deviasi on-chain tidak lagi melewati ambang.","rebalanceToleranceError":"Bobot akhir tidak mencapai toleransi yang diwajibkan.","rebalanceNavLossError":"Perkiraan rugi NAV melebihi 3%.","rebalanceCreatorError":"Hanya dompet kreator yang dapat rebalance.",
     "backToBasket":"Kembali ke basket","viewFeeDetails":"Detail biaya","maxWeightDeviation":"Deviasi bobot maksimum","rebalanceAvailable":"Ambang rebalance 3% telah terlampaui.","weightsHealthy":"Bobot masih dalam ambang batas.","rebalanceCooldown":"Tersedia dalam {minutes} mnt","rebalance":"Rebalance","rebalancing":"Rebalance…","feeCenter":"Pusat biaya","feeCenterTitle":"Biaya dan lelang buyback","feeCenterSubtitle":"Lihat alokasi, klaim biaya, dan ikuti lelang buyback TagAgent.","feeComposition":"Alokasi setiap biaya transaksi","feeBuybackDescription":"Mendanai buyback TagAgent; token yang dibeli dikirim ke dead address.","feeFrontendDescription":"Untuk alamat referral yang ditentukan; bila kosong dialihkan ke launcher.","feeLauncherDescription":"Alokasi launcher protokol.","feeCreatorDescription":"Terakumulasi untuk alamat pembayaran kreator.","feeHoldersDescription":"Dibagikan proporsional kepada holder yang memenuhi syarat.","feeClaims":"Biaya dapat diklaim","connectWallet":"Hubungkan dompet","publicClaimHint":"Siapa pun dapat mengeksekusi klaim; dana selalu dikirim ke penerima yang tercatat.","holderClaim":"Biaya holder Anda","frontendClaim":"Imbalan referral Anda","creatorClaim":"Biaya kreator","launcherClaim":"Biaya launcher","claiming":"Mengklaim…","claim":"Klaim","executeClaim":"Eksekusi klaim","buybackAuction":"Pool buyback TagAgent","liveOnChain":"Live on-chain","availableBuybackPool":"Dana tersedia","auctionRange":"Rentang lot","basketFeeReserve":"Cadangan biaya Basket","activeAuction":"Lelang aktif","readyToSettle":"Siap diselesaikan","endsAt":"Berakhir {time}","ethLot":"Lot ETH","highestBid":"Bid tertinggi","highestBidder":"Penawar tertinggi","settling":"Menyelesaikan…","settleAuction":"Selesaikan lelang","bidding":"Menawar…","placeBid":"Ajukan bid","startAuction":"Mulai lelang","startAuctionHint":"Perkiraan bid awal: {amount} {symbol}. Kontrak memakai 90% harga spot.","startingAuction":"Memulai…","bidTokenBalance":"Saldo dompet","refundableBid":"Saldo bid dapat ditarik","claimableAuctionEth":"ETH dapat diklaim","withdrawAmount":"Jumlah (kosong = semua)","withdrawBid":"Tarik token bid","claimAuctionEth":"Klaim ETH","auctionHistory":"Riwayat lelang","noAuctions":"Belum ada lelang.","winningBid":"Bid akhir / saat ini","winner":"Pemenang / pemimpin","settled":"Selesai","awaitingSettlement":"Menunggu penyelesaian","active":"Aktif"
     ,"buidlBuybackPool":"Pool buyback BUIDL"
-  }
+  },
+  "v13Create": {
+    "validation": {
+      "required": "Isi konfigurasi indeks sebelum membuatnya.",
+      "name": "Masukkan nama indeks sepanjang 1–64 byte dan simbol sepanjang 1–16 byte.",
+      "assets": "Pilih 1–4 aset penyusun yang valid dan berbeda.",
+      "weights": "Alokasi setiap aset harus lebih dari 0%, dengan total 100%.",
+      "fee": "Biaya perdagangan indeks harus antara 1% dan 3%.",
+      "creatorShare": "Bagian kreator harus antara 0% dan 30%."
+    }
+  },
+  "v13Operation": {
+    "title": "Pemberitahuan operasi",
+    "cancelled": "Operasi dibatalkan.",
+    "expired": "Transaksi kedaluwarsa. Silakan coba lagi.",
+    "slippage": "Harga berubah dan perlindungan slippage aktif. Perbarui penawaran lalu coba lagi.",
+    "balance": "Saldo tidak cukup. Periksa saldo token dan BNB Anda.",
+    "transfer": "Transfer token gagal. Periksa saldo dan persetujuan lalu coba lagi.",
+    "wallet": "Dompet atau jaringan berubah. Hubungkan kembali dompet BSC Anda.",
+    "pool": "Pool ini sedang tidak tersedia. Muat ulang lalu coba lagi.",
+    "amount": "Jumlah tidak valid atau terlalu kecil. Sesuaikan lalu coba lagi.",
+    "network": "Jaringan sementara tidak tersedia. Coba lagi nanti.",
+    "failed": "Operasi tidak dapat diselesaikan. Coba lagi nanti."
+  },
+  "auctionCountdown": {
+    "remaining": "Lelang berakhir dalam",
+    "lastMinute": "Menit terakhir",
+    "hours": "JAM",
+    "minutes": "MNT",
+    "seconds": "DTK"
+  },
+  "v13ClaimAll": {"button": "Klaim semua hadiah", "pending": "Mengklaim…", "success": "Hadiah pool berhasil diklaim", "empty": "Tidak ada hadiah pool untuk diklaim"}
 }

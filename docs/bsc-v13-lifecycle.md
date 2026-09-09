@@ -8,7 +8,13 @@ BSC 创建入口使用 Pump13 和对应 Token implementation，保留旧版本�
 
 权重合计 10000 bps；指数费率 100–300 bps；创建者分成 0–3000 bps，是指数交易费的内部份额。名称最多 64 UTF-8 字节，符号最多 16 字节。固定费用为 Pump fee + 尚未创建时的 IPShare fee + Community fee + 成分数量 × settings fee；初始买入另计。实际创建前重新读费用、校验 salt 和模拟交易。
 
-钱包返回 hash 后、等待确认前，保存 `createTokenForm:<chainId>:<account>`。确认成功后提交 `POST /pump/v13/register`，API 只使用真实 receipt 里的合约地址及配置。恢复记录仅在登记成功或确认交易回滚后清除；RPC 超时、API 失败、刷新页面都保留原 hash，不重复部署。Basket 创建使用 `basket-registration:<chainId>:<account>`，恢复时使用原来的协议版本。
+钱包返回 hash 后、等待确认前，将 V13 创建元数据保存到后台上传队列 `v13-registration:<API 与链作用域>:<hash>`。每笔交易独立保存，避免同一账户再次创建覆盖前一笔待上传数据。链上确认成功即关闭创建窗口；API 上传不阻塞创建、不弹出补录错误、不锁定新表单。
+
+应用启动后自动处理队列：先检查 receipt，成功后调用 `POST /pump/v13/register`；API 根据真实 receipt 校验地址和配置并幂等入库。失败按 5 秒起、最多 5 分钟的退避间隔静默重试，单次 API 请求超时 10 秒；联网、页面重新可见、刷新后再次启动都会检查到期待办项。只在 API 成功或链上明确回滚后清除记录，成功后触发社区列表刷新。后台任务不调用钱包写操作，也不重新部署。旧 `createTokenForm:<chainId>:<account>` 的 V13 待补录记录自动迁移，无须点击创建。
+
+关闭页面期间不会执行浏览器任务，再次打开后续传；手动清除网站存储会丢失尚未同步的元数据，浏览器存储不可用时只能在当前会话保留待办。Basket 创建现有恢复记录仍使用 `basket-registration:<chainId>:<account>`，恢复时使用原来的协议版本。
+
+队列回归：`node --test scripts/test-v13-registration.mjs`，覆盖上传失败后刷新恢复、退避、多笔创建、回滚、旧记录迁移、环境隔离和并发触发。
 
 ## 详情、交易与矿池
 
@@ -25,7 +31,7 @@ BSC 创建入口使用 Pump13 和对应 Token implementation，保留旧版本�
 
 ### 输入金额后的 LP 预估
 
-前端沿用 Worker 链下报价，无需新增合约 view 报价接口。BNB 输入停止 400 毫秒后自动更新，展示预计 LP、按所选滑点计算的最低 LP 和预计 BNB 退款；另保留手动刷新，每 20 秒在空闲时刷新报价。输入/成分/账户/链变更时清除旧结果并取消尚未完成的报价，离开页面终止 Worker。滑点变化只重算本地最低 LP，不触发新的 RPC。报价未完成、执行器未配置或滑点无效时不能提交。
+前端沿用 Worker 链下报价，无需新增合约 view 报价接口。BNB 输入停止 400 毫秒后自动更新，展示预计 LP 和按所选滑点计算的最低 LP；BNB 分配路径与预计退款保留在报价数据中，不在操作卡片展示；另保留手动刷新，每 20 秒在空闲时刷新报价。输入/成分/账户/链变更时清除旧结果并取消尚未完成的报价，离开页面终止 Worker。滑点变化只重算本地最低 LP，不触发新的 RPC。报价未完成、执行器未配置或滑点无效时不能提交。
 
 LP 预估使用兑换后的资产数量和池子储备，计入加池转账税，按两侧可支持的 LP 中较小值估算。最终以交易执行结果为准，合约仍校验实际 LP 余额增加不少于 minLP。
 
@@ -35,9 +41,21 @@ LP 预估使用兑换后的资产数量和池子储备，计入加池转账税�
 
 卖出检查实际 BNB 余额增长、原资产消费量，授权仅本次金额，成交后归零。无法达到最低到账则整笔回滚，包括已生成的 LP。最低可兑换金额不足 1 wei BNB 的舍入零头原币返还并发 DustRefund 事件；不会无限留在合约，也不会为零输出强行提交兑换。最终 NativeRefund 事件记录本次原生币退款，不包含合约原有余额。
 
-本轮仅更新前端和流动性辅助合约；API metadata 接口不变。尚未部署的辅助合约应使用这一版 ABI/字节码。
+辅助合约已部署，地址见下文前端配置；API metadata 接口不变。
 
 ## Basket V4
+
+### V13 社区关联指数面板
+
+“玩法 → 指数篮子”对 V13 仅展示自身关联指数，使用 `V13IndexRewards.vue`；旧版本继续使用包含该代币的 Basket 列表。代币信息卡片底部保留关联指数详情链接。
+
+面板直接读取 Token 保存的 `indexToken` / `listingHook`、Hook 的 `buybackBnbReserve`、Token 的 `totalIndexRewardsNotified` / `pendingBuybackReward`，以及指数奖励储备和钱包余额。API 仅补充名称、成分和权重，奖励读取不依赖索引同步。后台刷新保留已有数字。
+
+回购使用协议储备，用户钱包仅支付 Gas。先验证 Pump 当前 buybackRouter 的 Pump、NutboxRouter、BasketSwapRouter 和结算币绑定与前端 V4 配置一致；精确报价 BNB→结算币，再计算各成分最低到账。完整 Hook 回购通过 eth_call 预估，最终发送参数同时保护结算币、各成分和指数输出；首次铸造同样设置各成分下限。最终报价再模拟一次，发送前拒绝超过 60 秒或储备、账户、关联指数发生变化的报价。最终调用为 `Hook.executeBuyback(token,minIndexOut,deadline,abi.encode(minSettlementOut,basketTradeData))`，钱包发送的 value 为 0。
+
+领取调用 `Token.claimBuybackReward(当前钱包)`，奖励直接进入当前钱包。回购和领取确认成功后刷新链上数据；未上市、无储备或无奖励时禁用对应操作。
+
+验证：`node --test scripts/test-v13-buyback.mjs`（7 项），类型检查、Vue 编译及浏览器报价展示。dddd 的本地 fork 只读模拟得到约 15.027123 枚指数；同一 eth_call 中完成回购→为现有持有人领取→检查钱包余额增量，并确认模拟前后持久状态未变化。此验证没有提交钱包交易。
 
 UI 与 API 的 BSC 默认创建版本为 4；V2/V3 地址映射保留。V4 的交易、调仓路由和费用路径使用对应部署；共有 ABI 函数和事件已逐项对照 V4 编译 artifact 的 selector 与返回类型。完整 ABI 位于 `src/utils/v13/Basket*4.json`。
 
@@ -61,4 +79,24 @@ UI 与 API 的 BSC 默认创建版本为 4；V2/V3 地址映射保留。V4 的�
 - Solidity 交易执行器与流动性辅助合约本地单测，覆盖滑点回滚、退款、历史余额隔离、subject、LP 收款人和配比 fuzz。
 - 浏览器实际渲染新创建配置组件并检查中文表单。未连接真实钱包、未签名、未把本地模拟等同于链上端到端验收。
 
-上述发布与钱包联调尚未执行，因此不能将本次代码完成表述为“已经上线并完整验收”。
+本地 Fork 已由用户进行主要钱包流程的人工验收；这不代表主网发布或全部历史版本回归已完成。
+
+### 创建钱包弹窗前的性能
+
+创建表单打开并连接钱包后，在 Web Worker 中提前搜索 `3333` 后缀地址。固定 clone 字节码哈希、CREATE2 输入与 ABI 地址字预先构造；循环仅更新 salt 并计算两个必要哈希。Worker 不可用时按小批次异步搜索，避免主线程长时间阻塞。
+
+准备结果按链、Pump、Token implementation 和创建者隔离。点击提交时仍校验本地预测与链上 `createdTokens`，已被其他页面使用的候选会继续搜索；预计算不发起签名或链上交易。费用和初始购买金额与 salt 准备并行查询，随后仍进行交易模拟、Gas 估算以及账户/链检查。
+
+本地基准：相同 65,536 次搜索从约 1,769 ms 降至 545 ms；此数字仅衡量搜索计算，不代表钱包端总延迟。fork 首次创建模拟仍可能因冷状态读取耗时数秒。回归检查：`node --test scripts/test-pump-salt.mjs`。
+
+
+### 本地 Fork 人工验收后的交互修正
+
+- 创建成功后先保存交易登记任务，API 上传失败在后台静默重试，不要求用户再次创建；Logo 校验豁免仅用于本地测试模式。
+- LP 矿池使用翻转卡片，显示成分 Logo、权重、APR、总质押和我的质押；双资产输入可相互推算，余额及 LP 预估保持紧凑展示。销毁总量读取 T 的销毁地址余额。
+- 矿池区右上方提供“一键领取奖励”：校验成分、Pair、矿池与社区绑定，读取当前钱包待领取奖励，过滤零奖励并去重后，单次调用 `Community.withdrawPoolsRewards(address[])`。协议操作费仅支付一次；确认后刷新各卡片，失败复用简洁通知，不展示原始合约错误。
+- Basket V4 买入使用完整执行路径模拟和逐成分最低到账保护；调仓和流动性交易的 deadline 使用链上时间。无效滑点直接阻止提交。
+- 拍卖使用链上校准的动态倒计时，最后 60 秒红色高亮；到期后切换为待结算。结算与领取 BNB 是两个独立操作。
+- 本地环境启动、检查点恢复、RPC 调度与管理操作见 `local-fork/README.md`。`.local-fork/` 的链快照、社区数据、上传图片及日志不进入版本库；已有人工测试状态下不要运行会重置快照的 `local-fork/check.mjs`。
+
+新增回归测试位于 `scripts/test-v13-*.mjs`、`scripts/test-basket-trade-quote.mjs`、`scripts/test-basket-rebalance.mjs`、`scripts/test-auction-countdown.mjs`；本地工具单测为 `local-fork/rpc-gateway.test.mjs` 和 `local-fork/tick-budget.test.mjs`。

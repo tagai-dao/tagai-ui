@@ -1,0 +1,5 @@
+{
+ "extends":"../tsconfig.app.json",
+ "compilerOptions":{"composite":false,"noEmit":true},
+ "include":["../env.d.ts","../src/**/*","./wallet.ts","./panel.ts","./Panel.vue"]
+}
