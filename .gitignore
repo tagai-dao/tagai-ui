@@ -135,6 +135,10 @@ package-lock.json
 .cursorindexingignore
 _npm_cache/*
 .gstack/
-docs/
+docs/*
+!docs/bsc-v13-lifecycle.md
 # Local Spectrum reference clone
 .tmp-spectrum/
+
+# Local fork state and logs (never production data)
+.local-fork/

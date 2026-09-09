@@ -12,12 +12,12 @@ import { getChainDeployment } from '@/config/chains'
 
 const props = defineProps<{ detail: BasketDetail }>()
 const emit = defineEmits<{ traded: [] }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const modalStore = useModalStore()
 const detailRef = toRef(props, 'detail')
 
 const {
-  side, amountInput, slippageBps, step, txHash, errorMessage,
+  side, amountInput, slippageBps, validSlippage, step, txHash, errorMessage,
   usdgBalance, basketBalance, quote, needsApproval,
   isOnBasketChain, canTradeConfig, account, setMax, setAmountInput, runTrade, resetStep,
 } = useBasketTrade(detailRef)
@@ -32,8 +32,10 @@ const explorerTx = computed(() => {
 })
 
 const balanceLabel = computed(() => {
-  if (side.value === 'buy') return `${formatUnits(usdgBalance.value, deployment.value.settlementDecimals)} ${deployment.value.settlementSymbol}`
-  return `${formatUnits(basketBalance.value, props.detail.decimals)} ${props.detail.symbol}`
+  const buying = side.value === 'buy'
+  const balance = formatUnits(buying ? usdgBalance.value : basketBalance.value, buying ? deployment.value.settlementDecimals : props.detail.decimals)
+  const formatted = Number(balance).toLocaleString(locale.value, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return `${formatted} ${buying ? deployment.value.settlementSymbol : props.detail.symbol}`
 })
 
 const inputToken = computed(() => side.value === 'buy' ? deployment.value.settlementSymbol : props.detail.symbol)
@@ -50,7 +52,7 @@ const isBusy = computed(() => step.value === 'approving' || step.value === 'swap
 const isQuoting = computed(() => step.value === 'quoting')
 const showButtonSpinner = computed(() => isBusy.value || isQuoting.value)
 const tradeDisabled = computed(() => {
-  if (isBusy.value || !isOnBasketChain.value || !canTradeConfig.value || !account.value || !quote.value) return true
+  if (isBusy.value || !validSlippage.value || !isOnBasketChain.value || !canTradeConfig.value || !account.value || !quote.value) return true
   return false
 })
 
@@ -93,10 +95,10 @@ watch(side, () => resetStep())
     </div>
 
     <div class="trade-tabs">
-      <button type="button" :class="{ active: side === 'buy' }" @click="side = 'buy'">
+      <button type="button" :disabled="isBusy" :class="{ active: side === 'buy' }" @click="side = 'buy'">
         {{ $t('buy') }}
       </button>
-      <button type="button" :class="{ active: side === 'sell' }" @click="side = 'sell'">
+      <button type="button" :disabled="isBusy" :class="{ active: side === 'sell' }" @click="side = 'sell'">
         {{ $t('sell') }}
       </button>
     </div>
@@ -104,7 +106,7 @@ watch(side, () => resetStep())
     <div class="amount-box">
       <div class="amount-box__label">
         <span>{{ $t('amount') }}</span>
-        <button type="button" @click="setMax">{{ $t('max') }}</button>
+        <button type="button" :disabled="isBusy" @click="setMax">{{ $t('max') }}</button>
       </div>
       <div class="amount-box__input">
         <input
@@ -168,7 +170,8 @@ watch(side, () => resetStep())
       <span v-else class="button-spinner" />
     </button>
 
-    <p v-if="errorMessage" class="trade-error">{{ errorMessage }}</p>
+    <p v-if="!validSlippage" class="trade-error" role="alert">{{ t('baskets.tradeSlippageRange', { max: BASKET_MAX_SLIPPAGE_BPS }) }}</p>
+    <p v-else-if="errorMessage" class="trade-error" role="alert">{{ errorMessage }}</p>
     <a
       v-if="txHash && explorerTx"
       :href="explorerTx"
@@ -235,7 +238,7 @@ watch(side, () => resetStep())
 .trade-primary.quoting { opacity: .78; cursor: wait; }
 .trade-primary svg { width: 18px; height: 18px; }
 .button-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%; animation: button-spin 700ms linear infinite; }
-.trade-error { margin-top: 10px; color: var(--color-down); font-size: 10px; line-height: 15px; word-break: break-word; }
+.trade-error { margin-top: 10px; color: #e6374d; font-size: 10px; line-height: 15px; word-break: break-word; }
 .tx-link { display: inline-block; margin-top: 10px; color: #e77a27; font-size: 10px; font-weight: 700; }
 .trade-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; color: var(--text-muted); font-size: 9px; }
 .trade-note svg { width: 14px; height: 14px; }

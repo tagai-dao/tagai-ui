@@ -10,7 +10,7 @@ export type ChainDeployment = {
   name: string
   chainId: number
   /** 当前链新创建社区代币使用的 Pump 版本。 */
-  latestPumpVersion: 9 | 11
+  latestPumpVersion: 9 | 11 | 13
   symbol: string
   decimals: number
   browser: string
@@ -66,6 +66,11 @@ export type ChainDeployment = {
   contracts: {
     pump9: `0x${string}`
     tokenImplementation9: `0x${string}`
+    /** V13 executors are configured by the frontend, never selected by API responses. */
+    tradeRouter13?: `0x${string}`
+    liquidityRouter13?: `0x${string}`
+    pump13?: `0x${string}`
+    tokenImplementation13?: `0x${string}`
     pump11: `0x${string}`
     tokenImplementation11: `0x${string}`
     importHelper: `0x${string}`
@@ -104,7 +109,7 @@ export const BSC_CHAIN: ChainDeployment = {
   key: 'bsc',
   name: 'BSC',
   chainId: 56,
-  latestPumpVersion: 11,
+  latestPumpVersion: 13,
   symbol: 'BNB',
   decimals: 18,
   browser: 'https://bscscan.com/',
@@ -147,6 +152,10 @@ export const BSC_CHAIN: ChainDeployment = {
   contracts: {
     pump9: '0x327a473c763bcf0d60CCd6811F832332939110D5',
     tokenImplementation9: '0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16',
+    pump13: '0x2c2f4e8D85c02a065f109c74d9b27186AE65Adfa',
+    tradeRouter13: '0x7D5480C10A98b0Feb4e5fA77aF3F01aE3a5E86F4',
+    liquidityRouter13: '0x2868FDdf7F86041557257c55a79A382536401752',
+    tokenImplementation13: '0xcC8f585593feAb2a27f9e699a6b578d46446c88C',
     pump11: '0x8fEF5b4c0f761a0cc447800e3019B089ac306F28',
     tokenImplementation11: '0xfD40C112F39D372786265a032C546D05Feec4D66',
     importHelper: '0xcCB0f9a9db22cCC29fDd315180F89747118ec296',
@@ -267,6 +276,6 @@ export const getChainPath = (chainId: number, path = ''): string => {
 /** TagAI 自有合约是否已在该链部署（非零地址） */
 export const hasTagAiContracts = (chainId: number): boolean => {
   const { contracts, latestPumpVersion } = getChainDeployment(chainId)
-  const activePump = latestPumpVersion === 11 ? contracts.pump11 : contracts.pump9
-  return activePump !== ZERO && contracts.ipshare3 !== ZERO
+  const activePump = latestPumpVersion === 13 ? contracts.pump13 : latestPumpVersion === 11 ? contracts.pump11 : contracts.pump9
+  return !!activePump && activePump !== ZERO && contracts.ipshare3 !== ZERO
 }

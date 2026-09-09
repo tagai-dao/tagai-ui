@@ -8,15 +8,15 @@ import { encodeAbiParameters, keccak256, zeroAddress } from 'viem'
 import { useChainStore } from '@/stores/chain'
 import { readContract } from './contract'
 import { predictDeterministicAddress } from './ozClones'
+import { searchPumpSalt, type SaltSearchConfig } from './pumpSaltSearch'
 
 const SALT_STORAGE_KEY_PREFIX = 'pump_last_salt_'
 const VANITY_SUFFIX = '3333'
-const MAX_SEARCH = 500_000
 
 type CreatePumpDeployment = {
     chainId: number
-    version: 9 | 11
-    contractName: 'Pump9' | 'Pump11'
+    version: 9 | 11 | 13
+    contractName: 'Pump9' | 'Pump11' | 'Pump13'
     pump: `0x${string}`
     tokenImplementation: `0x${string}`
 }
@@ -24,27 +24,23 @@ type CreatePumpDeployment = {
 export function getCreatePumpDeployment(): CreatePumpDeployment {
     const deployment = useChainStore().deployment
     const version = deployment.latestPumpVersion
-    const pump = version === 11
+    const pump = version === 13 ? deployment.contracts.pump13 : version === 11
         ? deployment.contracts.pump11
         : deployment.contracts.pump9
-    const tokenImplementation = version === 11
+    const tokenImplementation = version === 13 ? deployment.contracts.tokenImplementation13 : version === 11
         ? deployment.contracts.tokenImplementation11
         : deployment.contracts.tokenImplementation9
 
-    if (pump === zeroAddress || tokenImplementation === zeroAddress) {
+    if (!pump || !tokenImplementation || pump === zeroAddress || tokenImplementation === zeroAddress) {
         throw new Error(`Pump V${version} is not deployed on ${deployment.name}`)
     }
     return {
         chainId: deployment.chainId,
         version,
-        contractName: `Pump${version}` as 'Pump9' | 'Pump11',
+        contractName: `Pump${version}` as 'Pump9' | 'Pump11' | 'Pump13',
         pump,
         tokenImplementation,
     }
-}
-
-function encodeSaltBytes32(saltNum: bigint): `0x${string}` {
-    return (`0x${saltNum.toString(16).padStart(64, '0')}`) as `0x${string}`
 }
 
 function addressEndsWithVanity(addr: string): boolean {
@@ -52,16 +48,49 @@ function addressEndsWithVanity(addr: string): boolean {
 }
 
 function getSaltStorageKey(config: CreatePumpDeployment, deployer: string): string {
-    return `${SALT_STORAGE_KEY_PREFIX}${config.chainId}_${config.version}_${deployer.toLowerCase()}`
+    return `${SALT_STORAGE_KEY_PREFIX}${config.chainId}_${config.version}_${config.pump.toLowerCase()}_${config.tokenImplementation.toLowerCase()}_${deployer.toLowerCase()}`
 }
 
 function getLastSaltNum(config: CreatePumpDeployment, deployer: string): bigint {
-    const stored = localStorage.getItem(getSaltStorageKey(config, deployer))
-    return stored ? BigInt(stored) : 0n
+    try {
+        const stored = localStorage.getItem(getSaltStorageKey(config, deployer))
+            ?? localStorage.getItem(`${SALT_STORAGE_KEY_PREFIX}${config.chainId}_${config.version}_${deployer.toLowerCase()}`)
+        return stored && /^\d+$/.test(stored) ? BigInt(stored) : 0n
+    } catch { return 0n }
 }
 
 function saveLastSaltNum(config: CreatePumpDeployment, deployer: string, saltNum: bigint) {
-    localStorage.setItem(getSaltStorageKey(config, deployer), saltNum.toString())
+    try { localStorage.setItem(getSaltStorageKey(config, deployer), saltNum.toString()) } catch { /* On-chain occupancy is authoritative. */ }
+}
+
+let prepared: {key: string; promise: Promise<`0x${string}`>} | undefined
+
+function searchInWorker(config: SaltSearchConfig, start: bigint): Promise<`0x${string}`> {
+    if (typeof Worker === 'undefined') return searchPumpSalt(config, start)
+    return new Promise((resolve, reject) => {
+        let worker: Worker
+        try { worker = new Worker(new URL('./pumpSalt.worker.ts', import.meta.url), {type: 'module'}) }
+        catch { searchPumpSalt(config, start).then(resolve, reject); return }
+        const timer = setTimeout(() => { worker.terminate(); reject(new Error('Pump salt search timed out')) }, 120_000)
+        const finish = () => { clearTimeout(timer); worker.terminate() }
+        worker.onmessage = ({data}) => { finish(); data.error ? reject(new Error(data.error)) : resolve(data.salt) }
+        worker.onerror = () => { finish(); searchPumpSalt(config, start).then(resolve, reject) }
+        worker.postMessage({config, start})
+    })
+}
+
+function preparation(config: CreatePumpDeployment, deployer: `0x${string}`) {
+    const key = getSaltStorageKey(config, deployer)
+    if (prepared?.key === key) return prepared.promise
+    const promise = searchInWorker({...config, deployer}, getLastSaltNum(config, deployer))
+    prepared = {key, promise}
+    void promise.catch(() => { if (prepared?.promise === promise) prepared = undefined })
+    return promise
+}
+
+/** Only local computation: opening a form never requests a signature or uses a salt. */
+export function preparePumpDeploySalt(deployer: `0x${string}`): Promise<`0x${string}`> {
+    return preparation(getCreatePumpDeployment(), deployer)
 }
 
 /** 与当前 Pump.predictTokenAddress(deployer, userSalt) 一致。 */
@@ -106,20 +135,20 @@ export async function verifyPumpSaltVanity(
 /** 搜索可用于当前链最新 Pump.createToken 的 salt。 */
 export async function findPumpDeploySalt(deployer: `0x${string}`): Promise<`0x${string}`> {
     const config = getCreatePumpDeployment()
-    const lastSalt = getLastSaltNum(config, deployer)
-
-    for (let i = 1n; i <= BigInt(MAX_SEARCH); i++) {
-        const saltNum = lastSalt + i
-        const userSalt = encodeSaltBytes32(saltNum)
+    const key = getSaltStorageKey(config, deployer)
+    let candidate = preparation(config, deployer)
+    for (let attempt = 0; attempt < 16; attempt++) {
+        const userSalt = await candidate
+        if (getSaltStorageKey(getCreatePumpDeployment(), deployer) !== key) throw new Error('Creation chain changed')
         const predicted = predictPumpTokenAddressWithConfig(config, deployer, userSalt)
-        if (!addressEndsWithVanity(predicted)) continue
-
+        if (!addressEndsWithVanity(predicted)) throw new Error('Pump salt vanity check failed')
+        // Re-check warmed candidates at submission: another tab may have used it.
         const created = await readContract(config.contractName, 'createdTokens', [predicted]) as boolean
-        if (created) continue
-
-        saveLastSaltNum(config, deployer, saltNum)
+        if (getSaltStorageKey(getCreatePumpDeployment(), deployer) !== key) throw new Error('Creation chain changed')
+        saveLastSaltNum(config, deployer, BigInt(userSalt))
+        if (prepared?.key === key) prepared = undefined
+        if (created) { candidate = searchInWorker({...config, deployer}, BigInt(userSalt)); continue }
         return userSalt
     }
-
-    throw new Error(`Failed to find a valid Pump V${config.version} deploy salt within search limit`)
+    throw new Error('Pump salt candidates already used; reopen the creation form')
 }

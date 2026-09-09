@@ -9,13 +9,17 @@ type DexPair = {
 }
 
 const resolvedLogos = new Map<string, Promise<string | null>>()
+// Artwork for assets outside the basket creation presets, keyed by contract address.
+const additionalLogos: Record<string, string> = {
+  '56:0x4ef9d3062c7f6eba4aae4990c5036598c6eff4ec': 'https://cdn.dexscreener.com/cms/images/9aXX9QHCoJuiPI59?width=800&height=800&quality=95&format=auto',
+}
 
 const chainSlug = (chainId: number) => chainId === 56 ? 'bsc' : chainId === 4663 ? 'robinhood' : ''
 
 export function presetBasketAssetLogo(chainId: number, address: string): string | null {
   const normalized = address.toLowerCase()
   return getBasketDeployment(chainId).assetPresets
-    .find(asset => asset.address.toLowerCase() === normalized)?.logoUrl ?? null
+    .find(asset => asset.address.toLowerCase() === normalized)?.logoUrl ?? additionalLogos[`${chainId}:${normalized}`] ?? null
 }
 
 /**

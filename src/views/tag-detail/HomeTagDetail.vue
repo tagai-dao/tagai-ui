@@ -6,6 +6,9 @@ import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType, type Tweet} from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import PredictIndex from '@/views/tag-detail/Prediction/Index.vue';
+import V13TokenPanel from './V13TokenPanel.vue'
+import V13IndexLink from './V13IndexLink.vue'
+import V13IndexRewards from './V13IndexRewards.vue'
 const CreditIndex = defineAsyncComponent(() => import('@/views/tag-detail/Credit/Index.vue'))
 const TagToken = defineAsyncComponent(() => import('@/views/tag-detail/TagToken.vue'))
 import SpcxbLiquidity from "@/views/tag-detail/SpcxbLiquidity.vue";
@@ -72,6 +75,7 @@ watch(
   { immediate: true },
 )
 
+const isV13Token = computed(()=>chainStore.activeChainId===56 && Number(comStore.currentSelectedCommunity?.version)===13)
 const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 const tabOptions = computed(() => [
   { label: 'Feed', key: 'content' },
@@ -83,6 +87,7 @@ const tabOptions = computed(() => [
   { label: 'Token', key: 'token' },
 ])
 const playTabOptions = computed(() => [
+  ...(isV13Token.value ? [{ label: 'v13Page.pools', key: 'lp' }] : []),
   ...(nutboxCommunity.value ? [{ label: 'NFT', key: 'nft' }] : []),
   { label: 'Baskets', key: 'baskets' },
   { label: 'AI', key: 'ai' },
@@ -238,32 +243,41 @@ const onTweetType =  async (type: CurationType) => {
   }
 }
 
-const progressData = ref([
-  {trackWidth: 15, value: 0, percent: "10%", background: '#FF3D54', desc: 'Social Distributed'},
-  {trackWidth: 70, value: 0, percent: "10%", background: '#FE913F', desc: 'Bonding Curve'},
-  {trackWidth: 15, value: 0, percent: "10%", background: '#FFCC00', desc: 'Listed'}
-])
+// Derive from the latest store data immediately, including an API snapshot when
+// RPC is temporarily unavailable. Do not leave the bar at a hard-coded default.
+const progressData = computed(() => {
+  const com = comStore.currentSelectedCommunity
+  const percent = (amount: number | undefined, total: number) => {
+    const value = Number(amount ?? 0) / total * 100
+    return Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 0
+  }
+  const curve = com?.listed ? 100 : percent(com?.bondingCurveSupply, BondingCurveSupply)
+  const social = percent(com?.totalClaimedSocialRewards, SocialSupply)
+  return [
+    {trackWidth: 15, value: social, percent: `${social.toFixed(2)}%`, background: '#FF3D54', desc: 'Social Distributed'},
+    {trackWidth: 65, value: curve, percent: `${curve.toFixed(2)}%`, background: '#FE913F', desc: 'Bonding Curve'},
+    {trackWidth: 20, value: com?.listed ? 100 : 0, percent: com?.listed ? '100%' : '0%', background: '#FFCC00', desc: com?.listed ? 'Listed' : 'Pending List'},
+  ]
+})
+// V13 does not use the legacy social-supply distribution bar.
+const visibleProgressData = computed(() => isV13Token.value
+  ? [{...progressData.value[1], trackWidth: 100}]
+  : progressData.value)
 
 async function updateProgress() {
   const selectedCommunity = comStore.currentSelectedCommunity
+  const chainId = chainStore.activeChainId
   if (!selectedCommunity) return
-  getTokenInfo([selectedCommunity]).then((coms: any) => {
-    const com = coms[0]
-    if (!com) return
-    comStore.currentSelectedCommunity = com
-    let bondingCurveProgress =  (com.bondingCurveSupply / BondingCurveSupply * 100);
-    if (!com.listed && bondingCurveProgress >= 99.99){
-      bondingCurveProgress = 99.99
+  try {
+    const [com] = await getTokenInfo([selectedCommunity])
+    // A slow refresh for the previous token must not replace the current page.
+    if (com && chainStore.activeChainId === chainId &&
+        comStore.currentSelectedCommunity?.token === selectedCommunity.token) {
+      comStore.currentSelectedCommunity = com
     }
-
-    progressData.value = [
-      {...progressData.value[0], value: (com.totalClaimedSocialRewards / SocialSupply * 100), percent: '15%'},
-      {...progressData.value[1], value: com.listed ? 100 : bondingCurveProgress, percent:'65%'},
-      {...progressData.value[2], value: 100, percent:'20%', desc: com.listed ? 'Listed' : 'Pending List'}
-    ]
-  }).catch(e => {
-    console.error(2, e)
-  })
+  } catch (e) {
+    console.error('Refresh token progress failed', e)
+  }
 }
 
 async function checkTipCurate() {
@@ -546,13 +560,14 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
         <div v-if="!comStore.currentSelectedCommunity?.isImport" class="text-base font-medium flex items-center gap-1">
           <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
+          <span v-if="isV13Token" class="text-orange-normal text-sm" role="status">{{ $t(comStore.currentSelectedCommunity?.listed ? 'v13Page.listed' : comStore.currentSelectedCommunity?.listingPending ? 'v13Page.pending' : 'v13Page.curve') }}</span>
           <el-popover popper-class="c-popper">
             <template #reference>
               <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
             </template>
             <template #default>
               <div class="bg-surface rounded-xl p-2 shadow-popper-tip w-[200px]">
-                {{ $t('community.distributionTip') }}
+                {{ $t(isV13Token ? 'community.distributionTipV13' : 'community.distributionTip') }}
               </div>
             </template>
           </el-popover>
@@ -560,12 +575,12 @@ onBeforeRouteLeave((to, from, next) => {
         <div v-if="!comStore.currentSelectedCommunity?.isImport" class="flex items-center gap-3">
           <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
                       bg-surface gap-[2px]">
-            <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
+            <el-tooltip v-for="(data, index) of visibleProgressData" :key="index"
                         placement="top" popper-class="c-arrow-popper">
               <template #content>
                 <div class="flex gap-1 text-grey-normal">
                   <span class="text-sm">
-                    {{ index === 0 && isPumpNutboxVersion ? $t('postView.v4HookTransactionDistribution') : data.desc }}
+                    {{ !isV13Token && index === 0 && isPumpNutboxVersion ? $t('postView.v4HookTransactionDistribution') : data.desc }}
                   </span>
                   <span class="font-semibold text-base">{{data.percent}}</span>
                 </div>
@@ -681,7 +696,8 @@ onBeforeRouteLeave((to, from, next) => {
             <TagProposal v-if="activeTab==='proposal'"/>
             <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
             <CreditIndex v-if="activeTab==='credit'"/>
-            <TagToken v-if="activeTab==='token' && !legacyLiquidityActive"/>
+            <TagToken v-if="activeTab==='token' && isV13Token"><template #info-footer><V13IndexLink/></template></TagToken>
+            <TagToken v-else-if="activeTab==='token' && !legacyLiquidityActive"/>
             <SpcxbLiquidity v-if="activeTab==='token' && legacyLiquidityActive"/>
             <div
               v-if="activeTab==='play'"
@@ -702,7 +718,9 @@ onBeforeRouteLeave((to, from, next) => {
                 </button>
               </div>
               <div class="min-h-0" :class="activePlayTab === 'ai' ? 'flex-1 overflow-hidden' : ''">
-                <TagNft v-if="activePlayTab==='nft' && nutboxCommunity" :community="nutboxCommunity"/>
+                <V13TokenPanel v-if="activePlayTab==='lp' && isV13Token" mining/>
+                <TagNft v-else-if="activePlayTab==='nft' && nutboxCommunity" :community="nutboxCommunity"/>
+                <V13IndexRewards v-else-if="activePlayTab==='baskets' && isV13Token" />
                 <CommunityBaskets
                   v-else-if="activePlayTab==='baskets'"
                   :token="comStore.currentSelectedCommunity?.token"
@@ -788,13 +806,14 @@ onBeforeRouteLeave((to, from, next) => {
               </div>
               <div v-if="!comStore.currentSelectedCommunity?.isImport" class="text-base font-medium flex items-center gap-1">
                 <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
+          <span v-if="isV13Token" class="text-orange-normal text-sm" role="status">{{ $t(comStore.currentSelectedCommunity?.listed ? 'v13Page.listed' : comStore.currentSelectedCommunity?.listingPending ? 'v13Page.pending' : 'v13Page.curve') }}</span>
                 <el-popover popper-class="c-popper">
                   <template #reference>
                     <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
                   </template>
                   <template #default>
                     <div class="bg-surface rounded-xl p-2 shadow-popper-tip">
-                      {{ $t('community.distributionTip') }}
+                      {{ $t(isV13Token ? 'community.distributionTipV13' : 'community.distributionTip') }}
                     </div>
                   </template>
                 </el-popover>
@@ -802,12 +821,12 @@ onBeforeRouteLeave((to, from, next) => {
               <div v-if="!comStore.currentSelectedCommunity?.isImport" class="flex items-center gap-3">
                 <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
                       bg-surface gap-[2px]">
-                  <el-tooltip v-for="(data, index) of (progressData ? progressData : [])" :key="index"
+                  <el-tooltip v-for="(data, index) of visibleProgressData" :key="index"
                               placement="top" popper-class="c-arrow-popper">
                     <template #content>
                       <div class="flex gap-1 text-grey-normal">
                         <span class="text-sm">
-                          {{ index === 0 && isPumpNutboxVersion ? $t('postView.v4HookTransactionDistribution') : data.desc }}
+                          {{ !isV13Token && index === 0 && isPumpNutboxVersion ? $t('postView.v4HookTransactionDistribution') : data.desc }}
                         </span>
                         <span class="font-semibold text-base">{{data.percent}}</span>
                       </div>

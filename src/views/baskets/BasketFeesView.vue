@@ -13,6 +13,7 @@ import { useChainStore } from '@/stores/chain'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import BasketChainGate from './components/BasketChainGate.vue'
+import AuctionCountdown from './components/AuctionCountdown.vue'
 
 type Auction = { id: bigint; ethAmount: bigint; initialBid: bigint; highestBid: bigint; highestBidder: Address; startTime: number; endTime: number; settled: boolean }
 const route = useRoute()
@@ -31,6 +32,9 @@ const auctionAbi = computed(() => getBasketFeeAuctionAbi(deployment.value.chainI
 const address = computed(() => String(route.params.address || ''))
 const account = computed(() => isAddress(accountStore.ethConnectAddress) ? getAddress(accountStore.ethConnectAddress) : undefined)
 const now = ref(Date.now())
+const chainClock = ref<{ timestamp: number; fetchedAt: number }>()
+const chainNow = computed(() => chainClock.value ? chainClock.value.timestamp * 1000 + Math.max(0, now.value - chainClock.value.fetchedAt) : undefined)
+let feeRequest = 0, disposed = false
 const loadingFees = ref(false)
 const action = ref('')
 const actionError = ref('')
@@ -57,7 +61,8 @@ const bidAllowance = ref(0n)
 const spotQuote = ref(0n)
 const auctions = ref<Auction[]>([])
 const timer = window.setInterval(() => { now.value = Date.now() }, 1_000)
-onBeforeUnmount(() => window.clearInterval(timer))
+const refreshTimer = window.setInterval(() => { if (!loadingFees.value && !action.value) void loadFees() }, 10_000)
+onBeforeUnmount(() => { disposed = true; feeRequest++; window.clearInterval(timer); window.clearInterval(refreshTimer) })
 
 const isBsc = computed(() => deployment.value.chainId === 56)
 const feeCenterSubtitleKey = computed(() => isBsc.value ? 'buidlFeeCenterSubtitle' : 'feeCenterSubtitle')
@@ -73,8 +78,8 @@ const activeAuction = computed(() => auctions.value.find((item) => item.id === a
 const auctionLot = computed(() => availableEth.value < maxAuctionEth.value ? availableEth.value : maxAuctionEth.value)
 const openingBid = computed(() => spotQuote.value * 9_000n / 10_000n)
 const minimumNextBid = computed(() => activeAuction.value ? (activeAuction.value.highestBid * 10_100n + 9_999n) / 10_000n : 0n)
-const canCreateAuction = computed(() => !activeAuctionId.value && auctionLot.value >= minAuctionEth.value && now.value / 1000 >= lastAuctionAt.value + cooldownSeconds.value)
-const isAuctionEnded = computed(() => !!activeAuction.value && now.value >= activeAuction.value.endTime * 1_000)
+const canCreateAuction = computed(() => !activeAuctionId.value && auctionLot.value >= minAuctionEth.value && chainNow.value !== undefined && chainNow.value / 1000 >= lastAuctionAt.value + cooldownSeconds.value)
+const isAuctionEnded = computed(() => !!activeAuction.value && chainNow.value !== undefined && chainNow.value >= activeAuction.value.endTime * 1_000)
 
 const formatToken = (value: bigint, decimals = 18, digits = 5) => Number(formatUnits(value, decimals)).toLocaleString(undefined, { maximumFractionDigits: digits })
 const short = (value?: string | null) => value ? `${value.slice(0, 6)}…${value.slice(-4)}` : '—'
@@ -93,6 +98,7 @@ const normalizeAuction = (raw: any, id: bigint): Auction => ({
 
 const loadFees = async () => {
   if (!detail.value) return
+  const requestId = ++feeRequest
   loadingFees.value = true
   try {
     const chainId = detail.value.chainId
@@ -119,7 +125,11 @@ const loadFees = async () => {
       { address: contracts.value.bidToken, abi: erc20Abi, functionName: 'balanceOf', args: [beneficiary] },
       { address: contracts.value.bidToken, abi: erc20Abi, functionName: 'allowance', args: [beneficiary, contracts.value.feeAuction] },
     ]
-    const rows = await client.multicall({ contracts: calls as any, allowFailure: true })
+    const block = await client.getBlock({ blockTag: 'latest' })
+    const fetchedAt = Date.now()
+    const rows = await client.multicall({ contracts: calls as any, allowFailure: true, blockNumber: block.number })
+    if (requestId !== feeRequest || disposed) return
+    chainClock.value = { timestamp: Number(block.timestamp), fetchedAt }
     const value = <T>(index: number, fallback: T) => rows[index]?.status === 'success' ? rows[index].result as T : fallback
     holderFees.value = value(0, 0n); frontendFees.value = value(1, 0n); creatorFees.value = value(2, 0n); launcherFees.value = value(3, 0n); feeReserve.value = value(4, 0n)
     availableEth.value = value(5, 0n); minAuctionEth.value = value(6, 0n); maxAuctionEth.value = value(7, 0n); lastAuctionAt.value = Number(value(8, 0n)); cooldownSeconds.value = Number(value(9, 0n)); nextAuctionId.value = value(10, 0n); activeAuctionId.value = value(11, 0n)
@@ -127,12 +137,14 @@ const loadFees = async () => {
     const first = nextAuctionId.value > 20n ? nextAuctionId.value - 19n : 1n
     const ids: bigint[] = []
     for (let id = nextAuctionId.value; id >= first && id > 0n; id -= 1n) ids.push(id)
-    const history = ids.length ? await client.multicall({ contracts: ids.map((id) => ({ address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'auctions', args: [id] })) as any, allowFailure: true }) : []
+    const history = ids.length ? await client.multicall({ contracts: ids.map((id) => ({ address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'auctions', args: [id] })) as any, allowFailure: true, blockNumber: block.number }) : []
+    if (requestId !== feeRequest || disposed) return
     auctions.value = history.flatMap((row, index) => row.status === 'success' ? [normalizeAuction(row.result, ids[index])] : [])
     if (auctionLot.value > 0n) {
       try { spotQuote.value = await client.readContract({ address: contracts.value.feeAuction, abi: auctionAbi.value, functionName: 'quoteSpot', args: [auctionLot.value] } as any) as bigint } catch { spotQuote.value = 0n }
     }
-  } finally { loadingFees.value = false }
+  } catch (error) { console.warn('[baskets] auction refresh failed', error) }
+  finally { if (requestId === feeRequest) loadingFees.value = false }
 }
 
 const connectWallet = () => modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
@@ -178,7 +190,7 @@ const withdraw = async () => {
 }
 
 onMounted(() => void load(address.value))
-watch(address, (value) => void load(value))
+watch(address, (value) => { feeRequest++; chainClock.value = undefined; auctions.value = []; activeAuctionId.value = 0n; void load(value) })
 watch(detail, () => void loadFees())
 watch(account, () => void loadFees())
 </script>
@@ -212,7 +224,7 @@ watch(account, () => void loadFees())
       <section class="panel auction-panel"><div class="panel-title"><div><span>BUYBACK</span><h2>{{ deployment.chainId === 56 ? $t('baskets.buidlBuybackPool') : $t('baskets.buybackAuction') }}</h2></div><em>{{ loadingFees ? $t('baskets.loading') : $t('baskets.liveOnChain') }}</em></div>
         <div class="pool-stats"><div><span>{{ $t('baskets.availableBuybackPool') }}</span><strong>{{ formatToken(availableEth) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.auctionRange') }}</span><strong>{{ formatToken(minAuctionEth) }}–{{ formatToken(maxAuctionEth) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.basketFeeReserve') }}</span><strong>{{ formatToken(feeReserve) }} {{ deployment.wrappedNativeSymbol }}</strong></div></div>
         <div v-if="activeAuction" class="active-auction">
-          <div class="auction-head"><div><span>#{{ activeAuction.id }}</span><h3>{{ $t('baskets.activeAuction') }}</h3></div><b>{{ isAuctionEnded ? $t('baskets.readyToSettle') : $t('baskets.endsAt', { time: formatDate(activeAuction.endTime) }) }}</b></div>
+          <div class="auction-head"><div><span>#{{ activeAuction.id }}</span><h3>{{ $t('baskets.activeAuction') }}</h3></div><AuctionCountdown :end-time="activeAuction.endTime" :now="chainNow" /></div>
           <div class="auction-values"><div><span>{{ $t('baskets.ethLot').replace('ETH', deployment.nativeSymbol) }}</span><strong>{{ formatToken(activeAuction.ethAmount) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.highestBid') }}</span><strong>{{ formatToken(activeAuction.highestBid, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.highestBidder') }}</span><strong>{{ short(activeAuction.highestBidder) }}</strong></div></div>
           <button v-if="isAuctionEnded" class="primary" :disabled="!!action" @click="write('settle', contracts.feeAuction, auctionAbi, 'settleAuction', [activeAuction.id])">{{ action === 'settle' ? $t('baskets.settling') : $t('baskets.settleAuction') }}</button>
           <div v-else class="bid-row"><input :value="bidInput" :placeholder="`${formatToken(minimumNextBid, bidDecimals)} ${bidSymbol}`" @input="onBidInput"><button class="primary" :disabled="!account || !!action" @click="placeBid">{{ action === 'approve' ? $t('baskets.approving') : action === 'bid' ? $t('baskets.bidding') : $t('baskets.placeBid') }}</button></div>
@@ -225,7 +237,7 @@ watch(account, () => void loadFees())
 
       <section class="panel"><div class="panel-title"><div><span>HISTORY</span><h2>{{ $t('baskets.auctionHistory') }}</h2></div></div>
         <div v-if="!auctions.length" class="empty">{{ $t('baskets.noAuctions') }}</div>
-        <div v-else class="history"><article v-for="item in auctions" :key="item.id.toString()"><b>#{{ item.id }}</b><div><span>{{ $t('baskets.ethLot').replace('ETH', deployment.nativeSymbol) }}</span><strong>{{ formatToken(item.ethAmount) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.winningBid') }}</span><strong>{{ formatToken(item.highestBid, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.winner') }}</span><strong>{{ short(item.highestBidder) }}</strong></div><em :class="{ done: item.settled }">{{ item.settled ? $t('baskets.settled') : item.endTime * 1000 <= now ? $t('baskets.awaitingSettlement') : $t('baskets.active') }}</em></article></div>
+        <div v-else class="history"><article v-for="item in auctions" :key="item.id.toString()"><b>#{{ item.id }}</b><div><span>{{ $t('baskets.ethLot').replace('ETH', deployment.nativeSymbol) }}</span><strong>{{ formatToken(item.ethAmount) }} {{ deployment.nativeSymbol }}</strong></div><div><span>{{ $t('baskets.winningBid') }}</span><strong>{{ formatToken(item.highestBid, bidDecimals) }} {{ bidSymbol }}</strong></div><div><span>{{ $t('baskets.winner') }}</span><strong>{{ short(item.highestBidder) }}</strong></div><em :class="{ done: item.settled }">{{ item.settled ? $t('baskets.settled') : chainNow !== undefined && item.endTime * 1000 <= chainNow ? $t('baskets.awaitingSettlement') : $t('baskets.active') }}</em></article></div>
       </section>
     </template>
   </div></div>
@@ -236,7 +248,7 @@ watch(account, () => void loadFees())
 .fee-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding:34px;border:1px solid var(--border-base);border-radius:28px;background:linear-gradient(135deg,color-mix(in srgb,var(--surface) 94%,transparent),color-mix(in srgb,#7d67ef 12%,var(--surface)));overflow:hidden}.fee-hero span,.panel-title span{color:#8d67e8;font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.fee-hero h1{margin-top:7px;color:var(--text-base);font-size:34px;font-weight:750;letter-spacing:-.05em}.fee-hero p,.panel-copy,.create-auction p{margin-top:8px;color:var(--text-muted);font-size:11px}.fee-hero>strong{font-size:42px;color:var(--text-base);letter-spacing:-.05em}
 .panel{margin-top:18px;padding:24px;border:1px solid var(--border-base);border-radius:24px;background:var(--surface)}.panel-title{display:flex;align-items:center;justify-content:space-between;gap:14px}.panel-title h2{margin-top:4px;color:var(--text-base);font-size:20px;font-weight:700}.panel-title em{color:#31b975;font-size:10px}.fee-parts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:20px}.fee-parts article,.claim-grid article{padding:16px;border:1px solid var(--border-base);border-radius:16px;background:var(--surface-2)}.fee-parts strong{color:#8d67e8;font-size:18px}.fee-parts h3{margin-top:8px;color:var(--text-base);font-size:12px}.fee-parts p{margin-top:6px;color:var(--text-muted);font-size:9px;line-height:1.5}
 .claim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:17px}.claim-grid article{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:7px 12px}.claim-grid span,.pool-stats span,.auction-values span,.account-balances span,.history span{color:var(--text-muted);font-size:9px}.claim-grid strong{color:var(--text-base);font-size:14px}.claim-grid button,.account-actions button{grid-row:1/3;grid-column:2;padding:8px 11px;border:1px solid var(--border-base);border-radius:10px;color:#8d67e8;font-size:10px}.claim-grid button:disabled,.account-actions button:disabled{opacity:.4}.primary{padding:11px 15px;border-radius:12px;background:linear-gradient(135deg,#7d67ef,#25b9cd);color:#fff;font-size:11px;font-weight:750}.primary:disabled{cursor:not-allowed;opacity:.45}.primary.small{padding:9px 12px}
-.pool-stats,.auction-values,.account-balances{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:20px;overflow:hidden;border:1px solid var(--border-base);border-radius:16px;background:var(--border-base)}.pool-stats>div,.auction-values>div,.account-balances>div{display:flex;min-width:0;flex-direction:column;gap:5px;padding:15px;background:var(--surface-2)}.pool-stats strong,.auction-values strong,.account-balances strong{overflow:hidden;color:var(--text-base);font-size:13px;text-overflow:ellipsis;white-space:nowrap}.active-auction,.create-auction{margin-top:14px;padding:18px;border:1px solid rgba(125,103,239,.3);border-radius:18px;background:rgba(125,103,239,.06)}.auction-head,.create-auction{display:flex;align-items:center;justify-content:space-between;gap:16px}.auction-head h3,.create-auction h3{color:var(--text-base);font-size:16px}.auction-head span{color:#8d67e8;font-size:10px}.auction-head b{color:var(--text-muted);font-size:9px}.auction-values{margin:14px 0}.bid-row,.account-actions,.account-actions>div{display:flex;gap:9px}.bid-row input,.account-actions input{min-width:0;flex:1;padding:11px 13px;border:1px solid var(--border-base);border-radius:12px;background:var(--surface);color:var(--text-base);font-size:11px}.account-balances{margin-top:14px}.account-actions{justify-content:flex-end;margin-top:10px}.account-actions>div{max-width:360px;flex:1}.account-actions button{grid-row:auto;grid-column:auto}.action-error{margin-top:12px;color:var(--color-red,#ef596f);font-size:10px}
+.pool-stats,.auction-values,.account-balances{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:20px;overflow:hidden;border:1px solid var(--border-base);border-radius:16px;background:var(--border-base)}.pool-stats>div,.auction-values>div,.account-balances>div{display:flex;min-width:0;flex-direction:column;gap:5px;padding:15px;background:var(--surface-2)}.pool-stats strong,.auction-values strong,.account-balances strong{overflow:hidden;color:var(--text-base);font-size:13px;text-overflow:ellipsis;white-space:nowrap}.active-auction,.create-auction{margin-top:14px;padding:18px;border:1px solid rgba(125,103,239,.3);border-radius:18px;background:rgba(125,103,239,.06)}.auction-head{flex-wrap:wrap}.auction-head,.create-auction{display:flex;align-items:center;justify-content:space-between;gap:16px}.auction-head h3,.create-auction h3{color:var(--text-base);font-size:16px}.auction-head span{color:#8d67e8;font-size:10px}.auction-head b{color:var(--text-muted);font-size:9px}.auction-values{margin:14px 0}.bid-row,.account-actions,.account-actions>div{display:flex;gap:9px}.bid-row input,.account-actions input{min-width:0;flex:1;padding:11px 13px;border:1px solid var(--border-base);border-radius:12px;background:var(--surface);color:var(--text-base);font-size:11px}.account-balances{margin-top:14px}.account-actions{justify-content:flex-end;margin-top:10px}.account-actions>div{max-width:360px;flex:1}.account-actions button{grid-row:auto;grid-column:auto}.action-error{margin-top:12px;color:var(--color-red,#ef596f);font-size:10px}
 .create-auction p.auction-threshold{color:#e77a27;font-weight:700}
 .history{margin-top:16px}.history article{display:grid;grid-template-columns:55px repeat(3,minmax(0,1fr)) auto;align-items:center;gap:12px;padding:14px 4px;border-top:1px solid var(--border-base)}.history article>b{color:#8d67e8}.history article>div{display:flex;min-width:0;flex-direction:column;gap:3px}.history strong{overflow:hidden;color:var(--text-base);font-size:11px;text-overflow:ellipsis;white-space:nowrap}.history em{padding:5px 8px;border-radius:99px;background:rgba(239,123,69,.1);color:#ef7b45;font-size:9px}.history em.done{background:rgba(49,185,117,.1);color:#31b975}.empty{padding:38px;text-align:center;color:var(--text-muted);font-size:11px}
 @media(max-width:800px){.fee-parts{grid-template-columns:repeat(2,1fr)}.pool-stats,.auction-values,.account-balances{grid-template-columns:1fr}.history article{grid-template-columns:45px 1fr auto}.history article>div:nth-of-type(2),.history article>div:nth-of-type(3){display:none}}

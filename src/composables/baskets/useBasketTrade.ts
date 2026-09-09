@@ -1,9 +1,11 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { formatUnits, type Address } from 'viem'
+import { useI18n } from 'vue-i18n'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import {
   BASKET_DEFAULT_SLIPPAGE_BPS,
+  BASKET_MAX_SLIPPAGE_BPS,
   getBasketDeployment,
 } from '@/config/baskets'
 import { getBasketBalance, getErc20Balance, invalidateBasketCache } from '@/utils/baskets/data'
@@ -11,7 +13,7 @@ import type { BasketDetail, BasketSwapQuote, TradeSide } from '@/utils/baskets/t
 import {
   approveBasketTrade,
   executeBasketSwap,
-  friendlyBasketError,
+  basketTradeErrorKey,
   getTradeAllowance,
   quoteBasketSwap,
   sanitizeBasketAmountInput,
@@ -20,12 +22,14 @@ import {
 export type TradeStep = 'idle' | 'quoting' | 'approving' | 'swapping' | 'success' | 'error'
 
 export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
+  const { t } = useI18n()
   const side = ref<TradeSide>('buy')
   // Vue casts values from <input type="number"> to numbers at runtime even
   // without the .number modifier. Keep the state honest and normalize before
   // passing it to viem's string-only parseUnits helper.
   const amountInput = ref<string | number>('')
   const slippageBps = ref(BASKET_DEFAULT_SLIPPAGE_BPS)
+  const validSlippage = computed(() => Number.isInteger(slippageBps.value) && slippageBps.value >= 1 && slippageBps.value <= BASKET_MAX_SLIPPAGE_BPS)
   const step = ref<TradeStep>('idle')
   const txHash = ref<string | null>(null)
   const errorMessage = ref('')
@@ -55,11 +59,12 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
   const refreshQuote = async () => {
     const current = ++quoteRequest
     const basket = detail.value
-    if (!basket || amount.value <= 0) {
+    if (!basket || amount.value <= 0 || !validSlippage.value) {
       quote.value = null
       return
     }
     step.value = 'quoting'
+    errorMessage.value = ''
     try {
       const next = await quoteBasketSwap({
         side: side.value,
@@ -71,7 +76,8 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     } catch (error) {
       if (current === quoteRequest) {
         quote.value = null
-        errorMessage.value = friendlyBasketError(error)
+        console.warn('[baskets] quote failed', error)
+        errorMessage.value = t(basketTradeErrorKey(error))
       }
     } finally {
       if (current === quoteRequest && step.value === 'quoting') step.value = 'idle'
@@ -81,6 +87,7 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
   const scheduleQuote = () => {
     if (quoteTimer) clearTimeout(quoteTimer)
     quote.value = null
+    errorMessage.value = ''
     quoteTimer = setTimeout(() => void refreshQuote(), 350)
   }
 
@@ -130,25 +137,33 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     const owner = account.value
     errorMessage.value = ''
     txHash.value = null
-    if (!basket || !owner || !quote.value) {
-      errorMessage.value = 'Enter an amount and wait for a quote'
+    if (!basket || !owner || !quote.value || !validSlippage.value) {
+      errorMessage.value = t('baskets.tradeEnterAmount')
       step.value = 'error'
       return
     }
     if (!isOnBasketChain.value) {
-      errorMessage.value = `Switch to ${deployment.value.networkLabel}`
+      errorMessage.value = t('v13Operation.wallet')
       step.value = 'error'
       return
     }
     const tokenIn = side.value === 'buy' ? deployment.value.contracts.settlementToken : basket.address
+    const tradeSide = side.value, tradeQuote = quote.value, tradeSlippage = slippageBps.value
     try {
       if (needsApproval.value) {
         step.value = 'approving'
-        await approveBasketTrade(tokenIn, quote.value.amountRaw, owner, basket.chainId, basket.version)
+        await approveBasketTrade(tokenIn, tradeQuote.amountRaw, owner, basket.chainId, basket.version)
         await refreshBalances()
       }
       step.value = 'swapping'
-      const hash = await executeBasketSwap({ side: side.value, detail: basket, quote: quote.value, account: owner })
+      const finalQuote = basket.chainId === 56 && Number(basket.version) >= 4
+        ? await quoteBasketSwap({ side: tradeSide, amount: formatUnits(tradeQuote.amountRaw, tradeSide === 'buy' ? deployment.value.settlementDecimals : basket.decimals), detail: basket, slippageBps: tradeSlippage })
+        : tradeQuote
+      if (account.value?.toLowerCase() !== owner.toLowerCase() || !isOnBasketChain.value) throw new Error('Wallet or chain changed')
+      // Refresh after approvals, but never reduce the minimum the user accepted.
+      if (finalQuote.minOutRaw < tradeQuote.minOutRaw) finalQuote.minOutRaw = tradeQuote.minOutRaw
+      quote.value = finalQuote
+      const hash = await executeBasketSwap({ side: tradeSide, detail: basket, quote: finalQuote, account: owner })
       txHash.value = hash
       step.value = 'success'
       amountInput.value = ''
@@ -157,7 +172,7 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     } catch (error) {
       console.error('[baskets] trade simulation or execution failed', error)
       step.value = 'error'
-      errorMessage.value = friendlyBasketError(error)
+      errorMessage.value = t(basketTradeErrorKey(error))
     }
   }
 
@@ -172,6 +187,7 @@ export const useBasketTrade = (detail: Ref<BasketDetail | null>) => {
     amountInput,
     amount,
     slippageBps,
+    validSlippage,
     step,
     txHash,
     errorMessage,

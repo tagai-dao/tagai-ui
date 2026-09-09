@@ -151,7 +151,7 @@ const assertV3RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
 }
 
 const assertV2RouteUsable = async (route: BasketLegRoute, asset: Address, chainId: number) => {
-  const protocol = getBasketProtocol(chainId, 3)
+  const protocol = getBasketProtocol(chainId, getBasketDeployment(chainId).creationVersion)
   const quote = route.poolQuoteToken ?? zeroAddress
   const factory = protocol.v2Factory
   if (sameAddress(quote, zeroAddress)) failPoolValidation('routeIncompatible')
@@ -173,15 +173,15 @@ const assertV2RouteUsable = async (route: BasketLegRoute, asset: Address, chainI
   if (reserves[0] === 0n || reserves[1] === 0n) failPoolValidation('noLiquidity', { venue: 'V2' })
 }
 
-const assertBscV3Bridge = async (route: BasketLegRoute, chainId: number) => {
-  const protocol = getBasketProtocol(chainId, 3)
+const assertBscV3Bridge = async (route: BasketLegRoute, chainId: number, version: number) => {
+  const protocol = getBasketProtocol(chainId, version)
   if (!route.poolQuoteToken) failPoolValidation('quoteTokenUnavailable')
   const quote = route.poolQuoteToken as Address
   if (sameAddress(quote, protocol.settlementToken)) return
   try {
     await Promise.all([
-      validateNutboxRoute(quote, protocol.settlementToken, chainId),
-      validateNutboxRoute(protocol.settlementToken, quote, chainId),
+      validateNutboxRoute(quote, protocol.settlementToken, chainId, version),
+      validateNutboxRoute(protocol.settlementToken, quote, chainId, version),
     ])
   } catch {
     failPoolValidation('nutboxRouteUnavailable')
@@ -199,5 +199,5 @@ export const assertBasketRouteUsable = async (route: BasketLegRoute, asset: Addr
     }
   } else if (route.venue === 3) await assertV2RouteUsable(route, asset, chainId)
   else failPoolValidation('routeIncompatible')
-  await assertBscV3Bridge(route, chainId)
+  await assertBscV3Bridge(route, chainId, getBasketDeployment(chainId).creationVersion)
 }

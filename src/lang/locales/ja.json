@@ -1,4 +1,58 @@
 {
+  "v13Index": {
+    "createdOnList": "インデックスバスケットは上場（List）時に自動作成されます。",
+    "totalBought": "累計買戻し指数",
+    "rewardBalance": "指数報酬準備金",
+    "walletBalance": "自分の指数残高",
+    "rewardHelp": "買い戻した指数はコミュニティトークンの保有ルールに従って配分され、受取時にウォレットへ送られます。",
+    "claimReward": "報酬を受け取る",
+    "buybackTitle": "指数の買戻し",
+    "buybackHelp": "プロトコルのBNB準備金を使用します。実行者はネットワークガスのみ支払います。",
+    "estimatedIndex": "買戻し見積り",
+    "minimumIndex": "最低受取額",
+    "preview": "買戻しを見積もる",
+    "execute": "買戻しを実行",
+    "pending": "上場完了後に買戻しと報酬受取が可能になります。",
+    "emptyReserve": "買戻し可能なBNB準備金がありません。",
+    "expired": "準備金または見積りが変わりました。再度見積もってください。",
+    "routerUnavailable": "買戻しルートは準備中です。後でもう一度お試しください。",
+    "tooSmall": "準備金が少なすぎるため、有効な最低受取額を設定できません。",
+    "cancelled": "操作をキャンセルしました。",
+    "operationFailed": "操作が完了しませんでした。更新して再試行してください。",
+    "buybackDone": "買戻しが完了し、指数報酬が計上されました。",
+    "claimDone": "報酬をウォレットに送付しました。"
+},
+  "v13Page": {
+    "chainPoolsFallback": "詳細サービスを利用できません。表示中のプールの関連付けはオンチェーンで検証済みです。",
+    "poolBurnDescription": "構成資産プールの取引では、{symbol} の 0.1% が差し引かれ、直接バーンされます。",
+    "totalBurned": "累計バーン",
+    "burnSource": "バーンアドレスが保有するコミュニティトークンの残高。",
+    "liquidityRatioChanged": "プール比率が変わりました。更新された数量を確認して再試行してください。",
+    "linkedIndex": "関連インデックス",
+    "holderV4Vault": "V4流動性保管庫",
+    "holderV4Manager": "V4プールマネージャー",
+    "holderComponentPool": "{asset} 流動性プール",
+    "holderStakingPool": "{asset} LPステーキング",
+    "rewardReserve": "マイニング報酬準備金",
+    "dailyRewardsHelp": "チェーン上の現在の時間から24時間分の全LPプールの推定報酬。プロトコル手数料控除後。",
+    "apr": "APR",
+    "aprHint": "今後24時間の純報酬 × 365 ÷ ステーキング済みLPのT換算価値（対応するT数量 × 2）。報酬とステーキング量により変動します。",
+    "aprEmpty": "ステーキングがないため、APRは計算できません。",
+    "aprUnavailable": "APRを更新できません。表示値は前回の結果です。",
+
+    "poolAction": "プール操作",
+    "dualAdd": "両方のトークンで流動性を追加",
+    "requiredAsset": "必要な {symbol}",
+    "assetRatioHelp": "現在のプール比率から自動計算します。流動性の追加には両方のトークンが必要です。",
+    "insufficientBalance": "{symbol} の残高が不足しています",
+
+    "active": "稼働中",
+    "inactive": "終了",
+    "collapse": "操作を閉じる"
+  },
+  "v13Trade": {
+    "metadataUnavailable": "プールデータを一時的に取得できません。少し待って見積もりを更新してください。取引数量を減らす必要はありません。"
+  },
   "Square": "広場",
   "Proposal": "提案",
   "Trades": "取引",
@@ -336,6 +390,7 @@
   },
   "community": {
     "distributionTip": "トークン総量は3つの部分で分配されます：ソーシャル分配15%、ボンディングカーブ販売65%、流動性プール20%",
+    "distributionTipV13": "総供給量は10億トークンです。65%をボンディングカーブでの販売、15%をV4メインプールの流動性、5%を構成トークンのV2プールの流動性、15%をコミュニティ報酬（LPステーキング報酬を含む）に割り当てます。進捗バーはボンディングカーブでの販売状況のみを示します。",
     "spaceHasCreated": "このスペースは既にキュレーションが作成されています。",
     "spaceInvalidLink": "有効なスペースリンクではありません",
     "spaceNotYours": "このスペースはあなたが作成したものではありません",
@@ -1025,6 +1080,10 @@
     "dragRangeHint": "ハンドルをドラッグして価格範囲を調整"
   },
   "baskets": {
+    "rebalancePlanChanged": "プールの状態変化によりリバランス計画が変わりました。再試行してください。",
+    "rebalanceSlippageRange": "スリッページは 0.01%～{max}% で入力してください。",
+    "tradeEnterAmount": "数量を入力して見積もりをお待ちください。",
+    "tradeSlippageRange": "スリッページは 1～{max} bps で入力してください（100 bps = 1%）。",
     "menu": "バスケット",
     "title": "バスケット",
     "subtitle": "{network}でバスケットトークンを発見・取引",
@@ -1174,5 +1233,36 @@
     "rebalanceUnavailable":"アップグレードが必要","rebalanceHighFeeBlocked":"{assets}の手数料はExecutorの3%制限以上です。コントラクトの更新が必要です。","rebalanceSlippageError":"構成資産がオンチェーンのスリッページ制限を超えました。","rebalanceCooldownError":"1時間のクールダウンが終了していません。","rebalanceNotNeededError":"オンチェーンの乖離は閾値以下になりました。","rebalanceToleranceError":"結果のウェイトが必要な許容範囲に達しません。","rebalanceNavLossError":"予想NAV損失が3%を超えました。","rebalanceCreatorError":"Basket作成者ウォレットのみ実行できます。",
     "backToBasket":"Basketに戻る","viewFeeDetails":"手数料の詳細","maxWeightDeviation":"最大ウェイト乖離","rebalanceAvailable":"3%のリバランス閾値を超えています。","weightsHealthy":"ウェイトは閾値内です。","rebalanceCooldown":"{minutes}分後に実行可能","rebalance":"リバランス","rebalancing":"リバランス中…","feeCenter":"手数料センター","feeCenterTitle":"手数料と買い戻しオークション","feeCenterSubtitle":"配分、請求、TagAgent買い戻しオークションを確認できます。","feeComposition":"取引手数料の配分","feeBuybackDescription":"TagAgentの買い戻しに使われ、取得したトークンはデッドアドレスへ送られます。","feeFrontendDescription":"取引で指定された紹介者アドレスへ配分。未指定分はLauncherへ。","feeLauncherDescription":"プロトコルLauncherへの配分です。","feeCreatorDescription":"Basket作成者の受取先に蓄積されます。","feeHoldersDescription":"対象のBasket保有者へ比例配分されます。","feeClaims":"請求可能な手数料","connectWallet":"ウォレット接続","publicClaimHint":"誰でも請求を実行できますが、資金は常に登録済み受益者へ送られます。","holderClaim":"保有者手数料","frontendClaim":"紹介者報酬","creatorClaim":"作成者手数料","launcherClaim":"Launcher手数料","claiming":"請求中…","claim":"請求","executeClaim":"請求を実行","buybackAuction":"TagAgent買い戻しプール","liveOnChain":"オンチェーンライブ","availableBuybackPool":"利用可能な資金","auctionRange":"ロット範囲","basketFeeReserve":"Basket手数料準備金","activeAuction":"開催中のオークション","readyToSettle":"決済可能","endsAt":"終了 {time}","ethLot":"ETHロット","highestBid":"最高入札","highestBidder":"最高入札者","settling":"決済中…","settleAuction":"オークション決済","bidding":"入札中…","placeBid":"入札する","startAuction":"オークション開始","startAuctionHint":"推定開始価格: {amount} {symbol}。コントラクトはスポット価格の90%を使用します。","startingAuction":"開始中…","bidTokenBalance":"ウォレット残高","refundableBid":"返金可能残高","claimableAuctionEth":"請求可能ETH","withdrawAmount":"数量（空欄=全額）","withdrawBid":"入札トークンを引出","claimAuctionEth":"ETHを請求","auctionHistory":"オークション履歴","noAuctions":"オークションはまだありません。","winningBid":"最終／現在の入札","winner":"勝者／首位","settled":"決済済み","awaitingSettlement":"決済待ち","active":"開催中"
     ,"buidlBuybackPool":"BUIDL買い戻しプール"
-  }
+  },
+  "v13Create": {
+    "validation": {
+      "required": "作成する前に指数の設定を入力してください。",
+      "name": "指数名は1〜64バイト、ティッカーは1〜16バイトで入力してください。",
+      "assets": "有効かつ重複しない構成資産を1〜4種類選択してください。",
+      "weights": "各資産の配分比率を0%より大きくし、合計を100%にしてください。",
+      "fee": "指数の取引手数料率は1%〜3%の範囲で入力してください。",
+      "creatorShare": "作成者への配分比率は0%〜30%の範囲で入力してください。"
+    }
+  },
+  "v13Operation": {
+    "title": "操作のお知らせ",
+    "cancelled": "操作をキャンセルしました。",
+    "expired": "取引の有効期限が切れました。再試行してください。",
+    "slippage": "価格が変動し、スリッページ保護が作動しました。見積もりを更新して再試行してください。",
+    "balance": "残高が不足しています。トークンと BNB の残高を確認してください。",
+    "transfer": "トークンの送金に失敗しました。残高と承認を確認して再試行してください。",
+    "wallet": "ウォレットまたはネットワークが変更されました。BSC ウォレットを再接続してください。",
+    "pool": "このプールは現在利用できません。更新して再試行してください。",
+    "amount": "数量が無効か少なすぎます。調整して再試行してください。",
+    "network": "ネットワークが一時的に利用できません。後でもう一度お試しください。",
+    "failed": "操作を完了できませんでした。後でもう一度お試しください。"
+  },
+  "auctionCountdown": {
+    "remaining": "オークション終了まで",
+    "lastMinute": "残り1分",
+    "hours": "時間",
+    "minutes": "分",
+    "seconds": "秒"
+  },
+  "v13ClaimAll": {"button": "報酬を一括受取", "pending": "受取中…", "success": "プール報酬を受け取りました", "empty": "受け取れるプール報酬はありません"}
 }

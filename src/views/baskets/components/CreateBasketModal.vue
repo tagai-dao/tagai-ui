@@ -8,6 +8,7 @@ import { ROBINHOOD_CHAIN, ROBINHOOD_TIPTAG_HOOK_FEE_PIPS } from '@/config/chains
 import {
   buildCustomRoute,
   createBasketAndBuy,
+  recoverBasketCreation,
   getBasketUsdgBalance,
   presetCreateLeg,
   validateCustomBasketAsset,
@@ -55,6 +56,8 @@ const selectedPoolId = ref('')
 const searchingPools = ref(false)
 const validatingAsset = ref(false)
 const customAssetError = ref('')
+const pendingBasket = ref(false)
+const pendingBasketKey = () => `basket-registration:${basketChainId}:${account.value?.toLowerCase()}`
 const state = ref<'idle' | 'approving' | 'creating' | 'success'>('idle')
 const errorMessage = ref('')
 const draftReady = ref(false)
@@ -128,7 +131,8 @@ const submitIssues = computed(() => {
   if (creatorShareBps.value < 0 || creatorShareBps.value > 3000) issues.push(t('baskets.createIssueCreatorShare'))
   return issues
 })
-const canSubmit = computed(() => !!account.value && submitIssues.value.length === 0)
+watch(account,()=>{pendingBasket.value=!!localStorage.getItem(pendingBasketKey())},{immediate:true})
+const canSubmit = computed(() => !!account.value && (pendingBasket.value || submitIssues.value.length === 0))
 
 const isSelected = (address: Address) => selected.value.some((leg) => leg.asset.address.toLowerCase() === address.toLowerCase())
 const formatUsd = (value: number) => new Intl.NumberFormat(undefined, {
@@ -481,6 +485,18 @@ const submit = async () => {
   }
   try {
     state.value = 'creating'
+    const storageKey=pendingBasketKey()
+    const saved=localStorage.getItem(storageKey)
+    if(saved){
+      const recovery=JSON.parse(saved)
+      let basket
+      try{basket=await recoverBasketCreation(recovery.hash,basketChainId,recovery.version)}
+      catch(error){if(error instanceof Error&&error.message==='Creation transaction reverted'){localStorage.removeItem(storageKey);pendingBasket.value=false;throw new Error(t('v13Create.reverted'))}throw error}
+      await registerBasketDeployment(basket,recovery.hash,basketChainId)
+      localStorage.removeItem(storageKey);pendingBasket.value=false
+      invalidateBasketCache();await clearDraftAfterSuccess();emit('created',basket);emit('update:modelValue',false)
+      await router.push(`/baskets/${basket}`);state.value='success';return
+    }
     const result = await createBasketAndBuy({
       chainId: basketChainId,
       name: name.value,
@@ -494,15 +510,13 @@ const submit = async () => {
       state.value = 'approving'
     }, () => {
       state.value = 'creating'
+    }, hash => {
+      localStorage.setItem(storageKey,JSON.stringify({hash,version:deployment.value.creationVersion}))
+      pendingBasket.value=true
     })
+    await registerBasketDeployment(result.basket, result.hash, basketChainId)
+    localStorage.removeItem(storageKey);pendingBasket.value=false
     state.value = 'success'
-    try {
-      await registerBasketDeployment(result.basket, result.hash, basketChainId)
-    } catch (error) {
-      // The on-chain creation is already final. Keep the successful UX while
-      // making the indexing failure visible to local/prod diagnostics.
-      console.error('Basket was created on-chain but API registration failed', error)
-    }
     invalidateBasketCache()
     await clearDraftAfterSuccess()
     emit('created', result.basket)
@@ -560,6 +574,7 @@ watch([
             <section class="form-section">
               <div class="section-title"><b>01</b><div><strong>{{ $t('baskets.createIdentity') }}</strong><span>{{ $t('baskets.createIdentityHint') }}</span></div></div>
               <div class="two-cols">
+                <p v-if="pendingBasket">{{ $t('v13Create.pending') }}</p>
                 <label class="field"><span>{{ $t('baskets.createName') }}</span><input v-model="name" maxlength="48" placeholder="Tech Momentum Basket" :disabled="isBusy"></label>
                 <label class="field"><span>{{ $t('baskets.createSymbol') }}</span><input v-model="symbol" maxlength="12" placeholder="TECHX" :disabled="isBusy" @input="symbol = symbol.toUpperCase()"></label>
               </div>

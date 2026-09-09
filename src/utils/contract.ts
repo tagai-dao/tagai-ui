@@ -1,3 +1,5 @@
+import pump13Abi from './v13/Pump13.json'
+import token13Abi from './v13/Token13.json'
 import { getReadOnlyClient, getWalletClient, setup, waitForTx } from "./wallets";
 import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
@@ -56,7 +58,7 @@ const ContractAddress = {
 
 /** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
 const CHAIN_SCOPED_CONTRACTS = new Set([
-    'Pump9', 'Pump11', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'Pump9', 'Pump11', 'Pump13', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
     'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
 ])
 
@@ -78,6 +80,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
     const byName: Record<string, `0x${string}` | undefined> = {
         Pump9: c.pump9,
         Pump11: c.pump11,
+        Pump13: c.pump13,
         IPShare3: c.ipshare3,
         ImportHelper: c.importHelper,
         ImportedTokenSwapWrapper: c.importedTokenSwapWrapper,
@@ -114,6 +117,8 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
 
 /** V11 保持 V9 的现有调用 ABI；只替换部署地址。 */
 const resolveContractAbi = (contractName: string) => {
+    if (contractName === 'Pump13') return pump13Abi as Abi
+    if (contractName === 'Token13') return token13Abi as Abi
     const aliases: Record<string, keyof typeof abis> = {
         Pump11: 'Pump9',
         Token11: 'Token9',
@@ -227,6 +232,8 @@ export const writeContract = async ({
     address,
     value = 0n,
     abi: abiOverride,
+    onSubmitted,
+    beforeWrite,
     simulationTimeout = 0,
     requestTimeout = 0,
     receiptTimeout = 120_000,
@@ -238,6 +245,8 @@ export const writeContract = async ({
     value?: bigint | string,
     /** Restrict overloaded deployments to the exact callable surface for this write. */
     abi?: Abi,
+    onSubmitted?: (hash: `0x${string}`) => void,
+    beforeWrite?: () => void,
     /** Bound each read-only preflight request before opening the wallet. */
     simulationTimeout?: number,
     /** Bound wallet submission for flows backed by embedded wallets. */
@@ -259,6 +268,7 @@ export const writeContract = async ({
     if (!address || address === zeroAddress) {
         throw new Error(`Contract ${contractName} not deployed on current chain`)
     }
+    beforeWrite?.()
     const abi = abiOverride ?? resolveContractAbi(contractName)
     // 交易目标链必须与产品当前链一致（Privy 钱包 chain 也要对齐）
     const chain = getChainById(useChainStore().activeChainId)
@@ -305,6 +315,7 @@ export const writeContract = async ({
         : await gasEstimate
     const gas = estimatedGas * 120n / 100n
 
+    beforeWrite?.()
     const writeRequest = client.writeContract({
         ...request,
         gas
@@ -316,6 +327,7 @@ export const writeContract = async ({
             'Wallet did not submit the transaction in time. Please retry.',
         )
         : await writeRequest
+    onSubmitted?.(tx)
     console.log('tx', tx)
     let hash: string | null
     try {

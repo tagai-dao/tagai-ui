@@ -1,11 +1,13 @@
-import { formatUnits, parseUnits, zeroAddress, type Address, type Hex } from 'viem'
+import { decodeErrorResult, formatUnits, parseAbi, parseUnits, zeroAddress, type Address, type Hex } from 'viem'
 import {
   getBasketDeployment,
+  BASKET_MAX_SLIPPAGE_BPS,
   getBasketProtocol,
   toContractPoolKey,
   type BasketPoolKey,
 } from '@/config/baskets'
 import { getChainDeployment } from '@/config/chains'
+import { poolOperationErrorKey } from '@/utils/v13/operation-error'
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import {
   bscBasketHookAbi,
@@ -81,6 +83,31 @@ export const friendlyBasketError = (error: unknown): string => {
   }
   if (/execution reverted/i.test(text)) return 'Transaction would revert. Check liquidity and try a smaller amount.'
   return text.split('\n')[0] || 'Transaction failed'
+}
+
+const wrappedTradeErrors = parseAbi([
+  'error WrappedError(address target,bytes4 selector,bytes reason,bytes details)',
+  'error UnexpectedRevertBytes(bytes reason)',
+  'error SlippageExceeded()',
+  'error MinOutputNotMet(uint256 actual,uint256 minimum)',
+])
+export const basketTradeErrorKey = (error: unknown): string => {
+  let text = basketErrorText(error)
+  // Infinity wraps Hook errors in WrappedError / UnexpectedRevertBytes.
+  const unwrap = (data: Hex, depth = 0): string => {
+    if (depth > 8) return ''
+    try {
+      const decoded = decodeErrorResult({ abi: wrappedTradeErrors, data })
+      if (decoded.errorName === 'WrappedError') return unwrap(decoded.args[2], depth + 1)
+      if (decoded.errorName === 'UnexpectedRevertBytes') return unwrap(decoded.args[0], depth + 1)
+      return decoded.errorName
+    } catch { return '' }
+  }
+  const normalized = text.replace(/(0x[0-9a-f]{8}):\s+([0-9a-f]+)/gi, '$1$2')
+  for (const data of normalized.match(/0x[0-9a-f]+/gi) ?? []) text += ' ' + unwrap(data as Hex)
+  if (/SlippageExceeded|MinOutputNotMet|0x8199f5f3/i.test(text)) return 'v13Operation.slippage'
+  if (/NotEnoughLiquidity|0x7a5ed734|no active liquidity|InactiveReserve/i.test(text)) return 'v13Operation.pool'
+  return poolOperationErrorKey(error)
 }
 
 export const getTradeAllowance = async (
@@ -288,7 +315,7 @@ export const quoteBasketBuyLegOutputs = async ({
         ? netSettlement - allocated
         : netSettlement * BigInt(leg.weightBps) / 10_000n
       allocated += amountIn
-      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn, chainId))
+      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn, chainId, version))
     }
     return outputs
   }
@@ -372,6 +399,45 @@ export const quoteBasketSwap = async ({
   const amountRaw = parseUnits(amountText, decimals)
   if (amountRaw <= 0n || amountRaw >= 2n ** 128n) throw new Error('Invalid amount')
   const key = await selfPoolKey(detail.address, detail.chainId, detail.version)
+  if (detail.chainId === 56 && Number(detail.version) >= 4) {
+    if (!Number.isInteger(slippageBps) || slippageBps < 1 || slippageBps > BASKET_MAX_SLIPPAGE_BPS) throw new Error('Invalid slippage')
+    const client = getReadOnlyClient(detail.chainId)
+    const blockNumber = await client.getBlockNumber()
+    const tokenAbi = getBasketTokenAbi(detail.chainId, detail.version)
+    const supply = await client.readContract({ address: detail.address, abi: tokenAbi, functionName: 'effectiveSupply', blockNumber }) as bigint
+    const firstMint = side === 'buy' && supply === 0n
+    // Existing baskets mint according to the shortest reserve-relative leg,
+    // not NAV. Simulate all constituent swaps together, including shared pools.
+    let legMins = side === 'buy'
+      ? firstMint ? await buyLegMins(detail, amountRaw, slippageBps) : Array<bigint>(detail.basketLength).fill(1n)
+      : []
+    const simulate = async (minOut: bigint, limits: bigint[]) => {
+      const hookData = encodeBasketTradeData({ chainId: detail.chainId, version: detail.version, side, minOut, legCount: detail.basketLength, firstMint, legMins: limits })
+      const { result } = await client.simulateContract({
+        address: getChainDeployment(detail.chainId).dex.v4Quoter,
+        abi: pancakeV4QuoterAbi, functionName: 'quoteExactInputSingle', blockNumber,
+        args: [{ poolKey: toContractPoolKey(key, detail.chainId), zeroForOne: key.currency0.toLowerCase() === (side === 'buy' ? deployment.contracts.settlementToken : detail.address).toLowerCase(), exactAmount: amountRaw, hookData }],
+      } as any)
+      return (typeof result === 'bigint' ? result : result[0]) as bigint
+    }
+    // Permissive bounds are used only in this read-only discovery call.
+    // No NAV fallback: a failed simulation must not produce an executable quote.
+    const estimatedOutRaw = await simulate(1n, legMins)
+    const minOutRaw = applySlippage(estimatedOutRaw, slippageBps)
+    if (minOutRaw <= 0n) throw new Error('Amount is too small')
+    if (side === 'buy' && !firstMint) {
+      const assets = await Promise.all(Array.from({ length: detail.basketLength }, (_, i) => client.readContract({
+        address: detail.address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(i)], blockNumber,
+      }))) as readonly (readonly [Address, number, bigint])[]
+      legMins = assets.map(([asset, , reserve], i) => {
+        if (reserve <= 0n || asset.toLowerCase() !== detail.holdings[i]?.asset.toLowerCase()) throw new Error('InvalidPool')
+        // floor(acquired * supply / reserve) >= minOut requires this ceiling.
+        return (minOutRaw * reserve + supply - 1n) / supply
+      })
+    }
+    await simulate(minOutRaw, legMins)
+    return { amountRaw, estimatedOutRaw, estimatedOut: Number(formatUnits(estimatedOutRaw, side === 'buy' ? detail.decimals : deployment.settlementDecimals)), minOutRaw, legCount: detail.basketLength, legMins, source: 'quoter' }
+  }
   const isFirstMint = side === 'buy' && (detail.effectiveSupply ?? 0) === 0
   // Always provide buy-leg limits. The Hook's spot-price fallback does not
   // deduct the pool fee (some curated pools charge 5%), so its built-in 3%
@@ -442,6 +508,7 @@ export const executeBasketSwap = async ({
 }): Promise<Hex> => {
   const wallet = getWalletClient()
   if (!wallet) throw new Error('Wallet not connected')
+  if (detail.chainId === 56 && Number(detail.version) >= 4 && (quote.source !== 'quoter' || quote.minOutRaw <= 0n)) throw new Error('V13_QUOTE_EXPIRED')
   const firstMint = side === 'buy' && (detail.effectiveSupply ?? 0) === 0
   const hookData = encodeBasketTradeData({
     chainId: detail.chainId,

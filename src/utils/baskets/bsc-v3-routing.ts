@@ -57,6 +57,7 @@ const quoteV4ExactInput = async (
   tokenIn: Address,
   amountIn: bigint,
   chainId = 56,
+  version = 3,
 ): Promise<bigint> => {
   const { result } = await getReadOnlyClient(chainId).simulateContract({
     address: getChainDeployment(chainId).dex.v4Quoter,
@@ -78,6 +79,7 @@ const quoteV3ExactInput = async (
   amountIn: bigint,
   fee: number,
   chainId = 56,
+  version = 3,
 ): Promise<bigint> => {
   const deployment = getBasketDeployment(chainId)
   const { result } = await getReadOnlyClient(chainId).simulateContract({
@@ -96,6 +98,7 @@ const quoteV2ExactInput = async (
   factory: Address,
   expectedPair?: Address,
   chainId = 56,
+  version = 3,
 ): Promise<bigint> => {
   const client = getReadOnlyClient(chainId)
   const pair = await client.readContract({
@@ -126,8 +129,8 @@ type NutboxPool = {
   sourceData: Hex
 }
 
-const readNutboxPools = async (tokenIn: Address, tokenOut: Address, chainId = 56): Promise<NutboxPool[]> => {
-  const protocol = getBasketProtocol(chainId, 3)
+const readNutboxPools = async (tokenIn: Address, tokenOut: Address, chainId = 56, version = 3): Promise<NutboxPool[]> => {
+  const protocol = getBasketProtocol(chainId, version)
   if (!protocol.nutboxRouter) throw new Error('NutboxRouter is not configured')
   const client = getReadOnlyClient(chainId)
   const count = Number(await client.readContract({
@@ -184,9 +187,9 @@ const decodePancakeV4Source = (data: Hex) => decodeAbiParameters([{
   ],
 }], data)[0]
 
-export const validateNutboxRoute = async (tokenIn: Address, tokenOut: Address, chainId = 56): Promise<void> => {
+export const validateNutboxRoute = async (tokenIn: Address, tokenOut: Address, chainId = 56, version = 3): Promise<void> => {
   if (sameAddress(tokenIn, tokenOut)) return
-  const router = getBasketProtocol(chainId, 3).nutboxRouter
+  const router = getBasketProtocol(chainId, version).nutboxRouter
   if (!router) throw new Error('NutboxRouter is not configured')
   await getReadOnlyClient(chainId).readContract({
     address: router,
@@ -201,11 +204,12 @@ export const quoteNutboxExactInput = async (
   tokenOut: Address,
   amountIn: bigint,
   chainId = 56,
+  version = 3,
 ): Promise<bigint> => {
   if (sameAddress(tokenIn, tokenOut)) return amountIn
   const deployment = getBasketDeployment(chainId)
-  const protocol = getBasketProtocol(chainId, 3)
-  const pools = await readNutboxPools(tokenIn, tokenOut, chainId)
+  const protocol = getBasketProtocol(chainId, version)
+  const pools = await readNutboxPools(tokenIn, tokenOut, chainId, version)
   let current = normalizeEndpoint(tokenIn, protocol.wrappedNative)
   let amount = amountIn
   for (const pool of pools) {
@@ -276,8 +280,9 @@ const quoteDirect = async (
   tokenOut: Address,
   amountIn: bigint,
   chainId = 56,
+  version = 3,
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, 3)
+  const protocol = getBasketProtocol(chainId, version)
   if (route.venue === 0) return quoteV4ExactInput(route.v4Pool, tokenIn, amountIn, chainId)
   if (route.venue === 1) return quoteV3ExactInput(tokenIn, tokenOut, amountIn, route.v3Fee, chainId)
   if (route.venue === 2) {
@@ -296,13 +301,14 @@ export const quoteBscV3SettlementToAsset = async (
   asset: Address,
   settlementIn: bigint,
   chainId = 56,
+  version = 3,
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, 3)
-  const poolQuote = getPoolQuoteToken(route, chainId, 3)
+  const protocol = getBasketProtocol(chainId, version)
+  const poolQuote = getPoolQuoteToken(route, chainId, version)
   const directIn = sameAddress(poolQuote, protocol.settlementToken)
     ? settlementIn
-    : await quoteNutboxExactInput(protocol.settlementToken, poolQuote, settlementIn, chainId)
-  return quoteDirect(route, asset, poolQuote, asset, directIn, chainId)
+    : await quoteNutboxExactInput(protocol.settlementToken, poolQuote, settlementIn, chainId, version)
+  return quoteDirect(route, asset, poolQuote, asset, directIn, chainId, version)
 }
 
 export const quoteBscV3AssetToSettlement = async (
@@ -310,13 +316,14 @@ export const quoteBscV3AssetToSettlement = async (
   asset: Address,
   assetIn: bigint,
   chainId = 56,
+  version = 3,
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, 3)
-  const poolQuote = getPoolQuoteToken(route, chainId, 3)
-  const directOut = await quoteDirect(route, asset, asset, poolQuote, assetIn, chainId)
+  const protocol = getBasketProtocol(chainId, version)
+  const poolQuote = getPoolQuoteToken(route, chainId, version)
+  const directOut = await quoteDirect(route, asset, asset, poolQuote, assetIn, chainId, version)
   return sameAddress(poolQuote, protocol.settlementToken)
     ? directOut
-    : quoteNutboxExactInput(poolQuote, protocol.settlementToken, directOut, chainId)
+    : quoteNutboxExactInput(poolQuote, protocol.settlementToken, directOut, chainId, version)
 }
 
 const currentInfinityFeeBps = async (pool: BasketPoolKey): Promise<number> => {
@@ -330,9 +337,9 @@ const currentInfinityFeeBps = async (pool: BasketPoolKey): Promise<number> => {
   return Math.ceil(fee / 100)
 }
 
-const nutboxRouteFeeBps = async (tokenIn: Address, tokenOut: Address): Promise<number[]> => {
+const nutboxRouteFeeBps = async (tokenIn: Address, tokenOut: Address, version = 3): Promise<number[]> => {
   if (sameAddress(tokenIn, tokenOut)) return []
-  const pools = await readNutboxPools(tokenIn, tokenOut)
+  const pools = await readNutboxPools(tokenIn, tokenOut, 56, version)
   const fees: number[] = []
   for (const pool of pools) {
     if (pool.sourceType === 0) fees.push(PANCAKE_V2_FEE_BPS)
@@ -363,16 +370,17 @@ export const getBscV3DefaultExecutionLossBps = async (
   route: BasketLegRoute,
   userSlippageBps = 100,
   chainId = 56,
+  version = 3,
 ): Promise<number> => {
-  const protocol = getBasketProtocol(chainId, 3)
-  const poolQuote = getPoolQuoteToken(route, chainId, 3)
+  const protocol = getBasketProtocol(chainId, version)
+  const poolQuote = getPoolQuoteToken(route, chainId, version)
   const directFee = route.venue === 0
     ? chainId === 56 ? await currentInfinityFeeBps(route.v4Pool) : Math.ceil(route.v4Pool.fee / 100)
     : route.venue === 1 ? Math.ceil(route.v3Fee / 100) : route.venue === 3 ? (chainId === 56 ? PANCAKE_V2_FEE_BPS : 30) : 0
   const bridgeFees = sameAddress(poolQuote, protocol.settlementToken)
     ? []
     : chainId === 56
-      ? await nutboxRouteFeeBps(protocol.settlementToken, poolQuote)
+      ? await nutboxRouteFeeBps(protocol.settlementToken, poolQuote, version)
       : [userSlippageBps]
   let remaining = BigInt(BPS)
   for (const fee of [directFee, ...bridgeFees, userSlippageBps]) {

@@ -17,6 +17,12 @@ import { useChainStore } from "./stores/chain";
 import { refreshRobinhoodBStockRegistry, registerRobinhoodStockCommunities } from "./config/bstocks";
 import type { Community } from "./types";
 
+import { startV13RegistrationSync } from '@/utils/v13/registration-sync';
+
+let stopRegistrationSync: (() => void) | undefined;
+onMounted(() => { stopRegistrationSync = startV13RegistrationSync(); });
+onUnmounted(() => stopRegistrationSync?.());
+
 const stateStore = useStateStore();
 const chainStore = useChainStore();
 const route = useRoute();

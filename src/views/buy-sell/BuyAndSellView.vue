@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { quoteCurve, executeCurve, type CurveQuote } from '@/utils/v13/lifecycle'
+import { createQuoteSession, executeQuote, type Quote } from '@/utils/v13/client'
 import BackHeader from "@/layout/BackHeader.vue";
-import {computed, nextTick, onActivated, onMounted, provide, ref, watch} from "vue";
+import {computed, nextTick, onActivated, onMounted, onUnmounted, provide, ref, shallowRef, watch} from "vue";
 import { useI18n } from "vue-i18n";
 import {useCreateTweet} from "@/composables/useCreateTweet";
 import RecordList from "@/views/buy-sell/RecordList.vue";
@@ -65,6 +67,7 @@ const getTradeSellsman = async () => {
   const candidate = props.sellsman || routeSellsman
   // Only modern wrappers/hooks own fallback. Legacy listed issued tokens
   // (including BUIDL) still require an existing IPShare subject.
+  if (isV13.value) return resolveListedTradeSellsman(candidate)
   if (!requiresIPShareSellsman(comStore.currentSelectedCommunity ?? {})) {
     return resolveListedTradeSellsman(candidate)
   }
@@ -76,6 +79,21 @@ const getTradeSellsman = async () => {
 }
 const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
+const isV13 = computed(() => chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 13)
+const v13Session = createQuoteSession()
+const v13Quote = shallowRef<Quote>()
+const curveQuote = shallowRef<CurveQuote>()
+const v13Error = ref('')
+const v13Message = computed(() => {
+  if (v13Error.value === 'V13_LISTING_PENDING') return t('v13Trade.pending')
+  if (v13Error.value === 'V13_NOT_LISTED') return t('v13Trade.notListed')
+  if (v13Error.value === 'V13_METADATA_UNAVAILABLE') return t('v13Trade.metadataUnavailable')
+  if (v13Error.value) return t('v13Trade.unavailable')
+  if (v13Quote.value && !v13Quote.value.snapshot.executable) return t('v13Trade.notDeployed')
+  return ''
+})
+
+onUnmounted(() => v13Session.reset())
 /** 有 tick 且非嵌入模式时展示桌面 K 线：未 list 用自建图，已 list 用 DexScreener */
 const showDesktopChart = computed(() =>
   !!comStore.currentSelectedCommunity?.tick && !props.tick
@@ -86,6 +104,10 @@ const isWalletConnected = computed(() =>
   accStore.ethConnectState === EthWalletState.Connected &&
   isAddress(accStore.ethConnectAddress ?? '')
 )
+watch([() => comStore.currentSelectedCommunity?.token, () => chainStore.activeChainId, () => accStore.ethConnectAddress], () => {
+  v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''
+  buyQuoteSeq++; sellQuoteSeq++; receiveAmount.value = ''; receiveEth.value = ''; calculating.value = false
+})
 const tradeType = ref('buy')
 const route = useRoute()
 const tokenInfo = ref()
@@ -171,15 +193,18 @@ watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value]
 watch(() => tradeType.value, () => {
   percentage.value = 0
   quoteSpotPrice.value = null
+  if (isV13.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''; receiveAmount.value = ''; receiveEth.value = ''; tradeType.value === 'buy' ? updateBuyAmount(payEth.value) : updateSellAmount(sellAmount.value) }
 })
 
 watch(payEth, (val: any) => {
+  if (isV13.value) { buyQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
   calculating.value = true
   willListing = false
   updateBuyAmount(val)
 })
 
 watch(sellAmount, (val: any) => {
+  if (isV13.value) { sellQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
   // 手动改数量后脱离进度条比例，避免余额刷新时覆盖输入
   if (!sellAmountSyncingFromPercent.value && percentage.value > 0) {
     percentage.value = 0
@@ -242,6 +267,7 @@ const calcAdversePriceImpact = (executionBnbPerToken: number, spotBnbPerToken: n
 }
 
 const buyPriceImpact = computed(() => {
+  if (isV13.value) return null
   const pay = parseFloat(payEth.value)
   const recv = Number(receiveAmount.value?.toString() ?? 0) / 1e18
   const spot = quoteSpotPrice.value
@@ -252,6 +278,7 @@ const buyPriceImpact = computed(() => {
   return calcAdversePriceImpact(execPrice, spot)
 })
 const sellPriceImpact = computed(() => {
+  if (isV13.value) return null
   const sellTokens = parseFloat(sellAmount.value)
   const recvEthNet = Number(receiveEth.value?.toString() ?? 0) / 1e18
   const spot = quoteSpotPrice.value
@@ -333,7 +360,18 @@ const updateBuyAmount = debounce(async (val: any) => {
   }
   let receive: bigint
   let spot = 0
-  if (community?.isImport && Number(community.version) === 10) {
+  if (isV13.value) {
+    try {
+      const q = await v13Session.quote(community!.token as `0x${string}`, true, amount)
+      if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
+      v13Quote.value = q; curveQuote.value = undefined; v13Error.value = ''; receive = q.plan.amountOut
+    } catch (e) {
+      if ((e as Error).message !== 'V13_NOT_LISTED') throw e
+      const q = await quoteCurve(community!.token as `0x${string}`,true,amount)
+      if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
+      curveQuote.value=q; v13Quote.value=undefined; v13Error.value=''; receive=q.amountOut
+    }
+  } else if (community?.isImport && Number(community.version) === 10) {
     const dexVersion = Number(community.dexVersion ?? 2)
     const recipient = accStore.ethConnectAddress
     const sellsman = await getTradeSellsman()
@@ -410,6 +448,8 @@ const updateBuyAmount = debounce(async (val: any) => {
   quoteSpotPrice.value = spot > 0 ? spot : null
   } catch (error) {
     if (seq !== buyQuoteSeq) return
+    if ((error as Error)?.message === 'V13_QUOTE_CANCELLED') return
+    if (isV13.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined; curveQuote.value = undefined }
     console.warn('Buy quote failed', error)
     // Empty means unavailable; zero is reserved for a successful quote that
     // cannot cross the pool and must not mask RPC/encoding failures.
@@ -454,7 +494,18 @@ const updateSellAmount = debounce(async (val: any) => {
     }
     let receive: bigint
     let spot = 0
-    if (community?.isImport && Number(community.version) === 10) {
+    if (isV13.value) {
+      try {
+        const q = await v13Session.quote(community!.token as `0x${string}`, false, amount)
+        if (seq !== sellQuoteSeq || sellAmount.value.trim() !== str || tradeType.value !== 'sell') return
+        v13Quote.value = q; curveQuote.value=undefined; v13Error.value = ''; receive = q.plan.amountOut
+      } catch (e) {
+        if ((e as Error).message !== 'V13_NOT_LISTED') throw e
+        const q=await quoteCurve(community!.token as `0x${string}`,false,amount)
+        if (seq !== sellQuoteSeq || sellAmount.value.trim() !== str || tradeType.value !== 'sell') return
+        curveQuote.value=q;v13Quote.value=undefined;v13Error.value='';receive=q.amountOut
+      }
+    } else if (community?.isImport && Number(community.version) === 10) {
       const dexVersion = Number(community.dexVersion ?? 2)
       receive = await quoteImportedTokenSell(community.token!, community.pair, dexVersion, amount)
       try {
@@ -517,6 +568,8 @@ const updateSellAmount = debounce(async (val: any) => {
     quoteSpotPrice.value = spot > 0 ? spot : null
   } catch (error) {
     if (seq !== sellQuoteSeq) return
+    if ((error as Error)?.message === 'V13_QUOTE_CANCELLED') return
+    if (isV13.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined; curveQuote.value = undefined }
     console.warn('Sell quote failed', error)
     receiveEth.value = ''
     quoteSpotPrice.value = null
@@ -637,7 +690,15 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (usesListedV4Quote(token) && listed.value && !(token.isImport && Number(token.version) === 10)) {
+      if (isV13.value && curveQuote.value) {
+        const q=curveQuote.value
+        if (!q.isBuy || q.amountIn!==parseEther(payEth.value)) throw new Error(t('v13Trade.refresh'))
+        hash=await executeCurve(q,resolvedSellsman as `0x${string}`,Math.ceil(maxSlippage.value*100))
+      } else if (isV13.value) {
+        const q = v13Quote.value
+        if (!q || !q.plan.isBuy || q.plan.amountIn !== parseEther(payEth.value)) throw new Error(t('v13Trade.refresh'))
+        hash = await executeQuote(q, resolvedSellsman as `0x${string}`, Math.ceil(maxSlippage.value * 100))
+      } else if (usesListedV4Quote(token) && listed.value && !(token.isImport && Number(token.version) === 10)) {
         const ethAmount = parseEther(payEth.value.toString());
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
@@ -673,6 +734,7 @@ async function confirm() {
       if (hash) {
         payEth.value = ''
         receiveAmount.value = undefined
+        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
         recordCommunityTrade(hash)
         emitter.emit('newTrade')
         updateUserTokenInfo()
@@ -688,7 +750,15 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (usesListedV4Quote(token) && listed.value && !(token.isImport && Number(token.version) === 10)) {
+      if (isV13.value && curveQuote.value) {
+        const q=curveQuote.value
+        if (q.isBuy || q.amountIn!==finalSellAmount) throw new Error(t('v13Trade.refresh'))
+        hash=await executeCurve(q,resolvedSellsman as `0x${string}`,Math.ceil(maxSlippage.value*100))
+      } else if (isV13.value) {
+        const q = v13Quote.value
+        if (!q || q.plan.isBuy || q.plan.amountIn !== finalSellAmount) throw new Error(t('v13Trade.refresh'))
+        hash = await executeQuote(q, resolvedSellsman as `0x${string}`, Math.ceil(maxSlippage.value * 100))
+      } else if (usesListedV4Quote(token) && listed.value && !(token.isImport && Number(token.version) === 10)) {
         if (chainStore.deployment.dex.kind === 'uniswap') {
           const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
           if (!poolKey || !receiveEth.value) throw new Error('RH V4 PoolKey or quote is unavailable')
@@ -712,6 +782,7 @@ async function confirm() {
       if (hash) {
         sellAmount.value = ''
         receiveEth.value = undefined
+        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
         recordCommunityTrade(hash)
 
         emitter.emit('newTrade')
@@ -731,6 +802,18 @@ async function confirm() {
   } finally {
     trading.value = false
   }
+}
+
+function refreshV13Quote() {
+  v13Session.reset()
+  v13Quote.value = undefined; curveQuote.value = undefined
+  v13Error.value = ''
+  receiveAmount.value = ''
+  receiveEth.value = ''
+  buyQuoteSeq++
+  sellQuoteSeq++
+  calculating.value = true
+  tradeType.value === 'buy' ? updateBuyAmount(payEth.value) : updateSellAmount(sellAmount.value)
 }
 
 async function updateUserTokenInfo () {
@@ -1002,10 +1085,17 @@ onMounted(async () => {
             </el-radio>
           </el-radio-group>
         </div>
+        <div v-if="isV13" class="text-sm space-y-1">
+          <p v-if="v13Message" role="status" class="text-orange-normal">{{ v13Message }}</p>
+          <template v-if="v13Quote">
+            <div class="flex justify-between text-grey-64"><span>{{ $t('v13Trade.estimatedGas') }}</span><span>{{ Number(v13Quote.plan.gas * v13Quote.snapshot.gasPrice) / 1e18 }} BNB</span></div>
+          </template>
+          <button class="underline" :disabled="calculating" @click="refreshV13Quote">{{ $t('v13Trade.refresh') }}</button>
+        </div>
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :disabled="(isWalletConnected && isV13 && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
             !isWalletConnected
