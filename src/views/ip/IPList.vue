@@ -454,6 +454,7 @@ onBeforeUnmount(() => {
 @media (max-width: 803px) {
   .ipshare-shell { padding: 14px 12px 88px; }
   .hero { padding: 22px 18px; border-radius: 22px; }
+  .hero__stats { display: none; }
 }
 @media (max-width: 460px) {
   .hero__stats { grid-template-columns: 1fr; }

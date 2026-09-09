@@ -255,7 +255,7 @@ onMounted(() => {
 @media (max-width: 900px) { .basket-grid { grid-template-columns: 1fr; } }
 @media (max-width: 803px) {
   .baskets-shell { padding-top: 14px; padding-bottom: 88px; }
-  .hero { padding: 24px 20px; border-radius: 24px; }
+  .hero { display: none; }
 }
 @media (max-width: 460px) {
   .hero__stats { width: 100%; }
