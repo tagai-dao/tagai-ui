@@ -580,6 +580,7 @@ onBeforeUnmount(() => {
           </SpaceItem>
           <TweetItem
             v-else
+            hide-community-hashtag
             class="bg-white rounded-2xl"
             :tweet="item.tweet"
             @open-token-details="openFeedTokenSheet"
