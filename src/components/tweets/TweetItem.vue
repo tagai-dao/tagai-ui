@@ -27,6 +27,7 @@ const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,},
   multiline: {type: Boolean, required: false},
   showMarketCap: {type: Boolean, required: false, default: true},
+  hideCommunityHashtag: {type: Boolean, default: false},
   textOnly: {type: Boolean, required: false, default: false}
 })
 const showXOriginalLink = computed(() => {
@@ -226,7 +227,8 @@ onUnmounted(() => {
             <div class="whitespace-pre-line break-words content" :class="multiline ? '' : 'multi-content-3'"
                  v-else v-html="formatEmojiText(content, true)"></div>
           </div>
-          <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags">
+          <!-- Feed token cards already provide the community entry point. -->
+          <div class="flex flex-wrap gap-4 mt-1" v-if="tweet.tags && !(hideCommunityHashtag && !textOnly && tweet.tick && tweet.token)">
             <button
                     :style="{backgroundColor: tagBgColors[0], color: tagTextColors[0]}"
                     @click.stop="gotoTick(tweet.tick!)"
