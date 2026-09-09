@@ -41,7 +41,6 @@ const refreshing = ref(false);
 const loading = ref(false);
 const loadFailed = ref(false);
 const listLoaded = ref(false);
-const usingListSnapshot = ref(false)
 const router = useRouter();
 const stateStore = useStateStore();
 const chainStore = useChainStore();
@@ -126,7 +125,6 @@ function showCoinList(type: ListType, chainId: number, source: TagCoinSource, ro
   if (type === ListType.New) nextNewPage.value = 1
   listLoaded.value = true
   loadFailed.value = false
-  usingListSnapshot.value = snapshot
 }
 
 /** Keep the Token page useful when one independent ranking endpoint is down. */
@@ -166,7 +164,6 @@ async function refresh() {
     if (!isCurrent()) return
     comStore[key] = communities || []
     saveCoinListSnapshot(chainId, type, source, comStore[key])
-    usingListSnapshot.value = false
     listLoaded.value = true
     finished[type] = communities.length < 30
     if (type === ListType.New) nextNewPage.value = 1
@@ -181,13 +178,11 @@ async function refresh() {
       const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type, source))
       if (existing?.length) {
         listLoaded.value = true
-        usingListSnapshot.value = false
         loadFailed.value = false
         console.warn(`[Token] ${ListType[type]} refresh failed; retaining current list`, error)
       } else if (cached?.length) {
         comStore[key] = cached
         listLoaded.value = true
-        usingListSnapshot.value = true
         loadFailed.value = false
       } else {
         const recovered = await showAvailableSiblingRanking(type, chainId, source, isCurrent)
@@ -446,7 +441,6 @@ function switchTagCoinSource(source: TagCoinSource) {
   )
   comStore[key] = cached ?? []
   listLoaded.value = !!cached?.length
-  usingListSnapshot.value = !!cached?.length
   loadFailed.value = false
   finished[listType.value] = false
   pageScrollRef.value?.scrollTo?.({ top: 0, behavior: 'smooth' })
@@ -747,11 +741,6 @@ const onCreate = (type: GlobalModalType) => {
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
-          <button
-            v-if="usingListSnapshot"
-            class="w-full mb-2 rounded-xl bg-orange-normal/10 px-3 py-2 text-sm text-orange-normal"
-            @click.stop="refresh"
-          >{{ $t('network.cached') }}</button>
           <van-list :loading="loading"
                     :error="loadFailed"
                     :finished="finished[listType]"
@@ -760,9 +749,6 @@ const onCreate = (type: GlobalModalType) => {
                     :finished-text="filterTagCoins(currentCoinList).length==0?'':$t('noMore')"
                     :offset="50"
                     @load="loadMore">
-            <template #error>
-              <button class="px-4 py-3 text-orange-normal" @click.stop="refresh">{{ $t('network.retry') }}</button>
-            </template>
 
             <div v-if="refreshing && currentCoinList.length === 0" class="flex justify-center py-10" role="status">
               <i-ep-loading class="animate-spin w-7 h-7 text-orange-normal" />
@@ -809,8 +795,7 @@ const onCreate = (type: GlobalModalType) => {
           <div v-if="bStocksLoading && bStockCommunities.length === 0" class="flex justify-center py-10 w-full">
             <i-ep-loading class="animate-spin w-7 h-7 text-orange-normal" />
           </div>
-          <button v-else-if="bStocksFailed" class="w-full py-6 text-orange-normal" @click="refreshBStocks">{{ $t('network.retry') }}</button>
-          <div v-else-if="bStocksLoaded && bStockCommunities.length === 0" class="flex justify-center py-6 w-full">
+          <div v-else-if="bStocksLoaded && !bStocksFailed && bStockCommunities.length === 0" class="flex justify-center py-6 w-full">
             <img src="~@/assets/images/empty-data.svg" alt="">
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">

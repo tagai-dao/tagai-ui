@@ -62,7 +62,8 @@ export function get(url: string, params?: Object, config?: any) {
   });
 }
 
-// Public display reads have a total network deadline and no automatic retry.
+// Each display attempt has a network deadline. The display reader handles
+// bounded PAGE_PREPARING retries without holding a network concurrency slot.
 // Requests for user participation explicitly opt out of publicDisplay.
 export async function getDisplay(url: string, params: Record<string, unknown>, chainId: number) {
   const response = await axios.get(url, {

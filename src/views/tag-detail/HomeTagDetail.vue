@@ -333,7 +333,7 @@ async function refreshCommunityDetail() {
     if (route.params.id === tick && chainStore.activeChainId === chainId && community?.tick) {
       comStore.currentSelectedCommunity = { ...comStore.currentSelectedCommunity, ...community }
     }
-  } catch (_) { /* Inline page status supplies retry. */ }
+  } catch (_) { /* Preserve the last available community after display retries. */ }
 }
 async function reloadCommunityData() {
   await refreshCommunityDetail()

@@ -8,6 +8,13 @@ const publish = (status: ReadStatus) => {
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent(eventName, { detail: status }))
 }
 
+function preparingRetryDelay(error: unknown): number | undefined {
+  const response = (error as { response?: { status?: number; data?: { code?: string; retryAfter?: number }; headers?: Record<string, unknown> } })?.response
+  if (response?.status !== 503 || response.data?.code !== 'PAGE_PREPARING') return undefined
+  const seconds = Number(response.headers?.['retry-after'] ?? response.data.retryAfter ?? 5)
+  return (Number.isFinite(seconds) ? Math.min(10, Math.max(1, seconds)) : 5) * 1000
+}
+
 /** Display-only SWR. Never call this for balances, quotes, signatures or writes. */
 export function createDisplayReader(
   fetcher: (path: string, query: Record<string, unknown>, chainId: number) => Promise<{ data: unknown; updatedAt?: string; stale?: boolean }>,
@@ -20,11 +27,25 @@ export function createDisplayReader(
   const run = async <T>(work: () => Promise<T>) => {
     if (active >= 4) await new Promise<void>((resolve, reject) => {
       const start = () => { clearTimeout(timer); resolve() }
-      const timer = setTimeout(() => { const i = queue.indexOf(start); if (i >= 0) queue.splice(i, 1); reject(new Error('Page request queue timed out')) }, 2500)
+      // A cold network request may take 10 seconds. Allow queued tabs to wait
+      // for capacity instead of failing before the first requests can finish.
+      const timer = setTimeout(() => { const i = queue.indexOf(start); if (i >= 0) queue.splice(i, 1); reject(new Error('Page request queue timed out')) }, 30000)
       queue.push(start)
     })
     active++
     try { return await work() } finally { active--; queue.shift()?.() }
+  }
+  const fetchWithRetry = async (path: string, query: Record<string, unknown>, chainId: number) => {
+    for (let attempt = 0; ; attempt++) {
+      try { return await run(() => fetcher(path, query, chainId)) }
+      catch (error) {
+        const delay = preparingRetryDelay(error)
+        if (attempt >= 2 || delay === undefined) throw error
+        // Keep same-key reads coalesced, but release network capacity while
+        // the backend prepares its snapshot. Never retry indefinitely.
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
   }
   const read = async (path: string, query: Record<string, unknown>, chainId: number, freshMs = 30000) => {
     const sorted = Object.fromEntries(Object.entries(query).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b)))
@@ -42,7 +63,7 @@ export function createDisplayReader(
     const refresh = () => {
       if (!pending.has(key)) {
         publish({ ...status, pending: true, stale: !!hit, updatedAt: hit?.updatedAt })
-        const task = run(() => fetcher(path, sorted, chainId)).then(result => {
+        const task = fetchWithRetry(path, sorted, chainId).then(result => {
           const entry = { data: clone(result.data), savedAt: Date.now(), updatedAt: result.updatedAt || new Date().toISOString(), stale: !!result.stale }
           entries.set(key, entry)
           while (entries.size > 150) {
@@ -55,7 +76,7 @@ export function createDisplayReader(
           return clone(entry.data)
         }).catch(error => {
           publish({ ...status, failed: true, stale: !!hit, updatedAt: hit?.updatedAt })
-          // PageDataStatus owns display errors; trading errors remain untouched.
+          // Mark display failures for silent handling; trading errors remain untouched.
           if (error && typeof error === 'object') error.displayRead = true
           throw error
         }).finally(() => pending.delete(key))

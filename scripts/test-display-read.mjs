@@ -47,6 +47,43 @@ test('caps parallel display requests at four', async () => {
   await Promise.all(Array.from({ length: 12 }, (_, page) => read('/list', { page }, 56)))
   assert.equal(maximum, 4)
 })
+test('retries PAGE_PREPARING and coalesces readers until the snapshot is ready', async () => {
+  let calls = 0
+  const read = createDisplayReader(async () => {
+    if (++calls === 1) throw { response: { status: 503, data: { code: 'PAGE_PREPARING', retryAfter: 1 } } }
+    return { data: ['ready'] }
+  })
+  const [a, b] = await Promise.all([read('/list', {}, 56), read('/list', {}, 56)])
+  assert.deepEqual(a, ['ready'])
+  assert.deepEqual(b, ['ready'])
+  assert.equal(calls, 2)
+})
+test('stops retrying persistent PAGE_PREPARING failures', async () => {
+  let calls = 0
+  const read = createDisplayReader(async () => {
+    calls++
+    throw { response: { status: 503, data: { code: 'PAGE_PREPARING' }, headers: { 'retry-after': '1' } } }
+  })
+  await assert.rejects(read('/list', {}, 56), error => error.displayRead === true)
+  assert.equal(calls, 3)
+})
+test('does not retry authorization errors', async () => {
+  let calls = 0
+  const read = createDisplayReader(async () => {
+    calls++
+    throw { response: { status: 401, data: { code: 'UNAUTHORIZED' } } }
+  })
+  await assert.rejects(read('/list', {}, 56))
+  assert.equal(calls, 1)
+})
+test('queued first loads survive a slow initial request batch', async () => {
+  const read = createDisplayReader(async (_, query) => {
+    if (query.page < 4) await new Promise(resolve => setTimeout(resolve, 2700))
+    return { data: [query.page] }
+  })
+  const rows = await Promise.all(Array.from({ length: 5 }, (_, page) => read('/list', { page }, 56)))
+  assert.deepEqual(rows[4], [4])
+})
 for (const name of ['components/common/PageDataStatus', 'views/HomeView', 'views/home/HomePost', 'views/tag-detail/HomeTagDetail', 'views/tag-detail/TagContent', 'views/tag-detail/TagToken', 'views/ip/IPList', 'views/buidler/PnlView', 'views/buidler/EarnView', 'views/tag-detail/Credit/TagCredit', 'views/tag-detail/Credit/PredictionCredit', 'views/baskets/BasketsListView']) {
   test(`${name} compiles`, () => {
     const filename = `src/${name}.vue`

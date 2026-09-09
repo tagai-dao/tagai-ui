@@ -542,11 +542,6 @@ onBeforeUnmount(() => {
       </button>
     </div>
   </div>
-  <button
-    v-if="usingSnapshot"
-    class="w-full mb-2 rounded-xl bg-orange-normal/10 px-3 py-2 text-sm text-orange-normal"
-    @click.stop="onRefresh"
-  >{{ $t('network.cached') }}</button>
   <div class="flex-1">
     <van-pull-refresh class="h-full min-h-full"
       v-model="refreshing"
@@ -563,9 +558,6 @@ onBeforeUnmount(() => {
         :finished-text="$t('noMore')"
         :offset="50"
       >
-        <template #error>
-          <button class="px-4 py-3 text-orange-normal" @click.stop="onRefresh">{{ $t('network.retry') }}</button>
-        </template>
         <div v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : tradeIdentity(item.trade)" class="mb-2">
           <FeedTradeActivity
             v-if="item.type === 'trade'"
