@@ -1,5 +1,6 @@
 {
   "v13Index": {
+    "createdOnList": "インデックスバスケットは上場（List）時に自動作成されます。",
     "totalBought": "累計買戻し指数",
     "rewardBalance": "指数報酬準備金",
     "walletBalance": "自分の指数残高",
@@ -22,6 +23,7 @@
     "claimDone": "報酬をウォレットに送付しました。"
 },
   "v13Page": {
+    "chainPoolsFallback": "詳細サービスを利用できません。表示中のプールの関連付けはオンチェーンで検証済みです。",
     "poolBurnDescription": "構成資産プールの取引では、{symbol} の 0.1% が差し引かれ、直接バーンされます。",
     "totalBurned": "累計バーン",
     "burnSource": "バーンアドレスが保有するコミュニティトークンの残高。",

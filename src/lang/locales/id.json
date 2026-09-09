@@ -1,5 +1,6 @@
 {
   "v13Index": {
+    "createdOnList": "Keranjang indeks akan dibuat otomatis saat listing (List).",
     "totalBought": "Total indeks dibeli kembali",
     "rewardBalance": "Cadangan imbalan indeks",
     "walletBalance": "Saldo indeks saya",
@@ -22,6 +23,7 @@
     "claimDone": "Imbalan dikirim ke dompet Anda."
 },
   "v13Page": {
+    "chainPoolsFallback": "Layanan detail tidak tersedia. Keterkaitan pool telah diverifikasi on-chain.",
     "poolBurnDescription": "Transaksi pool komponen memotong 0,1% {symbol} dan langsung membakarnya.",
     "totalBurned": "Total dibakar",
     "burnSource": "Saldo token komunitas di alamat pembakaran.",

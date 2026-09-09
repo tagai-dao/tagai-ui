@@ -1371,6 +1371,7 @@
     "allocationRules": "图中比例按总手续费计算，显示至一位小数，实际收益以合约结算为准。平台份额用于拍卖，其余按创建者、持有者、前端和发行方分配。未指定前端、没有持有者或销毁地址对应的收益，会按合约规则转给发行方。"
   },
   "v13Index": {
+    "createdOnList": "指数篮子将在上市（List）时自动创建。",
     "totalBought": "累计回购指数",
     "rewardBalance": "指数奖励储备",
     "walletBalance": "我的指数余额",
@@ -1393,6 +1394,7 @@
     "claimDone": "奖励已领取到你的钱包。"
 },
   "v13Page": {
+    "chainPoolsFallback": "详情服务暂不可用，当前矿池关联信息已从链上核验。",
     "poolBurnDescription": "成分池交易会扣除 0.1% 的 {symbol}，并直接销毁。",
     "totalBurned": "累计销毁",
     "burnSource": "按销毁地址持有的社区代币余额统计。",

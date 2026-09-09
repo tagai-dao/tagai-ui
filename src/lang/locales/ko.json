@@ -1,5 +1,6 @@
 {
   "v13Index": {
+    "createdOnList": "인덱스 바스켓은 상장(List) 시 자동으로 생성됩니다.",
     "totalBought": "누적 환매 인덱스",
     "rewardBalance": "인덱스 보상 준비금",
     "walletBalance": "내 인덱스 잔액",
@@ -22,6 +23,7 @@
     "claimDone": "보상이 지갑으로 전송되었습니다."
 },
   "v13Page": {
+    "chainPoolsFallback": "상세 서비스를 사용할 수 없습니다. 표시된 풀 연결 정보는 온체인에서 검증되었습니다.",
     "poolBurnDescription": "구성 자산 풀 거래 시 {symbol}의 0.1%를 차감하여 즉시 소각합니다.",
     "totalBurned": "누적 소각량",
     "burnSource": "소각 주소가 보유한 커뮤니티 토큰 잔액입니다.",

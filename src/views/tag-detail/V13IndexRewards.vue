@@ -9,19 +9,21 @@ import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import BasketTokenLogo from '@/views/baskets/components/BasketTokenLogo.vue'
 import { getV13Detail, type V13Detail } from '@/utils/v13/pools'
-import { readBuybackState, quoteBuyback, executeBuyback, claimIndexReward, type BuybackState, type BuybackQuote } from '@/utils/v13/buyback'
+import { buybackAbi, readBuybackState, quoteBuyback, executeBuyback, claimIndexReward, type BuybackState, type BuybackQuote } from '@/utils/v13/buyback'
+import { getReadOnlyClient } from '@/utils/wallets'
 
 const { t, locale } = useI18n(), store = useCommunityStore(), chain = useChainStore(), wallet = useAccountStore()
 const token = computed(() => store.currentSelectedCommunity?.token as Address | undefined)
 const account = computed(() => isAddress(wallet.ethConnectAddress || '') ? wallet.ethConnectAddress as Address : zeroAddress)
 const connected = computed(() => account.value !== zeroAddress && chain.activeChainId === 56)
 const detail = ref<V13Detail>(), state = ref<BuybackState>(), quote = ref<BuybackQuote>()
+const listed = ref<boolean>()
 const loading = ref(false), quoting = ref(false), busy = ref<'buyback' | 'claim' | ''>(''), error = ref(''), loadError = ref(''), success = ref('')
 const slippage = ref(1), bps = computed(() => Math.round(Number(slippage.value) * 100))
 const validSlippage = computed(() => Number.isInteger(bps.value) && bps.value >= 1 && bps.value <= 1000)
 const index = computed(() => state.value?.index || detail.value?.config.index_token || zeroAddress)
-const indexReady = computed(() => index.value !== zeroAddress && !!state.value?.listed)
-const name = computed(() => detail.value?.config.name || state.value?.symbol || '—')
+const indexReady = computed(() => listed.value === true && index.value !== zeroAddress && !!state.value?.listed)
+const name = computed(() => detail.value?.config.name || state.value?.symbol || store.currentSelectedCommunity?.tick || '—')
 const symbol = computed(() => state.value?.symbol || detail.value?.config.symbol || '')
 const assets = computed(() => detail.value?.components.map(c => ({ address: c.asset, symbol: c.asset_symbol || `${c.asset.slice(0, 6)}…`, weightPct: c.target_weight / 100 })) || [])
 const f = (value: bigint | undefined, decimals = state.value?.decimals ?? 18) => value === undefined ? '—' : Number(formatUnits(value, decimals)).toLocaleString(locale.value, { maximumFractionDigits: 6 })
@@ -29,12 +31,21 @@ let generation = 0, previewGeneration = 0, disposed = false
 async function load() {
   if (!token.value || chain.activeChainId !== 56) return
   const id = ++generation; loading.value = true
-  const result = await Promise.allSettled([getV13Detail(token.value), readBuybackState(token.value, account.value)])
-  if (id !== generation || disposed) return
-  if (result[0].status === 'fulfilled') detail.value = result[0].value
-  if (result[1].status === 'fulfilled') { state.value = result[1].value; loadError.value = '' }
-  else loadError.value = t('v13Page.loadError')
-  loading.value = false
+  const currentToken = token.value, currentAccount = account.value
+  try {
+    // Inner-curve tokens have no index yet. Do not depend on index metadata or
+    // reward reads just to explain when it will be created (including pendinglist).
+    const value = await getReadOnlyClient(56).readContract({ address: currentToken, abi: buybackAbi, functionName: 'listed' })
+    if (id !== generation || disposed) return
+    listed.value = value; loadError.value = ''
+    if (!value) { detail.value = undefined; state.value = undefined; quote.value = undefined; return }
+    const result = await Promise.allSettled([getV13Detail(currentToken), readBuybackState(currentToken, currentAccount)])
+    if (id !== generation || disposed) return
+    if (result[0].status === 'fulfilled') detail.value = result[0].value
+    if (result[1].status === 'fulfilled') { state.value = result[1].value; listed.value = result[1].value.listed }
+    else loadError.value = t('v13Page.loadError')
+  } catch { if (id === generation && !disposed) loadError.value = t('v13Page.loadError') }
+  finally { if (id === generation && !disposed) loading.value = false }
 }
 function message(cause: unknown) {
   const code = cause instanceof Error ? cause.message : ''
@@ -46,7 +57,7 @@ function message(cause: unknown) {
   return t('v13Index.operationFailed')
 }
 async function preview() {
-  if (!token.value || !validSlippage.value || busy.value || quoting.value) return
+  if (!indexReady.value || !token.value || !validSlippage.value || busy.value || quoting.value) return
   const id = ++previewGeneration; quoting.value = true; quote.value = undefined; error.value = ''; success.value = ''
   try {
     const result = await quoteBuyback(token.value, account.value, bps.value)
@@ -56,6 +67,7 @@ async function preview() {
 }
 function connect() { useModalStore().setModalVisible(true, GlobalModalType.ChoseWallet) }
 async function operate(kind: 'buyback' | 'claim') {
+  if (!indexReady.value) return
   if (!connected.value) { connect(); return }
   if (!token.value || busy.value || quoting.value) return
   const id = previewGeneration; busy.value = kind; error.value = ''; success.value = ''
@@ -69,7 +81,7 @@ async function operate(kind: 'buyback' | 'claim') {
   finally { busy.value = '' }
 }
 watch([token, account, () => chain.activeChainId], () => {
-  generation++; previewGeneration++; detail.value = undefined; state.value = undefined; quote.value = undefined
+  generation++; previewGeneration++; detail.value = undefined; state.value = undefined; quote.value = undefined; listed.value = undefined
   loading.value = false; quoting.value = false; error.value = ''; loadError.value = ''; success.value = ''
   void load()
 }, { immediate: true })
@@ -89,7 +101,9 @@ onUnmounted(() => { disposed = true; generation++; previewGeneration++; clearInt
       <button class="text-button" :disabled="loading || !!busy || quoting" @click="load">{{ t('v13Page.refresh') }}</button>
     </header>
     <p v-if="loadError" role="alert" class="error">{{ loadError }}</p>
-    <p v-if="state && !indexReady" class="pending">{{ t('v13Index.pending') }}</p>
+    <p v-if="listed === false" class="pending" role="status">{{ t('v13Index.createdOnList') }}</p>
+    <p v-else-if="state && !indexReady" class="pending" role="status">{{ t('v13Index.pending') }}</p>
+    <template v-if="indexReady">
     <div v-if="assets.length" class="index-assets"><span v-for="asset in assets" :key="asset.address">{{ asset.symbol }} <b>{{ asset.weightPct }}%</b></span></div>
     <div class="index-stats">
       <div><span>{{ t('v13Page.buybackReserve') }}</span><strong>{{ f(state?.reserve, 18) }} <small>BNB</small></strong></div>
@@ -119,6 +133,7 @@ onUnmounted(() => { disposed = true; generation++; previewGeneration++; clearInt
     </div>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-if="success" class="success" role="status">{{ success }}</p>
+    </template>
   </section>
 </template>
 

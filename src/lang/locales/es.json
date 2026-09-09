@@ -1,5 +1,6 @@
 {
   "v13Index": {
+    "createdOnList": "La cesta de índice se creará automáticamente al cotizar (List).",
     "totalBought": "Total de índice recomprado",
     "rewardBalance": "Reserva de recompensas",
     "walletBalance": "Mi saldo de índice",
@@ -22,6 +23,7 @@
     "claimDone": "Recompensas enviadas a tu cartera."
 },
   "v13Page": {
+    "chainPoolsFallback": "El servicio de detalles no está disponible. Las asociaciones de los pools se han verificado en la cadena.",
     "poolBurnDescription": "Las operaciones de los pools de componentes descuentan el 0,1% de {symbol} y lo queman directamente.",
     "totalBurned": "Total quemado",
     "burnSource": "Saldo del token de la comunidad en la dirección de quema.",

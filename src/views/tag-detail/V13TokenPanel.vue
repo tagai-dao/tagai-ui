@@ -14,6 +14,7 @@ import tokenAbi from '@/utils/v13/Token13.json'
 import V13PoolCard from './V13PoolCard.vue'
 import {notify} from '@/utils/notify'
 import {poolOperationErrorKey} from '@/utils/v13/operation-error'
+import {readMiningPools,type MiningPools} from '@/utils/v13/mining'
 const liquidityRouter=getChainDeployment(56).contracts.liquidityRouter13??null
 const props=defineProps<{mining?:boolean}>()
 const {t,locale}=useI18n(),store=useCommunityStore(),account=useAccountStore(),chain=useChainStore()
@@ -21,13 +22,15 @@ const token=computed(()=>store.currentSelectedCommunity?.token as Address),symbo
 const data=ref<V13Detail>(),state=ref<Awaited<ReturnType<typeof readLifecycle>>>(),pending=ref<bigint>(),error=ref(''),loading=ref(false),busy=ref(false)
 const claimingAll=ref(false),poolCards=ref<Array<{refresh:()=>Promise<void>}>>([])
 const poolBusy=ref<Record<string,boolean>>({})
-const canClaimAll=computed(()=>chain.activeChainId===56&&!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress&&!!data.value?.components.length&&!claimingAll.value&&!Object.values(poolBusy.value).some(Boolean))
+const chainPools=ref<MiningPools>()
+const pools=computed(()=>data.value?{community:data.value.config.community,components:data.value.components}:chainPools.value)
+const canClaimAll=computed(()=>chain.activeChainId===56&&!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress&&!!pools.value?.components.length&&!claimingAll.value&&!Object.values(poolBusy.value).some(Boolean))
 async function claimAll(){
- if(!canClaimAll.value||!data.value)return
+ if(!canClaimAll.value||!pools.value)return
  claimingAll.value=true
  const currentToken=token.value,currentAccount=account.ethConnectAddress
  try{
-  const hash=await claimAllPoolRewards(currentToken,data.value.config.community,data.value.components)
+  const hash=await claimAllPoolRewards(currentToken,pools.value.community,pools.value.components)
   if(!disposed&&token.value===currentToken&&account.ethConnectAddress===currentAccount){
    notify({message:t(hash?'v13ClaimAll.success':'v13ClaimAll.empty'),type:hash?'success':'info'})
    await Promise.allSettled(poolCards.value.map(card=>card.refresh()))
@@ -42,32 +45,55 @@ const progress=computed(()=>state.value?Math.min(100,Number(state.value.supply*1
 const stage=computed(()=>!state.value?'—':state.value.listed?t('v13Page.listed'):state.value.pending?t('v13Page.pending'):t('v13Page.curve'))
 let seq=0,disposed=false
 async function refresh(){
- const id=++seq;loading.value=true
- const burnRequest=props.mining?getReadOnlyClient(56).readContract({address:token.value,abi:tokenAbi as Abi,functionName:'balanceOf',args:[burnAddress]})
-  .then(value=>{if(id===seq&&!disposed){burned.value=value as bigint;burnUnavailable.value=false}})
-  .catch(cause=>{if(id===seq&&!disposed){burnUnavailable.value=true;console.warn('[V13 burned balance]',cause)}}):Promise.resolve()
- try{
-  const [d,s]=await Promise.all([getV13Detail(token.value),readLifecycle(token.value)])
-  const rewards=account.ethConnectAddress?await getReadOnlyClient(56).readContract({address:token.value,abi:tokenAbi as Abi,functionName:'pendingBuybackReward',args:[account.ethConnectAddress]}).catch(()=>undefined) as bigint|undefined:undefined
-  if(id!==seq||disposed)return
-  data.value=d;state.value=s;pending.value=rewards;error.value=''
- }catch(e){if(id===seq)error.value=t('v13Page.loadError')}finally{await burnRequest;if(id===seq)loading.value=false}
+ const id=++seq,currentToken=token.value,currentAccount=account.ethConnectAddress;loading.value=true
+ const current=()=>id===seq&&!disposed
+ const lifecycle=async()=>{
+  const s=await readLifecycle(currentToken)
+  if(!current())return
+  state.value=s
+  if(!s.listed){burned.value=undefined;burnUnavailable.value=false}
+  else if(props.mining){
+   try{const value=await getReadOnlyClient(56).readContract({address:currentToken,abi:tokenAbi as Abi,functionName:'balanceOf',args:[burnAddress]});if(current()){burned.value=value as bigint;burnUnavailable.value=false}}
+   catch(cause){if(current()){burnUnavailable.value=true;console.warn('[V13 burned balance]',cause)}}
+  }
+ }
+ const detail=async()=>{
+  try{const d=await getV13Detail(currentToken);if(current()){data.value=d;chainPools.value=undefined}}
+  catch(cause){
+   if(!current())return
+   if(!props.mining)throw cause
+   const fallback=await readMiningPools(getReadOnlyClient(56),currentToken)
+   if(current()){data.value=undefined;chainPools.value=fallback;console.warn('[V13 detail unavailable; verified on-chain pools]',cause)}
+  }
+ }
+ const rewards=async()=>{
+  if(props.mining||!currentAccount)return
+  const value=await getReadOnlyClient(56).readContract({address:currentToken,abi:tokenAbi as Abi,functionName:'pendingBuybackReward',args:[currentAccount]}).catch(()=>undefined)
+  if(current())pending.value=value as bigint|undefined
+ }
+ const results=await Promise.allSettled([lifecycle(),detail(),rewards()])
+ if(current()){error.value=results.some(r=>r.status==='rejected')?t('v13Page.loadError'):'';loading.value=false}
 }
 async function claim(){busy.value=true;try{const guard=walletGuard();await send(token.value,tokenAbi as Abi,'claimBuybackReward',[guard.account],0n,guard);await refresh()}catch(e){error.value=e instanceof Error?e.message:String(e)}finally{busy.value=false}}
 watch([token,()=>chain.activeChainId],()=>{burned.value=undefined;burnUnavailable.value=false})
-watch([token,()=>account.ethConnectAddress,()=>chain.activeChainId],()=>{seq++;data.value=undefined;state.value=undefined;pending.value=undefined;error.value='';if(token.value&&chain.activeChainId===56)void refresh()},{immediate:true})
+watch([token,()=>account.ethConnectAddress,()=>chain.activeChainId],()=>{seq++;data.value=undefined;chainPools.value=undefined;state.value=undefined;pending.value=undefined;error.value='';poolBusy.value={};if(token.value&&chain.activeChainId===56)void refresh()},{immediate:true})
 const timer=setInterval(()=>{if(!loading.value&&!busy.value&&token.value&&chain.activeChainId===56)void refresh()},15000)
 onUnmounted(()=>{disposed=true;seq++;clearInterval(timer)})
 </script>
 <template>
  <div class="v13-panel" :class="{'mining-panel':mining}">
-  <header><div class="panel-heading"><h2>{{ mining?t('v13Page.pools'):symbol }}</h2><span v-if="mining&&data" class="pool-count">{{ data.components.length }}</span><span v-if="mining&&state" class="stage-badge">{{ stage }}</span></div><button @click="refresh" :disabled="loading">{{ t('v13Page.refresh') }}</button></header>
-  <section v-if="mining" class="burn-summary" :aria-label="t('v13Page.totalBurned')">
+  <header><div class="panel-heading"><h2>{{ mining?t('v13Page.pools'):symbol }}</h2><span v-if="mining&&pools" class="pool-count">{{ pools.components.length }}</span><span v-if="mining&&state" class="stage-badge">{{ stage }}</span></div><button @click="refresh" :disabled="loading">{{ t('v13Page.refresh') }}</button></header>
+  <section v-if="mining && state?.listed" class="burn-summary" :aria-label="t('v13Page.totalBurned')">
    <div class="burn-description"><span class="burn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M13 3c1 5-4 6-2 10 1-1 2-2 2-4 4 3 6 6 4 9-2 4-9 4-11 0-2-4 1-7 3-9 0 3 1 3 1 3-1-4 2-5 3-9Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></span><p>{{ t('v13Page.poolBurnDescription',{symbol}) }}</p></div>
    <div class="burn-total" :title="burnUnavailable?t('v13Page.loadError'):t('v13Page.burnSource')"><span>{{ t('v13Page.totalBurned') }}</span><strong :title="burned===undefined?'':formatUnits(burned,18)">{{ burnedLabel }} <small>{{ symbol }}</small></strong></div>
   </section>
   <p v-if="error" role="alert">{{ error }}</p>
   <section v-if="state && (!mining || !state.listed)" class="summary"><strong>{{ stage }}</strong><template v-if="!state.listed"><progress :value="progress" max="100"/><span>{{ progress }}% · {{ Number(formatUnits(state.supply,18)).toLocaleString() }} / 650,000,000</span></template><p v-if="state.pending||(mining&&!state.listed)" class="liquidity-note"><span v-if="state.pending">{{ t('v13Page.pendingHelp') }} </span><span v-if="mining&&!state.listed">{{ t('v13Page.unseeded') }}</span></p></section>
+  <template v-if="mining && pools">
+   <p v-if="chainPools" role="status">{{ t('v13Page.chainPoolsFallback') }}</p>
+   <div class="claim-all-bar"><button class="claim-all-button" :disabled="!canClaimAll" :aria-busy="claimingAll" @click="claimAll"><span v-if="claimingAll" class="claim-spinner" aria-hidden="true"/>{{ t(claimingAll?'v13ClaimAll.pending':'v13ClaimAll.button') }}</button></div>
+   <div class="pool-grid"><V13PoolCard ref="poolCards" :actions-disabled="claimingAll" @busy="poolBusy[leg.staking_pool]=$event" v-for="leg in pools.components" :key="leg.staking_pool" :token="token" :community="pools.community" :leg="leg" :symbol="symbol" :token-logo="store.currentSelectedCommunity?.logo" :liquidity-router="liquidityRouter" /></div>
+  </template>
   <template v-if="data">
    <section v-if="!mining" class="summary">
     <h3>{{ data.config.name }} ({{ data.config.symbol }})</h3>
@@ -87,14 +113,18 @@ onUnmounted(()=>{disposed=true;seq++;clearInterval(timer)})
     <div>{{ t('v13Page.indexBought') }}: {{ formatUnits(BigInt(data.buyback.total_index_bought),18) }} {{ data.config.symbol }}</div>
     <p>{{ t('v13Page.indexDelay') }}</p>
    </section>
-   <div v-if="mining" class="claim-all-bar"><button class="claim-all-button" :disabled="!canClaimAll" :aria-busy="claimingAll" @click="claimAll"><span v-if="claimingAll" class="claim-spinner" aria-hidden="true"/>{{ t(claimingAll?'v13ClaimAll.pending':'v13ClaimAll.button') }}</button></div>
-   <div v-if="mining" class="pool-grid"><V13PoolCard ref="poolCards" :actions-disabled="claimingAll" @busy="poolBusy[leg.staking_pool]=$event" v-for="leg in data.components" :key="leg.staking_pool" :token="token" :community="data.config.community" :leg="leg" :symbol="symbol" :token-logo="store.currentSelectedCommunity?.logo" :liquidity-router="liquidityRouter" /></div>
-   <section v-else class="summary"><h3>{{ t('v13Page.components') }}</h3><div v-for="leg in data.components" :key="leg.asset" class="component"><a :href="`https://bscscan.com/address/${leg.asset}`" target="_blank" rel="noopener">{{ leg.asset_symbol || `${leg.asset.slice(0,8)}…${leg.asset.slice(-6)}` }}</a><span>{{ t('v13Create.weight') }} {{ leg.target_weight/100 }}%</span><a :href="`https://bscscan.com/address/${leg.pair}`" target="_blank" rel="noopener">V2 ↗</a></div><p>{{ t('v13Page.poolsHelp') }}</p></section>
+   <section v-if="!mining" class="summary"><h3>{{ t('v13Page.components') }}</h3><div v-for="leg in data.components" :key="leg.asset" class="component"><a :href="`https://bscscan.com/address/${leg.asset}`" target="_blank" rel="noopener">{{ leg.asset_symbol || `${leg.asset.slice(0,8)}…${leg.asset.slice(-6)}` }}</a><span>{{ t('v13Create.weight') }} {{ leg.target_weight/100 }}%</span><a :href="`https://bscscan.com/address/${leg.pair}`" target="_blank" rel="noopener">V2 ↗</a></div><p>{{ t('v13Page.poolsHelp') }}</p></section>
   </template>
  </div>
 </template>
 <style scoped>
-.v13-panel{display:grid;gap:16px;padding:16px}header{display:flex;justify-content:space-between;align-items:center}h2,h3{font-weight:700}.summary{display:grid;gap:12px;padding:20px;border:1px solid var(--border-base,#ddd);border-radius:16px}.component{display:flex;gap:16px;justify-content:space-between}.pool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:18px;align-items:start}p{font-size:13px;color:var(--text-muted,#777)}progress{width:100%;accent-color:#7657ed}button{border:1px solid var(--border-base,#ddd);padding:8px 12px;border-radius:8px}button:disabled{opacity:.4}[role=alert]{color:#d66a00}
+.v13-panel{display:grid;gap:16px;padding:16px}header{display:flex;justify-content:space-between;align-items:center}h2,h3{font-weight:700}.summary{display:grid;gap:12px;padding:20px;border:1px solid var(--border-base,#ddd);border-radius:16px}.component{display:flex;gap:16px;justify-content:space-between}.pool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:18px;align-items:start}p{font-size:13px;color:var(--text-muted,#777)}button{border:1px solid var(--border-base,#ddd);padding:8px 12px;border-radius:8px}button:disabled{opacity:.4}[role=alert]{color:#d66a00}
+
+/* Match the curve bar in HomeTagDetail, including its theme-aware track. */
+progress{display:block;width:100%;height:.75rem;appearance:none;-webkit-appearance:none;border:0;border-radius:9999px;overflow:hidden;background:var(--grey-light);color:#FE913F}
+progress::-webkit-progress-bar{background:var(--grey-light);border-radius:9999px}
+progress::-webkit-progress-value{background:#FE913F}
+progress::-moz-progress-bar{background:#FE913F}
 
 .v13-panel{container-type:inline-size;min-width:0}.mining-panel{padding:20px 4px}.panel-heading{display:flex;align-items:center;gap:10px}.panel-heading h2{font-size:17px}.pool-count{display:grid;place-items:center;min-width:23px;height:23px;border:1px solid var(--border-base);border-radius:7px;font-size:11px;color:var(--text-muted)}.stage-badge{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted)}.stage-badge:before{content:'';width:5px;height:5px;border-radius:50%;background:#58b79b}.mining-panel>header{padding:0 3px 5px}.mining-panel>header>button{font-size:11px;border-radius:9px;padding:7px 12px;color:var(--text-muted)}
 
