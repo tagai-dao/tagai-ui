@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
@@ -362,6 +363,7 @@ onActivated(() => {
   <div class="flex-1 min-h-0 overflow-hidden grid grid-cols-1 web:grid-cols-[minmax(0,600px)] desk:grid-cols-[minmax(0,600px)_minmax(280px,340px)] web:justify-center gap-3 px-3">
     <div class="h-full min-h-0 overflow-hidden min-w-0">
       <div class="h-full mobile-scroll-container no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
+        <PageDataStatus :paths="['/tweets/', '/community/tradeFeed']" @retry="onRefresh" @updated="!refreshing && onRefresh()" />
         <van-pull-refresh class="min-h-full"
                           v-model="refreshing"
                           @refresh="onRefresh"

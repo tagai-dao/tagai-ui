@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
@@ -142,17 +143,8 @@ async function showAvailableSiblingRanking(failedType: ListType, chainId: number
       return true
     }
 
-    try {
-      const rows = (await fetchCoinList(type, 0, source) || []) as Community[]
-      if (!isCurrent()) return true
-      if (!rows.length) continue
-      showCoinList(type, chainId, source, rows, false)
-      skipNextListTypeRefresh = true
-      listType.value = type
-      return true
-    } catch (error) {
-      console.warn(`[Token] ${ListType[type]} fallback unavailable`, error)
-    }
+    // Never chain two additional slow HTTP reads after the primary deadline.
+    // A sibling fallback is useful only when it is already available locally.
   }
   return false
 }
@@ -576,6 +568,7 @@ const onCreate = (type: GlobalModalType) => {
 
 <template>
   <div class="h-full min-h-0 overflow-hidden pb-2 flex flex-col gap-3 pt-2 w-full">
+    <PageDataStatus :paths="['/community/communit', '/community/getImportedCommunityInfo']" @retry="retryVisibleList" @updated="!refreshing && retryVisibleList()" />
     <!-- 新社区列表（TagCoin 滚动条）- 移动端显示在 Space 滚动条上方，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
     <div v-if="activeMainMenu==='tag'" class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
       <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">

@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import {onMounted, ref, computed, onActivated, nextTick, onUnmounted, watch} from "vue";
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
+import {onMounted, ref, computed, onActivated, nextTick, onUnmounted, watch, defineAsyncComponent} from "vue";
 import {useModalStore, useStateStore} from "@/stores/common";
 import { useCommunityStore } from "@/stores/community";
 import {GlobalModalType, type Tweet} from "@/types";
 import TagContent from "@/views/tag-detail/TagContent.vue";
 import PredictIndex from '@/views/tag-detail/Prediction/Index.vue';
-import CreditIndex from "@/views/tag-detail/Credit/Index.vue";
-import TagToken from "@/views/tag-detail/TagToken.vue";
+const CreditIndex = defineAsyncComponent(() => import('@/views/tag-detail/Credit/Index.vue'))
+const TagToken = defineAsyncComponent(() => import('@/views/tag-detail/TagToken.vue'))
 import SpcxbLiquidity from "@/views/tag-detail/SpcxbLiquidity.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
 import TagTippedContent from "@/views/tag-detail/TagTippedContent.vue";
@@ -29,8 +30,8 @@ import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
 import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
-import TagNft from '@/views/tag-detail/nft/TagNft.vue'
-import CommunityBaskets from '@/views/tag-detail/CommunityBaskets.vue'
+const TagNft = defineAsyncComponent(() => import('@/views/tag-detail/nft/TagNft.vue'))
+const CommunityBaskets = defineAsyncComponent(() => import('@/views/tag-detail/CommunityBaskets.vue'))
 import { getNutboxCommunityByToken } from '@/apis/nutbox'
 import type { NutboxCommunityByTokenResponse } from '@/types/nutbox'
 import { OperateType, useTweet } from "@/composables/useTweet";
@@ -323,6 +324,21 @@ async function checkTweet() {
   }
 }
 
+async function refreshCommunityDetail() {
+  const tick = route.params.id
+  const chainId = chainStore.activeChainId
+  if (typeof tick !== 'string') return
+  try {
+    const community = await getCommunityDetail(tick) as any
+    if (route.params.id === tick && chainStore.activeChainId === chainId && community?.tick) {
+      comStore.currentSelectedCommunity = { ...comStore.currentSelectedCommunity, ...community }
+    }
+  } catch (_) { /* Inline page status supplies retry. */ }
+}
+async function reloadCommunityData() {
+  await refreshCommunityDetail()
+  emitter.emit('tweeted')
+}
 onMounted(async () => {
   const tick = route.params.id;
   if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick){
@@ -331,6 +347,8 @@ onMounted(async () => {
       return;
     }
     const scope = `${chainStore.activeChainId}:community:${tick.toLowerCase()}:detail`
+    const previous = readPublicSnapshot<any>(scope)
+    if (previous?.tick) comStore.currentSelectedCommunity = previous
     try {
       const community = await getCommunityDetail(tick) as any
       if (!community?.tick) {
@@ -354,13 +372,16 @@ onMounted(async () => {
   // get deploy tweet
   if (comStore.currentSelectedCommunity?.createdByAi) {
     try {
-      const [deployTweet, ipshare] = await Promise.all([
+      const detailTick = comStore.currentSelectedCommunity.tick
+      void Promise.all([
         getCommunityDeployTweet(comStore.currentSelectedCommunity.tick, accStore.getAccountInfo?.twitterId),
         getCommunityDeployerIpshare(comStore.currentSelectedCommunity.tick),
-      ])
+      ]).then(([deployTweet, ipshare]) => {
+      if (comStore.currentSelectedCommunity?.tick !== detailTick) return
       if (ipshare) comStore.currentSelectedCommunity.ipshare = ipshare as string
       // @ts-ignore
       deployTweetList.value = deployTweet as Tweet[]
+      }).catch(error => console.warn('[HomeTagDetail] optional deploy metadata unavailable', error))
     } catch (error) {
       // Optional metadata must not prevent the community feed from rendering.
       console.warn('[HomeTagDetail] optional deploy metadata unavailable', error)
@@ -430,6 +451,7 @@ onBeforeRouteLeave((to, from, next) => {
        class="h-full mobile-scroll-container no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
        :class="{ 'overflow-hidden': isAiActive }"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
+    <PageDataStatus :paths="['/community/detail']" :scope="String(route.params.id)" @retry="reloadCommunityData" @updated="refreshCommunityDetail" />
     <div v-if="!isAiActive" class="grid grid-cols-1 web:hidden gap-3 " ref="topBannerContainerRef">
       <div v-if="deployTweetList.length>0"
            class="col-span-1 border-[1px] border-line bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide"

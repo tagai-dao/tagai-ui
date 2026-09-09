@@ -1,23 +1,19 @@
-import { get, post, put } from "./axios"
+import { get, post, put, getDisplay } from "./axios"
 import { BACKEND_API_URL, VP_CONSUME } from '@/config'
 import type { Community, CreateCommunity } from '@/types'
 import { useChainStore } from '@/stores/chain'
 
-// Coalesce duplicate public reads from header, ticker, Token and Wallet.
-// No account data or trading quotes are cached here.
-const publicReads = new Map<string, Promise<unknown>>()
+import { createDisplayReader } from '@/utils/displayRead'
+let displayStorage: Storage | undefined
+try { displayStorage = window.localStorage } catch (_) {}
+const readDisplay = createDisplayReader((path, query, chainId) => getDisplay(BACKEND_API_URL + path, query, chainId), displayStorage)
+// Only the explicitly selected display APIs below use this cache.
 function publicRead(path: string, params?: Record<string, unknown>) {
   const chainId = useChainStore().activeChainId
-  const key = `${chainId}:${path}:${JSON.stringify(params ?? {})}`
-  if (!publicReads.has(key)) {
-    const request = get(BACKEND_API_URL + path, params, {
-      headers: { 'X-Chain-Id': String(chainId) },
-      timeout: 15000,
-    }).finally(() => publicReads.delete(key))
-    publicReads.set(key, request)
-  }
-  return publicReads.get(key)!.then(value => structuredClone(value))
+  return readDisplay(path, params ?? {}, chainId)
 }
+export const invalidatePublicReads = (paths: string[]) => readDisplay.invalidate(paths, useChainStore().activeChainId)
+export const getBasketListSnapshot = (page: number, size: number, chainId: number) => readDisplay('/basket/list', { page, size }, chainId)
 
 import type { PoolTvlResponse, ClPositionsIndexResponse } from '@/types/liquidity'
 import type {
@@ -141,16 +137,16 @@ export const redeemIxoReward = async (twitterId: string, token: string) =>
   post(BACKEND_API_URL + '/community/redeemToken', {twitterId, token})
 /************************************ tweets **********************************/
 export const getCommunityNewTweets = async (tick: string, twitterId?: string, pages?: number) =>
-  get(BACKEND_API_URL + '/curation/communityTweets', {tick, twitterId, pages})
+  publicRead('/curation/communityTweets', {tick, twitterId, pages})
 
 export const getCommunityTrendingTweets = async (tick: string, twitterId?: string, pages?: number) =>
-  get(BACKEND_API_URL + '/curation/communityTrendingTweets', {tick, twitterId, pages})
+  publicRead('/curation/communityTrendingTweets', {tick, twitterId, pages})
 
 export const getCommunitySpaceTweets = async (tick: string, twitterId?: string, pages?: number) =>
-  get(BACKEND_API_URL + '/curation/communitySpaceTweets', {tick, twitterId, pages})
+  publicRead('/curation/communitySpaceTweets', {tick, twitterId, pages})
 
 export const getCommunityTippedTweets = async (tick: string, twitterId?: string, pages?: number) =>
-  get(BACKEND_API_URL + '/curation/communityTippedTweets', {tick, twitterId, pages})
+  publicRead('/curation/communityTippedTweets', {tick, twitterId, pages})
 
 export type ExternalCalloutSource = 'gmgn' | 'fomo' | 'pump'
 
@@ -159,7 +155,7 @@ export const getCommunityCallouts = async (
   source: ExternalCalloutSource,
   twitterId?: string,
   pages?: number,
-) => get(BACKEND_API_URL + '/curation/communityCallouts', { tick, source, twitterId, pages })
+) => publicRead('/curation/communityCallouts', { tick, source, twitterId, pages })
 
 export const getAiChannels = async (
   tick: string,
@@ -257,10 +253,10 @@ export const getNewTweets = async (
   twitterId: string | null | undefined,
   pages?: number,
   source?: 'x' | 'fomo' | 'gmgn' | 'pump'
-) => get(BACKEND_API_URL + '/tweets/byTime', {pages, twitterId, source})
+) => publicRead('/tweets/byTime', {pages, twitterId, source})
 
 export const getTrendingTweets = async (twitterId: string | null | undefined, pages?: number) =>
-    get(BACKEND_API_URL + '/tweets/byTrending', {pages, twitterId})
+    publicRead('/tweets/byTrending', {pages, twitterId})
 
 
 /************************************ community **********************************/
@@ -280,10 +276,10 @@ export const updateCommunityInfo = async (community: Community, twitterId: strin
   post(BACKEND_API_URL + '/community/updateInfo', {...community, twitterId})
 
 export const getCommunityCredits = async (tick: string, pages?: number) =>
-  get(BACKEND_API_URL + '/community/communityCredits', {tick, pages})
+  publicRead('/community/communityCredits', {tick, pages})
 
 export const getCommunityPredictionCredits = async (tick: string, pages?: number) =>
-  get(BACKEND_API_URL + '/community/communityPredictionCredits', {tick, pages})
+  publicRead('/community/communityPredictionCredits', {tick, pages})
 
 export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
   get(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
@@ -306,7 +302,7 @@ export const getCommunitiesByNew = async (pages?: number, source: TagCoinSourceF
   publicRead('/community/communitiesByNew', { pages: pages ?? 0, source })
 
 export const getCommunityDetail = async (tick: string) =>
-  get(BACKEND_API_URL + '/community/detail', { tick })
+  publicRead('/community/detail', { tick })
 
 export const getCommunityDeployerIpshare = async (tick: string) =>
   get(BACKEND_API_URL + '/community/getDeployerIpshare', {tick})
@@ -315,19 +311,19 @@ export const getCreatedList = async (twitterId: string, ethAddr: string) =>
   post(BACKEND_API_URL + '/community/createdList', {twitterId, ethAddr})
 
 export const getHolderList = async (token: string, pages?: number) =>
-  get(BACKEND_API_URL + '/community/holderList', { token, pages })
+  publicRead('/community/holderList', { token, pages })
 
 export const getHolderListOfImportToken = async (token: string, pages?: number) =>
-  get(BACKEND_API_URL + '/community/holderListOfImported', { token, pages })
+  publicRead('/community/holderListOfImported', { token, pages })
 
 export const getImportedCommunityInfo = async () =>
   publicRead('/community/getImportedCommunityInfo')
 
 export const getTokenTradeList = async (token: string, pages?: number) =>
-  get(BACKEND_API_URL + '/community/tradeList', { token, pages })
+  publicRead('/community/tradeList', { token, pages })
 
 export const getTradeFeed = async (pages?: number) =>
-  get(BACKEND_API_URL + '/community/tradeFeed', { pages })
+  publicRead('/community/tradeFeed', { pages })
 
 export const isTokenExist = async (tick: string) =>
   get(BACKEND_API_URL + '/community/isTokenExist', { tick, _: Date.now() })
@@ -412,7 +408,7 @@ export const getIpshareInfo = async (ethAddr: string) =>
   get(BACKEND_API_URL + '/user/ipshare', {ethAddr})
 
 export const getIPShareList = async (pages?: number, keyword?: string) =>
-    get(BACKEND_API_URL + '/ipshare/list', {pages, keyword})
+    publicRead('/ipshare/list', {pages, keyword})
 
 export type IPShareMarketSummary = {
   chainId: number
@@ -425,7 +421,7 @@ export type IPShareMarketSummary = {
 }
 
 export const getIPShareMarketSummary = async () =>
-  get(BACKEND_API_URL + '/ipshare/summary') as Promise<IPShareMarketSummary>
+  publicRead('/ipshare/summary') as Promise<IPShareMarketSummary>
 
 export const getIPShareHoldingList = async (ethAddr: string, pages?: number) =>
     get(BACKEND_API_URL + '/ipshare/holdingList', {ethAddr, pages})
@@ -622,7 +618,7 @@ export const getRewardLeaderboard = async (
   period: RewardPeriod = 'all',
   page = 0,
   size = 30,
-) => get(BACKEND_API_URL + '/rewards/leaderboard', { category, period, page, size })
+) => publicRead('/rewards/leaderboard', { category, period, page, size })
 
 export type PnlPeriod = '1d' | '7d' | '30d' | 'all'
 
@@ -657,7 +653,7 @@ export const getPnlLeaderboard = async (
   period: PnlPeriod = '7d',
   page = 0,
   size = 30,
-) => get(BACKEND_API_URL + '/pnl/leaderboard', { period, page, size })
+) => publicRead('/pnl/leaderboard', { period, page, size })
 
 export const getAccountPnl = async (
   period: PnlPeriod,

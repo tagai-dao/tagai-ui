@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
@@ -508,6 +509,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <PageDataStatus :paths="['/curation/community', '/community/tradeList']" @retry="onRefresh" @updated="!refreshing && onRefresh()" />
   <div class="flex items-center gap-1.5 mb-2 min-w-0">
     <div class="flex flex-1 min-w-0 items-center gap-1 overflow-x-auto no-scroll-bar pr-1">
       <button class="feed-filter-chip" :class="listType === ListType.All ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"

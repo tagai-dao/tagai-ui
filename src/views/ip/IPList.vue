@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getIPShareList, getIPShareMarketSummary, type IPShareMarketSummary } from '@/apis/api'
 import { formatAmount, formatPrice } from '@/utils/helper'
@@ -106,13 +107,17 @@ async function refreshList(refreshSummary: boolean) {
   try {
     refreshing.value = true
     listFinished.value = false
-    const [response] = await Promise.all([
-      getIPShareList(0, keyword || undefined) as Promise<any[]>,
-      refreshSummary ? loadMarketSummary() : Promise.resolve(),
-    ])
+    if (refreshSummary) void loadMarketSummary()
+    const response = await getIPShareList(0, keyword || undefined) as any[]
     if (requestId !== refreshRequestId) return
     const items = Array.isArray(response) ? response.slice(0, PAGE_SIZE) : []
-    list.value = await hydrateMarketStats(items)
+    list.value = items.map(ip => ({ ...ip, supply: Number(ip.supply) || 0, totalStaked: Number(ip.totalStaked) || 0 }))
+    void hydrateMarketStats(items).then(hydrated => {
+      if (requestId === refreshRequestId) {
+        const byAddress = new Map(hydrated.map(ip => [ip.ethAddr || ip.twitterId, ip]))
+        list.value = list.value.map(ip => byAddress.get(ip.ethAddr || ip.twitterId) || ip)
+      }
+    }).catch(error => console.warn('[IPShare] optional chain metrics unavailable', error))
     if (requestId !== refreshRequestId) return
     listFinished.value = !Array.isArray(response) || response.length < PAGE_SIZE
   } catch (error) {
@@ -183,6 +188,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="ipshare-page">
+    <PageDataStatus :paths="['/ipshare/']" @retry="onRefresh" @updated="!refreshing && refreshList(false)" />
     <van-pull-refresh
       v-model="refreshing"
       class="min-h-full"

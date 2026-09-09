@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPnlLeaderboard, type PnlPeriod } from '@/apis/api'
@@ -46,6 +47,7 @@ const periods: Array<{ value: PnlPeriod; label: string; description: string }> =
 ]
 const period = ref<PnlPeriod>('7d')
 const loading = ref(false)
+const loadFailed = ref(false)
 const loadingMore = ref(false)
 const users = ref<PnlUser[]>([])
 const page = ref(0)
@@ -56,6 +58,7 @@ const generatedAt = ref<string | null>(null)
 const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 let requestGeneration = 0
+let loadedQuery = ''
 
 function pnlClass(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === '') return 'text-grey-64'
@@ -84,10 +87,13 @@ function openProfile(user: PnlUser) {
 }
 
 async function load(reset = false) {
+  loadFailed.value = false
   if (reset) {
     requestGeneration += 1
     page.value = 0
-    users.value = []
+    const query = period.value
+    if (query !== loadedQuery) users.value = []
+    loadedQuery = query
     hasMore.value = false
   }
   if ((loading.value || loadingMore.value) && !reset) return
@@ -105,8 +111,9 @@ async function load(reset = false) {
     if (response.hasMore) page.value += 1
   } catch (error) {
     if (generation !== requestGeneration) return
+    loadFailed.value = true
     console.warn('[PnL] leaderboard unavailable', error)
-    if (reset) users.value = []
+    // Keep existing rows for a failed refresh of the same query.
     hasMore.value = false
   } finally {
     if (generation === requestGeneration) {
@@ -136,6 +143,7 @@ onBeforeUnmount(() => observer?.disconnect())
 
 <template>
   <div class="mx-auto w-full max-w-[760px] px-3 py-3">
+    <PageDataStatus :paths="['/pnl/leaderboard']" @retry="load(true)" @updated="!loading && load(true)" />
     <section class="pnl-hero">
       <div class="relative z-10 flex items-start justify-between gap-4">
         <div>
@@ -163,10 +171,10 @@ onBeforeUnmount(() => observer?.disconnect())
       <span v-if="generatedAt">Updated {{ new Date(generatedAt).toLocaleString() }}</span>
     </div>
 
-    <div v-if="loading" class="flex justify-center py-14">
+    <div v-if="loading && !users.length" class="flex justify-center py-14">
       <i-ep-loading class="h-7 w-7 animate-spin text-orange-normal" />
     </div>
-    <div v-else-if="!users.length" class="mt-3 rounded-2xl bg-white p-10 text-center text-grey-64">
+    <div v-else-if="!users.length && !loadFailed" class="mt-3 rounded-2xl bg-white p-10 text-center text-grey-64">
       PnL data is being indexed. The leaderboard will update automatically.
     </div>
     <div v-else class="mt-3 space-y-2">
