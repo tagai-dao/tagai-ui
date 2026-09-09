@@ -148,8 +148,8 @@ onBeforeUnmount(() => observer?.disconnect())
       <div class="relative z-10 flex items-start justify-between gap-4">
         <div>
           <span class="text-xs font-semibold uppercase tracking-[.16em] text-orange-normal">TagAI Leaderboard</span>
-          <h1 class="mt-2 text-3xl font-bold tracking-tight text-content">Top PnL</h1>
-          <p class="mt-1 max-w-[420px] text-sm text-grey-64">
+          <h1 class="pnl-intro mt-2 text-3xl font-bold tracking-tight text-content">Top PnL</h1>
+          <p class="pnl-intro mt-1 max-w-[420px] text-sm text-grey-64">
             PnL for TagAI, imported and callout accounts · updated hourly
           </p>
         </div>
@@ -222,5 +222,6 @@ onBeforeUnmount(() => observer?.disconnect())
 .pnl-user:hover { transform:translateY(-1px); }
 .rank { display:flex; width:28px; height:28px; flex:none; align-items:center; justify-content:center; border-radius:999px; background:var(--surface-2); color:var(--text-muted); font-size:12px; font-weight:700; }
 .rank--1 { background:#fff0b8; color:#a36600; }.rank--2 { background:#edf0f5; color:#626a79; }.rank--3 { background:#f7dfd0; color:#9a5936; }
+@media (max-width:803px) { .pnl-intro { display:none; } }
 @media (max-width:420px) { .pnl-hero { padding:17px; }.pnl-user { gap:9px; padding:12px 10px; } }
 </style>
