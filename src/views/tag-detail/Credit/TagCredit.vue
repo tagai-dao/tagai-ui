@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { getCommunityCredits } from '@/apis/api'
 import { useCommunityStore } from '@/stores/community';
 import { type CommunityCredit } from '@/types';
@@ -221,7 +222,8 @@ onBeforeUnmount(() => {
   <!-- <div class="flex justify-end mb-2 mr-2">
     <img class="w-6 h-6 cursor-pointer" @click="showCreditChart = true" src="~@/assets/icons/icon-pie-chart.svg" alt="">
   </div> -->
-  <div class="bg-white rounded-2xl p-3 flex flex-col overflow-x-auto" v-if="comStore.currentSelectedCommunity?.tick">
+  <div class="credit-table bg-white rounded-2xl p-3 flex flex-col overflow-x-auto" v-if="comStore.currentSelectedCommunity?.tick">
+    <PageDataStatus :paths="['/community/communityCredits']" @retry="onRefresh" @updated="!refreshing && onRefresh()" />
     <div class="credit-table-row credit-table-header text-h5 h-10 items-center flex-shrink-0">
       <span class="pl-8">{{ $t('account') }}</span>
       <span class="text-right flex justify-end items-center cursor-pointer gap-1" @click="showCreditChart = true">
@@ -320,3 +322,5 @@ onBeforeUnmount(() => {
   background: white;
 }
 </style>
+
+<style scoped src="./credit-mobile.css"></style>

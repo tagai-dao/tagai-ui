@@ -1,4 +1,5 @@
 import { get, post } from '@/apis/axios'
+import { getBasketListSnapshot } from '@/apis/api'
 import { API_BASE_URL } from '@/config/api'
 import { getBasketDeployment } from '@/config/baskets'
 import type { Address, Hex } from 'viem'
@@ -90,11 +91,7 @@ export const listRegisteredBaskets = async (chainId: number): Promise<Registered
   const baskets: RegisteredBasket[] = []
   const size = 100
   for (let page = 0; page < 100; page += 1) {
-    const response = await get(
-      `${API_BASE_URL}/basket/list`,
-      { page, size },
-      chainHeaders(chainId),
-    ) as BasketListResponse
+    const response = await getBasketListSnapshot(page, size, chainId) as BasketListResponse
     const rows = Array.isArray(response?.d?.list) ? response.d.list : []
     baskets.push(...rows)
     if (baskets.length >= Number(response?.d?.total || 0) || rows.length < size) break

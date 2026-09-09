@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, defineAsyncComponent } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import IPList from '@/views/ip/IPList.vue'
-import EarnView from '@/views/buidler/EarnView.vue'
-import PnlView from '@/views/buidler/PnlView.vue'
+const IPList = defineAsyncComponent(() => import('@/views/ip/IPList.vue'))
+const EarnView = defineAsyncComponent(() => import('@/views/buidler/EarnView.vue'))
+const PnlView = defineAsyncComponent(() => import('@/views/buidler/PnlView.vue'))
 const route = useRoute()
 const router = useRouter()
 type BuidlerTab = 'ipshare' | 'pnl' | 'earn'

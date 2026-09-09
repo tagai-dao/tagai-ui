@@ -175,7 +175,14 @@ export function parseViemRevertReason(error: any): string {
 }
 
 export const handleErrorTip = (e: any) => {
+  if (e?.displayRead) return e.message; // Handled by the page's inline retry/status.
   if (e?.code === 'ERR_CANCELED' || e?.name === 'AbortError') return;
+  // Receipt lookup failures retain a submitted hash; they are not contract
+  // reverts, and must never invite the user to repeat a successful payment.
+  if (e?.name === 'SubmittedTransactionError' && e?.transactionHash) {
+    notify({ message: e.message, type: 'info' });
+    return e.message;
+  }
   if (!e) {
     console.log("Null error");
     return;

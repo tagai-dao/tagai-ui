@@ -89,10 +89,12 @@ export type ChainDeployment = {
 }
 
 const BSC_RPC_URLS = [
-  'https://bsc-dataseed.binance.org',
-  'https://rpc.ankr.com/bsc',
-  'https://bsc.rpc.blxrbdn.com',
+  // PublicNode rejects archive reads during Privy's post-submit confirmation.
+  // Privy's first endpoint must also support historical state (not just
+  // receipts). Thirdweb was checked against the reported transaction block.
   'https://56.rpc.thirdweb.com',
+  'https://bsc.rpc.blxrbdn.com',
+  'https://bsc-dataseed.binance.org',
 ]
 
 const RH_RPC_URLS = [

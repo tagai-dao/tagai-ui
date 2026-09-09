@@ -12,6 +12,7 @@ import { useModalStore } from '@/stores/common';
 import { GlobalModalType } from '@/types';
 import { reportLog } from './helper';
 import { useChainStore } from '@/stores/chain';
+import { confirmTransaction } from './transactionConfirmation';
 
 
 // this.ethWalletType = 'none' // metamask, okx, none
@@ -78,8 +79,10 @@ export const getReadOnlyClient = (chainId?: number): PublicClient => {
     const client = createPublicClient({
         chain,
         transport: fallback(
-            rpcUrls.map((url) => http(url, { timeout: 15_000 })),
-            { rank: false },
+            rpcUrls.map((url) => http(url, { timeout: 8_000, retryCount: 0 })),
+            // Each fallback is attempted once. Retrying the whole sequence can
+            // otherwise keep a transaction simulation loading for over a minute.
+            { rank: false, retryCount: 0 },
         ),
     }) as PublicClient
     readOnlyClients[id] = client
@@ -337,15 +340,9 @@ export const transferEthTo = async (to: string, value: bigint) => {
     return await waitForTx(hash);
 }
 
-export const waitForTx = async (hash: `0x${string}`) => {
-    let wallet = getReadOnlyClient();
-    const receipt = await wallet.waitForTransactionReceipt({
-        hash
-    });
-    if (receipt.status === 'success') {
-        return hash;
-    }
-    return null;
+export const waitForTx = async (hash: `0x${string}`, timeout = 120_000) => {
+    const wallet = getReadOnlyClient();
+    return confirmTransaction(hash, () => wallet.getTransactionReceipt({ hash }), timeout);
 }
 
 export async function initPlugin() {

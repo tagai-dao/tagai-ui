@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
@@ -90,7 +91,7 @@ const calloutStoreKey = (tick: string, source: ExternalCalloutSource) => `${tick
 const communitySnapshotScope = (tick: string, type: ListType) =>
   `${chainStore.activeChainId}:community:${tick.toLowerCase()}:feed:${type}`
 const communityTradeSnapshotScope = (tick: string) =>
-  `${chainStore.activeChainId}:community:${tick.toLowerCase()}:trades`
+  `${chainStore.activeChainId}:community:${tick.toLowerCase()}:account-trades-v1`
 
 function publicTweets(rows: Tweet[]) {
   return rows.slice(0, 120).map(row => {
@@ -233,7 +234,10 @@ async function loadCommunityTrades(page = 0, replace = false) {
     const requestedToken = community.token
     const rows = (await getTokenTradeList(community.token, page) || []) as FeedTrade[]
     if (sequence !== refreshSequence || comStore.currentSelectedCommunity?.token !== requestedToken) return -1
-    const next = rows.map(row => ({
+    // The token trade endpoint also serves full market history. Community
+    // Feed includes only identities verified by the API (including imports).
+    // Keep the raw row count below for pagination: a filtered page is not EOF.
+    const next = rows.filter(row => row.isPlatformAccount === true).map(row => ({
       ...row,
       tick: row.tick || community.tick,
       token: row.token || community.token,
@@ -505,6 +509,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <PageDataStatus :paths="['/curation/community', '/community/tradeList']" @retry="onRefresh" @updated="!refreshing && onRefresh()" />
   <div class="flex items-center gap-1.5 mb-2 min-w-0">
     <div class="flex flex-1 min-w-0 items-center gap-1 overflow-x-auto no-scroll-bar pr-1">
       <button class="feed-filter-chip" :class="listType === ListType.All ? 'bg-gradient-primary text-white' : 'bg-grey-light-active text-white'"
@@ -537,11 +542,6 @@ onBeforeUnmount(() => {
       </button>
     </div>
   </div>
-  <button
-    v-if="usingSnapshot"
-    class="w-full mb-2 rounded-xl bg-orange-normal/10 px-3 py-2 text-sm text-orange-normal"
-    @click.stop="onRefresh"
-  >{{ $t('network.cached') }}</button>
   <div class="flex-1">
     <van-pull-refresh class="h-full min-h-full"
       v-model="refreshing"
@@ -558,9 +558,6 @@ onBeforeUnmount(() => {
         :finished-text="$t('noMore')"
         :offset="50"
       >
-        <template #error>
-          <button class="px-4 py-3 text-orange-normal" @click.stop="onRefresh">{{ $t('network.retry') }}</button>
-        </template>
         <div v-for="item of feedItems" :key="item.type === 'post' ? item.tweet.tweetId : tradeIdentity(item.trade)" class="mb-2">
           <FeedTradeActivity
             v-if="item.type === 'trade'"

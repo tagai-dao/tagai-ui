@@ -17,7 +17,9 @@ export const customBsc = {
   rpcUrls: {
     default: {
       http: BSC_CHAIN.rpcUrls,
-    }
+    },
+    // Privy chooses its own confirmation RPC unless explicitly overridden.
+    privyWalletOverride: { http: [BSC_CHAIN.rpc] },
   }
 } as Chain
 
@@ -34,6 +36,7 @@ export const customRobinhood = defineChain({
     default: {
       http: ROBINHOOD_CHAIN.rpcUrls,
     },
+    privyWalletOverride: { http: [ROBINHOOD_CHAIN.rpc] },
   },
   blockExplorers: {
     default: {

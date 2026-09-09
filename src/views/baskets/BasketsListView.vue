@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useBasketList } from '@/composables/baskets/useBasketList'
 import BasketChainGate from './components/BasketChainGate.vue'
@@ -44,6 +45,7 @@ onMounted(() => {
 
 <template>
   <div class="baskets-page">
+    <PageDataStatus :paths="['/basket/list']" @retry="refresh(true)" @updated="!isLoading && refresh(true)" />
     <div class="baskets-shell">
       <header class="hero">
         <div class="hero__grid" aria-hidden="true" />

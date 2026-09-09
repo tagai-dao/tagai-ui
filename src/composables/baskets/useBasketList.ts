@@ -6,6 +6,7 @@ import { ref, watch } from 'vue'
 import { listBaskets } from '@/utils/baskets/data'
 import type { BasketSummary } from '@/utils/baskets/types'
 import { useChainStore } from '@/stores/chain'
+import { readPublicSnapshot, writePublicSnapshot } from '@/utils/publicSnapshot'
 
 export const useBasketList = () => {
   const chainStore = useChainStore()
@@ -33,6 +34,8 @@ export const useBasketList = () => {
   const refresh = async (force = false) => {
     const request = ++sequence
     const chainId = chainStore.activeChainId
+    const scope = `${chainId}:basket-list:display-v1`
+    if (!baskets.value.length) baskets.value = readPublicSnapshot<BasketSummary[]>(scope) || []
     const hasExistingList = baskets.value.length > 0
     isLoading.value = true
     isEnriching.value = false
@@ -46,6 +49,7 @@ export const useBasketList = () => {
       })
       if (request !== sequence || chainId !== chainStore.activeChainId) return
       baskets.value = full
+      writePublicSnapshot(scope, full)
     } catch (e) {
       if (request !== sequence) return
       hasError.value = true

@@ -103,6 +103,7 @@ export type Trade = {
 };
 
 export type FeedTrade = {
+  isPlatformAccount?: boolean;
   timestamp: string | number;
   tick: string;
   token: string;
