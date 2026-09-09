@@ -30,12 +30,8 @@ export default defineConfig(async env => {
     if(path===resolve(root,'src/utils/web3.ts'))return code.replace('const target = getChainDeployment(useChainStore().activeChainId);','const target = {...getChainDeployment(56),chainId:560013};')
     if(path===resolve(root,'src/utils/v13/snapshot.ts'))return code.replace('[56n, m.nutboxRouter','[560013n, m.nutboxRouter')
     if(path===resolve(root,'src/utils/v13/creation-chain.ts'))return code.replace('client.chain?.id !== 56','client.chain?.id !== 560013')
-    // Optional logo during manual fork testing; keep community images usable.
-    if(path===resolve(root,'src/components/common/CreateCoinModal.vue'))return code
-     .replace("notify({message: 'Need upload an image for your tag'})\n      return;", "createForm.logoUrl = 'http://127.0.0.1:19900/logo.svg'")
-     .replace("$t('createCommunity.logo')", "'Logo（本地测试可选）'")
-    // Fork-created tokens do not exist on DexScreener; reuse the original chart with local trades.
-    if(['src/views/buy-sell/RecordList.vue','src/views/buy-sell/BuyAndSellView.vue'].some(p=>path===resolve(root,p)))return code.replace('<Kline v-if="!comStore.currentSelectedCommunity?.listed"','<Kline v-if="true"')
+    // Keep form validation and chart selection identical to production. Test
+    // conveniences belong in the panel; external integrations need separate acceptance.
     if(path===resolve(root,'src/composables/useUploadImg.ts'))return code.replace('https://upload.tagai.fun/files/upload','http://127.0.0.1:19900/files/upload')
     if(path===resolve(root,'src/main.ts'))return code.replace("app.mount('#app')",`app.mount('#app');import(${JSON.stringify(resolve(root,'local-fork/panel.ts'))}).then(m=>m.mountPanel(app))`)
    }

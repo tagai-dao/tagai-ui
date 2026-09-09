@@ -10,7 +10,7 @@
 只读取合约仓库 `.env` 中的 `BSC_RPC_URL`（也可在启动环境指定同名变量）；不读取或使用主网私钥签名。
 
 ```bash
-cd "/Volumes/Extreme Pro/wangxi/work/tiptag/tiptag-ui"
+cd /Users/wangxi/work/tiptag/tiptag-ui
 npm run dev:fork
 ```
 
@@ -34,7 +34,7 @@ npm run dev:fork
 
 1. 在橙色管理面板点击「连接 / 添加本地链」，由钱包确认添加和切链。使用浏览器钱包，不需要真实社交登录。
 2. 点击「补到 1000 BNB」，给当前钱包分配测试 BNB。
-3. 点击「创建代币（原页面）」打开原创建弹窗，选择成分和参数并在钱包确认。本地测试不强制上传 Logo，未上传时使用默认测试图片；正式页面仍要求上传。
+3. 可先在管理面板点击「下载测试图片（PNG）」。点击「创建代币（原页面）」打开原创建弹窗，通过原上传入口选择图片、裁剪和上传，再选择成分和参数并在钱包确认。Logo 必填及其他表单校验与正式页面一致；上传地址仅在 fork 模式下指向本地 API，不自动填入图片或跳过校验。
 4. 新社区出现在管理面板和原列表中。点击社区进入原详情/交易页；临时 API 从创建回执入库，无需等待 Graph。
 5. 正常购买代币直到 pendinglist。需要跳过创建保护时间时，先快进 20 秒。
 6. 默认自动 keeper 关闭，方便观察等待上市页面。点击该社区的「List」或「Keeper 执行一次」完成上市；也可开启每 5 秒扫描的自动 keeper。
@@ -66,7 +66,7 @@ npm run dev:fork
 - 创建选项：从本地 Pump/IPShare/Committee 查询真实费用和资产白名单。
 - 创建登记：验证本地成功回执，将社区、Token、成分、V2 pair、矿池关联写入 JSON。
 - 读取：本地社区列表、搜索、详情、V13 配置、路径/tick 元数据、价格、交易记录、持有人及简单图表数据。
-- 本地代币上市后继续使用原 K 线组件和本地成交记录，不查询 DexScreener 中不存在的 fork 代币。
+- 内盘 K 线使用本地成交记录；上市后的图表选择与正式页面一致。DexScreener 没有本地代币数据，不再强行用内盘 K 线替代外盘组件，外盘图表必须独立验收。
 - 钱包/矿池余额、LP 预估、待领取奖励等继续由正式前端逻辑直接查询 fork 合约。
 - 买卖路径和 LP 数量由现有 Worker 算法计算；链上执行使用 version13.json 中的已部署交易/流动性合约。
 - keeper 使用 fork 内当前 listingKeeper 的 impersonation，不用主网私钥。按成分预算查询实际报价、应用 Pump 的滑点设置，先模拟完整 List，再在本地发送。
@@ -84,6 +84,16 @@ npm run dev:fork
 因此在用户验收时发现的 UI 问题，应修改 `src/` 的正式组件，而不是另写本地交易页面。
 独立缓存放在 `.local-fork/vite-cache`，不与正常 5173 开发服务共享依赖预编译缓存。
 
+## 独立验收清单（fork 通过不代表这些项目通过）
+
+- [ ] Twitter / Privy 的真实登录、回调、退出、会话恢复及钱包绑定。
+- [ ] DexScreener：用正式环境已上市、已被收录的代币检查外盘图表、切换及加载失败状态。本地新代币无数据不算通过。
+- [ ] 正式图片上传服务的认证、跨域、上传失败与最终图片展示。本地只验证原选择、裁剪、校验及本地上传流程。
+- [ ] 正式 API / 索引的字段兼容、同步延迟、创建登记重试，以及真实 keeper 的扫描、权限和 List 集成。本地 API 副本及 impersonation keeper 不能替代服务验收。
+- [ ] 正式域名的 OAuth 回调、CORS、CSP、HTTPS 与 PWA 更新。本地生产预览仍不等于真实域名部署。
+
+普通前端及生产构建的本地启动命令见 [项目 README](../README.md#本地连接正式环境)。验收以人工操作为主；不要为了验收而默认执行主网交易或写入正式数据。
+
 ## 开发者检查
 
 以下是环境连通性检查，不是用户的测试入口。要求当前会话无社区，结束后重置本地快照：
@@ -92,6 +102,8 @@ npm run dev:fork
 node local-fork/check.mjs
 node node_modules/vue-tsc/bin/vue-tsc.js --noEmit -p local-fork/tsconfig.json
 ```
+
+不启动链、不发送交易的界面隔离回归：`node --test local-fork/ui-isolation.test.mjs`。
 
 检查创建、回执登记、内盘到 pending、keeper、Basket/矿池关联、原前端快照/LP 算法、路由 hash、买卖、BNB 加池、质押/奖励/领取/退出和重置。
 钱包扩展的实际确认弹窗与最终交互体验由用户在原页面验收。

@@ -41,6 +41,8 @@ onUnmounted(()=>clearInterval(timer))
    <p>{{account.ethConnectAddress||'未连接浏览器钱包'}}<br>余额 {{account.ethBalance.toFixed(4)}} 测试 BNB</p>
    <p>连接钱包：{{walletName}} · RPC：localhost:18545</p>
    <div class="fork-buttons"><button :disabled="busy" @click="run(initializeProvider)">连接 / 添加本地链</button><button :disabled="busy||!account.ethConnectAddress" @click="run(()=>action('fund',{address:account.ethConnectAddress}))">补到 1000 BNB</button><button :disabled="busy||!account.ethConnectAddress" @click="create">创建代币（原页面）</button></div>
+   <p><a href="/pwa-192x192.png" download="tiptag-fork-logo.png">下载测试图片（PNG）</a>，然后在原创建弹窗中选择、裁剪并上传。Logo 必填校验保持不变，上传仅进入本地 API。</p>
+   <details><summary>需要独立验收的功能</summary><p>本模式不验证真实 Twitter / Privy 登录、社交操作、正式图片服务、正式 API / 索引 / keeper 的运行集成。DexScreener 无法识别本地创建的代币；外盘图表保留正式组件，不用内盘图表代替，空白或无数据不能算验收通过。</p><p>请用普通前端或生产构建预览连接正式环境，检查上述功能。正式环境中的上传、写入和钱包交易是真实操作，会影响正式数据和资金。</p></details>
    <hr><div class="fork-buttons"><button :disabled="busy" @click="run(()=>action('keeper'))">Keeper 执行一次</button><button :disabled="busy" @click="run(()=>action('auto',{enabled:!status?.autoKeeper}))">自动 Keeper：{{status?.autoKeeper?'开':'关'}}</button></div>
    <p>默认手动，便于观察 pendinglist；自动模式每 5 秒检查。</p>
    <p v-if="status?.autoKeeper && status?.communities?.some((c:any)=>c.listingPending&&!c.listed)" role="status">有代币等待自动上市。首次在 fork 中执行需读取主网池子状态，可能耗时数分钟；上市后还会预加载交易池数据，请勿重复点击 List。</p>
