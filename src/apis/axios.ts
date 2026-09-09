@@ -13,7 +13,7 @@ axios.interceptors.request.use(
   config => {
     const accStore = useAccountStore();
     const accountInfo = accStore.getAccountInfo;
-    if (accountInfo && accountInfo.accessToken) {
+    if (accountInfo && accountInfo.accessToken && !(config as any).publicDisplay) {
       config.headers['AccessToken'] = accountInfo.accessToken;
       // Some unauthenticated bootstrap calls carry a dedicated bearer token
       // (for example Privy's token during email login). Do not overwrite it
@@ -60,6 +60,24 @@ export function get(url: string, params?: Object, config?: any) {
         }
       });
   });
+}
+
+// Public display reads have a total network deadline and no automatic retry.
+// Requests for user participation explicitly opt out of publicDisplay.
+export async function getDisplay(url: string, params: Record<string, unknown>, chainId: number) {
+  const response = await axios.get(url, {
+    params,
+    timeout: 10000,
+    'axios-retry': { retries: 0 },
+    publicDisplay: !params.twitterId,
+    headers: { 'X-Chain-Id': String(chainId), 'Cache-Control': undefined, Pragma: undefined },
+  } as any)
+  if (response.data?.c != null && response.data.c !== 0) throw new Error('Page data unavailable')
+  return {
+    data: response.data,
+    updatedAt: response.headers['x-tagai-updated-at'],
+    stale: response.headers['x-tagai-data-quality'] === 'stale',
+  }
 }
 
 export function post(url: string, params?: object, config?: any) {

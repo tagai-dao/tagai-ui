@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { getRewardLeaderboard, type RewardCategory, type RewardPeriod } from '@/apis/api'
 import { formatUsd } from '@/utils/format'
@@ -59,6 +60,7 @@ const categoryDescriptions: Record<RewardCategory, string> = {
 const category = ref<RewardCategory>('all')
 const period = ref<RewardPeriod>('all')
 const loading = ref(false)
+const loadFailed = ref(false)
 const loadingMore = ref(false)
 const users = ref<RewardUser[]>([])
 const page = ref(0)
@@ -68,12 +70,16 @@ const totalRewardsUsd = ref(0)
 const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | null = null
 let requestGeneration = 0
+let loadedQuery = ''
 
 async function load(reset = false) {
+  loadFailed.value = false
   if (reset) {
     requestGeneration += 1
     page.value = 0
-    users.value = []
+    const query = category.value + ':' + period.value
+    if (query !== loadedQuery) users.value = []
+    loadedQuery = query
     hasMore.value = false
   }
   if ((loading.value || loadingMore.value) && !reset) return
@@ -95,8 +101,9 @@ async function load(reset = false) {
     if (response.hasMore) page.value += 1
   } catch (error) {
     if (generation !== requestGeneration) return
+    loadFailed.value = true
     console.warn('[Earn] reward leaderboard unavailable', error)
-    if (reset) users.value = []
+    // Keep existing rows for a failed refresh of the same query.
     hasMore.value = false
   } finally {
     if (generation === requestGeneration) {
@@ -127,6 +134,7 @@ onBeforeUnmount(() => observer?.disconnect())
 
 <template>
   <div class="mx-auto w-full max-w-[760px] px-3 py-3">
+    <PageDataStatus :paths="['/rewards/leaderboard']" @retry="load(true)" @updated="!loading && load(true)" />
     <nav class="category-tabs" aria-label="Reward category">
       <button v-for="option in categoryOptions" :key="option.value" class="category-tab"
         :class="{ 'category-tab--active': category === option.value }" @click="category = option.value">
@@ -152,8 +160,8 @@ onBeforeUnmount(() => observer?.disconnect())
       </div>
     </section>
 
-    <div v-if="loading" class="flex justify-center py-12"><i-ep-loading class="h-7 w-7 animate-spin text-orange-normal" /></div>
-    <div v-else-if="!users.length" class="mt-3 rounded-2xl bg-white p-8 text-center text-grey-64">No reward data for this category and period yet.</div>
+    <div v-if="loading && !users.length" class="flex justify-center py-12"><i-ep-loading class="h-7 w-7 animate-spin text-orange-normal" /></div>
+    <div v-else-if="!users.length && !loadFailed" class="mt-3 rounded-2xl bg-white p-8 text-center text-grey-64">No reward data for this category and period yet.</div>
     <div v-else class="mt-3 space-y-2">
       <article v-for="user in users" :key="user.twitterId" class="reward-user">
         <div class="rank" :class="user.rank <= 3 ? `rank--${user.rank}` : ''">{{ user.rank }}</div>

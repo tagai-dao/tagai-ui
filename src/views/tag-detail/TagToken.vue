@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { useCommunityStore } from "@/stores/community";
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
 import { formatAddress, formatAmount, formatAmountTrunc, formatPrice, sleep, formatDate } from "@/utils/helper";
@@ -753,6 +754,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
+  <PageDataStatus :paths="['/community/holderList']" @retry="onRefresh" @updated="onRefresh" />
   <div class="" v-if="comStore.currentSelectedCommunity?.tick">
     <!-- <div class="bg-white p-3 rounded-2xl">
       <div class="flex justify-between items-center">
