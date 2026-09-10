@@ -3,9 +3,9 @@ import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import {computed, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
+import {computed, nextTick, onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
-import {getCommunitiesByNew, getCommunitiesByTrending, getCommunityByMarketCap, getImportedCommunityInfo, getOnlineSpaces, type TagCoinSourceFilter} from "@/apis/api";
+import {getCommunitiesByNew, getTokenCatalogPage, getImportedCommunityInfo, getOnlineSpaces, type TagCoinSourceFilter} from "@/apis/api";
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
 import {handleErrorTip} from '@/utils/notify'
@@ -49,7 +49,6 @@ const finished = reactive({
   [ListType.Trending]: false,
   [ListType.New]: false,
 })
-const nextNewPage = ref(1)
 const { setInter } = useInterval()
 const { setInter: setStockInterval } = useInterval()
 const { pageScroll, pageScrollTo} = usePageScroll()
@@ -87,12 +86,7 @@ const isActiveChainBStock = (community: Community) =>
 
 let newCommunitiesInterval: NodeJS.Timeout | null = null
 
-let skipNextListTypeRefresh = false
 watch(listType, () => {
-  if (skipNextListTypeRefresh) {
-    skipNextListTypeRefresh = false
-    return
-  }
   refresh()
 })
 watch(activeTab, (val) => {
@@ -111,62 +105,47 @@ function saveCoinListSnapshot(chainId: number, type: ListType, source: TagCoinSo
 const coinListKey = (type: ListType) =>
   type === ListType.MarketCap ? 'marketCapCommunities' : type === ListType.New ? 'newCommunities' : 'trendingCommunities'
 
-const fetchCoinList = (type: ListType, pages = 0, source: TagCoinSource = tagCoinSource.value) =>
-  type === ListType.MarketCap
-    ? getCommunityByMarketCap(pages, source)
-    : type === ListType.New
-      ? getCommunitiesByNew(pages, source)
-      : getCommunitiesByTrending(pages, source)
+const catalogSort = (type: ListType) => type === ListType.New ? 'new' : type === ListType.MarketCap ? 'marketCap' : 'trending'
+const cursors = new Map<ListType, { page: number; catalogId: string }>()
+const recentCommunities = ref<Community[]>([])
+const coinListRef = ref<{ check: () => void }>()
+function mergeCoins(existing: Community[], incoming: Community[]) {
+  const rows = new Map(existing.map(row => [row.token?.toLowerCase() || row.tick, row]))
+  for (const row of incoming) rows.set(row.token?.toLowerCase() || row.tick, row)
+  return [...rows.values()]
+}
 
 function showCoinList(type: ListType, chainId: number, source: TagCoinSource, rows: Community[], snapshot: boolean) {
   comStore[coinListKey(type)] = rows
   if (!snapshot) saveCoinListSnapshot(chainId, type, source, rows)
-  finished[type] = rows.length < 30
-  if (type === ListType.New) nextNewPage.value = 1
+  finished[type] = false
   listLoaded.value = true
   loadFailed.value = false
-}
-
-/** Keep the Token page useful when one independent ranking endpoint is down. */
-async function showAvailableSiblingRanking(failedType: ListType, chainId: number, source: TagCoinSource, isCurrent: () => boolean) {
-  const fallbackOrder = [ListType.MarketCap, ListType.New, ListType.Trending]
-    .filter(type => type !== failedType)
-
-  for (const type of fallbackOrder) {
-    const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type, source))
-    if (cached?.length && isCurrent()) {
-      showCoinList(type, chainId, source, cached, true)
-      skipNextListTypeRefresh = true
-      listType.value = type
-      return true
-    }
-
-    // Never chain two additional slow HTTP reads after the primary deadline.
-    // A sibling fallback is useful only when it is already available locally.
-  }
-  return false
 }
 
 async function refresh() {
   loadFailed.value = false
   refreshing.value = true
   const sequence = ++listRefreshSequence
+  loading.value = false
   const chainId = chainStore.activeChainId
   const type = listType.value
   const source = tagCoinSource.value
   const key = coinListKey(type)
   const isCurrent = () => sequence === listRefreshSequence
+    && type === listType.value
     && chainId === chainStore.activeChainId
     && source === tagCoinSource.value
   try {
     finished[type] = false
-    const communities = await fetchCoinList(type, 0, source) as Community[]
+    const result = await getTokenCatalogPage(catalogSort(type), source)
+    const communities = result.rows
     if (!isCurrent()) return
     comStore[key] = communities || []
     saveCoinListSnapshot(chainId, type, source, comStore[key])
     listLoaded.value = true
-    finished[type] = communities.length < 30
-    if (type === ListType.New) nextNewPage.value = 1
+    finished[type] = !result.hasMore
+    cursors.set(type, { page: result.nextPage, catalogId: result.catalogId })
     void getTokenInfo(communities).then(rows => {
       if (!isCurrent()) return
       const byToken = new Map(rows.map(row => [row.token.toLowerCase(), row]))
@@ -178,18 +157,15 @@ async function refresh() {
       const cached = readPublicSnapshot<Community[]>(coinListSnapshotScope(chainId, type, source))
       if (existing?.length) {
         listLoaded.value = true
-        loadFailed.value = false
+        loadFailed.value = true
         console.warn(`[Token] ${ListType[type]} refresh failed; retaining current list`, error)
       } else if (cached?.length) {
         comStore[key] = cached
         listLoaded.value = true
-        loadFailed.value = false
+        loadFailed.value = true
       } else {
-        const recovered = await showAvailableSiblingRanking(type, chainId, source, isCurrent)
-        if (!recovered && isCurrent()) {
-          loadFailed.value = true
-          handleErrorTip(error)
-        }
+        loadFailed.value = true
+        handleErrorTip(error)
       }
     }
   } finally {
@@ -198,65 +174,35 @@ async function refresh() {
 }
 
 async function loadMore() {
-  if (loading.value || refreshing.value || loadFailed.value) return
-  try{
-    loading.value = true
-    if (listType.value == ListType.MarketCap) {
-      if (finished[ListType.MarketCap]) return;
-      if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length == 0) {
-        return;
-      }
-      let communities = await getCommunityByMarketCap(
-        Math.floor((comStore.marketCapCommunities.length - 1) / 30) + 1,
-        tagCoinSource.value,
-      ) as Array<Community>;
-      if (communities && communities.length > 0) {
-        comStore.marketCapCommunities = comStore.marketCapCommunities.concat(await getTokenInfo(communities))
-        saveCoinListSnapshot(chainStore.activeChainId, ListType.MarketCap, tagCoinSource.value, comStore.marketCapCommunities)
-      }
-      if (communities.length < 30) {
-        finished[ListType.MarketCap] = true
-      }
-    } else if (listType.value == ListType.New) {
-      if (!comStore.newCommunities || comStore.newCommunities.length == 0) {
-        return;
-      }
-      if (finished[ListType.New]) return;
-      let communities = await getCommunitiesByNew(nextNewPage.value, tagCoinSource.value) as Array<Community>;
-      if (communities && communities.length > 0) {
-        const hydrated = await getTokenInfo(communities)
-        const existingTokens = new Set(comStore.newCommunities.map((community) => community.token?.toLowerCase()).filter(Boolean))
-        comStore.newCommunities = comStore.newCommunities.concat(
-          hydrated.filter((community) => !existingTokens.has(community.token?.toLowerCase()))
-        )
-        saveCoinListSnapshot(chainStore.activeChainId, ListType.New, tagCoinSource.value, comStore.newCommunities)
-      }
-      nextNewPage.value += 1
-      if (communities.length < 30) {
-        finished[ListType.New] = true
-      }
-    }else if(listType.value == ListType.Trending) {
-      if (!comStore.trendingCommunities || comStore.trendingCommunities.length == 0) {
-        return;
-      }
-      if (finished[ListType.Trending]) return;
-      let communities = await getCommunitiesByTrending(
-        Math.floor((comStore.trendingCommunities.length - 1) / 30) + 1,
-        tagCoinSource.value,
-      ) as Array<Community>;
-      if (communities && communities.length > 0) {
-        comStore.trendingCommunities = comStore.trendingCommunities.concat(await getTokenInfo(communities))
-        saveCoinListSnapshot(chainStore.activeChainId, ListType.Trending, tagCoinSource.value, comStore.trendingCommunities)
-      }
-      if (communities.length < 30) {
-        finished[ListType.Trending] = true
-      }
-    }
-  } catch (e) {
+  const type = listType.value
+  if (loading.value || refreshing.value || loadFailed.value || finished[type]) return
+  const cursor = cursors.get(type)
+  if (!cursor) return // Cached display rows are not a pagination cursor.
+  const sequence = listRefreshSequence
+  const chainId = chainStore.activeChainId
+  const source = tagCoinSource.value
+  const isCurrent = () => sequence === listRefreshSequence && type === listType.value
+    && chainId === chainStore.activeChainId && source === tagCoinSource.value
+  loading.value = true
+  try {
+    const result = await getTokenCatalogPage(catalogSort(type), source, cursor.page, cursor.catalogId)
+    if (!isCurrent()) return
+    const key = coinListKey(type)
+    comStore[key] = mergeCoins(comStore[key], result.rows)
+    cursors.set(type, { page: result.nextPage, catalogId: result.catalogId })
+    finished[type] = !result.hasMore
+    saveCoinListSnapshot(chainId, type, source, comStore[key])
+    void getTokenInfo(result.rows).then(rows => {
+      if (!isCurrent()) return
+      const byToken = new Map(rows.map(row => [row.token.toLowerCase(), row]))
+      comStore[key] = comStore[key].map(row => byToken.get(row.token.toLowerCase()) ?? row)
+    }).catch(error => console.warn('[Token] optional page metrics unavailable', error))
+  } catch (error) {
+    if (!isCurrent()) return
     loadFailed.value = true
-    handleErrorTip(e)
+    handleErrorTip(error)
   } finally {
-    loading.value = false
+    if (isCurrent()) loading.value = false
   }
 }
 
@@ -276,36 +222,15 @@ async function getSpaces() {
 
 async function getNewCommunities() {
   const chainId = chainStore.activeChainId
-  const source = activeMainMenu.value === 'coin'
-    && coinSubMenu.value === 'tagCoin'
-    && listType.value === ListType.New
-    ? tagCoinSource.value
-    : 'all'
-  try{
-    let communities = await getCommunitiesByNew(0, source) as Array<Community>;
+  try {
+    const communities = await getCommunitiesByNew(0, 'all') as Community[]
     if (chainId !== chainStore.activeChainId) return
-    if (communities && communities.length > 0) {
-      // 先用 API 数据填滚动条；只给可见的前 10 条做链上补价，减轻与 Feed 抢 RPC
-      const loaded = comStore.newCommunities || []
-      const loadedTokens = new Set(communities.map((community) => community.token?.toLowerCase()).filter(Boolean))
-      // Keep pages the user has already loaded. The minute refresh only
-      // replaces page 0 and must not make older imported tokens disappear
-      // while the user is scrolling toward them.
-      comStore.newCommunities = communities.concat(
-        loaded.filter((community) => !loadedTokens.has(community.token?.toLowerCase()))
-      )
-      const head = communities.slice(0, 10)
-      getTokenInfo(head).then((res) => {
-        if (chainId !== chainStore.activeChainId) return
-        const byToken = new Map(res.map((c) => [c.token?.toLowerCase(), c]))
-        comStore.newCommunities = comStore.newCommunities.map((c) => byToken.get(c.token?.toLowerCase() ?? '') ?? c)
-      }).catch(error => console.warn('[Token] ticker metrics unavailable', error))
-    } else {
-      finished[ListType.New] = true
-    }
-  } catch(e) {
-    if (!comStore.newCommunities.length) handleErrorTip(e)
-    else console.warn('[Token] background refresh failed; retaining last list', e)
+    recentCommunities.value = communities.slice(0, 10)
+    void getTokenInfo(recentCommunities.value).then(rows => {
+      if (chainId === chainStore.activeChainId) recentCommunities.value = rows
+    }).catch(error => console.warn('[Token] ticker metrics unavailable', error))
+  } catch (error) {
+    console.warn('[Token] ticker refresh unavailable', error)
   }
 }
 
@@ -371,7 +296,7 @@ function ensureCoinListLoaded() {
   }
   if (coinSubMenu.value !== 'tagCoin') return
   const list = currentCoinList.value
-  if (!list || list.length === 0) {
+  if (!list || list.length === 0 || !cursors.has(listType.value)) {
     void refresh()
   }
 }
@@ -435,6 +360,7 @@ function filterTagCoins(list: Community[]) {
 function switchTagCoinSource(source: TagCoinSource) {
   if (tagCoinSource.value === source) return
   tagCoinSource.value = source
+  cursors.clear()
   const key = coinListKey(listType.value)
   const cached = readPublicSnapshot<Community[]>(
     coinListSnapshotScope(chainStore.activeChainId, listType.value, source)
@@ -446,6 +372,11 @@ function switchTagCoinSource(source: TagCoinSource) {
   pageScrollRef.value?.scrollTo?.({ top: 0, behavior: 'smooth' })
   void refresh()
 }
+
+// Filtering can leave a full API page with zero/one visible card and no
+// scrollbar. Ask Vant to fill the viewport rather than waiting for a scroll.
+watch([() => filterTagCoins(currentCoinList.value).length, loading, refreshing, listType, hideDust],
+  () => { void nextTick(() => coinListRef.value?.check()) })
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
 const route = useRoute()
@@ -486,7 +417,8 @@ watch(() => chainStore.activeChainId, () => {
   finished[ListType.MarketCap] = false
   finished[ListType.New] = false
   finished[ListType.Trending] = false
-  nextNewPage.value = 1
+  cursors.clear()
+  recentCommunities.value = []
   bStockCommunities.value = []
   bStocksLoaded.value = false
   ensureCoinListLoaded()
@@ -524,8 +456,7 @@ watch([() => contentWidth.value, () => scrollContainer.value], () => {
   })
   
   const scrollNewCommunities = computed(() => {
-  if(!comStore.newCommunities) return []
-  return comStore.newCommunities.slice(0, 10)
+  return recentCommunities.value.slice(0, 10)
 })
 
 const newComDuration = computed(() => {
@@ -741,8 +672,9 @@ const onCreate = (type: GlobalModalType) => {
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
                           :loosing-text="$t('releaseToRefresh')">
-          <van-list :loading="loading"
+          <van-list ref="coinListRef" :loading="loading"
                     :error="loadFailed"
+                    @update:error="(value: boolean) => { if (!value) void refresh() }"
                     :finished="finished[listType]"
                     :immediate-check="false"
                     :loading-text="$t('loading')"
