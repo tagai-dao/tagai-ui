@@ -697,7 +697,12 @@ const onCreate = (type: GlobalModalType) => {
     <HomePost v-if="activeMainMenu==='tag'"/>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
       <div class="flex-1 min-h-0 px-3 mobile-scroll-container no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-        <van-pull-refresh v-model="refreshing" @refresh="refresh"
+        <div v-if="chainStore.deployment.key === 'rh' && tagCoinSource === 'memeetf'"
+             class="flex min-h-[280px] items-center justify-center py-16 text-xl font-semibold text-content/60"
+             role="status">
+          Coming soon
+        </div>
+        <van-pull-refresh v-else v-model="refreshing" @refresh="refresh"
                           class="min-h-full web:max-w-[1240px] web:mx-auto"
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
