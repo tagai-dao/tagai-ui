@@ -8,11 +8,11 @@ const body = source.slice(source.indexOf('async function loadMore()'), source.in
 const js = ts.transpileModule(body, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText
 function fixture(chainId, type, fetcher) {
   const ctx = {
-    listType: {value:type}, loading:{value:false}, refreshing:{value:false}, loadFailed:{value:false},
+    pageActive:true, listType: {value:type}, loading:{value:false}, refreshing:{value:false}, loadFailed:{value:false},
     finished:{[type]:false}, cursors:new Map([[type,{page:1,catalogId:'frozen'}]]), listRefreshSequence:1,
     chainStore:{activeChainId:chainId}, tagCoinSource:{value:'launch'},
     catalogSort: value=>value, coinListKey:value=>value,
-    comStore:{[type]:[{tick:'A',token:'0xa'}]},
+    coinLists:{[type]:[{tick:'A',token:'0xa'}]},
     getTokenCatalogPage:fetcher, mergeCoins:(a,b)=>[...new Map([...a,...b].map(r=>[r.token,r])).values()],
     saveCoinListSnapshot:()=>{}, getTokenInfo:async rows=>rows, handleErrorTip:()=>{},
   }
@@ -26,7 +26,7 @@ for(const chain of [56,4663]) for(const type of ['new','trending','marketCap']) 
     assert.deepEqual(args,[type,'launch',1,'frozen'])
     assert.equal(f.ctx.finished[type],false)
     assert.equal(f.ctx.cursors.get(type).page,2)
-    assert.equal(f.ctx.comStore[type].length,2)
+    assert.equal(f.ctx.coinLists[type].length,2)
   })
 }
 test('late results from a previous chain/source do not modify the current list',async()=>{
@@ -37,7 +37,7 @@ test('late results from a previous chain/source do not modify the current list',
   f.ctx.tagCoinSource.value='import'
   done({rows:[{tick:'wrong',token:'0xb'}],catalogId:'old',nextPage:2,hasMore:false})
   await pending
-  assert.equal(f.ctx.comStore.new.length,1)
+  assert.equal(f.ctx.coinLists.new.length,1)
   assert.equal(f.ctx.finished.new,false)
 })
 test('failed fetches retain the cursor for retry',async()=>{
@@ -48,7 +48,7 @@ test('failed fetches retain the cursor for retry',async()=>{
 })
 test('ticker has independent data and filtered short pages trigger viewport checks',()=>{
   const ticker=source.slice(source.indexOf('async function getNewCommunities()'),source.indexOf('async function loadBStocks'))
-  assert.ok(!ticker.includes('comStore.newCommunities'))
+  assert.ok(!ticker.includes('coinLists.newCommunities'))
   assert.match(ticker,/recentCommunities.value/)
   assert.match(source,/coinListRef.value\?\.check\(\)/)
   assert.match(source,/!cursors.has\(listType.value\)/)

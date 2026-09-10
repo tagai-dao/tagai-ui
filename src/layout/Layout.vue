@@ -206,13 +206,16 @@ onMounted( () => {
 <template>
   <WrappedReactComponent>
     <main class="w-full h-full">
-      <!-- PC 端布局：左侧边栏 + 主内容区 -->
-      <div class="hidden web:flex h-full">
+      <!-- A single route outlet serves both breakpoints. CSS-hidden outlets still
+           mount pages and used to race each other when refreshing shared lists. -->
+      <div class="flex h-full">
         <!-- 左侧边栏 - 根据路由 meta 控制显示 -->
-        <LeftSidebar v-if="$route.meta.tabBar !== false" />
+        <div v-if="$route.meta.tabBar !== false" class="hidden web:flex">
+          <LeftSidebar />
+        </div>
         
         <!-- 主内容区 -->
-        <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="relative w-full min-w-0 flex-1 flex flex-col overflow-hidden max-w-[1200px] mx-auto web:max-w-none">
           <!-- PC 端不显示 TopBar，移动端显示 -->
           <div class="web:hidden">
             <TopBar v-show="$route.meta.topBar"/>
@@ -227,28 +230,18 @@ onMounted( () => {
               <LanguageSwitcher />
             </div>
           </div>
-          <div class="flex-1 overflow-hidden">
+          <div class="flex-1 min-h-0 overflow-hidden">
             <router-view v-slot="{ Component }">
               <keep-alive :include="cachedComponents">
                 <component :is="Component" :key="$route.name"/>
               </keep-alive>
             </router-view>
           </div>
+          <div v-if="$route.meta.tabBar" class="web:hidden">
+            <TabBar />
+          </div>
         </div>
       </div>
-
-      <!-- 移动端布局：保持原有布局 -->
-      <main class="web:hidden w-full h-full flex flex-col max-w-[1200px] mx-auto relative">
-        <TopBar v-show="$route.meta.topBar"/>
-        <div class="flex-1 min-h-0 overflow-hidden">
-          <router-view v-slot="{ Component }">
-            <keep-alive :include="cachedComponents">
-              <component :is="Component" :key="$route.name"/>
-            </keep-alive>
-          </router-view>
-        </div>
-        <TabBar v-if="$route.meta.tabBar"/>
-      </main>
 
       <!-- 全局只挂载一个 Dialog。Element Plus 默认 teleport 到 body，重复实例会争用同一个 v-model。 -->
       <el-dialog v-model="modalStore.modalVisible"
