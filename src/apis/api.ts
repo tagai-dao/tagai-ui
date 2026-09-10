@@ -291,7 +291,7 @@ export const searchCommunity = async (tick: string) =>
 export const searchTick = async (tick: string) =>
   get(BACKEND_API_URL + '/community/searchTickOnly', { tick })
 
-export type TagCoinSourceFilter = 'all' | 'import' | 'launch'
+export type TagCoinSourceFilter = 'all' | 'memeetf' | 'launch' | 'import'
 
 export const getCommunityByMarketCap = async (pages?: number, source: TagCoinSourceFilter = 'all') =>
   publicRead('/community/communityByMarketCap', { pages: pages ?? 0, source })

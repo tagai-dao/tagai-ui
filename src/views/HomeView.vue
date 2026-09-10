@@ -73,8 +73,9 @@ type TagCoinSource = TagCoinSourceFilter
 const tagCoinSource = ref<TagCoinSource>('all')
 const tagCoinSourceTabs: Array<{ value: TagCoinSource; label: string }> = [
   { value: 'all', label: 'All' },
+  { value: 'memeetf', label: 'MemeETF' },
+  { value: 'launch', label: 'Social Launch' },
   { value: 'import', label: 'Import Token' },
-  { value: 'launch', label: 'TagAI Launch' },
 ]
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
@@ -350,14 +351,15 @@ function filterDust(list: Community[]) {
 const isImportedToken = (community: Community) =>
   community.isImport === true || Number(community.isImport) === 1
 
-/** TagCoin 排除股票，并按外部导入 / TagAI 发行来源分组。 */
+/** TagCoin 排除股票，并按 MemeETF / Social Launch / 外部导入分组。 */
 function filterTagCoins(list: Community[]) {
   return filterDust(list).filter((community) => {
     if (isActiveChainBStock(community)) return false
     if (tagCoinSource.value === 'all') return true
+    if (tagCoinSource.value === 'memeetf') return Number(community.version) === 13
     return tagCoinSource.value === 'import'
       ? isImportedToken(community)
-      : !isImportedToken(community)
+      : !isImportedToken(community) && Number(community.version) !== 13
   })
 }
 
@@ -668,7 +670,7 @@ const onCreate = (type: GlobalModalType) => {
       </div>
     </div>
 
-    <!-- TagCoin 来源筛选：外部导入代币 / TagAI 原生发行代币 -->
+    <!-- TagCoin 分类：All / MemeETF / Social Launch / Import Token -->
     <div
       v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'"
       class="w-full px-3 pb-2 pt-1 web:mx-auto web:max-w-[1240px] web:pb-3 web:pt-2"

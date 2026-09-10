@@ -63,6 +63,28 @@ function setup() {
   return { model, calls, hooks, shared, chain, state, fixture, snapshots, errors, dispose: () => scope.stop() }
 }
 
+test('category switches filter cached rows and request the selected source', async t => {
+  const f = setup(); t.after(f.dispose)
+  const rows = [
+    { ...token('legacy'), version: 12 },
+    { ...token('etf'), version: 13 },
+    { ...token('etf-string'), version: '13' },
+    { ...token('import', 1), version: 10 },
+  ]
+  assert.deepEqual(f.model.filterTagCoins(rows).map(row => row.tick), ['legacy', 'etf', 'etf-string', 'import'])
+  for (const [source, expected] of [
+    ['memeetf', ['etf', 'etf-string']],
+    ['launch', ['legacy']],
+    ['import', ['import']],
+  ]) {
+    f.model.switchTagCoinSource(source)
+    const call = f.calls.at(-1)
+    assert.equal(call.source, source)
+    call.resolve(rows); await flush()
+    assert.deepEqual(f.model.filterTagCoins(f.model.currentCoinList.value).map(row => row.tick), expected)
+  }
+})
+
 test('other route/store refreshes cannot erase Launch communities', async t => {
   const f = setup(); t.after(f.dispose)
   f.model.switchTagCoinSource('launch')
