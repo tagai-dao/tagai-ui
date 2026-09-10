@@ -73,9 +73,9 @@ type TagCoinSource = TagCoinSourceFilter
 const tagCoinSource = ref<TagCoinSource>('all')
 const tagCoinSourceTabs: Array<{ value: TagCoinSource; label: string }> = [
   { value: 'all', label: 'All' },
-  { value: 'memeetf', label: 'MemeETF' },
+  { value: 'memeetf', label: 'Meme ETF' },
   { value: 'launch', label: 'Social Launch' },
-  { value: 'import', label: 'Import Token' },
+  { value: 'import', label: 'Imported Token' },
 ]
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
