@@ -305,6 +305,14 @@ export const getCommunitiesByNew = async (pages?: number, source: TagCoinSourceF
 export const getCommunityDetail = async (tick: string) =>
   publicRead('/community/detail', { tick })
 
+export type TokenCatalogPage = { rows: Community[]; catalogId: string; nextPage: number; hasMore: boolean; total: number }
+export async function getTokenCatalogPage(sort: string, source: TagCoinSourceFilter, pages = 0, catalogId?: string): Promise<TokenCatalogPage> {
+  // Catalog membership is pinned for pagination; refreshing must request a new
+  // session rather than reusing an old browser/page snapshot's terminal state.
+  const result = await getDisplay(BACKEND_API_URL + '/community/catalogPage', { sort, source, pages, catalogId }, useChainStore().activeChainId)
+  return result.data as TokenCatalogPage
+}
+
 export const getCommunityDeployerIpshare = async (tick: string) =>
   get(BACKEND_API_URL + '/community/getDeployerIpshare', {tick})
 
