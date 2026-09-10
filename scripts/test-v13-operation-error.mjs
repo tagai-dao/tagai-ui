@@ -8,6 +8,7 @@ test('nested wallet and contract errors map to safe translation keys',()=>{
  for(const [error,key] of [
   [{cause:{code:4001}},'cancelled'],[{cause:{data:{errorName:'Expired'}}},'expired'],
   ['execution reverted: custom error 0x203d82d8','expired'],[{cause:{data:{errorName:'Slippage'}}},'slippage'],
+  [{cause:{cause:{data:'0x90bfb865000000008199f5f300000000'}}},'slippage'],
   [Error('insufficient funds for gas'),'balance'],[Error('ERC20InsufficientAllowance'),'transfer'],
   [Error('HTTP request failed'),'network'],[Error('Wallet or chain changed'),'wallet'],
   [Error('Contract Call: 0x12345 args: private data Docs: https://viem.sh'),'failed'],[null,'failed']

@@ -1,10 +1,8 @@
-import { encodeAbiParameters, parseAbi, zeroAddress, type Address, type Hex } from 'viem'
+import { decodeFunctionResult, encodeAbiParameters, encodeFunctionData, parseAbi, zeroAddress, type Address, type Hex } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import { getBasketProtocol } from '@/config/baskets'
 import { getReadOnlyClient } from '@/utils/wallets'
-import { getBasketDetail } from '@/utils/baskets/data'
 import { quoteNutboxExactInput } from '@/utils/baskets/bsc-v3-routing'
-import { quoteBasketBuyLegOutputs } from '@/utils/baskets/trade'
 import { encodeBasketTradeData } from '@/utils/baskets/hook-data'
 import { send, walletGuard } from './pools'
 
@@ -25,11 +23,18 @@ export const buybackAbi = parseAbi([
   'function balanceOf(address) view returns(uint256)',
   'function decimals() view returns(uint8)',
   'function symbol() view returns(string)',
+  'function basketVersion(address) view returns(uint32)',
+  'function engine() view returns(address)',
+  'function assetCount() view returns(uint256)',
+  'function assetAt(uint256) view returns(address asset,uint16 targetWeightBps,uint256 activeReserve)',
+])
+const buybackMulticallAbi = parseAbi([
+  'function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns((bool success,bytes returnData)[] returnData)',
 ])
 export type BuybackState = {
   token: Address; account: Address; index: Address; hook: Address; listed: boolean;
   reserve: bigint; notified: bigint; pending: bigint; rewardBalance: bigint;
-  walletIndex: bigint; decimals: number; symbol: string; timestamp: bigint;
+  walletIndex: bigint; decimals: number; symbol: string; timestamp: bigint; blockNumber: bigint;
 }
 export async function readBuybackState(token: Address, account: Address = zeroAddress): Promise<BuybackState> {
   const client = getReadOnlyClient(56), block = await client.getBlock()
@@ -41,7 +46,7 @@ export async function readBuybackState(token: Address, account: Address = zeroAd
     client.readContract({ ...at, address: token, functionName: 'totalIndexRewardsNotified' }),
     account === zeroAddress ? 0n : client.readContract({ ...at, address: token, functionName: 'pendingBuybackReward', args: [account] }),
   ])
-  const state: BuybackState = { token, account, listed, index, hook, notified, pending, reserve: 0n, rewardBalance: 0n, walletIndex: 0n, decimals: 18, symbol: '', timestamp: block.timestamp }
+  const state: BuybackState = { token, account, listed, index, hook, notified, pending, reserve: 0n, rewardBalance: 0n, walletIndex: 0n, decimals: 18, symbol: '', timestamp: block.timestamp, blockNumber: block.number }
   if (index === zeroAddress || !listed) return state
   const [reserve, rewardBalance, walletIndex, decimals, symbol] = await Promise.all([
     client.readContract({ ...at, address: hook, functionName: 'buybackBnbReserve', args: [token] }),
@@ -63,12 +68,12 @@ export type BuybackQuote = {
   state: BuybackState; amountOut: bigint; minOut: bigint; minSettlement: bigint;
   data: Hex; deadline: bigint; fetchedAt: number; bps: number;
 }
-async function checkBuybackRouter() {
+async function checkBuybackRouter(blockNumber?: bigint) {
   const client = getReadOnlyClient(56), pump = getChainDeployment(56).contracts.pump13!
-  const router = await client.readContract({ address: pump, abi: buybackAbi, functionName: 'buybackRouter' })
+  const router = await client.readContract({ address: pump, abi: buybackAbi, functionName: 'buybackRouter', blockNumber })
   if (router === zeroAddress) throw new Error('V13_BUYBACK_ROUTER')
   const protocol = getBasketProtocol(56, 4)
-  const actual = await Promise.all((['pump', 'nutboxRouter', 'basketRouter', 'settlementToken'] as const).map(functionName => client.readContract({ address: router, abi: buybackAbi, functionName })))
+  const actual = await Promise.all((['pump', 'nutboxRouter', 'basketRouter', 'settlementToken'] as const).map(functionName => client.readContract({ address: router, abi: buybackAbi, functionName, blockNumber })))
   const expected = [pump, protocol.nutboxRouter, protocol.swapRouter, protocol.settlementToken]
   if (actual.some((a, i) => a.toLowerCase() !== expected[i]?.toLowerCase())) throw new Error('V13_BUYBACK_ROUTER')
 }
@@ -77,26 +82,55 @@ export async function quoteBuyback(token: Address, account: Address, bps: number
   const state = await readBuybackState(token, account)
   if (!state.listed || state.index === zeroAddress) throw new Error('V13_BUYBACK_PENDING')
   if (state.reserve <= 0n) throw new Error('V13_BUYBACK_EMPTY')
-  await checkBuybackRouter()
-  const detail = await getBasketDetail(state.index, 56)
-  if (detail.version !== 4 || detail.holdings.length !== detail.basketLength || !detail.holdings.length) throw new Error('V13_BUYBACK_ROUTER')
+  const client = getReadOnlyClient(56), protocol = getBasketProtocol(56, 4)
+  const at = { abi: buybackAbi, blockNumber: state.blockNumber }
+  await checkBuybackRouter(state.blockNumber)
+  // Read execution metadata on chain; stale API metadata must not define the legs.
+  const [version, engine, count] = await Promise.all([
+    client.readContract({ ...at, address: protocol.registry, functionName: 'basketVersion', args: [state.index] }),
+    client.readContract({ ...at, address: state.index, functionName: 'engine' }),
+    client.readContract({ ...at, address: state.index, functionName: 'assetCount' }),
+  ])
+  // BasketToken.MAX_ASSETS = 10.
+  if (version !== 4 || engine.toLowerCase() !== protocol.hook.toLowerCase() || count < 1n || count > 10n) throw new Error('V13_BUYBACK_ROUTER')
+  const legCount = Number(count)
   const settlement = await quoteNutboxExactInput(zeroAddress, getBasketProtocol(56, 4).settlementToken, state.reserve, 56, 4)
   const minSettlement = buybackMinimum(settlement, bps)
-  // Protect every constituent even on the first mint. Use the minimum settlement
-  // budget so the intermediate conversion's allowed movement does not break the legs.
-  const outputs = await quoteBasketBuyLegOutputs({ chainId: 56, version: 4, settlementIn: minSettlement,
-    basketFeeBps: detail.basketFeeBps, legs: detail.holdings.map(h => ({ asset: h.asset, route: h.route, weightBps: Math.round(h.targetWeightPct * 100) })),
-  })
-  const legMins = outputs.map(amount => buybackMinimum(amount, bps))
-  const payload = (minimum: bigint) => encodeAbiParameters([{ type: 'uint256' }, { type: 'bytes' }], [minSettlement,
-    encodeBasketTradeData({ chainId: 56, version: 4, side: 'buy', minOut: minimum, legCount: legMins.length, legMins, frontend: zeroAddress }),
+  const payload = (minimum: bigint, legMins: bigint[]) => encodeAbiParameters([{ type: 'uint256' }, { type: 'bytes' }], [minSettlement,
+    encodeBasketTradeData({ chainId: 56, version: 4, side: 'buy', minOut: minimum, legCount, legMins, frontend: zeroAddress }),
   ])
-  const client = getReadOnlyClient(56), deadline = (await client.getBlock()).timestamp + 180n
-  // eth_call only: the actual Hook → adapter → Basket path produces the quote.
-  // The permissive final bound is never returned as a sendable transaction.
-  const preview = await client.simulateContract({ address: state.hook, abi: buybackAbi, functionName: 'executeBuyback', args: [token, 1n, deadline, payload(1n)], account })
-  const amountOut = preview.result, minOut = buybackMinimum(amountOut, bps), data = payload(minOut)
-  await client.simulateContract({ address: state.hook, abi: buybackAbi, functionName: 'executeBuyback', args: [token, minOut, deadline, data], account })
+  const deadline = state.timestamp + 180n
+  const reserveReads = Array.from({ length: legCount }, (_, i) => ({
+    target: state.index, allowFailure: false,
+    callData: encodeFunctionData({ abi: buybackAbi, functionName: 'assetAt', args: [BigInt(i)] }),
+  }))
+  // ONE eth_call, not client.multicall (which may split requests). The second leg
+  // must observe the first leg's changes to shared pools. BasketToken records the
+  // exact acquired amounts in activeReserve and rejects taxed engine deposits.
+  // These permissive discovery bounds and Multicall calldata are NEVER returned
+  // to the wallet path. Any failed/malformed result aborts; there is no fallback.
+  const preview = await client.simulateContract({
+    address: getChainDeployment(56).multiConfig.multicallAddress, abi: buybackMulticallAbi,
+    functionName: 'aggregate3', account, blockNumber: state.blockNumber,
+    args: [[...reserveReads, {
+      target: state.hook, allowFailure: false,
+      callData: encodeFunctionData({ abi: buybackAbi, functionName: 'executeBuyback',
+        args: [token, 1n, deadline, payload(1n, Array.from({ length: legCount }, () => 1n))] }),
+    }, ...reserveReads]],
+  })
+  const results = preview.result
+  if (results.length !== legCount * 2 + 1 || results.some(result => !result.success)) throw new Error('V13_BUYBACK_QUOTE_INVALID')
+  const legMins = reserveReads.map((_, i) => {
+    const before = decodeFunctionResult({ abi: buybackAbi, functionName: 'assetAt', data: results[i].returnData })
+    const after = decodeFunctionResult({ abi: buybackAbi, functionName: 'assetAt', data: results[legCount + 1 + i].returnData })
+    if (before[0] === zeroAddress || before[0].toLowerCase() !== after[0].toLowerCase() || before[1] !== after[1] || after[2] <= before[2]) throw new Error('V13_BUYBACK_QUOTE_INVALID')
+    return buybackMinimum(after[2] - before[2], bps)
+  })
+  const amountOut = decodeFunctionResult({ abi: buybackAbi, functionName: 'executeBuyback', data: results[legCount].returnData })
+  const minOut = buybackMinimum(amountOut, bps), data = payload(minOut, legMins)
+  // Validate the exact bounded wallet transaction, with the user's sender, at
+  // the same block. Only this protected payload can leave the quote function.
+  await client.simulateContract({ ...at, address: state.hook, functionName: 'executeBuyback', args: [token, minOut, deadline, data], account })
   return { state, amountOut, minOut, minSettlement, data, deadline, fetchedAt: Date.now(), bps }
 }
 export async function executeBuyback(quote: BuybackQuote) {

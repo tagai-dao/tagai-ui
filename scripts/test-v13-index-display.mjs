@@ -12,6 +12,7 @@ const filename='src/views/tag-detail/V13IndexRewards.vue',source=await readFile(
 const {descriptor}=parse(source,{filename}),script=compileScript(descriptor,{id:'index-display-test'})
 await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()},bundle:true,platform:'node',format:'cjs',outfile:join(dir,'panel.cjs'),logLevel:'silent',plugins:[{name:'fixtures',setup(b){
  b.onResolve({filter:/^vue$/},()=>({path:require.resolve('vue'),external:true}))
+ b.onResolve({filter:/^@\/utils\/v13\/operation-error$/},()=>({path:join(process.cwd(),'src/utils/v13/operation-error.ts')}))
  b.onResolve({filter:/^(@\/|vue-i18n$)/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export default {};export const useI18n=()=>({t:k=>k,locale:{value:'en'}});
@@ -22,7 +23,7 @@ await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()
  export const getReadOnlyClient=()=>({readContract:async()=>{if(globalThis.__indexDisplay.fail)throw Error('RPC');return globalThis.__indexDisplay.listed}});
  export const getV13Detail=async()=>{globalThis.__indexDisplay.details++;throw Error('503')};
  export const readBuybackState=async()=>{globalThis.__indexDisplay.rewards++;return {listed:true,index:'0x'+'22'.repeat(20),symbol:'IDX',reserve:1n}};
- export const quoteBuyback=async()=>{globalThis.__indexDisplay.actions++};
+ export const quoteBuyback=async()=>{globalThis.__indexDisplay.actions++;if(globalThis.__indexDisplay.quoteError)throw globalThis.__indexDisplay.quoteError};
  export const executeBuyback=async()=>{globalThis.__indexDisplay.actions++};
  export const claimIndexReward=async()=>{globalThis.__indexDisplay.actions++};
  `}))
@@ -44,6 +45,13 @@ test('subsequent refresh after listing reveals index actions even if optional me
 test('unknown lifecycle reports failure instead of incorrectly claiming inner curve',async()=>{
  const {app,s}=mount({fail:true})
  try{await s.load();assert.equal(s.listed,undefined);assert.equal(s.indexReady,false);assert.equal(s.loadError,'v13Page.loadError');assert.equal(globalThis.__indexDisplay.rewards,0)}finally{app.unmount()}
+})
+test('quote failures stop the spinner, clear executable quotes and display safe error messages',async(t)=>{
+ t.mock.method(console,'warn',()=>{})
+ for(const [quoteError,key] of [[Error('HTTP request failed'),'network'],[{cause:{data:'0x90bfb86500008199f5f30000'}},'slippage']]){
+  const {app,s}=mount({listed:true,quoteError})
+  try{await s.load();await s.preview();assert.equal(s.quoting,false);assert.equal(s.quote,undefined);assert.equal(s.error,'v13Operation.'+key)}finally{app.unmount()}
+ }
 })
 test('template hides stats and actions until index is ready and uses the listing notice',()=>{
  assert.match(source,/v-if="listed === false"[^>]*>[\s\S]*?v13Index.createdOnList/)

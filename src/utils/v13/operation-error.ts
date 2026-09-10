@@ -13,7 +13,8 @@ export function poolOperationErrorKey(error: unknown): string {
  if(codes.some(code=>Number(code)===4001)||/UserRejected|user (rejected|denied)|request rejected/i.test(text))return 'v13Operation.cancelled'
  if(/\bExpired\b|0x203d82d8|V13_QUOTE_EXPIRED/i.test(text))return 'v13Operation.expired'
  if(/V13_LIQUIDITY_RATIO_CHANGED/.test(text))return 'v13Page.liquidityRatioChanged'
- if(/slippage|TooLittleReceived|InsufficientOutput|INSUFFICIENT_[AB]_AMOUNT/i.test(text))return 'v13Operation.slippage'
+ // SlippageExceeded() may be nested inside Pancake Infinity WrappedError bytes.
+ if(/slippage|8199f5f3|TooLittleReceived|InsufficientOutput|INSUFFICIENT_[AB]_AMOUNT/i.test(text))return 'v13Operation.slippage'
  if(/insufficient (funds|.*balance)|InsufficientBalance|exceeds balance/i.test(text))return 'v13Operation.balance'
  if(/allowance|TransferFromFailed|TRANSFER_FROM_FAILED|SafeERC20FailedOperation|TransferFailed/i.test(text))return 'v13Operation.transfer'
  if(/Wallet or chain changed|Connect a BSC wallet|Wallet unavailable|chain mismatch/i.test(text))return 'v13Operation.wallet'

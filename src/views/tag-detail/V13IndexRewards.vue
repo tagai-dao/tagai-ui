@@ -11,6 +11,7 @@ import BasketTokenLogo from '@/views/baskets/components/BasketTokenLogo.vue'
 import { getV13Detail, type V13Detail } from '@/utils/v13/pools'
 import { buybackAbi, readBuybackState, quoteBuyback, executeBuyback, claimIndexReward, type BuybackState, type BuybackQuote } from '@/utils/v13/buyback'
 import { getReadOnlyClient } from '@/utils/wallets'
+import { poolOperationErrorKey } from '@/utils/v13/operation-error'
 
 const { t, locale } = useI18n(), store = useCommunityStore(), chain = useChainStore(), wallet = useAccountStore()
 const token = computed(() => store.currentSelectedCommunity?.token as Address | undefined)
@@ -53,8 +54,7 @@ function message(cause: unknown) {
   if (code === 'V13_BUYBACK_EMPTY') return t('v13Index.emptyReserve')
   if (code === 'V13_BUYBACK_ROUTER') return t('v13Index.routerUnavailable')
   if (code === 'V13_BUYBACK_TOO_SMALL') return t('v13Index.tooSmall')
-  if (/reject|denied|cancel/i.test(code)) return t('v13Index.cancelled')
-  return t('v13Index.operationFailed')
+  return t(poolOperationErrorKey(cause))
 }
 async function preview() {
   if (!indexReady.value || !token.value || !validSlippage.value || busy.value || quoting.value) return
