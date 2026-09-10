@@ -115,7 +115,8 @@ const rhContractsV3 = {
   poolManager: '0x8366a39CC670B4001A1121B8F6A443A643e40951',
   settlementToken: '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168',
   wrappedNative: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
-  bidToken: '0x90d2cCA000Dc36fA8401632C67faFDa7D7860C07',
+  // V3 shares the original auction; its immutable bidToken is TagAgent.
+  bidToken: rhContractsV1.bidToken,
   nutboxRouter: '0x200115D733106ecA3954EAA5d1fCbc6D0EfB78AE',
   v2Factory: '0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f',
   v3Factory: '0x1f7d7550B1b028f7571E69A784071F0205FD2EfA',
