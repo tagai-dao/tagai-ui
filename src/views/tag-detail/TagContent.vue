@@ -232,7 +232,10 @@ async function loadCommunityTrades(page = 0, replace = false) {
     const community = comStore.currentSelectedCommunity
     if (!community?.token) return 0
     const requestedToken = community.token
-    const rows = (await getTokenTradeList(community.token, page) || []) as FeedTrade[]
+    // Issued tokens retain their inner/outer market history in the same table.
+    // Filter account membership BEFORE pagination so public DEX traders cannot
+    // displace every platform activity from the first page after graduation.
+    const rows = (await getTokenTradeList(community.token, page, !community.isImport) || []) as FeedTrade[]
     if (sequence !== refreshSequence || comStore.currentSelectedCommunity?.token !== requestedToken) return -1
     // The token trade endpoint also serves full market history. Community
     // Feed includes only identities verified by the API (including imports).

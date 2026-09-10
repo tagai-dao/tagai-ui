@@ -38,7 +38,11 @@ export const getDexScreenerEmbedPath = (community?: {
     if (community.isImport) {
         return community.token
     }
-    return isPcsV4Version(community.version) ? community.token : community.pair
+    // v13 stores a bytes32 pool ID, which is not necessarily the pool indexed
+    // by DexScreener. Never embed JSON/PoolKey/bytes32 as an EVM pair address.
+    const pair = community.pair?.trim() || ''
+    return isPcsV4Version(community.version) || !/^0x[0-9a-f]{40}$/i.test(pair)
+        ? community.token : pair
 }
 
 /** v10 为导入代币，已在 DEX 上架，平台不展示交易功能 */
