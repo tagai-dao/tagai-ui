@@ -42,8 +42,9 @@ async function connectMetaMask() {
   <div class="px-1 flex flex-col gap-y-2">
       <div class="flex justify-between items-center">
         <span class="text-h2 text-grey-normal-hover">{{$t('loginView.choseWallet')}}</span>
-        <img class="cursor-pointer" src="~@/assets/icons/icon-modal-close.svg" alt=""
-             @click="modalStore.setModalVisible(false)"/>
+        <button type="button" class="wallet-close" :aria-label="$t('cancel')" @click="modalStore.setModalVisible(false)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
       </div>
       <div v-if="useAccountStore().getAccountInfo?.walletType != 1" id="wallets-container" class="flex flex-col gap-2 pt-4 pb-6">
 
@@ -87,3 +88,9 @@ async function connectMetaMask() {
       </div>
     </div>
   </template>
+
+<style scoped>
+.wallet-close{display:grid;place-items:center;width:40px;height:40px;flex-shrink:0;padding:0;border:2px solid var(--border-base);border-radius:50%;background:transparent;color:var(--text-base);cursor:pointer}
+.wallet-close:hover{background:var(--surface-2)}
+.wallet-close:focus-visible{outline:2px solid var(--text-base);outline-offset:3px}
+</style>

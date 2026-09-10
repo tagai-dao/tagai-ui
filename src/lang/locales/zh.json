@@ -1498,7 +1498,7 @@
   "mining": "质押挖矿",
   "curveDetail": "65% 的代币通过 Bonding Curve 募集 20 BNB。",
   "v4Detail": "15 BNB 与 15% 的代币组成 V4 流动性池，销毁 LP。",
-  "v2Detail": "5 BNB 按比例购买股票代币，再与 5% 的代币组成 V2 交易池，销毁所有 LP。",
+  "v2Detail": "5 BNB 按指数代币的一篮子比例，购买股票代币，再与 5% 的代币组成V2 交易池，销毁所有 LP。",
   "miningDetail": "15% 的代币用于流动性挖矿。",
   "retain": "保留管理流动性挖矿矿池比例调整权限"
 }
