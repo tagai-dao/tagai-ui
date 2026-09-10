@@ -320,7 +320,7 @@
     "directly": "Deploy baru",
     "byAI": "Dengan AI",
     "tokenCA": "Kontrak token",
-    "tokenCATip": "Masukkan alamat kontrak token di {chain}. Token harus memiliki pool V2 dengan {symbol} di {dex} dan cadangan lebih dari 1 {symbol}; simbol token belum boleh ada di TagAI.",
+    "tokenCATip": "Masukkan alamat kontrak token di {chain}. Token harus memiliki likuiditas di {dex}.",
     "tagTick": "Tag (Ticker)",
     "distribution": "Distribusi",
     "distributionTip": "Kami menyediakan tiga strategi distribusi. Pilih sesuai kebutuhanmu dan siapkan jumlah token minimum yang diperlukan. Langkah berikutnya mengharuskan transfer token tersebut ke kontrak distribusi sosial.",
@@ -349,7 +349,7 @@
     "categoryTag": "Tag kategori",
     "descTag": "Deskripsikan tag-mu",
     "add": "Tambah",
-    "buyTip": "Pilih berapa 【TagCoin】 yang ingin dibeli (opsional)",
+    "buyTip": "Pilih berapa 【{tick}】 yang ingin dibeli (opsional)",
     "create": "Buat",
     "costTopDeploy": "Biaya deploy",
     "deployTip": "Kamu bisa minta TagAI men-deploy token untukmu sekarang:",
@@ -1264,5 +1264,16 @@
     "minutes": "MNT",
     "seconds": "DTK"
   },
-  "v13ClaimAll": {"button": "Klaim semua hadiah", "pending": "Mengklaim…", "success": "Hadiah pool berhasil diklaim", "empty": "Tidak ada hadiah pool untuk diklaim"}
+  "v13ClaimAll": {"button": "Klaim semua hadiah", "pending": "Mengklaim…", "success": "Hadiah pool berhasil diklaim", "empty": "Tidak ada hadiah pool untuk diklaim"},
+  "v13Issuance": {
+  "title": "Alokasi token",
+  "total": "Total suplai",
+  "supply": "1 miliar",
+  "mining": "Hadiah staking",
+  "curveDetail": "65% token mengumpulkan 20 BNB melalui bonding curve.",
+  "v4Detail": "15 BNB dan 15% token membentuk pool likuiditas V4; LP dibakar.",
+  "v2Detail": "5 BNB membeli token saham secara proporsional, dipasangkan dengan 5% token dalam pool V2; semua LP dibakar.",
+  "miningDetail": "15% token digunakan untuk penambangan likuiditas.",
+  "retain": "Pertahankan izin untuk mengatur rasio hadiah pool penambangan likuiditas"
+}
 }

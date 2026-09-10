@@ -260,7 +260,7 @@
     "directly": "部署",
     "byAI": "通过AI",
     "tokenCA": "代币合约",
-    "tokenCATip": "请输入一个在 {chain} 上的代币合约地址。它必须在 {dex} 上和 {symbol} 创建 V2 交易池，且池中储备大于 1 {symbol}。代币符号不能和 TagAI 上的其他标签重名。",
+    "tokenCATip": "请输入一个在 {chain} 上的代币合约地址，并且代币必须在 {dex} 上创建了流动性。",
     "tagTick": "标签(Tick)",
     "distribution": "分发策略",
     "distributionTip": "我们提供三种时间的分发策略，您根据需求选择其中一种策略，并提供对应策略至少需要的token数量，后续步骤需要您将对应的代币数量转入社交分发合约中。",
@@ -289,7 +289,7 @@
     "categoryTag": "分类标签",
     "descTag": "描述你的标签",
     "add": "添加",
-    "buyTip": "选择你想购买的【TagCoin】数量（可选）",
+    "buyTip": "选择你想购买的【{tick}】数量（可选）",
     "create": "创建",
     "costTopDeploy": "部署手续费",
     "deployTip": "你可以让 TagAI 立即为你部署代币：",
@@ -1490,5 +1490,16 @@
     "minutes": "分",
     "seconds": "秒"
   },
-  "v13ClaimAll": {"button": "一键领取奖励", "pending": "领取中…", "success": "矿池奖励已领取", "empty": "当前没有可领取的矿池奖励"}
+  "v13ClaimAll": {"button": "一键领取奖励", "pending": "领取中…", "success": "矿池奖励已领取", "empty": "当前没有可领取的矿池奖励"},
+  "v13Issuance": {
+  "title": "代币发行分配",
+  "total": "发行总量",
+  "supply": "10亿",
+  "mining": "质押挖矿",
+  "curveDetail": "65% 的代币通过 Bonding Curve 募集 20 BNB。",
+  "v4Detail": "15 BNB 与 15% 的代币组成 V4 流动性池，销毁 LP。",
+  "v2Detail": "5 BNB 按比例购买股票代币，再与 5% 的代币组成 V2 交易池，销毁所有 LP。",
+  "miningDetail": "15% 的代币用于流动性挖矿。",
+  "retain": "保留管理流动性挖矿矿池比例调整权限"
+}
 }

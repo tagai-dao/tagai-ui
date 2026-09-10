@@ -302,7 +302,7 @@
     "directly": "신규 배포",
     "byAI": "AI로",
     "tokenCA": "토큰 컨트랙트",
-    "tokenCATip": "{chain}의 토큰 컨트랙트 주소를 입력해 주세요. {dex}에서 {symbol}과 V2 풀이 생성되어 있고 준비금이 1 {symbol}보다 많아야 하며, 토큰 심볼이 TagAI에 존재하지 않아야 합니다.",
+    "tokenCATip": "{chain}의 토큰 컨트랙트 주소를 입력해 주세요. 해당 토큰은 {dex}에 유동성이 제공되어 있어야 합니다.",
     "tagTick": "태그(티커)",
     "distribution": "분배",
     "distributionTip": "세 가지 분배 전략을 제공합니다. 필요에 따라 전략을 선택하고 해당 전략에 필요한 최소 토큰 수량을 준비하세요. 이후 단계에서 해당 수량의 토큰을 소셜 분배 컨트랙트로 전송해야 합니다.",
@@ -331,7 +331,7 @@
     "categoryTag": "카테고리 태그",
     "descTag": "태그를 설명해 주세요",
     "add": "추가",
-    "buyTip": "구매할 【TagCoin】 수량을 선택하세요 (선택)",
+    "buyTip": "구매할 【{tick}】 수량을 선택하세요 (선택)",
     "create": "생성",
     "costTopDeploy": "배포 비용",
     "deployTip": "지금 바로 TagAI에 토큰 배포를 요청할 수 있습니다:",
@@ -1263,5 +1263,16 @@
     "minutes": "분",
     "seconds": "초"
   },
-  "v13ClaimAll": {"button": "보상 모두 받기", "pending": "수령 중…", "success": "풀 보상을 받았습니다", "empty": "받을 수 있는 풀 보상이 없습니다"}
+  "v13ClaimAll": {"button": "보상 모두 받기", "pending": "수령 중…", "success": "풀 보상을 받았습니다", "empty": "받을 수 있는 풀 보상이 없습니다"},
+  "v13Issuance": {
+  "title": "토큰 배분",
+  "total": "총 발행량",
+  "supply": "10억",
+  "mining": "스테이킹 보상",
+  "curveDetail": "토큰의 65%를 본딩 커브로 판매하여 20 BNB를 모집합니다.",
+  "v4Detail": "15 BNB와 토큰의 15%로 V4 유동성 풀을 구성하고 LP를 소각합니다.",
+  "v2Detail": "5 BNB로 주식 토큰을 비율에 맞게 구매하고 토큰의 5%와 V2 풀을 구성하며 모든 LP를 소각합니다.",
+  "miningDetail": "토큰의 15%는 유동성 채굴에 사용됩니다.",
+  "retain": "유동성 채굴 풀의 보상 비율 조정 권한 유지"
+}
 }

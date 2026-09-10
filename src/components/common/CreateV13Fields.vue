@@ -59,7 +59,6 @@ function distribute() {
         </template>
         <div class="pool-note"><strong>{{ t('v13Create.poolTitle') }}</strong><p>{{ ready && modelValue.constituentAssets.length ? t('v13Create.poolHelp', { count: modelValue.constituentAssets.length }) : t('v13Create.poolIntro') }}</p></div>
         <IndexFeeAllocation :fee-bps="modelValue.basketFeeBps" :creator-bps="modelValue.creatorShareBps" :disabled="disabled" @update:fee-bps="patch({ basketFeeBps: $event })" @update:creator-bps="patch({ creatorShareBps: $event })" />
-        <div class="management"><label class="ownership"><input type="checkbox" :checked="modelValue.retainCommunityOwnership" @change="patch({ retainCommunityOwnership: ($event.target as HTMLInputElement).checked })" />{{ t('v13Create.owner') }}</label><p :class="{ 'weight-warning': !modelValue.retainCommunityOwnership }">{{ modelValue.retainCommunityOwnership ? t('v13Create.ownerHelp') : t('v13Create.renounceHelp') }}</p></div>
       </fieldset>
     </section>
   </div>
@@ -101,10 +100,6 @@ button:disabled { opacity:.4; cursor:not-allowed }
 .weight-warning { color:#e77a27!important }
 .pool-note { padding:13px 14px; border:1px solid var(--border-base); border-radius:12px; background:color-mix(in srgb,var(--surface-2) 35%,transparent) }
 .pool-note strong { display:block; margin-bottom:5px; color:var(--text-base); font-size:11px; font-weight:650 }
-.management p { margin-top:8px; font-size:10px }
-.management { padding-top:3px }
-.ownership { display:flex; align-items:center; gap:8px; margin-top:12px }
-.ownership input { width:15px; min-height:15px; accent-color:#e77a27 }
 .load-state { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:76px; padding:14px; border:1px solid var(--border-base); border-radius:12px; color:var(--text-muted); font-size:11px }
 .load-state strong { display:block; color:var(--text-base); font-size:11px }
 .load-state p { margin-top:5px; font-size:10px }

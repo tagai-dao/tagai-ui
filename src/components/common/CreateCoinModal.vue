@@ -5,6 +5,7 @@ import { GlobalModalType, type CreateCommunity } from "@/types";
 import { BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/config";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import CreateV13Fields from './CreateV13Fields.vue'
+import TokenIssuanceAllocation from './TokenIssuanceAllocation.vue'
 import { creationOptions, creationFee, validateIndexConfig, type CreationOptions } from '@/utils/v13/creation'
 import { enqueueV13Registration } from '@/utils/v13/registration-sync'
 import { IndexConfigValidationError } from '@/utils/v13/index-config'
@@ -220,6 +221,10 @@ async function loadV13Options() {
   try {
     const value = await creationOptions(accStore.ethConnectAddress)
     if (seq !== optionsSequence) return
+    value.assets = [...value.assets].sort((a, b) => {
+      const rank = (symbol: string) => symbol.toUpperCase() === 'SPCXB' ? -1 : ['ETH', 'BTC', 'BTCB'].includes(symbol.toUpperCase()) ? 1 : 0
+      return rank(a.symbol) - rank(b.symbol)
+    })
     v13Options.value = value
     if (!indexForm.value.constituentAssets.length && value.assets.length) {
       indexForm.value.constituentAssets = [value.assets[0].address]
@@ -787,6 +792,7 @@ onMounted(async () => {
             />
             <div v-show="showLongDesc" class="field-error">{{ $t('createCommunity.descTooLong') }}</div>
           </div>
+          <TokenIssuanceAllocation v-if="isV13Creation" v-model="indexForm.retainCommunityOwnership" :disabled="createLoading" />
         </section>
 
         <CreateV13Fields v-if="isV13Creation" v-model="indexForm" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />
@@ -850,7 +856,7 @@ onMounted(async () => {
           <div class="section-title">
             <span>{{ isV13Creation ? '04' : '03' }}</span>
             <div>
-              <h3>{{ $t('createCommunity.buyTip') }}</h3>
+              <h3>{{ $t('createCommunity.buyTip', { tick: createForm.tick.trim() || 'TagCoin' }) }}</h3>
               <p>{{ $t('optional') }}</p>
             </div>
           </div>
@@ -861,7 +867,7 @@ onMounted(async () => {
               type="number"
               placeholder="0"
             >
-            <span>TagCoin</span>
+            <span>{{ createForm.tick.trim() || 'TagCoin' }}</span>
           </div>
           <div v-show="showMaxAmount" class="field-error">{{ $t('createCommunity.maxAmountTip') }}</div>
           <div class="purchase-summary">

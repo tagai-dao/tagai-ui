@@ -260,7 +260,7 @@
     "directly": "Deploy new",
     "byAI": "By AI",
     "tokenCA": "Token Contract",
-    "tokenCATip": "Enter a token contract address on {chain}. It must have a V2 pool paired with {symbol} on {dex}, with more than 1 {symbol} in reserve. The token symbol must not already exist on TagAI.",
+    "tokenCATip": "Enter a token contract address on {chain}. The token must have liquidity on {dex}.",
     "tagTick": "Tag(Tick)",
     "distribution": "Distribution",
     "distributionTip": "We provider three distribution strategies for choose. You can choose one strategy based on your needs and provide the minimum number of tokens required for the corresponding strategy. The subsequent steps require you to transfer the corresponding number of tokens into the social distribution contract.",
@@ -289,7 +289,7 @@
     "categoryTag": "Category Tag",
     "descTag": "Describe your tag",
     "add": "Add",
-    "buyTip": "Choose how many 【TagCoin】 you want to buy (optional)",
+    "buyTip": "Choose how many 【{tick}】 you want to buy (optional)",
     "create": "Create",
     "costTopDeploy": "Cost to deploy",
     "deployTip": "You can ask TagAI deploy token for you right now:",
@@ -1487,5 +1487,16 @@
     "minutes": "MIN",
     "seconds": "SEC"
   },
-  "v13ClaimAll": {"button": "Claim all rewards", "pending": "Claiming…", "success": "Pool rewards claimed", "empty": "No pool rewards available to claim"}
+  "v13ClaimAll": {"button": "Claim all rewards", "pending": "Claiming…", "success": "Pool rewards claimed", "empty": "No pool rewards available to claim"},
+  "v13Issuance": {
+  "title": "Token allocation",
+  "total": "Total supply",
+  "supply": "1 billion",
+  "mining": "Staking rewards",
+  "curveDetail": "65% of tokens raise 20 BNB through the bonding curve.",
+  "v4Detail": "15 BNB and 15% of tokens form the V4 liquidity pool; LP is burned.",
+  "v2Detail": "5 BNB buys stock tokens proportionally, paired with 5% of tokens in V2 pools; all LP is burned.",
+  "miningDetail": "15% of tokens fund liquidity mining.",
+  "retain": "Retain permission to adjust liquidity mining pool reward ratios"
+}
 }

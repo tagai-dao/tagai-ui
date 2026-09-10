@@ -3,7 +3,6 @@ import {ref} from "vue";
 import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
 import { useAccountStore } from "@/stores/web3";
-import RuleModal from "@/components/common/RuleModal.vue";
 import { useRouter } from "vue-router";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
@@ -12,7 +11,6 @@ import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
 import ChainSwitcher from '@/components/common/ChainSwitcher.vue'
 
 const modalVisible = ref(false)
-const ruleModalVisible = ref(false)
 const router = useRouter();
 const accStore = useAccountStore();
 const menuRef = ref()
@@ -54,8 +52,6 @@ async function createTagCoin() {
       <img class="h-8 cursor-pointer"
            src="~@/assets/logo.png" alt=""
            @click="$router.replace('/')">
-      <button class="bg-gradient-primary text-white rounded-2xl text-sm px-2 h-5"
-              @click="ruleModalVisible = true">{{ $t('rule') }}</button>
     </div>
     <div class="flex items-center gap-3 web:gap-6">
       <!-- 移动端：链切换 + 搜索、通知 -->
@@ -142,12 +138,6 @@ async function createTagCoin() {
                modal-class="overlay-white c-modal-fullscreen" fullscreen
                :show-close="false" align-center destroy-on-close>
       <SearchModal @onClose="modalVisible=false"/>
-    </el-dialog>
-    <el-dialog v-model="ruleModalVisible"
-               modal-class="overlay-white"
-               class="max-w-[500px] rounded-[20px]"
-               width="90%" :show-close="false" align-center destroy-on-closee>
-      <RuleModal @onClose="ruleModalVisible=false"/>
     </el-dialog>
   </div>
 </template>
