@@ -328,8 +328,8 @@ export const getHolderListOfImportToken = async (token: string, pages?: number) 
 export const getImportedCommunityInfo = async () =>
   publicRead('/community/getImportedCommunityInfo')
 
-export const getTokenTradeList = async (token: string, pages?: number) =>
-  publicRead('/community/tradeList', { token, pages })
+export const getTokenTradeList = async (token: string, pages?: number, platformOnly = false) =>
+  publicRead('/community/tradeList', { token, pages, ...(platformOnly ? { platformOnly: '1' } : {}) })
 
 export const getTradeFeed = async (pages?: number) =>
   publicRead('/community/tradeFeed', { pages })
