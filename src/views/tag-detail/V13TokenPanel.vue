@@ -45,7 +45,7 @@ async function claimAll(){
 }
 const burnAddress='0x000000000000000000000000000000000000dEaD' as const
 const burned=ref<bigint>(),burnUnavailable=ref(false)
-const burnedLabel=computed(()=>burned.value===undefined?'—':Number(formatUnits(burned.value,18)).toLocaleString(locale.value,{maximumFractionDigits:6}))
+const burnedLabel=computed(()=>burned.value===undefined?'—':(burned.value/10n**18n).toLocaleString(locale.value))
 const progress=computed(()=>state.value?Math.min(100,Number(state.value.supply*10000n/CURVE_CAP)/100):0)
 const stage=computed(()=>!state.value?'—':state.value.listed?t('v13Page.listed'):state.value.pending?t('v13Page.pending'):t('v13Page.curve'))
 let seq=0,disposed=false
