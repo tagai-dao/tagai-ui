@@ -30,7 +30,7 @@ const active = ref<'pnl' | 'ipshare'>('pnl')
   position: relative;
   min-width: 5rem;
   padding: .7rem 1rem;
-  color: #8d8d8d;
+  color: var(--text-muted);
   font-size: .875rem;
   font-weight: 700;
 }

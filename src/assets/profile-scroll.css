@@ -23,7 +23,7 @@
   margin: 0 12px;
   padding: 4px;
   overflow-x: auto;
-  background: #fff;
+  background: var(--surface);
   border-radius: 12px;
   box-shadow: 0 1px 0 rgb(0 0 0 / 6%);
   scrollbar-width: none;
@@ -36,6 +36,7 @@
   white-space: nowrap;
   font-size: 14px;
   font-weight: 600;
+  color: var(--text-muted);
   border-bottom: 2px solid transparent;
 }
 .profile-content-tabs > button[aria-selected='true'] {

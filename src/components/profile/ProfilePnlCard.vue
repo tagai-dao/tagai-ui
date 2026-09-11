@@ -120,12 +120,12 @@ watch([period, () => props.twitterId, () => props.username], load, { immediate: 
 </template>
 
 <style scoped>
-.pnl-card { padding: 1rem; background: radial-gradient(circle at 80% 0, #fff1e8 0, transparent 32%); }
-.periods { display: flex; flex: none; gap: .2rem; border-radius: .75rem; background: #f4f4f5; padding: .2rem; }
-.periods button { min-width: 2.75rem; border-radius: .6rem; padding: .45rem .55rem; color: #8d8d8d; font-size: .7rem; font-weight: 700; }
-.periods button.active { background: white; color: #ff7a16; box-shadow: 0 2px 8px rgb(0 0 0 / 8%); }
-.chart { background-color: #fbfbfc; background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 12px 12px; }
-.metric { display: flex; flex-direction: column; border-radius: .75rem; background: #f7f7f8; padding: .65rem .75rem; }
-.metric span { color: #8d8d8d; font-size: .65rem; }
-.metric strong { margin-top: .15rem; color: #191b2b; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.pnl-card { padding: 1rem; background: radial-gradient(circle at 80% 0, var(--pool-selected-bg) 0, transparent 32%); }
+.periods { display: flex; flex: none; gap: .2rem; border-radius: .75rem; background: var(--surface-2); padding: .2rem; }
+.periods button { min-width: 2.75rem; border-radius: .6rem; padding: .45rem .55rem; color: var(--text-muted); font-size: .7rem; font-weight: 700; }
+.periods button.active { background: var(--surface); color: #ff7a16; box-shadow: 0 2px 8px rgb(0 0 0 / 8%); }
+.chart { background-color: var(--surface); background-image: radial-gradient(var(--border-base) 1px, transparent 1px); background-size: 12px 12px; }
+.metric { display: flex; flex-direction: column; border-radius: .75rem; background: var(--surface-2); padding: .65rem .75rem; }
+.metric span { color: var(--text-muted); font-size: .65rem; }
+.metric strong { margin-top: .15rem; color: var(--text-base); font-size: .875rem; font-variant-numeric: tabular-nums; }
 </style>
