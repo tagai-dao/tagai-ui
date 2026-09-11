@@ -31,7 +31,7 @@ export const useBasketList = () => {
   }
 
   /** force=true 绕过短时缓存（刷新按钮） */
-  const refresh = async (force = false) => {
+  const refresh = async (force = true) => {
     const request = ++sequence
     const chainId = chainStore.activeChainId
     const scope = `${chainId}:basket-list:display-v1`

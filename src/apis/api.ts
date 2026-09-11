@@ -14,7 +14,9 @@ function publicRead(path: string, params?: Record<string, unknown>) {
   return readDisplay(path, params ?? {}, chainId)
 }
 export const invalidatePublicReads = (paths: string[]) => readDisplay.invalidate(paths, useChainStore().activeChainId)
-export const getBasketListSnapshot = (page: number, size: number, chainId: number) => readDisplay('/basket/list', { page, size }, chainId)
+// The basket view already displays its saved cards while loading. Await the
+// latest membership here so newly registered indices cannot stay hidden.
+export const getBasketListSnapshot = (page: number, size: number, chainId: number) => readDisplay('/basket/list', { page, size }, chainId, 30000, true)
 
 import type { PoolTvlResponse, ClPositionsIndexResponse } from '@/types/liquidity'
 import type {

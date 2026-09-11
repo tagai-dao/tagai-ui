@@ -47,7 +47,7 @@ export function createDisplayReader(
       }
     }
   }
-  const read = async (path: string, query: Record<string, unknown>, chainId: number, freshMs = 30000) => {
+  const read = async (path: string, query: Record<string, unknown>, chainId: number, freshMs = 30000, force = false) => {
     const sorted = Object.fromEntries(Object.entries(query).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b)))
     const key = `${chainId}:${path}:${JSON.stringify(sorted)}`
     // Viewer-specific feed annotations stay in memory and never in shared or
@@ -72,7 +72,7 @@ export function createDisplayReader(
             try { storage?.removeItem('tagai-display:v1:' + oldest) } catch (_) {}
           }
           if (persist) { try { storage?.setItem(storageKey, JSON.stringify(entry)) } catch (_) {} }
-          publish({ ...status, stale: entry.stale, updatedAt: entry.updatedAt, backgroundComplete: !!hit && Number(sorted.page ?? sorted.pages ?? 0) === 0 })
+          publish({ ...status, stale: entry.stale, updatedAt: entry.updatedAt, backgroundComplete: !force && !!hit && Number(sorted.page ?? sorted.pages ?? 0) === 0 })
           return clone(entry.data)
         }).catch(error => {
           publish({ ...status, failed: true, stale: !!hit, updatedAt: hit?.updatedAt })
@@ -84,6 +84,9 @@ export function createDisplayReader(
       }
       return pending.get(key)!.then(clone)
     }
+    // Explicit refreshes must await the fetched snapshot, even when a fresh
+    // local copy exists. A background notification can be missed by a busy view.
+    if (force) return refresh()
     if (hit) {
       entries.set(key, hit)
       publish({ ...status, stale: hit.stale || Date.now() - hit.savedAt >= freshMs, updatedAt: hit.updatedAt })

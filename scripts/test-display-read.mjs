@@ -37,6 +37,38 @@ test('cold failures reject instead of returning an empty successful list', async
   const read = createDisplayReader(async () => { throw new Error('offline') })
   await assert.rejects(read('/list', {}, 56), error => error.displayRead === true)
 })
+test('explicit basket refresh waits for the latest list even with a fresh persisted snapshot', async () => {
+  const local = storage()
+  const query = { page: 0, size: 100 }
+  await createDisplayReader(async () => ({ data: ['V3'] }), local)('/basket/list', query, 56)
+  let complete
+  const read = createDisplayReader(() => new Promise(resolve => { complete = resolve }), local)
+  let resolved = false
+  const pending = read('/basket/list', query, 56, 30000, true).then(value => { resolved = true; return value })
+  await Promise.resolve()
+  assert.equal(resolved, false)
+  complete({ data: ['V3', 'CyberCab V4'] })
+  assert.deepEqual(await pending, ['V3', 'CyberCab V4'])
+  assert.deepEqual(await read('/basket/list', query, 56), ['V3', 'CyberCab V4'])
+})
+test('forced refresh joins an in-flight background read instead of returning its old membership', async () => {
+  const local = storage()
+  await createDisplayReader(async () => ({ data: ['V3'] }), local)('/basket/list', {}, 56)
+  let complete, calls = 0
+  const read = createDisplayReader(() => { calls++; return new Promise(resolve => { complete = resolve }) }, local)
+  assert.deepEqual(await read('/basket/list', {}, 56, -1), ['V3'])
+  const pending = read('/basket/list', {}, 56, 30000, true)
+  complete({ data: ['V3', 'CyberCab V4'] })
+  assert.deepEqual(await pending, ['V3', 'CyberCab V4'])
+  assert.equal(calls, 1)
+})
+test('failed forced refresh reports failure and preserves the offline snapshot', async () => {
+  const local = storage()
+  await createDisplayReader(async () => ({ data: ['V3'] }), local)('/basket/list', {}, 56)
+  const read = createDisplayReader(async () => { throw new Error('offline') }, local)
+  await assert.rejects(read('/basket/list', {}, 56, 30000, true), error => error.displayRead === true)
+  assert.deepEqual(await read('/basket/list', {}, 56), ['V3'])
+})
 test('caps parallel display requests at four', async () => {
   let active = 0, maximum = 0
   const read = createDisplayReader(async () => {
