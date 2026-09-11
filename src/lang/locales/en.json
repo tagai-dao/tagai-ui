@@ -1367,6 +1367,7 @@
     "allocationRules": "Percentages refer to the total trading fee and are displayed to one decimal place. Actual proceeds follow contract settlement. The platform share funds auctions; the rest is allocated to the creator, holders, frontend and launcher. Missing frontend recipients, no holders, and fees allocated to burned tokens redirect proceeds to the launcher according to the contract."
   },
   "v13Index": {
+    "tokenLabel": "{token} (Basket)",
     "createdOnList": "The index basket will be created automatically at listing (List).",
     "totalBought": "Total index bought",
     "rewardBalance": "Index reward reserve",

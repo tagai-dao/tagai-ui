@@ -26,6 +26,8 @@ const index = computed(() => state.value?.index || detail.value?.config.index_to
 const indexReady = computed(() => listed.value === true && index.value !== zeroAddress && !!state.value?.listed)
 const name = computed(() => detail.value?.config.name || state.value?.symbol || store.currentSelectedCommunity?.tick || '—')
 const symbol = computed(() => state.value?.symbol || detail.value?.config.symbol || '')
+const displayName = computed(() => name.value === '—' ? '—' : t('v13Index.tokenLabel', { token: name.value }))
+const displaySymbol = computed(() => symbol.value ? t('v13Index.tokenLabel', { token: symbol.value }) : '')
 const assets = computed(() => detail.value?.components.map(c => ({ address: c.asset, symbol: c.asset_symbol || `${c.asset.slice(0, 6)}…`, weightPct: c.target_weight / 100 })) || [])
 const f = (value: bigint | undefined, decimals = state.value?.decimals ?? 18) => value === undefined ? '—' : Number(formatUnits(value, decimals)).toLocaleString(locale.value, { maximumFractionDigits: 6 })
 let generation = 0, previewGeneration = 0, disposed = false
@@ -96,7 +98,7 @@ onUnmounted(() => { disposed = true; generation++; previewGeneration++; clearInt
     <header class="index-header">
       <div class="index-identity">
         <BasketTokenLogo v-if="assets.length" :chain-id="56" :address="index" :symbol="symbol" :assets="assets" :size="48" />
-        <div><span class="eyebrow">{{ t('v13Page.linkedIndex') }}</span><h2><RouterLink v-if="indexReady" :to="`/bsc/baskets/${index}`">{{ name }} ↗</RouterLink><span v-else>{{ name }}</span></h2></div>
+        <div><span class="eyebrow">{{ t('v13Page.linkedIndex') }}</span><h2><RouterLink v-if="indexReady" :to="`/bsc/baskets/${index}`">{{ displayName }} ↗</RouterLink><span v-else>{{ displayName }}</span></h2></div>
       </div>
       <button class="text-button" :disabled="loading || !!busy || quoting" @click="load">{{ t('v13Page.refresh') }}</button>
     </header>
@@ -107,23 +109,23 @@ onUnmounted(() => { disposed = true; generation++; previewGeneration++; clearInt
     <div v-if="assets.length" class="index-assets"><span v-for="asset in assets" :key="asset.address">{{ asset.symbol }} <b>{{ asset.weightPct }}%</b></span></div>
     <div class="index-stats">
       <div><span>{{ t('v13Page.buybackReserve') }}</span><strong>{{ f(state?.reserve, 18) }} <small>BNB</small></strong></div>
-      <div><span>{{ t('v13Index.totalBought') }}</span><strong>{{ f(state?.notified) }} <small>{{ symbol }}</small></strong></div>
-      <div><span>{{ t('v13Index.rewardBalance') }}</span><strong>{{ f(state?.rewardBalance) }} <small>{{ symbol }}</small></strong></div>
+      <div><span>{{ t('v13Index.totalBought') }}</span><strong>{{ f(state?.notified) }} <small>{{ displaySymbol }}</small></strong></div>
+      <div><span>{{ t('v13Index.rewardBalance') }}</span><strong>{{ f(state?.rewardBalance) }} <small>{{ displaySymbol }}</small></strong></div>
     </div>
     <div class="index-actions">
       <article class="action-card claim-card">
         <span class="eyebrow">{{ t('v13Page.dividend') }}</span>
-        <strong class="claim-amount">{{ connected ? f(state?.pending) : '—' }} <small>{{ symbol }}</small></strong>
-        <div class="data-row"><span>{{ t('v13Index.walletBalance') }}</span><span>{{ connected ? f(state?.walletIndex) : '—' }} {{ symbol }}</span></div>
+        <strong class="claim-amount">{{ connected ? f(state?.pending) : '—' }} <small>{{ displaySymbol }}</small></strong>
+        <div class="data-row"><span>{{ t('v13Index.walletBalance') }}</span><span>{{ connected ? f(state?.walletIndex) : '—' }} {{ displaySymbol }}</span></div>
         <p>{{ t('v13Index.rewardHelp') }}</p>
         <button class="primary" :disabled="!!busy || quoting || (connected && (!state?.pending || !indexReady))" @click="operate('claim')">{{ !connected ? t('connect') : busy === 'claim' ? t('v13Page.wait') : t('v13Index.claimReward') }}</button>
       </article>
       <article class="action-card buyback-card">
         <h3>{{ t('v13Index.buybackTitle') }}</h3>
         <p>{{ t('v13Index.buybackHelp') }}</p>
-        <div class="estimate data-row"><span>{{ t('v13Index.estimatedIndex') }}</span><strong>{{ f(quote?.amountOut) }} {{ symbol }}</strong></div>
+        <div class="estimate data-row"><span>{{ t('v13Index.estimatedIndex') }}</span><strong>{{ f(quote?.amountOut) }} {{ displaySymbol }}</strong></div>
         <label class="data-row"><span>{{ t('v13Page.slippage') }} %</span><input v-model.number="slippage" type="number" min="0.01" max="10" step="0.01" :disabled="!!busy || quoting" /></label>
-        <div v-if="quote" class="data-row minimum"><span>{{ t('v13Index.minimumIndex') }}</span><span>{{ f(quote.minOut) }} {{ symbol }}</span></div>
+        <div v-if="quote" class="data-row minimum"><span>{{ t('v13Index.minimumIndex') }}</span><span>{{ f(quote.minOut) }} {{ displaySymbol }}</span></div>
         <p v-if="state && !state.reserve && indexReady">{{ t('v13Index.emptyReserve') }}</p>
         <div class="buyback-buttons">
           <button class="secondary" :disabled="!!busy || quoting || !validSlippage || !indexReady || !state?.reserve" @click="preview">{{ quoting ? t('baskets.quoting') : quote ? t('v13Trade.refresh') : t('v13Index.preview') }}</button>
