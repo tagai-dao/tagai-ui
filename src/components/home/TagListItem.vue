@@ -12,7 +12,7 @@ import IconLinks from '@/components/home/IconLinks.vue'
 import Sparkline from '@/components/common/Sparkline.vue'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 
-const props = defineProps<{ community: Community }>()
+const props = defineProps<{ community: Community; marketCapUsd?: number; priceUsd?: number; metricLabel?: string }>()
 const curationStore = useCurationStore()
 const stateStore = useStateStore()
 
@@ -33,8 +33,8 @@ const createTimeText = computed(() => {
 })
 
 // App/PWA mobile compact card values.
-const marketCapUsd = computed(() => Number(props.community.marketCap || 0) * stateStore.ethPrice)
-const priceUsd = computed(() => Number(props.community.price || 0) * stateStore.ethPrice)
+const marketCapUsd = computed(() => props.marketCapUsd ?? Number(props.community.marketCap || 0) * stateStore.ethPrice)
+const priceUsd = computed(() => props.priceUsd ?? Number(props.community.price || 0) * stateStore.ethPrice)
 const change = computed(() => {
   const value = props.community.priceChange24h
   return value != null && String(value) !== '' && Number.isFinite(Number(value)) ? Number(value) : null
@@ -46,10 +46,13 @@ const change = computed(() => {
     <!-- Android + narrow PWA: reviewed compact token card. -->
     <article class="compact-token-card flex web:hidden" role="button" tabindex="0">
       <div class="flex min-w-0 items-center gap-3">
-        <CommunityLogo :logo="community.logo" size="md" :shadow="false" class="!rounded-full" />
+        <div class="relative shrink-0">
+          <slot name="logo" :size="40"><CommunityLogo :logo="community.logo" size="md" :shadow="false" class="!rounded-full" /></slot>
+          <div v-if="$slots['logo-badge']" class="absolute -right-1 -bottom-1 z-10" @click.stop @keydown.stop><slot name="logo-badge" /></div>
+        </div>
         <div class="min-w-0">
           <h3 class="truncate text-base font-semibold text-content">{{ community.name || community.tick }}</h3>
-          <p class="mt-0.5 text-sm font-medium text-grey-64">{{ marketCapUsd > 0 ? formatUsdCompact(marketCapUsd) : '—' }} MC</p>
+          <p class="mt-0.5 text-sm font-medium text-grey-64">{{ marketCapUsd > 0 ? formatUsdCompact(marketCapUsd) : '—' }} {{ metricLabel || 'MC' }}</p>
         </div>
       </div>
       <div class="ml-3 text-right">
@@ -64,19 +67,20 @@ const change = computed(() => {
     <!-- PC web: preserve the original information-rich token card. -->
     <div class="hidden web:flex bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 gap-3">
       <div class="relative w-20 h-20 min-w-20 min-h-20">
-        <CommunityLogo :logo="community.logo" :show-audio="onlineSpace" />
+        <slot name="logo" :size="80"><CommunityLogo :logo="community.logo" :show-audio="onlineSpace" /></slot>
         <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
           <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
             {{ community.isImport ? $t('imported') : $t('listed') }}
           </div>
         </div>
+        <div v-if="$slots['logo-badge']" class="absolute -right-1 -bottom-1 z-10" @click.stop @keydown.stop><slot name="logo-badge" /></div>
       </div>
       <div class="flex-1 flex flex-col justify-between truncate">
         <div class="flex gap-x-2 items-end flex-wrap">
           <span class="text-grey-normal text-h2 font-bold leading-6" :class="community.listed ? 'text-orange-normal' : ''">{{ community.tick }}</span>
           <div class="flex-1 flex justify-end mt-1">
             <div class="flex items-end gap-1.5">
-              <span class="font-normal italic text-grey-64 leading-5 text-sm">{{ $t('marketCap') }}</span>
+              <span class="font-normal italic text-grey-64 leading-5 text-sm">{{ metricLabel || $t('marketCap') }}</span>
               <span class="font-medium italic text-orange-normal leading-5 text-sm">
                 {{ marketCapUsd > 0 ? formatUsdCompact(marketCapUsd) : '—' }}
               </span>

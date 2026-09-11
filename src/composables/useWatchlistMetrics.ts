@@ -5,6 +5,7 @@ import { getBasketPerformances } from '@/utils/baskets/api'
 import { getBasketDetail } from '@/utils/baskets/data'
 import { useTokenFavoritesStore } from '@/stores/tokenFavorites'
 import { useChainStore } from '@/stores/chain'
+import type { Community } from '@/types'
 
 const positive = (value: unknown) => {
   const number = Number(value)
@@ -16,6 +17,8 @@ export function useWatchlistMetrics() {
   const favorites = useTokenFavoritesStore()
   const chain = useChainStore()
   const values = ref<Record<string, number>>({})
+  const communities = ref<Record<string, Community>>({})
+  const prices = ref<Record<string, number>>({})
   const key = (address: string) => address.toLowerCase()
   const scope = () => JSON.stringify([favorites.accountId, chain.activeChainId,
     favorites.entries.map(token => [token.chainId, key(token.address), token.kind, token.symbol])])
@@ -50,14 +53,18 @@ export function useWatchlistMetrics() {
     pending = (async () => {
       await Promise.allSettled([
         (async () => {
-          const communities = tokens.filter(token => token.kind === 'community')
-          if (!communities.length) return
+          const communityTokens = tokens.filter(token => token.kind === 'community')
+          if (!communityTokens.length) return
           const nativeUsd = positive(await getEthPrice(chainId, true))
           if (!nativeUsd || !active()) return
-          await each(communities, async token => {
-            const community = await getCommunityDetail(token.symbol, chainId, true) as { token?: string; chainId?: number; marketCap?: number }
+          await each(communityTokens, async token => {
+            const community = await getCommunityDetail(token.symbol, chainId, true) as Community
             if (community?.token?.toLowerCase() !== key(token.address)
               || (community.chainId != null && Number(community.chainId) !== chainId)) return
+            if (!active()) return
+            communities.value[key(token.address)] = community
+            const price = positive(community.price)
+            if (price) prices.value[key(token.address)] = price * nativeUsd
             const marketCap = positive(community.marketCap)
             if (marketCap) save(token.address, marketCap * nativeUsd)
           })
@@ -96,8 +103,10 @@ export function useWatchlistMetrics() {
     loadedAt = 0
     pending = undefined
     values.value = {}
+    communities.value = {}
+    prices.value = {}
     void refresh()
   }, { immediate: true })
   onScopeDispose(() => { generation++ })
-  return { values, refresh }
+  return { values, communities, prices, refresh }
 }

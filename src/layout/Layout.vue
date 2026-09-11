@@ -237,7 +237,7 @@ onMounted( () => {
               </keep-alive>
             </router-view>
           </div>
-          <div v-if="$route.meta.tabBar" class="web:hidden">
+          <div v-if="$route.meta.tabBar && $route.name !== 'tag-detail'" class="web:hidden">
             <TabBar />
           </div>
         </div>

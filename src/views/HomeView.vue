@@ -512,10 +512,7 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
 })
 
 const accStore = useAccountStore();
-watch(() => String(accStore.getAccountInfo?.twitterId || ''), (accountId, previousId) => {
-  if (accountId === previousId || route.name !== 'home') return
-  switchCoinTab(accountId ? 'watchlist' : 'tagCoin')
-})
+// Session restoration must not replace the default Coin tab or an explicit tab.
 const modalStore = useModalStore()
 const onCreate = (type: GlobalModalType) => {
   if (!accStore.getAccountInfo?.twitterId && type == GlobalModalType.CreateTweet) {
@@ -616,33 +613,33 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Home 菜单：TagCoin、Baskets、链对应的股票资产 -->
-    <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center justify-between">
-      <div class="flex min-w-0 gap-1 web:gap-2 overflow-x-auto no-scroll-bar">
+    <div v-if="activeMainMenu==='coin'" class="token-navigation px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-1 web:gap-2 items-center justify-between">
+      <div class="token-navigation-tabs flex flex-1 web:flex-none min-w-0 justify-between web:gap-2">
         <button
-          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors"
+          class="token-navigation-tab h-9 px-0.5 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
           :class="coinSubMenu==='watchlist' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('watchlist')"
         >{{ $t('watchlist.title') }}</button>
         <button
-          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors"
+          class="token-navigation-tab h-9 px-0.5 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
           :class="coinSubMenu==='tagCoin' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('tagCoin')"
         >
-          {{ $t('tagCoin') || 'TagCoin' }}
+          Coin
         </button>
         <button
-          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors"
+          class="token-navigation-tab h-9 px-0.5 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
           :class="coinSubMenu==='baskets' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('baskets')"
         >
           {{ $t('baskets.menu') || 'Baskets' }}
         </button>
         <button
-          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors inline-flex items-center gap-1.5"
+          class="token-navigation-tab h-9 px-0.5 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors inline-flex items-center gap-0.5 web:gap-1.5"
           :class="coinSubMenu==='bStocks' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('bStocks')"
         >
-          <img v-if="chainStore.deployment.key === 'rh'" src="~@/assets/icons/robinhood.png" class="h-5 w-auto object-contain" alt="Robinhood">
+          <img v-if="chainStore.deployment.key === 'rh'" src="~@/assets/icons/robinhood.png" class="h-3.5 web:h-5 w-auto object-contain" alt="Robinhood">
           {{ chainStore.deployment.key === 'rh' ? 'Stocks' : ($t('bStocks') || 'bStocks') }}
         </button>
       </div>
@@ -657,7 +654,7 @@ const onCreate = (type: GlobalModalType) => {
         >
           <button
             type="button"
-            class="h-8 web:h-9 min-w-[92px] max-w-[120px] rounded-full bg-white px-3 inline-flex items-center justify-between gap-2 text-xs web:text-sm text-black"
+            class="token-navigation-sort h-9 max-w-[100px] web:max-w-[120px] rounded-full bg-white px-1.5 web:px-3 inline-flex items-center justify-between gap-1 text-h3 text-black"
             aria-haspopup="menu"
           >
             <span class="truncate">{{ $t(currentCoinListTypeLabelKey) }}</span>
@@ -798,6 +795,19 @@ const onCreate = (type: GlobalModalType) => {
 </template>
 
 <style lang="scss">
+
+@media (max-width: 803px) {
+  .token-navigation .token-navigation-tab,
+  .token-navigation .token-navigation-sort {
+    font-size: clamp(12px, calc(7.273vw - 11.273px), 16px);
+  }
+  .token-navigation-tab {
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
 
 .scroll-content {
   display: inline-block;

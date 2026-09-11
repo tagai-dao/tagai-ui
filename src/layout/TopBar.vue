@@ -4,7 +4,7 @@ import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
 import { useAccountStore } from "@/stores/web3";
 import { useRoute, useRouter } from "vue-router";
-import { useModalStore } from "@/stores/common";
+import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
@@ -12,7 +12,10 @@ import ChainSwitcher from '@/components/common/ChainSwitcher.vue'
 import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import { useCommunityStore } from '@/stores/community'
-import { usePageRouter } from '@/composables/useTools'
+import { usePageRouter, useTools } from '@/composables/useTools'
+import { formatUsdCompact } from '@/utils/format'
+import { communityChartPeriods } from '@/utils/communityChartPeriod'
+import { useChainStore } from '@/stores/chain'
 
 const modalVisible = ref(false)
 const router = useRouter();
@@ -23,6 +26,24 @@ const headerCommunity = computed(() => route.name === 'tag-detail'
   && communityStore.currentSelectedCommunity?.tick === route.params.id
   ? communityStore.currentSelectedCommunity : null);
 const accStore = useAccountStore();
+const { onCopy } = useTools()
+const stateStore = useStateStore()
+const chainStore = useChainStore()
+const headerMarketCap = computed(() => {
+  const value = Number(headerCommunity.value?.marketCap) * Number(stateStore.ethPrice)
+  return Number.isFinite(value) && value > 0 ? formatUsdCompact(value) : '—'
+})
+const headerChange = computed(() => {
+  const quote = communityStore.chartQuote
+  if (quote.scope !== `${chainStore.activeChainId}:${headerCommunity.value?.token || ''}`) return null
+  const value = quote.change
+  return value != null && String(value) !== '' && Number.isFinite(Number(value)) ? Number(value) : null
+})
+const headerPeriod = computed(() => communityChartPeriods.find(p => p.key === communityStore.chartQuote.period)?.label || '24H')
+const shortCa = computed(() => {
+  const address = headerCommunity.value?.token
+  return address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—'
+})
 const menuRef = ref()
 
 
@@ -66,9 +87,21 @@ async function createTagCoin() {
            src="~@/assets/logo.png" alt=""
            @click="$router.replace('/')">
     </div>
-    <div v-if="headerCommunity" class="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 web:hidden">
+    <div v-if="headerCommunity" class="flex min-w-0 flex-1 items-center gap-2 web:hidden">
       <CommunityLogo :logo="headerCommunity.logo" size="sm" :shadow="false" class="shrink-0" />
-      <span class="truncate text-sm font-semibold text-content" :title="headerCommunity.tick">{{ headerCommunity.tick }}</span>
+      <div class="min-w-0 flex-1">
+        <span class="block truncate text-sm font-semibold text-content" :title="headerCommunity.tick">{{ headerCommunity.tick }}</span>
+        <button type="button" class="flex max-w-full items-center gap-1 text-xs text-grey-64 py-1" :disabled="!headerCommunity.token"
+          aria-label="Copy token contract address" :title="headerCommunity.token" @click="onCopy(headerCommunity.token || '')">
+          <span class="truncate">CA {{ shortCa }}</span><img class="h-3 w-3 shrink-0" src="~@/assets/icons/icon-copy.svg" alt="" />
+        </button>
+      </div>
+      <div class="shrink-0 text-right">
+        <div class="text-sm font-semibold tabular-nums text-content">{{ headerMarketCap }} <span class="text-xs text-grey-64">MC</span></div>
+        <div class="text-xs tabular-nums" :class="headerChange === null ? 'text-grey-64' : headerChange >= 0 ? 'text-up' : 'text-down'">
+          {{ headerPeriod }} {{ headerChange === null ? '—' : `${headerChange >= 0 ? '+' : ''}${headerChange.toFixed(2)}%` }}
+        </div>
+      </div>
     </div>
     <div class="flex shrink-0 items-center gap-3 web:gap-6">
       <!-- 移动端详情页用收藏替换链切换和搜索，保留通知入口。 -->
@@ -81,7 +114,7 @@ async function createTagCoin() {
                src="~@/assets/icons/icon-search.svg" alt=""
                @click="modalVisible=true">
         </template>
-        <div v-if="!!useAccountStore().getAccountInfo?.twitterId" class="relative">
+        <div v-if="route.name !== 'tag-detail' && !!useAccountStore().getAccountInfo?.twitterId" class="relative">
           <img class="w-6 cursor-pointer"
                src="~@/assets/icons/icon-notification.svg" alt=""
                @click="$router.push('/notification')">
@@ -98,7 +131,7 @@ async function createTagCoin() {
           <img v-else class="w-6" src="~@/assets/icons/icon-wallet.svg" alt="">
         </div>
       </router-link>
-      <el-popover popper-class="c-select-popper" ref="menuRef"
+      <el-popover v-if="route.name !== 'tag-detail'" popper-class="c-select-popper" ref="menuRef"
                   trigger="click" width="160" :teleported="true" :persistent="false">
         <template #reference>
           <img class="w-5 cursor-pointer"
