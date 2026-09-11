@@ -1,6 +1,7 @@
 import { isAddress, parseAbi, zeroAddress, type Address, type PublicClient } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import candidates from './creation-assets.json'
+import { sortBasketAssetOptions } from '@/utils/baskets/asset-order'
 import type { CreationOptions } from './creation'
 
 const pumpAbi = parseAbi([
@@ -45,7 +46,7 @@ export async function readCreationOptions(client: PublicClient, creator: Address
   })
   return {
     chainId: 56, version: 13, pump, sourceBlock: Number(blockNumber), tokenImplementation: implementation as string,
-    assets: candidates.filter((_, i) => approved[i] === true).map(a => ({ ...a, address: a.address as Address })),
+    assets: sortBasketAssetOptions(candidates.filter((_, i) => approved[i] === true).map(a => ({ ...a, address: a.address as Address }))),
     pumpFee: String(pumpFee), ipshareFee: hasShare ? '0' : String(ipFee), communityFee: String(communityFee), settingsFee: String(settingsFee),
   }
 }

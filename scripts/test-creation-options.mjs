@@ -7,8 +7,8 @@ import { join } from 'node:path'
 import { createRequire } from 'node:module'
 const dir = await mkdtemp(join(tmpdir(), 'creation-options-'))
 const outfile = join(dir, 'test.cjs')
-await build({ stdin: { contents: "export * from './src/utils/v13/creation-chain.ts';export * from './src/utils/v13/creation-fees.ts';", resolveDir: process.cwd() }, alias: { '@': join(process.cwd(), 'src') }, bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'silent' })
-const { readCreationOptions, creationFeeExample, creationFeeAllocation, creatorPercentToBps } = createRequire(import.meta.url)(outfile)
+await build({ stdin: { contents: "export * from './src/utils/v13/creation-chain.ts';export * from './src/utils/v13/creation-fees.ts';export * from './src/config/baskets.ts';export * from './src/utils/baskets/asset-order.ts';", resolveDir: process.cwd() }, alias: { '@': join(process.cwd(), 'src') }, bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'silent', define: { 'import.meta.env': '{}' } })
+const { readCreationOptions, creationFeeExample, creationFeeAllocation, creatorPercentToBps, BASKET_DEPLOYMENTS, sortBasketAssetOptions } = createRequire(import.meta.url)(outfile)
 const apiOutfile = join(dir, 'api.cjs')
 await build({ entryPoints: ['src/utils/v13/creation.ts'], alias: { '@': join(process.cwd(), 'src') }, bundle: true, platform: 'node', format: 'cjs', outfile: apiOutfile, logLevel: 'silent', plugins: [{ name: 'creation-dependencies', setup(build) {
   build.onResolve({ filter: /^@\/(apis\/axios|config\/api|utils\/wallets)$/ }, args => ({ path: args.path, namespace: 'creation-test' }))
@@ -71,7 +71,7 @@ test('missing API route falls back to the chain with one bounded API attempt', a
     attempts++; assert.equal(config.timeout, 8000); assert.equal(config['axios-retry'].retries, 0)
     assert.equal(config.headers['X-Chain-Id'], '56'); throw { status: 404 }
   } }
-  assert.equal((await creationOptions(creator)).assets.length, 8)
+  assert.equal((await creationOptions(creator)).assets.length, 9)
   assert.equal(attempts, 1); assert.equal(c.calls.length, 2)
 })
 test('malformed API asset data falls back instead of crashing the selector', async () => {
@@ -79,7 +79,7 @@ test('malformed API asset data falls back instead of crashing the selector', asy
   data.assets = [{ address: null, decimals: 18, symbol: 'BAD' }]
   const c = client()
   globalThis.creationTest = { client: c, get: async () => ({ c: 0, d: data }) }
-  assert.equal((await creationOptions(creator)).assets.length, 8)
+  assert.equal((await creationOptions(creator)).assets.length, 9)
 })
 
 test('segmented fee bar totals 100% for every supported creator setting', () => {
@@ -105,4 +105,40 @@ test('every 0.1% creator slider stop round-trips through integer contract bps', 
   }
   assert.equal(Math.round(creationFeeAllocation(creatorPercentToBps(1)).creator * 10) / 10, 1)
   assert.equal(creatorPercentToBps(24), 3000)
+})
+
+const bnc4 = '0x7c8d5502b544ddaf8852fc46d1174e34876d545c'
+test('both creation catalogs include the same BNC4 asset and keep ETH/BTC last', async () => {
+  const basket = BASKET_DEPLOYMENTS[56].assetPresets
+  assert.deepEqual(basket.slice(-2).map(a => a.symbol), ['ETH', 'BTC'])
+  const preset = basket.find(a => a.address.toLowerCase() === bnc4)
+  assert.equal(preset.symbol, 'BNC4')
+  assert.equal(preset.route.venue, 1)
+  assert.equal(preset.route.v3Fee, 2500)
+  assert.equal(preset.route.poolQuoteToken.toLowerCase(), '0x55d398326f99059ff775485246999027b3197955')
+  assert.equal(assets.find(a => a.address.toLowerCase() === bnc4).decimals, 18)
+  assert.deepEqual(assets.slice(-2).map(a => a.symbol), ['ETH', 'BTCB'])
+})
+test('API ordering cannot move ETH or BTC ahead of other selectable assets', async () => {
+  const data = await readCreationOptions(client(), creator)
+  const eth = assets.find(a => a.symbol === 'ETH'), btc = assets.find(a => a.symbol === 'BTCB')
+  const stock = assets.find(a => a.symbol === 'BNC4')
+  data.assets = [btc, stock, eth]
+  globalThis.creationTest = { get: async () => ({ c: 0, d: data }) }
+  assert.deepEqual((await creationOptions(creator)).assets.map(a => a.symbol), ['BNC4', 'ETH', 'BTCB'])
+  assert.deepEqual(data.assets.map(a => a.symbol), ['BTCB', 'BNC4', 'ETH'])
+  assert.deepEqual(sortBasketAssetOptions([eth, stock, btc, assets[0]]).map(a => a.symbol), ['BNC4', assets[0].symbol, 'ETH', 'BTCB'])
+})
+test('BNC4 stays unavailable until Pump approves it, then appears before ETH/BTC', async () => {
+  for (const approved of [false, true]) {
+    const c = client(); const multicall = c.multicall.bind(c)
+    c.multicall = async request => {
+      const result = await multicall(request)
+      if (c.calls.length === 1) assets.forEach((asset, i) => { result[4 + i] = asset.address.toLowerCase() === bnc4 ? approved : true })
+      return result
+    }
+    const result = await readCreationOptions(c, creator)
+    assert.equal(result.assets.some(a => a.address.toLowerCase() === bnc4), approved)
+    assert.deepEqual(result.assets.slice(-2).map(a => a.symbol), ['ETH', 'BTCB'])
+  }
 })

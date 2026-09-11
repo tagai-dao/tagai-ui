@@ -1,17 +1,5 @@
 [
   {
-    "symbol": "ETH",
-    "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
-    "decimals": 18,
-    "logoUrl": "/images/basket-assets/eth.svg"
-  },
-  {
-    "symbol": "BTCB",
-    "address": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
-    "decimals": 18,
-    "logoUrl": "/images/basket-assets/btc.svg"
-  },
-  {
     "symbol": "QQQB",
     "address": "0x205812CdBed920aFf76C6580abD681a46D11efc7",
     "decimals": 18,
@@ -94,5 +82,22 @@
     "address": "0x80f3D493EBCe97e343c53D29a137942416B4ffC0",
     "decimals": 18,
     "logoUrl": "https://cdn.prod.website-files.com/67116d0daddc92483c812e88/683f238c7540ce089af2ff6f_Favicon32x32.png"
+  },
+  {
+    "symbol": "BNC4",
+    "address": "0x7C8D5502b544dDAf8852Fc46D1174E34876D545C",
+    "decimals": 18
+  },
+  {
+    "symbol": "ETH",
+    "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/eth.svg"
+  },
+  {
+    "symbol": "BTCB",
+    "address": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+    "decimals": 18,
+    "logoUrl": "/images/basket-assets/btc.svg"
   }
 ]

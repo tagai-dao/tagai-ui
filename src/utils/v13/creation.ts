@@ -2,6 +2,7 @@ import { get, post } from '@/apis/axios'
 import { API_BASE_URL } from '@/config/api'
 import { isAddress, type Address } from 'viem'
 import { getChainDeployment } from '@/config/chains'
+import { sortBasketAssetOptions } from '@/utils/baskets/asset-order'
 export type CreationOptions = { chainId: number; version: number; pump: string; tokenImplementation: string; sourceBlock: number;
   assets: {address: `0x${string}`; symbol: string; decimals: number}[];
   pumpFee: string; ipshareFee: string; communityFee: string; settingsFee: string }
@@ -20,7 +21,7 @@ export async function creationOptions(creator: string): Promise<CreationOptions>
         !['pumpFee', 'ipshareFee', 'communityFee', 'settingsFee'].every(k => typeof r.d[k] === 'string' && /^\d+$/.test(r.d[k]))) {
       throw new Error('Creation settings unavailable')
     }
-    return r.d
+    return { ...r.d, assets: sortBasketAssetOptions(r.d.assets) }
   } catch {
     const [{ getReadOnlyClient }, { readCreationOptions }] = await Promise.all([
       import('@/utils/wallets'), import('./creation-chain'),

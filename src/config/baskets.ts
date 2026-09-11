@@ -1,3 +1,4 @@
+import { sortBasketAssetOptions } from '@/utils/baskets/asset-order'
 import { isAddress, zeroAddress, type Address, type Hex } from 'viem'
 import { FeeAddress } from '@/config'
 
@@ -236,7 +237,7 @@ const bscV3Asset = (
   route: { venue: 1, poolQuoteToken, v4Pool: bscEmptyPool, v3Fee },
 })
 
-const bscAssets: BasketAssetPreset[] = [
+const bscAssets: BasketAssetPreset[] = sortBasketAssetOptions<BasketAssetPreset>([
   {
     address: bscContractsV3.wrappedNative, symbol: 'WBNB', name: 'Wrapped BNB', category: 'platform',
     logoUrl: '/images/basket-assets/wbnb.svg',
@@ -292,7 +293,10 @@ const bscAssets: BasketAssetPreset[] = [
     '0x205812CdBed920aFf76C6580abD681a46D11efc7', 'QQQB', 'Invesco QQQ (bStocks)', bscContractsV3.settlementToken, 100,
     '/images/basket-assets/qqq.png',
   ),
-]
+  bscV3Asset(
+    '0x7C8D5502b544dDAf8852Fc46D1174E34876D545C', 'BNC4', 'Cea Industries', bscContractsV3.settlementToken, 2_500,
+  ),
+])
 
 export const BASKET_DEPLOYMENTS: Record<BasketChainId, BasketDeployment> = {
   56: {
