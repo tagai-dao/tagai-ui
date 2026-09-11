@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { isAddress } from 'viem'
+import { getRegisteredBasket } from '@/utils/baskets/api'
 import BasketAssetLogo from './BasketAssetLogo.vue'
 
 type BasketLogoAsset = { address: string; symbol: string; weightPct?: number; targetWeightPct?: number }
@@ -10,9 +12,31 @@ const props = withDefaults(defineProps<{
   symbol: string
   assets?: BasketLogoAsset[]
   size?: number
-}>(), { assets: () => [], size: 58 })
+}>(), { size: 58 })
 
-const visibleAssets = computed(() => [...props.assets]
+const resolvedAssets = ref<BasketLogoAsset[]>([])
+
+// Favorites store the basket identity, not its constituents. Load the same
+// registered assets used by the index page without fetching prices or balances.
+watch(() => [props.chainId, props.address, props.assets] as const, async ([chainId, address, assets], _, onCleanup) => {
+  let active = true
+  onCleanup(() => { active = false })
+  resolvedAssets.value = []
+  if (assets !== undefined || !isAddress(address)) return
+  try {
+    const basket = await getRegisteredBasket(address, chainId)
+    if (!active || basket.address.toLowerCase() !== address.toLowerCase()) return
+    resolvedAssets.value = basket.assets.map(asset => ({
+      address: asset.address,
+      symbol: asset.symbol,
+      targetWeightPct: asset.targetWeightBps / 100,
+    }))
+  } catch {
+    // Keep the symbol fallback if constituent metadata is unavailable.
+  }
+}, { immediate: true })
+
+const visibleAssets = computed(() => [...(props.assets ?? resolvedAssets.value)]
   .sort((a, b) => Number(b.weightPct ?? b.targetWeightPct ?? 0) - Number(a.weightPct ?? a.targetWeightPct ?? 0))
   .slice(0, 3))
 const fallback = computed(() => props.symbol.replace(/^\$/, '').slice(0, 2).toUpperCase())

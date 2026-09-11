@@ -30,8 +30,8 @@ import type {
 } from '@/types/aiChannel'
 
 /************************************ common **********************************/
-export const getEthPrice = async () =>
-  publicRead('/tiptag/getETHPrice')
+export const getEthPrice = async (chainId = useChainStore().activeChainId, force = false) =>
+  readDisplay('/tiptag/getETHPrice', {}, chainId, 30000, force)
 
 /** PCS Infinity 池储备（The Graph 代理，12s 缓存） */
 export const getPoolTvl = async (poolId: string) =>
@@ -304,8 +304,8 @@ export const getCommunitiesByTrending = async (pages?: number, source: TagCoinSo
 export const getCommunitiesByNew = async (pages?: number, source: TagCoinSourceFilter = 'all') =>
   publicRead('/community/communitiesByNew', { pages: pages ?? 0, source })
 
-export const getCommunityDetail = async (tick: string) =>
-  publicRead('/community/detail', { tick })
+export const getCommunityDetail = async (tick: string, chainId = useChainStore().activeChainId, force = false) =>
+  readDisplay('/community/detail', { tick }, chainId, 30000, force)
 
 export type TokenCatalogPage = { rows: Community[]; catalogId: string; nextPage: number; hasMore: boolean; total: number }
 export async function getTokenCatalogPage(sort: string, source: TagCoinSourceFilter, pages = 0, catalogId?: string): Promise<TokenCatalogPage> {

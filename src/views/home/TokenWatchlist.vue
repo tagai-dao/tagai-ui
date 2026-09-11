@@ -10,14 +10,27 @@ import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import BasketTokenLogo from '@/views/baskets/components/BasketTokenLogo.vue'
 import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import { getChainPath } from '@/config/chains'
+import { useWatchlistMetrics } from '@/composables/useWatchlistMetrics'
+import { formatUsdCompact } from '@/utils/format'
 
 const favorites = useTokenFavoritesStore()
 const chain = useChainStore()
 const router = useRouter()
 const refreshing = ref(false)
+const { values: metricValues, refresh: refreshMetrics } = useWatchlistMetrics()
 async function load(force = false) {
-  try { await favorites.load(force) } catch { /* Render retry state below. */ }
+  try {
+    await favorites.load(force)
+    await refreshMetrics(force)
+  } catch { /* Render retry state below. */ }
   finally { refreshing.value = false }
+}
+function metricText(token: FavoriteToken) {
+  const value = metricValues.value[token.address.toLowerCase()]
+  if (!value) return '—'
+  if (token.kind !== 'basket') return formatUsdCompact(value)
+  const digits = value >= 1 ? 2 : 4
+  return `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
 }
 function open(token: FavoriteToken) {
   const path = token.kind === 'basket' ? `/baskets/${token.address}` : `/tag-detail/${encodeURIComponent(token.symbol)}`
@@ -58,6 +71,10 @@ onActivated(() => void load())
               <strong class="block truncate text-content">{{ token.name || token.symbol }}</strong>
               <span class="block truncate text-sm text-muted">{{ token.symbol }} <span v-if="token.kind === 'basket'">· {{ $t('baskets.menu') }}</span></span>
               <span class="block text-xs text-muted">{{ token.address.slice(0, 6) }}…{{ token.address.slice(-4) }}</span>
+              <span class="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm">
+                <span class="text-muted">{{ token.kind === 'basket' ? 'NAV' : $t('marketCap') }}</span>
+                <strong class="font-semibold tabular-nums text-orange-normal">{{ metricText(token) }}</strong>
+              </span>
             </span>
           </button>
         </article>
