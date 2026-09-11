@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { useCommunityStore } from "@/stores/community";
-import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
+import { useRoute, useRouter } from 'vue-router';
 import { formatAddress, formatAmount, formatAmountTrunc, formatPrice, sleep, formatDate } from "@/utils/helper";
 import { useStateStore } from "@/stores/common";
 import { type TokenHoldingList } from "@/types";
@@ -30,6 +31,27 @@ import { readCommunityDailyRewards } from '@/utils/v13/community-rewards'
 import { readV13HolderLabels, type HolderLabel } from '@/utils/v13/holder-labels'
 
 defineProps<{ holdersOnly?: boolean }>()
+
+const CreditIndex = defineAsyncComponent(() => import('./Credit/Index.vue'))
+const RecordList = defineAsyncComponent(() => import('../buy-sell/RecordList.vue'))
+const route = useRoute()
+const router = useRouter()
+const tokenTabs = [
+  { label: 'postView.holderList', key: 'holders' },
+  { label: 'Credit', key: 'credit' },
+  { label: 'Trades', key: 'trade' },
+]
+const activeTokenTab = computed(() => {
+  const requested = ['credit', 'trade'].includes(String(route.query.tab))
+    ? route.query.tab
+    : route.query.tokenTab
+  return tokenTabs.find(tab => tab.key === requested)?.key ?? 'holders'
+})
+function selectTokenTab(key: string) {
+  router.replace({
+    query: { ...route.query, tab: 'token', tokenTab: key === 'holders' ? undefined : key },
+  })
+}
 
 const ApexCharts = VueApexCharts as any;
 const { t } = useI18n();
@@ -820,6 +842,18 @@ onBeforeUnmount(() => {
     </div> -->
     <div v-if="!holdersOnly" class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
       <div class="text-h2 mb-2">{{$t('postView.tokenInfo')}}</div>
+      <div v-if="comStore.currentSelectedCommunity.token" class="flex web:hidden justify-between items-center gap-3 h-6">
+        <span class="shrink-0 text-h4 text-grey-93">{{ $t('createCommunity.contractAddress') }}</span>
+        <button
+          type="button"
+          class="min-w-0 flex items-center justify-end gap-2 text-right text-sm text-black-19"
+          :aria-label="`${$t('copy')} ${$t('createCommunity.contractAddress')}: ${comStore.currentSelectedCommunity.token}`"
+          @click="onCopy(comStore.currentSelectedCommunity.token)"
+        >
+          <span class="whitespace-nowrap font-mono">{{ formatAddress(comStore.currentSelectedCommunity.token, 6, 4) }}</span>
+          <img class="w-3 shrink-0" src="~@/assets/icons/icon-copy.svg" alt="" />
+        </button>
+      </div>
       <div class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{ $t('postView.price') }}</span>
         <span class="text-h5 text-black-19">{{ formatPrice((comStore.currentSelectedCommunity.price ?? 0) * useStateStore().ethPrice) }}</span>
@@ -936,8 +970,30 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </div> -->
-    <div class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
-      <div class="text-h2 mb-2">{{$t('postView.holderList')}}</div>
+    <div v-if="!holdersOnly" class="flex items-center gap-1 web:gap-2 bg-surface-2 rounded-2xl p-1.5 mt-2" role="tablist">
+      <button
+        v-for="tab in tokenTabs"
+        :key="tab.key"
+        :id="`token-tab-${tab.key}`"
+        type="button"
+        role="tab"
+        :aria-selected="activeTokenTab === tab.key"
+        :aria-controls="`token-panel-${tab.key}`"
+        class="flex-1 px-2 web:px-3.5 h-8 rounded-xl text-xs web:text-sm font-semibold whitespace-nowrap transition-colors"
+        :class="activeTokenTab === tab.key ? 'bg-surface text-content shadow-sm' : 'text-grey-64 hover:text-content'"
+        @click="selectTokenTab(tab.key)"
+      >
+        {{ $t(tab.label) }}
+      </button>
+    </div>
+    <div v-if="!holdersOnly && activeTokenTab === 'credit'" id="token-panel-credit" role="tabpanel" aria-labelledby="token-tab-credit" class="mt-2">
+      <CreditIndex />
+    </div>
+    <div v-if="!holdersOnly && activeTokenTab === 'trade'" id="token-panel-trade" role="tabpanel" aria-labelledby="token-tab-trade" class="mt-2">
+      <RecordList v-if="comStore.currentSelectedCommunity?.token" />
+    </div>
+    <div v-show="holdersOnly || activeTokenTab === 'holders'" id="token-panel-holders" :role="holdersOnly ? undefined : 'tabpanel'" :aria-labelledby="holdersOnly ? undefined : 'token-tab-holders'" class="bg-white py-5 px-4 rounded-2xl mt-2 flex flex-col gap-1">
+      <div v-if="holdersOnly" class="text-h2 mb-2">{{$t('postView.holderList')}}</div>
       <van-pull-refresh
       v-model="refreshing"
       @refresh="onRefresh"

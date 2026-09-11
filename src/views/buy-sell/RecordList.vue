@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, onUnmounted, ref} from "vue";
 import { getTokenTradeList } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import type { TokenTrade } from "@/types";
@@ -7,18 +7,12 @@ import { formatAddress, formatAmount, formatPastTime } from "@/utils/helper";
 import { handleErrorTip } from "@/utils/notify";
 import emitter from "@/utils/emitter";
 import { useTools } from "@/composables/useTools";
-import Kline from "@/views/buy-sell/Kline.vue";
-import { getDexScreenerEmbedPath } from '@/utils/pumpVersion'
-import { useTheme } from "@/composables/useTheme";
 import { useChainStore } from '@/stores/chain'
 import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
-const { isDark } = useTheme()
-const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
 const chainStore = useChainStore()
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
-const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
 
 const refreshing = ref(false)
 const loading = ref(false)
@@ -94,17 +88,13 @@ onMounted(() => {
   onRefresh()
   emitter.on('newTrade', onRefresh);
 })
+onUnmounted(() => {
+  emitter.off('newTrade', onRefresh);
+})
 </script>
 
 <template>
   <div>
-    <!-- 移动端 K 线：未 list 自建图，已 list DexScreener（BSC / RH 均开放） -->
-    <div v-if="comStore.currentSelectedCommunity?.tick"
-         class="w-full web:hidden min-w-[320px] mb-2">
-      <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart2"/>
-      <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
-        frameborder="0" class="w-full h-[24rem]"></iframe>
-    </div>
     <div class="bg-white rounded-2xl p-3">
       <div class="grid grid-cols-4 gap-x-2 text-h5 h-10 items-center">
         <span class="col-span-1 text-left">{{$t('address')}}</span>

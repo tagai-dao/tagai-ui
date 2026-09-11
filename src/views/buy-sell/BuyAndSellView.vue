@@ -56,6 +56,7 @@ const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
 
 const props = defineProps({
   tick: {type: String, required: false, default: null},
+  showChart: {type: Boolean, default: true},
   sellsman: {type: String, required: false, default: null}
 })
 const { t } = useI18n()
@@ -96,7 +97,7 @@ const v13Message = computed(() => {
 onUnmounted(() => v13Session.reset())
 /** 有 tick 且非嵌入模式时展示桌面 K 线：未 list 用自建图，已 list 用 DexScreener */
 const showDesktopChart = computed(() =>
-  !!comStore.currentSelectedCommunity?.tick && !props.tick
+  props.showChart && !!comStore.currentSelectedCommunity?.tick && !props.tick
 )
 const accStore = useAccountStore()
 const modalStore = useModalStore()

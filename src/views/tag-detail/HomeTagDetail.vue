@@ -9,7 +9,7 @@ import PredictIndex from '@/views/tag-detail/Prediction/Index.vue';
 import V13TokenPanel from './V13TokenPanel.vue'
 import V13IndexLink from './V13IndexLink.vue'
 import V13IndexRewards from './V13IndexRewards.vue'
-const CreditIndex = defineAsyncComponent(() => import('@/views/tag-detail/Credit/Index.vue'))
+import CommunityChart from './CommunityChart.vue'
 const TagToken = defineAsyncComponent(() => import('@/views/tag-detail/TagToken.vue'))
 import SpcxbLiquidity from "@/views/tag-detail/SpcxbLiquidity.vue";
 import TagProposal from "@/views/tag-detail/TagProposal.vue";
@@ -31,7 +31,6 @@ import { TotalSupply, SocialSupply, BondingCurveSupply, ListSupply, PUMP9_VERSIO
 import IconLinks from "@/components/home/IconLinks.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import BuyAndSellView from "../buy-sell/BuyAndSellView.vue";
-import RecordList from "../buy-sell/RecordList.vue";
 import PostAI from "@/views/tag-detail/PostAI.vue";
 const TagNft = defineAsyncComponent(() => import('@/views/tag-detail/nft/TagNft.vue'))
 const CommunityBaskets = defineAsyncComponent(() => import('@/views/tag-detail/CommunityBaskets.vue'))
@@ -79,10 +78,6 @@ const isV13Token = computed(()=>chainStore.activeChainId===56 && Number(comStore
 const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 const tabOptions = computed(() => [
   { label: 'Feed', key: 'content' },
-  { label: 'Credit', key: 'credit' },
-  ...(comStore.currentSelectedCommunity?.token
-    ? [{ label: 'Trades', key: 'trade' }]
-    : []),
   { label: 'Play', key: 'play' },
   { label: 'Token', key: 'token' },
 ])
@@ -129,6 +124,7 @@ const selectTab = (key: string) => {
     query: {
       ...route.query,
       tab: key === 'content' ? undefined : key,
+      tokenTab: key === 'token' ? route.query.tokenTab : undefined,
       play: key === 'play' ? activePlayTab.value : undefined,
       channel: key === 'play' && activePlayTab.value === 'ai' ? route.query.channel : undefined,
       quoteTweetId: key === 'play' && activePlayTab.value === 'ai' ? route.query.quoteTweetId : undefined,
@@ -144,6 +140,7 @@ const selectPlayTab = (key: string) => {
     query: {
       ...route.query,
       tab: 'play',
+      tokenTab: undefined,
       play: key,
       channel: key === 'ai' ? route.query.channel : undefined,
       quoteTweetId: key === 'ai' ? route.query.quoteTweetId : undefined,
@@ -160,7 +157,7 @@ watch(
     if (legacyPlayTab) {
       activeTab.value = 'play'
       activePlayTab.value = legacyPlayTab
-    } else if (requested === 'liquidity') {
+    } else if (['liquidity', 'credit', 'trade'].includes(requested)) {
       activeTab.value = 'token'
     } else if (tabOptions.value.some((tab) => tab.key === requested)) {
       activeTab.value = requested
@@ -215,6 +212,10 @@ const deployTweetList = ref([])
 
 const showTradeBox = ref(false)
 const {width} = useWindowSize()
+const isMobile = computed(() => width.value < 804)
+watch([isMobile, () => route.params.id, () => chainStore.activeChainId], () => {
+  showTradeBox.value = false
+})
 /** 社区侧栏 Teleport 目标（K 线已对 RH 未 list 开放，统一标准布局） */
 const normalSidebarTarget = ref<HTMLElement | null>(null)
 const communitySidebarTarget = computed(() => normalSidebarTarget.value)
@@ -428,15 +429,6 @@ onUnmounted(() => {
   deployTweetList.value = []
   // DeBoxChatWidget.destroy();
 })
-const topBanner = ref<any>(null)
-const topBannerClass = ref('h-[15px] overflow-hidden')
-watch([() => topBanner.value, () => deployTweetList.value.length], () => {
-  topBannerClass.value = 'h-auto'
-  setTimeout(() => {
-    pageScrollRef.value.scrollTo({top: topBanner.value.offsetHeight+8})
-  })
-})
-
 const topBannerContainerRef = ref<any>(null)
 watch(() => tabScrollTop.value, () => {
   if(topBannerContainerRef.value?.offsetHeight && tabScrollTop.value>100 && pageScrollTop.value<topBannerContainerRef.value.offsetHeight+12) {
@@ -450,6 +442,7 @@ onActivated(async () => {
 })
 
 onBeforeRouteLeave((to, from, next) => {
+  showTradeBox.value = false
   if (to.path.indexOf('/post-detail')>=0 || to.path.indexOf('/space-detail')>=0 || to.path.indexOf('/predict/')>=0) {
     emitter.emit('setPageAliveState', {isAlive: true, pageName: 'HomeTagDetail'})
   } else {
@@ -463,209 +456,17 @@ onBeforeRouteLeave((to, from, next) => {
 <template>
   <div
        class="h-full mobile-scroll-container no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
-       :class="{ 'overflow-hidden': isAiActive }"
+       :class="isAiActive ? 'overflow-hidden' : 'pb-20 web:pb-2'"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
     <PageDataStatus :paths="['/community/detail']" :scope="String(route.params.id)" @retry="reloadCommunityData" @updated="refreshCommunityDetail" />
-    <div v-if="!isAiActive" class="grid grid-cols-1 web:hidden gap-3 " ref="topBannerContainerRef">
-      <div v-if="deployTweetList.length>0"
-           class="col-span-1 border-[1px] border-line bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide"
-           ref="topBanner">
-        <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">
-          <template #tweet-action-bar>
-            <PostButtonGroup :tweet="deployTweetList[0]"/>
-          </template>
-          <template #tweet-trade>
-            <CommerceBtn :tweet="deployTweetList[0]"/>
-          </template>
-        </TweetItem>
-      </div>
-      <div v-else class="col-span-1 web:col-span-2 border-[1px] border-line bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
-        <CommunityLogo
-          :logo="comStore.currentSelectedCommunity?.logo"
-          :show-audio="!!onlineSpace"
-        >
-          <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
-                  {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
-                </div>
-        </CommunityLogo>
-        <div class="flex-1 py-1">
-          <div class="flex flex-wrap justify-between gap-x-4 items-center">
-            <div class="flex items-center">
-              <span class="text-content text-h2" :class="comStore.currentSelectedCommunity?.listed ? 'text-orange-normal' : ''">{{ comStore.currentSelectedCommunity?.tick }}</span>
-              <button v-if="comStore.currentSelectedCommunity?.createdByAi" class="pl-2 h-5 text-sm rounded-md gradient-text glow-effect">
-                {{comStore.currentSelectedCommunity?.version === 5 ? $t('postView.ixo') : $t('postView.aiCreate')}}
-              </button>
-              <IconLinks :community="comStore.currentSelectedCommunity"/>
-            </div>
-            <div class="text-base flex gap-1">
-              <span class="font-semibold text-grey-64">{{$t('marketCap')}}</span>
-              <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ marketCapText }}</span>
-            </div>
-          </div>
-          <div class="flex justify-between items-end gap-3 mt-1">
-            <div class="whitespace-pre-line text-h5 leading-4 text-grey-5a">
-              {{ comStore.currentSelectedCommunity?.description }}
-            </div>
-            <button v-if="!!accStore.getAccountInfo?.ethAddr && comStore.currentSelectedCommunity?.creator == accStore.getAccountInfo?.ethAddr"
-                    @click="modalStore.setModalVisible(true, GlobalModalType.ModifyCoin)"
-                    :disabled="!comStore.currentSelectedCommunity">
-              <img class="w-8 h-6" src="~@/assets/icons/icon-edit.svg" alt="">
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="col-span-1 web:col-span-3 border-[1px] border-line bg-grey-fa rounded-2xl py-5 px-3.5 flex flex-col gap-3">
-        <div v-if="deployTweetList.length>0"  class="flex gap-3 overflow-hide">
-          <CommunityLogo
-            :logo="comStore.currentSelectedCommunity?.logo"
-            size="md"
-            :show-audio="!!onlineSpace"
-          >
-            <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-xs
-                  transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] scale-75">
-              {{comStore.currentSelectedCommunity?.isImport ? $t('imported') : $t('listed')}}
-            </div>
-          </CommunityLogo>
-          <div class="flex-1 py-1">
-            <div class="flex flex-wrap justify-between gap-x-4 items-center">
-              <div class="flex items-center">
-                <span class="text-content text-h2">{{ comStore.currentSelectedCommunity?.tick }}</span>
-                <IconLinks :community="comStore.currentSelectedCommunity"/>
-              </div>
-              <div class="text-base flex gap-1">
-                <span class="font-semibold text-grey-64">{{ $t('marketCap') }}</span>
-                <span class="text-gradient bg-gradient-primary font-semibold tabular-nums">{{ marketCapText }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="text-sm font-semibold whitespace-nowrap">CA</span>
-          <div class="bg-surface text-grey-light-active text-sm h-4 flex items-center rounded-[3px]">
-            {{ comStore.currentSelectedCommunity?.token }}
-          </div>
-          <button class="p-1.5 -m-1" @click="onCopy(comStore.currentSelectedCommunity?.token??'')"
-                  :disabled="!(comStore.currentSelectedCommunity?.token)">
-            <img class="w-[10px]" src="~@/assets/icons/icon-copy.svg" alt="">
-          </button>
-          <div v-if="tokenExternalLinks" class="flex items-center gap-2 text-xs text-grey-64">
-            <a class="hover:text-orange-normal underline underline-offset-2" target="_blank" rel="noopener"
-               :href="tokenExternalLinks.explorer">{{ tokenExternalLinks.explorerLabel }}</a>
-            <a class="hover:text-orange-normal underline underline-offset-2" target="_blank" rel="noopener"
-               :href="tokenExternalLinks.dexScreener">DexScreener</a>
-            <a v-if="tokenExternalLinks.gmgn" class="hover:text-orange-normal underline underline-offset-2" target="_blank" rel="noopener"
-               :href="tokenExternalLinks.gmgn">GMGN</a>
-          </div>
-        </div>
-        <div v-if="!comStore.currentSelectedCommunity?.isImport" class="text-base font-medium flex items-center gap-1">
-          <span>{{$t('postView.curveProgress')}}: {{ progressData[1].value.toFixed(2) }}%</span>
-          <span v-if="isV13Token" class="text-orange-normal text-sm" role="status">{{ $t(comStore.currentSelectedCommunity?.listed ? 'v13Page.listed' : comStore.currentSelectedCommunity?.listingPending ? 'v13Page.pending' : 'v13Page.curve') }}</span>
-          <el-popover popper-class="c-popper">
-            <template #reference>
-              <img class="w-4" src="../../assets/icons/icon-warning-gray.svg" alt="">
-            </template>
-            <template #default>
-              <div class="bg-surface rounded-xl p-2 shadow-popper-tip w-[200px]">
-                {{ $t(isV13Token ? 'community.distributionTipV13' : 'community.distributionTip') }}
-              </div>
-            </template>
-          </el-popover>
-        </div>
-        <div v-if="!comStore.currentSelectedCommunity?.isImport" class="flex items-center gap-3">
-          <div class="relative flex justify-between items-center rounded-full h-3 overflow-hidden w-full
-                      bg-surface gap-[2px]">
-            <el-tooltip v-for="(data, index) of visibleProgressData" :key="index"
-                        placement="top" popper-class="c-arrow-popper">
-              <template #content>
-                <div class="flex gap-1 text-grey-normal">
-                  <span class="text-sm">
-                    {{ !isV13Token && index === 0 && isPumpNutboxVersion ? $t('postView.v4HookTransactionDistribution') : data.desc }}
-                  </span>
-                  <span class="font-semibold text-base">{{data.percent}}</span>
-                </div>
-              </template>
-              <div class="w-full h-full bg-grey-light" :style="{width:`${data.trackWidth}%`}">
-                <div class="h-full"
-                     :style="{background: data.background, width:`${data.value.toFixed(2)}%`}" >
-                </div>
-              </div>
-            </el-tooltip>
-          </div>
-          <!-- <button class="bg-grey-normal px-6 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold"
-          @click="$router.push(`/buy-sell/${$route.params?.id??''}`)">
-            Trade
-          </button> -->
-          <!-- <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
-            <template #reference>
-              <button class="bg-grey-normal px-3 h-8 text-white text-sm rounded-full whitespace-nowrap font-bold">
-                Post to Earn
-              </button>
-            </template>
-            <template #default>
-              <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
-                <button @click="onTweetType(CurationType.TWEET)"
-                        :disabled="checkingAccount"
-                        class="whitespace-nowrap flex items-center space-x-3">
-                    Tweet on-chain
-                    <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                </button>
-                <button @click="onTweetType(CurationType.SPACE)"
-                        :disabled="checkingAccount"
-                        class="whitespace-nowrap flex items-center space-x-3">
-                        Tweet an onchain Space
-                    <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                </button>
-              </div>
-            </template>
-          </el-popover> -->
-        </div>
-        <div class="flex justify-center space-x-4">
-          <button :disabled="checkingTweet" @click="checkTweet" class="w-1/3 bg-surface border border-orange-normal text-orange-normal flex justify-center items-center text-h5 rounded-full h-11 transition-colors">
-            Blinks
-            <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-          </button>
-          <button class="w-1/3 bg-gradient-primary text-white flex justify-center items-center text-h5 gap-1 rounded-full h-11"
-                  @click="showTradeBox=!showTradeBox">
-            <span>{{$t('trade')}}</span>
-            <i-ep-caret-bottom  class="transition-transform duration-300"
-                                :class="{ 'rotate-180': showTradeBox }"></i-ep-caret-bottom>
-          </button>
-          <button :disabled="checkingTweet" @click="checkTipCurate" class="w-1/3 bg-surface border border-orange-normal text-orange-normal flex justify-center items-center text-h5 rounded-full h-11 transition-colors">
-            {{$t('tip')}} ${{ comStore.currentSelectedCommunity?.tick }}
-            <i-ep-loading v-show="checkingTweet" class="animate-spin" />
-          </button>
-
-          <el-popover popper-class="c-popper" placement="bottom-end" width="200" ref="tweetTypeRef" trigger="click">
-            <template #reference>
-              <button class="w-1/3 bg-surface border border-orange-normal text-orange-normal text-h5 rounded-full h-11 transition-colors">Post</button>
-            </template>
-            <template #default>
-              <div class="bg-grey-normal rounded-2xl px-3 py-4 w-[240px] shadow-popper-tip text-white text-lg flex flex-col gap-2 items-start">
-                <button @click="onTweetType(CurationType.TWEET)"
-                        :disabled="checkingAccount"
-                        class="whitespace-nowrap flex items-center space-x-3">
-                    {{$t('postView.tweetOnChain')}}
-                    <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                </button>
-                <button @click="onTweetType(CurationType.SPACE)"
-                        :disabled="checkingAccount"
-                        class="whitespace-nowrap flex items-center space-x-3">
-                        {{$t('postView.spaceOnChain')}}
-                    <i-ep-loading v-show="checkingAccount" class="animate-spin" />
-                </button>
-              </div>
-            </template>
-          </el-popover>
-          <!-- <button class="w-1/3 bg-gradient-primary text-h5 rounded-full h-11">Post To Earn</button> -->
-        </div>
-      </div>
+    <div v-if="isMobile && !isAiActive" class="shrink-0 min-w-0" ref="topBannerContainerRef">
+      <CommunityChart :key="`${chainStore.activeChainId}-${route.params.id}`" />
     </div>
     <div
       class="min-h-0"
       :class="{ 'flex-1 overflow-hidden': isAiActive }"
     >
-      <BuyAndSellView v-if="!isAiActive && (showTradeBox || width>800)" />
+      <BuyAndSellView v-if="!isAiActive && !isMobile" />
       <div
         class="min-h-0 web:sticky web:top-[0px]"
         :class="isAiActive ? 'h-full' : 'web:h-full web:min-h-full'"
@@ -694,8 +495,6 @@ onBeforeRouteLeave((to, from, next) => {
             <TagContent v-if="activeTab==='content'"/>
             <TagTippedContent v-if="activeTab==='tipped'"/>
             <TagProposal v-if="activeTab==='proposal'"/>
-            <RecordList v-if="activeTab==='trade' && comStore.currentSelectedCommunity?.token"/>
-            <CreditIndex v-if="activeTab==='credit'"/>
             <TagToken v-if="activeTab==='token' && isV13Token"><template #info-footer><V13IndexLink/></template></TagToken>
             <TagToken v-else-if="activeTab==='token' && !legacyLiquidityActive"/>
             <SpcxbLiquidity v-if="activeTab==='token' && legacyLiquidityActive"/>
@@ -915,6 +714,27 @@ onBeforeRouteLeave((to, from, next) => {
       </div>
     </div>
   </div>
+  <div v-if="isMobile && comStore.currentSelectedCommunity?.token" class="fixed inset-x-0 z-20 flex justify-center pointer-events-none community-trade-button">
+    <button type="button" class="pointer-events-auto h-11 min-w-40 px-10 rounded-full bg-gradient-primary text-white text-h3 shadow-lg" @click="showTradeBox = true">
+      {{ $t('trade') }}
+    </button>
+  </div>
+  <van-popup
+    v-if="isMobile"
+    v-model:show="showTradeBox"
+    position="bottom"
+    round
+    teleport="body"
+    :z-index="1900"
+    :style="{ maxHeight: '85dvh', background: 'var(--surface)' }"
+    safe-area-inset-bottom
+  >
+    <div class="flex items-center justify-between px-4 pt-3 pb-2 text-h3 text-content">
+      <span>{{ $t('trade') }} · {{ comStore.currentSelectedCommunity?.tick }}</span>
+      <button type="button" class="flex h-9 w-9 items-center justify-center rounded-full text-xl text-muted" :aria-label="$t('cancel')" @click="showTradeBox = false">×</button>
+    </div>
+    <BuyAndSellView v-if="showTradeBox" :show-chart="false" class="pb-3" />
+  </van-popup>
   <el-dialog v-model="showModal"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
@@ -927,6 +747,10 @@ onBeforeRouteLeave((to, from, next) => {
 </template>
 
 <style scoped>
+.community-trade-button {
+  bottom: calc(4.25rem + var(--safe-area-bottom, 0px));
+}
+
 .gradient-text {
   background: linear-gradient(
     300deg,

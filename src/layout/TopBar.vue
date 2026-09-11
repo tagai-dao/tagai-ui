@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import {ref} from "vue";
+import {computed, ref} from "vue";
 import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
 import { useAccountStore } from "@/stores/web3";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
 import ChainSwitcher from '@/components/common/ChainSwitcher.vue'
+import CommunityLogo from '@/components/common/CommunityLogo.vue'
+import { useCommunityStore } from '@/stores/community'
 
 const modalVisible = ref(false)
 const router = useRouter();
+const route = useRoute();
+const communityStore = useCommunityStore();
+const headerCommunity = computed(() => route.name === 'tag-detail'
+  && communityStore.currentSelectedCommunity?.tick === route.params.id
+  ? communityStore.currentSelectedCommunity : null);
 const accStore = useAccountStore();
 const menuRef = ref()
 
@@ -48,12 +55,16 @@ async function createTagCoin() {
 <template>
   <div class="w-full h-14 web:h-20 native-safe-topbar flex justify-between items-center px-4
               web:border-b-[1px] border-line">
-    <div class="flex items-center gap-2 mt-2">
+    <div class="flex shrink-0 items-center gap-2 mt-2">
       <img class="h-8 cursor-pointer"
            src="~@/assets/logo.png" alt=""
            @click="$router.replace('/')">
     </div>
-    <div class="flex items-center gap-3 web:gap-6">
+    <div v-if="headerCommunity" class="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 web:hidden">
+      <CommunityLogo :logo="headerCommunity.logo" size="sm" :shadow="false" class="shrink-0" />
+      <span class="truncate text-sm font-semibold text-content" :title="headerCommunity.tick">{{ headerCommunity.tick }}</span>
+    </div>
+    <div class="flex shrink-0 items-center gap-3 web:gap-6">
       <!-- 移动端：链切换 + 搜索、通知 -->
       <div class="flex items-center gap-3 web:hidden">
         <ChainSwitcher variant="compact" />
