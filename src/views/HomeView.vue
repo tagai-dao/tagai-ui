@@ -47,6 +47,8 @@ let pageActive = true
 const curationStore = useCurationStore();
 const tweetsStore = useTweetsStore();
 const refreshing = ref(false);
+// Only a user pull should move the list to reveal the refresh indicator.
+const pullRefreshing = ref(false);
 const loading = ref(false);
 const loadFailed = ref(false);
 const listLoaded = ref(false);
@@ -289,6 +291,15 @@ async function refreshBStocks() {
   }
 }
 
+async function onPullRefresh() {
+  try {
+    if (coinSubMenu.value === 'bStocks') await refreshBStocks()
+    else await refresh()
+  } finally {
+    pullRefreshing.value = false
+  }
+}
+
 /** 仅在 Coin 列表可见时拉数据，避免 Tag 首页抢 RPC */
 function ensureCoinListLoaded() {
   if (!pageActive || activeMainMenu.value !== 'coin') return
@@ -336,24 +347,12 @@ function selectCoinListType(value: ListType) {
   if (coinListTypeOptions.value.some(option => option.value === value)) listType.value = value
 }
 
-// 隐藏小市值（垃圾/测试币）：official / listed / 已导入 / 市值≥$4,200 的保留
-const HIDE_DUST_KEY = 'hide-dust-coins'
-const hideDust = ref(localStorage.getItem(HIDE_DUST_KEY) !== 'false')
-watch(hideDust, (v) => localStorage.setItem(HIDE_DUST_KEY, String(v)))
-function filterDust(list: Community[]) {
-  if (!hideDust.value) return list
-  return list.filter(c =>
-    c.official || c.listed || c.isImport ||
-    (parseFloat(c.marketCap as any) || 0) * stateStore.ethPrice >= 4200
-  )
-}
-
 const isImportedToken = (community: Community) =>
   community.isImport === true || Number(community.isImport) === 1
 
 /** TagCoin 排除股票，并按 MemeETF / Social Launch / 外部导入分组。 */
 function filterTagCoins(list: Community[]) {
-  return filterDust(list).filter((community) => {
+  return list.filter((community) => {
     if (isActiveChainBStock(community)) return false
     if (tagCoinSource.value === 'all') return true
     if (tagCoinSource.value === 'memeetf') return Number(community.version) === 13
@@ -381,7 +380,7 @@ function switchTagCoinSource(source: TagCoinSource) {
 
 // Filtering can leave a full API page with zero/one visible card and no
 // scrollbar. Ask Vant to fill the viewport rather than waiting for a scroll.
-watch([() => filterTagCoins(currentCoinList.value).length, loading, refreshing, listType, hideDust],
+watch([() => filterTagCoins(currentCoinList.value).length, loading, refreshing, listType],
   () => { void nextTick(() => coinListRef.value?.check()) })
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
@@ -409,6 +408,7 @@ function startBackgroundRefresh() {
 }
 
 function stopBackgroundRefresh() {
+  pullRefreshing.value = false
   backgroundIntervals.forEach(interval => clearInterval(interval))
   backgroundIntervals = []
   pageActive = false
@@ -419,6 +419,7 @@ function stopBackgroundRefresh() {
 }
 
 function clearCoinLists() {
+  pullRefreshing.value = false
   listRefreshSequence++
   coinLists.marketCapCommunities = []
   coinLists.newCommunities = []
@@ -635,12 +636,8 @@ const onCreate = (type: GlobalModalType) => {
           {{ chainStore.deployment.key === 'rh' ? 'Stocks' : ($t('bStocks') || 'bStocks') }}
         </button>
       </div>
-      <!-- 排序 + 隐藏小市值开关 -->
+      <!-- 排序 -->
       <div class="flex-shrink-0 flex items-center gap-3">
-        <label v-if="coinSubMenu==='tagCoin'" class="flex items-center gap-1.5 cursor-pointer text-sm text-grey-64 select-none" :title="$t('hideDust')">
-          <el-switch v-model="hideDust" size="small" style="--el-switch-on-color: #FE913F" />
-          <span class="hidden web:inline">{{ $t('hideDust') }}</span>
-        </label>
         <el-dropdown
           v-if="coinSubMenu==='tagCoin'"
           trigger="click"
@@ -702,7 +699,7 @@ const onCreate = (type: GlobalModalType) => {
              role="status">
           Coming soon
         </div>
-        <van-pull-refresh v-else v-model="refreshing" @refresh="refresh"
+        <van-pull-refresh v-else v-model="pullRefreshing" @refresh="onPullRefresh"
                           class="min-h-full web:max-w-[1240px] web:mx-auto"
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
@@ -754,7 +751,7 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='bStocks'">
       <div class="flex-1 min-h-0 px-3 mobile-scroll-container no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-        <van-pull-refresh v-model="refreshing" @refresh="refreshBStocks"
+        <van-pull-refresh v-model="pullRefreshing" @refresh="onPullRefresh"
                           class="min-h-full web:max-w-[1240px] web:mx-auto"
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"

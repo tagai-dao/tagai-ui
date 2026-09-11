@@ -43,6 +43,7 @@ const PAGE_SIZE = 30
 const tweetsStore = useTweetsStore();
 const accStore = useAccountStore();
 const refreshing = ref(false);
+const pullRefreshing = ref(false);
 const loading = ref(false);
 const loadFailed = ref(false);
 const usingSnapshot = ref(false)
@@ -267,6 +268,14 @@ async function loadCommunityTrades(page = 0, replace = false) {
     return -1
   } finally {
     if (sequence === refreshSequence) tradesLoading.value = false
+  }
+}
+
+async function onPullRefresh() {
+  try {
+    await onRefresh()
+  } finally {
+    pullRefreshing.value = false
   }
 }
 
@@ -547,8 +556,8 @@ onBeforeUnmount(() => {
   </div>
   <div class="flex-1">
     <van-pull-refresh class="h-full min-h-full"
-      v-model="refreshing"
-      @refresh="onRefresh"
+      v-model="pullRefreshing"
+      @refresh="onPullRefresh"
       :loading-text="$t('loading')"
       :lpulling-text="$t('pullToRefreshData')"
       :loosing-text="$t('releaseToRefresh')"

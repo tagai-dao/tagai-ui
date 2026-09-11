@@ -22,7 +22,7 @@ const token = (id, isImport = 0) => ({ token: `0x${id}`, tick: id, isImport, mar
 
 // Run the actual SFC setup with Vue reactivity and controlled network/lifecycle
 // boundaries so old responses can be delivered in a deterministic order.
-function setup() {
+function setup(savedDust = 'false') {
   const calls = [], hooks = {}, snapshots = new Map(), errors = []
   const scope = Vue.effectScope()
   const shared = Vue.reactive({ newCommunities: [], trendingCommunities: [], marketCapCommunities: [] })
@@ -57,11 +57,45 @@ function setup() {
       if (modules[name]) return modules[name]
       if (name.endsWith('.vue') || ['@/utils/emitter', '../utils/helper', '@/utils/format', '@/utils/chainFilter', '@/assets/externalSourceLogos'].includes(name)) return {}
       throw Error(`Missing mock ${name}`)
-    }, module.exports, { getItem: () => 'false', setItem() {} },
+    }, module.exports, { getItem: () => savedDust, setItem() {} },
   )
   const model = scope.run(() => module.exports.default.setup({}, { expose() {} }))
   return { model, calls, hooks, shared, chain, state, fixture, snapshots, errors, dispose: () => scope.stop() }
 }
+
+test('small-cap tokens remain visible with a previously enabled dust filter', t => {
+  const f = setup('true'); t.after(f.dispose)
+  const rows = [token('small'), { ...token('zero'), marketCap: '0' }]
+  assert.deepEqual(f.model.filterTagCoins(rows).map(row => row.tick), ['small', 'zero'])
+})
+
+test('automatic list updates retain rows while loading without activating pull refresh', async t => {
+  const f = setup(); t.after(f.dispose)
+  const initial = f.model.refresh()
+  f.calls[0].resolve([token('existing')]); await initial
+  const update = f.model.refresh()
+  assert.equal(f.model.refreshing.value, true)
+  assert.equal(f.model.pullRefreshing.value, false)
+  assert.equal(f.model.currentCoinList.value[0].tick, 'existing')
+  f.calls[1].resolve([token('updated')]); await update
+  assert.equal(f.model.currentCoinList.value[0].tick, 'updated')
+  assert.equal(f.model.pullRefreshing.value, false)
+})
+
+test('manual pull refresh ends on both success and failure', async t => {
+  for (const fail of [false, true]) {
+    const f = setup(); t.after(f.dispose)
+    f.model.pullRefreshing.value = true
+    const request = f.model.onPullRefresh()
+    assert.equal(f.model.pullRefreshing.value, true)
+    if (fail) f.calls[0].reject(Error('offline'))
+    else f.calls[0].resolve([token('manual')])
+    await request
+    assert.equal(f.model.pullRefreshing.value, false)
+    assert.equal(f.model.refreshing.value, false)
+    assert.equal(f.model.loadFailed.value, fail)
+  }
+})
 
 test('category switches filter cached rows and request the selected source', async t => {
   const f = setup(); t.after(f.dispose)

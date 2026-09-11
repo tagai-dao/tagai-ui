@@ -11,10 +11,12 @@ import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
 import ChainSwitcher from '@/components/common/ChainSwitcher.vue'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import { useCommunityStore } from '@/stores/community'
+import { usePageRouter } from '@/composables/useTools'
 
 const modalVisible = ref(false)
 const router = useRouter();
 const route = useRoute();
+const { goBack } = usePageRouter();
 const communityStore = useCommunityStore();
 const headerCommunity = computed(() => route.name === 'tag-detail'
   && communityStore.currentSelectedCommunity?.tick === route.params.id
@@ -55,7 +57,10 @@ async function createTagCoin() {
 <template>
   <div class="w-full h-14 web:h-20 native-safe-topbar flex justify-between items-center px-4
               web:border-b-[1px] border-line">
-    <div class="flex shrink-0 items-center gap-2 mt-2">
+    <button v-if="route.name === 'tag-detail'" type="button" class="flex h-10 w-10 shrink-0 items-center justify-center web:hidden" :aria-label="$t('back')" @click="goBack">
+      <img class="w-6 h-6 dark:invert" src="~@/assets/icons/icon-back.svg" alt="" />
+    </button>
+    <div class="flex shrink-0 items-center gap-2 mt-2" :class="{ 'hidden web:flex': route.name === 'tag-detail' }">
       <img class="h-8 cursor-pointer"
            src="~@/assets/logo.png" alt=""
            @click="$router.replace('/')">
