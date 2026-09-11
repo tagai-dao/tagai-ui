@@ -39,6 +39,7 @@ await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()
  export default {};export const useI18n=()=>({t:k=>k,locale:{value:'en'}});
  export const getChainDeployment=()=>({contracts:{liquidityRouter13:null}});
  export const useAccountStore=()=>({ethConnectAddress:''});export const useChainStore=()=>({activeChainId:56});
+ export const GlobalModalType={ChoseWallet:1};export const useModalStore=()=>({setModalVisible:(...args)=>globalThis.__miningFixture.modalCalls.push(args)});
  export const useCommunityStore=()=>({currentSelectedCommunity:{token:${JSON.stringify(token)},tick:'T'}});
  export const getV13Detail=()=>globalThis.__miningFixture.detail();
  export const readLifecycle=()=>globalThis.__miningFixture.lifecycle();
@@ -78,5 +79,9 @@ test('template gates burn by listed state, not just the mining tab',()=>{
  assert.match(source,/v-if="mining && state\?\.listed" class="burn-summary"/)
  assert.match(source,/v-if="state && \(!mining \|\| !state.listed\)" class="summary"/)
  assert.match(source,/v-if="mining && pools"/)
+})
+test('disconnected claim-all entry opens wallet selection',()=>{
+ const {app,s}=mount({modalCalls:[]})
+ try{assert.equal(s.connected,false);assert.equal(s.canClaimAll,false);s.connectWallet();assert.deepEqual(globalThis.__miningFixture.modalCalls,[[true,1]])}finally{app.unmount()}
 })
 after(async()=>{delete globalThis.__miningFixture;await rm(dir,{recursive:true,force:true})})

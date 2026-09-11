@@ -6,6 +6,8 @@ import {presetBasketAssetLogo,resolveBasketAssetLogo} from '@/utils/baskets/logo
 import {formatUnits,parseUnits,zeroAddress,type Address} from 'viem'
 import {useAccountStore} from '@/stores/web3'
 import {useChainStore} from '@/stores/chain'
+import {useModalStore} from '@/stores/common'
+import {GlobalModalType} from '@/types'
 import {quoteZap,executeZap,type ZapQuote} from '@/utils/v13/zap'
 import {readPoolRewards,poolAprBps,type PoolRewards} from '@/utils/v13/pool-apr'
 import {readPool,operatePool,liquidity,afterPairTax,previewLiquidityAdd,type Component} from '@/utils/v13/pools'
@@ -45,7 +47,9 @@ let quoteTimer:ReturnType<typeof setTimeout>|undefined,quoteAbort:AbortControlle
 const slippageBps=computed(()=>Math.round(Number(slippage.value)*100))
 const validSlippage=computed(()=>Number.isInteger(slippageBps.value)&&slippageBps.value>=1&&slippageBps.value<=1000)
 let quoteSequence=0
-const connected=computed(()=>chain.activeChainId===56&&!!account.ethConnectAddress)
+const connected=computed(()=>chain.activeChainId===56&&!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress)
+const modal=useModalStore()
+const connectWallet=()=>modal.setModalVisible(true,GlobalModalType.ChoseWallet)
 let sequence=0,disposed=false
 const f=(n:bigint,decimals=18)=>Number(formatUnits(n,decimals)).toLocaleString(locale.value,{maximumFractionDigits:6})
 const compact=(n:bigint,decimals=18)=>new Intl.NumberFormat(locale.value,{notation:'compact',maximumFractionDigits:2}).format(Number(formatUnits(n,decimals)))
@@ -65,6 +69,7 @@ function selectLiquidityInput(value:'bnb'|'add'){
  amount.value='';error.value='';action.value=value
 }
 function openAction(value:typeof action.value,event:MouseEvent){
+ if(!connected.value){connectWallet();return}
  actionOpener=event.currentTarget as HTMLElement;action.value=value;amount.value='';error.value='';expanded.value=true
  void nextTick(()=>backButton.value?.focus({preventScroll:true}))
 }
@@ -151,12 +156,13 @@ onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clear
     <div><span>{{ t('v13Page.totalStaked') }}</span><strong :title="f(state.total)">{{ compact(state.total) }} <small>LP</small></strong></div>
     <div><span>{{ t('v13Page.myStake') }}</span><strong :title="connected?f(state.staked):''">{{ connected?compact(state.staked):'—' }} <small>LP</small></strong></div>
    </div>
-   <div class="reward-box"><div><span>{{ t('v13Page.reward') }}</span><strong :title="connected?f(state.pending):''">{{ connected?f(state.pending):'—' }} <small>{{ symbol }}</small></strong></div><button :disabled="busy||!connected||state.pending===0n" @click="operate(true)">{{ t('v13Page.claim') }} ↗</button></div>
+   <div class="reward-box"><div><span>{{ t('v13Page.reward') }}</span><strong :title="connected?f(state.pending):''">{{ connected?f(state.pending):'—' }} <small>{{ symbol }}</small></strong></div><button v-if="!connected" @click="connectWallet">{{ t('baskets.connectWallet') }}</button><button v-else :disabled="busy||state.pending===0n" @click="operate(true)">{{ t('v13Page.claim') }} ↗</button></div>
    <div class="reserve-box"><span>{{ t('v13Page.reserves') }}</span><div><span :title="f(state.reserveToken)">{{ compact(state.reserveToken) }} <b>{{ symbol }}</b></span><span :title="f(state.reserveAsset,state.decimals)">{{ compact(state.reserveAsset,state.decimals) }} <b>{{ assetSymbol }}</b></span></div></div>
    <p v-if="!state.active" class="pool-note">{{ t('v13Page.closed') }}</p>
-   <div class="card-actions"><button class="primary-button" :disabled="busy||!state.supply||!liquidityRouter" @click="openAction('bnb',$event)">+ {{ t('v13Page.add') }}</button><button class="secondary-button" :disabled="busy||!state.active" @click="openAction('deposit',$event)">{{ t('v13Page.stake') }}</button></div>
-   <div class="secondary-actions"><button :disabled="busy" @click="openAction('withdraw',$event)">{{ t('v13Page.unstake') }}</button><span>·</span><button :disabled="busy||!state.supply||!liquidityRouter" @click="openAction('remove',$event)">{{ t('v13Page.remove') }}</button></div>
+   <div v-if="connected" class="card-actions"><button class="primary-button" :disabled="busy||!state.supply||!liquidityRouter" @click="openAction('bnb',$event)">+ {{ t('v13Page.add') }}</button><button class="secondary-button" :disabled="busy||!state.active" @click="openAction('deposit',$event)">{{ t('v13Page.stake') }}</button></div>
+   <div v-if="connected" class="secondary-actions"><button :disabled="busy" @click="openAction('withdraw',$event)">{{ t('v13Page.unstake') }}</button><span>·</span><button :disabled="busy||!state.supply||!liquidityRouter" @click="openAction('remove',$event)">{{ t('v13Page.remove') }}</button></div>
   </template>
+  <button v-if="!connected" class="primary-button" @click="connectWallet">{{ t('baskets.connectWallet') }}</button>
   </section>
   <section class="card-face card-back" :inert="!expanded" :aria-hidden="!expanded" @keydown.esc.stop.prevent="closeAction">
    <header class="back-header"><button ref="backButton" class="back-button" :disabled="busy" @click="closeAction"><span aria-hidden="true">←</span> {{ t('back') }}</button><span>{{ symbol }} / {{ assetSymbol }}</span></header>

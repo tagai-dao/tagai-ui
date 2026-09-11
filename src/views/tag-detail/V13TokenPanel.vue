@@ -5,6 +5,8 @@ import {useI18n} from 'vue-i18n'
 import {type Address,type Abi,formatUnits,zeroAddress} from 'viem'
 import {useCommunityStore} from '@/stores/community'
 import {useAccountStore} from '@/stores/web3'
+import {useModalStore} from '@/stores/common'
+import {GlobalModalType} from '@/types'
 import {formatPrice,formatAmount} from '@/utils/helper'
 import {useChainStore} from '@/stores/chain'
 import {claimAllPoolRewards,getV13Detail,send,walletGuard,type V13Detail} from '@/utils/v13/pools'
@@ -24,7 +26,10 @@ const claimingAll=ref(false),poolCards=ref<Array<{refresh:()=>Promise<void>}>>([
 const poolBusy=ref<Record<string,boolean>>({})
 const chainPools=ref<MiningPools>()
 const pools=computed(()=>data.value?{community:data.value.config.community,components:data.value.components}:chainPools.value)
-const canClaimAll=computed(()=>chain.activeChainId===56&&!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress&&!!pools.value?.components.length&&!claimingAll.value&&!Object.values(poolBusy.value).some(Boolean))
+const connected=computed(()=>!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress)
+const modal=useModalStore()
+const connectWallet=()=>modal.setModalVisible(true,GlobalModalType.ChoseWallet)
+const canClaimAll=computed(()=>chain.activeChainId===56&&connected.value&&!!pools.value?.components.length&&!claimingAll.value&&!Object.values(poolBusy.value).some(Boolean))
 async function claimAll(){
  if(!canClaimAll.value||!pools.value)return
  claimingAll.value=true
@@ -91,7 +96,7 @@ onUnmounted(()=>{disposed=true;seq++;clearInterval(timer)})
   <section v-if="state && (!mining || !state.listed)" class="summary"><strong>{{ stage }}</strong><template v-if="!state.listed"><progress :value="progress" max="100"/><span>{{ progress }}% · {{ Number(formatUnits(state.supply,18)).toLocaleString() }} / 650,000,000</span></template><p v-if="state.pending||(mining&&!state.listed)" class="liquidity-note"><span v-if="state.pending">{{ t('v13Page.pendingHelp') }} </span><span v-if="mining&&!state.listed">{{ t('v13Page.unseeded') }}</span></p></section>
   <template v-if="mining && pools">
    <p v-if="chainPools" role="status">{{ t('v13Page.chainPoolsFallback') }}</p>
-   <div class="claim-all-bar"><button class="claim-all-button" :disabled="!canClaimAll" :aria-busy="claimingAll" @click="claimAll"><span v-if="claimingAll" class="claim-spinner" aria-hidden="true"/>{{ t(claimingAll?'v13ClaimAll.pending':'v13ClaimAll.button') }}</button></div>
+   <div class="claim-all-bar"><button v-if="!connected" class="claim-all-button" @click="connectWallet">{{ t('baskets.connectWallet') }}</button><button v-else class="claim-all-button" :disabled="!canClaimAll" :aria-busy="claimingAll" @click="claimAll"><span v-if="claimingAll" class="claim-spinner" aria-hidden="true"/>{{ t(claimingAll?'v13ClaimAll.pending':'v13ClaimAll.button') }}</button></div>
    <div class="pool-grid"><V13PoolCard ref="poolCards" :actions-disabled="claimingAll" @busy="poolBusy[leg.staking_pool]=$event" v-for="leg in pools.components" :key="leg.staking_pool" :token="token" :community="pools.community" :leg="leg" :symbol="symbol" :token-logo="store.currentSelectedCommunity?.logo" :liquidity-router="liquidityRouter" /></div>
   </template>
   <template v-if="data">

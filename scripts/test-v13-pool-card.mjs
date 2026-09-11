@@ -19,7 +19,8 @@ await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()
  b.onResolve({filter:/^(@\/|vue-i18n$)/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export default {};export const useI18n=()=>({t:k=>k,locale:{value:'en'}});
- export const useAccountStore=()=>({ethConnectAddress:'0x'+'11'.repeat(20)});export const useChainStore=()=>({activeChainId:56});
+ export const useAccountStore=()=>({ethConnectAddress:globalThis.__cardFixture.address});export const useChainStore=()=>({activeChainId:56});
+ export const GlobalModalType={ChoseWallet:1};export const useModalStore=()=>({setModalVisible:(...args)=>globalThis.__cardFixture.modalCalls.push(args)});
  export const presetBasketAssetLogo=()=>null;export const resolveBasketAssetLogo=async()=>null;
  export const readPool=async()=>globalThis.__cardFixture.state;export const readPoolRewards=async()=>({daily:0n,ratio:10000});
  export const poolAprBps=()=>0n;
@@ -31,13 +32,23 @@ await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()
 const Card=require(join(dir,'card.cjs')).default;Card.render=()=>null
 const renderer=createRenderer({createComment:()=>({}),createElement:()=>({}),createText:()=>({}),insert:()=>{},remove:()=>{},setText:()=>{},setElementText:()=>{},parentNode:()=>null,nextSibling:()=>null,patchProp:()=>{}})
 const address='0x'+'22'.repeat(20)
-function mount(execute){
- globalThis.__cardFixture={execute,notices:[],state:{supply:10n**18n,reserveToken:10n**18n,reserveAsset:10n**18n,lpBalance:10n**18n,staked:0n,total:0n,active:true,symbol:'STOCK',decimals:18,pending:0n,fee:0n,nativeBalance:10n**18n,assetBalance:0n,tokenBalance:0n}}
+function mount(execute,walletAddress='0x'+'11'.repeat(20)){
+ globalThis.__cardFixture={execute,address:walletAddress,modalCalls:[],notices:[],state:{supply:10n**18n,reserveToken:10n**18n,reserveAsset:10n**18n,lpBalance:10n**18n,staked:0n,total:0n,active:true,symbol:'STOCK',decimals:18,pending:0n,fee:0n,nativeBalance:10n**18n,assetBalance:0n,tokenBalance:0n}}
  const app=renderer.createApp(Card,{token:address,community:address,symbol:'T',liquidityRouter:address,leg:{asset:address,pair:address,staking_pool:address,position:0,target_weight:10000,asset_decimals:18,pool_status:'OPENED'}})
  const vm=app.mount({});return {app,s:vm.$.setupState}
 }
 const event={currentTarget:{isConnected:true,focus:()=>{}}}
 after(async()=>{delete globalThis.__cardFixture;await rm(dir,{recursive:true,force:true})})
+for(const wallet of ['', '0x'+'00'.repeat(20)])test(`disconnected wallet ${wallet||'(empty)'} opens wallet selection without entering a transaction`,async()=>{
+ const {app,s}=mount(()=>assert.fail('must not submit a transaction'),wallet)
+ try{
+  assert.equal(s.connected,false)
+  s.connectWallet();assert.deepEqual(globalThis.__cardFixture.modalCalls,[[true,1]])
+  s.openAction('deposit',event);assert.equal(s.expanded,false)
+  await s.operate();await s.operate(true)
+  assert.deepEqual(globalThis.__cardFixture.modalCalls,[[true,1],[true,1]])
+ }finally{app.unmount()}
+})
 for(const action of ['deposit','withdraw','add','remove','bnb'])test(`${action}: keep back face during confirmation; return only after successful transaction`,async()=>{
  let finish;const pending=new Promise(r=>finish=r),{app,s}=mount(()=>pending)
  try{
