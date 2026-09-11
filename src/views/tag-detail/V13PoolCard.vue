@@ -28,7 +28,7 @@ function returnToFront(){
 }
 function closeAction(){if(!busy.value)returnToFront()}
 const rewards=ref<PoolRewards>(),aprError=ref(false)
-const apr=computed(()=>state.value&&rewards.value?poolAprBps(rewards.value.daily,state.value.reserveToken,state.value.supply,state.value.total,state.value.active):undefined)
+const apr=computed(()=>!aprError.value&&state.value&&rewards.value?poolAprBps(rewards.value.annual,state.value.reserveToken,state.value.supply,state.value.total,state.value.active):undefined)
 const aprHint=computed(()=>aprError.value?t('v13Page.aprUnavailable'):state.value?.total===0n?t('v13Page.aprEmpty'):t('v13Page.aprHint'))
 const action=ref<'deposit'|'withdraw'|'add'|'remove'|'bnb'>('deposit'),rawAmount=ref(''),slippage=ref(1)
 const inputSide=ref<'token'|'asset'>('token'),rawAssetAmount=ref('')

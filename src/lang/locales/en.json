@@ -1403,7 +1403,7 @@
     "rewardReserve": "Mining reward reserve",
     "dailyRewardsHelp": "Estimated rewards across all LP pools for 24 hours from the current on-chain hour, after protocol fees.",
     "apr": "APR",
-    "aprHint": "Next 24h net rewards × 365 / staked LP value in T (its T reserves × 2). APR changes with rewards and stake.",
+    "aprHint": "Use the greater of next 1h net rewards × 8,760 and next 24h net rewards × 365, divided by staked LP value in T (its T reserves × 2). APR changes with rewards and stake.",
     "aprEmpty": "No stake yet; APR cannot be calculated.",
     "aprUnavailable": "APR update unavailable. Any displayed value is from the previous update.",
 

@@ -36,7 +36,7 @@
     "rewardReserve": "Cadangan imbalan mining",
     "dailyRewardsHelp": "Estimasi imbalan semua pool LP selama 24 jam dari jam on-chain saat ini, setelah biaya protokol.",
     "apr": "APR",
-    "aprHint": "Imbalan bersih 24 jam berikutnya × 365 / nilai LP yang di-stake dalam T (cadangan T-nya × 2). APR berubah sesuai imbalan dan stake.",
+    "aprHint": "Gunakan nilai terbesar antara imbalan bersih 1 jam berikutnya × 8.760 dan 24 jam berikutnya × 365, dibagi nilai LP yang di-stake dalam T (cadangan T-nya × 2). APR berubah sesuai imbalan dan stake.",
     "aprEmpty": "Belum ada stake; APR belum dapat dihitung.",
     "aprUnavailable": "Pembaruan APR tidak tersedia. Nilai sebelumnya tetap ditampilkan.",
 

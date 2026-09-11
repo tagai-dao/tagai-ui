@@ -36,7 +36,7 @@
     "rewardReserve": "Reserva de recompensas",
     "dailyRewardsHelp": "Recompensas estimadas de todos los pools LP durante 24 horas desde la hora actual en cadena, descontando las comisiones del protocolo.",
     "apr": "APR",
-    "aprHint": "Recompensas netas de las próximas 24 h × 365 / valor de los LP en staking en T (su reserva de T × 2). La APR varía con las recompensas y el staking.",
+    "aprHint": "Se usa el mayor valor entre las recompensas netas de la próxima hora × 8.760 y las de las próximas 24 h × 365, dividido por el valor de los LP en staking en T (su reserva de T × 2). La APR varía con las recompensas y el staking.",
     "aprEmpty": "Sin staking; aún no se puede calcular la APR.",
     "aprUnavailable": "No se pudo actualizar la APR. Se conserva el valor anterior.",
 
