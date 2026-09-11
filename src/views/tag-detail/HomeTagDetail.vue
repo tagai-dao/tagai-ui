@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import {onMounted, ref, computed, onActivated, nextTick, onUnmounted, watch, defineAsyncComponent} from "vue";
 import {useModalStore, useStateStore} from "@/stores/common";
@@ -218,6 +219,7 @@ watch([isMobile, () => route.params.id, () => chainStore.activeChainId], () => {
 })
 /** 社区侧栏 Teleport 目标（K 线已对 RH 未 list 开放，统一标准布局） */
 const normalSidebarTarget = ref<HTMLElement | null>(null)
+const tokenInfoTarget = ref<HTMLElement | null>(null)
 const communitySidebarTarget = computed(() => normalSidebarTarget.value)
 const onlineSpace = computed(() => {
   const spaces = useCurationStore().allSpaces;
@@ -466,7 +468,9 @@ onBeforeRouteLeave((to, from, next) => {
       class="min-h-0"
       :class="{ 'flex-1 overflow-hidden': isAiActive }"
     >
-      <BuyAndSellView v-if="!isAiActive && !isMobile" />
+      <BuyAndSellView v-if="!isAiActive && !isMobile">
+        <template #token-info><div ref="tokenInfoTarget" /></template>
+      </BuyAndSellView>
       <div
         class="min-h-0 web:sticky web:top-[0px]"
         :class="isAiActive ? 'h-full' : 'web:h-full web:min-h-full'"
@@ -538,8 +542,10 @@ onBeforeRouteLeave((to, from, next) => {
         <Teleport v-if="communitySidebarTarget" :to="communitySidebarTarget">
         <div class="web:w-[340px] web:min-w-[340px] hidden web:flex flex-col gap-2 h-full overflow-auto no-scroll-bar">
           <div class="flex flex-col gap-2">
-            <!-- 社区身份卡：始终置于部署推文卡上方，凸显社区身份 -->
+            <!-- 桌面交易时放在交易框上方；无交易框时保留在社区侧栏。 -->
+            <Teleport :to="tokenInfoTarget || 'body'" :disabled="!tokenInfoTarget">
             <div class="border-[1px] border-line bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
+              <TokenFavoriteButton :token="comStore.currentSelectedCommunity" class="self-center" />
               <CommunityLogo
                 :logo="comStore.currentSelectedCommunity?.logo"
                 :show-audio="!!onlineSpace"
@@ -572,7 +578,8 @@ onBeforeRouteLeave((to, from, next) => {
                 </div>
               </div>
             </div>
-            <!-- 部署推文卡：置于社区身份卡下方 -->
+            </Teleport>
+            <!-- 部署推文卡 -->
             <div v-if="deployTweetList.length>0"
                  class="border-[1px] border-line bg-grey-fa rounded-2xl px-3.5 flex gap-3 overflow-hide">
               <TweetItem :tweet="deployTweetList[0]" :show-market-cap="false">

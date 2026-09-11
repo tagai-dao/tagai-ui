@@ -36,6 +36,16 @@
   "tag": "Tag",
   "tagCoin": "Tag Coin",
   "bStocks": "bStocks",
+  "watchlist": {
+    "title": "Watchlist",
+    "add": "Add to watchlist",
+    "remove": "Remove from watchlist",
+    "empty": "No favorites yet. Tap the star on a token page to add it.",
+    "loginHint": "Log in to view and save your favorite tokens",
+    "loadError": "Unable to load your watchlist. Please try again.",
+    "saveError": "Unable to update your watchlist. Please try again.",
+    "retry": "Retry"
+  },
   "ip": "IPShare",
   "ip.priceSupply": "Price / Supply",
   "profile": "Profile",

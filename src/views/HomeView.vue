@@ -24,6 +24,7 @@ import MindShare from "@/views/mind-share/MindShare.vue";
 import {useAccountStore} from "@/stores/web3";
 import {useChainStore} from "@/stores/chain";
 import Predict from "@/views/predict/Index.vue";
+import TokenWatchlist from '@/views/home/TokenWatchlist.vue'
 import BasketsListView from '@/views/baskets/BasketsListView.vue'
 import {type HomeNewSource, TweetListType, useTweetsStore} from "@/stores/tweets";
 import {filterByActiveChain} from "@/utils/chainFilter";
@@ -385,10 +386,10 @@ watch([() => filterTagCoins(currentCoinList.value).length, loading, refreshing, 
 
 // Coin 子 Tab 切换：状态 + URL query 双向同步（支持 ?tab=bstocks / ?tab=ip 深链）
 const route = useRoute()
-function switchCoinTab(tab: 'tagCoin' | 'baskets' | 'bStocks') {
+function switchCoinTab(tab: 'watchlist' | 'tagCoin' | 'baskets' | 'bStocks') {
   stateStore.setCoinSubMenu(tab)
   if (route.name === 'home') {
-    router.replace({ query: tab === 'baskets' ? { tab: 'baskets' } : tab === 'bStocks' ? { tab: 'bstocks' } : {} })
+    router.replace({ query: { ...route.query, tab: tab.toLowerCase() } })
   }
   ensureCoinListLoaded()
 }
@@ -511,6 +512,10 @@ watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
 })
 
 const accStore = useAccountStore();
+watch(() => String(accStore.getAccountInfo?.twitterId || ''), (accountId, previousId) => {
+  if (accountId === previousId || route.name !== 'home') return
+  switchCoinTab(accountId ? 'watchlist' : 'tagCoin')
+})
 const modalStore = useModalStore()
 const onCreate = (type: GlobalModalType) => {
   if (!accStore.getAccountInfo?.twitterId && type == GlobalModalType.CreateTweet) {
@@ -612,23 +617,28 @@ const onCreate = (type: GlobalModalType) => {
     
     <!-- Home 菜单：TagCoin、Baskets、链对应的股票资产 -->
     <div v-if="activeMainMenu==='coin'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-2 items-center justify-between">
-      <div class="flex gap-2">
+      <div class="flex min-w-0 gap-1 web:gap-2 overflow-x-auto no-scroll-bar">
         <button
-          class="h-9 px-2 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
+          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors"
+          :class="coinSubMenu==='watchlist' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
+          @click="switchCoinTab('watchlist')"
+        >{{ $t('watchlist.title') }}</button>
+        <button
+          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors"
           :class="coinSubMenu==='tagCoin' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('tagCoin')"
         >
           {{ $t('tagCoin') || 'TagCoin' }}
         </button>
         <button
-          class="h-9 px-2 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
+          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors"
           :class="coinSubMenu==='baskets' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('baskets')"
         >
           {{ $t('baskets.menu') || 'Baskets' }}
         </button>
         <button
-          class="h-9 px-2 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors inline-flex items-center gap-1.5"
+          class="h-9 px-1.5 web:px-5 text-sm web:text-h3 whitespace-nowrap border-b-2 transition-colors inline-flex items-center gap-1.5"
           :class="coinSubMenu==='bStocks' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('bStocks')"
         >
@@ -691,6 +701,7 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     
+    <TokenWatchlist v-if="activeMainMenu==='coin' && coinSubMenu==='watchlist'" />
     <HomePost v-if="activeMainMenu==='tag'"/>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
       <div class="flex-1 min-h-0 px-3 mobile-scroll-container no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">

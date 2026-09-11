@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBasketDetail } from '@/composables/baskets/useBasketDetail'
@@ -16,6 +17,7 @@ import { listBasketTrades, type BasketTradeEvent } from '@/utils/baskets/api'
 const route = useRoute()
 const router = useRouter()
 const { detail, isLoading, hasError, errorMessage, load } = useBasketDetail()
+const headerMounted = ref(false)
 const legColors = ['#b84fc2', '#5368d9', '#ef7b45', '#27b8a2', '#8d67e8']
 const addressCopied = ref(false)
 const copiedLegAddress = ref('')
@@ -161,7 +163,11 @@ const refreshDetail = async (force = false) => {
 
 const openFees = () => router.push({ name: 'basket-fees', params: { address: address.value } })
 
-onMounted(() => void refreshDetail())
+onMounted(() => {
+  // TopBar is mounted before the route view; defer the Teleport until then.
+  headerMounted.value = true
+  void refreshDetail()
+})
 watch(address, () => {
   tradesRequestId += 1
   trades.value = []
@@ -177,6 +183,9 @@ onUnmounted(() => {
 
 <template>
   <div class="detail-page">
+    <Teleport v-if="headerMounted && detail && detail.address.toLowerCase() === address.toLowerCase()" to="#mobile-basket-favorite">
+      <TokenFavoriteButton :token="detail" kind="basket" />
+    </Teleport>
     <div class="detail-shell">
       <div class="page-actions">
         <button type="button" class="back-button" @click="router.push('/baskets')">
@@ -234,6 +243,9 @@ onUnmounted(() => {
 
           <div class="relative z-10 flex flex-col web:flex-row web:items-start web:justify-between gap-6">
             <div class="flex items-start gap-4 min-w-0">
+              <div class="hidden web:flex">
+                <TokenFavoriteButton :token="detail" kind="basket" />
+              </div>
               <BasketTokenLogo
                 :chain-id="detail.chainId"
                 :address="detail.address"

@@ -9,6 +9,7 @@ import { GlobalModalType } from "@/types";
 import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, setLocale, type LocaleCode } from '@/lang'
 import ChainSwitcher from '@/components/common/ChainSwitcher.vue'
+import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import { useCommunityStore } from '@/stores/community'
 import { usePageRouter } from '@/composables/useTools'
@@ -70,12 +71,16 @@ async function createTagCoin() {
       <span class="truncate text-sm font-semibold text-content" :title="headerCommunity.tick">{{ headerCommunity.tick }}</span>
     </div>
     <div class="flex shrink-0 items-center gap-3 web:gap-6">
-      <!-- 移动端：链切换 + 搜索、通知 -->
+      <!-- 移动端详情页用收藏替换链切换和搜索，保留通知入口。 -->
       <div class="flex items-center gap-3 web:hidden">
-        <ChainSwitcher variant="compact" />
-        <img class="w-6 cursor-pointer"
-             src="~@/assets/icons/icon-search.svg" alt=""
-             @click="modalVisible=true">
+        <TokenFavoriteButton v-if="route.name === 'tag-detail'" :token="headerCommunity" />
+        <span v-else-if="route.name === 'basket-detail'" id="mobile-basket-favorite" class="flex items-center" />
+        <template v-else>
+          <ChainSwitcher variant="compact" />
+          <img class="w-6 cursor-pointer"
+               src="~@/assets/icons/icon-search.svg" alt=""
+               @click="modalVisible=true">
+        </template>
         <div v-if="!!useAccountStore().getAccountInfo?.twitterId" class="relative">
           <img class="w-6 cursor-pointer"
                src="~@/assets/icons/icon-notification.svg" alt=""

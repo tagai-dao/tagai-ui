@@ -36,6 +36,16 @@
   "tag": "Tag",
   "tagCoin": "标签币",
   "bStocks": "bStocks",
+  "watchlist": {
+    "title": "自选",
+    "add": "加入自选",
+    "remove": "取消收藏",
+    "empty": "暂无自选代币，点击代币详情页的星标即可收藏",
+    "loginHint": "登录后查看和收藏自选代币",
+    "loadError": "自选列表加载失败，请重试",
+    "saveError": "收藏更新失败，请重试",
+    "retry": "重试"
+  },
   "ip": "IPShare",
   "ip.priceSupply": "价格 / 供应量",
   "profile": "我的",

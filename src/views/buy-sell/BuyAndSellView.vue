@@ -883,13 +883,17 @@ onMounted(async () => {
       :class="showDesktopChart ? '' : 'web:justify-end'"
     >
       <div v-if="showDesktopChart"
-           class="w-full h-[360px] hidden web:flex min-w-[320px] flex-1 gap-3">
+           class="w-full hidden web:flex min-w-[320px] flex-1 gap-3"
+           :class="$slots['token-info'] ? 'min-h-[360px] self-stretch' : 'h-[360px]'">
         <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
         <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
         frameborder="0" class="w-full h-full"></iframe>
 
       </div>
-      <div v-if="comStore.currentSelectedCommunity?.tick && comStore.currentSelectedCommunity?.tick !== '币安小说'" class="bg-surface py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full" :class="props.tick?'':'web:w-[340px]'">
+      <div v-if="comStore.currentSelectedCommunity?.tick && comStore.currentSelectedCommunity?.tick !== '币安小说'"
+           class="flex flex-col gap-2 w-full" :class="props.tick ? '' : 'web:w-[340px] web:min-w-[340px]'">
+        <slot name="token-info" />
+        <div class="bg-surface py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >
@@ -1122,6 +1126,7 @@ onMounted(async () => {
         </div>
         <div v-if="showFillInfo" class="text-sm text-red-e6 text-center">
           {{ $t('buyAndSell.fillInfoTip') }}
+        </div>
         </div>
       </div>
     </div>

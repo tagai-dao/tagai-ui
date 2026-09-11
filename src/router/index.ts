@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { resolveCoinTab } from '@/utils/coinTabs'
 import HomeView from '../views/HomeView.vue'
 import { useAccountStore } from '@/stores/web3'
 import { useModalStore, useStateStore } from '@/stores/common'
@@ -52,7 +53,7 @@ const router = createRouter({
       redirect: to => ({
         name: to.query.tab === 'ip' ? 'buidler' : 'home',
         params: { chain: to.params.chain },
-        query: to.query.tab === 'ip' ? { tab: 'ipshare' } : to.query.tab === 'bstocks' ? { tab: 'bstocks' } : {},
+        query: to.query.tab === 'ip' ? { tab: 'ipshare' } : to.query,
       }),
     },
     {
@@ -238,7 +239,7 @@ router.beforeEach(async (to, from, next) => {
     stateStore.setActiveMainMenu(to.meta.mainMenu as 'tag' | 'coin' | 'prediction')
     if (to.meta.mainMenu === 'coin') {
       const coinTab = to.query.tab
-      stateStore.setCoinSubMenu(coinTab === 'baskets' ? 'baskets' : coinTab === 'bstocks' ? 'bStocks' : 'tagCoin')
+      stateStore.setCoinSubMenu(resolveCoinTab(coinTab, !!account?.twitterId))
     }
   }
   next();

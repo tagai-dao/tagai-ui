@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
@@ -286,6 +287,7 @@ onUnmounted(() => { document.body.style.overflow = previousBodyOverflow })
             </UserAvatar>
 
             <div class="flex items-center gap-3 py-4">
+              <TokenFavoriteButton :token="asset" />
               <CommunityLogo :logo="asset.logo" size="md" :shadow="false" class="!rounded-full" />
               <div class="min-w-0 flex-1"><button type="button" class="block max-w-full truncate text-left text-xl font-bold text-content hover:text-orange-normal" :aria-label="`Open ${asset.tick} community`" @click.stop="openCommunity">{{ asset.name || asset.tick }}</button><span class="text-sm text-grey-64">{{ asset.listed ? 'Graduated' : 'Bonding' }}</span></div>
               <div class="text-right"><strong class="block text-xl tabular-nums text-content">{{ formatUsd(currentPrice) }}</strong><span class="text-sm font-semibold tabular-nums" :class="trendUp ? 'text-up' : 'text-down'">{{ trendUp ? '△ +' : '▽ ' }}{{ selectedChange.toFixed(2) }}%</span><span v-if="marketCapUsd" class="mt-0.5 block text-xs text-grey-64">{{ formatUsdCompact(marketCapUsd) }} MC</span></div>
