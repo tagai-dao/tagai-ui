@@ -77,8 +77,8 @@ const tagCoinSource = ref<TagCoinSource>('all')
 const tagCoinSourceTabs: Array<{ value: TagCoinSource; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'memeetf', label: 'Meme ETF' },
-  { value: 'launch', label: 'Social Launch' },
   { value: 'import', label: 'Imported Token' },
+  { value: 'launch', label: 'Social Launch' },
 ]
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
@@ -613,13 +613,13 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     <!-- Home 菜单：TagCoin、Baskets、链对应的股票资产 -->
-    <div v-if="activeMainMenu==='coin'" class="token-navigation px-3 w-full web:max-w-[1240px] web:mx-auto flex gap-1 web:gap-2 items-center justify-between">
-      <div class="token-navigation-tabs flex flex-1 web:flex-none min-w-0 justify-between web:gap-2">
+    <div v-if="activeMainMenu==='coin'" class="token-navigation px-3 w-full web:max-w-[1240px] web:mx-auto border-b border-line">
+      <div class="token-navigation-tabs grid grid-cols-4 min-w-0" aria-label="Token categories">
         <button
           class="token-navigation-tab h-9 px-0.5 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
           :class="coinSubMenu==='watchlist' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
           @click="switchCoinTab('watchlist')"
-        >{{ $t('watchlist.title') }}</button>
+        ><span aria-hidden="true" class="mr-1">☆</span>{{ $t('watchlist.title') }}</button>
         <button
           class="token-navigation-tab h-9 px-0.5 web:px-5 text-h3 whitespace-nowrap border-b-2 transition-colors"
           :class="coinSubMenu==='tagCoin' ? 'border-orange-normal text-orange-normal' : 'border-transparent text-black'"
@@ -643,22 +643,29 @@ const onCreate = (type: GlobalModalType) => {
           {{ chainStore.deployment.key === 'rh' ? 'Stocks' : ($t('bStocks') || 'bStocks') }}
         </button>
       </div>
+    </div>
+    <!-- Coin secondary navigation: fixed sort control followed by scrollable sources. -->
+    <div v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'"
+      class="token-secondary-navigation flex items-center gap-2 w-full px-3 pb-2 pt-1 web:mx-auto web:max-w-[1240px] web:pb-3 web:pt-2">
       <!-- 排序 -->
       <div class="flex-shrink-0 flex items-center gap-3">
         <el-dropdown
           v-if="coinSubMenu==='tagCoin'"
           trigger="click"
-          placement="bottom-end"
+          placement="bottom-start"
           popper-class="c-select-popper rounded-xl"
           @command="selectCoinListType"
         >
           <button
             type="button"
-            class="token-navigation-sort h-9 max-w-[100px] web:max-w-[120px] rounded-full bg-white px-1.5 web:px-3 inline-flex items-center justify-between gap-1 text-h3 text-black"
+            class="token-navigation-sort h-10 w-10 shrink-0 rounded-xl border border-line bg-surface inline-flex items-center justify-center text-content hover:border-orange-normal"
             aria-haspopup="menu"
+            :aria-label="`Sort: ${$t(currentCoinListTypeLabelKey)}`"
+            :title="$t(currentCoinListTypeLabelKey)"
           >
-            <span class="truncate">{{ $t(currentCoinListTypeLabelKey) }}</span>
-            <i-ep-arrow-down class="w-3.5 h-3.5 shrink-0" />
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 6h16M7 12h10M10 18h4" />
+            </svg>
           </button>
           <template #dropdown>
             <el-dropdown-menu>
@@ -667,29 +674,22 @@ const onCreate = (type: GlobalModalType) => {
                 :key="option.value"
                 :command="option.value"
                 :class="option.value === listType ? 'font-bold bg-surface' : ''"
-              >{{ $t(option.labelKey) }}</el-dropdown-item>
+              ><span v-if="option.value === listType" aria-hidden="true" class="mr-2">✓</span>{{ $t(option.labelKey) }}</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </div>
-    </div>
-
-    <!-- TagCoin 分类：All / MemeETF / Social Launch / Import Token -->
-    <div
-      v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'"
-      class="w-full px-3 pb-2 pt-1 web:mx-auto web:max-w-[1240px] web:pb-3 web:pt-2"
-    >
-      <div class="flex gap-2 overflow-x-auto no-scroll-bar" role="tablist" aria-label="TagCoin source">
+      <div class="flex min-w-0 flex-1 gap-2 overflow-x-auto no-scroll-bar" role="tablist" aria-label="TagCoin source">
         <button
           v-for="source in tagCoinSourceTabs"
           :key="source.value"
           type="button"
           role="tab"
           :aria-selected="tagCoinSource === source.value"
-          class="h-9 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors web:h-10 web:px-5"
+          class="h-10 shrink-0 rounded-xl border px-3 text-sm font-semibold transition-colors web:px-5"
           :class="tagCoinSource === source.value
-            ? 'border-orange-normal bg-orange-normal text-white shadow-sm'
-            : 'border-line bg-white text-content hover:border-orange-normal/50 hover:text-orange-normal dark:bg-surface-2'"
+            ? 'border-orange-normal bg-surface-2 text-orange-normal'
+            : 'border-line bg-surface text-muted hover:border-orange-normal/50 hover:text-orange-normal'"
           @click="switchTagCoinSource(source.value)"
         >
           {{ source.label }}
@@ -796,10 +796,17 @@ const onCreate = (type: GlobalModalType) => {
 
 <style lang="scss">
 
+.token-navigation .token-navigation-tab {
+  height: 48px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.token-navigation .token-navigation-tab.border-transparent { color: var(--text-muted, #787f82); }
 @media (max-width: 803px) {
-  .token-navigation .token-navigation-tab,
-  .token-navigation .token-navigation-sort {
-    font-size: clamp(12px, calc(7.273vw - 11.273px), 16px);
+  .token-navigation .token-navigation-tab {
+    font-size: clamp(14px, 4vw, 16px);
   }
   .token-navigation-tab {
     flex-shrink: 0;
