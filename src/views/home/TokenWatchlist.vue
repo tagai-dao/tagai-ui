@@ -4,20 +4,19 @@ import { useRouter } from 'vue-router'
 import { useTokenFavoritesStore } from '@/stores/tokenFavorites'
 import { useChainStore } from '@/stores/chain'
 import { useModalStore } from '@/stores/common'
-import { GlobalModalType } from '@/types'
+import { GlobalModalType, type Community } from '@/types'
 import type { FavoriteToken } from '@/apis/tokenFavorites'
-import CommunityLogo from '@/components/common/CommunityLogo.vue'
+import TagListItem from '@/components/home/TagListItem.vue'
 import BasketTokenLogo from '@/views/baskets/components/BasketTokenLogo.vue'
 import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import { getChainPath } from '@/config/chains'
 import { useWatchlistMetrics } from '@/composables/useWatchlistMetrics'
-import { formatUsdCompact } from '@/utils/format'
 
 const favorites = useTokenFavoritesStore()
 const chain = useChainStore()
 const router = useRouter()
 const refreshing = ref(false)
-const { values: metricValues, refresh: refreshMetrics } = useWatchlistMetrics()
+const { values: metricValues, communities, prices, refresh: refreshMetrics } = useWatchlistMetrics()
 async function load(force = false) {
   try {
     await favorites.load(force)
@@ -25,12 +24,11 @@ async function load(force = false) {
   } catch { /* Render retry state below. */ }
   finally { refreshing.value = false }
 }
-function metricText(token: FavoriteToken) {
-  const value = metricValues.value[token.address.toLowerCase()]
-  if (!value) return '—'
-  if (token.kind !== 'basket') return formatUsdCompact(value)
-  const digits = value >= 1 ? 2 : 4
-  return `$${value.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`
+function cardCommunity(token: FavoriteToken): Community {
+  return communities.value[token.address.toLowerCase()] || {
+    token: token.address, chainId: token.chainId, tick: token.symbol,
+    name: token.name || token.symbol, logo: token.logo, description: token.name || token.symbol,
+  } as Community
 }
 function open(token: FavoriteToken) {
   const path = token.kind === 'basket' ? `/baskets/${token.address}` : `/tag-detail/${encodeURIComponent(token.symbol)}`
@@ -61,23 +59,17 @@ onActivated(() => void load())
         <p>{{ $t('watchlist.empty') }}</p>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-        <article v-for="token in favorites.entries" :key="`${token.chainId}:${token.address}`"
-          class="flex items-center gap-2 rounded-2xl border border-line bg-surface p-3">
-          <TokenFavoriteButton :token="token" :kind="token.kind" />
-          <button type="button" class="flex min-w-0 flex-1 items-center gap-3 text-left" @click="open(token)">
-            <BasketTokenLogo v-if="token.kind === 'basket'" :chain-id="token.chainId" :address="token.address" :symbol="token.symbol" :size="40" />
-            <CommunityLogo v-else :logo="token.logo" size="md" :shadow="false" />
-            <span class="min-w-0">
-              <strong class="block truncate text-content">{{ token.name || token.symbol }}</strong>
-              <span class="block truncate text-sm text-muted">{{ token.symbol }} <span v-if="token.kind === 'basket'">· {{ $t('baskets.menu') }}</span></span>
-              <span class="block text-xs text-muted">{{ token.address.slice(0, 6) }}…{{ token.address.slice(-4) }}</span>
-              <span class="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm">
-                <span class="text-muted">{{ token.kind === 'basket' ? 'NAV' : $t('marketCap') }}</span>
-                <strong class="font-semibold tabular-nums text-orange-normal">{{ metricText(token) }}</strong>
-              </span>
-            </span>
-          </button>
-        </article>
+        <TagListItem v-for="token in favorites.entries" :key="`${token.chainId}:${token.address}`"
+          :community="cardCommunity(token)"
+          :market-cap-usd="metricValues[token.address.toLowerCase()] || 0"
+          :price-usd="(token.kind === 'basket' ? metricValues : prices)[token.address.toLowerCase()] || 0"
+          :metric-label="token.kind === 'basket' ? 'NAV' : undefined"
+          @click="open(token)" @keydown.enter.prevent="open(token)">
+          <template v-if="token.kind === 'basket'" #logo="{ size }">
+            <BasketTokenLogo :chain-id="token.chainId" :address="token.address" :symbol="token.symbol" :size="size" />
+          </template>
+          <template #logo-badge><TokenFavoriteButton :token="token" :kind="token.kind" badge /></template>
+        </TagListItem>
       </div>
     </van-pull-refresh>
   </div>

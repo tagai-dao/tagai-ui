@@ -32,11 +32,12 @@ function fixture(fetcher) {
 const token = { address: `0x${'ab'.repeat(20)}`, chainId: 56, kind: 'community', name: 'Imported', symbol: 'TEST', logo: '' }
 const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r }); return { promise, resolve } }
 
-test('default tabs follow login status and explicit selections survive navigation', () => {
+test('Coin is the default for every login state and explicit selections survive navigation', () => {
   const { resolveCoinTab } = loadTs('../src/utils/coinTabs.ts')
   assert.equal(resolveCoinTab(undefined, false), 'tagCoin')
-  assert.equal(resolveCoinTab(undefined, true), 'watchlist')
+  assert.equal(resolveCoinTab(undefined, true), 'tagCoin')
   for (const loggedIn of [true, false]) {
+    assert.equal(resolveCoinTab('unknown', loggedIn), 'tagCoin')
     assert.equal(resolveCoinTab('tagcoin', loggedIn), 'tagCoin')
     assert.equal(resolveCoinTab('watchlist', loggedIn), 'watchlist')
     assert.equal(resolveCoinTab('baskets', loggedIn), 'baskets')
@@ -113,7 +114,14 @@ test('unauthenticated and wrong-chain mutations do not send requests', async () 
   assert.equal(calls.length, 0)
 })
 
-for (const file of ['layout/TopBar.vue', 'components/common/TokenFavoriteButton.vue', 'views/home/TokenWatchlist.vue', 'views/tag-detail/HomeTagDetail.vue', 'views/baskets/BasketDetailView.vue', 'components/feed/FeedTokenDetailSheet.vue']) {
+test('session restoration cannot redirect Coin to Watchlist', () => {
+  const source = readFileSync(new URL('../src/views/HomeView.vue', import.meta.url), 'utf8')
+  assert.doesNotMatch(source, /switchCoinTab\(accountId\s*\?/)
+  assert.match(source, /token-navigation-tab/)
+  assert.doesNotMatch(source, /\$t\('tagCoin'\)/)
+})
+
+for (const file of ['views/HomeView.vue', 'layout/TopBar.vue', 'components/common/TokenFavoriteButton.vue', 'views/home/TokenWatchlist.vue', 'views/tag-detail/HomeTagDetail.vue', 'views/baskets/BasketDetailView.vue', 'components/feed/FeedTokenDetailSheet.vue']) {
   test(`${file} compiles`, () => {
     const source = readFileSync(new URL(`../src/${file}`, import.meta.url), 'utf8')
     const { descriptor, errors } = parse(source, { filename: file })

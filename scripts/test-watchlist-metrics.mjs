@@ -19,7 +19,7 @@ function fixture(overrides = {}, entries = [community, basket]) {
     getEthPrice: async chainId => { calls.push(['native', chainId]); return 700 },
     getCommunityDetail: async (symbol, chainId) => {
       calls.push(['community', symbol, chainId])
-      return { token: community.address, chainId, marketCap: 33 }
+      return { token: community.address, chainId, marketCap: 33, price: 0.001, priceChange24h: 12 }
     },
     getBasketPerformances: async (addresses, chainId) => {
       calls.push(['nav', addresses, chainId])
@@ -49,6 +49,8 @@ test('converts native market cap to USD but leaves basket NAV in USD', async () 
   try {
     await f.metrics.refresh()
     assert.equal(f.metrics.values.value[community.address], 23100)
+    assert.ok(Math.abs(f.metrics.prices.value[community.address] - 0.7) < 1e-12)
+    assert.equal(f.metrics.communities.value[community.address].priceChange24h, 12)
     assert.equal(f.metrics.values.value[basket.address], 1.2345)
     assert.equal(f.calls.filter(call => call[0] === 'nav').length, 1)
     assert.ok(f.calls.every(call => call.at(-1) === 56))

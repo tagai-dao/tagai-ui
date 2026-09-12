@@ -8,9 +8,11 @@ import { useInterval } from "@/composables/useTools";
 import { useWindowSize } from '@vant/use';
 import { useRoute } from "vue-router";
 import { useTheme } from "@/composables/useTheme";
+import { periodChange } from '@/utils/communityChartPeriod'
 
 const { width, height } = useWindowSize();
-const props = defineProps(['tick', 'chartId'])
+const props = defineProps(['tick', 'chartId', 'period', 'changeSeconds'])
+const emit = defineEmits<{ change: [value: number | null] }>()
 const { setInter } = useInterval();
 const { isDark } = useTheme()
 let tick = ref('');
@@ -161,6 +163,8 @@ const applyChartTheme = () => {
 }
 
 function updateChart() {
+  if (props.changeSeconds) emit('change', periodChange(originalData, Number(props.changeSeconds)))
+  if (!chart.value) return
   if(activeTab.value ==='5min') chart.value.applyNewData(data5min.values);
   else if(activeTab.value ==='1h') chart.value.applyNewData(data1h.values);
   else if(activeTab.value ==='1d') chart.value.applyNewData(data1day.values);
@@ -271,6 +275,12 @@ onMounted(async () => {
 watch(()=> activeTab.value, () => {
   updateChart()
 })
+watch(() => props.period, value => {
+  if (value && timeOptions.includes(value)) activeTab.value = value
+}, { immediate: true })
+watch(() => props.changeSeconds, () => {
+  if (props.changeSeconds) emit('change', periodChange(originalData, Number(props.changeSeconds)))
+})
 
 watch(() => width.value, () => {
   chart.value.resize()
@@ -300,7 +310,7 @@ watch(() => useStateStore().ethPrice, (newPrice, oldPrice) => {
   <div class="pt-4 px-4 pb-5 rounded-2xl min-h-[400px] w-full bg-surface flex flex-col">
     <div class="mb-4 px-3 flex flex-wrap justify-between gap-y-2 gap-x-4">
       <span class="font-medium text-content text-xl">{{tick + '/USDT'}}</span>
-      <div class="flex-1 flex justify-end items-center gap-4">
+      <div v-if="!period" class="flex-1 flex justify-end items-center gap-4">
         <button v-for="t of timeOptions" :key="t" class="flex items-center gap-1"
                 @click="activeTab=t">
           <span class="text-sm font-light text-muted">{{t}}</span>

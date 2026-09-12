@@ -458,7 +458,7 @@ onBeforeRouteLeave((to, from, next) => {
 <template>
   <div
        class="h-full mobile-scroll-container no-scroll-bar flex flex-col py-2 gap-3 px-3 relative"
-       :class="isAiActive ? 'overflow-hidden' : 'pb-20 web:pb-2'"
+       :class="isAiActive ? 'overflow-hidden' : 'community-detail-content web:pb-2'"
        ref="pageScrollRef" @scroll="pageScroll(pageScrollRef, 'page')">
     <PageDataStatus :paths="['/community/detail']" :scope="String(route.params.id)" @retry="reloadCommunityData" @updated="refreshCommunityDetail" />
     <div v-if="isMobile && !isAiActive" class="shrink-0 min-w-0" ref="topBannerContainerRef">
@@ -755,7 +755,10 @@ onBeforeRouteLeave((to, from, next) => {
 
 <style scoped>
 .community-trade-button {
-  bottom: calc(4.25rem + var(--safe-area-bottom, 0px));
+  bottom: calc(0.75rem + var(--safe-area-bottom, 0px));
+}
+@media (max-width: 803px) {
+  .community-detail-content { padding-bottom: calc(4.5rem + var(--safe-area-bottom, 0px)); }
 }
 
 .gradient-text {

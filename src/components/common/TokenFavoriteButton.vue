@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n'
 const props = defineProps<{
   token?: { token?: string; address?: string; name?: string; tick?: string; symbol?: string; logo?: string | null; chainId?: number | null } | null
   kind?: FavoriteToken['kind']
+  badge?: boolean
 }>()
 const favorites = useTokenFavoritesStore()
 const { t } = useI18n()
@@ -41,7 +42,7 @@ async function toggle() {
 </script>
 
 <template>
-  <button v-if="address" type="button" class="token-favorite" :class="{ selected }"
+  <button v-if="address" type="button" class="token-favorite" :class="{ selected, badge }"
     :disabled="busy" :aria-busy="busy" :aria-pressed="selected"
     :aria-label="$t(selected ? 'watchlist.remove' : 'watchlist.add')"
     :title="$t(selected ? 'watchlist.remove' : 'watchlist.add')" @click.stop="toggle">
@@ -54,6 +55,8 @@ async function toggle() {
 <style scoped>
 .token-favorite { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; color: var(--text-muted, #787f82); border-radius: 10px; transition: color .15s, background .15s; }
 .token-favorite.selected { color: #e9bd58; }
+.token-favorite.badge { width: 28px; height: 28px; border-radius: 50%; background: var(--surface, #fff); box-shadow: 0 1px 4px #0002; }
+.token-favorite.badge svg { width: 21px; height: 21px; }
 .token-favorite:hover { background: rgba(233, 189, 88, .1); }
 .token-favorite:focus-visible { outline: 2px solid #e9bd58; outline-offset: 2px; }
 .token-favorite:disabled { cursor: wait; opacity: .55; }
