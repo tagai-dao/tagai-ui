@@ -7,6 +7,7 @@ import { useAccountStore } from '@/stores/web3';
 import { parseAbi, isAddress, zeroAddress, type Abi, type Address, type Hex } from 'viem';
 import tradeAbi from './TradeRouter.json';
 import { loadSnapshot } from './snapshot';
+import { requestMetadata } from './metadataRequest';
 import { QuoteError, type Metadata, type Snapshot, type Plan, type Leg } from './types';
 const ERC20 = parseAbi(['function allowance(address,address) view returns(uint256)', 'function approve(address,uint256) returns(bool)']);
 export type Quote = {
@@ -17,6 +18,7 @@ export type Quote = {
 export function createQuoteSession() {
     let metadata: Metadata | undefined, snapshot: Snapshot | undefined, previous: Plan | undefined, worker: Worker | undefined;
     let generation = 0;
+    let metadataController = new AbortController();
     let rejectPending: ((reason: Error) => void) | undefined;
     let metadataPending: {
         key: string;
@@ -26,7 +28,7 @@ export function createQuoteSession() {
         promise: Promise<Snapshot>;
     } | undefined;
     const cancel = () => { generation++; worker?.terminate(); worker = undefined; rejectPending?.(new QuoteError('V13_QUOTE_CANCELLED')); rejectPending = undefined; };
-    const reset = () => { cancel(); metadata = undefined; snapshot = undefined; previous = undefined; metadataPending = undefined; snapshotPending = undefined; };
+    const reset = () => { cancel(); metadataController.abort(); metadataController = new AbortController(); metadata = undefined; snapshot = undefined; previous = undefined; metadataPending = undefined; snapshotPending = undefined; };
     async function quote(token: Address, isBuy: boolean, amount: bigint): Promise<Quote> {
         cancel();
         const id = generation;
@@ -41,13 +43,15 @@ export function createQuoteSession() {
                 metadataPending = { key, promise: (async () => {
                         let r: any;
                         try {
-                            r = await get(`${API_BASE_URL}/pump/v13/metadata/${token}`, {}, {
-                                headers: { 'X-Chain-Id': '56' }, timeout: 10_000, 'axios-retry': { retries: 0 },
-                            });
-                        } catch {
+                            const signal = metadataController.signal;
+                            r = await requestMetadata(() => get(`${API_BASE_URL}/pump/v13/metadata/${token}`, {}, {
+                                headers: { 'X-Chain-Id': '56' }, timeout: 10_000, signal, 'axios-retry': { retries: 0 },
+                            }), signal);
+                        } catch (error) {
+                            if ((error as Error).message === 'V13_QUOTE_CANCELLED') throw error;
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
                         }
-                        if (r?.c !== 0 || !r?.d || r.d.token.toLowerCase() !== key)
+                        if (r?.c !== 0 || typeof r?.d?.token !== 'string' || r.d.token.toLowerCase() !== key)
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
                         return { ...r.d, executor: getChainDeployment(56).contracts.tradeRouter13 ?? null } as Metadata;
                     })() };
