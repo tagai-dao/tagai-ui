@@ -89,6 +89,7 @@ const v13Message = computed(() => {
   if (v13Error.value === 'V13_LISTING_PENDING') return t('v13Trade.pending')
   if (v13Error.value === 'V13_NOT_LISTED') return t('v13Trade.notListed')
   if (v13Error.value === 'V13_METADATA_UNAVAILABLE') return t('v13Trade.metadataUnavailable')
+  if (v13Error.value === 'V13_METADATA_PREPARING') return t('v13Trade.metadataPreparing')
   if (v13Error.value) return t('v13Trade.unavailable')
   if (v13Quote.value && !v13Quote.value.snapshot.executable) return t('v13Trade.notDeployed')
   return ''

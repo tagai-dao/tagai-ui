@@ -4,6 +4,7 @@ import {API_BASE_URL} from '@/config/api'
 import {getReadOnlyClient} from '@/utils/wallets'
 import {type Abi,type Address} from 'viem'
 import {loadSnapshot} from './snapshot'
+import {quoteGasPrice} from './gas-price'
 import {type Quote} from './client'
 import {type Metadata} from './types'
 import {type ZapPlan} from './math'
@@ -13,11 +14,14 @@ export type ZapQuote={quote:Quote;zap:ZapPlan;amount:bigint;component:number}
 export async function quoteZap(token:Address,component:number,amount:bigint,signal?:AbortSignal):Promise<ZapQuote>{
  const check=()=>{if(signal?.aborted)throw new Error('V13_QUOTE_CANCELLED')}
  check()
- const result:any=await get(`${API_BASE_URL}/pump/v13/metadata/${token}`,{},{headers:{'X-Chain-Id':'56'},signal})
+ let result:any
+ try { result=await get(`${API_BASE_URL}/pump/v13/metadata/${token}`,{},{headers:{'X-Chain-Id':'56'},signal,timeout:10000,'axios-retry':{retries:0}}) }
+ catch(error:any){if(error?.data?.error==='V13_METADATA_PREPARING')throw new Error('V13_METADATA_PREPARING');throw error}
  check()
+ if(result?.error==='V13_METADATA_PREPARING')throw new Error('V13_METADATA_PREPARING')
  if(result?.c!==0)throw new Error('V13_METADATA_UNAVAILABLE')
  const m={...result.d,executor:getChainDeployment(56).contracts.tradeRouter13??null} as Metadata,client=getReadOnlyClient(56)
- const gas=await client.getGasPrice()
+ const gas=await quoteGasPrice(client)
  check()
  const s=await loadSnapshot(client,m,gas)
  check()

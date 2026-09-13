@@ -14,6 +14,8 @@ export async function requestMetadata(
       return result
     } catch (error: any) {
       if (signal.aborted) throw new Error('V13_QUOTE_CANCELLED')
+      // Background cache preparation is not a transport failure; honor its retry hint in the UI.
+      if ((error?.data?.error ?? error?.response?.data?.error) === 'V13_METADATA_PREPARING') throw error
       const status = Number(error?.status ?? error?.response?.status)
       if (attempt === 2 || !(status === 408 || status === 429 || status >= 500 || error?.code === 'ECONNABORTED')) throw error
       await pause()

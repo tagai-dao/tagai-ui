@@ -260,6 +260,18 @@ test('continuous input coalesces metadata/current state and cancels the stale qu
     assert.equal(f.count(), 1);
     session.reset();
 });
+test('metadata not ready performs no chain read; legacy metadata retry uses one state multicall',async()=>{
+    const f=snapshotFixture();f.m.generatedAt=Date.now();f.m.configHash=hash(33);
+    let ready=false,gasCalls=0,getCount=0;
+    globalThis.__v13Deps={get:async()=>{getCount++;if(!ready)throw {status:503,data:{error:'V13_METADATA_PREPARING'}};return {c:0,d:f.m}},
+        client:{...f.client,getGasPrice:async()=>{gasCalls++;return 1n}}};
+    const session=createQuoteSession();
+    await assert.rejects(session.quote(token,false,E),/V13_METADATA_PREPARING/);
+    assert.equal(f.count(),0);assert.equal(gasCalls,0);assert.equal(getCount,1);
+    ready=true;const q=await session.quote(token,false,E);
+    assert.ok(q.plan.amountOut>0n);assert.equal(f.count(),1);assert.equal(getCount,2);
+    session.reset();
+});
 test('trade calldata carries subject, exact split sum, per-leg and global minimums', () => {
     const { m, s } = fixture();
     m.executor = address(90);

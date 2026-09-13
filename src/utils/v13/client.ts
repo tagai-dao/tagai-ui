@@ -8,6 +8,7 @@ import { parseAbi, isAddress, zeroAddress, type Abi, type Address, type Hex } fr
 import tradeAbi from './TradeRouter.json';
 import { loadSnapshot } from './snapshot';
 import { requestMetadata } from './metadataRequest';
+import { quoteGasPrice } from './gas-price';
 import { QuoteError, type Metadata, type Snapshot, type Plan, type Leg } from './types';
 const ERC20 = parseAbi(['function allowance(address,address) view returns(uint256)', 'function approve(address,uint256) returns(bool)']);
 export type Quote = {
@@ -47,10 +48,12 @@ export function createQuoteSession() {
                             r = await requestMetadata(() => get(`${API_BASE_URL}/pump/v13/metadata/${token}`, {}, {
                                 headers: { 'X-Chain-Id': '56' }, timeout: 10_000, signal, 'axios-retry': { retries: 0 },
                             }), signal);
-                        } catch (error) {
+                        } catch (error: any) {
                             if ((error as Error).message === 'V13_QUOTE_CANCELLED') throw error;
+                            if (error?.data?.error === 'V13_METADATA_PREPARING') throw new QuoteError('V13_METADATA_PREPARING');
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
                         }
+                        if (r?.error === 'V13_METADATA_PREPARING') throw new QuoteError('V13_METADATA_PREPARING');
                         if (r?.c !== 0 || typeof r?.d?.token !== 'string' || r.d.token.toLowerCase() !== key)
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
                         return { ...r.d, executor: getChainDeployment(56).contracts.tradeRouter13 ?? null } as Metadata;
@@ -78,7 +81,8 @@ export function createQuoteSession() {
             const client = getReadOnlyClient(56);
             const key = metadata.configHash;
             if (!snapshotPending || snapshotPending.key !== key)
-                snapshotPending = { key, promise: ((m: Metadata) => client.getGasPrice().then(gas => loadSnapshot(client, m, gas)))(metadata) };
+                snapshotPending = { key, promise: ((m: Metadata) => Promise.all([quoteGasPrice(client), loadSnapshot(client, m, 0n)])
+                    .then(([gas, state]) => ({ ...state, gasPrice: gas })))(metadata) };
             const pending = snapshotPending;
             let value: Snapshot;
             try {

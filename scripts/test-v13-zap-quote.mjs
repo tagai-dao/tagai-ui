@@ -36,6 +36,11 @@ test('cancelled input never starts API work',async()=>{
  const controller=new AbortController();controller.abort();
  await assert.rejects(quoteZap(token,0,1n,controller.signal),/QUOTE_CANCELLED/);assert.equal(getCalls,0);
 })
+test('SQL metadata preparing never falls back to chain discovery',async()=>{
+ globalThis.__zap.get=async()=>{throw {status:503,data:{error:'V13_METADATA_PREPARING'}}};
+ await assert.rejects(quoteZap(token,0,1n),/V13_METADATA_PREPARING/);
+ assert.equal(snapshotCalls,0);assert.equal(workers.length,0);
+})
 test('cancel during metadata prevents a later pool read',async()=>{
  const started=deferred(),result=deferred(),controller=new AbortController();
  globalThis.__zap.get=async(_url,_params,config)=>{assert.equal(config.signal,controller.signal);started.resolve();return result.promise};

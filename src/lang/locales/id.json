@@ -51,6 +51,7 @@
     "collapse": "Tutup tindakan"
   },
   "v13Trade": {
+    "metadataPreparing": "Data kuotasi sedang disiapkan atau diperbarui. Silakan segarkan kuotasi sebentar lagi.",
     "metadataUnavailable": "Data pool sementara tidak tersedia. Segarkan kuotasi sebentar lagi; jumlah transaksi tidak perlu dikurangi."
   },
   "Square": "Beranda",

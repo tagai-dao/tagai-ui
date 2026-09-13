@@ -1296,6 +1296,7 @@
     "active": "Active"
   },
   "v13Trade": {
+    "metadataPreparing": "Quote data is being prepared or refreshed. Please refresh the quote shortly.",
     "metadataUnavailable": "Pool data is temporarily unavailable. Refresh the quote shortly; there is no need to reduce the amount.",
     "pending": "Waiting for listing; trading is unavailable",
     "notListed": "This trading entry is for listed tokens",

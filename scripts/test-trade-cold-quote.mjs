@@ -31,6 +31,13 @@ test('auth and invalid metadata are not blindly retried', async () => {
   assert.equal(n, 1)
   assert.deepEqual(await requestMetadata(async () => ({ c: 1, m: 'V13_UNKNOWN_TOKEN' }), signal()), { c: 1, m: 'V13_UNKNOWN_TOKEN' })
 })
+test('background route preparation is surfaced immediately instead of rapid transport retries', async () => {
+  let n = 0
+  await assert.rejects(requestMetadata(async () => {
+    n++; throw { status: 503, data: { error: 'V13_METADATA_PREPARING' } }
+  }, signal(), async () => {}))
+  assert.equal(n, 1)
+})
 test('metadata busy retries but successful zero values remain intact', async () => {
   let n = 0
   assert.deepEqual(await requestMetadata(async () => ++n === 1 ? { c: 1, m: 'V13_BUSY' } : { c: 0, d: 0 }, signal(), async () => {}), { c: 0, d: 0 })

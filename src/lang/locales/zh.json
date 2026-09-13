@@ -1299,6 +1299,7 @@
     "active": "进行中"
   },
   "v13Trade": {
+    "metadataPreparing": "报价数据正在准备或更新，请稍后刷新报价。",
     "metadataUnavailable": "池子数据暂时无法读取，请稍后刷新报价，无需降低交易金额。",
     "pending": "等待上市，暂不可交易",
     "notListed": "此交易入口仅用于已上市代币",

@@ -51,6 +51,7 @@
     "collapse": "Contraer acciones"
   },
   "v13Trade": {
+    "metadataPreparing": "Los datos de cotización se están preparando o actualizando. Actualiza la cotización en breve.",
     "metadataUnavailable": "Los datos de los pools no están disponibles temporalmente. Actualiza la cotización en breve; no hace falta reducir el importe."
   },
   "Square": "Plaza",

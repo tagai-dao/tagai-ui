@@ -58,6 +58,8 @@ export type Metadata = {
     sourceBlock: string;
     generatedAt: number;
     configHash: Hex;
+    /** SQL + route-cache responses omit ticks; legacy/fork responses may still include them. */
+    tickDiscovery?: 'client';
     components: Array<{
         position: number;
         asset: Address;

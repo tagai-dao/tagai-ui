@@ -10,6 +10,7 @@ export function poolOperationErrorKey(error: unknown): string {
   codes.push(current.code);current=current.cause
  }
  const text=messages.join(' ')
+ if(/V13_METADATA_PREPARING/.test(text))return 'v13Trade.metadataPreparing'
  if(codes.some(code=>Number(code)===4001)||/UserRejected|user (rejected|denied)|request rejected/i.test(text))return 'v13Operation.cancelled'
  if(/\bExpired\b|0x203d82d8|V13_QUOTE_EXPIRED/i.test(text))return 'v13Operation.expired'
  if(/V13_LIQUIDITY_RATIO_CHANGED/.test(text))return 'v13Page.liquidityRatioChanged'

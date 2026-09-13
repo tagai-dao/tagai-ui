@@ -1,19 +1,21 @@
 # BSC V13 本地拆单交易
 
-本次实现范围是已上市 V13 代币的 BNB 买入、卖出收 BNB。UI 和 API 均在
-`bsc-version13` 分支。V11 及更早版本沿用原入口。发行页、Basket V4 部署页、LP 玩法页
+本次实现范围是已上市 V13 代币的 BNB 买入、卖出收 BNB。V11 及更早版本沿用原入口。发行页、Basket V4 部署页、LP 玩法页
 属于独立升级工作，不由本路由实现代表完成。
 
 ## 数据和执行流程
 
 1. UI 请求 `GET /pump/v13/metadata/:token`，链头为 `X-Chain-Id: 56`。
-2. API 提供 Token/Pump/Nutbox/执行器、主池、组件池、中转池、注册路径、费用规则、
-   decimals、tick 列表及覆盖边界。API 首次加载会自行发现这些数据并缓存 60 秒，
-   同 token 的并发请求合并；浏览器不承担发现工作。
-3. 前端调用一次 Multicall3.aggregate3 获取该轮当前状态：V2 储备及余额、CL 价格、
-   流动性、费用、API 所列 ticks/bitmap、路线配置和 Token 上市状态、执行器绑定。
-   区块号和区块时间也在同一次调用返回；没有自动分包、前置发现或补读。
-   `eth_gasPrice` 单独获取，它不是池子状态读取。
+2. API 一次 SELECT 联查现有 community、bsc_token、bsc_pump13_token_index、bsc_pump13_token_component，
+   上市只依据 bsc_token.state / community.listed_block，不读取 Graph 上市标记或请求 Graph。
+   主池 ID 来自 community.pair；成分币、权重、pair 和 decimals 来自现有 SQL 表。
+   路径及中转池固定参数来自进程内 Router 缓存。
+   不新增表、不写 SQL、HTTP 请求不触发或等待 RPC；缺失返回 503 / V13_METADATA_PREPARING。
+3. API 返回 tickDiscovery=client，不返回实时 tick 清单。首次 CL 报价分三轮 Multicall：
+   当前 tick 和区块号 → 附近 bitmap → tick 流动性及全部实时状态。后两轮固定到第一轮的区块，
+   保证发现和计算一致。最后一轮也校验 Router 路径、Token 上市状态与执行器绑定。
+   tick 缓存有效时只执行最后一轮；纯 V2 首次也是一轮。
+   Gas 价格独立缓存 60 秒，用于路线费用比较，不代替钱包发送时的实际费用。
 4. 同一行情快照在 10 秒内可以复用。Web Worker 本地计算所有金额分配和执行顺序，
    取消旧请求，只有当前金额/方向的结果能进入页面。配置最多缓存 60 秒。
 5. 用户提交时：验证链、账号、报价年龄；卖出先检查 allowance，必要时单独授权本次金额；
@@ -23,11 +25,13 @@
 
 ## tick 边界
 
-API 每个 CL 池发现当前 bitmap word 前后各两个 word；密集时只返回距离当前 tick 最近
-的 128 个初始化 tick，并明确 coverageLower/coverageUpper。总 tick 列表最多 512 个。
-前端只读 API 给出的列表，不发现或补读任何额外 tick。
+浏览器对每个 CL 池读取当前 bitmap word 前后各两个 word；密集时只保留距离当前 tick 最近
+的 128 个初始化 tick，并设置 coverageLower/coverageUpper；所有池合计最多 512 个 tick。
+tick 清单按链和池配置缓存 5 分钟，最多缓存 256 个池。最终 Multicall 校验实时 bitmap 和价格范围。
+缓存失效时仅允许一次有界重建：失败的实时校验 1 轮，加重新发现和读取 3 轮，总共 4 轮；
+不无限重试或无限扩大覆盖范围。旧版/fork API 的完整 tick 元数据仍走原单次读取流程。
 
-覆盖范围外的 tick 完全不处理。若覆盖范围内 bitmap 出现 API 未提供的初始化 tick，
+覆盖范围外的 tick 完全不处理。若覆盖范围内 bitmap 出现缓存未覆盖的初始化 tick，
 整个依赖该池的路线失效；不把未知数据当作空流动性。交易触及覆盖边界后仍有未成交
 输入时，该分配失败，优化器减小该路线投入或选择其他路线。全部路线无法完成时提示
 刷新或降低金额。
@@ -46,29 +50,42 @@ API 每个 CL 池发现当前 bitmap word 前后各两个 word；密集时只返
   容量较小时，分配步长二分缩小。上次结果是额外初值，最佳单路线始终保留。
 - 买入按 output/(input+gas) 比较，卖出按 output-gas 比较，整数交叉相乘避免价格浮点误差。
   相同时优先少腿。gas 采用路径/跨 tick 启发式估算，不宣称全局最优；实际报价还受
-  Tick API 覆盖和可支持 Hook 范围限制。
+  tick 缓存覆盖和可支持 Hook 范围限制。
 
 ## 发布配置
 
-TagAITradeRouter（支持 subject 的 `e2fce01` 版本）尚未部署。
-API 环境变量 `BSC_V13_TRADE_ROUTER` 未配置时，metadata.executor=null，前端允许报价但
-不允许提交。部署后填入执行器地址并重启 API，刷新前端报价即可读取配置，不需要另给
-前端维护一份执行器地址。快照还校验执行器 pump/nutboxRouter 与 API 配置一致。
+前端执行器取自链配置（当前为 0x7D5480C10A98b0Feb4e5fA77aF3F01aE3a5E86F4），
+不会直接信任 API 的 executor。单次 Multicall 还会校验执行器 pump/nutboxRouter。
 
-本次不新增数据库迁移；API 查询已有 bsc_token 确认版本，再校验官方 Pump.createdTokens。
+不需要执行 SQL 迁移，也不需要启动 tiptag-server 新进程；此前 V38 快照表及 worker 方案已撤销。
+部署顺序：先发布兼容旧元数据的 UI，再发布 API。
+API bin/www 随现有后台任务启动 server/v13RouteCache.js，各 API 进程分别持有内存缓存：
+
+- 启动后立即预热数据库中已上市 V13 代币及其成分币使用的 Router 路径。
+- 成功缓存的路径每小时刷新；每次扫描结束 60 秒后再扫描新代币或重试失败项。
+- 单条路径按同一区块完整构建，失败不替换旧缓存；旧缓存最多保留两小时。
+- RPC 使用 BSC_RPC_URL 或现有 RPC_NODE，单请求超时 10 秒；不读取钱包私钥，不发送交易。
+- 内存不跨进程共享，重启需要预热。DISABLE_BACKGROUND_JOBS=1 时不会预热，冷缓存返回准备中。
+- 不扫描 Router 的全部历史事件，只缓存当前数据库内 V13 代币实际使用的完整路径。
+- 路由变更后旧路径会被前端实时校验拒绝，后台下一次刷新后恢复；需要立即更新可重启 API 预热。
+
 未知版本/其他链不进入本路由。ABI 文件 `src/utils/v13/TradeRouter.json` 与合约导出一致。
 
 ## 验证
 
 ```bash
 npm run type-check
-node --test scripts/test-v13-routing.mjs scripts/test-trade-sellsman.mjs
+node --test scripts/test-v13-routing.mjs scripts/test-v13-tick-discovery.mjs scripts/test-trade-sellsman.mjs
 npm run build-only
 ```
 
-覆盖单次 multicall、未知 tick 无补读、失败读取/路线变更隔离、共享池顺序、税费舍入、
+覆盖冷启动三轮、缓存命中单轮、未知 tick 有界重建、失败读取/路线变更隔离、共享池顺序、税费舍入、
 跨 tick SDK 双向对照、gas 选择、报价异步取消、账号/链切换拦截、授权金额及 subject。
 测试中的毫秒数只反映本机 Node 计算耗时，不是浏览器/手机/网络性能承诺。
 
 
 创建、内盘、Basket V4 和 LP 矿池的后续接入详见 [bsc-v13-lifecycle.md](./bsc-v13-lifecycle.md)。
+
+API 模块：src/services/v13/metadata.js、route-cache.js、server/v13RouteCache.js。
+每次元数据 HTTP 请求只有一次 SQL SELECT 和同步内存读取，每 IP 每分钟最多 60 次。
+后台缓存刷新与 HTTP 路径分离，公开错误不包含 SQL/RPC 内部异常细节。
