@@ -1,5 +1,5 @@
 import { parseAbi, encodeFunctionData, decodeFunctionResult, encodeAbiParameters, keccak256, zeroAddress, type PublicClient, type Address, type Hex } from 'viem';
-import { QuoteError, type Metadata, type Snapshot, type PoolState, type Route, type Pool } from './types';
+import { QuoteError, type Metadata, type Snapshot, type PoolState, type Route } from './types';
 const MULTI = parseAbi(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[] returnData)']);
 const ABI = parseAbi([
     'function getBlockNumber() view returns(uint256)', 'function getCurrentBlockTimestamp() view returns(uint256)',
@@ -28,88 +28,19 @@ export function routeHash(m: Metadata, r: Route, buy: boolean): Hex {
         hash = keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'address' }, { type: 'address' }, { type: 'uint8' }, { type: 'bytes' }], [hash, p.id, p.token0, p.token1, p.sourceType, p.sourceData]));
     return hash;
 }
-const tickCache = new Map<string, { at: number; words: number[]; ticks: number[]; coverageLower?: number; coverageUpper?: number }>();
-const tickKey = (m: Metadata, p: Pool) => JSON.stringify([m.chainId, p.address.toLowerCase(), p.poolId, p.tickSpacing, p.key]);
-async function discoverTicks(client: PublicClient, m: Metadata, pools: Pool[]): Promise<bigint> {
-    const readBatch = async (requests: Array<{ target: Address; fn: string; args: unknown[] }>, blockNumber?: bigint) => {
-        const raw = await client.readContract({ address: m.multicall, abi: MULTI, functionName: 'aggregate3',
-            ...(blockNumber === undefined ? {} : { blockNumber }),
-            args: [requests.map(r => ({ target: r.target, allowFailure: true,
-                callData: encodeFunctionData({ abi: ABI, functionName: r.fn, args: r.args } as any) }))] } as any) as unknown as Array<{ success: boolean; returnData: Hex }>;
-        return requests.map((r, i) => {
-            if (!raw[i]?.success) throw new QuoteError('V13_STATE_UNAVAILABLE');
-            return decodeFunctionResult({ abi: ABI, functionName: r.fn, data: raw[i].returnData } as any) as any;
-        });
-    };
-    // Round 1: get the block and all current ticks. No separate eth_blockNumber request.
-    const slots = await readBatch([{ target: m.multicall, fn: 'getBlockNumber', args: [] }, ...pools.map(p => ({
-        target: p.address, fn: p.kind === 'v4' ? 'getSlot0' : 'slot0', args: p.kind === 'v4' ? [p.poolId] : [] }))]);
-    const block = slots[0] as bigint;
-    const requests: Array<{ target: Address; fn: string; args: unknown[] }> = [];
-    const windows = pools.map((p, i) => {
-        const spacing = p.tickSpacing!;
-        if (!Number.isInteger(spacing) || spacing <= 0) throw new QuoteError('V13_INVALID_METADATA');
-        const current = Number(slots[i + 1][1]), word = Math.floor(current / spacing / 256);
-        const words = Array.from({ length: 5 }, (_, n) => word + n - 2).filter(w =>
-            w >= Math.floor(-887272 / spacing / 256) && w <= Math.floor(887272 / spacing / 256));
-        for (const w of words) requests.push({ target: p.address, fn: p.kind === 'v4' ? 'getPoolBitmapInfo' : 'tickBitmap', args: p.kind === 'v4' ? [p.poolId, w] : [w] });
-        return { current, words };
-    });
-    // Round 2: discover bounded initialized tick lists at the same block.
-    const maps = await readBatch(requests, block);
-    let offset = 0, total = m.pools.filter(p => p.kind !== 'v2' && !pools.includes(p)).reduce((n, p) => n + (p.ticks?.length || 0), 0);
-    const updates = pools.map((p, i) => {
-        const { current, words } = windows[i];
-        let ticks: number[] = [];
-        for (const w of words) {
-            const bits = BigInt(maps[offset++]);
-            for (let bit = 0; bit < 256; bit++) if ((bits >> BigInt(bit)) & 1n) {
-                const tick = (w * 256 + bit) * p.tickSpacing!;
-                if (tick >= -887272 && tick <= 887272) ticks.push(tick);
-            }
-        }
-        let coverageLower: number | undefined, coverageUpper: number | undefined;
-        if (ticks.length > 128) {
-            ticks = ticks.sort((a, b) => Math.abs(a - current) - Math.abs(b - current)).slice(0, 128).sort((a, b) => a - b);
-            coverageLower = Math.min(current, ticks[0]); coverageUpper = Math.max(current + 1, ticks[ticks.length - 1]);
-        }
-        total += ticks.length;
-        return { at: Date.now(), words, ticks, coverageLower, coverageUpper };
-    });
-    if (total > 512) throw new QuoteError('V13_METADATA_TOO_LARGE');
-    pools.forEach((p, i) => {
-        const entry = updates[i]; Object.assign(p, entry);
-        tickCache.set(tickKey(m, p), entry);
-    });
-    while (tickCache.size > 256) tickCache.delete(tickCache.keys().next().value!);
-    return block;
-}
 export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: bigint): Promise<Snapshot> {
-    if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || m.chainId !== 56 || m.version !== 13
-        || m.pools.length > 25 || m.routes.length > 5) throw new QuoteError('V13_INVALID_METADATA');
-    // Legacy/fork metadata with closed tick lists keeps its original single-call behavior.
-    if (m.tickDiscovery !== 'client') return snapshotOnce(client, m, gasPrice);
-    const cl = m.pools.filter(p => p.kind !== 'v2');
-    const missing = cl.filter(p => {
-        const cached = tickCache.get(tickKey(m, p));
-        if (cached && Date.now() - cached.at < 300000) { Object.assign(p, cached); return false; }
-        return true;
-    });
-    const block = missing.length ? await discoverTicks(client, m, missing) : undefined;
-    let snapshot = await snapshotOnce(client, m, gasPrice, block);
-    // A cached bitmap/window may no longer cover the live pool. One bounded rebuild only.
-    const invalid = block === undefined ? cl.filter(p => !snapshot.pools[p.id]?.valid) : [];
-    if (invalid.length) {
-        invalid.forEach(p => tickCache.delete(tickKey(m, p)));
-        const freshBlock = await discoverTicks(client, m, invalid);
-        snapshot = await snapshotOnce(client, m, gasPrice, freshBlock);
-    }
-    return snapshot;
-}
-async function snapshotOnce(client: PublicClient, m: Metadata, gasPrice: bigint, blockNumber?: bigint): Promise<Snapshot> {
     if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || m.chainId !== 56 || m.version !== 13
         || m.pools.length > 25 || m.routes.length > 5 || m.pools.reduce((n, p) => n + (p.ticks?.length || 0), 0) > 512)
         throw new QuoteError('V13_INVALID_METADATA');
+    for (const p of m.pools) if (p.kind !== 'v2') {
+        if (!Array.isArray(p.words) || !p.words.length || !Array.isArray(p.ticks))
+            throw new QuoteError('V13_METADATA_PREPARING');
+        if (p.words.length > 5 || p.ticks.length > 128 || !Number.isInteger(p.tickSpacing) || p.tickSpacing! <= 0
+            || p.words.some(w => !Number.isInteger(w) || w < -32768 || w > 32767)
+            || p.ticks.some(t => !Number.isInteger(t) || t < -887272 || t > 887272 || t % p.tickSpacing! !== 0))
+            throw new QuoteError('V13_INVALID_METADATA');
+    }
+    let staleTicks = false;
     const calls: Array<{
         target: Address;
         allowFailure: boolean;
@@ -157,8 +88,7 @@ async function snapshotOnce(client: PublicClient, m: Metadata, gasPrice: bigint,
             r.registry.forEach((_, i) => add(key + ':' + i, m.nutboxRouter, 'routePoolAt', [a, b, i]));
         }
     // Final round: all quote state and cache/route validation share one block.
-    const raw = await client.readContract({ address: m.multicall, abi: MULTI, functionName: 'aggregate3', args: [calls],
-        ...(blockNumber === undefined ? {} : { blockNumber }) } as any) as unknown as Array<{
+    const raw = await client.readContract({ address: m.multicall, abi: MULTI, functionName: 'aggregate3', args: [calls] } as any) as unknown as Array<{
         success: boolean;
         returnData: Hex;
     }>;
@@ -209,9 +139,10 @@ async function snapshotOnce(client: PublicClient, m: Metadata, gasPrice: bigint,
                         continue;
                     const mask = ((1n << BigInt(high - low + 1)) - 1n) << BigInt(low);
                     const current = values[p.id + ':w:' + w];
-                    if (current === undefined || (current & mask) !== (expected.get(w)! & mask))
-                        valid = false;
+                    if (current === undefined) valid = false;
+                    else if ((current & mask) !== (expected.get(w)! & mask)) { valid = false; staleTicks = true; }
                 }
+                if (Number(v[1]) < lower || Number(v[1]) >= upper) staleTicks = true;
                 state = { sqrtPrice: v[0], tick: Number(v[1]), liquidity: values[p.id + ':liquidity'],
                     feePips: p.kind === 'v4' ? Number(v[3]) : p.feePips, protocolFee: p.kind === 'v4' ? Number(v[2]) : 0,
                     ticks: ticks.sort((a, b) => a.index - b.index), lower, upper, valid: valid && Number(v[1]) >= lower && Number(v[1]) < upper };
@@ -219,6 +150,7 @@ async function snapshotOnce(client: PublicClient, m: Metadata, gasPrice: bigint,
         }
         pools[p.id] = state;
     }
+    if (m.tickDiscovery === 'server' && staleTicks) throw new QuoteError('V13_METADATA_PREPARING');
     const hashes: Record<string, Hex> = {};
     const routes = m.routes.filter(r => {
         if (r.pools.some(id => !pools[id]?.valid))

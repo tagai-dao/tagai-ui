@@ -272,6 +272,17 @@ test('metadata not ready performs no chain read; legacy metadata retry uses one 
     assert.ok(q.plan.amountOut>0n);assert.equal(f.count(),1);assert.equal(getCount,2);
     session.reset();
 });
+test('stale server ticks discard local metadata so the next quote fetches fresh lists',async()=>{
+    const stale=snapshotFixture({unknown:true}),fresh=snapshotFixture();let bad=true,getCount=0;
+    for(const f of [stale,fresh]){f.m.generatedAt=Date.now();f.m.configHash=hash(77);f.m.tickDiscovery='server'}
+    globalThis.__v13Deps={get:async()=>{getCount++;return {c:0,d:bad?stale.m:fresh.m}},
+        client:{getGasPrice:async()=>1n,readContract:req=>(bad?stale.client:fresh.client).readContract(req)}};
+    const session=createQuoteSession();
+    await assert.rejects(session.quote(token,false,E),/V13_METADATA_PREPARING/);
+    assert.equal(stale.count(),1);assert.equal(getCount,1);
+    bad=false;const q=await session.quote(token,false,E);
+    assert.ok(q.plan.amountOut>0n);assert.equal(fresh.count(),1);assert.equal(getCount,2);session.reset();
+});
 test('trade calldata carries subject, exact split sum, per-leg and global minimums', () => {
     const { m, s } = fixture();
     m.executor = address(90);

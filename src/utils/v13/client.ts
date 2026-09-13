@@ -91,6 +91,10 @@ export function createQuoteSession() {
             catch (e) {
                 if (snapshotPending === pending)
                     snapshotPending = undefined;
+                if (e instanceof QuoteError && e.code === 'V13_METADATA_PREPARING' && id === generation) {
+                    metadata = undefined;
+                    snapshot = undefined;
+                }
                 throw e;
             }
             if (id !== generation)

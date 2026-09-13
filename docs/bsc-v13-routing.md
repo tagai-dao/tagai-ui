@@ -11,10 +11,10 @@
    主池 ID 来自 community.pair；成分币、权重、pair 和 decimals 来自现有 SQL 表。
    路径及中转池固定参数来自进程内 Router 缓存。
    不新增表、不写 SQL、HTTP 请求不触发或等待 RPC；缺失返回 503 / V13_METADATA_PREPARING。
-3. API 返回 tickDiscovery=client，不返回实时 tick 清单。首次 CL 报价分三轮 Multicall：
-   当前 tick 和区块号 → 附近 bitmap → tick 流动性及全部实时状态。后两轮固定到第一轮的区块，
-   保证发现和计算一致。最后一轮也校验 Router 路径、Token 上市状态与执行器绑定。
-   tick 缓存有效时只执行最后一轮；纯 V2 首次也是一轮。
+3. API 返回 tickDiscovery=server，附带后台缓存的 tick 清单、bitmap word 和覆盖边界。
+   前端只执行一次 Multicall 获取 V2 储备/余额和 V3/V4 价格、流动性、tick 明细、实时 bitmap。
+   同一调用也校验 Router 路径、Token 上市状态与执行器绑定；前端不发现或补查 tick。
+   首次和后续刷新都只有一轮池子状态读取。缺失清单则在查链前返回准备中。
    Gas 价格独立缓存 60 秒，用于路线费用比较，不代替钱包发送时的实际费用。
 4. 同一行情快照在 10 秒内可以复用。Web Worker 本地计算所有金额分配和执行顺序，
    取消旧请求，只有当前金额/方向的结果能进入页面。配置最多缓存 60 秒。
@@ -25,11 +25,14 @@
 
 ## tick 边界
 
-浏览器对每个 CL 池读取当前 bitmap word 前后各两个 word；密集时只保留距离当前 tick 最近
-的 128 个初始化 tick，并设置 coverageLower/coverageUpper；所有池合计最多 512 个 tick。
-tick 清单按链和池配置缓存 5 分钟，最多缓存 256 个池。最终 Multicall 校验实时 bitmap 和价格范围。
-缓存失效时仅允许一次有界重建：失败的实时校验 1 轮，加重新发现和读取 3 轮，总共 4 轮；
-不无限重试或无限扩大覆盖范围。旧版/fork API 的完整 tick 元数据仍走原单次读取流程。
+后端对每个 CL 池读取当前 bitmap word 前后各两个 word；密集时只保留距离当前 tick 最近
+的 128 个初始化 tick，并设置 coverageLower/coverageUpper；每份报价元数据合计最多 512 个 tick。
+tick 清单按池配置在 API 进程内存中复用，每 3 分钟刷新，与路由的 1 小时周期独立。
+后台同一区块读取 slot0 和 bitmap，不缓存价格或流动性明细供报价使用；失败不覆盖该池旧清单，
+也不延长有效期。超过 6 分钟的清单不再提供，API 返回 V13_METADATA_PREPARING。
+后台每 5 秒检查待刷新池，单批最多 25 个，失败池按 3 分钟周期重试，避免阻塞其他池。
+前端最终 Multicall 若发现新增 tick 或价格移出覆盖范围，提示准备/更新中，不额外查链，
+不使用未知流动性计算。交易页同时丢弃旧元数据，下次手动刷新重新请求 API。
 
 覆盖范围外的 tick 完全不处理。若覆盖范围内 bitmap 出现缓存未覆盖的初始化 tick，
 整个依赖该池的路线失效；不把未知数据当作空流动性。交易触及覆盖边界后仍有未成交
@@ -58,12 +61,12 @@ tick 清单按链和池配置缓存 5 分钟，最多缓存 256 个池。最终 
 不会直接信任 API 的 executor。单次 Multicall 还会校验执行器 pump/nutboxRouter。
 
 不需要执行 SQL 迁移，也不需要启动 tiptag-server 新进程；此前 V38 快照表及 worker 方案已撤销。
-部署顺序：先发布兼容旧元数据的 UI，再发布 API。
-API bin/www 随现有后台任务启动 server/v13RouteCache.js，各 API 进程分别持有内存缓存：
+部署顺序：先发布 API 并等待 tick 缓存预热，再发布 UI。旧 UI 能使用 server tick 清单；\n新 UI 不再为旧 API 的 tickDiscovery=client 自动发现 tick。
+API bin/www 随现有后台任务启动 server/v13RouteCache.js，各 API 进程分别持有路由与 tick 内存缓存：
 
 - 启动后立即预热数据库中已上市 V13 代币及其成分币使用的 Router 路径。
-- 成功缓存的路径每小时刷新；每次扫描结束 60 秒后再扫描新代币或重试失败项。
-- 单条路径按同一区块完整构建，失败不替换旧缓存；旧缓存最多保留两小时。
+- 成功缓存的路径每小时刷新；每次路由扫描结束 60 秒后再扫描新代币或重试失败项。\n- tick 清单独立按 3 分钟周期刷新，共用池只刷新一次；路由慢查询不阻塞 tick 刷新循环。
+- 单条路径按同一区块完整构建，失败不替换旧缓存；路径缓存最多保留两小时，tick 清单最多 6 分钟。
 - RPC 使用 BSC_RPC_URL 或现有 RPC_NODE，单请求超时 10 秒；不读取钱包私钥，不发送交易。
 - 内存不跨进程共享，重启需要预热。DISABLE_BACKGROUND_JOBS=1 时不会预热，冷缓存返回准备中。
 - 不扫描 Router 的全部历史事件，只缓存当前数据库内 V13 代币实际使用的完整路径。
@@ -79,13 +82,13 @@ node --test scripts/test-v13-routing.mjs scripts/test-v13-tick-discovery.mjs scr
 npm run build-only
 ```
 
-覆盖冷启动三轮、缓存命中单轮、未知 tick 有界重建、失败读取/路线变更隔离、共享池顺序、税费舍入、
+覆盖首次/刷新均单轮、后台三分钟缓存、未知 tick 拒绝且无前端补读、失败读取/路线变更隔离、共享池顺序、税费舍入、
 跨 tick SDK 双向对照、gas 选择、报价异步取消、账号/链切换拦截、授权金额及 subject。
 测试中的毫秒数只反映本机 Node 计算耗时，不是浏览器/手机/网络性能承诺。
 
 
 创建、内盘、Basket V4 和 LP 矿池的后续接入详见 [bsc-v13-lifecycle.md](./bsc-v13-lifecycle.md)。
 
-API 模块：src/services/v13/metadata.js、route-cache.js、server/v13RouteCache.js。
+API 模块：src/services/v13/metadata.js、route-cache.js、tick-cache.js、server/v13RouteCache.js。
 每次元数据 HTTP 请求只有一次 SQL SELECT 和同步内存读取，每 IP 每分钟最多 60 次。
 后台缓存刷新与 HTTP 路径分离，公开错误不包含 SQL/RPC 内部异常细节。
