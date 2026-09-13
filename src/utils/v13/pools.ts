@@ -42,8 +42,15 @@ export function walletGuard(){
 export async function send(address:Address,abi:Abi,functionName:string,args:unknown[],value=0n,guard=walletGuard()) {
  guard.check();if(useAccountStore().getWalletType!=='privy')await setup();guard.check()
  const client=getReadOnlyClient(56),wallet=getWalletClient();if(!wallet)throw new Error('Wallet unavailable')
- const {request}=await client.simulateContract({address,abi,functionName,args,value,account:guard.account})
- guard.check();const hash=await wallet.writeContract(request as any)
+ const tx={address,abi,functionName,args,value,account:guard.account}
+ const {request}=await client.simulateContract(tx)
+ guard.check()
+ const estimatedGas=await client.estimateContractGas(tx)
+ if(estimatedGas<=0n)throw new Error('Invalid gas estimate')
+ // LP execution can take different branches as pool state changes before inclusion.
+ // Round up a 30% buffer; estimation failures must never fall back to a fixed limit.
+ const gas=(estimatedGas*130n+99n)/100n
+ guard.check();const hash=await wallet.writeContract({...request,account:guard.account,chain:client.chain,gas} as any)
  const receipt=await client.waitForTransactionReceipt({hash});if(receipt.status!=='success')throw new Error('Transaction reverted');return hash
 }
 export async function approve(asset:Address,spender:Address,amount:bigint,guard=walletGuard()) {

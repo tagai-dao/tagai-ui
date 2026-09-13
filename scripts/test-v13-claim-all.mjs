@@ -35,6 +35,7 @@ function fixture(pending=[1n,0n,2n,3n]){
   })
  },readContract:async({functionName})=>functionName==='getCommittee'?committee:500000000000000n,
  simulateContract:async request=>{f.calls.push(request);return {request}},
+ estimateContractGas:async()=>100000n,
  waitForTransactionReceipt:async()=>({status:'success'})}
  f.wallet={writeContract:async()=>{f.writes++;return '0xhash'}}
  globalThis.__claimAll=f;return f
