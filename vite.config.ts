@@ -56,7 +56,7 @@ export default defineConfig( (): any => {
       viteCommonjs(),
       VitePWA({
         // disable: true,
-        registerType: 'autoUpdate',
+        registerType: 'prompt',
         strategies: 'injectManifest',
         devOptions: {
           enabled: false

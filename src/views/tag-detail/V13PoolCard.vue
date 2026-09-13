@@ -48,6 +48,9 @@ const slippageBps=computed(()=>Math.round(Number(slippage.value)*100))
 const validSlippage=computed(()=>Number.isInteger(slippageBps.value)&&slippageBps.value>=1&&slippageBps.value<=1000)
 let quoteSequence=0
 const connected=computed(()=>chain.activeChainId===56&&!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress)
+const accountKey=computed(()=>(account.ethConnectAddress||zeroAddress).toLowerCase())
+const stateAccount=ref<string>()
+const userReady=computed(()=>connected.value&&stateAccount.value===accountKey.value)
 const modal=useModalStore()
 const connectWallet=()=>modal.setModalVisible(true,GlobalModalType.ChoseWallet)
 let sequence=0,disposed=false
@@ -82,9 +85,9 @@ const stockInput=computed({
 const estimatedLp=computed(()=>action.value==='add'?addPreview.value?.lp:action.value==='bnb'&&zap.value?.amount===units.value?zap.value.zap.lp:undefined)
 const minimumLp=computed(()=>{if(!estimatedLp.value||!validSlippage.value)return undefined;const value=estimatedLp.value*BigInt(10000-slippageBps.value)/10000n;return value>0n?value:1n})
 const inputSymbol=computed(()=>action.value==='bnb'?'BNB':action.value==='add'?props.symbol:'LP')
-const inputBalance=computed(()=>{const s=state.value;return !s?0n:action.value==='bnb'?s.nativeBalance:action.value==='add'?s.tokenBalance:action.value==='withdraw'?s.staked:s.lpBalance})
-const assetShort=computed(()=>connected.value&&!!state.value&&(inputSide.value==='asset'?assetUnits.value:(addPreview.value?.assetAmount??0n))>state.value.assetBalance)
-const inputShort=computed(()=>connected.value&&!!state.value&&units.value>inputBalance.value)
+const inputBalance=computed(()=>{const s=state.value;return !s||!userReady.value?0n:action.value==='bnb'?s.nativeBalance:action.value==='add'?s.tokenBalance:action.value==='withdraw'?s.staked:s.lpBalance})
+const assetShort=computed(()=>userReady.value&&!!state.value&&(inputSide.value==='asset'?assetUnits.value:(addPreview.value?.assetAmount??0n))>state.value.assetBalance)
+const inputShort=computed(()=>userReady.value&&!!state.value&&units.value>inputBalance.value)
 const balanceError=computed(()=>inputShort.value?t('v13Page.insufficientBalance',{symbol:inputSymbol.value}):assetShort.value?t('v13Page.insufficientBalance',{symbol:assetSymbol.value}):'')
 const estimated=computed(()=>{
  const s=state.value;if(!s||!s.supply||!s.reserveToken)return ''
@@ -92,9 +95,9 @@ const estimated=computed(()=>{
  return ''
 })
 async function refresh(){
- const seq=++sequence;loading.value=true
+ const seq=++sequence,currentAccount=accountKey.value;loading.value=true
  const updatePool=async()=>{
-  try{const value=await readPool(props.token,props.community,props.leg,(account.ethConnectAddress||zeroAddress) as Address);if(!disposed&&seq===sequence){state.value=value;error.value=''}}
+  try{const value=await readPool(props.token,props.community,props.leg,currentAccount as Address);if(!disposed&&seq===sequence&&currentAccount===accountKey.value){state.value=value;stateAccount.value=currentAccount;error.value=''}}
   catch(e){if(!disposed&&seq===sequence){error.value=t('v13Page.loadError');console.warn('[V13 pool]',props.leg.staking_pool,e)}}
  }
  const updateApr=async()=>{
@@ -121,19 +124,25 @@ function scheduleQuote(){
  quoting.value=true
  quoteTimer=setTimeout(()=>{void previewZap()},400)
 }
-watch([amount,action,expanded,()=>props.leg.position,()=>Boolean(state.value?.supply)],scheduleQuote,{flush:'sync'})
+watch([amount,action,expanded,()=>props.leg.position,()=>Boolean(state.value?.supply),userReady],scheduleQuote,{flush:'sync'})
 async function operate(claim=false){
- if(!connected.value||busy.value)return
+ if(!userReady.value||busy.value)return
+ const currentAccount=accountKey.value,currentToken=props.token,currentPool=props.leg.staking_pool
  localBusy.value=true;error.value=''
  try{
   if(claim)await operatePool(props.token,props.community,props.leg,'claim',0n)
   else if(action.value==='bnb'){if(!zap.value||zap.value.amount!==units.value||!props.liquidityRouter)throw new Error(t('v13Page.refresh'));await executeZap(zap.value,props.liquidityRouter,zap.value.quote.metadata.subject,Math.round(slippage.value*100))}
   else if(action.value==='add'||action.value==='remove'){if(!props.liquidityRouter)throw new Error(t('v13Page.routerPending'));await liquidity(props.token,props.community,props.leg,action.value,units.value,Math.round(slippage.value*100),props.liquidityRouter,action.value==='add'?(inputSide.value==='asset'?assetUnits.value:addPreview.value?.assetAmount):undefined)}
   else await operatePool(props.token,props.community,props.leg,action.value,units.value)
-  amount.value='';returnToFront();void refresh()
+  if(!disposed&&chain.activeChainId===56&&accountKey.value===currentAccount&&props.token===currentToken&&props.leg.staking_pool===currentPool){amount.value='';returnToFront();void refresh()}
  }catch(e){console.warn('[V13 pool operation]',e);if(!disposed){const key=poolOperationErrorKey(e);notify({title:t('v13Operation.title'),message:t(key),type:key==='v13Operation.cancelled'?'info':'error'})}}finally{localBusy.value=false}
 }
-watch([()=>props.token,()=>props.community,()=>props.leg.staking_pool,()=>props.leg.pair,()=>props.leg.asset,()=>account.ethConnectAddress,()=>chain.activeChainId],()=>{expanded.value=false;sequence++;state.value=undefined;rewards.value=undefined;aprError.value=false;error.value='';amount.value='';cancelQuote();if(chain.activeChainId===56)void refresh()},{immediate:true})
+watch([()=>props.token,()=>props.community,()=>props.leg.staking_pool,()=>props.leg.pair,()=>props.leg.asset,()=>chain.activeChainId],()=>{expanded.value=false;sequence++;state.value=undefined;stateAccount.value=undefined;rewards.value=undefined;aprError.value=false;error.value='';amount.value='';cancelQuote();if(chain.activeChainId===56)void refresh()},{immediate:true})
+watch(accountKey,()=>{
+ // Invalidate private data and quotes, not the card, APR, reserves or user input.
+ sequence++;stateAccount.value=undefined;error.value='';cancelQuote()
+ if(chain.activeChainId===56)void refresh()
+},{flush:'sync'})
 const timer=setInterval(()=>{if(!busy.value&&!loading.value&&chain.activeChainId===56)void refresh();if(canQuote()&&!quoting.value)void previewZap()},20000)
 defineExpose({refresh})
 onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clearInterval(timer)})
@@ -154,9 +163,9 @@ onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clear
    <div class="pool-metrics">
     <div class="apr-metric" :title="aprHint"><span>{{ t('v13Page.apr') }}</span><strong>{{ apr===undefined?'—':f(apr,2) }}<small v-if="apr!==undefined">%</small></strong></div>
     <div><span>{{ t('v13Page.totalStaked') }}</span><strong :title="f(state.total)">{{ compact(state.total) }} <small>LP</small></strong></div>
-    <div><span>{{ t('v13Page.myStake') }}</span><strong :title="connected?f(state.staked):''">{{ connected?compact(state.staked):'—' }} <small>LP</small></strong></div>
+    <div><span>{{ t('v13Page.myStake') }}</span><strong :title="userReady?f(state.staked):''">{{ userReady?compact(state.staked):'—' }} <small>LP</small></strong></div>
    </div>
-   <div class="reward-box"><div><span>{{ t('v13Page.reward') }}</span><strong :title="connected?f(state.pending):''">{{ connected?f(state.pending):'—' }} <small>{{ symbol }}</small></strong></div><button v-if="!connected" @click="connectWallet">{{ t('baskets.connectWallet') }}</button><button v-else :disabled="busy||state.pending===0n" @click="operate(true)">{{ t('v13Page.claim') }} ↗</button></div>
+   <div class="reward-box"><div><span>{{ t('v13Page.reward') }}</span><strong :title="userReady?f(state.pending):''">{{ userReady?f(state.pending):'—' }} <small>{{ symbol }}</small></strong></div><button v-if="!connected" @click="connectWallet">{{ t('baskets.connectWallet') }}</button><button v-else :disabled="busy||!userReady||state.pending===0n" @click="operate(true)">{{ t('v13Page.claim') }} ↗</button></div>
    <div class="reserve-box"><span>{{ t('v13Page.reserves') }}</span><div><span :title="f(state.reserveToken)">{{ compact(state.reserveToken) }} <b>{{ symbol }}</b></span><span :title="f(state.reserveAsset,state.decimals)">{{ compact(state.reserveAsset,state.decimals) }} <b>{{ assetSymbol }}</b></span></div></div>
    <p v-if="!state.active" class="pool-note">{{ t('v13Page.closed') }}</p>
    <div v-if="connected" class="card-actions"><button class="primary-button" :disabled="busy||!state.supply||!liquidityRouter" @click="openAction('bnb',$event)">+ {{ t('v13Page.add') }}</button><button class="secondary-button" :disabled="busy||!state.active" @click="openAction('deposit',$event)">{{ t('v13Page.stake') }}</button></div>
@@ -175,8 +184,8 @@ onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clear
      <button type="button" :aria-pressed="action==='bnb'" :disabled="busy" :title="t('v13Page.bnbAdd')" @click="selectLiquidityInput('bnb')">BNB</button>
      <button type="button" :aria-pressed="action==='add'" :disabled="busy" :title="t('v13Page.dualAdd')" @click="selectLiquidityInput('add')">{{ symbol }} + {{ assetSymbol }}</button>
     </div>
-    <div class="amount-field" :class="{'has-error':inputShort}"><label><span>{{ t('v13Page.amount') }} · {{ inputSymbol }}</span><input v-model="amount" type="text" inputmode="decimal" autocomplete="off" :disabled="busy" /></label><div class="input-footer"><button v-if="action!=='bnb'" :disabled="busy||!connected" @click="amount=formatUnits(inputBalance,18)">MAX</button><span :title="connected?formatUnits(inputBalance,18):''">{{ t(action==='withdraw'?'v13Page.myStake':'balance') }}: {{ connected?f(inputBalance):'—' }} {{ inputSymbol }}</span></div></div>
-    <template v-if="action==='add'"><div class="pair-plus" aria-hidden="true">+</div><div class="amount-field asset-field" :class="{'has-error':assetShort}"><label><span>{{ t('v13Page.amount') }} · {{ assetSymbol }}</span><input v-model="stockInput" placeholder="0" type="text" inputmode="decimal" autocomplete="off" :disabled="busy" /></label><div class="input-footer"><button :disabled="busy||!connected" @click="stockInput=formatUnits(state.assetBalance,state.decimals)">MAX</button><span :title="connected?formatUnits(state.assetBalance,state.decimals):''">{{ t('balance') }}: {{ connected?f(state.assetBalance,state.decimals):'—' }} {{ assetSymbol }}</span></div></div><p class="ratio-help">{{ t('v13Page.assetRatioHelp') }}</p></template>
+    <div class="amount-field" :class="{'has-error':inputShort}"><label><span>{{ t('v13Page.amount') }} · {{ inputSymbol }}</span><input v-model="amount" type="text" inputmode="decimal" autocomplete="off" :disabled="busy" /></label><div class="input-footer"><button v-if="action!=='bnb'" :disabled="busy||!userReady" @click="amount=formatUnits(inputBalance,18)">MAX</button><span :title="userReady?formatUnits(inputBalance,18):''">{{ t(action==='withdraw'?'v13Page.myStake':'balance') }}: {{ userReady?f(inputBalance):'—' }} {{ inputSymbol }}</span></div></div>
+    <template v-if="action==='add'"><div class="pair-plus" aria-hidden="true">+</div><div class="amount-field asset-field" :class="{'has-error':assetShort}"><label><span>{{ t('v13Page.amount') }} · {{ assetSymbol }}</span><input v-model="stockInput" placeholder="0" type="text" inputmode="decimal" autocomplete="off" :disabled="busy" /></label><div class="input-footer"><button :disabled="busy||!userReady" @click="stockInput=formatUnits(state.assetBalance,state.decimals)">MAX</button><span :title="userReady?formatUnits(state.assetBalance,state.decimals):''">{{ t('balance') }}: {{ userReady?f(state.assetBalance,state.decimals):'—' }} {{ assetSymbol }}</span></div></div><p class="ratio-help">{{ t('v13Page.assetRatioHelp') }}</p></template>
    </div>
    <p v-if="balanceError" class="balance-error" role="alert">{{ balanceError }}</p>
    <div v-if="action==='bnb'||action==='add'" class="lp-estimate"><span>{{ t('v13Page.estimatedLp') }}</span><strong :title="estimatedLp!==undefined?f(estimatedLp)+' LP':''"><template v-if="quoting&&!zap"><small role="status">{{ t('v13Page.quotingLp') }}</small></template><template v-else>{{ estimatedLp!==undefined?'≈ '+f(estimatedLp):'—' }} <small>LP</small></template></strong></div>
@@ -190,7 +199,7 @@ onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clear
    <p v-if="estimated">{{ estimated }}</p>
    </div>
    <footer class="operation-footer">
-   <button class="primary-button confirm-button" :disabled="busy||!connected||units<=0n||!!balanceError||(['bnb','add','remove'].includes(action)&&!validSlippage)||(action==='add'&&(!addPreview?.lp||!liquidityRouter))||(action==='remove'&&!liquidityRouter)||(action==='bnb'&&(!zap||quoting||!liquidityRouter||!zap.quote.snapshot.executable))||(action==='deposit'&&!state.active)" @click="operate()">{{ busy?t('v13Page.wait'):t('v13Page.confirm') }}</button>
+   <button class="primary-button confirm-button" :disabled="busy||!userReady||units<=0n||!!balanceError||(['bnb','add','remove'].includes(action)&&!validSlippage)||(action==='add'&&(!addPreview?.lp||!liquidityRouter))||(action==='remove'&&!liquidityRouter)||(action==='bnb'&&(!zap||quoting||!liquidityRouter||!zap.quote.snapshot.executable))||(action==='deposit'&&!state.active)" @click="operate()">{{ busy?t('v13Page.wait'):t('v13Page.confirm') }}</button>
    </footer>
    </template>
   </section>

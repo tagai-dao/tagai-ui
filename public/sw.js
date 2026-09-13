@@ -18,9 +18,9 @@ registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), {
   denylist: navigationDenylist,
 }))
 
-self.addEventListener('install', () => {
-  self.skipWaiting()
-})
+// Keep an open page and its cached chunks on the same release. A new worker
+// waits until the old release's tabs close; never interrupt wallet confirmations
+// or forms by taking control and forcing a page reload during a deployment.
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim())

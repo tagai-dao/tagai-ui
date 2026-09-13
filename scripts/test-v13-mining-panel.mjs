@@ -2,7 +2,7 @@ import {test,after} from 'node:test'
 import assert from 'node:assert/strict'
 import {build} from 'esbuild'
 import {parse,compileScript} from '@vue/compiler-sfc'
-import {createRenderer} from 'vue'
+import {createRenderer,reactive,nextTick} from 'vue'
 import {mkdtemp,rm,readFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
@@ -38,7 +38,7 @@ await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export default {};export const useI18n=()=>({t:k=>k,locale:{value:'en'}});
  export const getChainDeployment=()=>({contracts:{liquidityRouter13:null}});
- export const useAccountStore=()=>({ethConnectAddress:''});export const useChainStore=()=>({activeChainId:56});
+ export const useAccountStore=()=>globalThis.__miningFixture.walletState;export const useChainStore=()=>({activeChainId:56});
  export const GlobalModalType={ChoseWallet:1};export const useModalStore=()=>({setModalVisible:(...args)=>globalThis.__miningFixture.modalCalls.push(args)});
  export const useCommunityStore=()=>({currentSelectedCommunity:{token:${JSON.stringify(token)},tick:'T'}});
  export const getV13Detail=()=>globalThis.__miningFixture.detail();
@@ -53,6 +53,7 @@ const Panel=require(join(dir,'panel.cjs')).default;Panel.render=()=>null
 const renderer=createRenderer({createComment:()=>({}),createElement:()=>({}),createText:()=>({}),insert:()=>{},remove:()=>{},setText:()=>{},setElementText:()=>{},parentNode:()=>null,nextSibling:()=>null,patchProp:()=>{}})
 function mount(overrides={}){
  globalThis.__miningFixture={detail:async()=>{throw Error('503')},lifecycle:async()=>({listed:false,pending:false,supply:325000000n*10n**18n}),pools:async()=>({community,components:[{asset,pair,staking_pool:pool}]}),reads:[],...overrides}
+ globalThis.__miningFixture.walletState=reactive({ethConnectAddress:''})
  const app=renderer.createApp(Panel,{mining:true}),vm=app.mount({});return {app,s:vm.$.setupState}
 }
 test('API 503 cannot erase inner-curve progress; verified chain pools remain visible',async()=>{
@@ -83,5 +84,17 @@ test('template gates burn by listed state, not just the mining tab',()=>{
 test('disconnected claim-all entry opens wallet selection',()=>{
  const {app,s}=mount({modalCalls:[]})
  try{assert.equal(s.connected,false);assert.equal(s.canClaimAll,false);s.connectWallet();assert.deepEqual(globalThis.__miningFixture.modalCalls,[[true,1]])}finally{app.unmount()}
+})
+test('wallet connection and switches never clear or refetch the public pool list',async()=>{
+ let calls=0
+ const {app,s}=mount({detail:async()=>{calls++;return {config:{community},components:[{asset,pair,staking_pool:pool}],buyback:null}}})
+ try{
+  await s.refresh();const pools=s.pools,state=s.state,count=calls
+  for(const wallet of [asset,pair,'']){
+   globalThis.__miningFixture.walletState.ethConnectAddress=wallet
+   await nextTick()
+   assert.equal(s.pools,pools);assert.equal(s.state,state);assert.equal(calls,count)
+  }
+ }finally{app.unmount()}
 })
 after(async()=>{delete globalThis.__miningFixture;await rm(dir,{recursive:true,force:true})})

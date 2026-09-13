@@ -2,7 +2,7 @@ import {test,after} from 'node:test'
 import assert from 'node:assert/strict'
 import {build} from 'esbuild'
 import {parse,compileScript} from '@vue/compiler-sfc'
-import {createRenderer,nextTick} from 'vue'
+import {createRenderer,nextTick,reactive} from 'vue'
 import {mkdtemp,rm,readFile} from 'node:fs/promises'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
@@ -19,10 +19,10 @@ await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()
  b.onResolve({filter:/^(@\/|vue-i18n$)/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export default {};export const useI18n=()=>({t:k=>k,locale:{value:'en'}});
- export const useAccountStore=()=>({ethConnectAddress:globalThis.__cardFixture.address});export const useChainStore=()=>({activeChainId:56});
+ export const useAccountStore=()=>globalThis.__cardFixture.walletState;export const useChainStore=()=>({activeChainId:56});
  export const GlobalModalType={ChoseWallet:1};export const useModalStore=()=>({setModalVisible:(...args)=>globalThis.__cardFixture.modalCalls.push(args)});
  export const presetBasketAssetLogo=()=>null;export const resolveBasketAssetLogo=async()=>null;
- export const readPool=async()=>globalThis.__cardFixture.state;export const readPoolRewards=async()=>({daily:0n,ratio:10000});
+ export const readPool=(...args)=>globalThis.__cardFixture.read(...args);export const readPoolRewards=async()=>({daily:0n,ratio:10000});
  export const poolAprBps=()=>0n;
  export const notify=options=>globalThis.__cardFixture.notices.push(options);
  export {afterPairTax,previewLiquidityAdd} from ${JSON.stringify(join(process.cwd(),'src/utils/v13/liquidity-preview.ts'))};
@@ -34,6 +34,8 @@ const renderer=createRenderer({createComment:()=>({}),createElement:()=>({}),cre
 const address='0x'+'22'.repeat(20)
 function mount(execute,walletAddress='0x'+'11'.repeat(20)){
  globalThis.__cardFixture={execute,address:walletAddress,modalCalls:[],notices:[],state:{supply:10n**18n,reserveToken:10n**18n,reserveAsset:10n**18n,lpBalance:10n**18n,staked:0n,total:0n,active:true,symbol:'STOCK',decimals:18,pending:0n,fee:0n,nativeBalance:10n**18n,assetBalance:0n,tokenBalance:0n}}
+ globalThis.__cardFixture.walletState=reactive({ethConnectAddress:walletAddress})
+ globalThis.__cardFixture.read=async()=>globalThis.__cardFixture.state
  const app=renderer.createApp(Card,{token:address,community:address,symbol:'T',liquidityRouter:address,leg:{asset:address,pair:address,staking_pool:address,position:0,target_weight:10000,asset_decimals:18,pool_status:'OPENED'}})
  const vm=app.mount({});return {app,s:vm.$.setupState}
 }
@@ -59,7 +61,7 @@ for(const action of ['deposit','withdraw','add','remove','bnb'])test(`${action}:
 })
 test('wallet cancellation uses the existing notification and preserves the form for retry',async()=>{
  const {app,s}=mount(async()=>{throw Error('User rejected request')})
- try{s.openAction('deposit',event);s.amount='1';await s.operate();assert.equal(s.expanded,true);assert.equal(s.amount,'1');assert.equal(s.error,'');assert.deepEqual(globalThis.__cardFixture.notices,[{title:'v13Operation.title',message:'v13Operation.cancelled',type:'info'}]);assert.equal(s.busy,false);s.closeAction();assert.equal(s.expanded,false)}finally{app.unmount()}
+ try{await nextTick();s.openAction('deposit',event);s.amount='1';await s.operate();assert.equal(s.expanded,true);assert.equal(s.amount,'1');assert.equal(s.error,'');assert.deepEqual(globalThis.__cardFixture.notices,[{title:'v13Operation.title',message:'v13Operation.cancelled',type:'info'}]);assert.equal(s.busy,false);s.closeAction();assert.equal(s.expanded,false)}finally{app.unmount()}
 })
 test('verbose contract failures use a concise existing notification without card text or repeated refresh notices',async()=>{
  const {app,s}=mount(async()=>{throw Error('The contract function "add" reverted. Error: Expired() Contract Call: address: 0x123 args: (123,456) Docs: https://viem.sh Version: viem@2.50.3')})
@@ -90,5 +92,56 @@ test('reopening another operation clears stock input and asset-driven balance er
   await nextTick();s.openAction('add',event);s.stockInput='2';assert.equal(s.assetShort,true)
   s.closeAction();s.openAction('deposit',event)
   assert.equal(s.amount,'');assert.equal(s.stockInput,'');assert.equal(s.assetShort,false);assert.equal(s.inputSide,'token')
+ }finally{app.unmount()}
+})
+test('connecting a wallet keeps public state and APR visible while private data loads',async()=>{
+ const {app,s}=mount(()=>assert.fail('must wait for balances'),'')
+ try{
+  await s.refresh();const state=s.state,rewards=s.rewards
+  let finish;globalThis.__cardFixture.read=()=>new Promise(resolve=>finish=resolve)
+  globalThis.__cardFixture.walletState.ethConnectAddress=address
+  assert.equal(s.state,state);assert.equal(s.rewards,rewards);assert.equal(s.userReady,false)
+  await s.operate(true)
+  finish({...state,staked:123n,pending:456n});await nextTick()
+  assert.equal(s.userReady,true);assert.equal(s.state.staked,123n);assert.equal(s.state.pending,456n)
+ }finally{app.unmount()}
+})
+test('wallet switches and disconnects preserve the form and reject stale account responses',async()=>{
+ const {app,s}=mount(()=>assert.fail('must not use stale balances'))
+ try{
+  await s.refresh();s.openAction('add',event);s.stockInput='1.23';s.slippage=3
+  const state=s.state,requests=[]
+  globalThis.__cardFixture.read=(...args)=>new Promise(resolve=>requests.push({account:args[3],resolve}))
+  globalThis.__cardFixture.walletState.ethConnectAddress=address
+  assert.equal(s.expanded,true);assert.equal(s.stockInput,'1.23');assert.equal(s.slippage,3)
+  assert.equal(s.state,state);assert.equal(s.userReady,false);assert.equal(s.inputBalance,0n)
+  await s.operate(true)
+  globalThis.__cardFixture.walletState.ethConnectAddress=''
+  assert.equal(s.expanded,true);assert.equal(s.stockInput,'1.23')
+  requests[0].resolve({...state,staked:999n});await nextTick()
+  assert.equal(s.state,state);assert.equal(s.userReady,false)
+  requests[1].resolve({...state,staked:0n});await nextTick()
+  assert.equal(s.connected,false);assert.equal(s.expanded,true)
+ }finally{app.unmount()}
+})
+test('failed wallet refresh keeps public data and inputs but blocks private operations',async()=>{
+ const {app,s}=mount(()=>assert.fail('must not submit'))
+ try{
+  await s.refresh();s.openAction('deposit',event);s.amount='1'
+  const state=s.state
+  globalThis.__cardFixture.read=async()=>{throw Error('RPC failed')}
+  globalThis.__cardFixture.walletState.ethConnectAddress=address
+  await nextTick();await s.refresh()
+  assert.equal(s.state,state);assert.equal(s.expanded,true);assert.equal(s.amount,'1');assert.equal(s.userReady,false)
+  await s.operate()
+ }finally{app.unmount()}
+})
+test('background refresh patches pool data without resetting the form',async()=>{
+ const {app,s}=mount(async()=>{})
+ try{
+  await s.refresh();s.openAction('deposit',event);s.amount='2';s.slippage=5
+  globalThis.__cardFixture.state={...globalThis.__cardFixture.state,total:123n}
+  await s.refresh()
+  assert.equal(s.state.total,123n);assert.equal(s.expanded,true);assert.equal(s.amount,'2');assert.equal(s.slippage,5)
  }finally{app.unmount()}
 })

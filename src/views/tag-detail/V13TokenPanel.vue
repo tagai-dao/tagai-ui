@@ -74,14 +74,17 @@ async function refresh(){
  const rewards=async()=>{
   if(props.mining||!currentAccount)return
   const value=await getReadOnlyClient(56).readContract({address:currentToken,abi:tokenAbi as Abi,functionName:'pendingBuybackReward',args:[currentAccount]}).catch(()=>undefined)
-  if(current())pending.value=value as bigint|undefined
+  if(current()&&account.ethConnectAddress===currentAccount)pending.value=value as bigint|undefined
  }
  const results=await Promise.allSettled([lifecycle(),detail(),rewards()])
  if(current()){error.value=results.some(r=>r.status==='rejected')?t('v13Page.loadError'):'';loading.value=false}
 }
 async function claim(){busy.value=true;try{const guard=walletGuard();await send(token.value,tokenAbi as Abi,'claimBuybackReward',[guard.account],0n,guard);await refresh()}catch(e){error.value=e instanceof Error?e.message:String(e)}finally{busy.value=false}}
 watch([token,()=>chain.activeChainId],()=>{burned.value=undefined;burnUnavailable.value=false})
-watch([token,()=>account.ethConnectAddress,()=>chain.activeChainId],()=>{seq++;data.value=undefined;chainPools.value=undefined;state.value=undefined;pending.value=undefined;error.value='';poolBusy.value={};if(token.value&&chain.activeChainId===56)void refresh()},{immediate:true})
+watch([token,()=>chain.activeChainId],()=>{seq++;data.value=undefined;chainPools.value=undefined;state.value=undefined;pending.value=undefined;error.value='';poolBusy.value={};if(token.value&&chain.activeChainId===56)void refresh()},{immediate:true})
+// Wallet changes do not change pool identity. Keep children mounted; each card
+// refreshes its own account data without resetting the public pool or form.
+watch(()=>account.ethConnectAddress,()=>{pending.value=undefined;if(!props.mining&&token.value&&chain.activeChainId===56)void refresh()})
 const timer=setInterval(()=>{if(!loading.value&&!busy.value&&token.value&&chain.activeChainId===56)void refresh()},15000)
 onUnmounted(()=>{disposed=true;seq++;clearInterval(timer)})
 </script>

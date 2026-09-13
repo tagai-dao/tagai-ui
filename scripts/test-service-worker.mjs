@@ -49,11 +49,15 @@ const built = await build({
 })
 test('root and chain-prefixed refreshes use the same release shell, while assets and OAuth bypass it', async () => {
   const previousSelf = globalThis.self
-  globalThis.self = { __WB_MANIFEST: [], addEventListener() {} }
+  let skips=0
+  const listeners={}
+  globalThis.self = { __WB_MANIFEST: [], addEventListener(name,fn) {listeners[name]=fn}, skipWaiting(){skips++} }
   globalThis.swFixture = { routes: [], cached: { '/index.html': 'release-A' } }
   try {
     await import(`data:text/javascript;base64,${Buffer.from(built.outputFiles[0].text).toString('base64')}`)
     const f = globalThis.swFixture
+    listeners.install?.({waitUntil(){}})
+    assert.equal(skips,0,'a new release must wait instead of taking over an open wallet session')
     assert.equal(f.cacheDetails.prefix, 'tagai-validated-v1')
     assert.equal(f.routes.length, 1)
     const route = f.routes[0]
@@ -68,4 +72,9 @@ test('root and chain-prefixed refreshes use the same release shell, while assets
     globalThis.self = previousSelf
     delete globalThis.swFixture
   }
+})
+test('release updates cannot force page reloads or opt into auto-update',()=>{
+  assert.doesNotMatch(readFileSync('src/main.ts','utf8'),/location\.reload|controllerchange/)
+  assert.match(readFileSync('vite.config.ts','utf8'),/registerType:\s*'prompt'/)
+  assert.doesNotMatch(readFileSync('public/sw.js','utf8'),/self\.skipWaiting\(/)
 })
