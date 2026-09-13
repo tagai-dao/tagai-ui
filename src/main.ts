@@ -46,11 +46,10 @@ app.use(i18n)
 app.use(VueApexCharts as any)
 app.use(VueQrcodeReader)
 
-app.mount('#app')
-
-initNativeApp(router).catch((error) => {
-    console.error('Failed to initialize native app handlers:', error)
-})
+// Register the native return listener before Privy mounts (including cold starts).
+initNativeApp(router).catch(() => {
+    console.error('Failed to initialize native app handlers')
+}).finally(() => app.mount('#app'))
 
 void import('@/utils/androidUpdates').then(({ initAndroidUpdates }) => initAndroidUpdates())
     .catch(error => console.warn('Update checker initialization failed:', error))

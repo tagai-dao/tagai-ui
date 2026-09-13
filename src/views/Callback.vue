@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useAccountStore } from "@/stores/web3";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { getWalletClient, signMessage } from "@/utils/wallets";
 import { bondEth } from "@/apis/api";
@@ -12,6 +12,7 @@ const accStore = useAccountStore();
 
 let finished = false
 let fallbackTimer: ReturnType<typeof setTimeout> | null = null
+const takingLonger = ref(false)
 
 const finish = () => {
   if (finished) return
@@ -32,7 +33,9 @@ onMounted(() => {
   if (hasOauthParams) {
     emitter.on('authSuccess', finish)
     emitter.on('authError', finish)
-    fallbackTimer = setTimeout(finish, 12000)
+    // A slow mobile connection is not a completed login. Do not erase the
+    // OAuth params or silently send users home after twelve seconds.
+    fallbackTimer = setTimeout(() => { takingLonger.value = true }, 45000)
   } else {
     finish()
   }
@@ -49,6 +52,9 @@ onUnmounted(() => {
     <img class="w-14 h-14 mr-3" src="~@/assets/loading.gif" alt="">
     <div>
       Waiting for login...
+      <p v-if="takingLonger" class="mt-2 text-sm">
+        Login is taking longer than expected. Check your connection; keep this page open to complete login.
+      </p>
     </div>
   </div>
 

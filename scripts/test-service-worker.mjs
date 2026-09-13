@@ -61,7 +61,7 @@ test('root and chain-prefixed refreshes use the same release shell, while assets
       assert.equal(route.options.denylist.some(rule => rule.test(path)), false)
       assert.equal(await route.handler({ request: request(path) }), 'release-A')
     }
-    for (const path of ['/assets/main.js', '/api/foo', '/.well-known/test', '/native-oauth-redirect.html', '/actions.json', '/sw.js', '/manifest.webmanifest']) {
+    for (const path of ['/assets/main.js', '/api/foo', '/.well-known/test', '/native-oauth-redirect.html', '/native-oauth-redirect', '/native-oauth-redirect?privy_oauth_code=test', '/actions.json', '/sw.js', '/manifest.webmanifest']) {
       assert.equal(navigationDenylist.some(rule => rule.test(path)), true, path)
     }
   } finally {

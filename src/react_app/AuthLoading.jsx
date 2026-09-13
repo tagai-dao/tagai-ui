@@ -194,6 +194,9 @@ export default function AuthLoading() {
     useEffect(() => {
         console.log('state', state.status)
         console.log('loading', loading)
+        // Native return remounts without the login modal. Forward completion
+        // errors here too, so /callback does not wait forever on an expired code.
+        if (state.status === 'error') emitter.emit('authError', state.error)
     }, [state, loading])
 
     const {reauthorize} = useOAuthTokens({
