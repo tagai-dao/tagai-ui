@@ -194,18 +194,20 @@ watch([() => percentage.value, () => ethBalance.value, () => tokenBalance.value]
 watch(() => tradeType.value, () => {
   percentage.value = 0
   quoteSpotPrice.value = null
-  if (isV13.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''; receiveAmount.value = ''; receiveEth.value = ''; tradeType.value === 'buy' ? updateBuyAmount(payEth.value) : updateSellAmount(sellAmount.value) }
+  refreshV13Quote()
 })
 
 watch(payEth, (val: any) => {
-  if (isV13.value) { buyQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
+  buyQuoteSeq++; receiveAmount.value = ''
+  if (isV13.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
   calculating.value = true
   willListing = false
   updateBuyAmount(val)
 })
 
 watch(sellAmount, (val: any) => {
-  if (isV13.value) { sellQuoteSeq++; v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
+  sellQuoteSeq++; receiveEth.value = ''
+  if (isV13.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
   // 手动改数量后脱离进度条比例，避免余额刷新时覆盖输入
   if (!sellAmountSyncingFromPercent.value && percentage.value > 0) {
     percentage.value = 0
@@ -806,6 +808,7 @@ async function confirm() {
 }
 
 function refreshV13Quote() {
+  updateBuyAmount.cancel(); updateSellAmount.cancel()
   v13Session.reset()
   v13Quote.value = undefined; curveQuote.value = undefined
   v13Error.value = ''
@@ -818,9 +821,13 @@ function refreshV13Quote() {
 }
 
 async function updateUserTokenInfo () {
+  const token = comStore.currentSelectedCommunity?.token
+  const address = accStore.ethConnectAddress
+  const chainId = chainStore.activeChainId
   try {
-    if (isAddress(accStore.ethConnectAddress ?? '')) {
-      let info = await getUserTokenInfo(comStore.currentSelectedCommunity!.token, accStore.ethConnectAddress);
+    if (token && isAddress(address ?? '')) {
+      let info = await getUserTokenInfo(token, address);
+      if (disposed || token !== comStore.currentSelectedCommunity?.token || address !== accStore.ethConnectAddress || chainId !== chainStore.activeChainId) return
       tokenBalance.value = info.balance.toString() / 1e18;
       tokenOriginalBalance.value = info.balance;
       ethBalance.value = info.ethBalance;
@@ -848,19 +855,35 @@ onActivated(async () => {
 
 })
 
-onMounted(async () => {
-  const tick = props.tick || route.params.id as string
-  if (!comStore.currentSelectedCommunity?.tick || comStore.currentSelectedCommunity?.tick != tick) {
-    if (comStore.currentSelectedCommunity?.tick != tick) {
-      comStore.currentSelectedCommunity = null;
+let disposed = false
+let communityLoad = 0
+watch([() => props.tick || route.params.id as string, () => chainStore.activeChainId], async ([tick, chainId], previous) => {
+  const load = ++communityLoad
+  const chainChanged = previous?.[1] !== undefined && previous[1] !== chainId
+  try {
+    if (chainChanged || !comStore.currentSelectedCommunity?.token || comStore.currentSelectedCommunity?.tick !== tick) {
+      comStore.currentSelectedCommunity = null
+      tokenBalance.value = 0; tokenOriginalBalance.value = 0n; ethBalance.value = 0
+      const detail = await getCommunityDetail(tick, chainId)
+      if (disposed || load !== communityLoad) return
+      const community = (await getTokenInfo([detail as Community]))[0]
+      if (disposed || load !== communityLoad) return
+      comStore.currentSelectedCommunity = community
     }
-    let community = (await getCommunityDetail(tick)) as Community
-    community = (await getTokenInfo([community]))[0]
-    comStore.currentSelectedCommunity = community
+    const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
+    stateStore.sellsman = props.sellsman ?? routeSellsman
+    await nextTick()
+    if (disposed || load !== communityLoad) return
+    void updateUserTokenInfo()
+    refreshV13Quote()
+  } catch (error) {
+    if (!disposed && load === communityLoad) { calculating.value = false; handleErrorTip(error) }
   }
-  const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
-  stateStore.sellsman = props.sellsman ?? routeSellsman
-  updateUserTokenInfo()
+}, { immediate: true })
+
+onUnmounted(() => {
+  disposed = true; communityLoad++; buyQuoteSeq++; sellQuoteSeq++
+  updateBuyAmount.cancel(); updateSellAmount.cancel()
 })
 </script>
 
