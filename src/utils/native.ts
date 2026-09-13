@@ -1,25 +1,12 @@
 import type { Router } from 'vue-router'
-import { Capacitor } from '@capacitor/core'
+import { Capacitor, registerPlugin } from '@capacitor/core'
+import { nativeOAuthCallbackPath } from './nativeOAuthCallback'
+export { NATIVE_OAUTH_REDIRECT_URL } from './nativeOAuthCallback'
 
 export const NATIVE_AUTH_CALLBACK_URL = 'tagai://auth-callback'
 
-/**
- * Privy 的 redirect URL 只接受 http(s)（Dashboard 校验拒绝自定义 scheme），
- * 故 OAuth 回跳先落到这个托管跳板页，由它把参数原样转发到 tagai://auth-callback 唤起 App。
- * 跳板页源码在 public/native-oauth-redirect.html，随 Web 站点部署；域名必须在 Privy Allowed origins 内。
- */
-export const NATIVE_OAUTH_REDIRECT_URL = 'https://tagai.fun/native-oauth-redirect.html'
-
 export const isNativePlatform = () => Capacitor.isNativePlatform()
-
-function isNativeAuthCallbackUrl(url: string) {
-  try {
-    const callbackUrl = new URL(url)
-    return callbackUrl.protocol === 'tagai:' && callbackUrl.host === 'auth-callback'
-  } catch {
-    return false
-  }
-}
+const NativeOAuth = registerPlugin<{ prepare(): Promise<void>; cancel(): Promise<void> }>('NativeOAuth')
 
 export async function initNativeApp(router: Router) {
   if (!isNativePlatform()) return
@@ -33,35 +20,42 @@ export async function initNativeApp(router: Router) {
 
   let handledAuthCallbackUrl: string | undefined
 
-  const handleAuthCallbackUrl = async (url: string) => {
-    if (!isNativeAuthCallbackUrl(url)) return
+  const handleAuthCallbackUrl = async (url: string, coldStart = false) => {
+    const path = nativeOAuthCallbackPath(url)
+    if (!path) return
     if (handledAuthCallbackUrl === url) return
     handledAuthCallbackUrl = url
 
     const { Browser } = await import('@capacitor/browser')
     await Browser.close().catch(() => {})
 
-    const callbackUrl = new URL(url)
     // Privy OAuth 必须进入专用 callback 页。旧的 /login 是 TagAI 历史
     // Twitter state 轮询回调，会在看不到 `state` 时立即清空 URL，导致
     // Privy SDK 尚未消费 privy_oauth_* 参数就丢失登录结果。
-    const loginUrl = new URL('/callback', window.location.origin)
-    callbackUrl.searchParams.forEach((value, key) => {
-      loginUrl.searchParams.set(key, value)
-    })
-    loginUrl.hash = callbackUrl.hash
-
-    window.location.assign(loginUrl.toString())
+    if (coldStart) {
+      // Install params before the first Privy render, without a second startup.
+      await router.replace(path)
+    } else {
+      window.location.replace(new URL(path, window.location.origin).toString())
+    }
   }
 
-  await App.addListener('appUrlOpen', async ({ url }) => {
-    await handleAuthCallbackUrl(url)
-  })
+  // Capacitor may replay a retained appUrlOpen while getLaunchUrl is pending.
+  // Serialize and deduplicate both sources before the first Privy render.
+  let starting = true
+  let returnWork = Promise.resolve()
+  const queueReturn = (url: string, coldStart: boolean) => {
+    returnWork = returnWork.then(() => handleAuthCallbackUrl(url, coldStart))
+    return returnWork
+  }
+  await App.addListener('appUrlOpen', ({ url }) => queueReturn(url, starting))
 
   const launchUrl = await App.getLaunchUrl()
   if (launchUrl?.url) {
-    await handleAuthCallbackUrl(launchUrl.url)
+    await queueReturn(launchUrl.url, true)
   }
+  await returnWork
+  starting = false
 
   await SplashScreen.hide()
 
@@ -76,25 +70,19 @@ export async function initNativeApp(router: Router) {
 }
 
 export async function runNativeBrowserOAuth(startOAuth: () => Promise<void>) {
-  if (!isNativePlatform()) {
+  if (Capacitor.getPlatform() !== 'android') {
     await startOAuth()
     return
   }
 
-  const { Browser } = await import('@capacitor/browser')
-  const locationPrototype = Object.getPrototypeOf(window.location)
-  const originalAssign = locationPrototype.assign
-
-  locationPrototype.assign = function assign(url: string | URL) {
-    void Browser.open({
-      url: String(url),
-      presentationStyle: 'fullscreen',
-    })
-  }
-
+  // Location.assign is an own, non-configurable browser property. A prototype
+  // monkeypatch cannot intercept it. Intercept the actual WebView navigation
+  // natively instead, after Privy stores its PKCE verifier in this WebView.
+  await NativeOAuth.prepare()
   try {
     await startOAuth()
-  } finally {
-    locationPrototype.assign = originalAssign
+  } catch (error) {
+    await NativeOAuth.cancel().catch(() => {})
+    throw error
   }
 }

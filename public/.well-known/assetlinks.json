@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "fun.tagai.app",
+      "sha256_cert_fingerprints": [
+        "C8:D6:78:B7:68:F8:F3:49:AE:AD:14:4B:83:77:69:F4:0E:CF:1E:8C:40:42:08:9D:21:E1:93:0A:C1:4A:17:DC"
+      ]
+    }
+  }
+]

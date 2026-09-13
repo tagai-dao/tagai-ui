@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
+  <meta name="referrer" content="no-referrer">
   <title>Returning to TagAI…</title>
   <style>
     body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -15,15 +16,30 @@
 </head>
 <body>
   <p id="tip">Returning to the TagAI app…</p>
-  <a id="open" class="btn" href="tagai://auth-callback">Open TagAI</a>
+  <a id="open" class="btn" hidden>Open TagAI</a>
   <script>
-    // Privy OAuth 的 http(s) 回跳落到本页；把 query/hash 原样转发到 App 的自定义 scheme。
-    // 只转发参数，不解析、不存储；App 内 native.ts 会做 scheme/host 严格校验。
+    // Verified HTTPS App Links normally return directly to Android. This page
+    // is a user-gesture fallback for devices with "Open supported links" off.
+    // No SDK, analytics, persistence or web login: PKCE belongs to the app.
     (function () {
-      var target = 'tagai://auth-callback' + window.location.search + window.location.hash;
-      document.getElementById('open').setAttribute('href', target);
-      // 自动唤起；部分浏览器要求用户手势，故保留按钮兜底
-      window.location.replace(target);
+      var params = new URLSearchParams(window.location.search);
+      var keys = ['privy_oauth_code', 'privy_oauth_state', 'privy_oauth_provider'];
+      if (keys.some(function (key) { return params.getAll(key).length > 1; }) ||
+          !params.get('privy_oauth_state') || params.get('privy_oauth_provider') !== 'twitter' ||
+          !params.get('privy_oauth_code')) {
+        document.getElementById('tip').textContent = 'Please return to TagAI and start Twitter login again.';
+        return;
+      }
+      var safe = new URLSearchParams();
+      keys.forEach(function (key) { if (params.get(key)) safe.set(key, params.get(key)); });
+      var target = 'tagai://auth-callback?' + safe;
+      var open = document.getElementById('open');
+      open.hidden = false;
+      // Package-bound intent avoids another app claiming the legacy scheme.
+      open.href = /Android/i.test(navigator.userAgent)
+        ? 'intent://auth-callback?' + safe + '#Intent;scheme=tagai;package=fun.tagai.app;end'
+        : target;
+      document.getElementById('tip').textContent = 'Tap Open TagAI to finish login in the app. Do not log in again on this web page.';
     })();
   </script>
 </body>

@@ -2,6 +2,7 @@ import {useLoginWithOAuth} from '@privy-io/react-auth';
 import {useCallback, useEffect, useRef, useState} from "react";
 import emitter from "@/utils/emitter.ts";
 import {runNativeBrowserOAuth} from "@/utils/native.ts";
+import {Capacitor, registerPlugin} from '@capacitor/core';
 
 export default function LoginWithOAuth() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
@@ -20,6 +21,22 @@ export default function LoginWithOAuth() {
         reportedErrorRef.current = errorKey;
         emitter.emit('authError', error);
     }, []);
+
+    useEffect(() => {
+        if (Capacitor.getPlatform() !== 'android') return;
+        let disposed = false;
+        const handles = [];
+        const keep = (handle) => disposed ? handle.remove() : handles.push(handle);
+        import('@capacitor/app').then(({App}) => App.addListener('appStateChange', ({isActive}) => {
+            // Closing Chrome without authorizing must not leave the login button disabled.
+            if (isActive) setIsLoading(false);
+        })).then(keep);
+        registerPlugin('NativeOAuth').addListener('openFailed', () => {
+            reportAuthError(new Error('Unable to open authorization. Install or enable Chrome and try again.'));
+            setIsLoading(false);
+        }).then(keep);
+        return () => { disposed = true; handles.forEach(handle => handle.remove()); };
+    }, [reportAuthError]);
 
     const handleLogin = async () => {
         try {
