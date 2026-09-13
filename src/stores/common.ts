@@ -11,9 +11,15 @@ export const useModalStore = defineStore(
 
   const setModalVisible = (visible: boolean, type: GlobalModalType = GlobalModalType.CreateCoin, params: any = null) => {
     if(!modalCloseEnable.value) return
-    modalVisible.value = visible
+    // A closing dialog still renders during its leave animation. Keep its
+    // current content/params rather than mounting the default creation form.
+    if (!visible) {
+      modalVisible.value = false
+      return
+    }
     modalType.value = type
     modalParams.value = params
+    modalVisible.value = true
   }
 
   const setModalCloseEnable = (value: boolean) => {
