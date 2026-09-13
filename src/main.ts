@@ -51,3 +51,6 @@ app.mount('#app')
 initNativeApp(router).catch((error) => {
     console.error('Failed to initialize native app handlers:', error)
 })
+
+void import('@/utils/androidUpdates').then(({ initAndroidUpdates }) => initAndroidUpdates())
+    .catch(error => console.warn('Update checker initialization failed:', error))
