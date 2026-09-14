@@ -71,7 +71,7 @@ test('missing API route falls back to the chain with one bounded API attempt', a
     attempts++; assert.equal(config.timeout, 8000); assert.equal(config['axios-retry'].retries, 0)
     assert.equal(config.headers['X-Chain-Id'], '56'); throw { status: 404 }
   } }
-  assert.equal((await creationOptions(creator)).assets.length, 9)
+  assert.equal((await creationOptions(creator)).assets.length, assets.filter((_, i) => i % 2 === 0).length)
   assert.equal(attempts, 1); assert.equal(c.calls.length, 2)
 })
 test('malformed API asset data falls back instead of crashing the selector', async () => {
@@ -79,7 +79,7 @@ test('malformed API asset data falls back instead of crashing the selector', asy
   data.assets = [{ address: null, decimals: 18, symbol: 'BAD' }]
   const c = client()
   globalThis.creationTest = { client: c, get: async () => ({ c: 0, d: data }) }
-  assert.equal((await creationOptions(creator)).assets.length, 9)
+  assert.equal((await creationOptions(creator)).assets.length, assets.filter((_, i) => i % 2 === 0).length)
 })
 
 test('segmented fee bar totals 100% for every supported creator setting', () => {

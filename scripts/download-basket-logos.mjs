@@ -15,6 +15,8 @@ const downloads = [
   { file: 'aapl.png', url: 'https://financialmodelingprep.com/image-stock/AAPL.png' },
   { file: 'spy.png', url: 'https://assets.parqet.com/logos/symbol/SPY?format=png' },
   { file: 'qqq.png', url: 'https://assets.parqet.com/logos/symbol/QQQ?format=png' },
+  { file: 'bnc.svg', url: 'https://www.ceaindustries.com/favicon.svg' },
+  { file: 'mstr.png', url: 'https://assets.parqet.com/logos/symbol/MSTR?format=png' },
   { file: 'spcx.svg', url: 'https://cdn.simpleicons.org/spacex/005288' },
   {
     file: 'tagagent.jpg',
