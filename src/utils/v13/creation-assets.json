@@ -99,5 +99,15 @@
     "address": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
     "decimals": 18,
     "logoUrl": "/images/basket-assets/btc.svg"
+  },
+  {
+    "symbol": "BNCB",
+    "address": "0x4902C5ebc598265Ed2212b559B042De8a5Eeec3f",
+    "decimals": 18
+  },
+  {
+    "symbol": "MSTRB",
+    "address": "0xE87afb3076AeB0f9B14E368DE8145ae6a2826A14",
+    "decimals": 18
   }
 ]
