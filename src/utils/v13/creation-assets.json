@@ -87,13 +87,13 @@
     "symbol": "BNC4",
     "address": "0x7C8D5502b544dDAf8852Fc46D1174E34876D545C",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/bnc.svg"
+    "logoUrl": "/images/basket-assets/bnc.png"
   },
   {
     "symbol": "BNCB",
     "address": "0x4902C5ebc598265Ed2212b559B042De8a5Eeec3f",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/bnc.svg"
+    "logoUrl": "/images/basket-assets/bnc.png"
   },
   {
     "symbol": "MSTRB",

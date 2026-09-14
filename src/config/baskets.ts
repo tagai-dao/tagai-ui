@@ -295,7 +295,7 @@ const bscAssets: BasketAssetPreset[] = sortBasketAssetOptions<BasketAssetPreset>
   ),
   bscV3Asset(
     '0x7C8D5502b544dDAf8852Fc46D1174E34876D545C', 'BNC4', 'Cea Industries', bscContractsV3.settlementToken, 2_500,
-    '/images/basket-assets/bnc.svg',
+    '/images/basket-assets/bnc.png',
   ),
 ])
 
