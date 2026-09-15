@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {computed, ref} from "vue";
+import DownloadAppButton from '@/components/common/DownloadAppButton.vue'
 import SearchModal from "@/components/common/SearchModal.vue";
 import ProfileBtn from "@/layout/ProfileBtn.vue";
 import { useAccountStore } from "@/stores/web3";
@@ -160,6 +161,7 @@ async function createTagCoin() {
               </div>
               <span v-if="locale === l.code">✓</span>
             </div>
+            <DownloadAppButton class="web:hidden" />
             <a class="flex gap-2 items-center cursor-pointer"
                @click="menuRef.hide()"
                href="https://coincidence-labs.gitbook.io/tagai/" target="_blank">

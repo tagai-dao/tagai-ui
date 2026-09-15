@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import DownloadAppButton from '@/components/common/DownloadAppButton.vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAccountStore } from '@/stores/web3'
 import { useModalStore, useStateStore } from '@/stores/common'
@@ -93,7 +94,7 @@ const handleWalletClick = (e?: Event) => {
     </div>
 
     <!-- 菜单项 -->
-    <nav class="flex-1 px-2 py-4 space-y-1">
+    <nav class="flex-1 min-h-0 overflow-y-auto px-2 py-4 space-y-1">
       <!-- 1. Home（Feed） -->
       <router-link
         to="/feed"
@@ -240,6 +241,8 @@ const handleWalletClick = (e?: Event) => {
         >
         <span class="hidden desk:inline text-h4 text-content">{{ $t('about') || 'About' }}</span>
       </router-link>
+
+      <DownloadAppButton sidebar />
 
       <!-- 8. More -->
       <el-popover 
