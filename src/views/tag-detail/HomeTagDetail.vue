@@ -468,9 +468,11 @@ onBeforeRouteLeave((to, from, next) => {
       class="min-h-0"
       :class="{ 'flex-1 overflow-hidden': isAiActive }"
     >
-      <BuyAndSellView v-if="!isAiActive && !isMobile">
-        <template #token-info><div ref="tokenInfoTarget" /></template>
-      </BuyAndSellView>
+      <div v-if="!isAiActive && !isMobile" class="mb-3">
+        <BuyAndSellView>
+          <template #token-info><div ref="tokenInfoTarget" /></template>
+        </BuyAndSellView>
+      </div>
       <div
         class="min-h-0 web:sticky web:top-[0px]"
         :class="isAiActive ? 'h-full' : 'web:h-full web:min-h-full'"
