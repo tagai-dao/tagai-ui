@@ -66,6 +66,7 @@ export default defineConfig( (): any => {
           globPatterns: ['**/*.{react_vue_utils,css,html}']
         },
         injectManifest: {
+          globIgnores: ['**/downloads/**', '**/app-updates/**'],
           maximumFileSizeToCacheInBytes: 15 * 1024 * 1024
         },
         includeAssets: ['favicon.ico'],

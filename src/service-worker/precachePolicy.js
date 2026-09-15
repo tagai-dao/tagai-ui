@@ -24,6 +24,6 @@ export const navigationDenylist = [
   // The host canonicalizes .html to extensionless URLs. Both are OAuth pages,
   // never the SPA shell (which cannot access the native WebView's PKCE state).
   /^\/native-oauth-redirect(?:\.html)?(?:\?|$)/,
-  /^\/(?:assets|api|\.well-known)(?:\/|$)/,
+  /^\/(?:assets|api|downloads|app-updates|\.well-known)(?:\/|$)/,
   /^\/[^/?]+\.(?:html|js|css|json|webmanifest|ico|png|svg|txt|xml)(?:\?|$)/,
 ]
