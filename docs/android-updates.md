@@ -11,10 +11,10 @@ builds cannot discover updates retroactively.
 ## Publish a version
 
 1. Increase Android versionCode and versionName, build and verify the APK.
-2. Use the SAME application ID and signing key as the installed app. Current test
-   APKs use the local debug signing key. Do not switch these users to a differently
-   signed release or tell wallet users to uninstall. Choose a production signing
-   and migration plan before public distribution; keep keys outside git.
+2. Use the SAME application ID and signing key as the installed app. Current
+   production APKs (including 1.0.22 and 1.0.24) use the production release key.
+   Legacy debug-signed builds cannot upgrade in place to that identity; do not
+   tell wallet users to uninstall. Keep keys outside git.
 3. Upload the verified APK to an immutable HTTPS URL under
    `https://tagai.fun/downloads/` (filename ending in `.apk`). Serve as
    `application/vnd.android.package-archive` with attachment disposition. Do not
@@ -25,8 +25,9 @@ builds cannot discover updates retroactively.
 5. Test an older updater-enabled app: start/resume, Later, download, installation,
    preservation of login data. Test current version and offline cases too.
 
-The shipped manifest is intentionally disabled until a real download exists.
-This change does NOT upload APKs or deploy the manifest. There is no mandatory
+The manifest enables reminders for the already published, signed 1.0.24 APK.
+It takes effect when the website deployment publishes the updated manifest;
+no APK rebuild is required. Current/newer installs are not prompted. There is no mandatory
 upgrade, silent install or background binary download. Confirmation opens the
 Android browser download flow; the user opens the downloaded APK and approves
 installation (including permission to install from that browser if requested).
