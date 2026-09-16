@@ -284,8 +284,8 @@ export const getCommunityCredits = async (tick: string, pages?: number) =>
 export const getCommunityPredictionCredits = async (tick: string, pages?: number) =>
   publicRead('/community/communityPredictionCredits', {tick, pages})
 
-export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string) =>
-  get(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token})
+export const trade = async (tick: string, twitterId: string, transHash?: string, commerceId?: string, token?: string, chainId = useChainStore().activeChainId) =>
+  get(BACKEND_API_URL + '/community/trade', {tick, twitterId, transHash, commerceId, token}, { headers: { 'X-Chain-Id': String(chainId) } })
 
 export const searchCommunity = async (tick: string) =>
   get(BACKEND_API_URL + '/community/search', { tick })
@@ -356,6 +356,10 @@ export const getCommunityDeployTweet = async (tick: string, twitterId: string) =
 export type CommerceType = 1 | 2 | 3
 
 export type CommerceResolveResult = {
+  commerceId: string
+  chainId: number
+  token: string | null
+  publisher: { twitterId: string; address: string | null; username: string | null; name: string | null; profile: string | null }
   commerceType: CommerceType
   tweetId?: string | null
   fpmm?: string | null
@@ -375,8 +379,8 @@ export const createPredictCommerce = async (
 ) => post(BACKEND_API_URL + '/commerce/newPredictCommerce', { twitterId, marketAddress, type, blinkLogo })
 
 /** 解析 commerce 类型，用于前端路由跳转 */
-export const resolveCommerce = async (commerceId: string) =>
-  get(BACKEND_API_URL + '/commerce/resolve', { commerceId }) as Promise<{ c: number; d: CommerceResolveResult }>
+export const resolveCommerce = async (commerceId: string, chainId = useChainStore().activeChainId) =>
+  get(BACKEND_API_URL + '/commerce/resolve', { commerceId }, { headers: { 'X-Chain-Id': String(chainId) }, timeout: 10000 }) as Promise<{ c: number; d: CommerceResolveResult }>
 
 /** @deprecated 使用 createTokenCommerce */
 export const newCommerce = async (_text: string, twitterId: string, tick: string, token: string) =>

@@ -2,9 +2,9 @@
   "enabled": false,
   "downloadEnabled": true,
   "applicationId": "fun.tagai.app",
-  "versionCode": 22,
-  "versionName": "1.0.22",
-  "notes": "Android release with native Twitter login fixes and removal of the automatic wallet smoke signature.",
-  "downloadUrl": "https://tagai.fun/downloads/TagAI-1.0.22-release.apk",
-  "sha256": "89c58798af8d977a38546ddb11392f314d8fbd3216deb498b717d570ab7565e0"
+  "versionCode": 24,
+  "versionName": "1.0.24",
+  "notes": "Open TagAI content links in the Android app. Blinks open the original post when available and preserve verified publisher attribution across community trading. Includes native Twitter login compatibility.",
+  "downloadUrl": "https://tagai.fun/downloads/TagAI-1.0.24-release.apk",
+  "sha256": "cdbb97c07c22ab7d43717f362fb8db8b7126f18ad19f02473e904990db3a0e68"
 }
