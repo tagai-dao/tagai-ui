@@ -6,7 +6,8 @@ Deploy the matching API change (`/commerce/resolve` returning commerceId,
 chainId, token and publisher) before the frontend/APK. Old API metadata fails
 closed; it must not silently redirect referral fees. This PR includes the signed
 1.0.24 APK and manual-download manifest. Merge/deploy only after both chain API
-instances serve the new metadata. Automatic upgrade prompts remain disabled.
+instances serve the new metadata. Automatic upgrade reminders are enabled for
+older updater-capable installs; downloading and installation require user approval.
 
 Commerce links open an available original post with an opaque `blink` id. If
 the post is missing, a verified publisher/token card offers trading or a

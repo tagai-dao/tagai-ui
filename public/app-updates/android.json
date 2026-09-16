@@ -1,5 +1,5 @@
 {
-  "enabled": false,
+  "enabled": true,
   "downloadEnabled": true,
   "applicationId": "fun.tagai.app",
   "versionCode": 24,
