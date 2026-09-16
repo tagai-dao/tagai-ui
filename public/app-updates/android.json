@@ -2,9 +2,9 @@
   "enabled": true,
   "downloadEnabled": true,
   "applicationId": "fun.tagai.app",
-  "versionCode": 24,
-  "versionName": "1.0.24",
-  "notes": "Open TagAI content links in the Android app. Blinks open the original post when available and preserve verified publisher attribution across community trading. Includes native Twitter login compatibility.",
-  "downloadUrl": "https://tagai.fun/downloads/TagAI-1.0.24-release.apk",
-  "sha256": "cdbb97c07c22ab7d43717f362fb8db8b7126f18ad19f02473e904990db3a0e68"
+  "versionCode": 25,
+  "versionName": "1.0.25",
+  "notes": "Fix Blinks and post token-card trading for listed tokens. Verify listing status before quotes and transactions on BNB Chain and Robinhood, while preserving publisher IPShare attribution. Install over your existing official TagAI app; do not uninstall.",
+  "downloadUrl": "https://tagai.fun/downloads/TagAI-1.0.25-release.apk",
+  "sha256": "30a647457964ced338f5b622f6c92dd764a648cb9e142fd3cd4505b49f2f0cab"
 }
