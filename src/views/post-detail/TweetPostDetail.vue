@@ -4,7 +4,7 @@ import BackHeader from "@/layout/BackHeader.vue";
 import TweetItem from "@/components/tweets/TweetItem.vue";
 import PostButtonGroup from "@/components/tweets/PostButtonGroup.vue";
 import Comments from "@/components/tweets/Comments.vue";
-import {onMounted, ref, watch} from "vue";
+import {onUnmounted, ref, watch} from "vue";
 import CuratorsList from "@/components/tweets/CuratorsList.vue";
 import { useCurationStore } from "@/stores/curation"
 import { useCommunityStore } from "@/stores/community"
@@ -16,6 +16,8 @@ import { getTokenInfoOfTweets } from "@/utils/pump";
 import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
 import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
 import type { FeedTokenSheetAsset } from '@/types'
+import { useChainStore } from '@/stores/chain'
+import { getChainPath } from '@/config/chains'
 
 const curatorsModalVisible = ref(false)
 const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
@@ -42,7 +44,14 @@ watch(showFeedTokenSheet, visible => {
   if (!visible) showFeedTradeSheet.value = false
 })
 
-onMounted(async () => {
+const chainStore = useChainStore()
+let postRun = 0
+onUnmounted(() => { postRun++ })
+watch(() => [route.params.id, chainStore.activeChainId], async () => {
+  const run = ++postRun
+  if (route.name !== 'post-detail') return
+  showFeedTokenSheet.value = false
+  showFeedTradeSheet.value = false
   const tweetId = route.params.id;
   if (typeof(tweetId) !== 'string') {
     router.replace('/')
@@ -51,20 +60,31 @@ onMounted(async () => {
   if (curationStore.currentSelectedTweet?.tweetId !== tweetId) {
     curationStore.currentSelectedTweet = null
   }
-  curationStore.currentSelectedTweet = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId) as any
+  try {
+  const post: any = await getTweetById(tweetId, accStore.getAccountInfo?.twitterId)
+  if (run !== postRun) return
+  if (!post?.tweetId) throw new Error('Post unavailable')
+  curationStore.currentSelectedTweet = post
   if (!curationStore.currentSelectedTweet?.tick) return
 
-  if (!comStore.currentSelectedCommunity) {
-    comStore.currentSelectedCommunity = await getCommunityDetail(curationStore.currentSelectedTweet.tick) as any
+  if (comStore.currentSelectedCommunity?.tick !== post.tick) {
+    const community = await getCommunityDetail(post.tick)
+    if (run !== postRun) return
+    comStore.currentSelectedCommunity = community as any
   }
 
   if (curationStore.currentSelectedTweet.spaceId) {
-    router.replace('/space-detail/' + tweetId)
+    router.replace({path:getChainPath(chainStore.activeChainId, '/space-detail/' + tweetId),query:route.query})
   }
 
   let ts = await getTokenInfoOfTweets([curationStore.currentSelectedTweet!])
-  curationStore.currentSelectedTweet = ts[0]
-})
+  if (run === postRun) curationStore.currentSelectedTweet = ts[0]
+  } catch {
+    if (run === postRun && typeof route.query.blink === 'string') {
+      await router.replace({path:getChainPath(chainStore.activeChainId, `/commerce/${encodeURIComponent(route.query.blink)}`),query:{preview:'1'}})
+    }
+  }
+}, {immediate:true})
 
 </script>
 

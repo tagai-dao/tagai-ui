@@ -1,10 +1,9 @@
-import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy, useSignMessage, useCreateWallet} from "@privy-io/react-auth";
+import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy, useCreateWallet} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
 import {useEffect, useRef, useState} from "react";
 import { bondEthByPrivyAccToken } from '@/apis/api.ts';
 import { useAccountStore } from "@/stores/web3";
-import {isNativePlatform} from "@/utils/native.ts";
 import {usePrivyStore} from "@/stores/privy";
 import {findConnectedEmbeddedWallet, ensureConnectedEmbeddedWallet} from './embeddedWallet.mjs';
 
@@ -14,7 +13,6 @@ export default function AuthLoading() {
     const {wallets, ready} = useWallets()
     const { getAccessToken } = usePrivy();
     const { createWallet } = useCreateWallet();
-    const { signMessage } = useSignMessage();
     const accStore = useAccountStore();
     const privyStore = usePrivyStore();
     const walletsRef = useRef(wallets);
@@ -23,7 +21,6 @@ export default function AuthLoading() {
     /** Both login methods use this persistent wallet creation/binding coordinator. */
     const [pendingWalletBinding, setPendingWalletBinding] = useState(null);
     const walletBindingInFlightRef = useRef(false);
-    const nativeWalletSmokeConsumedRef = useRef(false);
 
     const findEmbeddedEthWallet = () =>
         findConnectedEmbeddedWallet(walletsRef.current);
@@ -155,31 +152,7 @@ export default function AuthLoading() {
                     privyStore.ethersProvider = provider
                     emitter.emit('walletProvider', provider)
 
-                    if (isNativePlatform() && !nativeWalletSmokeConsumedRef.current) {
-                        nativeWalletSmokeConsumedRef.current = true;
-                        try {
-                            const chainId = await provider.request({ method: 'eth_chainId' });
-                            const { signature } = await signMessage(
-                                { message: `TagAI embedded wallet smoke: ${wallet.address}` },
-                                { address: wallet.address }
-                            );
-                            emitter.emit('walletSmoke', {
-                                address: wallet.address,
-                                chainId,
-                                signature
-                            });
-                            console.log('Native embedded wallet smoke passed', {
-                                address: wallet.address,
-                                chainId,
-                                signature
-                            });
-                        } catch (error) {
-                            nativeWalletSmokeConsumedRef.current = false;
-                            console.error('Native embedded wallet smoke failed:', error);
-                        }
-                    }
-
-                    console.log(provider)
+                    // Never request a diagnostic signature on login/session restoration.
                 } catch (error) {
                     privyStore.walletBinding = false
                     console.error('Failed to initialize embedded wallet provider:', error)
@@ -189,7 +162,7 @@ export default function AuthLoading() {
 
         }
         getWalletProvider()
-    }, [ready, wallets, pendingWalletBinding, signMessage]);
+    }, [ready, wallets, pendingWalletBinding]);
 
     useEffect(() => {
         console.log('state', state.status)

@@ -49,6 +49,39 @@
                     android:path="/native-oauth-redirect.html" />
             </intent-filter>
 
+            <!-- User-initiated fallback from browsers that retain HTTPS links. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tagai" android:host="open" />
+            </intent-filter>
+
+            <!-- Content links only; downloads and OAuth keep their own handling. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="tagai.fun" />
+                <data android:pathPrefix="/bsc/commerce/" />
+                <data android:pathPrefix="/rh/commerce/" />
+                <data android:pathPrefix="/commerce/" />
+                <data android:pathPrefix="/bsc/tag-detail/" />
+                <data android:pathPrefix="/rh/tag-detail/" />
+                <data android:pathPrefix="/tag-detail/" />
+                <data android:pathPrefix="/bsc/buy-sell/" />
+                <data android:pathPrefix="/rh/buy-sell/" />
+                <data android:pathPrefix="/buy-sell/" />
+                <data android:pathPrefix="/bsc/post-detail/" />
+                <data android:pathPrefix="/rh/post-detail/" />
+                <data android:pathPrefix="/post-detail/" />
+                <data android:pathPrefix="/bsc/space-detail/" />
+                <data android:pathPrefix="/rh/space-detail/" />
+                <data android:pathPrefix="/space-detail/" />
+                <data android:pathPrefix="/bsc/user/" />
+                <data android:pathPrefix="/rh/user/" />
+                <data android:pathPrefix="/user/" />
+            </intent-filter>
         </activity>
 
         <provider

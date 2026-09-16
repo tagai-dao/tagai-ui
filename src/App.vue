@@ -3,7 +3,10 @@ import Layout from "@/layout/Layout.vue";
 import {useRoute, useRouter} from "vue-router";
 import { useStateStore, useModalStore } from "./stores/common";
 import { EthWalletState, useAccountStore } from "./stores/web3";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, watch } from "vue";
+import OpenAppBanner from '@/components/common/OpenAppBanner.vue'
+import BlinkSourceBanner from '@/components/common/BlinkSourceBanner.vue'
+import { getChainPath } from '@/config/chains'
 import { GlobalModalType } from "@/types";
 import { initPlugin } from "./utils/wallets";
 import { getEthPrice, getImportedCommunityInfo, getUserProfile, resolveCommerce } from "@/apis/api"
@@ -31,6 +34,16 @@ const { setInter } = useInterval();
 const { updateVPOP, updateUnreadMessageCount } = useAccount();
 
 useDocumentTitle(route);
+
+// A warm App Link changes the route without mounting App.vue again.
+watch(() => [route.params.commerceid, route.params.chain], async () => {
+  const id = route.params.commerceid
+  if (route.name !== 'home' || typeof id !== 'string' || id.length <= 4) return
+  const chainId = chainStore.activeChainId
+  try {
+    await router.replace({ path: getChainPath(chainId, `/commerce/${encodeURIComponent(id)}`), query: route.query, hash: route.hash })
+  } catch (error) { console.warn('Unable to resolve shared content:', error) }
+}, { immediate: true })
 
 function updateOgUrl() {
     const currentUrl = window.location.href;
@@ -101,24 +114,6 @@ onMounted(async () => {
     useAccountStore().ethConnectState = EthWalletState.Disconnect;
   }
 
-  if (typeof(route.params.commerceid) === 'string' && route.params.commerceid.length > 4) {
-    const commerceId = route.params.commerceid
-    resolveCommerce(commerceId).then((res: any) => {
-      if (res?.c !== 0 || !res?.d) return
-      const { commerceType, tweetId, fpmm, tick } = res.d
-      // 预测类 commerce：推文已绑定且有关联 fpmm 时，进预测详情页
-      if (tweetId && fpmm && commerceType === 2) {
-        router.replace(`/predict/battle/${fpmm}`)
-      } else if (tweetId && fpmm && commerceType === 3) {
-        router.replace(`/predict/event/${fpmm}`)
-      } else if (tweetId) {
-        router.replace('/post-detail/' + tweetId)
-      } else if (tick) {
-        router.replace('/tag-detail/' + tick)
-      }
-    }).catch()
-  }
-
   getEthPrice().then((p: any) => {
       if (Number(p) > 0) stateStore.ethPrice = Number(p)
     }).catch(error => console.warn('[price] initial native price unavailable', error));
@@ -147,6 +142,8 @@ onMounted(async () => {
 <template>
   <div id="app" :class="route.name==='home'?'bg-img-home':'bg-img-common'">
     <Layout></Layout>
+    <OpenAppBanner />
+    <BlinkSourceBanner />
   </div>
 </template>
 

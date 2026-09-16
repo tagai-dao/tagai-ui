@@ -1,4 +1,4 @@
-/** Only OAuth return links belong to the app; ordinary TagAI links stay on the web. */
+/** OAuth returns use a separate strict parser from ordinary content links. */
 export const NATIVE_OAUTH_REDIRECT_URL = 'https://tagai.fun/native-oauth-redirect'
 
 export function nativeOAuthCallbackPath(value: string): string | null {

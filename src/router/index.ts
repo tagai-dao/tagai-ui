@@ -64,8 +64,8 @@ const router = createRouter({
     {
       path: `${chainPrefix}/commerce/:commerceid?`,
       name: 'commerce',
-      component: HomeView,
-      meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'tag' }
+      component: () => import('@/views/BlinkLanding.vue'),
+      meta: { tabBar: true, topBar: true, mainMenu: 'tag' }
     },
     {
       path: `${chainPrefix}/tag-detail/:id/:sellsman?`,

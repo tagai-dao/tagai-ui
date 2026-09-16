@@ -10,7 +10,8 @@ import { useCommunityStore } from "@/stores/community";
 import { useChainStore } from '@/stores/chain';
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import { useRoute } from "vue-router";
-import { getCommunityDetail, trade, createTokenCommerce, tweet } from '@/apis/api'
+import { getCommunityDetail, trade, createTokenCommerce, tweet, resolveCommerce } from '@/apis/api'
+import { blinkIdFromRoute, verifiedBlink, blinkMatchesTrade } from '@/utils/blinkAttribution'
 import { GlobalModalType, type Community } from "@/types";
 import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getTokenInfo,
   buyToken, sellToken, getUserTokenInfo,
@@ -62,8 +63,34 @@ const props = defineProps({
 const { t } = useI18n()
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
-const getTradeSellsman = async () => {
+const getTradeSellsman = async (onVerifiedSource?: (id: string) => void) => {
   const chainId = chainStore.activeChainId
+  const sourcePath = route.fullPath
+  const token = comStore.currentSelectedCommunity?.token
+  const blinkId = blinkIdFromRoute(route)
+  if (blinkId) {
+    const result = await resolveCommerce(blinkId, chainId)
+    if (chainStore.activeChainId !== chainId || route.fullPath !== sourcePath || comStore.currentSelectedCommunity?.token !== token) {
+      throw new Error('Trade source changed. Please refresh the quote.')
+    }
+    if (result?.c !== 0) throw new Error('Unable to verify Blinks publisher. Please retry.')
+    const source = verifiedBlink(result.d, blinkId, chainId)
+    if (!token) throw new Error('Token is still loading. Please retry.')
+    if (['post-detail', 'space-detail'].includes(String(route.name)) && String(route.params.id) !== String(source.tweetId)) {
+      throw new Error('Blinks source does not match this post.')
+    }
+    if (blinkMatchesTrade(source, token, chainId)) {
+      const ipshare = chainStore.deployment.contracts.ipshare3
+      const subject = await resolveTradeSellsman(chainId, source.publisher.address,
+        async address => (await readContract('IPShare3', 'ipshareCreated', [address], ipshare)) === true)
+      if (chainStore.activeChainId !== chainId || route.fullPath !== sourcePath || comStore.currentSelectedCommunity?.token !== token) {
+        throw new Error('Trade source changed. Please refresh the quote.')
+      }
+      onVerifiedSource?.(blinkId)
+      return subject
+    }
+    // Another token in a post/community does not inherit the original Blink.
+  }
   const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
   const candidate = props.sellsman || routeSellsman
   // Only modern wrappers/hooks own fallback. Legacy listed issued tokens
@@ -688,7 +715,11 @@ async function confirm() {
     trading.value = true
     const token = comStore.currentSelectedCommunity
     if (!token) return;
-    const resolvedSellsman = await getTradeSellsman()
+    const tradeChainId = chainStore.activeChainId
+    const traderId = accStore.getAccountInfo?.twitterId
+    let sourceCommerceId: string | undefined
+    const resolvedSellsman = await getTradeSellsman(id => { sourceCommerceId = id })
+    const recordConfirmedTrade = (hash: string) => trade(token.tick, traderId, hash, sourceCommerceId, token.token, tradeChainId).catch(console.error)
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
 
@@ -739,7 +770,7 @@ async function confirm() {
         payEth.value = ''
         receiveAmount.value = undefined
         if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
-        recordCommunityTrade(hash)
+        recordConfirmedTrade(hash)
         emitter.emit('newTrade')
         updateUserTokenInfo()
       }else{
@@ -787,7 +818,7 @@ async function confirm() {
         sellAmount.value = ''
         receiveEth.value = undefined
         if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
-        recordCommunityTrade(hash)
+        recordConfirmedTrade(hash)
 
         emitter.emit('newTrade')
         updateUserTokenInfo()
@@ -836,19 +867,6 @@ async function updateUserTokenInfo () {
   } catch (error) {
     console.error('get users token info fail', error)
   }
-}
-
-function recordCommunityTrade(hash: string) {
-  const token = comStore.currentSelectedCommunity;
-  if (!token) return;
-
-  trade(
-    token.tick,
-    accStore.getAccountInfo?.twitterId,
-    hash,
-    useCurationStore().currentSelectedTweet?.commerceId,
-    token.token
-  ).catch(console.error)
 }
 
 onActivated(async () => {

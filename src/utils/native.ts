@@ -1,6 +1,7 @@
 import type { Router } from 'vue-router'
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import { nativeOAuthCallbackPath } from './nativeOAuthCallback'
+import { nativeContentPath } from './nativeContentLinks'
 export { NATIVE_OAUTH_REDIRECT_URL } from './nativeOAuthCallback'
 
 export const NATIVE_AUTH_CALLBACK_URL = 'tagai://auth-callback'
@@ -22,7 +23,14 @@ export async function initNativeApp(router: Router) {
 
   const handleAuthCallbackUrl = async (url: string, coldStart = false) => {
     const path = nativeOAuthCallbackPath(url)
-    if (!path) return
+    if (!path) {
+      const contentPath = nativeContentPath(url)
+      if (contentPath) {
+        if (coldStart) await router.replace(contentPath)
+        else await router.push(contentPath)
+      }
+      return
+    }
     if (handledAuthCallbackUrl === url) return
     handledAuthCallbackUrl = url
 
@@ -45,7 +53,8 @@ export async function initNativeApp(router: Router) {
   let starting = true
   let returnWork = Promise.resolve()
   const queueReturn = (url: string, coldStart: boolean) => {
-    returnWork = returnWork.then(() => handleAuthCallbackUrl(url, coldStart))
+    // A failed navigation must not poison all subsequent link deliveries.
+    returnWork = returnWork.catch(() => {}).then(() => handleAuthCallbackUrl(url, coldStart))
     return returnWork
   }
   await App.addListener('appUrlOpen', ({ url }) => queueReturn(url, starting))
