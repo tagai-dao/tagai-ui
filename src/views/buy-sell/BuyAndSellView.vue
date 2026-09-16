@@ -23,6 +23,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
   resolveV2NativePair, resolveV3NativePool
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
+import { resolveTradeListing } from '@/utils/tradeListing'
 import { requiresIPShareSellsman, resolveListedTradeSellsman, resolveTradeSellsman } from '@/utils/tradeSellsman'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
 import {
@@ -174,13 +175,11 @@ const maxSlippage = ref(1)
 const tokenBalance = ref(0)
 const tokenOriginalBalance = ref(0n)
 const ethBalance = ref(0)
-const listed = computed(() => {
-  const listed = comStore.currentSelectedCommunity?.listed
-  if (listed) {
-    maxSlippage.value = 1
-  }
-  return listed
-})
+const tradeReady = ref(false)
+const tradeLoadError = ref(false)
+const listed = ref<boolean>(false)
+const readTradeListing = (community: Community) => resolveTradeListing(community,
+  () => readContract('Token1', 'listed', [], community.token as `0x${string}`))
 
 const {
   contentRef,
@@ -357,7 +356,7 @@ function setMaxBuy() {
 const updateBuyAmount = debounce(async (val: any) => {
   const seq = ++buyQuoteSeq
   const str = normalizeAmountStr(val)
-  if (!comStore.currentSelectedCommunity) {
+  if (!tradeReady.value || !comStore.currentSelectedCommunity) {
     trading.value = false
     calculating.value = false
     receiveAmount.value = ''
@@ -495,7 +494,7 @@ const updateSellAmount = debounce(async (val: any) => {
   const seq = ++sellQuoteSeq
   try {
     const str = normalizeAmountStr(val)
-    if (!comStore.currentSelectedCommunity) {
+    if (!tradeReady.value || !comStore.currentSelectedCommunity) {
       receiveEth.value = ''
       quoteSpotPrice.value = null
       return
@@ -640,6 +639,7 @@ async function checkTweet() {
 }
 
 async function confirm() {
+  if (!tradeReady.value || trading.value || calculating.value) return
   // 交易只要求链上钱包，不要求 TagAI / Twitter 登录。社交登录仅用于
   // Log in、Wallet、Profile 和发帖等账户功能，不能拦截纯链上交易。
   if (!isWalletConnected.value) {
@@ -716,6 +716,15 @@ async function confirm() {
     const token = comStore.currentSelectedCommunity
     if (!token) return;
     const tradeChainId = chainStore.activeChainId
+    const verifiedListed = await readTradeListing(token)
+    if (disposed || tradeChainId !== chainStore.activeChainId || token !== comStore.currentSelectedCommunity) return
+    if (verifiedListed !== listed.value) {
+      // Graduation may also create a new pair/pool. Reload metadata and quote,
+      // rather than submitting the old curve quote through an external router.
+      await loadTradeCommunity()
+      notify({ message: t('v13Trade.refresh') })
+      return
+    }
     const traderId = accStore.getAccountInfo?.twitterId
     let sourceCommerceId: string | undefined
     const resolvedSellsman = await getTradeSellsman(id => { sourceCommerceId = id })
@@ -840,6 +849,13 @@ async function confirm() {
 }
 
 function refreshV13Quote() {
+  if (!tradeReady.value) {
+    void loadTradeCommunity()
+    return
+  }
+  willListing = false
+  updatedBuyValue = 0n
+  updatedReveiveAmount = 0n
   updateBuyAmount.cancel(); updateSellAmount.cancel()
   v13Session.reset()
   v13Quote.value = undefined; curveQuote.value = undefined
@@ -876,18 +892,31 @@ onActivated(async () => {
 
 let disposed = false
 let communityLoad = 0
-watch([() => props.tick || route.params.id as string, () => chainStore.activeChainId], async ([tick, chainId], previous) => {
+async function loadTradeCommunity() {
+  const tick = props.tick || route.params.id as string
+  const chainId = chainStore.activeChainId
   const load = ++communityLoad
-  const chainChanged = previous?.[1] !== undefined && previous[1] !== chainId
+  tradeReady.value = false
+  tradeLoadError.value = false
+  updateBuyAmount.cancel(); updateSellAmount.cancel()
+  buyQuoteSeq++; sellQuoteSeq++
+  receiveAmount.value = ''; receiveEth.value = ''
+  willListing = false
+  calculating.value = true
   try {
-    if (chainChanged || !comStore.currentSelectedCommunity?.token || comStore.currentSelectedCommunity?.tick !== tick) {
+    {
       comStore.currentSelectedCommunity = null
       tokenBalance.value = 0; tokenOriginalBalance.value = 0n; ethBalance.value = 0
       const detail = await getCommunityDetail(tick, chainId)
       if (disposed || load !== communityLoad) return
       const community = (await getTokenInfo([detail as Community]))[0]
       if (disposed || load !== communityLoad) return
+      const verifiedListed = await readTradeListing(community)
+      if (disposed || load !== communityLoad || chainId !== chainStore.activeChainId) return
+      community.listed = verifiedListed
+      listed.value = verifiedListed
       comStore.currentSelectedCommunity = community
+      tradeReady.value = true
     }
     const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
     stateStore.sellsman = props.sellsman ?? routeSellsman
@@ -896,9 +925,10 @@ watch([() => props.tick || route.params.id as string, () => chainStore.activeCha
     void updateUserTokenInfo()
     refreshV13Quote()
   } catch (error) {
-    if (!disposed && load === communityLoad) { calculating.value = false; handleErrorTip(error) }
+    if (!disposed && load === communityLoad) { tradeLoadError.value = true; calculating.value = false; handleErrorTip(error) }
   }
-}, { immediate: true })
+}
+watch([() => props.tick || route.params.id as string, () => chainStore.activeChainId], loadTradeCommunity, { immediate: true })
 
 onUnmounted(() => {
   disposed = true; communityLoad++; buyQuoteSeq++; sellQuoteSeq++
@@ -908,6 +938,7 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col gap-3">
+    <button v-if="tradeLoadError" class="underline text-orange-normal" @click="loadTradeCommunity">{{ $t('v13Trade.refresh') }}</button>
     <!-- <BackHeader class="px-3">
       <template #title>
         <div class="text-lg font-semibold text-black-19">
@@ -1142,7 +1173,7 @@ onUnmounted(() => {
         <button
           class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="(isWalletConnected && isV13 && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :disabled="!tradeReady || (isWalletConnected && isV13 && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
             !isWalletConnected

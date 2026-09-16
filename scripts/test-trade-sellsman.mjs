@@ -65,7 +65,7 @@ test('invalid default and unsupported chain fail before sending a transaction', 
 test('trade component uses the same resolver in quotes and all Buy/Sell branches', async () => {
   const view = await readFile(new URL('../src/views/buy-sell/BuyAndSellView.vue', import.meta.url), 'utf8')
   assert.doesNotMatch(view, /stateStore\.sellsman\s*\?\?/)
-  assert.match(view, /const resolvedSellsman = await getTradeSellsman\(\)/)
-  assert.match(view, /props\.sellsman \|\| routeSellsman/)
+  assert.match(view, /const resolvedSellsman = await getTradeSellsman\(id => \{ sourceCommerceId = id \}\)/)
+  assert.match(view, /props\.sellsman \?\? routeSellsman/)
   assert.match(view, /!requiresIPShareSellsman\(comStore.currentSelectedCommunity \?\? \{\}\)/)
 })
