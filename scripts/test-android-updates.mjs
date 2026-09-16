@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import ts from 'typescript'
 
 const code = ts.transpileModule(readFileSync(new URL('../src/utils/androidUpdatePolicy.ts', import.meta.url), 'utf8'), {
@@ -23,9 +24,15 @@ assert.equal(parse(release, NaN), null)
 assert.equal(parse(release, 0), null)
 const published = JSON.parse(readFileSync(new URL('../public/app-updates/android.json', import.meta.url), 'utf8'))
 assert.equal(published.enabled, true)
-assert.equal(parse(published, 22)?.versionCode, 24)
-assert.equal(parse(published, 23)?.versionCode, 24)
-assert.equal(parse(published, 24), null)
-assert.equal(parse(published, 25), null)
+const gradle = readFileSync(new URL('../android/app/build.gradle', import.meta.url), 'utf8')
+assert.equal(published.versionCode, Number(gradle.match(/versionCode (\d+)/)[1]))
+assert.equal(published.versionName, gradle.match(/versionName "([^"]+)"/)[1])
+for (const version of [22, 23, published.versionCode - 1]) {
+  assert.equal(parse(published, version)?.versionCode, published.versionCode)
+}
+assert.equal(parse(published, published.versionCode), null)
+assert.equal(parse(published, published.versionCode + 1), null)
+const apk = readFileSync(new URL(`../public${new URL(published.downloadUrl).pathname}`, import.meta.url))
+assert.equal(createHash('sha256').update(apk).digest('hex'), published.sha256)
 assert.equal(parse({ ...published, enabled: false }, 22), null)
 console.log('Android update policy: validation, enabled rollout, older/current/newer versions and rollback switch passed')

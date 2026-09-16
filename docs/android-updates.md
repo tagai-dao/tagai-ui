@@ -35,3 +35,14 @@ Android enforces APK integrity/signing compatibility at install time; this
 reminder-only implementation does not claim an in-app SHA-256 verification.
 
 Before release, test physical Android devices and OEM browser download handling.
+
+## 1.0.25 (versionCode 25)
+
+- Includes PR #186: Blinks/post token-card trades verify the on-chain listing
+  state before quoting and submitting. If a token graduates after quoting,
+  refresh pool metadata and require another confirmation.
+- Preserves Blinks publisher/IPShare attribution, native OAuth, and update reminders.
+- Uses the existing production signing certificate and `fun.tagai.app` ID;
+  install over the existing official app without uninstalling or clearing data.
+- No physical Android device was connected during packaging. Real-account login,
+  upgrade data preservation, and BUIDL buy/sell require device acceptance.
