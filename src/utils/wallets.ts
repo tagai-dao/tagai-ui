@@ -13,6 +13,7 @@ import { GlobalModalType } from '@/types';
 import { reportLog } from './helper';
 import { useChainStore } from '@/stores/chain';
 import { confirmTransaction } from './transactionConfirmation';
+import { ensureWalletChain } from './ensureWalletChain';
 
 
 // this.ethWalletType = 'none' // metamask, okx, none
@@ -125,6 +126,29 @@ export const getWalletClient = (): WalletClient | null | undefined => {
 }
 
 export const getProviderInfo = () => providerInfo
+
+/** Prepare the selected wallet for a write, including Privy after a deep link. */
+export const getPreparedWalletClient = async (chainId = resolveChainId()): Promise<WalletClient> => {
+    const account = useAccountStore().ethConnectAddress
+    const client = getWalletClient()
+    if (!client) throw new Error('Wallet unavailable')
+    const assertContext = () => {
+        if (resolveChainId() !== chainId || useAccountStore().ethConnectAddress !== account)
+            throw new Error('Account or network changed. Please refresh the quote.')
+    }
+    assertContext()
+    const deployment = getChainDeployment(chainId)
+    const provider = { request: (args: any) => client.request(args) }
+    await ensureWalletChain(provider, chainId, {
+        chainId: `0x${chainId.toString(16)}`, chainName: deployment.name,
+        rpcUrls: deployment.rpcUrls?.length ? deployment.rpcUrls : [deployment.rpc],
+        nativeCurrency: deployment.nativeCurrency, blockExplorerUrls: [deployment.browser],
+    })
+    assertContext()
+    useAccountStore().chainId = chainId
+    // Rebuild rather than reusing a Privy client configured for the prior route.
+    return createWalletClient({ chain: getChainById(chainId), transport: custom(provider) }) as WalletClient
+}
 
 const detectEip6963 = () => {
     const accStore = useAccountStore();

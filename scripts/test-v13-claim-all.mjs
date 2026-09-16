@@ -14,7 +14,7 @@ await build({entryPoints:['src/utils/v13/pools.ts'],bundle:true,platform:'node',
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export const getChainDeployment=()=>({contracts:{}});
  export const getReadOnlyClient=()=>globalThis.__claimAll.client;
- export const getWalletClient=()=>globalThis.__claimAll.wallet;
+ export const getPreparedWalletClient=async()=>globalThis.__claimAll.wallet;
  export const useAccountStore=()=>({ethConnectAddress:globalThis.__claimAll.account,getWalletType:'privy'});
  export const useChainStore=()=>({activeChainId:56});
  export const setup=async()=>{};export const get=async()=>{};export const API_BASE_URL='';

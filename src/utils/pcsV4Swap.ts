@@ -19,7 +19,7 @@ import {
     type Hex
 } from "viem";
 import { writeContract, readContract } from "./contract";
-import { getWalletClient, getReadOnlyClient, setup, waitForTx } from "./wallets";
+import { getPreparedWalletClient, getReadOnlyClient, waitForTx } from "./wallets";
 import { customBsc } from "./privy";
 import errCode from "@/errCode";
 
@@ -316,13 +316,10 @@ export const buyTokenV4 = async (
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
 
     // Call Universal Router
-    const client = getWalletClient();
+    const client = await getPreparedWalletClient(56);
     const publicClient = getReadOnlyClient();
     if (!client) throw 'no wallet client';
     
-    if (useAccountStore().getWalletType !== 'privy') {
-        await setup();
-    }
     
     const { request } = await publicClient.simulateContract({
         account: useAccountStore().ethConnectAddress as `0x${string}`,
@@ -383,13 +380,10 @@ export const sellTokenV4 = async (
 
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
 
-    const client = getWalletClient();
+    const client = await getPreparedWalletClient(56);
     const publicClient = getReadOnlyClient();
     if (!client) throw 'no wallet client';
     
-    if (useAccountStore().getWalletType !== 'privy') {
-        await setup();
-    }
 
     const { request } = await publicClient.simulateContract({
         account,

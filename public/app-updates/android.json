@@ -2,9 +2,9 @@
   "enabled": true,
   "downloadEnabled": true,
   "applicationId": "fun.tagai.app",
-  "versionCode": 25,
-  "versionName": "1.0.25",
-  "notes": "Fix Blinks and post token-card trading for listed tokens. Verify listing status before quotes and transactions on BNB Chain and Robinhood, while preserving publisher IPShare attribution. Install over your existing official TagAI app; do not uninstall.",
-  "downloadUrl": "https://tagai.fun/downloads/TagAI-1.0.25-release.apk",
-  "sha256": "30a647457964ced338f5b622f6c92dd764a648cb9e142fd3cd4505b49f2f0cab"
+  "versionCode": 26,
+  "versionName": "1.0.26",
+  "notes": "Fix wallet chain mismatch when opening Blinks: verify and switch the actual wallet network before BNB Chain or Robinhood transactions, including Privy wallets. Includes the listed-token trading fix. Install over your existing official TagAI app; do not uninstall.",
+  "downloadUrl": "https://tagai.fun/downloads/TagAI-1.0.26-release.apk",
+  "sha256": "c74c46438b8b31ccf98f5b6f7bd8013afffdc4665e0a4620ce5bb34aabcaadd3"
 }

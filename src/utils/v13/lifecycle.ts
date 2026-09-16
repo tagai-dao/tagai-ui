@@ -1,4 +1,4 @@
-import { getReadOnlyClient, getWalletClient, setup } from '@/utils/wallets'
+import { getReadOnlyClient, getPreparedWalletClient } from '@/utils/wallets'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { getChainDeployment } from '@/config/chains'
@@ -34,8 +34,9 @@ export async function quoteCurve(token:Address,isBuy:boolean,amountIn:bigint):Pr
 export async function executeCurve(q:CurveQuote,subject:Address,slippage:number) {
   const account=useAccountStore().ethConnectAddress as Address
   const check=()=> { if(useChainStore().activeChainId!==56 || useAccountStore().ethConnectAddress?.toLowerCase()!==account.toLowerCase() || Date.now()-q.quotedAt>30000)throw new Error('V13_QUOTE_EXPIRED') }
-  check();if(useAccountStore().getWalletType!=='privy')await setup();check()
-  const client=getReadOnlyClient(56),wallet=getWalletClient()
+  check()
+  const client=getReadOnlyClient(56),wallet=await getPreparedWalletClient(56)
+  check()
   if(!wallet)throw new Error('Wallet unavailable')
   // Token13 skips its slippage check when bps=0. Use at least 1 bps.
   if (!Number.isInteger(slippage) || slippage < 0 || slippage > 5000) throw new Error('Invalid slippage')

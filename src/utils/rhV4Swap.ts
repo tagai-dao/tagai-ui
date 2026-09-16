@@ -12,7 +12,7 @@ import {
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { readContract, resolveContractAddress, writeContract } from './contract'
-import { getReadOnlyClient, getWalletClient, setup, waitForTx } from './wallets'
+import { getReadOnlyClient, getPreparedWalletClient, waitForTx } from './wallets'
 import { encodeHookData, sqrtPriceX96ToBnbPerToken } from './pcsV4Swap'
 import errCode from '@/errCode'
 
@@ -362,9 +362,8 @@ const executeRhV4Direct = async (
   )
   const commands = encodePacked(['uint8'], [V4_SWAP])
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 300)
-  const walletClient = getWalletClient()
+  const walletClient = await getPreparedWalletClient(4663)
   if (!walletClient) throw new Error('no wallet client')
-  if (useAccountStore().getWalletType !== 'privy') await setup()
 
   const { request } = await getReadOnlyClient().simulateContract({
     account,

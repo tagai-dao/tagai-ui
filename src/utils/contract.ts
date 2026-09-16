@@ -1,6 +1,6 @@
 import pump13Abi from './v13/Pump13.json'
 import token13Abi from './v13/Token13.json'
-import { getReadOnlyClient, getWalletClient, setup, waitForTx } from "./wallets";
+import { getReadOnlyClient, getPreparedWalletClient, waitForTx } from "./wallets";
 import { abis } from './abis'
 import { PumpContract1, IPShareContract1, uniswapV2Router02, uniswapV2Factory,
     PumpContract2, PumpContract3, PumpContract4, IPShareContract2,
@@ -254,13 +254,12 @@ export const writeContract = async ({
     /** Stop waiting for a receipt while leaving the submitted transaction intact. */
     receiptTimeout?: number,
 }): Promise<string> => {
-    const client = getWalletClient();
+    const targetChainId = useChainStore().activeChainId
+    const targetAccount = useAccountStore().ethConnectAddress
+    const client = await getPreparedWalletClient(targetChainId);
     const publicClient = getReadOnlyClient();
     if (!client) {
         throw 'no wallet client'
-    }
-    if (useAccountStore().getWalletType !== 'privy') {
-        await setup()
     }
     if (!address) {
         address = resolveContractAddress(contractName)
@@ -316,6 +315,8 @@ export const writeContract = async ({
     const gas = estimatedGas * 120n / 100n
 
     beforeWrite?.()
+    if (useChainStore().activeChainId !== targetChainId || useAccountStore().ethConnectAddress !== targetAccount)
+        throw new Error('Account or network changed. Please refresh the quote.')
     const writeRequest = client.writeContract({
         ...request,
         gas

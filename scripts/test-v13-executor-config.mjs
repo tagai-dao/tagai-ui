@@ -12,7 +12,7 @@ await build({entryPoints:['src/utils/v13/client.ts'],bundle:true,platform:'node'
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export const API_BASE_URL='http://test';export const get=async()=>({c:0,d:globalThis.__executor.metadata});
  export const getReadOnlyClient=()=>({getGasPrice:async()=>1n});
- export const getWalletClient=()=>{throw new Error('unexpected wallet access')};export const setup=()=>{};
+ export const getPreparedWalletClient=async()=>{throw new Error('unexpected wallet access')};export const setup=()=>{};
  export const useChainStore=()=>({activeChainId:56});
  export const useAccountStore=()=>({ethConnectAddress:'0x1111111111111111111111111111111111111111'});
  export const loadSnapshot=async(_client,m)=>{globalThis.__executor.snapshotTarget=m.executor;return{executable:true,fetchedAt:Date.now(),timestamp:1,hashes:{'0:true':'0x'+'00'.repeat(32),'0:false':'0x'+'00'.repeat(32)}}};`}))

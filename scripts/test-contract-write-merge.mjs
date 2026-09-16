@@ -27,7 +27,7 @@ function fixture(overrides = {}) {
   const context = vm.createContext({
     setTimeout, clearTimeout, console: { log() {} }, SubmittedTransactionError,
     zeroAddress: '0x' + '00'.repeat(20),
-    getWalletClient: () => ({ writeContract: async request => {
+    getPreparedWalletClient: async () => ({ writeContract: async request => {
       events.push('write'); assert.equal(request.gas, 120n); return hash
     } }),
     getReadOnlyClient: () => publicClient,

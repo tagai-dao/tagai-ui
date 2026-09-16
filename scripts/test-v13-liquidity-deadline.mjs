@@ -14,7 +14,7 @@ await build({entryPoints:['src/utils/v13/pools.ts'], bundle:true, platform:'node
   b.onLoad({filter:/.*/,namespace:'fixture'}, ()=>({loader:'js',contents:`
     export const getChainDeployment=()=>({contracts:{liquidityRouter13:'${router}',pump13:'${pump}',tradeRouter13:'${trade}'}});
     export const getReadOnlyClient=()=>globalThis.__liquidityDeadline.client;
-    export const getWalletClient=()=>globalThis.__liquidityDeadline.wallet;
+    export const getPreparedWalletClient=async()=>globalThis.__liquidityDeadline.wallet;
     export const useAccountStore=()=>({ethConnectAddress:globalThis.__liquidityDeadline.account,getWalletType:'privy'});
     export const useChainStore=()=>({activeChainId:globalThis.__liquidityDeadline.chainId});
     export const setup=async()=>{};

@@ -2,7 +2,7 @@ import liquidityAbi from './LiquidityRouter.json'
 import { getChainDeployment } from '@/config/chains'
 import { get } from '@/apis/axios'
 import { API_BASE_URL } from '@/config/api'
-import { getReadOnlyClient, getWalletClient, setup } from '@/utils/wallets'
+import { getReadOnlyClient, getPreparedWalletClient } from '@/utils/wallets'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { type Address,type Abi,parseAbi,zeroAddress } from 'viem'
@@ -40,8 +40,9 @@ export function walletGuard(){
  return {account,check:()=>{if(useChainStore().activeChainId!==56||useAccountStore().ethConnectAddress?.toLowerCase()!==account.toLowerCase())throw new Error('Wallet or chain changed')}}
 }
 export async function send(address:Address,abi:Abi,functionName:string,args:unknown[],value=0n,guard=walletGuard()) {
- guard.check();if(useAccountStore().getWalletType!=='privy')await setup();guard.check()
- const client=getReadOnlyClient(56),wallet=getWalletClient();if(!wallet)throw new Error('Wallet unavailable')
+ guard.check()
+ const client=getReadOnlyClient(56),wallet=await getPreparedWalletClient(56);if(!wallet)throw new Error('Wallet unavailable')
+ guard.check()
  const tx={address,abi,functionName,args,value,account:guard.account}
  const {request}=await client.simulateContract(tx)
  guard.check()
