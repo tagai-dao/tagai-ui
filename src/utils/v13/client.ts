@@ -1,7 +1,7 @@
 import { getChainDeployment } from '@/config/chains';
 import { get } from '@/apis/axios';
 import { API_BASE_URL } from '@/config/api';
-import { getReadOnlyClient, getWalletClient, setup } from '@/utils/wallets';
+import { getReadOnlyClient, getPreparedWalletClient } from '@/utils/wallets';
 import { useChainStore } from '@/stores/chain';
 import { useAccountStore } from '@/stores/web3';
 import { parseAbi, isAddress, zeroAddress, type Abi, type Address, type Hex } from 'viem';
@@ -149,11 +149,9 @@ export async function executeQuote(q: Quote, subject: Address, slippageBps: numb
             throw new QuoteError('V13_EXECUTOR_UNAVAILABLE');
     };
     guard();
-    const client = getReadOnlyClient(56), wallet = getWalletClient();
+    const client = getReadOnlyClient(56), wallet = await getPreparedWalletClient(56);
     if (!wallet)
         throw new QuoteError('V13_ACCOUNT_CHANGED');
-    if (useAccountStore().getWalletType !== 'privy')
-        await setup();
     guard();
     const send = async (tx: any): Promise<Hex> => {
         guard();

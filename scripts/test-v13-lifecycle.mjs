@@ -10,7 +10,7 @@ await build({entryPoints:['src/utils/v13/lifecycle.ts'],bundle:true,platform:'no
  b.onResolve({filter:/^@\/(utils\/wallets|stores\/(web3|chain)|config\/chains)$/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:`
  export const getReadOnlyClient=()=>globalThis.__life.client;
- export const getWalletClient=()=>globalThis.__life.wallet;
+ export const getPreparedWalletClient=async()=>globalThis.__life.wallet;
  export const setup=async()=>{};
  export const useAccountStore=()=>globalThis.__life.account;
  export const useChainStore=()=>globalThis.__life.chain;

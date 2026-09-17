@@ -220,7 +220,7 @@ await build({ entryPoints: ['src/utils/v13/client.ts'], bundle: true, platform: 
                         '@/apis/axios': 'export const get=(...a)=>globalThis.__v13Deps.get(...a)',
                         '@/config/api': "export const API_BASE_URL='http://test'",
                         '@/config/chains': "export const getChainDeployment=()=>({contracts:{tradeRouter13:'0x000000000000000000000000000000000000005a'}})",
-                        '@/utils/wallets': 'export const getReadOnlyClient=()=>globalThis.__v13Deps.client; export const getWalletClient=()=>globalThis.__v13Deps.wallet; export const setup=async()=>{}',
+                        '@/utils/wallets': 'export const getReadOnlyClient=()=>globalThis.__v13Deps.client; export const getPreparedWalletClient=async()=>globalThis.__v13Deps.wallet; export const setup=async()=>{}',
                         '@/stores/chain': 'export const useChainStore=()=>globalThis.__v13Deps.chain',
                         '@/stores/web3': 'export const useAccountStore=()=>globalThis.__v13Deps.account',
                     })[args.path], loader: 'js' }));

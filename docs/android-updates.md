@@ -46,3 +46,15 @@ Before release, test physical Android devices and OEM browser download handling.
   install over the existing official app without uninstalling or clearing data.
 - No physical Android device was connected during packaging. Real-account login,
   upgrade data preservation, and BUIDL buy/sell require device acceptance.
+
+## 1.0.26 (versionCode 26)
+
+- Fix actual-wallet chain mismatch after Blinks/deep-link navigation. Privy and
+  external wallets verify `eth_chainId`, switch networks when required, and
+  verify again before preparing the transaction client.
+- Covers shared contract writes and direct BNB/RH V4 and V13 transaction paths.
+  Rejected, pending, or unsuccessful switches stop before transaction submission.
+- Retains the 1.0.25 listing fix and the existing production signing identity.
+- APK SHA-256: `c74c46438b8b31ccf98f5b6f7bd8013afffdc4665e0a4620ce5bb34aabcaadd3`.
+- Automated regressions, production build/type-check, Android unit tests and
+  release assembly passed. No physical-device upgrade or live trade was executed.
