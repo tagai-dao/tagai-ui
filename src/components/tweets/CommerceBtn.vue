@@ -11,13 +11,18 @@ import { isMultiOutcomeMarket } from '@/composables/useEventMarketOutcomes';
 import { useAccountStore } from '@/stores/web3';
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { useChainStore } from '@/stores/chain';
+import { getChainPath } from '@/config/chains';
+import BlinkTwitterLoginButton from '@/components/login/BlinkTwitterLoginButton.vue';
+import { useBlinkLoginPrompt } from '@/composables/useBlinkLoginPrompt';
 
 const props = defineProps<{
     tweet: Tweet
 }>()
 const stateStore = useStateStore()
 const accStore = useAccountStore()
+const showBlinkLogin = useBlinkLoginPrompt()
 const chainStore = useChainStore()
+const loginReturnPath = computed(() => getChainPath(chainStore.activeChainId, `/commerce/${encodeURIComponent(props.tweet.commerceId || '')}`))
 const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 const showTradeModal = ref(false)
 
@@ -154,10 +159,13 @@ onUnmounted(() => {
     </div>
     <!-- 代币销售分享：Trade 按钮（保持原行为）。预测类解析完成前不显示按钮，避免错误闪现 Trade -->
     <template v-else-if="tweet.commerceId && commerceType === 1">
-        <button class="h-12 w-full bg-gradient-primary rounded-full text-h5 text-white my-3"
+        <div class="flex gap-2 items-stretch my-3">
+        <BlinkTwitterLoginButton v-if="showBlinkLogin" :return-path="loginReturnPath" />
+        <button v-else class="min-h-12 min-w-0 flex-1 bg-gradient-primary rounded-full text-base text-white px-3 py-2"
             @click.stop="gotoTrade">
             Trade ${{ tweet.tick }}
         </button>
+        </div>
         <el-dialog v-model="showTradeModal"
                    :close-on-click-modal="false"
                    :close-on-press-escape="showTradeModal"
@@ -166,7 +174,7 @@ onUnmounted(() => {
                    @click.stop
                    @pointerdown.stop>
             <div ref="tradeDialogContentRef" @click.stop @pointerdown.stop>
-                <BuyAndSellView :tick="tweet.tick" :sellsman="tweet.ethAddr || ''"/>
+                <BuyAndSellView :tick="tweet.tick" :sellsman="tweet.ethAddr || ''" :login-return-path="loginReturnPath"/>
             </div>
         </el-dialog>
     </template>

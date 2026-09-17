@@ -3,11 +3,13 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import emitter from "@/utils/emitter.ts";
 import {runNativeBrowserOAuth} from "@/utils/native.ts";
 import {Capacitor, registerPlugin} from '@capacitor/core';
+import {clearBlinkLoginReturn, saveBlinkLoginReturn} from '@/utils/blinkLoginReturn.ts';
 
-export default function LoginWithOAuth() {
+export default function LoginWithOAuth({returnPath, label = 'Log in with Twitter', compact = false}) {
     const { state, loading, initOAuth } = useLoginWithOAuth();
     const [ isLoading, setIsLoading] = useState(false);
     const reportedErrorRef = useRef('');
+    const startedRef = useRef(false);
 
     const reportAuthError = useCallback((error) => {
         const errorKey = [
@@ -41,7 +43,14 @@ export default function LoginWithOAuth() {
     const handleLogin = async () => {
         try {
             setIsLoading(true);
+            startedRef.current = true;
             reportedErrorRef.current = '';
+            // A fresh ordinary login supersedes a cancelled Blinks attempt.
+            // Do not clear on component mount: native OAuth remounts on return.
+            if (!returnPath) clearBlinkLoginReturn();
+            if (returnPath && !saveBlinkLoginReturn(returnPath)) {
+                throw new Error('Unable to save the Blinks return page. Allow site storage and try again.');
+            }
             window.localStorage.setItem('lastLoginTime', '0');
             await runNativeBrowserOAuth(() => initOAuth({ provider: 'twitter' }));
         } catch (err) {
@@ -54,7 +63,7 @@ export default function LoginWithOAuth() {
     useEffect(() => {
         console.log('state', state.status)
         console.log('loading', loading)
-        if(state.status==="error") {
+        if(state.status==="error" && startedRef.current) {
             reportAuthError(state.error)
             setIsLoading(false);
         }
@@ -64,9 +73,9 @@ export default function LoginWithOAuth() {
     }, [state, loading, reportAuthError])
 
     return (
-        <button onClick={handleLogin} disabled={isLoading}
-                className='h-12 w-full bg-gradient-primary rounded-full flex justify-center items-center gap-2'>
-            <span className='text-white text-h5'>Log in with Twitter</span>
+        <button type="button" onClick={handleLogin} disabled={isLoading}
+                className='min-h-12 w-full px-3 py-2 bg-gradient-primary rounded-full flex justify-center items-center gap-2 disabled:opacity-50'>
+            <span className={compact ? 'text-white text-sm leading-tight' : 'text-white text-h5'}>{label}</span>
             {isLoading && (
                 // 加载动画，使用 Tailwind CSS 的 animate-spin
                <div className="animate-spin">

@@ -2,6 +2,8 @@
 import { quoteCurve, executeCurve, type CurveQuote } from '@/utils/v13/lifecycle'
 import { createQuoteSession, executeQuote, type Quote } from '@/utils/v13/client'
 import BackHeader from "@/layout/BackHeader.vue";
+import BlinkTwitterLoginButton from '@/components/login/BlinkTwitterLoginButton.vue'
+import { useBlinkLoginPrompt } from '@/composables/useBlinkLoginPrompt'
 import {computed, nextTick, onActivated, onMounted, onUnmounted, provide, ref, shallowRef, watch} from "vue";
 import { useI18n } from "vue-i18n";
 import {useCreateTweet} from "@/composables/useCreateTweet";
@@ -58,10 +60,13 @@ const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
 
 const props = defineProps({
   tick: {type: String, required: false, default: null},
+  loginReturnPath: {type: String, default: ''},
   showChart: {type: Boolean, default: true},
   sellsman: {type: String, required: false, default: null}
 })
 const { t } = useI18n()
+const blinkLoginPath = computed(() => props.loginReturnPath || (blinkIdFromRoute(route) ? route.fullPath : ''))
+const showBlinkLogin = useBlinkLoginPrompt()
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
 const getTradeSellsman = async (onVerifiedSource?: (id: string) => void) => {
@@ -1170,8 +1175,10 @@ onUnmounted(() => {
           </template>
           <button class="underline" :disabled="calculating" @click="refreshV13Quote">{{ $t('v13Trade.refresh') }}</button>
         </div>
-        <button
-          class="w-full h-10 web:h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
+        <div class="flex gap-2 items-stretch">
+        <BlinkTwitterLoginButton v-if="!isWalletConnected && blinkLoginPath && showBlinkLogin" :return-path="blinkLoginPath" trade-dialog />
+        <button v-else
+          class="min-w-0 flex-1 min-h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
           :disabled="!tradeReady || (isWalletConnected && isV13 && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
@@ -1184,6 +1191,7 @@ onUnmounted(() => {
           }}</span>
           <i-ep-loading v-show="trading || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress)" class="animate-spin" />
         </button>
+        </div>
 
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">
             Maybe listing
