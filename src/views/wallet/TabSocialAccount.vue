@@ -13,6 +13,7 @@ import RechargeBNB from "@/views/wallet/social/RechargeBNB.vue";
 import WithdrawBNB from "@/views/wallet/social/WithdrawBNB.vue";
 import { useAccount } from "@/composables/useAccount";
 import { zeroAddress } from "viem";
+import CommentBuyAuthorization from './social/CommentBuyAuthorization.vue';
 
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
@@ -44,6 +45,7 @@ onMounted(() => {
 
 <template>
   <div class="h-full px-3">
+    <CommentBuyAuthorization />
     <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3 relative mb-2">
       <div class="flex justify-center items-center mb-2">
         <div class="relative w-min">
