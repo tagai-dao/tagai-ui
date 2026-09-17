@@ -25,7 +25,7 @@ const orders = ref<any[]>([])
 const contractChecked = ref(false)
 const abi = parseAbi([
   'function deposit(uint256 fees) payable', 'function withdraw(uint256 principal,uint256 fees)',
-  'function authorize(uint256 budget,uint256 perTrade,uint256 perDay,uint256 maxExecutionFee,uint16 maxPlatformBps,uint16 maxSlippageBps,uint256 expiresAt)',
+  'function authorize(uint256 budget,uint256 perTrade,uint256 perDay,uint256 maxExecutionFee,uint16 maxPlatformBps,uint16 maxSlippageBps,uint256 expiresAt,uint256 fees) payable',
   'function revoke()', 'function paused() view returns(bool)',
   'function principalBalance(address) view returns(uint256)', 'function feeBalance(address) view returns(uint256)',
   'function grants(address) view returns(uint256 remaining,uint256 perTrade,uint256 perDay,uint256 maxExecutionFee,uint256 expiresAt,uint256 version,uint256 startsAt,uint256 spentDay,uint256 day,uint16 maxPlatformBps,uint16 maxSlippageBps,bool enabled)',
@@ -33,7 +33,7 @@ const abi = parseAbi([
 const user = computed(() => account.getAccountInfo?.ethAddr as Address | undefined)
 const configured = computed(() => chain.activeChainId === 56 && isAddress(config.value?.vault ?? '') && !/^0x0{40}$/i.test(config.value?.vault ?? ''))
 const ready = computed(() => configured.value && contractChecked.value &&
-  user.value && account.ethConnectAddress?.toLowerCase() === user.value.toLowerCase() && account.getAccountInfo?.accountType === 0)
+  user.value && account.ethConnectAddress?.toLowerCase() === user.value.toLowerCase() && Number(account.getAccountInfo?.accountType) === 0)
 let generation = 0
 async function refresh() {
   const current = ++generation
@@ -57,10 +57,11 @@ async function refresh() {
     if (current !== generation) return
     principalBalance.value = p; feeBalance.value = f; grant.value = g
     contractChecked.value = true
-    orders.value = Array.isArray(history) ? history.map(item => {
+    const historyRows = Array.isArray(history) ? history : Array.isArray((history as any)?.data) ? (history as any).data : []
+    orders.value = historyRows.map((item: any) => {
       try { return { ...item, settlement: typeof item.settlement === 'string' ? JSON.parse(item.settlement) : item.settlement } }
       catch (_) { return { ...item, settlement: null } }
-    }) : []
+    })
   } catch (_) { if (current === generation) error.value = text('交易授权数据暂不可用，请刷新。', 'Trading authorization unavailable. Please refresh.') }
 }
 watch(() => [chain.activeChainId, user.value], () => { config.value = undefined; grant.value = undefined; orders.value = []; void refresh() }, { immediate: true })
@@ -90,7 +91,7 @@ async function action(kind: 'authorize' | 'deposit' | 'revoke' | 'withdraw') {
       const signature = await client.signMessage({ account: wallet, message: challenge.message })
       await post(BACKEND_API_URL + '/commentBuy/verify', { twitterId, nonce: challenge.nonce, signature })
       ensureContext()
-      args = [...amounts, bps, slip, BigInt(Math.floor(Date.now() / 1000) + duration * 86400)]
+      args = [...amounts, bps, slip, BigInt(Math.floor(Date.now() / 1000) + duration * 86400), 0n]
     } else if (kind === 'deposit') {
       const p = parseEther(principal.value), f = parseEther(fees.value)
       if (p < 0n || f < 0n || p + f === 0n) throw new Error('Invalid amount')
@@ -120,7 +121,7 @@ async function checkSubmitted() {
   <section class="rounded-2xl bg-grey-fa border border-white p-4 mb-4">
     <h3 class="text-lg font-bold">{{ text('交易授权 · BNB', 'Trading authorization · BNB') }}</h3>
     <p class="text-sm text-gray-500 mt-2">{{ text('与打赏资金独立。评论 @TagAIDAO buy 0.01BNB，买入唯一识别的原帖代币，直接到账已验证钱包。', 'Separate from tipping funds. Reply @TagAIDAO buy 0.01BNB to buy the uniquely identified token into your verified wallet.') }}</p>
-    <p class="text-sm text-gray-500 mt-2">{{ text('仅执行已审核的代币和交易池。旧版 V2 协议费按净本金折算约 2.041%；新授权默认费率上限 3%，可自行调低。部分导入代币另扣买入代币协议费，计入费率上限且已包含在最低到账数量中，不重复扣 BNB。既有授权不自动提高。', 'Only reviewed tokens and pools execute. Legacy V2 protocol fees are about 2.041% of net principal. New grants default to a 3% fee cap, which you can lower; existing grants are not raised. Some imported tokens deduct an output-token protocol fee, included in the fee cap and minimum received, never charged again in BNB.') }}</p>
+    <p class="text-sm text-gray-500 mt-2">{{ text('仅执行已审核的代币和交易池。协议费率按执行时链上配置报价；新授权默认费率上限 3%，可自行调低。部分导入代币另扣买入代币协议费，计入费率上限且已包含在最低到账数量中，不重复扣 BNB。既有授权不自动提高。', 'Only reviewed tokens and pools execute. Protocol fees are quoted from current on-chain settings. New grants default to a 3% fee cap, which you can lower; existing grants are not raised. Some imported tokens deduct an output-token protocol fee, included in the fee cap and minimum received, never charged again in BNB.') }}</p>
     <p v-if="!config?.enabled || chain.activeChainId !== 56" class="text-sm mt-3">{{ text('首期仅支持 BNB Chain；交易服务尚未启用时，不接受充值或授权。', 'BNB Chain only. Deposits and authorization are unavailable until the service is activated.') }}</p>
     <template v-if="configured">
       <p class="text-sm break-all mt-3">{{ text('接收钱包', 'Recipient') }}: {{ user }}</p>
