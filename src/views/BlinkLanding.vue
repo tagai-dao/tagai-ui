@@ -6,8 +6,11 @@ import { useChainStore } from '@/stores/chain'
 import { getChainPath } from '@/config/chains'
 import { verifiedBlink } from '@/utils/blinkAttribution'
 import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
+import BlinkTwitterLoginButton from '@/components/login/BlinkTwitterLoginButton.vue'
+import { useBlinkLoginPrompt } from '@/composables/useBlinkLoginPrompt'
 
 const route = useRoute(), router = useRouter(), chain = useChainStore()
+const showBlinkLogin = useBlinkLoginPrompt()
 const source = ref<CommerceResolveResult | null>(null)
 const loading = ref(false), error = ref(''), trade = ref(false)
 let generation = 0
@@ -50,7 +53,10 @@ watch(() => [route.params.commerceid, chain.activeChainId], () => load(), { imme
       <p>{{ source.publisher.username ? '@' + source.publisher.username : source.publisher.twitterId }}</p>
       <p class="text-sm">The original post is not available yet. This trade retains the verified Blinks publisher.</p>
       <a v-if="source.tweetId" :href="`https://x.com/i/status/${source.tweetId}`" target="_blank" rel="noopener noreferrer" class="text-orange-normal">View original post on X</a>
-      <button class="block w-full rounded-xl bg-surface-2 border border-line p-4 text-left" @click="trade = true">{{ source.tick }} · Trade</button>
+      <div class="flex gap-2 items-stretch">
+        <BlinkTwitterLoginButton v-if="showBlinkLogin" :return-path="route.fullPath" />
+        <button v-else class="min-w-0 flex-1 rounded-xl bg-surface-2 border border-line p-3 text-left" @click="trade = true">Trade ${{ source.tick }}</button>
+      </div>
       <router-link :to="{ path: getChainPath(source.chainId, `/tag-detail/${encodeURIComponent(source.tick!)}`), query: { blink: source.commerceId } }" class="text-orange-normal">Open community · keep Blinks attribution</router-link>
       <button class="block text-sm" @click="load(true)">Check for original post again</button>
     </article>

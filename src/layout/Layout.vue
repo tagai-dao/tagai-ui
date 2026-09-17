@@ -20,6 +20,7 @@ import {getUserProfile} from "@/apis/api";
 import SearchBar from "@/components/common/SearchBar.vue";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher.vue";
 import ChainSwitcher from "@/components/common/ChainSwitcher.vue";
+import { clearBlinkLoginReturn, takeBlinkLoginReturn } from '@/utils/blinkLoginReturn'
 
 const router = useRouter();
 const accStore = useAccountStore();
@@ -32,6 +33,9 @@ const modalStore = useModalStore()
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
 const handleReactLoginSuccess = async (accInfo: any) => {
+  // Email completion can arrive after another login was started. It must never
+  // consume a Twitter-only Blinks return target.
+  if (Number(accInfo.accountType) === 1) clearBlinkLoginReturn()
   accStore.setAccount(accInfo)
   emitter.emit('login', true);
 
@@ -71,7 +75,10 @@ const finishNewLoginIfNeeded = () => {
   newLogin.value = false
   const guardRedirect = sessionStorage.getItem('login-redirect')
   sessionStorage.removeItem('login-redirect')
-  router.replace(guardRedirect || localStorage.getItem('current-route') || '/')
+  const blinkReturn = takeBlinkLoginReturn()
+  const legacyReturn = localStorage.getItem('current-route')
+  localStorage.removeItem('current-route')
+  router.replace(blinkReturn || guardRedirect || legacyReturn || '/')
 }
 
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
@@ -144,7 +151,7 @@ const handleReactLoginError = async (error?: any) => {
   console.error('Failed to login tip', error)
   await sleep(1)
   accStore.clear();
-  router.replace(localStorage.getItem('current-route') || '/')
+  router.replace(takeBlinkLoginReturn() || localStorage.getItem('current-route') || '/')
 }
 
 const handleWalletProvider = async (provider: any) => {

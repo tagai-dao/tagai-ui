@@ -6,6 +6,7 @@ import { getWalletClient, signMessage } from "@/utils/wallets";
 import { bondEth } from "@/apis/api";
 import { BondEthMessage } from "@/config";
 import emitter from "@/utils/emitter";
+import { takeBlinkLoginReturn } from '@/utils/blinkLoginReturn'
 
 const router = useRouter();
 const accStore = useAccountStore();
@@ -20,9 +21,8 @@ const finish = () => {
   emitter.off('authSuccess', finish)
   emitter.off('authError', finish)
   if (fallbackTimer) clearTimeout(fallbackTimer)
-  const path = localStorage.getItem('current-route')
-  localStorage.removeItem('current-route')
-  router.replace(path ?? '/')
+  // Layout owns auth completion navigation. A second replace here used to
+  // overwrite the original Blinks destination with '/'.
 }
 
 onMounted(() => {
@@ -38,6 +38,9 @@ onMounted(() => {
     fallbackTimer = setTimeout(() => { takingLonger.value = true }, 45000)
   } else {
     finish()
+    const path = takeBlinkLoginReturn() || localStorage.getItem('current-route')
+    localStorage.removeItem('current-route')
+    router.replace(path ?? '/')
   }
 });
 

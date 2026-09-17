@@ -4,6 +4,7 @@ import { privyEmailLogin } from "../apis/api.ts";
 
 import emitter from "@/utils/emitter.ts";
 import debounce from "lodash.debounce";
+import { clearBlinkLoginReturn } from '@/utils/blinkLoginReturn.ts';
 
 export default function LoginWithEmail() {
   const [email, setEmail] = useState("");
@@ -48,6 +49,7 @@ export default function LoginWithEmail() {
   });
   
   const handleSendCode = useCallback(async () => {
+    clearBlinkLoginReturn();
     setIsLoading(true);
     try {
       try {
@@ -67,6 +69,8 @@ export default function LoginWithEmail() {
   }, [email])
 
   const handleLoginWithCode = useCallback(async () => {
+    // Also isolate a code obtained before a cancelled Blinks OAuth attempt.
+    clearBlinkLoginReturn();
     setIsLoading(true);
     try {
       await loginWithCode({ code });
