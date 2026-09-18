@@ -1,4 +1,4 @@
-import { parseEther } from 'viem'
+import { parseEther, formatEther } from 'viem'
 
 /** Do not allow parseEther to silently round an input with more than 18 decimals. */
 export function commentBuyAmount(value: string): bigint | null {
@@ -7,6 +7,17 @@ export function commentBuyAmount(value: string): bigint | null {
     const amount = parseEther(value.trim())
     return amount <= (1n << 256n) - 1n ? amount : null
   } catch { return null }
+}
+
+/** 页面展示用：最多 4 位小数、去掉尾零。授权输入框仍用完整精度。 */
+export function commentBuyDisplayAmount(value: bigint | string | undefined, fractionDigits = 4): string {
+  try {
+    const n = Number(formatEther(BigInt(value ?? 0)))
+    if (!Number.isFinite(n)) return '—'
+    return n.toLocaleString('en-US', { maximumFractionDigits: fractionDigits, useGrouping: false })
+  } catch {
+    return '—'
+  }
 }
 
 export const COMMENT_BUY_SLIPPAGE_BPS = 500

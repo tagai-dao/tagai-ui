@@ -24,7 +24,7 @@ const legacyAbi = parseAbi(['function principalBalance(address) view returns(uin
   'function grants(address) view returns(uint256 remaining,uint256 perTrade,uint256 perDay,uint256 maxExecutionFee,uint256 expiresAt,uint256 version,uint256 startsAt,uint256 spentDay,uint256 day,uint16 maxPlatformBps,uint16 maxSlippageBps,bool enabled)',
 ])
 interface BuyConfig { enabled: boolean; vault: Address; platformFeeBps: number; executionFeeWei: string }
-export interface CommentBuyOrder { replyId: string; state: string; reason?: string; txHash?: string; createdAt?: string; settlement?: Record<string, any> | null }
+export interface CommentBuyOrder { replyId: string; state: string; reason?: string; txHash?: string; createdAt?: string; tick?: string; settlement?: Record<string, any> | null }
 
 export function useCommentBuyAuthorization() {
   const { locale } = useI18n()

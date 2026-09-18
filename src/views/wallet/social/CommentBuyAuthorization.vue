@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { formatEther } from 'viem'
 import { ChatDotRound, Wallet, Refresh, CopyDocument, ArrowRight, Check, Close, Document, Lock } from '@element-plus/icons-vue'
 import { useCommentBuyAuthorization, type CommentBuyOrder } from '@/composables/useCommentBuyAuthorization'
+import { commentBuyDisplayAmount } from '@/utils/commentBuyForm'
 
 const {
   text, config, grant, balance, unified, checked, refreshing, busy,
@@ -14,7 +14,15 @@ const {
 const copied = ref(false)
 const command = '@TagAIDAO buy 0.001BNB'
 const shortAddress = (address?: string) => address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—'
-const amount = (value: bigint | string | undefined) => { try { return formatEther(BigInt(value ?? 0)) } catch { return '—' } }
+const amount = (value: bigint | string | undefined) => commentBuyDisplayAmount(value)
+const orderTick = (order: CommentBuyOrder) => order.tick || (order.settlement?.token ? shortAddress(order.settlement.token) : '')
+function orderTitle(order: CommentBuyOrder) {
+  const tick = orderTick(order)
+  if (order.state === 'confirmed' && order.settlement?.received != null && tick) {
+    return `+${amount(order.settlement.received)} ${tick}`
+  }
+  return tick || text('评论买币', 'Comment buy')
+}
 const displayBalance = computed(() => checked.value && user.value ? amount(balance.value) : '—')
 const status = computed(() => {
   if (!onBsc.value) return text('仅支持 BNB Chain', 'BNB Chain only')
@@ -144,9 +152,9 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
       <div v-else-if="!orders.length" class="cb-history-empty"><span class="cb-empty-icon"><ChatDotRound /></span><strong>{{ text('下一笔买入，从一条评论开始', 'Your next buy starts with a comment') }}</strong><p>{{ text('完成授权后，订单状态和链上凭证会显示在这里。', 'After authorization, your order status and on-chain receipts will appear here.') }}</p></div>
       <div v-else class="cb-order-list">
         <article v-for="order in orders" :key="order.replyId" class="cb-order">
-          <div class="cb-order-line"><span class="cb-order-icon"><Check v-if="order.state === 'confirmed'" /><Document v-else /></span><div class="cb-order-summary"><strong>{{ order.state === 'confirmed' && order.settlement?.token ? shortAddress(order.settlement.token) : text('评论买币', 'Comment buy') }}</strong><span>{{ dateLabel(order.createdAt) }}</span></div><div class="cb-order-result"><strong v-if="order.settlement?.total">−{{ amount(order.settlement.total) }} BNB</strong><span class="cb-order-status" :class="`cb-order-${order.state}`">{{ orderLabel(order) }}</span></div></div>
+          <div class="cb-order-line"><span class="cb-order-icon"><Check v-if="order.state === 'confirmed'" /><Document v-else /></span><div class="cb-order-summary"><strong>{{ orderTitle(order) }}</strong><span>{{ dateLabel(order.createdAt) }}</span></div><div class="cb-order-result"><strong v-if="order.settlement?.total">−{{ amount(order.settlement.total) }} BNB</strong><span class="cb-order-status" :class="`cb-order-${order.state}`">{{ orderLabel(order) }}</span></div></div>
           <p v-if="order.reason" class="cb-order-reason">{{ orderReason(order.reason) }}</p>
-          <details class="cb-order-details"><summary>{{ text('订单详情', 'Order details') }}</summary><div class="cb-detail-content"><div v-if="order.settlement?.principal">{{ text('买入本金', 'Buy principal') }}<span>{{ amount(order.settlement.principal) }} BNB</span></div><div v-if="order.settlement?.total">{{ text('实际总扣款', 'Total deducted') }}<span>{{ amount(order.settlement.total) }} BNB</span></div><div v-if="order.reason">{{ text('原因代码', 'Reason code') }}<code>{{ order.reason }}</code></div><div class="cb-order-links"><a :href="`https://x.com/i/status/${order.replyId}`" target="_blank" rel="noopener noreferrer">{{ text('查看 X 评论', 'View X reply') }} ↗</a><a v-if="order.txHash" :href="`https://bscscan.com/tx/${order.txHash}`" target="_blank" rel="noopener noreferrer">{{ text('查看链上交易', 'View transaction') }} ↗</a></div></div></details>
+          <details class="cb-order-details"><summary>{{ text('订单详情', 'Order details') }}</summary><div class="cb-detail-content"><div v-if="orderTick(order)">{{ text('买入代币', 'Token') }}<span>{{ orderTick(order) }}</span></div><div v-if="order.settlement?.received != null">{{ text('到账数量', 'Received') }}<span>{{ amount(order.settlement.received) }} {{ orderTick(order) }}</span></div><div v-if="order.settlement?.principal">{{ text('买入本金', 'Buy principal') }}<span>{{ amount(order.settlement.principal) }} BNB</span></div><div v-if="order.settlement?.total">{{ text('实际总扣款', 'Total deducted') }}<span>{{ amount(order.settlement.total) }} BNB</span></div><div v-if="order.reason">{{ text('原因代码', 'Reason code') }}<code>{{ order.reason }}</code></div><div class="cb-order-links"><a :href="`https://x.com/i/status/${order.replyId}`" target="_blank" rel="noopener noreferrer">{{ text('查看 X 评论', 'View X reply') }} ↗</a><a v-if="order.txHash" :href="`https://bscscan.com/tx/${order.txHash}`" target="_blank" rel="noopener noreferrer">{{ text('查看链上交易', 'View transaction') }} ↗</a></div></div></details>
         </article>
       </div>
     </section>
