@@ -9,12 +9,18 @@ export function commentBuyAmount(value: string): bigint | null {
   } catch { return null }
 }
 
-/** User-facing percentages, converted exactly to the contract's integer basis points. */
-export function commentBuyBps(value: string): number | null {
-  if (!/^\d+(?:\.\d{1,2})?$/.test(value.trim())) return null
-  const [whole, fraction = ''] = value.trim().split('.')
-  const bps = Number(whole) * 100 + Number(fraction.padEnd(2, '0'))
-  return Number.isSafeInteger(bps) && bps <= 1000 ? bps : null
+export const COMMENT_BUY_SLIPPAGE_BPS = 500
+export const COMMENT_BUY_PROTOCOL_CAP_BPS = 300
+
+/** Fee comes from the public API; never fall back to a zero-fee authorization on bad data. */
+export function commentBuyExecutionFee(value: unknown): bigint | null {
+  if (typeof value !== 'string' || !/^\d{1,30}$/.test(value)) return null
+  return BigInt(value)
+}
+
+/** Suggested reserve for one buy, not a charge or a guarantee of execution. */
+export function commentBuyFeeReserve(principal: bigint, executionFee: bigint): bigint {
+  return executionFee + (principal * BigInt(COMMENT_BUY_PROTOCOL_CAP_BPS) + 9999n) / 10000n
 }
 
 export function commentBuyLimitIssue(total: string, trade: string, daily: string): 'amount' | 'total' | 'daily' | null {

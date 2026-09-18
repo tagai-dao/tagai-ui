@@ -13,15 +13,15 @@ export const useChainStore = () => ({ activeChainId: mode === 'wrong-chain' ? 46
 export const useModalStore = () => ({ setModalVisible: () => { account.ethConnectAddress = wallet; account.ethConnectState = 1 } })
 export const GlobalModalType = { Login: 0, ChoseWallet: 1, BondEth: 2 }
 export const BACKEND_API_URL = '/fixture'
-let principal = mode === 'active' ? 9600000000000000n : mode === 'funded' ? 1000000000000000n : 0n
-let fees = principal > 0n ? 100000000000000n : 0n
-let grant: any[] = mode === 'active' ? [10000000000000000n, 1100000000000000n, 5000000000000000n, 0n, BigInt(Math.floor(Date.now() / 1000) + 86400 * 7), 1n, 0n, 0n, 0n, 300, 100, true] : [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0, 0, false]
+let principal = ['active', 'legacy'].includes(mode) ? 9600000000000000n : mode === 'funded' ? 1000000000000000n : 0n
+let fees = principal > 0n ? 530000000000000n : 0n
+let grant: any[] = ['active', 'legacy'].includes(mode) ? [10000000000000000n, 1530000000000000n, 5000000000000000n, mode === 'legacy' ? 0n : 500000000000000n, BigInt(Math.floor(Date.now() / 1000) + 86400 * 7), 1n, 0n, 0n, 0n, 300, mode === 'legacy' ? 100 : 500, true] : [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0, 0, false]
 export async function get(url: string) {
   if (mode === 'error') throw new Error('Fixture offline')
-  if (url.endsWith('/config')) return { enabled: mode !== 'disabled', vault, platformFeeBps: 100, executionFeeWei: '0' }
+  if (url.endsWith('/config')) return { enabled: mode !== 'disabled', vault, platformFeeBps: 0, executionFeeWei: '500000000000000' }
   if (mode !== 'active') return []
   return [
-    { replyId: '123', state: 'confirmed', createdAt: new Date().toISOString(), settlement: { token: wallet, principal: '1000000000000000', total: '1030000000000000' } },
+    { replyId: '123', state: 'confirmed', createdAt: new Date().toISOString(), settlement: { token: wallet, principal: '1000000000000000', executionFee: '500000000000000', total: '1530000000000000' } },
     { replyId: '124', state: 'rejected', reason: 'PROTOCOL_FEE_CAP', createdAt: new Date().toISOString() },
     { replyId: '125', state: 'submitted', createdAt: new Date().toISOString() },
   ]

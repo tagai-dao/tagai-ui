@@ -124,11 +124,6 @@
 .cb-modal-note { font-size: 11px; color: var(--text-muted); margin: 15px 0 0; }
 .cb-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .cb-field select { background: var(--surface-2); color: var(--text-base); border: 1px solid var(--border-base); padding: 12px; border-radius: 11px; font-size: 13px; min-height: 45px; }
-.cb-advanced-toggle { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px; padding: 15px 0; border-top: 1px solid var(--border-base); border-bottom: 1px solid var(--border-base); font-size: 11px; text-align: left; }
-.cb-advanced-toggle > span { display: inline-flex; gap: 7px; align-items: center; }
-.cb-advanced-toggle > span:last-child { color: var(--text-muted); }
-.cb-advanced-toggle svg { width: 14px; height: 14px; }
-.cb-advanced-fields { padding-top: 17px; }
 .cb-authorization-review { display: flex; align-items: flex-start; gap: 9px; padding: 15px 0 0; font-size: 11px; color: var(--text-muted); }
 .cb-authorization-review svg { color: #e58339; margin-top: 2px; width: 15px; height: 15px; }
 .cb-authorization-review p { margin: 0; }
@@ -156,4 +151,4 @@
   .cb-presets button { min-height: 40px; }
   .cb-icon-button { width: 40px; height: 40px; }
 }
-@media (max-width: 380px) { .cb-form-grid { grid-template-columns: 1fr; gap: 0; } .cb-command { gap: 6px; padding-left: 8px; } .cb-command code { font-size: 11px; } .cb-advanced-toggle { flex-wrap: wrap; } }
+@media (max-width: 380px) { .cb-form-grid { grid-template-columns: 1fr; gap: 0; } .cb-command { gap: 6px; padding-left: 8px; } .cb-command code { font-size: 11px; } }

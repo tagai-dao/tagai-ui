@@ -9,7 +9,7 @@ import { get, post } from '@/apis/axios'
 import { BACKEND_API_URL } from '@/config'
 import { getPreparedWalletClient, getReadOnlyClient } from '@/utils/wallets'
 import { writeContract, SubmittedTransactionError } from '@/utils/contract'
-import { commentBuyAmount, commentBuyBps, commentBuyLimitIssue } from '@/utils/commentBuyForm'
+import { commentBuyAmount, commentBuyExecutionFee, commentBuyFeeReserve, commentBuyLimitIssue, COMMENT_BUY_SLIPPAGE_BPS, COMMENT_BUY_PROTOCOL_CAP_BPS } from '@/utils/commentBuyForm'
 
 type Action = 'deposit' | 'authorize' | 'withdraw' | 'revoke'
 type Dialog = '' | Action
@@ -33,9 +33,9 @@ export function useCommentBuyAuthorization() {
   const checked = ref(false), refreshing = ref(false), busy = ref(false)
   const error = ref(''), loadError = ref(''), historyError = ref(false), success = ref('')
   const submitted = ref(''), submittedKind = ref<Action>(), transactionStage = ref('')
-  const dialog = ref<Dialog>(''), dialogVisible = ref(false), advanced = ref(false)
+  const dialog = ref<Dialog>(''), dialogVisible = ref(false)
   const orders = ref<CommentBuyOrder[]>([]), now = ref(Date.now())
-  const form = reactive({ principal: '0.001', fees: '0.0001', budget: '0.0011', perTrade: '0.0011', perDay: '0.0011', executionFee: '0', feePercent: '3', slippagePercent: '1', days: '7' })
+  const form = reactive({ principal: '0.001', fees: '0', budget: '0', perTrade: '0', perDay: '0', days: '7' })
   const user = computed(() => account.getAccountInfo?.ethAddr as Address | undefined)
   const twitterId = computed(() => account.getAccountInfo?.twitterId)
   const onBsc = computed(() => chain.activeChainId === 56)
@@ -44,7 +44,9 @@ export function useCommentBuyAuthorization() {
   const ready = computed(() => onBsc.value && checked.value && connected.value && Number(account.getAccountInfo?.accountType) === 0)
   const tradingAvailable = computed(() => checked.value && config.value?.enabled && !paused.value)
   const activeGrant = computed(() => !!grant.value?.[11] && grant.value[4] * 1000n > BigInt(now.value) && grant.value[0] > 0n)
-  const funded = computed(() => principalBalance.value > 0n && feeBalance.value > 0n)
+  const executionFeeWei = computed(() => commentBuyExecutionFee(config.value?.executionFeeWei))
+  const needsReauthorization = computed(() => activeGrant.value && executionFeeWei.value !== null && grant.value![3] < executionFeeWei.value)
+  const funded = computed(() => principalBalance.value > 0n && feeBalance.value > 0n && executionFeeWei.value !== null && feeBalance.value >= executionFeeWei.value)
   const locked = computed(() => busy.value || !!submitted.value)
   const depositTotal = computed(() => {
     const p = commentBuyAmount(form.principal), f = commentBuyAmount(form.fees)
@@ -57,8 +59,8 @@ export function useCommentBuyAuthorization() {
     if (issue === 'amount') return text('所有授权额度必须大于 0。', 'All spending limits must be greater than zero.')
     if (issue === 'total') return text('单笔限额不能超过总授权额度。', 'Per-order limit cannot exceed the total budget.')
     if (issue === 'daily') return text('单笔限额不能超过每日限额。', 'Per-order limit cannot exceed the daily limit.')
-    if (commentBuyBps(form.feePercent) === null || commentBuyBps(form.slippagePercent) === null) return text('费率与滑点须为 0–10%，最多两位小数。', 'Fee and slippage caps must be 0–10%, with up to two decimals.')
-    if (commentBuyAmount(form.executionFee) === null) return text('请输入有效的执行费上限。', 'Enter a valid execution fee cap.')
+    if (executionFeeWei.value === null) return text('无法读取执行费，请刷新后重试。', 'Execution fee unavailable. Refresh and retry.')
+    if (commentBuyAmount(form.perTrade)! <= executionFeeWei.value) return text('单笔限额必须高于执行费，并留出买币本金和协议费。', 'The per-order limit must cover more than the execution fee, including principal and protocol fees.')
     if (!/^\d+$/.test(form.days) || Number(form.days) < 1 || Number(form.days) > 90) return text('有效期须为 1–90 天。', 'Choose an expiry of 1–90 days.')
     return ''
   })
@@ -84,6 +86,7 @@ export function useCommentBuyAuthorization() {
       const c: BuyConfig = await get(BACKEND_API_URL + '/commentBuy/config') as any
       if (current !== generation) return
       if (!isAddress(c.vault ?? '') || /^0x0{40}$/i.test(c.vault)) throw new Error('Invalid vault')
+      if (commentBuyExecutionFee(c.executionFeeWei) === null || !Number.isInteger(c.platformFeeBps) || c.platformFeeBps < 0 || c.platformFeeBps > 1000) throw new Error('Invalid fee configuration')
       if (config.value && c.vault.toLowerCase() !== config.value.vault.toLowerCase()) { checked.value = false; grant.value = undefined; principalBalance.value = 0n; feeBalance.value = 0n }
       config.value = c
       const client = getReadOnlyClient(56)
@@ -127,22 +130,24 @@ export function useCommentBuyAuthorization() {
 
   function open(kind: Action) {
     if (locked.value) return
-    error.value = ''; success.value = ''; advanced.value = false
+    error.value = ''; success.value = ''
+    if (kind === 'deposit' && executionFeeWei.value !== null) {
+      form.fees = formatEther(commentBuyFeeReserve(commentBuyAmount(form.principal) ?? 1000000000000000n, executionFeeWei.value))
+    }
     if (kind === 'authorize') {
       const g = grant.value
       if (g && g[5] > 0n) {
-        // Editing starts from the user's actual caps, never silently raises an existing grant.
+        // Preserve spending limits. Current execution fee and 5% slippage are disclosed before signing.
         form.budget = formatEther(g[0]); form.perTrade = formatEther(g[1]); form.perDay = formatEther(g[2])
-        form.executionFee = formatEther(g[3]); form.feePercent = String(g[9] / 100); form.slippagePercent = String(g[10] / 100)
         form.days = String(Math.max(1, Math.min(90, Math.ceil((Number(g[4]) * 1000 - Date.now()) / 86400000))))
       } else {
         const total = principalBalance.value + feeBalance.value
-        const budget = total > 0n ? total : 1100000000000000n
+        const suggested = 1000000000000000n + commentBuyFeeReserve(1000000000000000n, executionFeeWei.value ?? 0n)
+        const budget = total > 0n ? total : suggested
         form.budget = formatEther(budget)
-        form.perTrade = formatEther(budget < 1100000000000000n ? budget : 1100000000000000n)
-        form.perDay = formatEther(budget < 11000000000000000n ? budget : 11000000000000000n)
-        form.executionFee = formatEther(BigInt(config.value?.executionFeeWei ?? '0'))
-        form.feePercent = '3'; form.slippagePercent = '1'; form.days = '7'
+        form.perTrade = formatEther(budget < suggested ? budget : suggested)
+        form.perDay = formatEther(budget < suggested * 10n ? budget : suggested * 10n)
+        form.days = '7'
       }
     }
     dialog.value = kind; dialogVisible.value = true
@@ -159,14 +164,18 @@ export function useCommentBuyAuthorization() {
     if (kind === 'authorize' && !signedIn.value) { connect(); return }
     busy.value = true; error.value = ''; success.value = ''
     const address = config.value!.vault, wallet = user.value!, id = twitterId.value
+    const authorizedExecutionFee = executionFeeWei.value
     const ensureContext = () => {
       if (!ready.value || user.value !== wallet || twitterId.value !== id || config.value?.vault !== address) throw new Error(text('账号或网络已切换，请重新打开操作。', 'Account or network changed. Reopen this action.'))
+      if (kind === 'authorize' && authorizedExecutionFee !== executionFeeWei.value) throw new Error('Fee configuration changed')
     }
     try {
       let args: any[] = [], value = 0n
       if (kind === 'authorize') {
-        const amounts = [form.budget, form.perTrade, form.perDay, form.executionFee].map(commentBuyAmount)
-        if (amounts.some(v => v === null)) return
+        const amounts = [form.budget, form.perTrade, form.perDay].map(commentBuyAmount)
+        if (amounts.some(v => v === null) || authorizedExecutionFee === null) return
+        // Keep the deployed contract's protocol-fee safety cap, not a user-facing pricing input.
+        const protocolCap = grant.value && grant.value[5] > 0n ? grant.value[9] : COMMENT_BUY_PROTOCOL_CAP_BPS
         transactionStage.value = text('请在钱包签名，验证 X 账号与钱包关联…', 'Sign in your wallet to verify the X account link…')
         const challenge: any = await post(BACKEND_API_URL + '/commentBuy/challenge', { twitterId: id })
         ensureContext()
@@ -175,7 +184,7 @@ export function useCommentBuyAuthorization() {
         const signature = await client.signMessage({ account: wallet, message: challenge.message })
         await post(BACKEND_API_URL + '/commentBuy/verify', { twitterId: id, nonce: challenge.nonce, signature })
         ensureContext()
-        args = [...amounts, commentBuyBps(form.feePercent), commentBuyBps(form.slippagePercent), BigInt(Math.floor(Date.now() / 1000) + Number(form.days) * 86400), 0n]
+        args = [...amounts, authorizedExecutionFee, protocolCap, COMMENT_BUY_SLIPPAGE_BPS, BigInt(Math.floor(Date.now() / 1000) + Number(form.days) * 86400), 0n]
       } else if (kind === 'deposit') {
         const p = commentBuyAmount(form.principal), f = commentBuyAmount(form.fees)
         if (p === null || f === null || p + f === 0n) return
@@ -209,5 +218,5 @@ export function useCommentBuyAuthorization() {
     } catch { error.value = text('尚未查到交易结果，请稍后检查，不要重复提交。', 'No receipt yet. Check again later; do not resubmit.') }
     finally { busy.value = false }
   }
-  return { text, account, config, grant, principalBalance, feeBalance, paused, checked, refreshing, busy, error, loadError, historyError, success, submitted, transactionStage, dialog, dialogVisible, advanced, orders, form, user, onBsc, signedIn, connected, ready, tradingAvailable, activeGrant, funded, locked, depositTotal, formIssue, needsConnection, connectionLabel, connectionHint, connect, refresh, open, action, checkSubmitted }
+  return { text, account, config, grant, principalBalance, feeBalance, paused, checked, refreshing, busy, error, loadError, historyError, success, submitted, transactionStage, dialog, dialogVisible, orders, form, user, onBsc, signedIn, connected, ready, tradingAvailable, activeGrant, needsReauthorization, funded, locked, depositTotal, formIssue, needsConnection, connectionLabel, connectionHint, connect, refresh, open, action, checkSubmitted }
 }
