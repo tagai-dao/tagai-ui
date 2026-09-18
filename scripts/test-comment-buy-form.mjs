@@ -37,7 +37,13 @@ test('unchanged grant uses pure deposit, preserving remaining budget and exact e
 test('new or changed grant and deposit produce one payable authorize call', () => {
   assert.equal(commentBuyGrantChanged({ budget: '0.01', perTrade: '0.002', perDay: '0.005', days: '7' }), true)
   assert.deepEqual(commentBuyFundingPlan('0.01', true), { functionName: 'authorize', value: 10000000000000000n })
-  for (const amount of ['0', '-1', '1e-3', '', '0.0000000000000000001']) assert.throws(() => commentBuyFundingPlan(amount, true), /INVALID_DEPOSIT/)
+  for (const amount of ['-1', '1e-3', '', '0.0000000000000000001']) assert.throws(() => commentBuyFundingPlan(amount, true), /INVALID_DEPOSIT/)
+})
+test('zero deposit updates authorization only; unchanged settings never send a transaction', () => {
+  for (const amount of ['0', '0.0', '0.000000000000000000']) {
+    assert.deepEqual(commentBuyFundingPlan(amount, true), { functionName: 'authorize', value: 0n })
+    assert.throws(() => commentBuyFundingPlan(amount, false), /NO_CHANGES/)
+  }
 })
 test('all-in limits honor contract constraints', () => {
   assert.equal(commentBuyLimitIssue('0.0011', '0.0011', '0.0011'), null)

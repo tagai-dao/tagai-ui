@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { formatEther } from 'viem'
-import { ChatDotRound, Wallet, Setting, Refresh, CopyDocument, ArrowRight, Check, Close, Document, Lock } from '@element-plus/icons-vue'
+import { ChatDotRound, Wallet, Refresh, CopyDocument, ArrowRight, Check, Close, Document, Lock } from '@element-plus/icons-vue'
 import { useCommentBuyAuthorization, type CommentBuyOrder } from '@/composables/useCommentBuyAuthorization'
 
 const {
@@ -28,20 +28,20 @@ const status = computed(() => {
   return text('已开启', 'Enabled')
 })
 const enabled = computed(() => checked.value && tradingAvailable.value && activeGrant.value && !needsReauthorization.value && funded.value)
-const primaryLabel = computed(() => needsConnection.value ? connectionLabel.value : !checked.value ? text('重新读取', 'Retry') : !tradingAvailable.value ? text('服务暂不可用', 'Service unavailable') : !funded.value ? text('充值并设置授权', 'Fund & set limits') : needsReauthorization.value ? text('更新买币授权', 'Update authorization') : !activeGrant.value ? text('设置额度并开启', 'Set limits & enable') : text('充值', 'Add funds'))
+const primaryLabel = computed(() => needsConnection.value ? connectionLabel.value : !checked.value ? text('重新读取', 'Retry') : !tradingAvailable.value ? text('服务暂不可用', 'Service unavailable') : text('充值 / 设置授权', 'Funds & authorization'))
 function primaryAction() {
   if (needsConnection.value) connect()
   else if (!checked.value) void refresh()
-  else open(!funded.value ? 'deposit' : needsReauthorization.value ? 'authorize' : activeGrant.value ? 'deposit' : 'authorize')
+  else open('deposit')
 }
 const expiry = computed(() => grant.value ? new Date(Number(grant.value[4]) * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
 const dialogTitle = computed(() => ({
-  deposit: text('充值买币资金', 'Fund comment buys'),
+  deposit: text('充值与授权设置', 'Funds & authorization'),
   authorize: activeGrant.value ? text('管理买币授权', 'Manage authorization') : text('开启评论买币', 'Enable comment buys'),
   withdraw: text('提取买币资金', 'Withdraw trading funds'),
   revoke: text('关闭评论买币？', 'Disable comment buys?'), '': '',
 })[dialog.value])
-const submitLabel = computed(() => dialog.value === 'deposit' ? updatesGrant.value ? text('确认充值并授权', 'Fund & authorize') : text('确认充值 · 保持原授权', 'Deposit · keep authorization') : dialog.value === 'authorize' ? text('确认更新授权', 'Update authorization') : dialog.value === 'withdraw' ? text('确认提取全部', 'Withdraw all funds') : text('确认关闭', 'Confirm disable'))
+const submitLabel = computed(() => dialog.value === 'deposit' ? depositTotal.value === 0n ? text('确认授权 · 不充值', 'Authorize · no deposit') : updatesGrant.value ? text('确认充值并授权', 'Fund & authorize') : text('确认充值 · 保持原授权', 'Deposit · keep authorization') : dialog.value === 'authorize' ? text('确认更新授权', 'Update authorization') : dialog.value === 'withdraw' ? text('确认提取全部', 'Withdraw all funds') : text('确认关闭', 'Confirm disable'))
 const canSubmit = computed(() => ready.value && !locked.value && !formIssue.value &&
   ((dialog.value === 'deposit' || dialog.value === 'authorize') ? tradingAvailable.value : true) &&
   (dialog.value !== 'authorize' || updatesGrant.value) &&
@@ -121,6 +121,7 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
         </div>
         <div class="cb-recipient"><span>{{ text('代币接收钱包', 'Tokens arrive in') }}</span><a v-if="user" :href="`https://bscscan.com/address/${user}`" :title="user" target="_blank" rel="noopener noreferrer">{{ shortAddress(user) }} ↗</a><span v-else>{{ text('连接后显示', 'Connect to view') }}</span></div>
         <p class="cb-separate"><Lock />{{ text('仅用于买币，与打赏余额和授权完全独立', 'Separate from your tipping balance and authorization') }}</p>
+        <button v-if="checked && grant?.[10]" class="cb-text-button cb-danger-text" :disabled="!ready || locked" @click="open('revoke')">{{ text('关闭评论买币', 'Disable comment buys') }}</button>
       </section>
 
       <section class="cb-card cb-guide" :aria-label="text('如何使用', 'How it works')">
@@ -135,18 +136,6 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
         <p class="cb-guide-note">{{ text('示例为真实买入 0.001 BNB；本金之外另收费用。', 'This command spends 0.001 BNB in principal, plus fees.') }}</p>
       </section>
     </div>
-
-    <section class="cb-card cb-authorization">
-      <div class="cb-section-heading"><div class="cb-card-title"><Setting />{{ text('我的交易授权', 'My trading authorization') }}</div><button v-if="checked && grant && grant[5] > 0n" class="cb-text-button" :disabled="!ready || locked || !tradingAvailable" @click="open('authorize')">{{ text('管理额度', 'Manage limits') }} <ArrowRight /></button></div>
-      <div v-if="checked && grant && grant[5] > 0n" class="cb-grant-grid">
-        <div><span>{{ text('剩余授权额度', 'Remaining budget') }}</span><strong>{{ amount(grant[0]) }} <small>BNB</small></strong></div>
-        <div><span>{{ text('每笔最多', 'Per order') }}</span><strong>{{ amount(grant[1]) }} <small>BNB</small></strong></div>
-        <div><span>{{ text('每天最多 · UTC', 'Per day · UTC') }}</span><strong>{{ amount(grant[2]) }} <small>BNB</small></strong></div>
-        <div><span>{{ text('授权有效至', 'Expires on') }}</span><strong>{{ expiry }} <small v-if="!activeGrant">{{ text('未生效', 'Inactive') }}</small></strong></div>
-      </div>
-      <div v-else class="cb-authorization-empty"><div><strong>{{ text('由你决定，每次能花多少。', 'You decide how much each buy can spend.') }}</strong><p>{{ text('充值时一起设置单笔、每日和总额度。授权不会转走钱包中的其他资产。', 'Set per-order, daily and total limits when funding. Other wallet assets are unaffected.') }}</p></div><button class="cb-button cb-secondary" :disabled="!ready || locked || !tradingAvailable" @click="open(funded ? 'authorize' : 'deposit')">{{ funded ? text('设置授权', 'Set up authorization') : text('充值并授权', 'Fund & authorize') }}</button></div>
-      <div v-if="checked && grant && grant[5] > 0n" class="cb-grant-footer"><span>{{ text('额度包含本金与费用，不等于账户余额。', 'Limits include principal and fees; they are not your balance.') }}</span><button v-if="grant[10]" class="cb-text-button cb-danger-text" :disabled="!ready || locked" @click="open('revoke')">{{ text('关闭评论买币', 'Disable comment buys') }}</button></div>
-    </section>
 
     <section class="cb-card cb-history">
       <div class="cb-section-heading"><div class="cb-card-title">{{ text('最近买入', 'Recent buys') }}<span v-if="orders.length" class="cb-count">{{ orders.length }}</span></div><span class="cb-small-label">{{ text('结果在这里查看，不自动回复 X', 'RESULTS HERE · NO AUTOMATIC X REPLIES') }}</span></div>
@@ -174,21 +163,15 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
       <div class="comment-buy cb-dialog-body">
         <fieldset :disabled="locked" class="cb-fieldset">
           <template v-if="dialog === 'deposit'">
-            <p class="cb-modal-intro">{{ text('充入一个余额，买币本金和费用都从这里扣。下方一起设置授权，一笔交易完成。', 'One balance pays for buys and fees. Set authorization below and confirm in one transaction.') }}</p>
-            <label class="cb-field"><span>{{ text('充值金额', 'Deposit amount') }}</span><div class="cb-amount-input"><input v-model="form.amount" inputmode="decimal" autocomplete="off" /><span>BNB</span></div></label>
-            <div class="cb-presets"><button v-for="preset in ['0.01', '0.05', '0.1']" :key="preset" type="button" :class="{ selected: form.amount === preset }" @click="form.amount = preset">{{ preset }} BNB</button></div>
+            <p class="cb-modal-intro">{{ text('在这里充值或修改授权。买币本金和费用统一从账户余额扣除。', 'Add funds or change authorization here. Buys and fees use your trading balance.') }}</p>
+            <label class="cb-field"><span>{{ text('充值金额', 'Deposit amount') }}</span><div class="cb-amount-input"><input v-model="form.amount" inputmode="decimal" autocomplete="off" /><span>BNB</span></div><small>{{ text('不充值可填写 0，仅设置或修改授权，仍需支付网络费。', 'Enter 0 to set or change authorization without depositing. A network fee still applies.') }}</small></label>
+            <div class="cb-presets"><button v-for="preset in ['0', '0.01', '0.05', '0.1']" :key="preset" type="button" :class="{ selected: form.amount === preset }" @click="form.amount = preset">{{ preset === '0' ? text('不充值', 'No deposit') : `${preset} BNB` }}</button></div>
           </template>
           <template v-if="dialog === 'authorize' || dialog === 'deposit'">
             <p class="cb-modal-intro">{{ text('仅允许从买币账户扣款。所有限额都包含买入本金和费用。', 'Only funds in your trading account can be spent. Every limit includes principal and fees.') }}</p>
             <div class="cb-form-grid"><label class="cb-field"><span>{{ text('每笔最多', 'Per-order limit') }}</span><div class="cb-input"><input v-model="form.perTrade" inputmode="decimal" /><span>BNB</span></div></label><label class="cb-field"><span>{{ text('每天最多', 'Daily limit') }}</span><div class="cb-input"><input v-model="form.perDay" inputmode="decimal" /><span>BNB</span></div></label></div>
             <label class="cb-field"><span>{{ text('本次总授权额度', 'Total budget for this authorization') }}</span><div class="cb-input"><input v-model="form.budget" inputmode="decimal" /><span>BNB</span></div><small>{{ text('可累计花费的上限，不是充值金额。每日限额按 UTC 0 点重置。', 'Maximum cumulative spending, not a deposit. Daily limits reset at 00:00 UTC.') }}</small></label>
             <label class="cb-field"><span>{{ text('授权有效期', 'Authorization expiry') }}</span><select v-model="form.days"><option v-if="grant && grant[4] > BigInt(Math.floor(Date.now() / 1000))" value="keep">{{ text('保持原到期时间', 'Keep original expiry') }} · {{ expiry }}</option><option v-for="day in ['1', '7', '30', '90']" :key="day" :value="day">{{ text('从本次确认起', 'From confirmation:') }} {{ day }} {{ text('天', 'days') }}</option></select></label>
-            <div class="cb-authorization-review"><Lock /><p>{{ text('每笔买入成功收取', 'Each successful buy costs') }} {{ executionFee }} BNB，{{ text('代币交易费用另计。', 'plus token trading fees.') }}<template v-if="updatesGrant">{{ text('本次授权允许最多 5% 的到账数量偏差。请先在钱包签名验证身份（免费），再确认交易。', 'This authorization allows up to a 5% shortfall from the quoted token amount. Verify your identity with a free wallet signature, then confirm the transaction.') }}</template><template v-if="config && config.platformFeeBps > 0"> {{ text('另收平台服务费', 'Additional service fee:') }} {{ serviceFee }}。</template></p></div>
-            <p class="cb-modal-note">{{ !updatesGrant ? dialog === 'deposit' ? text('设置未修改：只充值，不重置剩余额度、到期时间或今日已用额度。', 'Settings unchanged: deposit only, preserving remaining budget, expiry and today’s spend.') : text('设置未修改，无需提交交易。', 'Settings unchanged. No transaction is needed.') : text('确认后按填写值设置剩余额度与有效期，不叠加额度，也不重置今日已用额度。', 'Confirmation sets the entered remaining budget and expiry; it does not add budgets or reset today’s spend.') }}</p>
-            <template v-if="dialog === 'deposit'">
-              <div class="cb-checkout"><div><span>{{ text('本次存入', 'Deposit') }}</span><strong>{{ depositTotal === null ? '—' : amount(depositTotal) }} BNB</strong></div><small>{{ text('充值不收买入手续费，仅需支付网络费。', 'No buy fee is charged for deposits. A network fee applies.') }}</small></div>
-              <div class="cb-destination"><span>{{ text('资金存入买币账户，不用于打赏', 'Funds go to your trading account, not tips') }}</span><a v-if="config" :href="`https://bscscan.com/address/${config.vault}`" :title="config.vault" target="_blank" rel="noopener noreferrer">{{ text('查看资金合约', 'View funds contract') }} ↗<code>{{ shortAddress(config.vault) }}</code></a></div>
-            </template>
           </template>
           <template v-else-if="dialog === 'withdraw'">
             <p class="cb-modal-intro">{{ text('将全部买币余额提取到绑定钱包，不影响打赏资金。', 'Return the full trading balance to your linked wallet. Tip funds are unaffected.') }}</p>

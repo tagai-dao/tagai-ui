@@ -33,7 +33,8 @@ export function commentBuyGrantChanged(form: { budget: string; perTrade: string;
 
 export function commentBuyFundingPlan(amount: string, updateGrant: boolean) {
   const value = commentBuyAmount(amount)
-  if (value === null || value <= 0n) throw new Error('INVALID_DEPOSIT')
+  if (value === null || value < 0n) throw new Error('INVALID_DEPOSIT')
+  if (value === 0n && !updateGrant) throw new Error('NO_CHANGES')
   return { functionName: updateGrant ? 'authorize' as const : 'deposit' as const, value }
 }
 

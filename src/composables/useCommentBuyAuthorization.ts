@@ -54,7 +54,8 @@ export function useCommentBuyAuthorization() {
   const depositTotal = computed(() => commentBuyAmount(form.amount))
   const updatesGrant = computed(() => !activeGrant.value || needsReauthorization.value || commentBuyGrantChanged(form, openedGrant.value))
   const formIssue = computed(() => {
-    if (dialog.value === 'deposit' && (depositTotal.value === null || depositTotal.value <= 0n)) return text('请输入有效的充值金额。', 'Enter a valid deposit amount.')
+    if (dialog.value === 'deposit' && depositTotal.value === null) return text('请输入有效金额；不充值可填 0。', 'Enter a valid amount, or 0 to skip the deposit.')
+    if (dialog.value === 'deposit' && depositTotal.value === 0n && !updatesGrant.value) return text('未充值且授权设置未修改，无需提交交易。', 'No deposit or authorization changes. No transaction is needed.')
     if (dialog.value !== 'authorize' && dialog.value !== 'deposit') return ''
     if (!updatesGrant.value) return ''
     const issue = commentBuyLimitIssue(form.budget, form.perTrade, form.perDay)
@@ -164,7 +165,7 @@ export function useCommentBuyAuthorization() {
   }
   const actionSuccess = (kind: Action) => ({
     deposit: submittedCombined.value ? text('充值与授权已一起完成，现在可以去 X 发买币评论。', 'Deposit and authorization confirmed together. You can now post a buy comment on X.') : text('充值成功，原授权额度与有效期保持不变。', 'Deposit confirmed. Existing limits and expiry are unchanged.'),
-    authorize: text('授权已生效，现在可以去 X 发一条新的买币评论。', 'Authorization is active. You can now post a new buy comment on X.'),
+    authorize: text('授权设置已保存，未充值。', 'Authorization saved. No deposit was made.'),
     withdraw: text('已提取全部买币资金到绑定钱包。授权状态未改变。', 'Trading funds returned to your linked wallet. Authorization is unchanged.'),
     revoke: text('已关闭评论买币，账户余额不会自动提取。', 'Comment buys are disabled. Your funds remain available to withdraw.'),
   })[kind]
@@ -202,11 +203,11 @@ export function useCommentBuyAuthorization() {
       } else if (kind === 'withdraw') args = unified.value ? [balance.value] : [...legacyBalances.value]
       ensureContext()
       transactionStage.value = text('请在钱包确认交易…', 'Confirm the transaction in your wallet…')
-      submittedKind.value = kind
-      submittedCombined.value = kind === 'deposit' && updating
+      submittedKind.value = kind === 'deposit' && value === 0n ? 'authorize' : kind
+      submittedCombined.value = kind === 'deposit' && updating && value > 0n
       await writeContract({ contractName: 'CommentTradeVault', address, abi: unified.value ? abi : legacyAbi, functionName, args, value,
         beforeWrite: ensureContext, onSubmitted: hash => { submitted.value = hash; transactionStage.value = text('交易已提交，等待链上确认…', 'Transaction submitted. Waiting for confirmation…') } })
-      submitted.value = ''; success.value = actionSuccess(kind); dialogVisible.value = false
+      submitted.value = ''; success.value = actionSuccess(submittedKind.value); dialogVisible.value = false
       await refresh()
     } catch (e) {
       if (e instanceof SubmittedTransactionError || submitted.value) {
