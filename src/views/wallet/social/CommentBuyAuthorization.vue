@@ -63,7 +63,8 @@ function orderLabel(order: CommentBuyOrder) {
 function orderReason(reason?: string) {
   const reasons: Record<string, string> = {
     EXPIRED_COMMAND: text('评论已超过 3 分钟有效期，未执行。', 'The comment expired after 3 minutes and was not executed.'),
-    VERIFIED_WALLET_REQUIRED: text('请先验证钱包并开启买币授权。', 'Verify your wallet and enable comment buys first.'),
+    VERIFIED_WALLET_REQUIRED: text('请先绑定钱包，并使用绑定钱包开启买币授权。', 'Link your wallet, then use it to enable comment buys.'),
+    BOUND_WALLET_CHANGED: text('绑定钱包已变更，请确认新钱包的买币授权后重新发评论。', 'Your linked wallet changed. Authorize the new wallet and post a new comment.'),
     INSUFFICIENT_FUNDS: text('买币余额不足以支付本次买入及费用。', 'Trading balance does not cover this buy and its fees.'),
     LIMIT_EXCEEDED: text('本次买入含费用的金额超过授权限额。', 'The buy including fees exceeds your spending limit.'),
     FEE_CAP: text('当前授权未覆盖本次费用，请更新买币授权后重试。', 'Current authorization does not cover these fees. Update authorization and retry.'),

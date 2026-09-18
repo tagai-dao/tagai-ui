@@ -5,9 +5,9 @@ import { EthWalletState, useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
-import { get, post } from '@/apis/axios'
+import { get } from '@/apis/axios'
 import { BACKEND_API_URL } from '@/config'
-import { getPreparedWalletClient, getReadOnlyClient } from '@/utils/wallets'
+import { getReadOnlyClient } from '@/utils/wallets'
 import { writeContract, SubmittedTransactionError } from '@/utils/contract'
 import { commentBuyAmount, commentBuyExecutionFee, commentBuyGrantChanged, commentBuyFundingPlan, commentBuyLimitIssue, normalizeLegacyCommentBuyGrant, COMMENT_BUY_SLIPPAGE_BPS, type CommentBuyGrant } from '@/utils/commentBuyForm'
 
@@ -44,7 +44,8 @@ export function useCommentBuyAuthorization() {
   const onBsc = computed(() => chain.activeChainId === 56)
   const signedIn = computed(() => !!twitterId.value && !!account.getAccountInfo?.accessToken && Number(account.getAccountInfo?.accountType) === 0)
   const connected = computed(() => !!user.value && account.ethConnectState === EthWalletState.Connected && account.ethConnectAddress?.toLowerCase() === user.value.toLowerCase())
-  const ready = computed(() => onBsc.value && checked.value && connected.value && Number(account.getAccountInfo?.accountType) === 0)
+  const wrongWallet = computed(() => !!user.value && account.ethConnectState === EthWalletState.Connected && !!account.ethConnectAddress && account.ethConnectAddress.toLowerCase() !== user.value.toLowerCase())
+  const ready = computed(() => onBsc.value && checked.value && connected.value && signedIn.value)
   const tradingAvailable = computed(() => checked.value && unified.value && config.value?.enabled && !paused.value)
   const activeGrant = computed(() => !!grant.value?.[10] && grant.value[4] * 1000n > BigInt(now.value) && grant.value[0] > 0n)
   const executionFeeWei = computed(() => commentBuyExecutionFee(config.value?.executionFeeWei))
@@ -70,8 +71,8 @@ export function useCommentBuyAuthorization() {
     return ''
   })
   const needsConnection = computed(() => !onBsc.value || !signedIn.value || !connected.value)
-  const connectionLabel = computed(() => !onBsc.value ? text('切换到 BNB Chain', 'Switch to BNB Chain') : !signedIn.value ? text('登录 X 账号', 'Sign in with X') : !user.value ? text('绑定钱包', 'Link wallet') : text('连接绑定钱包', 'Connect linked wallet'))
-  const connectionHint = computed(() => !onBsc.value ? text('评论买币目前仅支持 BNB Chain。', 'Comment buys are available on BNB Chain.') : !signedIn.value ? text('使用发评论的 X 账号登录，买入代币将进入该账号绑定的钱包。', 'Sign in with the X account you will comment from. Tokens arrive in its linked wallet.') : text('请连接下方接收钱包，才能充值或修改授权。', 'Connect the recipient wallet below to fund or change authorization.'))
+  const connectionLabel = computed(() => !onBsc.value ? text('切换到 BNB Chain', 'Switch to BNB Chain') : !signedIn.value ? text('登录 X 账号', 'Sign in with X') : !user.value ? text('绑定钱包', 'Link wallet') : wrongWallet.value ? text('切换到绑定钱包', 'Switch to linked wallet') : text('连接绑定钱包', 'Connect linked wallet'))
+  const connectionHint = computed(() => !onBsc.value ? text('评论买币目前仅支持 BNB Chain。', 'Comment buys are available on BNB Chain.') : !signedIn.value ? text('使用发评论的 X 账号登录，买入代币将进入该账号绑定的钱包。', 'Sign in with the X account you will comment from. Tokens arrive in its linked wallet.') : wrongWallet.value ? text('当前钱包与绑定地址不一致，请在钱包中切换到下方绑定地址后再操作。', 'Your connected wallet does not match. Switch to the linked address below before continuing.') : text('请连接下方绑定钱包后再操作。', 'Connect the linked wallet below before continuing.'))
 
   function connect() {
     if (!onBsc.value) {
@@ -148,7 +149,7 @@ export function useCommentBuyAuthorization() {
       const g = grant.value
       openedGrant.value = g ? [...g] as CommentBuyGrant : undefined
       if (g && g[5] > 0n) {
-        // Preserve spending limits. Current execution fee and 5% slippage are disclosed before signing.
+        // Preserve spending limits; wallet binding was verified by the existing account flow.
         form.budget = formatEther(g[0]); form.perTrade = formatEther(g[1]); form.perDay = formatEther(g[2])
         form.days = g[4] * 1000n > BigInt(Date.now()) ? 'keep' : '7'
       } else {
@@ -191,14 +192,6 @@ export function useCommentBuyAuthorization() {
         if (amounts.some(v => v === null) || authorizedExecutionFee === null) return
         const expiresAt = form.days === 'keep' ? openedGrant.value![4] : BigInt(Math.floor(Date.now() / 1000) + Number(form.days) * 86400)
         if (expiresAt <= BigInt(Math.floor(Date.now() / 1000))) throw new Error('Authorization expired')
-        transactionStage.value = text('请在钱包签名，验证 X 账号与钱包关联…', 'Sign in your wallet to verify the X account link…')
-        const challenge: any = await post(BACKEND_API_URL + '/commentBuy/challenge', { twitterId: id })
-        ensureContext()
-        if (challenge.wallet?.toLowerCase() !== wallet.toLowerCase() || typeof challenge.message !== 'string') throw new Error(text('钱包验证信息不匹配，请重新登录。', 'Wallet verification mismatch. Sign in again.'))
-        const client = await getPreparedWalletClient(56)
-        const signature = await client.signMessage({ account: wallet, message: challenge.message })
-        await post(BACKEND_API_URL + '/commentBuy/verify', { twitterId: id, nonce: challenge.nonce, signature })
-        ensureContext()
         args = [...amounts, authorizedExecutionFee, COMMENT_BUY_SLIPPAGE_BPS, expiresAt]
       } else if (kind === 'withdraw') args = unified.value ? [balance.value] : [...legacyBalances.value]
       ensureContext()

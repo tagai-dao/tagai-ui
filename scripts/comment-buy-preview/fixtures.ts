@@ -6,7 +6,7 @@ const vault = '0xAB2A0FF3BDbdD68E7100B6875Ac4a58db851d363'
 export const EthWalletState = { Disconnect: 0, Connected: 1, Connecting: 2 }
 const account = reactive({
   getAccountInfo: { twitterId: 'fixture', ethAddr: wallet, accessToken: 'local-preview-only', accountType: 0 },
-  ethConnectAddress: mode === 'disconnected' ? '' : wallet, ethConnectState: mode === 'disconnected' ? 0 : 1,
+  ethConnectAddress: mode === 'disconnected' ? '' : mode === 'wrong-wallet' ? '0x0000000000000000000000000000000000000002' : wallet, ethConnectState: mode === 'disconnected' ? 0 : 1,
 })
 export const useAccountStore = () => account
 export const useChainStore = () => ({ activeChainId: mode === 'wrong-chain' ? 4663 : 56, setActiveChain: () => {} })
@@ -25,7 +25,7 @@ export async function get(url: string) {
     { replyId: '125', state: 'submitted', createdAt: new Date().toISOString() },
   ]
 }
-export async function post(url: string) { return url.endsWith('/challenge') ? { wallet, message: 'LOCAL DESIGN PREVIEW — NO REAL SIGNATURE', nonce: 'fixture' } : {} }
+export async function post() { throw new Error('Comment buys must reuse the existing wallet binding without a separate challenge') }
 export const getReadOnlyClient = () => ({
   getBytecode: async () => '0x01',
   readContract: async ({ functionName }: { functionName: string }) => {
@@ -34,10 +34,11 @@ export const getReadOnlyClient = () => ({
   },
   getTransactionReceipt: async () => ({ status: 'success' }),
 })
-export const getPreparedWalletClient = async () => ({ signMessage: async () => 'LOCAL_PREVIEW_NOT_A_SIGNATURE' })
+export const getPreparedWalletClient = async () => ({ signMessage: async () => { throw new Error('Unexpected extra identity signature') } })
 export class SubmittedTransactionError extends Error {}
 export async function writeContract(options: any) {
   options.beforeWrite()
+  if (account.ethConnectState !== 1 || account.ethConnectAddress.toLowerCase() !== wallet.toLowerCase()) throw new Error('Bound wallet required')
   if (mode === 'rejected') throw new Error('User rejected request')
   if (mode === 'pending') {
     options.onSubmitted(`0x${'1'.repeat(64)}`)
