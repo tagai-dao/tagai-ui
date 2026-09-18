@@ -10,6 +10,8 @@ import { GlobalModalType } from '@/types';
 import i18n from "@/lang";
 import { useAccount } from '@/composables/useAccount';
 import { parseEther } from 'viem';
+import { useI18n } from 'vue-i18n';
+const { locale } = useI18n();
 const t = i18n.global.t;
 
 const modalStore = useModalStore();
@@ -46,7 +48,7 @@ const withdraw = async () => {
 <template>
   <div class="flex flex-col p-6">
     <div class="flex justify-between items-center">
-      <span class="text-h2 text-grey-normal-hover">{{ t('profileView.withdraw') }}</span>
+      <span class="text-h2 text-grey-normal-hover">{{ locale.startsWith('zh') ? '提取打赏资金' : 'Withdraw tip funds' }}</span>
       <img
         class="cursor-pointer"
         @click="socialAccountModalStore.setModalVisible(false)"

@@ -14,11 +14,15 @@ import WithdrawBNB from "@/views/wallet/social/WithdrawBNB.vue";
 import { useAccount } from "@/composables/useAccount";
 import { zeroAddress } from "viem";
 import CommentBuyAuthorization from './social/CommentBuyAuthorization.vue';
+import { useI18n } from 'vue-i18n';
 
 const accStore = useAccountStore()
 const socialAccountModalStore = useSocialAccountModalStore()
 const { updateBalance } = useAccount();
 const isLoading = ref(false)
+const activeService = ref<'buy' | 'tip'>('buy')
+const { locale } = useI18n()
+const serviceText = (cn: string, en: string) => locale.value.startsWith('zh') ? cn : en
 
 function setModalType(type: SocialAccountModalType) {
   socialAccountModalStore.modalType = type
@@ -45,7 +49,14 @@ onMounted(() => {
 
 <template>
   <div class="h-full px-3">
-    <CommentBuyAuthorization />
+    <div class="social-services" :aria-label="serviceText('选择自动支付功能', 'Choose payment service')">
+      <button :aria-pressed="activeService === 'buy'" :class="{ selected: activeService === 'buy' }" @click="activeService = 'buy'">{{ serviceText('评论买币', 'Comment buy') }}</button>
+      <button :aria-pressed="activeService === 'tip'" :class="{ selected: activeService === 'tip' }" @click="activeService = 'tip'">{{ serviceText('社交打赏', 'Social tipping') }}</button>
+      <span>{{ serviceText('独立账户 · 独立授权', 'Separate funds & authorizations') }}</span>
+    </div>
+    <CommentBuyAuthorization v-show="activeService === 'buy'" />
+    <section v-show="activeService === 'tip'" class="social-tip-section">
+    <header class="social-tip-heading"><h2>{{ serviceText('社交打赏', 'Social tipping') }}</h2><p>{{ serviceText('给喜欢的创作者打赏。这里的充值仅用于 Tip，不用于评论买币。', 'Tip your favorite creators. Deposits here fund tips, not comment buys.') }}</p></header>
     <div class="bg-grey-fa border-[1px] border-white rounded-2xl py-3 px-3 relative mb-2">
       <div class="flex justify-center items-center mb-2">
         <div class="relative w-min">
@@ -88,11 +99,11 @@ onMounted(() => {
         </button> -->
         <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
           @click="setModalType(SocialAccountModalType.Recharge)">
-          {{$t('profileView.recharge')}}
+          {{ serviceText('充值打赏资金', 'Fund tips') }}
         </button>
         <button class="flex-1 h-10 bg-gradient-primary rounded-full px-3 text-white text-h5"
           @click="setModalType(SocialAccountModalType.Withdraw)">
-          {{$t('profileView.withdraw')}}
+          {{ serviceText('提取打赏资金', 'Withdraw tip funds') }}
         </button>
         <button @click="$router.push('/tip-record')" class="relative">
           <img class="w-8 h-8" src="~@/assets/icons/icon-record.svg" alt="">
@@ -107,6 +118,7 @@ onMounted(() => {
         </button>
     </div>
     <AddTokenList></AddTokenList>
+    </section>
     <el-dialog v-model="socialAccountModalStore.modalVisible"
                modal-class="overlay-white"
                class="max-w-[500px] rounded-[20px]"
@@ -124,5 +136,13 @@ onMounted(() => {
 </template>
 
 <style scoped>
-
+.social-services { display: flex; align-items: center; gap: 5px; padding: 5px; border-bottom: 1px solid var(--border-base); margin-top: 14px; }
+.social-services button { padding: 11px 20px; border-radius: 10px; color: var(--text-muted); font-size: 14px; font-weight: 600; }
+.social-services button.selected { color: #e58339; background: #fe913f12; }
+.social-services button:focus-visible { outline: 2px solid #fe913f; outline-offset: 2px; }
+.social-services > span { margin-left: auto; color: var(--text-muted); font-size: 11px; padding-right: 12px; }
+.social-tip-heading { margin: 28px 0 22px; color: var(--text-base); }
+.social-tip-heading h2 { font-size: 26px; font-weight: 650; }
+.social-tip-heading p { font-size: 13px; color: var(--text-muted); margin-top: 7px; }
+@media (max-width: 600px) { .social-services > span { display: none; } .social-services button { flex: 1; padding: 10px; } }
 </style>

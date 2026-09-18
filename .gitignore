@@ -137,6 +137,7 @@ _npm_cache/*
 .gstack/
 docs/*
 !docs/bsc-v13-lifecycle.md
+!docs/comment-buy-ux.md
 # Local Spectrum reference clone
 .tmp-spectrum/
 

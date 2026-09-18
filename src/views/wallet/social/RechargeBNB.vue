@@ -11,6 +11,9 @@ import { approveCoinPurse, setTokenLimit } from "@/utils/twitterTip";
 import { WETH } from "@/config";
 import { sleep } from "@/utils/helper";
 import { parseEther, zeroAddress } from "viem";
+import { useI18n } from 'vue-i18n';
+
+const { locale } = useI18n()
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const tick = ref('')
@@ -92,11 +95,12 @@ onMounted(async () => {
 <template>
   <div class="py-2">
     <div class="flex justify-between items-center">
-      <span class="text-h2 text-grey-normal-hover">{{ $t('profileView.recharge') }}</span>
+      <span class="text-h2 text-grey-normal-hover">{{ locale.startsWith('zh') ? '充值打赏资金' : 'Fund tips' }}</span>
       <img class="cursor-pointer"
            @click="socialAccountModalStore.setModalVisible(false, SocialAccountModalType.AddToken)"
            src="../../../assets/icons/icon-modal-close.svg" alt=""/>
     </div>
+    <p class="text-muted text-sm mt-3">{{ locale.startsWith('zh') ? '资金进入 CoinPurse 打赏合约，不用于评论买币。' : 'Funds go to the CoinPurse tipping contract, not comment buys.' }}</p>
     <div class="py-3">
       <div class="flex flex-col gap-1">
         <label for="docs" class="leading-6 text-lg flex gap-2">{{$t('profileView.inputBNB')}}:
