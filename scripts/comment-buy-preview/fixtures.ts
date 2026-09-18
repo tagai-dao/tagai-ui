@@ -13,9 +13,8 @@ export const useChainStore = () => ({ activeChainId: mode === 'wrong-chain' ? 46
 export const useModalStore = () => ({ setModalVisible: () => { account.ethConnectAddress = wallet; account.ethConnectState = 1 } })
 export const GlobalModalType = { Login: 0, ChoseWallet: 1, BondEth: 2 }
 export const BACKEND_API_URL = '/fixture'
-let principal = ['active', 'legacy'].includes(mode) ? 9600000000000000n : mode === 'funded' ? 1000000000000000n : 0n
-let fees = principal > 0n ? 530000000000000n : 0n
-let grant: any[] = ['active', 'legacy'].includes(mode) ? [10000000000000000n, 1530000000000000n, 5000000000000000n, mode === 'legacy' ? 0n : 500000000000000n, BigInt(Math.floor(Date.now() / 1000) + 86400 * 7), 1n, 0n, 0n, 0n, 300, mode === 'legacy' ? 100 : 500, true] : [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0, 0, false]
+let balance = ['active', 'legacy', 'old-vault'].includes(mode) ? 10130000000000000n : mode === 'funded' ? 10000000000000000n : 0n
+let grant: any[] = ['active', 'legacy', 'old-vault'].includes(mode) ? [10000000000000000n, 1530000000000000n, 5000000000000000n, mode === 'legacy' ? 0n : 500000000000000n, BigInt(Math.floor(Date.now() / 1000) + 86400 * 7), 1n, 0n, 1200000000000000n, 0n, mode === 'legacy' ? 100 : 500, true] : [0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0, false]
 export async function get(url: string) {
   if (mode === 'error') throw new Error('Fixture offline')
   if (url.endsWith('/config')) return { enabled: mode !== 'disabled', vault, platformFeeBps: 0, executionFeeWei: '500000000000000' }
@@ -29,7 +28,10 @@ export async function get(url: string) {
 export async function post(url: string) { return url.endsWith('/challenge') ? { wallet, message: 'LOCAL DESIGN PREVIEW — NO REAL SIGNATURE', nonce: 'fixture' } : {} }
 export const getReadOnlyClient = () => ({
   getBytecode: async () => '0x01',
-  readContract: async ({ functionName }: { functionName: string }) => ({ principalBalance: principal, feeBalance: fees, grants: grant, paused: mode === 'paused' })[functionName],
+  readContract: async ({ functionName }: { functionName: string }) => {
+    if (functionName === 'vaultVersion' && mode === 'old-vault') throw new Error('Legacy selector missing')
+    return { vaultVersion: 2n, balanceOf: balance, principalBalance: balance, feeBalance: 0n, grants: mode === 'old-vault' ? [...grant.slice(0, 9), 300, ...grant.slice(9)] : grant, paused: mode === 'paused' }[functionName]
+  },
   getTransactionReceipt: async () => ({ status: 'success' }),
 })
 export const getPreparedWalletClient = async () => ({ signMessage: async () => 'LOCAL_PREVIEW_NOT_A_SIGNATURE' })
@@ -41,9 +43,16 @@ export async function writeContract(options: any) {
     options.onSubmitted(`0x${'1'.repeat(64)}`)
     throw new SubmittedTransactionError('LOCAL PREVIEW: pending receipt')
   }
-  if (options.functionName === 'deposit') { fees += options.args[0]; principal += options.value - options.args[0] }
-  if (options.functionName === 'withdraw') { fees = principal = 0n }
-  if (options.functionName === 'revoke') grant[11] = false
-  if (options.functionName === 'authorize') grant = [options.args[0], options.args[1], options.args[2], options.args[3], options.args[6], 1n, 0n, 0n, 0n, options.args[4], options.args[5], true]
+  if (options.functionName === 'deposit') {
+    if (options.args.length !== 0) throw new Error('Unified deposit takes no arguments')
+    balance += options.value
+  }
+  if (options.functionName === 'withdraw') balance = 0n
+  if (options.functionName === 'revoke') grant[10] = false
+  if (options.functionName === 'authorize') {
+    if (options.args.length !== 6 || options.args[3] !== 500000000000000n || options.args[4] !== 500) throw new Error('Incorrect unified authorization policy')
+    balance += options.value
+    grant = [options.args[0], options.args[1], options.args[2], options.args[3], options.args[5], grant[5] + 1n, BigInt(Math.floor(Date.now() / 1000)), grant[7], grant[8], options.args[4], true]
+  }
   // No provider, real signature, hash or network transaction exists in this fixture.
 }

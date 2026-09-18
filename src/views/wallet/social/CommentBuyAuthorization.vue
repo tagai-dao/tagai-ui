@@ -5,21 +5,22 @@ import { ChatDotRound, Wallet, Setting, Refresh, CopyDocument, ArrowRight, Check
 import { useCommentBuyAuthorization, type CommentBuyOrder } from '@/composables/useCommentBuyAuthorization'
 
 const {
-  text, config, grant, principalBalance, feeBalance, checked, refreshing, busy,
+  text, config, grant, balance, unified, checked, refreshing, busy,
   error, loadError, historyError, success, submitted, transactionStage, dialog, dialogVisible,
   orders, form, user, signedIn, connected, ready, tradingAvailable, activeGrant, needsReauthorization, funded, locked,
-  depositTotal, formIssue, needsConnection, connectionLabel, connectionHint, onBsc,
+  depositTotal, updatesGrant, formIssue, needsConnection, connectionLabel, connectionHint, onBsc,
   connect, refresh, open, action, checkSubmitted,
 } = useCommentBuyAuthorization()
 const copied = ref(false)
 const command = '@TagAIDAO buy 0.001BNB'
 const shortAddress = (address?: string) => address ? `${address.slice(0, 6)}…${address.slice(-4)}` : '—'
 const amount = (value: bigint | string | undefined) => { try { return formatEther(BigInt(value ?? 0)) } catch { return '—' } }
-const displayBalance = computed(() => checked.value && user.value ? amount(principalBalance.value) : '—')
+const displayBalance = computed(() => checked.value && user.value ? amount(balance.value) : '—')
 const status = computed(() => {
   if (!onBsc.value) return text('仅支持 BNB Chain', 'BNB Chain only')
   if (loadError.value) return text('数据暂不可用', 'Data unavailable')
   if (!checked.value) return text('读取中', 'Loading')
+  if (!unified.value) return text('旧版账户', 'Legacy account')
   if (!tradingAvailable.value) return text('服务已暂停', 'Service paused')
   if (!activeGrant.value) return text('未开启', 'Not enabled')
   if (needsReauthorization.value) return text('待更新授权', 'Update authorization')
@@ -27,11 +28,11 @@ const status = computed(() => {
   return text('已开启', 'Enabled')
 })
 const enabled = computed(() => checked.value && tradingAvailable.value && activeGrant.value && !needsReauthorization.value && funded.value)
-const primaryLabel = computed(() => needsConnection.value ? connectionLabel.value : !checked.value ? text('重新读取', 'Retry') : !tradingAvailable.value ? text('服务暂不可用', 'Service unavailable') : needsReauthorization.value ? text('更新买币授权', 'Update authorization') : !funded.value ? text('充值买币资金', 'Fund comment buys') : !activeGrant.value ? text('设置额度并开启', 'Set limits & enable') : text('充值', 'Add funds'))
+const primaryLabel = computed(() => needsConnection.value ? connectionLabel.value : !checked.value ? text('重新读取', 'Retry') : !tradingAvailable.value ? text('服务暂不可用', 'Service unavailable') : !funded.value ? text('充值并设置授权', 'Fund & set limits') : needsReauthorization.value ? text('更新买币授权', 'Update authorization') : !activeGrant.value ? text('设置额度并开启', 'Set limits & enable') : text('充值', 'Add funds'))
 function primaryAction() {
   if (needsConnection.value) connect()
   else if (!checked.value) void refresh()
-  else open(needsReauthorization.value ? 'authorize' : !funded.value || activeGrant.value ? 'deposit' : 'authorize')
+  else open(!funded.value ? 'deposit' : needsReauthorization.value ? 'authorize' : activeGrant.value ? 'deposit' : 'authorize')
 }
 const expiry = computed(() => grant.value ? new Date(Number(grant.value[4]) * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—')
 const dialogTitle = computed(() => ({
@@ -40,12 +41,14 @@ const dialogTitle = computed(() => ({
   withdraw: text('提取买币资金', 'Withdraw trading funds'),
   revoke: text('关闭评论买币？', 'Disable comment buys?'), '': '',
 })[dialog.value])
-const submitLabel = computed(() => dialog.value === 'deposit' ? text('确认充值', 'Confirm deposit') : dialog.value === 'authorize' ? text('签名并确认授权', 'Sign & authorize') : dialog.value === 'withdraw' ? text('确认提取全部', 'Withdraw all funds') : text('确认关闭', 'Confirm disable'))
+const submitLabel = computed(() => dialog.value === 'deposit' ? updatesGrant.value ? text('确认充值并授权', 'Fund & authorize') : text('确认充值 · 保持原授权', 'Deposit · keep authorization') : dialog.value === 'authorize' ? text('确认更新授权', 'Update authorization') : dialog.value === 'withdraw' ? text('确认提取全部', 'Withdraw all funds') : text('确认关闭', 'Confirm disable'))
 const canSubmit = computed(() => ready.value && !locked.value && !formIssue.value &&
   ((dialog.value === 'deposit' || dialog.value === 'authorize') ? tradingAvailable.value : true) &&
-  (dialog.value !== 'withdraw' || principalBalance.value + feeBalance.value > 0n))
+  (dialog.value !== 'authorize' || updatesGrant.value) &&
+  (dialog.value !== 'withdraw' || balance.value > 0n))
 const serviceFee = computed(() => config.value ? `${Number(config.value.platformFeeBps) / 100}%` : '—')
 const executionFee = computed(() => config.value ? amount(config.value.executionFeeWei) : '—')
+const slippagePercent = computed(() => activeGrant.value && grant.value ? Math.min(grant.value[9], 500) / 100 : 5)
 async function copyCommand() {
   try { await navigator.clipboard.writeText(command); copied.value = true }
   catch { error.value = text('复制失败，请手动选择下方指令复制。', 'Copy failed. Select and copy the command manually.') }
@@ -61,7 +64,7 @@ function orderReason(reason?: string) {
   const reasons: Record<string, string> = {
     EXPIRED_COMMAND: text('评论已超过 3 分钟有效期，未执行。', 'The comment expired after 3 minutes and was not executed.'),
     VERIFIED_WALLET_REQUIRED: text('请先验证钱包并开启买币授权。', 'Verify your wallet and enable comment buys first.'),
-    INSUFFICIENT_FUNDS: text('买币本金或手续费余额不足。', 'Insufficient trading or fee balance.'),
+    INSUFFICIENT_FUNDS: text('买币余额不足以支付本次买入及费用。', 'Trading balance does not cover this buy and its fees.'),
     LIMIT_EXCEEDED: text('本次买入含费用的金额超过授权限额。', 'The buy including fees exceeds your spending limit.'),
     FEE_CAP: text('当前授权未覆盖本次费用，请更新买币授权后重试。', 'Current authorization does not cover these fees. Update authorization and retry.'),
     PROTOCOL_FEE_CAP: text('该交易的协议费用超出安全限制，订单未执行。', 'Protocol fees exceed the safety limit. No buy was executed.'),
@@ -104,16 +107,17 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
     <div class="cb-overview">
       <section class="cb-card cb-account" :aria-label="text('买币账户', 'Trading account')">
         <div class="cb-card-top"><span class="cb-card-title"><Wallet />{{ text('买币账户', 'Trading account') }}</span><span class="cb-badge" :class="{ 'cb-badge-live': enabled }"><span></span>{{ status }}</span></div>
-        <div class="cb-balance-label">{{ text('可用买币本金', 'Available buy principal') }}</div>
+        <div class="cb-balance-label">{{ text('可用买币余额', 'Available trading balance') }}</div>
         <div class="cb-balance">{{ displayBalance }} <span>BNB</span></div>
-        <div class="cb-fee-balance"><span>{{ text('手续费余额', 'Fee balance') }}</span><strong>{{ checked && user ? amount(feeBalance) : '—' }} BNB</strong></div>
+        <div class="cb-fee-balance"><span>{{ text('买入手续费', 'Buy fee') }}</span><strong>{{ executionFee }} BNB / {{ text('笔', 'buy') }}</strong></div>
         <div v-if="needsConnection" class="cb-connection-hint">{{ connectionHint }}</div>
+        <div v-else-if="checked && !unified" class="cb-connection-hint">{{ text('这是你的旧版买币账户，暂不支持充值或修改额度。你仍可提取余额、关闭授权；余额不会自动转入新版账户。', 'This is your previous trading account. Deposits and limit changes are unavailable. You can still withdraw funds or disable buys; funds will not move to the new account automatically.') }}</div>
         <div v-else-if="checked && !tradingAvailable" class="cb-connection-hint">{{ text('当前无法新增充值或授权。已有资金仍可提取，授权仍可撤销。', 'Deposits and new authorizations are unavailable. You can still withdraw funds or revoke authorization.') }}</div>
-        <div v-else-if="checked && needsReauthorization" class="cb-connection-hint">{{ text('旧授权未覆盖当前执行费，请更新授权后再发买币评论。', 'Your previous authorization does not cover the current execution fee. Update it before commenting.') }}</div>
-        <div v-else-if="checked && activeGrant && !funded" class="cb-connection-hint">{{ text('授权已开启，请补充买币本金及手续费余额后再发评论。', 'Authorization is active. Add trading and fee funds before commenting.') }}</div>
+        <div v-else-if="checked && needsReauthorization" class="cb-connection-hint">{{ text('买入手续费已更新，请重新确认授权后再发买币评论。', 'The buy fee has changed. Confirm your authorization again before posting a buy comment.') }}</div>
+        <div v-else-if="checked && activeGrant && !funded" class="cb-connection-hint">{{ text('请补充买币余额，本金和费用均从此余额扣除。', 'Add funds. Buy amounts and fees use this same balance.') }}</div>
         <div class="cb-account-actions">
           <button class="cb-button cb-primary" :disabled="locked || refreshing || (!needsConnection && checked && !tradingAvailable)" @click="primaryAction">{{ primaryLabel }}<ArrowRight /></button>
-          <button class="cb-button cb-secondary" :disabled="!ready || locked || principalBalance + feeBalance === 0n" @click="open('withdraw')">{{ text('提取', 'Withdraw') }}</button>
+          <button class="cb-button cb-secondary" :disabled="!ready || locked || balance === 0n" @click="open('withdraw')">{{ text('提取', 'Withdraw') }}</button>
         </div>
         <div class="cb-recipient"><span>{{ text('代币接收钱包', 'Tokens arrive in') }}</span><a v-if="user" :href="`https://bscscan.com/address/${user}`" :title="user" target="_blank" rel="noopener noreferrer">{{ shortAddress(user) }} ↗</a><span v-else>{{ text('连接后显示', 'Connect to view') }}</span></div>
         <p class="cb-separate"><Lock />{{ text('仅用于买币，与打赏余额和授权完全独立', 'Separate from your tipping balance and authorization') }}</p>
@@ -123,8 +127,8 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
         <div class="cb-card-top"><span class="cb-card-title">{{ text('从这里开始', 'Start here') }}</span><span class="cb-small-label">{{ text('3 步完成设置', '3 SIMPLE STEPS') }}</span></div>
         <ol class="cb-steps">
           <li :class="{ 'cb-step-done': signedIn && connected }"><span class="cb-step-number"><Check v-if="signedIn && connected" /><template v-else>1</template></span><div><strong>{{ text('连接你的钱包', 'Connect your wallet') }}</strong><p>{{ text('使用发评论的 X 账号及其绑定钱包', 'Use your X account and its linked wallet') }}</p></div></li>
-          <li :class="{ 'cb-step-done': checked && funded }"><span class="cb-step-number"><Check v-if="checked && funded" /><template v-else>2</template></span><div><strong>{{ text('充值买币资金', 'Fund your trading account') }}</strong><p>{{ text('本金与费用独立记账，未使用的资金可提取', 'Separate fee funds. Withdraw unused funds anytime.') }}</p></div></li>
-          <li :class="{ 'cb-step-done': checked && activeGrant && !needsReauthorization }"><span class="cb-step-number"><Check v-if="checked && activeGrant && !needsReauthorization" /><template v-else>3</template></span><div><strong>{{ text('开启授权，去 X 评论', 'Enable, then reply on X') }}</strong><p>{{ text('设置额度后，直接回复明确包含一个代币的原帖', 'Set limits, then reply to a post identifying one token') }}</p></div></li>
+          <li :class="{ 'cb-step-done': checked && funded && activeGrant && !needsReauthorization }"><span class="cb-step-number"><Check v-if="checked && funded && activeGrant && !needsReauthorization" /><template v-else>2</template></span><div><strong>{{ text('充值并设置授权', 'Fund & set limits') }}</strong><p>{{ text('一次填写，一笔交易完成；已有设置自动带入', 'One form, one transaction. Existing settings are prefilled.') }}</p></div></li>
+          <li><span class="cb-step-number">3</span><div><strong>{{ text('去 X 评论买币', 'Reply on X to buy') }}</strong><p>{{ text('回复明确包含一个代币的原帖，本金和费用从买币余额扣除', 'Reply to a post identifying one token. Principal and fees use your trading balance.') }}</p></div></li>
         </ol>
         <div class="cb-command"><ChatDotRound /><code>{{ command }}</code><button class="cb-icon-button" :aria-label="text('复制买币指令', 'Copy buy command')" @click="copyCommand"><Check v-if="copied" /><CopyDocument v-else /></button></div>
         <span v-if="copied" class="cb-copy-feedback" role="status">{{ text('已复制，请粘贴到目标代币帖子的回复中。', 'Copied. Paste it as a reply to the target token post.') }}</span>
@@ -140,8 +144,8 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
         <div><span>{{ text('每天最多 · UTC', 'Per day · UTC') }}</span><strong>{{ amount(grant[2]) }} <small>BNB</small></strong></div>
         <div><span>{{ text('授权有效至', 'Expires on') }}</span><strong>{{ expiry }} <small v-if="!activeGrant">{{ text('未生效', 'Inactive') }}</small></strong></div>
       </div>
-      <div v-else class="cb-authorization-empty"><div><strong>{{ text('由你决定，每次能花多少。', 'You decide how much each buy can spend.') }}</strong><p>{{ text('设置单笔、每日和总额度后开启。授权不会转走钱包中的其他资产。', 'Set per-order, daily and total limits. Authorization does not access other assets in your wallet.') }}</p></div><button class="cb-button cb-secondary" :disabled="!ready || locked || !tradingAvailable" @click="open('authorize')">{{ text('设置授权', 'Set up authorization') }}</button></div>
-      <div v-if="checked && grant && grant[5] > 0n" class="cb-grant-footer"><span>{{ text('额度包含本金与费用，不等于账户余额。', 'Limits include principal and fees; they are not your balance.') }}</span><button v-if="grant[11]" class="cb-text-button cb-danger-text" :disabled="!ready || locked" @click="open('revoke')">{{ text('关闭评论买币', 'Disable comment buys') }}</button></div>
+      <div v-else class="cb-authorization-empty"><div><strong>{{ text('由你决定，每次能花多少。', 'You decide how much each buy can spend.') }}</strong><p>{{ text('充值时一起设置单笔、每日和总额度。授权不会转走钱包中的其他资产。', 'Set per-order, daily and total limits when funding. Other wallet assets are unaffected.') }}</p></div><button class="cb-button cb-secondary" :disabled="!ready || locked || !tradingAvailable" @click="open(funded ? 'authorize' : 'deposit')">{{ funded ? text('设置授权', 'Set up authorization') : text('充值并授权', 'Fund & authorize') }}</button></div>
+      <div v-if="checked && grant && grant[5] > 0n" class="cb-grant-footer"><span>{{ text('额度包含本金与费用，不等于账户余额。', 'Limits include principal and fees; they are not your balance.') }}</span><button v-if="grant[10]" class="cb-text-button cb-danger-text" :disabled="!ready || locked" @click="open('revoke')">{{ text('关闭评论买币', 'Disable comment buys') }}</button></div>
     </section>
 
     <section class="cb-card cb-history">
@@ -157,12 +161,12 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
       </div>
     </section>
 
-    <details class="cb-disclosure"><summary>{{ text('费用、支持范围与资金安全', 'Fees, supported tokens & fund controls') }}</summary><div class="cb-disclosure-body">
-      <p>{{ text('每笔成功买入收取执行费', 'Execution fee per successful buy:') }} {{ executionFee }} BNB，{{ text('支付给 Keeper，失败不收取。交易协议费另计。', 'paid to the Keeper; no execution fee on failure. Protocol fees are additional.') }}<template v-if="config && config.platformFeeBps > 0"> {{ text('当前平台服务费', 'Current service fee:') }} {{ serviceFee }}。</template><template v-else-if="config">{{ text('不额外收取平台比例服务费。', 'No additional percentage-based service fee.') }}</template></p>
-      <p>{{ text('系统默认滑点保护为 5%；旧授权若更严格，仍按旧授权执行。部分代币的协议费从买入代币中扣除，不重复扣 BNB。超过授权额度或系统安全限制的订单不会执行。', 'Default slippage protection is 5%; stricter existing authorizations still apply. Some tokens deduct protocol fees from output tokens, without a second BNB charge. Orders beyond spending limits or safety controls do not execute.') }}</p>
-      <p>{{ text('仅支持 TagAI 已注册且有受支持交易路径的 BSC 代币。直接回复原帖，不要编辑评论；指令有效期为 3 分钟。', 'Only registered BSC tokens with supported trading routes are eligible. Reply directly without editing. Commands expire after 3 minutes.') }}</p>
-      <p>{{ text('买币失败不扣本金与订单费用，执行交易的 gas 由 Keeper 承担。你自己的充值、授权和提现交易仍需钱包支付 gas。', 'Failed buys do not debit principal or order fees; the keeper pays execution gas. Your deposit, authorization and withdrawal transactions require wallet gas.') }}</p>
-      <a v-if="config" :href="`https://bscscan.com/address/${config.vault}`" target="_blank" rel="noopener noreferrer">CommentTradeVault · {{ config.vault }} ↗</a>
+    <details class="cb-disclosure"><summary>{{ text('费用与使用说明', 'Fees & how it works') }}</summary><div class="cb-disclosure-body">
+      <p><strong>{{ text('如何收费', 'Fees') }}</strong><br />{{ text('每笔买入成功收取', 'Each successful buy costs') }} {{ executionFee }} BNB。{{ text('买入失败，不扣买入金额和手续费。代币交易本身的费用另计，部分会从买入的代币中扣除，不再重复扣 BNB。', 'Failed buys do not deduct the buy amount or fees. Token trading fees are additional; some are deducted from the tokens you receive, without a second BNB charge.') }}<template v-if="config && config.platformFeeBps > 0"> {{ text('另收平台服务费', 'Additional service fee:') }} {{ serviceFee }}。</template></p>
+      <p><strong>{{ text('成交保护', 'Trade protection') }}</strong><br />{{ text('实际到账数量比报价少超过', 'If the tokens received fall more than') }} {{ slippagePercent }}%{{ text('，买入不会完成。所有扣款都受你设置的额度限制。', ' below the quote, the buy will not complete. All spending stays within your limits.') }}</p>
+      <p><strong>{{ text('如何使用', 'How to use') }}</strong><br />{{ text('支持 TagAI 已收录、可交易的 BNB Chain 代币。直接回复代币原帖，发出后不要编辑。评论超过 3 分钟未执行将失效。', 'Buy supported BNB Chain tokens listed on TagAI. Reply directly to the token post without editing your comment. Unexecuted commands expire after 3 minutes.') }}</p>
+      <p><strong>{{ text('充值与提现', 'Deposits & withdrawals') }}</strong><br />{{ text('买入金额和费用统一从买币余额扣除，未使用的余额可随时提取。充值、修改授权和提现需另付网络费。', 'Buys and fees use the same trading balance. Withdraw unused funds anytime. Deposits, authorization changes and withdrawals require a network fee.') }}</p>
+      <a v-if="config" :href="`https://bscscan.com/address/${config.vault}`" :title="config.vault" target="_blank" rel="noopener noreferrer">{{ text('查看资金合约', 'View funds contract') }} ↗</a>
     </div></details>
 
     <el-dialog v-model="dialogVisible" class="cb-dialog" width="min(560px, calc(100vw - 24px))" align-center :show-close="false" :close-on-click-modal="!busy" :close-on-press-escape="!busy" :title="dialogTitle" destroy-on-close>
@@ -170,29 +174,29 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
       <div class="comment-buy cb-dialog-body">
         <fieldset :disabled="locked" class="cb-fieldset">
           <template v-if="dialog === 'deposit'">
-            <p class="cb-modal-intro">{{ text('这笔充值只进入买币账户，不会增加 Tip 打赏余额。', 'This deposit funds comment buys only, not your Tip balance.') }}</p>
-            <label class="cb-field"><span>{{ text('买币本金', 'Buy principal') }}</span><div class="cb-amount-input"><input v-model="form.principal" inputmode="decimal" autocomplete="off" /><span>BNB</span></div></label>
-            <div class="cb-presets"><button v-for="preset in ['0.001', '0.01', '0.05']" :key="preset" type="button" :class="{ selected: form.principal === preset }" @click="form.principal = preset">{{ preset }} BNB</button></div>
-            <label class="cb-field"><span>{{ text('预存手续费', 'Fee reserve') }}</span><div class="cb-input"><input v-model="form.fees" inputmode="decimal" autocomplete="off" /><span>BNB</span></div><small>{{ text('每笔成功买入的执行费为', 'Execution fee per successful buy:') }} {{ executionFee }} BNB。{{ text('请另外预留协议费；预存金额不是立即收费，未使用部分可提取。', 'Also reserve protocol fees. Deposits are not immediate charges; unused funds can be withdrawn.') }}</small></label>
-            <div class="cb-checkout"><div><span>{{ text('本次存入合计', 'Total deposit') }}</span><strong>{{ depositTotal === null ? '—' : amount(depositTotal) }} BNB</strong></div><small>{{ text('另需支付钱包交易 gas', 'Wallet network gas is additional') }}</small></div>
-            <div class="cb-destination"><span>{{ text('收款合约 · 不是打赏合约', 'Destination · not the tipping contract') }}</span><a v-if="config" :href="`https://bscscan.com/address/${config.vault}`" target="_blank" rel="noopener noreferrer">CommentTradeVault ↗<code>{{ config.vault }}</code></a></div>
-            <p class="cb-modal-note">{{ activeGrant ? text('充值不会提高现有授权额度。', 'Depositing does not increase your existing spending limits.') : text('充值后还需开启授权，才会执行买币评论。', 'After funding, enable authorization before posting a buy comment.') }}</p>
+            <p class="cb-modal-intro">{{ text('充入一个余额，买币本金和费用都从这里扣。下方一起设置授权，一笔交易完成。', 'One balance pays for buys and fees. Set authorization below and confirm in one transaction.') }}</p>
+            <label class="cb-field"><span>{{ text('充值金额', 'Deposit amount') }}</span><div class="cb-amount-input"><input v-model="form.amount" inputmode="decimal" autocomplete="off" /><span>BNB</span></div></label>
+            <div class="cb-presets"><button v-for="preset in ['0.01', '0.05', '0.1']" :key="preset" type="button" :class="{ selected: form.amount === preset }" @click="form.amount = preset">{{ preset }} BNB</button></div>
           </template>
-          <template v-else-if="dialog === 'authorize'">
+          <template v-if="dialog === 'authorize' || dialog === 'deposit'">
             <p class="cb-modal-intro">{{ text('仅允许从买币账户扣款。所有限额都包含买入本金和费用。', 'Only funds in your trading account can be spent. Every limit includes principal and fees.') }}</p>
             <div class="cb-form-grid"><label class="cb-field"><span>{{ text('每笔最多', 'Per-order limit') }}</span><div class="cb-input"><input v-model="form.perTrade" inputmode="decimal" /><span>BNB</span></div></label><label class="cb-field"><span>{{ text('每天最多', 'Daily limit') }}</span><div class="cb-input"><input v-model="form.perDay" inputmode="decimal" /><span>BNB</span></div></label></div>
             <label class="cb-field"><span>{{ text('本次总授权额度', 'Total budget for this authorization') }}</span><div class="cb-input"><input v-model="form.budget" inputmode="decimal" /><span>BNB</span></div><small>{{ text('可累计花费的上限，不是充值金额。每日限额按 UTC 0 点重置。', 'Maximum cumulative spending, not a deposit. Daily limits reset at 00:00 UTC.') }}</small></label>
-            <label class="cb-field"><span>{{ text('有效期 · 从本次确认起', 'Valid for · from this confirmation') }}</span><select v-model="form.days"><option v-for="day in [...new Set(['1', '7', '30', '90', form.days])]" :key="day" :value="day">{{ day }} {{ text('天', 'days') }}</option></select></label>
-            <div class="cb-authorization-review"><Lock /><p>{{ text('每笔成功买入执行费', 'Execution fee per successful buy:') }} {{ executionFee }} BNB。{{ text('协议费另计，默认滑点保护 5%。本次确认会将执行费授权更新为上述金额、滑点保护更新为 5%。', 'Protocol fees are additional, with 5% slippage protection. Confirming updates the authorized execution fee to this amount and slippage protection to 5%.') }}<template v-if="config && config.platformFeeBps > 0"> {{ text('当前平台服务费', 'Current service fee:') }} {{ serviceFee }}。</template><br />{{ text('钱包将先请求验证签名，再请求一笔链上授权交易。', 'Your wallet will request a verification signature, then an on-chain authorization transaction.') }}</p></div>
-            <p v-if="grant && grant[5] > 0n" class="cb-modal-note">{{ text('保存将替换剩余额度和有效期，不叠加额度，也不重置今日已用额度。', 'Saving replaces the remaining budget and expiry. It does not add budgets or reset today’s spending.') }}</p>
+            <label class="cb-field"><span>{{ text('授权有效期', 'Authorization expiry') }}</span><select v-model="form.days"><option v-if="grant && grant[4] > BigInt(Math.floor(Date.now() / 1000))" value="keep">{{ text('保持原到期时间', 'Keep original expiry') }} · {{ expiry }}</option><option v-for="day in ['1', '7', '30', '90']" :key="day" :value="day">{{ text('从本次确认起', 'From confirmation:') }} {{ day }} {{ text('天', 'days') }}</option></select></label>
+            <div class="cb-authorization-review"><Lock /><p>{{ text('每笔买入成功收取', 'Each successful buy costs') }} {{ executionFee }} BNB，{{ text('代币交易费用另计。', 'plus token trading fees.') }}<template v-if="updatesGrant">{{ text('本次授权允许最多 5% 的到账数量偏差。请先在钱包签名验证身份（免费），再确认交易。', 'This authorization allows up to a 5% shortfall from the quoted token amount. Verify your identity with a free wallet signature, then confirm the transaction.') }}</template><template v-if="config && config.platformFeeBps > 0"> {{ text('另收平台服务费', 'Additional service fee:') }} {{ serviceFee }}。</template></p></div>
+            <p class="cb-modal-note">{{ !updatesGrant ? dialog === 'deposit' ? text('设置未修改：只充值，不重置剩余额度、到期时间或今日已用额度。', 'Settings unchanged: deposit only, preserving remaining budget, expiry and today’s spend.') : text('设置未修改，无需提交交易。', 'Settings unchanged. No transaction is needed.') : text('确认后按填写值设置剩余额度与有效期，不叠加额度，也不重置今日已用额度。', 'Confirmation sets the entered remaining budget and expiry; it does not add budgets or reset today’s spend.') }}</p>
+            <template v-if="dialog === 'deposit'">
+              <div class="cb-checkout"><div><span>{{ text('本次存入', 'Deposit') }}</span><strong>{{ depositTotal === null ? '—' : amount(depositTotal) }} BNB</strong></div><small>{{ text('充值不收买入手续费，仅需支付网络费。', 'No buy fee is charged for deposits. A network fee applies.') }}</small></div>
+              <div class="cb-destination"><span>{{ text('资金存入买币账户，不用于打赏', 'Funds go to your trading account, not tips') }}</span><a v-if="config" :href="`https://bscscan.com/address/${config.vault}`" :title="config.vault" target="_blank" rel="noopener noreferrer">{{ text('查看资金合约', 'View funds contract') }} ↗<code>{{ shortAddress(config.vault) }}</code></a></div>
+            </template>
           </template>
           <template v-else-if="dialog === 'withdraw'">
-            <p class="cb-modal-intro">{{ text('将买币账户的全部本金和费用余额提取到绑定钱包，不影响打赏资金。', 'Return all trading principal and fee funds to your linked wallet. Tip funds are unaffected.') }}</p>
-            <div class="cb-checkout"><div><span>{{ text('买币本金', 'Buy principal') }}</span><strong>{{ amount(principalBalance) }} BNB</strong></div><div><span>{{ text('手续费余额', 'Fee balance') }}</span><strong>{{ amount(feeBalance) }} BNB</strong></div><div class="cb-checkout-total"><span>{{ text('合计提取', 'Total withdrawal') }}</span><strong>{{ amount(principalBalance + feeBalance) }} BNB</strong></div></div>
+            <p class="cb-modal-intro">{{ text('将全部买币余额提取到绑定钱包，不影响打赏资金。', 'Return the full trading balance to your linked wallet. Tip funds are unaffected.') }}</p>
+            <div class="cb-checkout"><div class="cb-checkout-total"><span>{{ text('合计提取', 'Total withdrawal') }}</span><strong>{{ amount(balance) }} BNB</strong></div></div>
             <div class="cb-destination"><span>{{ text('接收钱包', 'Recipient wallet') }}</span><code>{{ user }}</code></div><p class="cb-modal-note">{{ text('提现不会撤销授权。如需停止后续买入，请先关闭评论买币。若有正在执行的订单，请等待确认后再提取。', 'Withdrawal does not revoke authorization. Disable comment buys to stop future execution. If an order is pending, wait for confirmation before withdrawing.') }}</p>
           </template>
           <template v-else-if="dialog === 'revoke'">
-            <p class="cb-modal-intro">{{ text('关闭后，新的评论不能再从这个账户买币。已上链完成的买入不会撤回。', 'Once disabled, new comments cannot spend from this account. Completed buys are not reversed.') }}</p><div class="cb-checkout"><div><span>{{ text('保留在买币账户的资金', 'Funds remaining in this account') }}</span><strong>{{ amount(principalBalance + feeBalance) }} BNB</strong></div></div><p class="cb-modal-note">{{ text('资金不会自动提现，你仍可随时提取。Tip 打赏授权不受影响。', 'Funds are not withdrawn automatically. You can withdraw anytime. Tip authorization is unaffected.') }}</p>
+            <p class="cb-modal-intro">{{ text('关闭后，新的评论不能再从这个账户买币。已上链完成的买入不会撤回。', 'Once disabled, new comments cannot spend from this account. Completed buys are not reversed.') }}</p><div class="cb-checkout"><div><span>{{ text('保留在买币账户的资金', 'Funds remaining in this account') }}</span><strong>{{ amount(balance) }} BNB</strong></div></div><p class="cb-modal-note">{{ text('资金不会自动提现，你仍可随时提取。Tip 打赏授权不受影响。', 'Funds are not withdrawn automatically. You can withdraw anytime. Tip authorization is unaffected.') }}</p>
           </template>
         </fieldset>
       </div>
@@ -204,7 +208,7 @@ const dateLabel = (value?: string) => value && !Number.isNaN(Date.parse(value)) 
           <p v-if="!ready && !locked" class="cb-form-error" role="alert">{{ needsConnection ? connectionHint : text('交易数据暂不可用，请关闭弹窗后刷新。', 'Trading data unavailable. Close this dialog and refresh.') }}</p>
           <div v-if="submitted" class="cb-pending"><a :href="`https://bscscan.com/tx/${submitted}`" target="_blank" rel="noopener noreferrer">{{ text('查看已提交交易', 'View submitted transaction') }} ↗</a><button class="cb-text-button" :disabled="busy" @click="checkSubmitted">{{ text('检查结果', 'Check result') }}</button></div>
           <button v-else class="cb-button cb-primary cb-submit" :class="{ 'cb-destructive': dialog === 'revoke' }" :disabled="!canSubmit" @click="dialog && action(dialog)">{{ busy ? text('请稍候…', 'Please wait…') : submitLabel }}<ArrowRight v-if="!busy" /></button>
-          <p class="cb-modal-footer">{{ text('请核对钱包中的目标合约与金额后再确认。', 'Verify the destination contract and amount in your wallet before confirming.') }}</p>
+          <p class="cb-modal-footer">{{ text('请核对钱包中显示的收款地址和金额后再确认。', 'Check the recipient address and amount shown in your wallet before confirming.') }}</p>
         </div>
       </template>
     </el-dialog>
