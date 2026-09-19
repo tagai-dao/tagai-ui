@@ -157,9 +157,9 @@ onUnmounted(() => {
     <div v-else-if="predictionEnabled && tweet.commerceId && commerceType === 2 && battleMarket" class="my-3" @click.stop>
         <PredictBattleCard :battle="battleMarket" :tweets="{}" :showCommunity="false" />
     </div>
-    <!-- 代币销售分享：Trade 按钮（保持原行为）。预测类解析完成前不显示按钮，避免错误闪现 Trade -->
+    <!-- The token card is the trade entry; retain login and a fallback for posts without a card. -->
     <template v-else-if="tweet.commerceId && commerceType === 1">
-        <div class="flex gap-2 items-stretch my-3">
+        <div v-if="showBlinkLogin || !(tweet.tick && tweet.token)" class="flex gap-2 items-stretch my-3">
         <BlinkTwitterLoginButton v-if="showBlinkLogin" :return-path="loginReturnPath" />
         <button v-else class="min-h-12 min-w-0 flex-1 bg-gradient-primary rounded-full text-base text-white px-3 py-2"
             @click.stop="gotoTrade">
@@ -174,7 +174,7 @@ onUnmounted(() => {
                    @click.stop
                    @pointerdown.stop>
             <div ref="tradeDialogContentRef" @click.stop @pointerdown.stop>
-                <BuyAndSellView :tick="tweet.tick" :sellsman="tweet.ethAddr || ''" :login-return-path="loginReturnPath"/>
+                <BuyAndSellView :tick="tweet.tick" :sellsman="tweet.ethAddr || ''" :commerce-id="tweet.commerceId" :login-return-path="loginReturnPath"/>
             </div>
         </el-dialog>
     </template>

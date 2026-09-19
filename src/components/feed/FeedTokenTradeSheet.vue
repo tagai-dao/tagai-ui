@@ -95,7 +95,7 @@ watch(() => props.modelValue, visible => {
             </div>
           </div>
           <div ref="scroller" class="min-h-0 flex-1 overflow-y-auto px-2 pb-[calc(12px+env(safe-area-inset-bottom))] pt-2 no-scroll-bar">
-            <BuyAndSellView :key="`${asset.tick}-${asset.sellsman || ''}`" :tick="asset.tick" :sellsman="asset.sellsman" />
+            <BuyAndSellView :key="`${asset.tick}-${asset.commerceId || ''}-${asset.sellsman || ''}`" :tick="asset.tick" :sellsman="asset.sellsman" :commerce-id="asset.commerceId" :login-return-path="asset.loginReturnPath" />
           </div>
         </section>
       </div>

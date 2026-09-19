@@ -252,7 +252,7 @@ onUnmounted(() => {
         </div>
         <div v-if="!textOnly" class="px-3 md:pl-12">
           <!--       foreign page -->
-          <!-- commerce 分享（社交交易 / 预测市场）已有专属模块（Trade 按钮 / 预测卡），隐藏冗余的 tagai.fun 链接预览卡 -->
+          <!-- commerce 分享已有代币卡 / 预测卡，隐藏冗余的 tagai.fun 链接预览卡 -->
           <LinkPreview @click.stop="clickLinkView()" class="cursor-pointer"
                        v-if="showPageInfo && !isIgnoreAccount && !tweet.commerceId" :pageInfo="tweet.pageInfo ?? ''" />
           <!--       retweet  -->

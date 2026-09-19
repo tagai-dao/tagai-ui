@@ -2,11 +2,14 @@
 import type { FeedTokenSheetAsset, Tweet } from '@/types'
 import { computed } from 'vue'
 import { useStateStore } from '@/stores/common'
+import { useChainStore } from '@/stores/chain'
+import { getChainPath } from '@/config/chains'
 import { formatUsd, formatUsdCompact } from '@/utils/format'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 
 const props = defineProps<{ tweet: Tweet }>()
 const stateStore = useStateStore()
+const chainStore = useChainStore()
 const emit = defineEmits<{ openDetails: [asset: FeedTokenSheetAsset] }>()
 const price = computed(() => Number(props.tweet.price || 0) * stateStore.ethPrice)
 const marketCap = computed(() => Number(props.tweet.marketCap || 0) * stateStore.ethPrice)
@@ -18,6 +21,10 @@ const change = computed<number | null>(() => {
 function openDetails() {
   if (!props.tweet.tick || !props.tweet.token) return
   emit('openDetails', {
+    commerceId: props.tweet.commerceId || undefined,
+    loginReturnPath: props.tweet.commerceId
+      ? getChainPath(chainStore.activeChainId, `/commerce/${encodeURIComponent(props.tweet.commerceId)}`)
+      : undefined,
     tick: props.tweet.tick,
     token: props.tweet.token,
     name: props.tweet.tick,

@@ -139,6 +139,8 @@ export type FeedTrade = {
 
 /** Feed 代币详情 Bottom Sheet 使用的统一展示模型。 */
 export type FeedTokenSheetAsset = {
+  commerceId?: string;
+  loginReturnPath?: string;
   tick: string;
   token: string;
   name?: string;
