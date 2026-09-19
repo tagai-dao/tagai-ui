@@ -1,119 +1,141 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getAccountPnl, type AccountPnl, type PnlPeriod } from '@/apis/api'
+import { useChainStore } from '@/stores/chain'
 import { formatUsd, formatUsdCompact } from '@/utils/format'
 
-const props = defineProps<{
-  twitterId?: string | null
-  username?: string | null
-}>()
-
-const periods: Array<{ value: PnlPeriod; label: string; suffix: string }> = [
-  { value: '1d', label: '24H', suffix: '24h' },
-  { value: '7d', label: '7D', suffix: '7d' },
-  { value: '30d', label: '30D', suffix: '30d' },
+const props = defineProps<{ twitterId?: string | null; username?: string | null }>()
+const { locale } = useI18n()
+const chain = useChainStore()
+const zh = computed(() => String(locale.value).startsWith('zh'))
+const periods: Array<{ value: PnlPeriod; label: string }> = [
+  { value: '1d', label: '24H' }, { value: '7d', label: '7D' }, { value: '30d', label: '30D' },
 ]
 const period = ref<PnlPeriod>('7d')
 const data = ref<AccountPnl | null>(null)
 const loading = ref(false)
+const failed = ref(false)
 let requestId = 0
-
-const activePeriod = computed(() => periods.find(item => item.value === period.value) || periods[1])
-const positive = computed(() => Number(data.value?.pnlChangeUsd || 0) >= 0)
+let lastKey = ''
+const indexed = computed(() => data.value?.calculation === 'indexed-realized-v1')
+const value = computed(() => indexed.value ? data.value?.pnlNative : data.value?.pnlUsd)
+const color = computed(() => Number(value.value || 0) >= 0 ? '#22c55e' : '#ef4444')
+function native(value: number | null | undefined) {
+  return value == null ? '—' : `${Number(value).toLocaleString('en-US', { maximumSignificantDigits: 8 })} ${data.value?.nativeSymbol || ''}`
+}
+const amount = computed(() => !data.value?.hasData || value.value == null ? '—'
+  : indexed.value ? native(value.value) : formatUsd(value.value))
+const series = computed(() => (data.value?.points || []).flatMap(point => {
+  const value = indexed.value ? point.pnlNative : point.pnlUsd
+  const timestamp = new Date(point.timestamp).getTime()
+  return value != null && Number.isFinite(value) && Number.isFinite(timestamp) ? [{ value, timestamp }] : []
+}).sort((a, b) => a.timestamp - b.timestamp))
 const chartPoints = computed(() => {
-  const values = (data.value?.points || []).map(point => Number(point.pnlUsd)).filter(Number.isFinite)
-  if (!values.length && data.value?.hasData) values.push(Number(data.value.pnlUsd || 0))
-  if (!values.length) return []
-  if (values.length === 1) values.unshift(values[0])
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const span = max - min || Math.max(Math.abs(max) * .05, 1)
-  return values.map((value, index) => ({
-    x: 4 + (index / Math.max(1, values.length - 1)) * 92,
-    y: 88 - ((value - min) / span) * 72,
+  if (series.value.length < 2) return []
+  const values = series.value.map(point => point.value)
+  const min = Math.min(...values), max = Math.max(...values)
+  const start = series.value[0].timestamp, end = series.value.at(-1)!.timestamp
+  if (start === end) return []
+  return series.value.map(point => ({
+    x: 4 + (point.timestamp - start) / (end - start) * 92,
+    y: max === min ? 50 : 88 - (point.value - min) / (max - min) * 72,
   }))
 })
 const polyline = computed(() => chartPoints.value.map(point => `${point.x},${point.y}`).join(' '))
-const area = computed(() => chartPoints.value.length
-  ? `4,94 ${polyline.value} 96,94`
-  : '')
-
+const emptyText = computed(() => {
+  if (failed.value) return zh.value ? '收益数据暂时加载失败' : 'Unable to load PnL'
+  if (data.value?.status === 'incomplete_history') return zh.value ? '历史成本不足，暂无法计算收益' : 'Insufficient cost history to calculate PnL'
+  if (data.value?.status === 'history_limit') return zh.value ? '交易历史较多，暂无法计算收益' : 'Trading history exceeds the current calculation limit'
+  if (data.value?.status === 'no_wallet') return zh.value ? '此账号尚无关联钱包数据' : 'No linked wallet data for this account'
+  return zh.value ? '暂无可用交易数据' : 'No trading data available yet'
+})
 function metric(value: number | null | undefined, suffix = '') {
   return value == null ? '—' : `${Number(value).toLocaleString('en-US', { maximumFractionDigits: 2 })}${suffix}`
 }
-
+function date(value: string | number) { return new Date(value).toLocaleString() }
 async function load() {
-  if (!props.twitterId && !props.username) return
   const currentRequest = ++requestId
+  const key = `${chain.activeChainId}:${props.twitterId}:${props.username}:${period.value}`
+  if (lastKey !== key) data.value = null
+  lastKey = key
+  failed.value = false
+  if (!props.twitterId && !props.username) { loading.value = false; return }
   loading.value = true
   try {
     const result = await getAccountPnl(period.value, {
-      twitterId: props.twitterId || undefined,
-      username: props.username || undefined,
+      twitterId: props.twitterId || undefined, username: props.username || undefined,
     })
+    if (typeof result?.hasData !== 'boolean' || result.chainId !== chain.activeChainId) throw new Error('Invalid PnL response')
     if (currentRequest === requestId) data.value = result
-  } catch (error) {
-    console.error('Load personal PnL failed', error)
-    if (currentRequest === requestId) data.value = null
+  } catch {
+    if (currentRequest === requestId) failed.value = true
   } finally {
     if (currentRequest === requestId) loading.value = false
   }
 }
-
-watch([period, () => props.twitterId, () => props.username], load, { immediate: true })
+watch([period, () => props.twitterId, () => props.username, () => chain.activeChainId], load, { immediate: true })
+onBeforeUnmount(() => { requestId++ })
 </script>
 
 <template>
   <div class="pnl-card">
     <div class="flex items-start justify-between gap-3">
       <div class="min-w-0">
-        <p class="text-[10px] font-bold uppercase tracking-[.18em] text-orange-normal">Personal PnL</p>
-        <strong class="mt-1 block truncate text-3xl font-bold tabular-nums text-content web:text-4xl">
-          {{ loading ? '—' : formatUsd(data?.pnlUsd || 0) }}
-        </strong>
-        <p v-if="data?.hasData" class="mt-1 text-base font-semibold tabular-nums"
-          :class="positive ? 'text-green-500' : 'text-red-500'">
-          {{ positive ? '+' : '' }}{{ formatUsd(data.pnlChangeUsd || 0) }} {{ activePeriod.suffix }}
+        <p class="text-[10px] font-bold uppercase tracking-[.12em] text-orange-normal">
+          {{ indexed ? (zh ? '已实现收益 · TagAI 估算' : 'Realized PnL · TagAI estimate') : 'Personal PnL' }}
         </p>
+        <strong class="mt-1 block break-words text-2xl font-bold tabular-nums text-content web:text-4xl">
+          {{ loading ? '—' : amount }}
+        </strong>
       </div>
       <div class="periods">
         <button v-for="item in periods" :key="item.value" :class="{ active: period === item.value }"
-          @click="period = item.value">{{ item.label }}</button>
+          :aria-pressed="period === item.value" @click="period = item.value">{{ item.label }}</button>
       </div>
     </div>
-
-    <div v-if="loading" class="flex h-48 items-center justify-center text-grey-8d">
+    <div v-if="loading" class="flex h-48 items-center justify-center text-grey-8d" aria-busy="true">
       <i-ep-loading class="h-6 w-6 animate-spin" />
     </div>
-    <div v-else-if="!data?.hasData" class="flex h-48 flex-col items-center justify-center px-6 text-center">
-      <strong class="text-base text-content">No PnL data yet</strong>
-      <span class="mt-1 text-xs text-grey-8d">This profile will update when FOMO, GMGN or Pump provides matched data.</span>
+    <div v-else-if="!data?.hasData" class="flex h-48 flex-col items-center justify-center gap-3 px-6 text-center">
+      <strong class="text-base text-content">{{ emptyText }}</strong>
+      <button v-if="failed" class="text-orange-normal" @click="load">{{ zh ? '重试' : 'Retry' }}</button>
     </div>
     <template v-else>
-      <div class="chart mt-4 h-48 overflow-hidden rounded-xl">
-        <svg class="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="PnL history">
-          <defs>
-            <linearGradient id="profile-pnl-area" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#22c55e" stop-opacity=".28" />
-              <stop offset="1" stop-color="#22c55e" stop-opacity="0" />
-            </linearGradient>
-          </defs>
-          <polygon v-if="area" :points="area" fill="url(#profile-pnl-area)" />
-          <polyline :points="polyline" fill="none" stroke="#22c55e" stroke-width="2.2"
-            stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
-          <circle v-if="chartPoints.length" :cx="chartPoints.at(-1)?.x" :cy="chartPoints.at(-1)?.y" r="2.4"
-            fill="#22c55e" vector-effect="non-scaling-stroke" />
-        </svg>
+      <p v-if="failed || data.stale" class="mt-2 text-xs text-grey-8d" role="status">
+        {{ zh ? '当前显示上次可用数据' : 'Showing the last available data' }}
+        <button class="ml-2 text-orange-normal" @click="load">{{ zh ? '重试' : 'Retry' }}</button>
+      </p>
+      <template v-if="chartPoints.length">
+        <div class="chart mt-4 h-48 overflow-hidden rounded-xl">
+          <svg class="h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" role="img"
+            :aria-label="indexed ? 'Realized PnL history' : 'PnL snapshots'">
+            <polygon :points="`4,94 ${polyline} 96,94`" :fill="color" fill-opacity=".1" />
+            <polyline :points="polyline" fill="none" :stroke="color" stroke-width="2.2"
+              stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+          </svg>
+        </div>
+        <div class="mt-1 flex justify-between gap-2 text-[10px] text-grey-8d">
+          <span>{{ date(series[0].timestamp) }}</span><span>{{ date(series.at(-1)!.timestamp) }}</span>
+        </div>
+      </template>
+      <div v-else class="flex h-48 items-center justify-center text-sm text-grey-8d">
+        {{ zh ? '暂缺历史曲线数据' : 'History is not available yet' }}
       </div>
       <div class="mt-3 grid grid-cols-2 gap-2 web:grid-cols-4">
-        <div class="metric"><span>Volume</span><strong>{{ data.volumeUsd == null ? '—' : formatUsdCompact(data.volumeUsd) }}</strong></div>
-        <div class="metric"><span>ROI</span><strong>{{ metric(data.roiPercent, '%') }}</strong></div>
-        <div class="metric"><span>Win rate</span><strong>{{ metric(data.winRate, '%') }}</strong></div>
-        <div class="metric"><span>Trades</span><strong>{{ metric(data.tradeCount) }}</strong></div>
+        <div class="metric"><span>{{ zh ? '交易额' : 'Volume' }}</span><strong>{{ indexed ? native(data.volumeNative) : data.volumeUsd == null ? '—' : formatUsdCompact(data.volumeUsd) }}</strong></div>
+        <div class="metric"><span>{{ indexed ? (zh ? '已匹配卖出 ROI' : 'Matched sales ROI') : 'ROI' }}</span><strong>{{ metric(data.roiPercent, '%') }}</strong></div>
+        <div class="metric"><span>{{ indexed ? (zh ? '盈利卖出占比' : 'Profitable sales') : (zh ? '胜率' : 'Win rate') }}</span><strong>{{ metric(data.winRate, '%') }}</strong></div>
+        <div class="metric"><span>{{ zh ? '交易次数' : 'Trades' }}</span><strong>{{ metric(data.tradeCount) }}</strong></div>
       </div>
-      <div class="mt-3 flex items-center justify-between text-[10px] text-grey-8d">
-        <span>Source: {{ (data.source || 'TagAI').toUpperCase() }}</span>
-        <span>12-hour snapshots · {{ data.capturedAt ? new Date(data.capturedAt).toLocaleString() : '—' }}</span>
+      <p v-if="indexed" class="mt-3 text-xs leading-relaxed text-grey-8d">
+        {{ zh ? '部分数据：仅统计已索引且成本可追溯的卖出收益，不含持仓浮盈、Gas 及未记录费用。' : 'Partial coverage: indexed sales with known costs. Open-position gains, gas and unrecorded fees are excluded.' }}
+        <span v-if="data.excludedSales">{{ zh ? `本周期 ${data.excludedSales} 笔卖出因成本不明未计入。` : `${data.excludedSales} sales excluded due to unknown costs.` }}</span>
+        <span v-if="data.reasons?.includes('transfers_not_indexed')">{{ zh ? '此链缺少转账历史，成本按已索引买卖记录估算。' : 'Transfer history is unavailable on this chain; costs are estimated from indexed trades.' }}</span>
+      </p>
+      <div class="mt-3 flex flex-wrap justify-between gap-1 text-[10px] text-grey-8d">
+        <span>{{ data.chain.toUpperCase() }} · {{ (data.source || 'TagAI').toUpperCase() }}</span>
+        <span>{{ data.capturedAt ? date(data.capturedAt) : '—' }}</span>
       </div>
     </template>
   </div>
@@ -127,5 +149,5 @@ watch([period, () => props.twitterId, () => props.username], load, { immediate: 
 .chart { background-color: var(--surface); background-image: radial-gradient(var(--border-base) 1px, transparent 1px); background-size: 12px 12px; }
 .metric { display: flex; flex-direction: column; border-radius: .75rem; background: var(--surface-2); padding: .65rem .75rem; }
 .metric span { color: var(--text-muted); font-size: .65rem; }
-.metric strong { margin-top: .15rem; color: var(--text-base); font-size: .875rem; font-variant-numeric: tabular-nums; }
+.metric strong { margin-top: .15rem; color: var(--text-base); font-size: .875rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 </style>
