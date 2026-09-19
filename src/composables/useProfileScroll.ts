@@ -3,13 +3,13 @@ import '@/assets/profile-scroll.css'
 
 const profileScrollKey: InjectionKey<Ref<HTMLElement | undefined>> = Symbol('profile-scroll')
 
-export function useProfileScroll(activeTab: Ref<string>) {
-  const profileScroller = ref<HTMLElement>()
+export function useProfileScroll(activeTab: Ref<string>, listScroller?: Ref<HTMLElement | undefined>, scrollContainer?: Ref<HTMLElement | undefined>) {
+  const profileScroller = scrollContainer ?? ref<HTMLElement>()
   const profileTabs = ref<HTMLElement>()
   const profileContent = ref<HTMLElement>()
-  // The app mounts separate desktop/mobile route trees. A global DOM query
-  // can select the hidden tree; each profile must own its scroll parent.
-  provide(profileScrollKey, profileScroller)
+  // Each view owns its scroll parent. Wallet can supply a different list
+  // scroller on desktop while retaining the same sticky mobile page behavior.
+  provide(profileScrollKey, listScroller ?? profileScroller)
   watch(activeTab, async () => {
     await nextTick()
     const scroller = profileScroller.value

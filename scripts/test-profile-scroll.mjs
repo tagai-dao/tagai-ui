@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
-for (const view of ['profile/ProfileView', 'profile/UserView', 'profile/TabPost', 'profile/TabBlinksTweet', 'profile/TabCreateCoin', 'wallet/TipTokenRecord']) {
+for (const view of ['profile/ProfileView', 'profile/UserView', 'profile/TabPost', 'profile/TabBlinksTweet', 'profile/TabCreateCoin', 'profile/TabPrediction', 'wallet/WalletView', 'wallet/TabHoldTag', 'wallet/TabIPShareHolding', 'wallet/TabSocialAccount', 'wallet/social/AddTokenList', 'wallet/TipTokenRecord']) {
   test(`${view} script and template compile`, () => {
     const filename = `src/views/${view}.vue`
     const { descriptor, errors } = parse(read(filename), { filename })
@@ -32,4 +32,20 @@ test('self and public profiles share one scroll region and sticky tabs', () => {
     assert.ok(!source.includes('id="profile-tab-scroller"'))
   }
   assert.match(read('src/assets/profile-scroll.css'), /position: sticky/)
+})
+test('mobile wallet shares one scroll region with sticky tabs and scoped list pagination', () => {
+  const wallet = read('src/views/wallet/WalletView.vue')
+  assert.ok(wallet.includes('ref="walletScroller" class="profile-scroll-page wallet-scroll-page"'))
+  assert.ok(wallet.includes('ref="walletTabs" class="profile-content-tabs wallet-content-tabs"'))
+  assert.ok(wallet.includes('ref="walletContent" class="profile-scroll-content wallet-scroll-content"'))
+  assert.ok(wallet.includes('mobileViewport.value ? walletScroller.value : walletContent.value'))
+  for (const view of ['wallet/TabHoldTag', 'wallet/TabIPShareHolding', 'profile/TabPrediction', 'wallet/social/AddTokenList']) {
+    const source = read(`src/views/${view}.vue`)
+    assert.ok(source.includes('const scroller = useProfileScrollParent()'))
+    assert.ok(source.includes(':scroller="scroller"'))
+    assert.ok(!source.includes("document.querySelector('#profile-tab-scroller')"))
+  }
+  assert.ok(!read('src/views/wallet/TabHoldTag.vue').includes('min-h-full h-full overflow-auto'))
+  assert.ok(!read('src/views/wallet/TabIPShareHolding.vue').includes('class="h-full overflow-auto"'))
+  assert.ok(!read('src/views/profile/TabPrediction.vue').includes('class="h-full overflow-auto"'))
 })

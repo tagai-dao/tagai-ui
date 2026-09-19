@@ -48,7 +48,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full px-3">
+  <div class="min-h-full px-3">
     <div class="social-services" :aria-label="serviceText('选择自动支付功能', 'Choose payment service')">
       <button :aria-pressed="activeService === 'buy'" :class="{ selected: activeService === 'buy' }" @click="activeService = 'buy'">{{ serviceText('评论买币', 'Comment buy') }}</button>
       <button :aria-pressed="activeService === 'tip'" :class="{ selected: activeService === 'tip' }" @click="activeService = 'tip'">{{ serviceText('社交打赏', 'Social tipping') }}</button>
