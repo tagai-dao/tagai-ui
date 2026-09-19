@@ -11,8 +11,8 @@ const { parseAndroidDownload: parse, parseAndroidRelease } = await import(`data:
 const manifest = JSON.parse(read('public/app-updates/android.json'))
 assert.equal(parse(manifest).versionCode, manifest.versionCode)
 assert.equal(parseAndroidRelease({ ...manifest, enabled: false }, 20), null, 'manual downloads must not enable update prompts')
-assert.equal(parseAndroidRelease(manifest, 22)?.versionCode, 24)
-assert.equal(parseAndroidRelease(manifest, 24), null, 'current installs must not be prompted')
+assert.equal(parseAndroidRelease(manifest, manifest.versionCode - 1)?.versionCode, manifest.versionCode)
+assert.equal(parseAndroidRelease(manifest, manifest.versionCode), null, 'current installs must not be prompted')
 for (const patch of [
   { downloadEnabled: false }, { downloadEnabled: undefined }, { applicationId: 'other.app' },
   { versionCode: NaN }, { versionCode: -1 }, { versionCode: '22' }, { versionName: '' },

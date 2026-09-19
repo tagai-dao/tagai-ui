@@ -58,3 +58,13 @@ Before release, test physical Android devices and OEM browser download handling.
 - APK SHA-256: `c74c46438b8b31ccf98f5b6f7bd8013afffdc4665e0a4620ce5bb34aabcaadd3`.
 - Automated regressions, production build/type-check, Android unit tests and
   release assembly passed. No physical-device upgrade or live trade was executed.
+
+## 1.0.27 (versionCode 27)
+
+- Packages the latest main-branch Blinks and comment-buy updates, while retaining
+  the 1.0.26 wallet-chain and 1.0.25 listed-token fixes.
+- Uses the existing production signing identity and `fun.tagai.app` ID; install
+  over the existing official app without uninstalling or clearing data.
+- APK SHA-256: `8b3d750e84c17adcb0f759744a7a4313ff09206c7c10b02e31a305194644d8ca`.
+- Automated build and signing verification passed. Physical-device login,
+  upgrade data preservation, and live trading still require device acceptance.
