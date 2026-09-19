@@ -639,8 +639,9 @@ export type PnlPeriod = '1d' | '7d' | '30d' | 'all'
 
 export type AccountPnlPoint = {
   timestamp: string;
-  capturedAt: string;
-  pnlUsd: number;
+  capturedAt?: string;
+  pnlUsd?: number;
+  pnlNative?: number;
 }
 
 export type AccountPnl = {
@@ -651,6 +652,18 @@ export type AccountPnl = {
   twitterId?: string;
   twitterUsername?: string;
   hasData: boolean;
+  calculation?: 'indexed-realized-v1';
+  status?: 'partial' | 'incomplete_history' | 'no_data' | 'no_wallet' | 'history_limit';
+  quality?: 'partial';
+  stale?: boolean;
+  historyUnavailable?: boolean;
+  nativeSymbol?: string;
+  pnlNative?: number | null;
+  volumeNative?: number;
+  matchedSales?: number;
+  excludedSales?: number;
+  reasons?: string[];
+  lastTradeAt?: string | null;
   source?: 'fomo' | 'gmgn' | 'pump' | 'tagai';
   pnlUsd?: number;
   pnlChangeUsd?: number;
