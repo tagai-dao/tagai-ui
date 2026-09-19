@@ -4,12 +4,13 @@ import { useSocialAccountModalStore } from "@/stores/wallet";
 import { WETH } from "@/config";
 import { type SocialAccountTokens } from "@/types";
 import { formatAmount } from "@/utils/helper";
+import { useProfileScrollParent } from '@/composables/useProfileScroll'
 
 const socialAccountModalStore = useSocialAccountModalStore()
 const refreshing = ref(false)
 const loading = ref(false)
 const finished = ref(false)
-const scroller = document.querySelector('#profile-tab-scroller')
+const scroller = useProfileScrollParent()
 
 const onLoad = async () => {
 

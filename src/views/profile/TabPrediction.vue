@@ -15,11 +15,13 @@
     import { useStateStore } from '@/stores/common'
     import { useI18n } from 'vue-i18n'
     import { isPcsV4Version } from '@/utils/pumpVersion'
+    import { useProfileScrollParent } from '@/composables/useProfileScroll'
     
     const { t } = useI18n()
     const comStore = useCommunityStore()
     const accStore = useAccountStore()
     const stateStore = useStateStore()
+    const scroller = useProfileScrollParent()
     const battles = ref<BattleData[]>([])
     const events = ref<EventPredictData[]>([])
     let tweets = reactive<{ [key: string]: Tweet }>({})
@@ -237,9 +239,9 @@
     </script>
     
     <template>
-      <div class="predict-container rounded-t-2xl overflow-hidden flex flex-col h-full">
-        <div class="flex-1 overflow-hidden relative bg-gray-50">
-             <van-pull-refresh class="h-full overflow-auto"
+      <div class="predict-container rounded-t-2xl flex flex-col min-h-full">
+        <div class="flex-1 relative bg-gray-50">
+             <van-pull-refresh class="min-h-full"
                 v-model="refreshing"
                 @refresh="onRefresh"
                 :loading-text="$t('loading')"
@@ -247,6 +249,7 @@
                 :loosing-text="$t('releaseToRefresh')"
              >
                 <van-list
+                    :scroller="scroller"
                     :loading="loading"
                     :finished="finished"
                     :immediate-check="false"
