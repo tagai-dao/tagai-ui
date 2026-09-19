@@ -61,6 +61,7 @@ const dexTheme = computed(() => isDark.value ? 'dark' : 'light')
 const props = defineProps({
   tick: {type: String, required: false, default: null},
   loginReturnPath: {type: String, default: ''},
+  commerceId: {type: String, default: ''},
   showChart: {type: Boolean, default: true},
   sellsman: {type: String, required: false, default: null}
 })
@@ -73,28 +74,30 @@ const getTradeSellsman = async (onVerifiedSource?: (id: string) => void) => {
   const chainId = chainStore.activeChainId
   const sourcePath = route.fullPath
   const token = comStore.currentSelectedCommunity?.token
-  const blinkId = blinkIdFromRoute(route)
+  const explicitSource = props.commerceId
+  const blinkId = explicitSource || blinkIdFromRoute(route)
   if (blinkId) {
     const result = await resolveCommerce(blinkId, chainId)
-    if (chainStore.activeChainId !== chainId || route.fullPath !== sourcePath || comStore.currentSelectedCommunity?.token !== token) {
+    if (props.commerceId !== explicitSource || chainStore.activeChainId !== chainId || route.fullPath !== sourcePath || comStore.currentSelectedCommunity?.token !== token) {
       throw new Error('Trade source changed. Please refresh the quote.')
     }
     if (result?.c !== 0) throw new Error('Unable to verify Blinks publisher. Please retry.')
     const source = verifiedBlink(result.d, blinkId, chainId)
     if (!token) throw new Error('Token is still loading. Please retry.')
-    if (['post-detail', 'space-detail'].includes(String(route.name)) && String(route.params.id) !== String(source.tweetId)) {
+    if (!explicitSource && ['post-detail', 'space-detail'].includes(String(route.name)) && String(route.params.id) !== String(source.tweetId)) {
       throw new Error('Blinks source does not match this post.')
     }
     if (blinkMatchesTrade(source, token, chainId)) {
       const ipshare = chainStore.deployment.contracts.ipshare3
       const subject = await resolveTradeSellsman(chainId, source.publisher.address,
         async address => (await readContract('IPShare3', 'ipshareCreated', [address], ipshare)) === true)
-      if (chainStore.activeChainId !== chainId || route.fullPath !== sourcePath || comStore.currentSelectedCommunity?.token !== token) {
+      if (props.commerceId !== explicitSource || chainStore.activeChainId !== chainId || route.fullPath !== sourcePath || comStore.currentSelectedCommunity?.token !== token) {
         throw new Error('Trade source changed. Please refresh the quote.')
       }
       onVerifiedSource?.(blinkId)
       return subject
     }
+    if (explicitSource) throw new Error('Blinks source does not match this token.')
     // Another token in a post/community does not inherit the original Blink.
   }
   const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
