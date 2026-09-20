@@ -102,6 +102,12 @@
     "logoUrl": "/images/basket-assets/mstr.png"
   },
   {
+    "symbol": "RDDTB",
+    "address": "0x41622a9125A22767Df8C1dC79FC17299BAc4Bd0b",
+    "decimals": 18,
+    "logoUrl": "https://assets.parqet.com/logos/symbol/RDDT?format=png"
+  },
+  {
     "symbol": "ETH",
     "address": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
     "decimals": 18,
