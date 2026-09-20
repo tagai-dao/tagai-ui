@@ -9,6 +9,7 @@ import { getIPshareSupplies, getIPshareBalances, getIPshareStaked } from "@/util
 import IPShareTradeModal from "@/components/ipshare/IPShareTradeModal.vue";
 import { isAddress } from "viem";
 import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
+import { useProfileScrollParent } from '@/composables/useProfileScroll'
 
 const router = useRouter()
 const accStore = useAccountStore()
@@ -24,6 +25,7 @@ const selectedIP = ref<any>(null)
 const ipshareSupplies = computed(() => ipshareStore.ipshareSupplies)
 const ipshareBalances = computed(() => ipshareStore.ipshareBalances)
 const stakeInfos = computed(() => ipshareStore.stakeInfos)
+const scroller = useProfileScrollParent()
 
 const profile = (ip: any) => {
   if (!ip.profile) return null
@@ -172,7 +174,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto">
+  <div class="min-h-full">
     <van-pull-refresh 
       v-model="refreshing" 
       @refresh="onRefresh"
@@ -181,6 +183,7 @@ onMounted(() => {
       :pulling-text="$t('pullToRefreshData')"
       :loosing-text="$t('releaseToRefresh')">
       <van-list 
+        :scroller="scroller"
         :loading="loading"
         :finished="finished"
         :immediate-check="false"

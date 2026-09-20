@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {ref, computed, watch} from "vue";
+import {ref, computed, onMounted, onUnmounted, watch} from "vue";
 import TabHoldTag from "@/views/wallet/TabHoldTag.vue";
 import TabPrediction from "@/views/profile/TabPrediction.vue";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -17,6 +17,7 @@ import { calculateWalletUsd } from '@/utils/walletValue.mjs'
 import { GlobalModalType } from "@/types";
 import { useChainStore } from "@/stores/chain";
 import emitter from "@/utils/emitter";
+import { useProfileScroll } from '@/composables/useProfileScroll'
 
 const ReactWallet = applyPureReactInVue(Wallet);
 
@@ -33,6 +34,14 @@ const tabOptions = computed(() => [
   ...(chainStore.deployment.features.auPay ? ['socialAccount'] : []),
 ])
 const activeTab = ref('holding')
+const mobileViewport = ref(typeof window !== 'undefined' && window.innerWidth < 804)
+const walletScroller = ref<HTMLElement>()
+const walletContent = ref<HTMLElement>()
+const walletListScroller = computed(() => mobileViewport.value ? walletScroller.value : walletContent.value)
+const { profileTabs: walletTabs } = useProfileScroll(activeTab, walletListScroller, walletScroller)
+const updateViewport = () => { mobileViewport.value = window.innerWidth < 804 }
+onMounted(() => window.addEventListener('resize', updateViewport))
+onUnmounted(() => window.removeEventListener('resize', updateViewport))
 watch(tabOptions, options => {
   if (!options.includes(activeTab.value)) activeTab.value = 'holding'
 })
@@ -108,7 +117,7 @@ watch(
 </script>
 
 <template>
-  <div class="h-full overflow-hidden py-2 flex flex-col gap-3">
+  <div ref="walletScroller" class="profile-scroll-page wallet-scroll-page" data-testid="wallet-scroll">
     <div class="bg-white py-3 px-3 rounded-2xl mx-3">
       <div class="flex gap-2 items-center">
         <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
@@ -156,13 +165,12 @@ watch(
         </div>
       </div> -->
     </div>
-    <div class="flex justify-around items-center gap-2 bg-white h-12 min-h-12 px-4 rounded-2xl mx-3">
+    <div ref="walletTabs" class="profile-content-tabs wallet-content-tabs" role="tablist" aria-label="Wallet assets">
       <button v-for="tab of tabOptions" :key="tab"
-              class="px-3 rounded-full h-8 text-h3 whitespace-nowrap"
-              :class="tab===activeTab?'bg-orange-normal text-white':'text-grey-3f'"
+              role="tab" :aria-selected="tab===activeTab"
               @click="activeTab=tab">{{$t('profileView.'+tab)}}</button>
     </div>
-    <div class="flex-1 overflow-auto " id="profile-tab-scroller">
+    <div ref="walletContent" class="profile-scroll-content wallet-scroll-content">
       <!-- <TabHoldCoin v-if="activeTab==='holdCoin'"/> -->
       <TabHoldTag v-if="activeTab==='holding'"/>
       <TabIPShareHolding v-if="activeTab==='ipshare'"/>
@@ -174,5 +182,47 @@ watch(
 </template>
 
 <style scoped>
+@media (max-width: 803px) {
+  .wallet-content-tabs > button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 4px;
+    font-size: clamp(11px, 3.2vw, 14px);
+  }
+}
 
+@media (min-width: 804px) {
+  .wallet-scroll-page {
+    overflow: hidden;
+  }
+
+  .wallet-content-tabs {
+    position: static;
+    justify-content: space-around;
+    gap: 8px;
+    height: 48px;
+    min-height: 48px;
+    padding: 0 16px;
+  }
+
+  .wallet-content-tabs > button {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9999px;
+    font-size: 16px;
+  }
+
+  .wallet-content-tabs > button[aria-selected='true'] {
+    color: white;
+    background: #ff8919;
+  }
+
+  .wallet-scroll-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
 </style>

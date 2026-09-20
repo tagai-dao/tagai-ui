@@ -15,6 +15,7 @@ import { useAccount } from "@/composables/useAccount";
 import { getTokenBalances } from "@/utils/web3";
 import { filterByActiveChain } from "@/utils/chainFilter";
 import { isPcsV4Version } from '@/utils/pumpVersion'
+import { useProfileScrollParent } from '@/composables/useProfileScroll'
 
 enum ModalType {
   transfer,
@@ -37,7 +38,7 @@ const showingNoEth = computed(() => {
 let currentLenth = 0
 const { updateHoldingValue } = useAccount()
 
-const scroller = document.querySelector('#profile-tab-scroller')
+const scroller = useProfileScrollParent()
 
 /** 持仓项：community / 顶层 chainId；缺省按 BSC */
 const filterHoldingsForActiveChain = (list: any[]) =>
@@ -200,7 +201,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="h-full">
+  <div class="min-h-full">
     <template v-if="showingNoEth">
       <div  class="p-3 bg-white rounded-2xl mx-3 text-center">
         <button @click="useModalStore().setModalVisible(true, GlobalModalType.BondEth)" class="h-12 w-full rounded-full bg-gradient-primary text-h3 text-white web:max-w-[310px]">
@@ -212,7 +213,7 @@ onMounted(async () => {
       </div>
     </template>
     <van-pull-refresh v-else v-model="refreshing" @refresh="onRefresh"
-                      class="min-h-full h-full overflow-auto"
+                      class="min-h-full"
                       :loading-text="$t('loading')"
                       :lpulling-text="$t('pullToRefreshData')"
                       :loosing-text="$t('releaseToRefresh')">
