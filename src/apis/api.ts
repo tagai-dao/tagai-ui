@@ -330,8 +330,16 @@ export const getHolderListOfImportToken = async (token: string, pages?: number) 
 export const getImportedCommunityInfo = async () =>
   publicRead('/community/getImportedCommunityInfo')
 
-export const getTokenTradeList = async (token: string, pages?: number, platformOnly = false) =>
-  publicRead('/community/tradeList', { token, pages, ...(platformOnly ? { platformOnly: '1' } : {}) })
+export const getTokenTradeList = async (token: string, pages?: number, platformOnly = false) => {
+  const params = { token, pages, ...(platformOnly ? { platformOnly: '1' } : {}) }
+  if (useChainStore().activeChainId === 56) return (await getDisplay(BACKEND_API_URL + '/community/tradeList', params, 56)).data
+  return publicRead('/community/tradeList', params)
+}
+
+export const reportCurveTrade = (twitterId: string, report: Record<string, unknown>) =>
+  post(BACKEND_API_URL + '/community/reportCurveTrade', { ...report, twitterId }, {
+    headers: { 'X-Chain-Id': '56' }, timeout: 8000,
+  })
 
 export const getTradeFeed = async (pages?: number) =>
   publicRead('/community/tradeFeed', { pages })

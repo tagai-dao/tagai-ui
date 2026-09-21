@@ -84,11 +84,16 @@ const onRefresh = async () => {
   }
 };
 
+let refreshTimer: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
   onRefresh()
   emitter.on('newTrade', onRefresh);
+  refreshTimer = setInterval(() => {
+    if (chainStore.activeChainId === 56 && !loading.value && listData.value.length <= 30) void onRefresh()
+  }, 5000)
 })
 onUnmounted(() => {
+  clearInterval(refreshTimer)
   emitter.off('newTrade', onRefresh);
 })
 </script>

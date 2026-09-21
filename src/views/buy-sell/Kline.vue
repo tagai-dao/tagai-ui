@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import {useStateStore} from "@/stores/common";
 import {formatKChartDate} from "@/utils/helper";
-import {onActivated, onMounted, reactive, ref, watch} from "vue";
+import {onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
 import {init} from "klinecharts";
 import { useInterval } from "@/composables/useTools";
 import { useWindowSize } from '@vant/use';
 import { useRoute } from "vue-router";
 import { useTheme } from "@/composables/useTheme";
+import { useChainStore } from '@/stores/chain'
+import emitter from '@/utils/emitter'
+import { curveRefreshFrom, replaceCandleTail } from '@/utils/curveCandleTail'
 import { periodChange } from '@/utils/communityChartPeriod'
 
 const { width, height } = useWindowSize();
@@ -15,6 +18,7 @@ const props = defineProps(['tick', 'chartId', 'period', 'changeSeconds'])
 const emit = defineEmits<{ change: [value: number | null] }>()
 const { setInter } = useInterval();
 const { isDark } = useTheme()
+const chainStore = useChainStore()
 let tick = ref('');
 let lastTimestamp = 0;
 type ChartData = {
@@ -22,7 +26,8 @@ type ChartData = {
   open: number,
   close: number,
   low: number,
-  high: number
+  high: number,
+  pending?: boolean
 }
 
 type FormData = {
@@ -170,60 +175,52 @@ function updateChart() {
   else if(activeTab.value ==='1d') chart.value.applyNewData(data1day.values);
 }
 
+function setChartRows(rows: ChartData[]) {
+  originalData = rows
+  lastTimestamp = rows.length ? Number(rows[rows.length - 1].timestamp) : 0
+  for (const [target, interval] of [[data1min,60],[data5min,300],[data1h,3600],[data1day,86400]] as const) {
+    const data = splitData(rows, interval)
+    target.categoryData = data.categoryData
+    target.values = data.values
+  }
+}
+
 async function getNewData() {
-  try{
-    let res: any = await getTokenTradeData(props.tick, undefined, true);
-    if (res && res.length > 0) {
-      originalData = res as ChartData[];
-      lastTimestamp = res[res.length - 1].timestamp;
-      let m1 = splitData(res, 60)
-      let m5 = splitData(res, 300)
-      let h1 = splitData(res, 3600)
-      let day1 = splitData(res, 86400)
-      data1min.categoryData = m1.categoryData;
-      data1min.values = m1.values;
-      data5min.categoryData = m5.categoryData;
-      data5min.values = m5.values;
-      data1day.categoryData = day1.categoryData;
-      data1day.values = day1.values;
-      data1h.categoryData = h1.categoryData;
-      data1h.values = h1.values;
-    }
-  } catch (e) {}
+  const requestedTick = props.tick
+  const requestedChain = chainStore.activeChainId
+  try {
+    const rows: any = await getTokenTradeData(requestedTick, undefined, true)
+    if (requestedTick === props.tick && requestedChain === chainStore.activeChainId && Array.isArray(rows)) setChartRows(rows)
+  } catch (_) {}
+}
+
+let refreshing = false
+async function refreshData() {
+  if (refreshing) return
+  refreshing = true
+  const requestedTick = props.tick
+  const requestedChain = chainStore.activeChainId
+  const from = requestedChain === 56 ? curveRefreshFrom(originalData) : lastTimestamp
+  try {
+    const rows: any = await getTokenTradeData(requestedTick, from || undefined, true)
+    if (requestedTick !== props.tick || requestedChain !== chainStore.activeChainId || !Array.isArray(rows)) return
+    setChartRows(requestedChain === 56 ? replaceCandleTail(originalData, rows, from) : originalData.concat(rows))
+    updateChart()
+  } catch (error) { console.warn('Chart refresh failed', error) }
+  finally { refreshing = false }
 }
 
 onActivated(async () => {
   if (route.params.id !== tick.value) {
-    originalData = []
+    setChartRows([])
     tick.value = route.params.id as string
     await getNewData()
     updateChart()
-    setInter(async () => {
-      try{
-        let res: any = await getTokenTradeData(tick.value, lastTimestamp, true);
-        if (res && res.length > 0) {
-          originalData = originalData.concat(res as ChartData[])
-          lastTimestamp = res[res.length - 1].timestamp
-          let m1 = splitData(originalData, 60)
-          let m5 = splitData(originalData, 300)
-          let h1 = splitData(originalData, 3600)
-          let day1 = splitData(originalData, 86400)
-          data1min.categoryData = m1.categoryData;
-          data1min.values = m1.values;
-          data5min.categoryData = m5.categoryData;
-          data5min.values = m5.values;
-          data1day.categoryData = day1.categoryData;
-          data1day.values = day1.values;
-          data1h.categoryData = h1.categoryData;
-          data1h.values = h1.values;
-          updateChart();
-        }
-      } catch (e) {
-        console.log(53331, e)
-      }
-    }, 3000)
+    setInter(refreshData, 3000)
   }
 })
+
+onUnmounted(() => emitter.off('newTrade', refreshData))
 
 onMounted(async () => {
   tick.value = route.params.id as string
@@ -246,30 +243,8 @@ onMounted(async () => {
   applyChartTheme()
   chart.value.setPriceVolumePrecision(6, 2)
   updateChart();
-  setInter(async () => {
-    try{
-      let res: any = await getTokenTradeData(tick.value, lastTimestamp, true);
-      if (res && res.length > 0) {
-        originalData = originalData.concat(res as ChartData[])
-        lastTimestamp = res[res.length - 1].timestamp
-        let m1 = splitData(originalData, 60)
-        let m5 = splitData(originalData, 300)
-        let h1 = splitData(originalData, 3600)
-        let day1 = splitData(originalData, 86400)
-        data1min.categoryData = m1.categoryData;
-        data1min.values = m1.values;
-        data5min.categoryData = m5.categoryData;
-        data5min.values = m5.values;
-        data1day.categoryData = day1.categoryData;
-        data1day.values = day1.values;
-        data1h.categoryData = h1.categoryData;
-        data1h.values = h1.values;
-        updateChart();
-      }
-    } catch (e) {
-      console.log(5333, e)
-    }
-  }, 3000)
+  setInter(refreshData, 3000)
+  emitter.on('newTrade', refreshData)
 })
 
 watch(()=> activeTab.value, () => {

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { curveTradeReports } from '@/utils/curveTradeReport'
+import { getReadOnlyClient } from '@/utils/wallets'
+import { reportCurveTrade } from '@/apis/api'
 import { quoteCurve, executeCurve, type CurveQuote } from '@/utils/v13/lifecycle'
 import { createQuoteSession, executeQuote, type Quote } from '@/utils/v13/client'
 import BackHeader from "@/layout/BackHeader.vue";
@@ -736,7 +739,23 @@ async function confirm() {
     const traderId = accStore.getAccountInfo?.twitterId
     let sourceCommerceId: string | undefined
     const resolvedSellsman = await getTradeSellsman(id => { sourceCommerceId = id })
-    const recordConfirmedTrade = (hash: string) => trade(token.tick, traderId, hash, sourceCommerceId, token.token, tradeChainId).catch(console.error)
+    const recordConfirmedTrade = (hash: string) => {
+      void trade(token.tick, traderId, hash, sourceCommerceId, token.token, tradeChainId).catch(console.error)
+      if (tradeChainId !== 56 || verifiedListed || token.isImport || !traderId) return
+      // Capture chain/token/account before the user navigates or switches chains.
+      // Reporting failures must never turn a successful on-chain trade into a failure.
+      void (async () => {
+        const client = getReadOnlyClient(56)
+        const receipt = await client.getTransactionReceipt({ hash: hash as `0x${string}` })
+        if (receipt.status !== 'success') return
+        const block = await client.getBlock({ blockNumber: receipt.blockNumber })
+        const reports = curveTradeReports(receipt, token.token, Number(block.timestamp))
+        await Promise.all(reports.map(report => reportCurveTrade(traderId, report)))
+        if (!disposed && chainStore.activeChainId === tradeChainId && token === comStore.currentSelectedCommunity) {
+          emitter.emit('newTrade')
+        }
+      })().catch(error => console.warn('Curve trade report failed; Graph will synchronize it', error))
+    }
     if (tradeType.value === 'buy') {
       if (!payEth.value) return
 
