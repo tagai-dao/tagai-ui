@@ -18,9 +18,9 @@ const result = await build({
                 : args.path.includes('/apis/') ? 'export const getNutboxNftRewardSummary = (...a) => globalThis.fixture.rewards(...a);'
                   : `export const erc20NutboxAbi=[], indexBrokerNftAbi=[], indexBrokerNftAmmAbi=[], indexBrokerNftRendererAbi=[], nutboxCommitteeAbi=[], nutboxCommunityAbi=[], nutboxRouterAbi=[];
                     export const readNutboxContract = (...a) => globalThis.fixture.read(...a);
-                    export const getNutboxReadClient = () => ({ getBlockNumber: () => globalThis.fixture.block() });
+                    export const getNutboxReadClient = () => ({ getBlockNumber: () => globalThis.fixture.block(), getBalance: () => globalThis.fixture.balance() });
                     export const writeNutboxContract = (...a) => globalThis.fixture.write(...a);
-                    export const imageCandidatesFromTokenUri = () => []; export const svgDataUrl = x => x; export const withFeeBuffer = x => x + 1n;`
+                    export const imageCandidatesFromTokenUri = () => []; export const svgArtworkCandidates = x => [x]; export const withFeeBuffer = x => x + 1n;`
       return { contents: exports, loader: 'js' }
     })
   } }],
@@ -36,7 +36,7 @@ function setup(poolOverrides = {}) {
   globalThis.fixture = {
     account: { ethConnectAddress: '' }, chain: { activeChainId: 4663 },
     read: async (_address, _abi, name) => { calls.push(name); return fields[name] ?? 0n },
-    block: async () => 10n, rewards: async () => null, write: async () => 'tx',
+    block: async () => 10n, balance: async () => 10n ** 18n, rewards: async () => null, write: async () => 'tx',
   }
   return { model: useNutboxNftPool({ value: { ...pool, ...poolOverrides } }), calls, fields, fixture: globalThis.fixture }
 }
@@ -108,4 +108,17 @@ test('mint re-reads the price instead of using display state', async () => {
   fixture.write = async (...args) => { sentValue = args[4]; return 'tx' }
   await model.mint()
   assert.equal(sentValue, 3000000000000000n)
+})
+
+test('wallet read failures stay unavailable instead of masquerading as zero balances', async () => {
+  const { model, fixture } = setup()
+  fixture.account.ethConnectAddress = '0xaccount'
+  fixture.balance = async () => { throw Error('offline') }
+  await model.load()
+  assert.equal(model.walletDataReady.value, false)
+  assert.match(model.walletDataError.value, /Unable to load/)
+  fixture.balance = async () => 21n * 10n ** 15n
+  await model.load()
+  assert.equal(model.walletDataReady.value, true)
+  assert.equal(model.state.nativeBalance, 21n * 10n ** 15n)
 })

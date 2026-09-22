@@ -199,9 +199,12 @@ export const imageCandidatesFromTokenUri = (uri: string, svg = '') => {
   try {
     const image = imageValueFromTokenUri(uri)
     const metadataSources = image.startsWith('ipfs://') ? ipfsHttpCandidates(image) : [image]
-    return uniqueSources([...metadataSources, svgDataUrl(svg)])
+    const embeddedSvg = image.startsWith('data:image/svg+xml,') || image.startsWith('data:image/svg+xml;charset=utf-8,')
+      ? decodeURIComponent(image.slice(image.indexOf(',') + 1))
+      : image.startsWith('data:image/svg+xml;base64,') ? atob(image.slice(image.indexOf(',') + 1)) : ''
+    return uniqueSources([...svgArtworkCandidates(embeddedSvg), ...svgArtworkCandidates(svg), ...metadataSources])
   } catch {
-    return uniqueSources([svgDataUrl(svg)])
+    return svgArtworkCandidates(svg)
   }
 }
 
@@ -212,3 +215,21 @@ export const imageFromTokenUri = (uri: string) => {
 export const svgDataUrl = (svg: string) => svg
   ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
   : ''
+
+// SVG loaded as an <img> cannot fetch nested external images. Nutbox renderers
+// may wrap IPFS/HTTP artwork in <image>; load that image directly, never inline SVG.
+export const svgArtworkCandidates = (svg: string): string[] => {
+  if (!svg.trim()) return []
+  const href = svg.match(/<image\b[^>]*\s(?:href|xlink:href)\s*=\s*["']([^"']+)["']/i)?.[1]?.replaceAll('&amp;', '&') || ''
+  if (/^ipfs:\/\//i.test(href)) return ipfsHttpCandidates(href)
+  if (/^https?:\/\//i.test(href)) {
+    // Renderers also emit gateway URLs (HBTC uses Pinata). Keep the original
+    // first, but recover via independent gateways when that provider fails.
+    try {
+      const url = new URL(href)
+      const ipfs = url.pathname.match(/^\/ipfs\/(.+)$/)?.[1]
+      return uniqueSources([href, ...(ipfs ? ipfsHttpCandidates(`ipfs://${ipfs}`) : [])])
+    } catch { return [] }
+  }
+  return [svgDataUrl(svg)]
+}

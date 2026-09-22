@@ -10,6 +10,8 @@ import { GlobalModalType } from '@/types'
 import { handleErrorTip, notify } from '@/utils/notify'
 import { useChainStore } from '@/stores/chain'
 import NftArtwork from './NftArtwork.vue'
+import { withFeeBuffer } from '@/utils/nutboxNft'
+import { nftPaymentError } from '@/utils/nftTradeEligibility'
 
 const props = defineProps<{ pool: NutboxIndexBrokerPool; model: NutboxNftPoolModel }>()
 const route = useRoute()
@@ -17,7 +19,7 @@ const modalStore = useModalStore()
 const chainStore = useChainStore()
 const {
   state, loading, ready, error, action, connected, ownedNfts, inventory,
-  mintPreviewImage, approveErc20, mint, reveal, approveNft, buy, sell,
+  mintPreviewImage, mintPreviewFallbacks, walletDataReady, walletDataError, approveErc20, mint, reveal, approveNft, buy, sell,
 } = props.model
 
 const mode = ref<'mint' | 'swap' | 'snipe'>('mint')
@@ -43,13 +45,35 @@ const selectedInventory = computed(() => inventory.value.find(nft => nft.tokenId
 const selectedOwned = computed(() => ownedNfts.value.find(nft => nft.tokenId.toString() === selectedOwnedId.value))
 const mintArtwork = computed(() => mintPreviewImage.value || inventory.value[0]?.image || ownedNfts.value[0]?.image || '')
 const mintArtworkFallbacks = computed(() => mintPreviewImage.value
-  ? [inventory.value[0]?.image, ...(inventory.value[0]?.imageFallbacks || [])].filter(Boolean) as string[]
+  ? mintPreviewFallbacks.value
   : inventory.value[0]?.imageFallbacks || ownedNfts.value[0]?.imageFallbacks || [])
 const mintNeedsApproval = computed(() => state.mintAllowance < state.communityTokenPrice)
 const buyNeedsApproval = computed(() => state.ammAllowance < state.tokensPerNft)
 const selectedOwnedApproved = computed(() => selectedOwned.value?.approved?.toLowerCase() === props.pool.amm.toLowerCase())
 const explorer = computed(() => chainStore.browser.replace(/\/$/, ''))
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
+const paymentError = (tokenRequired: bigint, nativeRequired: bigint) => nftPaymentError({
+  tokenRequired, nativeRequired, tokenBalance: state.communityBalance,
+  tokenDecimals: state.communityDecimals, tokenSymbol: state.communitySymbol,
+  nativeBalance: state.nativeBalance, nativeSymbol: nativeSymbol.value,
+})
+const mintIssue = computed(() => {
+  if (!connected.value) return ''
+  if (!walletDataReady.value) return walletDataError.value || 'Loading wallet balances…'
+  if (state.totalSupply >= state.maxSupply) return 'NFT collection is sold out.'
+  if (state.whitelistRemaining === 0n && state.remainingPaidMints === 0n) return 'No public mints remaining.'
+  return paymentError(state.communityTokenPrice, state.whitelistRemaining > 0n ? 0n : state.nativePrice)
+})
+const ammIssue = computed(() => {
+  if (!connected.value) return ''
+  if (!walletDataReady.value) return walletDataError.value || 'Loading wallet balances…'
+  if (!state.ammActive) return 'NFT AMM trading is not active.'
+  if (side.value === 'buy' && inventory.value.length === 0) return 'AMM inventory is empty.'
+  if (side.value === 'buy' && mode.value === 'snipe' && !selectedInventory.value) return 'Choose an NFT to buy.'
+  if (side.value === 'sell' && !selectedOwned.value) return 'Choose an NFT to sell.'
+  return paymentError(side.value === 'buy' ? state.tokensPerNft : 0n,
+    withFeeBuffer(mode.value === 'snipe' ? state.specificFee : state.normalFee))
+})
 
 const connect = () => modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
 const run = async (fn: () => Promise<unknown>, success: string) => {
@@ -61,15 +85,15 @@ const run = async (fn: () => Promise<unknown>, success: string) => {
   }
 }
 
-const executeMint = () => run(
+const executeMint = () => !mintIssue.value && run(
   () => mint(referrerTokenId.value),
   'NFT minted. Complete Reveal when the reveal window opens.',
 )
-const executeBuy = () => run(
+const executeBuy = () => !ammIssue.value && run(
   () => buy(mode.value === 'snipe' ? selectedInventory.value?.tokenId : undefined),
   'NFT purchased',
 )
-const executeSell = () => selectedOwned.value && run(() => sell(selectedOwned.value!.tokenId), 'NFT sold')
+const executeSell = () => !ammIssue.value && selectedOwned.value && run(() => sell(selectedOwned.value!.tokenId), 'NFT sold')
 
 const mergeTransactions = (rows: NutboxNftTransaction[]) => {
   const byId = new Map([...rows, ...transactions.value].map(item => [item.id, item]))
@@ -159,8 +183,8 @@ onBeforeUnmount(() => socket?.close())
             <strong class="mt-2 block text-xl text-content">{{ formatToken(state.communityTokenPrice, state.communityDecimals) }} {{ state.communitySymbol }}<template v-if="state.whitelistRemaining === 0n"> + {{ formatEther(state.nativePrice) }} {{ nativeSymbol }}</template></strong>
               <small v-if="referrerTokenId" class="mt-1 block text-grey-3f">Referrer NFT #{{ referrerTokenId }}</small>
             <button v-if="!connected" class="mt-5 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" @click="connect">Connect wallet to mint and manage NFTs.</button>
-            <button v-else-if="mintNeedsApproval" class="mt-5 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" :disabled="!!action" @click="run(() => approveErc20(pool.communityToken, pool.pool, state.communityTokenPrice, 'approve-mint'), 'Mint token approved')">Approve {{ state.communitySymbol }}</button>
-            <button v-else class="mt-5 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || state.totalSupply >= state.maxSupply || state.communityBalance < state.communityTokenPrice" @click="executeMint">{{ action === 'mint' ? 'Minting…' : 'Mint NFT' }}</button>
+            <button v-else-if="mintNeedsApproval" class="mt-5 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!mintIssue" @click="run(() => approveErc20(pool.communityToken, pool.pool, state.communityTokenPrice, 'approve-mint'), 'Mint token approved')">Approve {{ state.communitySymbol }}</button>
+            <button v-else class="mt-5 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!mintIssue" @click="executeMint">{{ action === 'mint' ? 'Minting…' : 'Mint NFT' }}</button>
           </div>
           </div>
         </div>
@@ -186,12 +210,12 @@ onBeforeUnmount(() => socket?.close())
             <div v-else class="rounded-xl border border-dashed border-line p-6 text-center text-grey-3f">AMM inventory is empty</div>
           </div>
         </div>
-        <div class="mt-4 grid gap-2 text-sm web:grid-cols-2"><div class="flex justify-between"><span class="text-grey-3f">Exchange rate</span><b>1 NFT = {{ formatToken(state.tokensPerNft, state.communityDecimals) }} {{ state.communitySymbol }}</b></div><div class="flex justify-between"><span class="text-grey-3f">Maximum {{ nativeSymbol }} fee</span><b>{{ formatNative(state.normalFee) }} {{ nativeSymbol }}</b></div></div>
+        <div class="mt-4 grid gap-2 text-sm web:grid-cols-2"><div class="flex justify-between"><span class="text-grey-3f">Exchange rate</span><b>1 NFT = {{ formatToken(state.tokensPerNft, state.communityDecimals) }} {{ state.communitySymbol }}</b></div><div class="flex justify-between"><span class="text-grey-3f">Maximum {{ nativeSymbol }} fee</span><b>{{ formatNative(withFeeBuffer(state.normalFee)) }} {{ nativeSymbol }}</b></div></div>
         <button v-if="!connected" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" @click="connect">Connect wallet</button>
-        <button v-else-if="side === 'buy' && buyNeedsApproval" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" :disabled="!!action" @click="run(() => approveErc20(pool.communityToken, pool.amm, state.tokensPerNft, 'approve-buy'), 'AMM token approved')">Approve {{ state.communitySymbol }}</button>
-        <button v-else-if="side === 'buy'" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !state.ammActive || inventory.length === 0" @click="executeBuy">Buy queue head</button>
-        <button v-else-if="selectedOwned && !selectedOwnedApproved" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" :disabled="!!action" @click="run(() => approveNft(selectedOwned!.tokenId), 'NFT approved')">Approve NFT #{{ selectedOwned.tokenId }}</button>
-        <button v-else class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !selectedOwned || !state.ammActive" @click="executeSell">Sell selected NFT</button>
+        <button v-else-if="side === 'buy' && buyNeedsApproval" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!ammIssue" @click="run(() => approveErc20(pool.communityToken, pool.amm, state.tokensPerNft, 'approve-buy'), 'AMM token approved')">Approve {{ state.communitySymbol }}</button>
+        <button v-else-if="side === 'buy'" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!ammIssue" @click="executeBuy">Buy queue head</button>
+        <button v-else-if="selectedOwned && !selectedOwnedApproved" class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!ammIssue" @click="run(() => approveNft(selectedOwned!.tokenId), 'NFT approved')">Approve NFT #{{ selectedOwned.tokenId }}</button>
+        <button v-else class="mt-4 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!ammIssue" @click="executeSell">Sell selected NFT</button>
         <p class="mt-3 text-xs text-grey-3f">⚠ Staked assets and index-mining weight transfer with the NFT.</p>
       </template>
 
@@ -202,12 +226,18 @@ onBeforeUnmount(() => socket?.close())
         <div v-if="inventory.length === 0" class="py-8 text-center text-grey-3f">AMM inventory is empty</div>
         <div class="mt-4 rounded-xl bg-surface-2 p-3 text-sm">
           <div class="flex justify-between"><span>Community token</span><b>{{ formatToken(state.tokensPerNft, state.communityDecimals) }} {{ state.communitySymbol }}</b></div>
-          <div class="mt-2 flex justify-between"><span>Maximum {{ nativeSymbol }} fee</span><b>{{ formatNative(mode === 'snipe' ? state.specificFee : state.normalFee) }} {{ nativeSymbol }}</b></div>
+          <div class="mt-2 flex justify-between"><span>Maximum {{ nativeSymbol }} fee</span><b>{{ formatNative(withFeeBuffer(mode === 'snipe' ? state.specificFee : state.normalFee)) }} {{ nativeSymbol }}</b></div>
         </div>
         <button v-if="!connected" class="mt-3 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" @click="connect">Connect wallet</button>
-        <button v-else-if="buyNeedsApproval" class="mt-3 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white" :disabled="!!action" @click="run(() => approveErc20(pool.communityToken, pool.amm, state.tokensPerNft, 'approve-buy'), 'AMM token approved')">Approve {{ state.communitySymbol }}</button>
-        <button v-else class="mt-3 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !state.ammActive || inventory.length === 0 || (mode === 'snipe' && !selectedInventory)" @click="executeBuy">Buy {{ mode === 'snipe' && selectedInventory ? `#${selectedInventory.tokenId}` : 'next NFT' }}</button>
+        <button v-else-if="buyNeedsApproval" class="mt-3 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!ammIssue" @click="run(() => approveErc20(pool.communityToken, pool.amm, state.tokensPerNft, 'approve-buy'), 'AMM token approved')">Approve {{ state.communitySymbol }}</button>
+        <button v-else class="mt-3 w-full rounded-xl bg-grey-normal px-4 py-3 font-medium text-white disabled:opacity-50" :disabled="!!action || !!ammIssue" @click="executeBuy">Buy {{ mode === 'snipe' && selectedInventory ? `#${selectedInventory.tokenId}` : 'next NFT' }}</button>
       </template>
+      <div v-if="connected" class="mt-3 text-sm" aria-live="polite">
+        <p class="text-grey-3f">Wallet balance: <template v-if="walletDataReady">{{ formatToken(state.communityBalance, state.communityDecimals) }} {{ state.communitySymbol }} · {{ formatNative(state.nativeBalance) }} {{ nativeSymbol }}</template><template v-else>Unavailable / loading…</template></p>
+        <p v-if="side === 'buy' && mode === 'mint' ? mintIssue : ammIssue" class="mt-1 font-medium text-red-600" role="status">{{ side === 'buy' && mode === 'mint' ? mintIssue : ammIssue }}</p>
+        <button v-if="walletDataError" class="mt-1 underline" :disabled="loading" @click="model.load()">Retry wallet balances</button>
+        <p v-if="walletDataReady && side === 'buy' && mode === 'mint' && state.whitelistRemaining > 0n" class="mt-1 text-grey-3f">Whitelist mint: native mint price waived; gas is still required.</p>
+      </div>
       </div>
     </div>
 
