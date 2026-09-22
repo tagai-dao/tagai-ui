@@ -24,6 +24,7 @@ const useNextSource = () => { sourceIndex.value += 1 }
     <div v-else class="flex h-full flex-col items-center justify-center gap-2 p-3 text-center text-grey-3f">
       <span class="text-2xl">◇</span>
       <span class="text-sm">{{ alt }}</span>
+      <span class="text-xs">Artwork temporarily unavailable</span>
     </div>
   </div>
 </template>
