@@ -16,7 +16,7 @@ import {
   nutboxCommunityAbi,
   nutboxRouterAbi,
   readNutboxContract,
-  svgDataUrl,
+  svgArtworkCandidates,
   withFeeBuffer,
   writeNutboxContract,
 } from '@/utils/nutboxNft'
@@ -65,6 +65,9 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
   const ownedNfts = ref<NutboxNftInfo[]>([])
   const inventory = ref<NutboxNftInfo[]>([])
   const mintPreviewImage = ref('')
+  const mintPreviewFallbacks = ref<string[]>([])
+  const walletDataReady = ref(false)
+  const walletDataError = ref('')
   const state = reactive({
     name: '', symbol: '', communitySymbol: '', communityDecimals: 18,
     miningSymbol: '', miningDecimals: 18, indexSymbol: '', indexDecimals: 18,
@@ -73,7 +76,7 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     levelRules: [] as { level: number; threshold: bigint; weight: bigint }[],
     totalWeight: 0n, totalActiveIndexWeight: 0n, queuedRewards: 0n,
     whitelistRemaining: 0n, remainingPaidMints: 0n,
-    communityBalance: 0n, miningBalance: 0n,
+    communityBalance: 0n, miningBalance: 0n, nativeBalance: 0n,
     mintAllowance: 0n, ammAllowance: 0n, miningAllowance: 0n,
     pendingCommunityRewards: 0n, poolOperationFee: 0n,
     holderPoolDailyRewards: 0n,
@@ -134,6 +137,8 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
     if (!requestPool?.pool || !requestPool.amm) return
     const requestAccount = account.value
     const requestChain = useChainStore().activeChainId
+    walletDataReady.value = false
+    walletDataError.value = ''
     const isCurrent = () => !disposed && pool.value?.pool === requestPool.pool
       && account.value === requestAccount && useChainStore().activeChainId === requestChain
     const requestPoolAddress = `${requestChain}:${requestPool.pool.toLowerCase()}`
@@ -145,6 +150,7 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
       ready.value = false
       previewTokenId = 0n
       mintPreviewImage.value = ''
+      mintPreviewFallbacks.value = []
       ownedNfts.value = []
       inventory.value = []
       Object.assign(state, initialState)
@@ -170,7 +176,7 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
         safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'getTotalStakedAmount'), 0n),
         safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'totalActiveIndexMiningWeight'), toBigInt(requestPool.totalActiveIndexMiningWeight)),
         safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'queuedIndexRewards'), toBigInt(requestPool.queuedIndexRewards)),
-        safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'remainingPaidMints'), 0n),
+        safe<bigint | null>(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'remainingPaidMints'), null),
         safe(readNutboxContract<Address>(poolAddress, indexBrokerNftAbi, 'renderer'), requestPool.renderer || zeroAddress),
         safe(readNutboxContract<number>(poolAddress, indexBrokerNftAbi, 'levelCount'), requestPool.levelThresholds?.length || 0),
         safe(readNutboxContract<string>(communityToken, erc20NutboxAbi, 'symbol'), 'TOKEN'),
@@ -198,7 +204,7 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
         remainingPaidMints, rendererAddress, levelCount, communitySymbol, communityDecimals, miningSymbol,
         miningDecimals, indexSymbol, indexDecimals, ammActive, inventoryCount, oldestTokenId, tokensPerNft, normalFeeBps,
         specificFeeBps, normalFee, specificFee, platformFee, nativeValue, currentBlock] = reads
-      if (communityTokenPrice === null || nativePrice === null || maxSupply === null || totalSupply === null) {
+      if (communityTokenPrice === null || nativePrice === null || maxSupply === null || totalSupply === null || remainingPaidMints === null) {
         throw new Error(ready.value
           ? 'NFT network temporarily unavailable. Showing the last loaded data; retry to refresh.'
           : 'NFT network temporarily unavailable. Please retry loading the market.')
@@ -271,7 +277,9 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
             }],
           )
           if (!isCurrent()) return
-          mintPreviewImage.value = svgDataUrl(svg)
+          const images = svgArtworkCandidates(svg)
+          mintPreviewImage.value = images[0] || ''
+          mintPreviewFallbacks.value = images.slice(1)
         } catch {
           previewTokenId = 0n
           // Keep an existing preview during a transient RPC outage.
@@ -280,19 +288,22 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
 
       if (account.value) {
         const [ids, whitelist, communityBalance, miningBalance, mintAllowance, ammAllowance,
-          miningAllowance, pendingCommunityRewards, poolOperationFee] = await Promise.all([
+          miningAllowance, pendingCommunityRewards, poolOperationFee, nativeBalance] = await Promise.all([
           safe(readNutboxContract<bigint[]>(poolAddress, indexBrokerNftAbi, 'tokensOfOwner', [account.value, 0n, 100n]), []),
-          safe(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'remainingWhitelistMints', [account.value]), 0n),
-          safe(readNutboxContract<bigint>(communityToken, erc20NutboxAbi, 'balanceOf', [account.value]), 0n),
+          safe<bigint | null>(readNutboxContract<bigint>(poolAddress, indexBrokerNftAbi, 'remainingWhitelistMints', [account.value]), null),
+          safe<bigint | null>(readNutboxContract<bigint>(communityToken, erc20NutboxAbi, 'balanceOf', [account.value]), null),
           safe(readNutboxContract<bigint>(miningToken, erc20NutboxAbi, 'balanceOf', [account.value]), 0n),
           safe(readNutboxContract<bigint>(communityToken, erc20NutboxAbi, 'allowance', [account.value, poolAddress]), 0n),
           safe(readNutboxContract<bigint>(communityToken, erc20NutboxAbi, 'allowance', [account.value, ammAddress]), 0n),
           safe(readNutboxContract<bigint>(miningToken, erc20NutboxAbi, 'allowance', [account.value, poolAddress]), 0n),
           safe(readNutboxContract<bigint>(normalizeAddress(requestPool.community), nutboxCommunityAbi, 'getPoolPendingRewards', [poolAddress, account.value]), 0n),
           committee ? safe(readNutboxContract<bigint>(committee, nutboxCommitteeAbi, 'getPoolOperationFee'), 0n) : 0n,
+          safe<bigint | null>(getNutboxReadClient(requestChain).getBalance({ address: requestAccount as Address }), null),
         ])
         if (!isCurrent()) return
-        Object.assign(state, { whitelistRemaining: whitelist, communityBalance, miningBalance, mintAllowance, ammAllowance, miningAllowance, pendingCommunityRewards, poolOperationFee })
+        walletDataReady.value = whitelist !== null && communityBalance !== null && nativeBalance !== null
+        if (!walletDataReady.value) walletDataError.value = 'Unable to load wallet balances. Please retry.'
+        Object.assign(state, { whitelistRemaining: whitelist ?? 0n, communityBalance: communityBalance ?? 0n, nativeBalance: nativeBalance ?? 0n, miningBalance, mintAllowance, ammAllowance, miningAllowance, pendingCommunityRewards, poolOperationFee })
         const owned = (await Promise.all(ids.map(nftInfo))).filter(Boolean) as NutboxNftInfo[]
         if (!isCurrent()) return
         ownedNfts.value = owned
@@ -373,6 +384,8 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
   ))
 
   watch([() => pool.value?.pool, account, () => useChainStore().activeChainId], async () => {
+    walletDataReady.value = false
+    walletDataError.value = ''
     await pendingLoad
     if (!disposed) await load()
   })
@@ -388,7 +401,7 @@ export function useNutboxNftPool(pool: Ref<NutboxIndexBrokerPool> | { value: Nut
   })
 
   return {
-    state, loading, ready, error, action, account, connected, ownedNfts, inventory, mintPreviewImage, load,
+    state, loading, ready, error, action, account, connected, ownedNfts, inventory, mintPreviewImage, mintPreviewFallbacks, walletDataReady, walletDataError, load,
     approveErc20, mint, reveal, approveNft, buy, sell, miningAction, claimCommunityRewards,
   }
 }
