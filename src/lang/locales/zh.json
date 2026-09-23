@@ -1513,5 +1513,10 @@
   "v2Detail": "5 BNB 按指数代币的一篮子比例，购买股票代币，再与 5% 的代币组成V2 交易池，销毁所有 LP。",
   "miningDetail": "15% 的代币用于流动性挖矿。",
   "retain": "保留管理流动性挖矿矿池比例调整权限"
+},
+  "tradeCuration": {
+  "title": "交易策展奖励",
+  "claiming": "领取中…",
+  "claimSubmitted": "领取已提交，确认后更新奖励"
 }
 }

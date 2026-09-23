@@ -21,6 +21,7 @@ const change = computed<number | null>(() => {
 function openDetails() {
   if (!props.tweet.tick || !props.tweet.token) return
   emit('openDetails', {
+    tweetId: props.tweet.tweetId,
     commerceId: props.tweet.commerceId || undefined,
     loginReturnPath: props.tweet.commerceId
       ? getChainPath(chainStore.activeChainId, `/commerce/${encodeURIComponent(props.tweet.commerceId)}`)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TradeCurationRewards from '@/components/profile/TradeCurationRewards.vue';
 import TagCurationReward from "@/components/profile/TagCurationReward.vue";
 import CommerceBtn from "@/components/tweets/CommerceBtn.vue";
 import { onMounted, ref, watch, computed, type PropType } from "vue";
@@ -227,6 +228,7 @@ onMounted(() => {
             </div>
           </div>
         </div>
+        <TradeCurationRewards :twitter-id="(userInfo ?? accStore.getAccountInfo)?.twitterId" :is-profile="!userInfo" :state="rewardType" />
         <div class="px-3">
           <div v-for="tweet of tweetsList" :key="tweet.tweetId">
             <div v-if="tweet.tick !== DefaultCommunityTick" class="flex items-center gap-2 py-3">

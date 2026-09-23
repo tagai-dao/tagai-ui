@@ -65,3 +65,10 @@ test('zero slippage still enforces a minimum in Token13 and passes subject',asyn
  const [expected,subject,bps]=submitted[0].args
  assert.equal(subject,user);assert.equal(bps,1);assert.ok(expected*9999n/10000n>=q.amountOut)
 })
+test('V14 reuses token lifecycle but quotes its own Pump and preserves the post attribution in the buy',async()=>{
+ const q=await life.quoteCurve(token,true,10000n,14)
+ assert.equal(calls[1].address.toLowerCase(),'0xcd4e721fc418f4d723c04c71e8d8eccb75c3cd34')
+ const dataSuffix='0x7461676169746331'+'ab'.repeat(32)
+ await life.executeCurve(q,user,100,dataSuffix)
+ assert.equal(submitted[0].dataSuffix,dataSuffix)
+})

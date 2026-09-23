@@ -1766,7 +1766,7 @@ export const getTokenOnchainInfo = async (
 ) => {
     if (tokens.length === 0) return []
     const v13Info: Record<string, any> = {}
-    const v13Tokens = _.union(tokens).filter(token => useChainStore().activeChainId === 56 && Number(versions[token]) === 13)
+    const v13Tokens = _.union(tokens).filter(token => useChainStore().activeChainId === 56 && [13, 14].includes(Number(versions[token])))
     await Promise.all(v13Tokens.map(async token => {
         try {
             const state = await readLifecycle(token as `0x${string}`)

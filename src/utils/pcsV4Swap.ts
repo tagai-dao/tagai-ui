@@ -291,7 +291,8 @@ export const buyTokenV4 = async (
     ethAmount: bigint,
     minTokenOut: bigint,
     sellsman: `0x${string}` | undefined | null,
-    slippage: number = 0
+    slippage: number = 0,
+    dataSuffix?: `0x${string}`
 ): Promise<string> => {
     assertDirectNativeTokenPool(poolKey, token)
     const hookData = encodeHookData(sellsman);
@@ -322,6 +323,7 @@ export const buyTokenV4 = async (
     
     
     const { request } = await publicClient.simulateContract({
+        dataSuffix,
         account: useAccountStore().ethConnectAddress as `0x${string}`,
         address: PCSUniversalRouter as `0x${string}`,
         abi: universalRouterAbi,

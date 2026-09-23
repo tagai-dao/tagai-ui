@@ -135,7 +135,7 @@ export function buildTrade(q: Quote, subject: Address, recipient: Address, slipp
         : [q.metadata.token, p.amountIn, legs, minimum(p.amountOut), deadline, recipient, subject];
     return { address: q.metadata.executor!, abi: tradeAbi as Abi, functionName: p.isBuy ? 'buy' : 'sell', args, value: p.isBuy ? p.amountIn : 0n };
 }
-export async function executeQuote(q: Quote, subject: Address, slippageBps: number): Promise<Hex> {
+export async function executeQuote(q: Quote, subject: Address, slippageBps: number, dataSuffix?: Hex): Promise<Hex> {
     const account = useAccountStore().ethConnectAddress as Address;
     const guard = () => {
         if (!isAddress(account ?? ''))
@@ -173,5 +173,5 @@ export async function executeQuote(q: Quote, subject: Address, slippageBps: numb
     }
     guard();
     const tx = buildTrade(q, subject, account, slippageBps);
-    return send(tx);
+    return send({ ...tx, dataSuffix });
 }

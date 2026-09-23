@@ -13,12 +13,12 @@ export async function readLifecycle(token: Address) {
   return {token,blockNumber,listed:Boolean(values[0]),pending:Boolean(values[1]),supply:values[2] as bigint,createdAt:values[3] as bigint,fees:values[4] as [bigint,bigint],subject:values[5] as Address,community:values[6] as Address,indexToken:values[7] as Address}
 }
 export type CurveQuote = {token:Address;isBuy:boolean;amountIn:bigint;amountOut:bigint;quotedAt:number;state:Awaited<ReturnType<typeof readLifecycle>>}
-export async function quoteCurve(token:Address,isBuy:boolean,amountIn:bigint):Promise<CurveQuote> {
+export async function quoteCurve(token:Address,isBuy:boolean,amountIn:bigint,version=13):Promise<CurveQuote> {
   const state = await readLifecycle(token)
   if(state.listed) throw new Error('V13_ALREADY_LISTED')
   if(state.pending) throw new Error('V13_LISTING_PENDING')
   if(amountIn<=0n) throw new Error('V13_INVALID_AMOUNT')
-  const client=getReadOnlyClient(56), pump=getChainDeployment(56).contracts.pump13!
+  const client=getReadOnlyClient(56), pump=version===14 ? '0xcd4e721Fc418f4D723C04c71e8d8EcCb75C3CD34' as Address : getChainDeployment(56).contracts.pump13!
   let amountOut:bigint
   if(isBuy) {
     const net=amountIn - amountIn*state.fees[0]/10000n - amountIn*state.fees[1]/10000n
@@ -31,7 +31,7 @@ export async function quoteCurve(token:Address,isBuy:boolean,amountIn:bigint):Pr
   if(amountOut<=0n) throw new Error('V13_INVALID_AMOUNT')
   return {token,isBuy,amountIn,amountOut,state,quotedAt:Date.now()}
 }
-export async function executeCurve(q:CurveQuote,subject:Address,slippage:number) {
+export async function executeCurve(q:CurveQuote,subject:Address,slippage:number,dataSuffix?:`0x${string}`) {
   const account=useAccountStore().ethConnectAddress as Address
   const check=()=> { if(useChainStore().activeChainId!==56 || useAccountStore().ethConnectAddress?.toLowerCase()!==account.toLowerCase() || Date.now()-q.quotedAt>30000)throw new Error('V13_QUOTE_EXPIRED') }
   check()
@@ -42,7 +42,7 @@ export async function executeCurve(q:CurveQuote,subject:Address,slippage:number)
   if (!Number.isInteger(slippage) || slippage < 0 || slippage > 5000) throw new Error('Invalid slippage')
   const bps=Math.max(1,slippage)
   const expected=slippage===0?(q.amountOut*10000n+9998n)/9999n:q.amountOut
-  const params={address:q.token,abi:tokenAbi as Abi,functionName:q.isBuy?'buyToken':'sellToken',args:q.isBuy?[expected,subject,bps]:[q.amountIn,expected,subject,bps],account,value:q.isBuy?q.amountIn:0n}
+  const params={dataSuffix,address:q.token,abi:tokenAbi as Abi,functionName:q.isBuy?'buyToken':'sellToken',args:q.isBuy?[expected,subject,bps]:[q.amountIn,expected,subject,bps],account,value:q.isBuy?q.amountIn:0n}
   const {request}=await client.simulateContract(params)
   check()
   const hash=await wallet.writeContract(request as any)

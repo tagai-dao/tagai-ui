@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { prepareTradeAttribution } from '@/utils/tradeCuration'
 import { curveTradeReports } from '@/utils/curveTradeReport'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { reportCurveTrade } from '@/apis/api'
@@ -65,6 +66,7 @@ const props = defineProps({
   tick: {type: String, required: false, default: null},
   loginReturnPath: {type: String, default: ''},
   commerceId: {type: String, default: ''},
+  tweetId: {type: String, default: ''},
   showChart: {type: Boolean, default: true},
   sellsman: {type: String, required: false, default: null}
 })
@@ -120,6 +122,7 @@ const getTradeSellsman = async (onVerifiedSource?: (id: string) => void) => {
 const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
 const isV13 = computed(() => chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 13)
+const isV14 = computed(() => chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 14)
 const v13Session = createQuoteSession()
 const v13Quote = shallowRef<Quote>()
 const curveQuote = shallowRef<CurveQuote>()
@@ -401,7 +404,11 @@ const updateBuyAmount = debounce(async (val: any) => {
   }
   let receive: bigint
   let spot = 0
-  if (isV13.value) {
+  if (isV14.value && !listed.value) {
+    const q = await quoteCurve(community!.token as `0x${string}`, true, amount, 14)
+    if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
+    curveQuote.value=q; receive=q.amountOut; willListing=false
+  } else if (isV13.value) {
     try {
       const q = await v13Session.quote(community!.token as `0x${string}`, true, amount)
       if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
@@ -535,7 +542,11 @@ const updateSellAmount = debounce(async (val: any) => {
     }
     let receive: bigint
     let spot = 0
-    if (isV13.value) {
+    if (isV14.value && !listed.value) {
+      const q = await quoteCurve(community!.token as `0x${string}`, false, amount, 14)
+      if (seq !== sellQuoteSeq || sellAmount.value.trim() !== str || tradeType.value !== 'sell') return
+      curveQuote.value=q; receive=q.amountOut
+    } else if (isV13.value) {
       try {
         const q = await v13Session.quote(community!.token as `0x${string}`, false, amount)
         if (seq !== sellQuoteSeq || sellAmount.value.trim() !== str || tradeType.value !== 'sell') return
@@ -739,6 +750,17 @@ async function confirm() {
     const traderId = accStore.getAccountInfo?.twitterId
     let sourceCommerceId: string | undefined
     const resolvedSellsman = await getTradeSellsman(id => { sourceCommerceId = id })
+    const attributionContext = { path: route.fullPath, post: props.tweetId, commerce: props.commerceId,
+      wallet: accStore.ethConnectAddress, side: tradeType.value }
+    const rewardSource = tradeType.value === 'buy' && tradeChainId === 56
+      ? await prepareTradeAttribution({ token: token.token!, wallet: accStore.ethConnectAddress,
+          tweetId: props.tweetId || (route.name === 'post-detail' ? String(route.params.id) : undefined),
+          commerceId: sourceCommerceId }) : null
+    if (disposed || tradeChainId !== chainStore.activeChainId || token !== comStore.currentSelectedCommunity) return
+    if (route.fullPath !== attributionContext.path || props.tweetId !== attributionContext.post
+      || props.commerceId !== attributionContext.commerce || tradeType.value !== attributionContext.side
+      || accStore.ethConnectAddress !== attributionContext.wallet) return
+    if (rewardSource && rewardSource.wallet.toLowerCase() !== accStore.ethConnectAddress?.toLowerCase()) throw new Error('Trade wallet changed')
     const recordConfirmedTrade = (hash: string) => {
       void trade(token.tick, traderId, hash, sourceCommerceId, token.token, tradeChainId).catch(console.error)
       if (tradeChainId !== 56 || verifiedListed || token.isImport || !traderId) return
@@ -761,14 +783,16 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (isV13.value && curveQuote.value) {
+      if ((isV13.value || isV14.value) && curveQuote.value && !verifiedListed) {
         const q=curveQuote.value
         if (!q.isBuy || q.amountIn!==parseEther(payEth.value)) throw new Error(t('v13Trade.refresh'))
-        hash=await executeCurve(q,resolvedSellsman as `0x${string}`,Math.ceil(maxSlippage.value*100))
+        hash=await executeCurve(q,resolvedSellsman as `0x${string}`,Math.ceil(maxSlippage.value*100), rewardSource?.dataSuffix)
+      } else if (isV14.value && !verifiedListed) {
+        throw new Error(t('v13Trade.refresh'))
       } else if (isV13.value) {
         const q = v13Quote.value
         if (!q || !q.plan.isBuy || q.plan.amountIn !== parseEther(payEth.value)) throw new Error(t('v13Trade.refresh'))
-        hash = await executeQuote(q, resolvedSellsman as `0x${string}`, Math.ceil(maxSlippage.value * 100))
+        hash = await executeQuote(q, resolvedSellsman as `0x${string}`, Math.ceil(maxSlippage.value * 100), rewardSource?.dataSuffix)
       } else if (usesListedV4Quote(token) && listed.value && !(token.isImport && Number(token.version) === 10)) {
         const ethAmount = parseEther(payEth.value.toString());
         if (chainStore.deployment.dex.kind === 'uniswap') {
@@ -784,7 +808,7 @@ async function confirm() {
           const poolKey = await resolveV4PoolKeyForTrade(token!.pair)
           if (!poolKey) throw new Error('invalid V4 pool')
           hash = await buyTokenV4(poolKey, token.token as `0x${string}`, ethAmount, receiveAmount.value ?? 0n,
-            resolvedSellsman, Math.ceil(maxSlippage.value * 100));
+            resolvedSellsman, Math.ceil(maxSlippage.value * 100), rewardSource?.dataSuffix);
         }
       } else {
         // check list
@@ -805,7 +829,7 @@ async function confirm() {
       if (hash) {
         payEth.value = ''
         receiveAmount.value = undefined
-        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
+        if (isV13.value || isV14.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
         recordConfirmedTrade(hash)
         emitter.emit('newTrade')
         updateUserTokenInfo()
@@ -821,10 +845,12 @@ async function confirm() {
 
       let hash: string | undefined;
       // 上市后 PCS V4（Pump v7-v9 或导入币 dexVersion=4）
-      if (isV13.value && curveQuote.value) {
+      if ((isV13.value || isV14.value) && curveQuote.value && !verifiedListed) {
         const q=curveQuote.value
         if (q.isBuy || q.amountIn!==finalSellAmount) throw new Error(t('v13Trade.refresh'))
         hash=await executeCurve(q,resolvedSellsman as `0x${string}`,Math.ceil(maxSlippage.value*100))
+      } else if (isV14.value && !verifiedListed) {
+        throw new Error(t('v13Trade.refresh'))
       } else if (isV13.value) {
         const q = v13Quote.value
         if (!q || q.plan.isBuy || q.plan.amountIn !== finalSellAmount) throw new Error(t('v13Trade.refresh'))
@@ -853,7 +879,7 @@ async function confirm() {
       if (hash) {
         sellAmount.value = ''
         receiveEth.value = undefined
-        if (isV13.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
+        if (isV13.value || isV14.value) { v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined }
         recordConfirmedTrade(hash)
 
         emitter.emit('newTrade')

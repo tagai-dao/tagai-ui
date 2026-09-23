@@ -1510,5 +1510,10 @@
   "v2Detail": "5 BNB buys stock tokens proportionally, paired with 5% of tokens in V2 pools; all LP is burned.",
   "miningDetail": "15% of tokens fund liquidity mining.",
   "retain": "Retain permission to adjust liquidity mining pool reward ratios"
+},
+  "tradeCuration": {
+  "title": "Trading curation rewards",
+  "claiming": "Claiming…",
+  "claimSubmitted": "Claim submitted. Rewards update after confirmation."
 }
 }
