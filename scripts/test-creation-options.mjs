@@ -13,22 +13,22 @@ const apiOutfile = join(dir, 'api.cjs')
 await build({ entryPoints: ['src/utils/v13/creation.ts'], alias: { '@': join(process.cwd(), 'src') }, bundle: true, platform: 'node', format: 'cjs', outfile: apiOutfile, logLevel: 'silent', plugins: [{ name: 'creation-dependencies', setup(build) {
   build.onResolve({ filter: /^@\/(apis\/axios|config\/api|utils\/wallets)$/ }, args => ({ path: args.path, namespace: 'creation-test' }))
   build.onLoad({ filter: /.*/, namespace: 'creation-test' }, args => ({ contents: args.path.endsWith('axios')
-    ? 'export const get=(...args)=>globalThis.creationTest.get(...args);export const post=()=>{}'
+    ? 'export const get=(...args)=>globalThis.creationTest.get(...args);export const post=(...args)=>globalThis.creationTest.post(...args)'
     : args.path.endsWith('wallets') ? 'export const getReadOnlyClient=()=>globalThis.creationTest.client'
     : 'export const API_BASE_URL="https://example.invalid"' }))
 } }] })
-const { creationOptions } = createRequire(import.meta.url)(apiOutfile)
+const { creationOptions, creationFee, registerV13 } = createRequire(import.meta.url)(apiOutfile)
 await rm(dir, { recursive: true, force: true })
 const creator = '0x' + '11'.repeat(20)
 const committee = '0x' + '22'.repeat(20)
-const implementation = '0x' + '33'.repeat(20)
+const implementation = '0xcC8f585593feAb2a27f9e699a6b578d46446c88C'
 const assets = JSON.parse(await readFile('src/utils/v13/creation-assets.json', 'utf8'))
 function client(hasShare = false, noAssets = false) {
   const calls = []
   return { calls, chain: { id: 56 }, getBlockNumber: async () => 123456n, async multicall(request) {
     calls.push(request)
     if (calls.length === 1) return [creator, committee, 123n, implementation, ...assets.map((_, i) => !noAssets && i % 2 === 0)]
-    return [hasShare, 200n, 300n, 400n]
+    return [hasShare, 200n, 300n, 400n, ['Trade Curation', 8000, true], true]
   } }
 }
 test('fallback returns only approved candidates and snapshots all reads at one block', async () => {
@@ -141,4 +141,25 @@ test('BNC4 stays unavailable until Pump approves it, then appears before ETH/BTC
     assert.equal(result.assets.some(a => a.address.toLowerCase() === bnc4), approved)
     assert.deepEqual(result.assets.slice(-2).map(a => a.symbol), ['ETH', 'BTCB'])
   }
+})
+
+
+test('V14 optional pool charges one extra settings fee, preserving raw wei precision', async () => {
+  const o = await readCreationOptions(client(), creator)
+  o.pumpFee = '900719925474099312345'
+  assert.equal(creationFee(o, 5) - creationFee(o, 4), 400n)
+  assert.equal(creationFee(o, 4), 900719925474099314445n)
+})
+test('obsolete API V13 config cannot downgrade new creation', async () => {
+  const data = await readCreationOptions(client(), creator)
+  const c = client(); globalThis.creationTest = { client: c, get: async url => { assert.match(url, /pump\/v14\/creation/); return { c: 0, d: { ...data, version: 13 } } } }
+  assert.equal((await creationOptions(creator)).version, 14)
+  assert.equal(c.calls.length, 2)
+})
+test('receipt registration sends V14 to V14 and historical V13 to V13', async () => {
+  const urls = []
+  globalThis.creationTest = { post: async (url, form) => { urls.push(url); return { c: 0, d: { version: form.version } } } }
+  for (const version of [14, 13]) assert.equal((await registerV13({ version })).version, version)
+  assert.deepEqual(urls, ['https://example.invalid/pump/v14/register', 'https://example.invalid/pump/v13/register'])
+  await assert.rejects(registerV13({ version: 12 }), /Unsupported/)
 })

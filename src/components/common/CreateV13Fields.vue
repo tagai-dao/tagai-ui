@@ -5,9 +5,10 @@ import type { V13IndexConfig } from '@/types'
 import type { CreationOptions } from '@/utils/v13/creation'
 import IndexFeeAllocation from './IndexFeeAllocation.vue'
 import IndexAssetSelect from './IndexAssetSelect.vue'
+import TradeMiningFields from './TradeMiningFields.vue'
 
-const props = defineProps<{ modelValue: V13IndexConfig; options?: CreationOptions; error: string; loading: boolean; disabled?: boolean }>()
-const emit = defineEmits<{ (e: 'update:modelValue', value: V13IndexConfig): void; (e: 'reload'): void }>()
+const props = defineProps<{ modelValue: V13IndexConfig; tradeRewardRatioBps?: number; options?: CreationOptions; error: string; loading: boolean; disabled?: boolean }>()
+const emit = defineEmits<{ (e: 'update:modelValue', value: V13IndexConfig): void; (e: 'update:tradeRewardRatioBps', value: number): void; (e: 'reload'): void }>()
 const { t, locale } = useI18n()
 const total = computed(() => props.modelValue.targetWeights.reduce((a, b) => a + b, 0) / 100)
 const nextAsset = computed(() => props.options?.assets.find(a => !props.modelValue.constituentAssets.some(b => a.address.toLowerCase() === b.toLowerCase())))
@@ -58,6 +59,7 @@ function distribute() {
           <p v-if="total !== 100 || modelValue.targetWeights.some(w => w <= 0)" class="weight-warning" role="status">{{ t('v13Create.weightHelp') }}</p>
         </template>
         <div class="pool-note"><strong>{{ t('v13Create.poolTitle') }}</strong><p>{{ ready && modelValue.constituentAssets.length ? t('v13Create.poolHelp', { count: modelValue.constituentAssets.length }) : t('v13Create.poolIntro') }}</p></div>
+        <TradeMiningFields :model-value="tradeRewardRatioBps ?? 0" :options="options" :index="modelValue" :disabled="disabled || !ready" @update:model-value="emit('update:tradeRewardRatioBps', $event)" />
         <IndexFeeAllocation :fee-bps="modelValue.basketFeeBps" :creator-bps="modelValue.creatorShareBps" :disabled="disabled" @update:fee-bps="patch({ basketFeeBps: $event })" @update:creator-bps="patch({ creatorShareBps: $event })" />
       </fieldset>
     </section>

@@ -11,9 +11,9 @@ await build({stdin:{contents:"export * from './src/utils/v13/index-config.ts';ex
 const {validateIndexConfig,IndexConfigValidationError,getChainDeployment}=createRequire(import.meta.url)(join(dir,'test.cjs'))
 await rm(dir,{recursive:true,force:true})
 const config=()=>({name:'测试指数',symbol:'TIDX',constituentAssets:['0x'+ '12'.repeat(20),'0x'+'34'.repeat(20)],targetWeights:[5000,5000],basketFeeBps:100,creatorShareBps:3000,retainCommunityOwnership:true})
-test('BSC uses V13 while RH stays on V11 and legacy addresses are retained',()=>{
+test('BSC uses V14 while RH stays on V11 and legacy addresses are retained',()=>{
  const bsc=getChainDeployment(56),rh=getChainDeployment(4663)
- assert.equal(bsc.latestPumpVersion,13);assert.equal(rh.latestPumpVersion,11)
+ assert.equal(bsc.latestPumpVersion,14);assert.equal(rh.latestPumpVersion,11)
  assert.equal(bsc.contracts.pump13,'0x2c2f4e8D85c02a065f109c74d9b27186AE65Adfa')
  assert.equal(bsc.contracts.pump11,'0x8fEF5b4c0f761a0cc447800e3019B089ac306F28')
  assert.equal(rh.contracts.pump13,undefined)

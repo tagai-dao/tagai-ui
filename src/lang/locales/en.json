@@ -1315,7 +1315,9 @@
       "assets": "Choose 1–4 distinct, valid constituent assets.",
       "weights": "Each asset allocation must be greater than 0%, with a total of 100%.",
       "fee": "Index trading fee must be between 1% and 3%.",
-      "creatorShare": "Creator share must be between 0% and 30%."
+      "creatorShare": "Creator share must be between 0% and 30%.",
+      "tradeRatio": "Trade mining share must be above 0% and within the current limit (at most 80%), with up to two decimal places.",
+      "tradeUnavailable": "Trade mining is unavailable. Refresh settings or disable the trade mining pool."
     },
     "tickTooLong": "This token ticker is too long to use as the index ticker. Please shorten it before creating.",
     "reverted": "The previous creation reverted. Its recovery record was cleared. Review the form before creating again.",
@@ -1343,7 +1345,7 @@
     "weightHelp": "Each allocation must be greater than 0%, with a total of 100%.",
     "poolTitle": "Liquidity pools are created for you",
     "poolIntro": "Each asset is paired with your community token and gets a matching LP staking pool.",
-    "poolHelp": "Creates {count} pools. Users can provide liquidity and stake their LP tokens to earn rewards. Pool rewards follow the allocations above.",
+    "poolHelp": "Creates {count} LP staking pools. Users can provide liquidity and stake LP tokens for rewards. If trade mining is enabled, its share is deducted first; remaining rewards follow the index weights above.",
     "feeHelp": "1%–3% of the index trade amount; fixed after creation.",
     "feesTitle": "Trading fees & your earnings",
     "feesIntro": "Set the trading fee, then choose how much of its proceeds you receive.",
@@ -1539,5 +1541,15 @@
   "title": "Trading curation rewards",
   "claiming": "Claiming…",
   "claimSubmitted": "Claim submitted. Rewards update after confirmation."
-}
+},
+  "v14Create": {
+    "enableTradeMining": "Enable trade mining pool",
+    "tradeHelp": "Allocate mining rewards to buys made under posts. When disabled, all pool rewards go to LP staking pools according to index weights.",
+    "tradeRatio": "Trade mining reward share",
+    "ratioLimit": "More than 0%, up to {max}%, with at most two decimal places.",
+    "unavailable": "Trade mining is currently unavailable. Refresh creation settings to retry.",
+    "rewardAllocation": "Pool reward allocation",
+    "tradePool": "Trade mining",
+    "allocationHelp": "Trade mining receives a share of total pool rewards. The remainder is split among LP pools by index weights. Index weights and trading fee allocation stay unchanged."
+  }
 }

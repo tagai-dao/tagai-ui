@@ -1,3 +1,4 @@
+import { tradePoolConfig } from './v14/creation-config'
 import { readLifecycle } from './v13/lifecycle'
 import { validateIndexConfig, creationOptions, creationFee } from './v13/creation'
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
@@ -38,6 +39,7 @@ const pumpContract = [
 const getActivePumpAddress = (version: number): string | undefined => {
     const deployment = useChainStore().deployment
     if (version === 9) return deployment.contracts.pump9
+    if (version === 14) return deployment.contracts.pump14
     if (version === 13) return deployment.contracts.pump13
     if (version === 11) return deployment.contracts.pump11
     if (deployment.key !== 'bsc') return undefined
@@ -290,12 +292,16 @@ export const checkTickUsed = async (tick: string) => {
 export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (hash: string, version: number) => void) => {
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
     const createPump = getCreatePumpDeployment();
-    if (createPump.version === 13) validateIndexConfig(createParms.indexConfig);
+    if (createPump.chainId === 56 && createPump.version !== 14) throw new Error('New BSC tokens require Pump14');
+    if (createPump.version === 14) validateIndexConfig(createParms.indexConfig);
+    const options = createPump.version === 14 ? await creationOptions(userAddress) : undefined;
+    const optionalPools = options ? tradePoolConfig(createParms.tradeRewardRatioBps ?? 0, options) : [];
+    if (options && createParms.indexConfig!.constituentAssets.some(asset => !options.assets.some(a => a.address.toLowerCase() === asset.toLowerCase()))) throw new Error('Constituent approval changed');
     // Salt search verifies the predicted suffix and current on-chain occupancy.
     // Independent fee / initial-buy reads need not wait for that computation.
     const [salt, createFee, initEth] = await Promise.all([
         findPumpDeploySalt(userAddress),
-        getCreatePumpFee(userAddress, createParms.indexConfig?.constituentAssets.length ?? 1),
+        options ? Promise.resolve(creationFee(options, createParms.indexConfig!.constituentAssets.length + optionalPools.length)) : getCreatePumpFee(userAddress),
         createParms.initAmount ? calculateInitEth(createParms.initAmount) : Promise.resolve(0n),
     ]);
     if (useChainStore().activeChainId !== createPump.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Wallet or chain changed');
@@ -303,7 +309,9 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
     let hash = await writeContract({
         contractName: createPump.contractName,
         functionName: 'createToken',
-        args: createPump.version === 13 ? [createParms.tick, salt, createParms.indexConfig] : [createParms.tick, salt],
+        args: createPump.version === 14
+            ? optionalPools.length ? [createParms.tick, salt, createParms.indexConfig, optionalPools] : [createParms.tick, salt, createParms.indexConfig]
+            : [createParms.tick, salt],
         value: initEth + createFee,
         beforeWrite: () => { if (useChainStore().activeChainId !== createPump.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Wallet or chain changed') },
         onSubmitted: hash => onSubmitted?.(hash, createPump.version),
@@ -321,7 +329,7 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
 
 /** 当前链最新 Pump 创建固定费用：Pump + Nutbox Committee + 可选 IPShare 创建费。 */
 export const getCreatePumpFee = async (userAddress: `0x${string}`, componentCount = 1): Promise<bigint> => {
-    if (getCreatePumpDeployment().version === 13) {
+    if (getCreatePumpDeployment().version === 14) {
         if (!Number.isInteger(componentCount) || componentCount < 1 || componentCount > 4) throw new Error('Choose 1–4 components');
         return creationFee(await creationOptions(userAddress), componentCount);
     }

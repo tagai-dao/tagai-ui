@@ -1,3 +1,4 @@
+import pump14Abi from './v14/Pump14.json'
 import pump13Abi from './v13/Pump13.json'
 import token13Abi from './v13/Token13.json'
 import { getReadOnlyClient, getPreparedWalletClient, waitForTx } from "./wallets";
@@ -58,7 +59,7 @@ const ContractAddress = {
 
 /** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
 const CHAIN_SCOPED_CONTRACTS = new Set([
-    'Pump9', 'Pump11', 'Pump13', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'Pump9', 'Pump11', 'Pump13', 'Pump14', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
     'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
 ])
 
@@ -81,6 +82,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
         Pump9: c.pump9,
         Pump11: c.pump11,
         Pump13: c.pump13,
+        Pump14: c.pump14,
         IPShare3: c.ipshare3,
         ImportHelper: c.importHelper,
         ImportedTokenSwapWrapper: c.importedTokenSwapWrapper,
@@ -117,6 +119,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
 
 /** V11 保持 V9 的现有调用 ABI；只替换部署地址。 */
 const resolveContractAbi = (contractName: string) => {
+    if (contractName === 'Pump14') return pump14Abi as Abi
     if (contractName === 'Pump13') return pump13Abi as Abi
     if (contractName === 'Token13' || contractName === 'Token14') return token13Abi as Abi
     const aliases: Record<string, keyof typeof abis> = {

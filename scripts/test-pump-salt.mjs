@@ -12,7 +12,7 @@ const {createSaltSearcher,predictDeterministicAddress,getChainDeployment}=create
 await rm(dir,{recursive:true,force:true})
 const creator='0x76B713f30734450CE566C170Fda27E8dce63b1F6'
 const reference=(c,salt)=>predictDeterministicAddress(c.tokenImplementation,keccak256(encodeAbiParameters([{type:'address'},{type:'bytes32'}],[c.deployer,salt])),c.pump)
-for(const version of [9,11,13])test(`optimized search preserves CREATE2 prediction for V${version}`,()=>{
+for(const version of [9,11,13,14])test(`optimized search preserves CREATE2 prediction for V${version}`,()=>{
  const addresses=getChainDeployment(56).contracts,c={pump:addresses['pump'+version],tokenImplementation:addresses['tokenImplementation'+version],deployer:creator}
  const search=createSaltSearcher(c,0n);const salt=search(500000);assert.ok(salt);assert.ok(reference(c,salt).toLowerCase().endsWith('3333'))
 })

@@ -1,6 +1,6 @@
 import type { V13IndexConfig } from '@/types'
 import { isAddress, zeroAddress } from 'viem'
-export type IndexConfigErrorCode = 'required' | 'name' | 'assets' | 'weights' | 'fee' | 'creatorShare'
+export type IndexConfigErrorCode = 'required' | 'name' | 'assets' | 'weights' | 'fee' | 'creatorShare' | 'tradeRatio' | 'tradeUnavailable'
 export class IndexConfigValidationError extends Error {
   constructor(readonly code: IndexConfigErrorCode, message: string) {
     super(message)

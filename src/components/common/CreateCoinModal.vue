@@ -6,6 +6,7 @@ import { BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/con
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import CreateV13Fields from './CreateV13Fields.vue'
 import TokenIssuanceAllocation from './TokenIssuanceAllocation.vue'
+import { tradePoolConfig } from '@/utils/v14/creation-config'
 import { creationOptions, creationFee, validateIndexConfig, type CreationOptions } from '@/utils/v13/creation'
 import { enqueueV13Registration } from '@/utils/v13/registration-sync'
 import { IndexConfigValidationError } from '@/utils/v13/index-config'
@@ -201,10 +202,12 @@ const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
 const activeTab = ref('token');
 const chainStore = useChainStore();
-const isV13Creation = computed(() => chainStore.activeChainId === 56 && chainStore.deployment.latestPumpVersion === 13)
-const indexTickTooLong = computed(() => isV13Creation.value && new TextEncoder().encode(createForm.tick).length > 16)
+const isV14Creation = computed(() => chainStore.activeChainId === 56 && chainStore.deployment.latestPumpVersion === 14)
+const indexTickTooLong = computed(() => isV14Creation.value && new TextEncoder().encode(createForm.tick).length > 16)
 const indexForm = ref<V13IndexConfig>({ name:'',symbol:'',constituentAssets:[],targetWeights:[],basketFeeBps:100,creatorShareBps:0,retainCommunityOwnership:false })
+const tradeRewardRatioBps = ref(0)
 const createValidationKey = ref('')
+watch(tradeRewardRatioBps, () => { createValidationKey.value = '' })
 watch(indexForm, () => { createValidationKey.value = '' }, { deep: true, flush: 'sync' })
 watch(() => createForm.tick, tick => {
   indexForm.value = { ...indexForm.value, name: tick, symbol: tick }
@@ -216,7 +219,7 @@ let optionsSequence = 0
 async function loadV13Options() {
   const seq = ++optionsSequence
   v13Options.value = undefined; v13OptionsError.value = ''
-  if (!isV13Creation.value || !isAddress(accStore.ethConnectAddress)) { v13OptionsLoading.value = false; return }
+  if (!isV14Creation.value || !isAddress(accStore.ethConnectAddress)) { v13OptionsLoading.value = false; return }
   v13OptionsLoading.value = true
   try {
     const value = await creationOptions(accStore.ethConnectAddress)
@@ -290,8 +293,8 @@ async function refreshCreateFee() {
     return
   }
   try {
-    if (isV13Creation.value) {
-      showingCreateFee.value = v13Options.value ? `~ ${formatPrice(Number(creationFee(v13Options.value,indexForm.value.constituentAssets.length))/1e18)}` : '--'
+    if (isV14Creation.value) {
+      showingCreateFee.value = v13Options.value ? `~ ${formatPrice(Number(creationFee(v13Options.value,indexForm.value.constituentAssets.length + (tradeRewardRatioBps.value !== 0 ? 1 : 0)))/1e18)}` : '--'
       return
     }
     const fee = await getCreatePumpFee(addr as `0x${string}`)
@@ -304,7 +307,7 @@ async function refreshCreateFee() {
 watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], () => {
   void loadV13Options(); void refreshCreateFee()
 }, { immediate: true })
-watch([v13Options, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
+watch([v13Options, tradeRewardRatioBps, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
 
 watch(() => showingInitAmount.value, debounce(async (val: number) => {
   if (val && val > 0) {
@@ -550,7 +553,7 @@ const create = async () => {
     showLongDesc.value = false
 
     let prevForm:any  = localStorage.getItem('createTokenForm')
-    if (prevForm && Number(JSON.parse(prevForm).version) !== 13){
+    if (prevForm && ![13, 14].includes(Number(JSON.parse(prevForm).version))){
       prevForm = JSON.parse(prevForm)
       console.log('prevForm', prevForm)
       if(await checkTickUsed(prevForm.tick)){
@@ -581,21 +584,23 @@ const create = async () => {
       showLongDesc.value = true;
       return;
     }
-    if (isV13Creation.value) {
+    if (isV14Creation.value) {
       if (!v13Options.value?.assets.length || v13OptionsLoading.value) throw new Error(t('v13Create.loadError'))
       indexForm.value = { ...indexForm.value, name: createForm.tick, symbol: createForm.tick }
       validateIndexConfig(indexForm.value)
       if (indexForm.value.constituentAssets.some(asset => !v13Options.value!.assets.some(a=>a.address.toLowerCase()===asset.toLowerCase()))) throw new Error(t('v13Create.loadError'))
+      tradePoolConfig(tradeRewardRatioBps.value, v13Options.value)
+      createForm.tradeRewardRatioBps = tradeRewardRatioBps.value
       createForm.indexConfig = JSON.parse(JSON.stringify(indexForm.value))
-    } else { delete createForm.indexConfig }
+    } else { delete createForm.indexConfig; delete createForm.tradeRewardRatioBps }
     if (showMaxAmount.value) return
     createForm.chainId = chainStore.activeChainId
     createForm.ethAddr = connetctedEthAddr
     const submittedForm = {...createForm, indexConfig:createForm.indexConfig ? JSON.parse(JSON.stringify(createForm.indexConfig)) : undefined}
     const {createHash, token, version} = await createCoin(submittedForm, (hash, version) => {
-      if (version !== 13) return
+      if (version !== 14) return
       const {initAmount,initEth,...saved} = submittedForm
-      enqueueV13Registration({...saved,createHash:hash,chainId:56,version:13,token:''})
+      enqueueV13Registration({...saved,createHash:hash,chainId:56,version:14,token:''})
     });
     Object.assign(createForm, submittedForm)
     createForm.createHash = createHash as string;
@@ -604,7 +609,7 @@ const create = async () => {
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth
-    if (version === 13) {
+    if (version === 14) {
       // Submission already persisted the metadata. API retries belong to the
       // app worker, and must never turn a successful creation into a form error.
       modalStore.setModalCloseEnable(true)
@@ -655,7 +660,7 @@ onMounted(async () => {
     }
   }
   let prevForm:any  = localStorage.getItem('createTokenForm')
-  if (prevForm && Number(JSON.parse(prevForm).version) !== 13){
+  if (prevForm && ![13, 14].includes(Number(JSON.parse(prevForm).version))){
     prevForm = JSON.parse(prevForm)
     console.log('prevForm', prevForm)
     if(await checkTickUsed(prevForm.tick)){
@@ -792,13 +797,13 @@ onMounted(async () => {
             />
             <div v-show="showLongDesc" class="field-error">{{ $t('createCommunity.descTooLong') }}</div>
           </div>
-          <TokenIssuanceAllocation v-if="isV13Creation" v-model="indexForm.retainCommunityOwnership" :disabled="createLoading" />
+          <TokenIssuanceAllocation v-if="isV14Creation" v-model="indexForm.retainCommunityOwnership" :disabled="createLoading" />
         </section>
 
-        <CreateV13Fields v-if="isV13Creation" v-model="indexForm" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />
+        <CreateV13Fields v-if="isV14Creation" v-model="indexForm" v-model:trade-reward-ratio-bps="tradeRewardRatioBps" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />
         <details class="form-section social-section">
           <summary class="section-title">
-            <span>{{ isV13Creation ? '03' : '02' }}</span>
+            <span>{{ isV14Creation ? '03' : '02' }}</span>
             <div>
               <h3>{{ $t('createCommunity.socialLinks') }}</h3>
               <p>{{ $t('optional') }}</p>
@@ -854,7 +859,7 @@ onMounted(async () => {
 
         <section class="form-section purchase-section">
           <div class="section-title">
-            <span>{{ isV13Creation ? '04' : '03' }}</span>
+            <span>{{ isV14Creation ? '04' : '03' }}</span>
             <div>
               <h3>{{ $t('createCommunity.buyTip', { tick: createForm.tick.trim() || 'TagCoin' }) }}</h3>
               <p>{{ $t('optional') }}</p>
@@ -877,7 +882,7 @@ onMounted(async () => {
         </section>
 
         <div class="create-submit">
-          <button type="button" :aria-describedby="createValidationKey ? 'create-validation-error' : undefined" :disabled="createLoading || (isV13Creation && (!v13Options?.assets.length || v13OptionsLoading))" @click="create">
+          <button type="button" :aria-describedby="createValidationKey ? 'create-validation-error' : undefined" :disabled="createLoading || (isV14Creation && (!v13Options?.assets.length || v13OptionsLoading))" @click="create">
             <span>{{ $t('createCommunity.create') }}</span>
             <svg v-if="!createLoading" viewBox="0 0 20 20" fill="none" aria-hidden="true">
               <path d="M6 14 14 6m0 0H8m6 0v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
