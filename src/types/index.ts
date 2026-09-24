@@ -11,7 +11,8 @@ export enum GlobalModalType {
   ModifyCoin,
   CreateUserInfo,
   PredictTrade,
-  PredictLiquidity
+  PredictLiquidity,
+  TradeCurationRewards
 }
 
 export enum ListType {
@@ -103,6 +104,9 @@ export type Trade = {
 };
 
 export type FeedTrade = {
+  curationSourceId?: string
+  logIndex?: number | string
+
   isPlatformAccount?: boolean;
   timestamp: string | number;
   tick: string;

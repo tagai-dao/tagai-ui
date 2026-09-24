@@ -1515,6 +1515,30 @@
   "retain": "保留管理流动性挖矿矿池比例调整权限"
 },
   "tradeCuration": {
+  "totalReward": "策展总奖励",
+  "records": "交易策展记录",
+  "recordsHint": "按账号合并有效买入；下列金额为买家策展奖励。",
+  "bought": "累计买入",
+  "buyCount": "{count} 次买入",
+  "buyerReward": "策展奖励",
+  "emptyRecords": "暂无有效交易策展记录",
+  "loadMore": "加载更多",
+  "close": "关闭",
+  "refresh": "刷新",
+  "recordsError": "策展记录加载失败，请重试",
+
+  "badge": "交易奖励",
+  "author": "作者 · 25%",
+  "buyers": "买家 · 75%",
+  "processing": "预估奖励，结算前会变化",
+  "settled": "已结算",
+  "end": "策展截止",
+  "rule": "本卡片下的有效买入按代币数量分配买家奖励；本卡片总买入量平方后参与矿池分配。后续卡片独立计算。",
+  "unavailable": "交易奖励暂不可用",
+  "retry": "重试",
+  "estimate": "美元估值按当前价格计算",
+  "priceUnavailable": "价格暂不可用",
+
   "title": "交易策展奖励",
   "claiming": "领取中…",
   "claimSubmitted": "领取已提交，确认后更新奖励"

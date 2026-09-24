@@ -4,6 +4,7 @@ import { computed } from 'vue'
 import { useStateStore } from '@/stores/common'
 import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
 import { formatAddress, parseTimestamp } from '@/utils/helper'
+import TradeCurationBadge from '@/components/feed/TradeCurationBadge.vue'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 import UserAvatar from '@/components/common/UserAvatar.vue'
@@ -26,6 +27,7 @@ const traderHandle = computed(() => props.trade.twitterUsername
   : formatAddress(props.trade.trader, 5, 4))
 function openDetails() {
   emit('openDetails', {
+    tweetId: props.trade.curationSourceId,
     tick: props.trade.tick,
     token: props.trade.token,
     name: props.trade.name || props.trade.tick,
@@ -82,10 +84,11 @@ function openDetails() {
         <div class="flex items-center gap-1">
           <strong class="truncate text-sm text-content">{{ traderLabel }}</strong>
           <AccountOriginBadges :sources="trade.accountSources" :account-type="trade.accountType" :wallet-type="trade.walletType" :eth-addr="trade.trader" />
+          <button type="button" class="shrink-0 rounded-lg border px-2 py-0.5 text-xs font-semibold" :class="isBuy ? 'border-up text-up' : 'border-orange-normal text-orange-normal'" @click.stop="openDetails">{{ isBuy ? 'Buy' : 'Sell' }}</button>
         </div>
         <span class="text-xs text-grey-64">{{ traderHandle }} · {{ parseTimestamp(trade.timestamp) }}</span>
       </div>
-      <span class="rounded-lg border px-3 py-1 text-sm font-semibold" :class="isBuy ? 'border-up text-up' : 'border-orange-normal text-orange-normal'">{{ isBuy ? 'Buy' : 'Sell' }}</span>
+      <TradeCurationBadge :tweet-id="trade.curationSourceId" :token="trade.token" :tick="trade.tick" :price="trade.price" />
     </div>
     <button class="mt-3 flex w-full items-center justify-between rounded-xl border bg-surface-2 p-3" @click.stop="openDetails">
       <div class="flex min-w-0 items-center gap-2.5"><CommunityLogo :logo="trade.logo" size="xs" :shadow="false" class="!rounded-full" /><div class="text-left"><strong class="block text-sm text-content">{{ trade.name || trade.tick }}</strong><span class="text-xs text-grey-64">{{ formatTokenAmount(trade.amount) }} {{ trade.tick }}</span></div></div>

@@ -1512,6 +1512,30 @@
   "retain": "Retain permission to adjust liquidity mining pool reward ratios"
 },
   "tradeCuration": {
+  "totalReward": "Total curation rewards",
+  "records": "Trading curation records",
+  "recordsHint": "Eligible buys are grouped by account. Rewards below are buyer rewards.",
+  "bought": "Total bought",
+  "buyCount": "{count} buys",
+  "buyerReward": "Curation reward",
+  "emptyRecords": "No eligible trading curation records yet",
+  "loadMore": "Load more",
+  "close": "Close",
+  "refresh": "Refresh",
+  "recordsError": "Unable to load curation records. Please retry",
+
+  "badge": "Trade rewards",
+  "author": "Author · 25%",
+  "buyers": "Buyers · 75%",
+  "processing": "Estimated rewards; may change before settlement",
+  "settled": "Settled",
+  "end": "Curation ends",
+  "rule": "Eligible buys under this card share buyer rewards by token quantity. The squared total determines this card’s pool allocation. Subsequent cards are calculated independently.",
+  "unavailable": "Trade rewards unavailable",
+  "retry": "Retry",
+  "estimate": "USD estimate uses the current price",
+  "priceUnavailable": "Price unavailable",
+
   "title": "Trading curation rewards",
   "claiming": "Claiming…",
   "claimSubmitted": "Claim submitted. Rewards update after confirmation."

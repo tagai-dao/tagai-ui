@@ -13,6 +13,7 @@ import {tagBgColors, tagTextColors} from "@/composables/useTags";
 import { useStateStore } from '@/stores/common';
 import { useRouter } from 'vue-router';
 import { BACKEND_API_URL } from '@/config';
+import TradeCurationBadge from '@/components/feed/TradeCurationBadge.vue'
 import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 import SafeAvatar from '@/components/common/SafeAvatar.vue'
@@ -153,9 +154,9 @@ onUnmounted(() => {
               @click.stop="onUserAvatar" />
           </template>
         </UserAvatar>
-        <div class="flex-1">
+        <div class="min-w-0 flex-1">
           <div class="w-full flex items-center flex-wrap gap-x-2">
-            <a class="font-bold text-lg"
+            <a class="font-bold text-lg break-words min-w-0"
                @click.stop="onUserAvatar()">{{ tweet.twitterName }}</a>
             <AccountOriginBadges
               :sources="calloutSources"
@@ -178,6 +179,7 @@ onUnmounted(() => {
             <span v-if="tweet.mirrorClaimStatus === 'unclaimed'">· Unclaimed creator</span>
           </a>
         </div>
+        <div class="flex shrink-0 flex-col items-end gap-1">
         <el-popover v-if="tweet.amount && !tweet.isDeployTweet && showMarketCap" popper-class="c-arrow-popper rounded-sm" position="end"
                     trigger="click" :teleported="true" :persistent="false">
           <template #reference>
@@ -217,6 +219,8 @@ onUnmounted(() => {
             </button>
           </template>
         </el-popover>
+        <TradeCurationBadge v-if="showMarketCap && !textOnly && !tweet.spaceId" :tweet-id="tweet.tweetId" :token="tweet.token" :tick="tweet.tick" :price="tweet.price" />
+        </div>
 
       </div>
       <div class="flex-1 overflow-hidden flex flex-col gap-3 mt-3">

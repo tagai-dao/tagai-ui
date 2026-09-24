@@ -48,3 +48,11 @@ test('claim amounts stay integer strings through the API boundary',async()=>{
  const o=await api.getTradeClaim('user',input.token)
  assert.equal(BigInt(o.amountRaw),2n**256n-1n);assert.equal(o.orderId,max)
 })
+test('trade-card attribution survives unchanged and cannot silently move to the parent post',async()=>{
+ const source='tr_'+'0'.repeat(50)+'_00000000'
+ globalThis.__tc.post=async(...args)=>{calls.push(args);return {c:0,d:{...input,tweetId:source,dataSuffix:suffix}}}
+ assert.equal((await api.prepareTradeAttribution({...input,tweetId:source})).tweetId,source)
+ assert.equal(calls[0][1].tweetId,source)
+ globalThis.__tc.post=async()=>({c:0,d:{...input,dataSuffix:suffix}})
+ await assert.rejects(api.prepareTradeAttribution({...input,tweetId:source}),/INVALID_TRADE_ATTRIBUTION/)
+})

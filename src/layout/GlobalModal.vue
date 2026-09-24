@@ -15,6 +15,8 @@ import CreateUserInfo from '@/components/login/CreateUserInfo.vue'
 import PredictTradeModal from '@/components/common/PredictTradeModal.vue'
 import PredictLiquidityModal from '@/components/common/PredictLiquidityModal.vue'
 
+import TradeCurationRewardsModal from '@/components/feed/TradeCurationRewardsModal.vue'
+
 const modalStore = useModalStore()
 </script>
 
@@ -27,10 +29,13 @@ const modalStore = useModalStore()
              :modal-class="`overlay-white ${modalStore.modalType===GlobalModalType.Login?'modal-gradient-bg':''}`"
              :class="modalStore.modalType===GlobalModalType.PredictTrade
                ? 'max-w-[900px] rounded-[20px]'
-               : modalStore.modalType===GlobalModalType.CreateCoin
+               : modalStore.modalType===GlobalModalType.TradeCurationRewards
+                 ? 'max-w-[600px] rounded-[20px]'
+                 : modalStore.modalType===GlobalModalType.CreateCoin
                  ? 'max-w-[720px] rounded-[24px] create-token-dialog'
                  : 'max-w-[500px] rounded-[20px]'"
              width="90%" :show-close="false" align-center destroy-on-close>
+    <TradeCurationRewardsModal v-if="modalStore.modalType===GlobalModalType.TradeCurationRewards"/>
     <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
     <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
     <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace" :default-tick="false"/>

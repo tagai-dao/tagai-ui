@@ -60,8 +60,9 @@ const showFeedTokenSheet = ref(false)
 const showFeedTradeSheet = ref(false)
 
 function tradeIdentity(trade: FeedTrade) {
+  if (trade.curationSourceId) return `${trade.token.toLowerCase()}:${trade.curationSourceId}`
   const hash = trade.transHash?.trim().toLowerCase()
-  if (hash) return `hash:${hash}`
+  if (hash) return `hash:${hash}:${trade.token.toLowerCase()}:${trade.logIndex ?? ''}`
   return [trade.timestamp, trade.trader, trade.token, trade.isBuy, trade.amount, trade.ethAmount].join(':').toLowerCase()
 }
 
