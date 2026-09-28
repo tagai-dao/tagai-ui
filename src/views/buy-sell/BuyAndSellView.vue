@@ -30,6 +30,7 @@ import { getBuyAmountWithETHAfterFee, getReceivedAmountSellETHAfterFee, getToken
  } from '@/utils/pump'
 import { readContract } from '@/utils/contract'
 import { resolveTradeListing } from '@/utils/tradeListing'
+import { resolveTradeTick } from '@/utils/tradeScope'
 import { requiresIPShareSellsman, resolveListedTradeSellsman, resolveTradeSellsman } from '@/utils/tradeSellsman'
 import { buyTokenV4, sellTokenV4, getV4BuyQuote, getV4SellQuote, getV4SpotPrice, resolveV4PoolId, resolveV4PoolKeyForTrade, poolKeyToPoolId, type PoolKey } from '@/utils/pcsV4Swap'
 import {
@@ -945,8 +946,9 @@ onActivated(async () => {
 
 let disposed = false
 let communityLoad = 0
+const tradeTick = computed(() => resolveTradeTick(props.tick, route))
 async function loadTradeCommunity() {
-  const tick = props.tick || route.params.id as string
+  const tick = tradeTick.value
   const chainId = chainStore.activeChainId
   const load = ++communityLoad
   tradeReady.value = false
@@ -956,16 +958,24 @@ async function loadTradeCommunity() {
   receiveAmount.value = ''; receiveEth.value = ''
   willListing = false
   calculating.value = true
+  // Invalidate in-flight work before returning, without clearing the new
+  // page's shared community or issuing a request using its post ID.
+  if (!tick) { calculating.value = false; return }
+  const isCurrentLoad = () => !disposed && load === communityLoad
+    && tradeTick.value === tick && chainStore.activeChainId === chainId
   try {
     {
       comStore.currentSelectedCommunity = null
       tokenBalance.value = 0; tokenOriginalBalance.value = 0n; ethBalance.value = 0
-      const detail = await getCommunityDetail(tick, chainId)
-      if (disposed || load !== communityLoad) return
+      const detail = await getCommunityDetail(tick, chainId) as Community | null
+      if (!isCurrentLoad()) return
+      if (!detail?.token || !isAddress(detail.token) || detail.token === zeroAddress) {
+        throw new Error('Token is unavailable. Please refresh and try again.')
+      }
       const community = (await getTokenInfo([detail as Community]))[0]
-      if (disposed || load !== communityLoad) return
+      if (!isCurrentLoad()) return
       const verifiedListed = await readTradeListing(community)
-      if (disposed || load !== communityLoad || chainId !== chainStore.activeChainId) return
+      if (!isCurrentLoad()) return
       community.listed = verifiedListed
       listed.value = verifiedListed
       comStore.currentSelectedCommunity = community
@@ -974,14 +984,14 @@ async function loadTradeCommunity() {
     const routeSellsman = typeof route.params.sellsman === 'string' ? route.params.sellsman : ''
     stateStore.sellsman = props.sellsman ?? routeSellsman
     await nextTick()
-    if (disposed || load !== communityLoad) return
+    if (!isCurrentLoad()) return
     void updateUserTokenInfo()
     refreshV13Quote()
   } catch (error) {
-    if (!disposed && load === communityLoad) { tradeLoadError.value = true; calculating.value = false; handleErrorTip(error) }
+    if (isCurrentLoad()) { tradeLoadError.value = true; calculating.value = false; handleErrorTip(error) }
   }
 }
-watch([() => props.tick || route.params.id as string, () => chainStore.activeChainId], loadTradeCommunity, { immediate: true })
+watch([tradeTick, () => chainStore.activeChainId], loadTradeCommunity, { immediate: true })
 
 onUnmounted(() => {
   disposed = true; communityLoad++; buyQuoteSeq++; sellQuoteSeq++
