@@ -103,11 +103,13 @@ test('category switches filter cached rows and request the selected source', asy
     { ...token('legacy'), version: 12 },
     { ...token('etf'), version: 13 },
     { ...token('etf-string'), version: '13' },
+    { ...token('Starship'), version: 14 },
+    { ...token('v14-string'), version: '14' },
     { ...token('import', 1), version: 10 },
   ]
-  assert.deepEqual(f.model.filterTagCoins(rows).map(row => row.tick), ['legacy', 'etf', 'etf-string', 'import'])
+  assert.deepEqual(f.model.filterTagCoins(rows).map(row => row.tick), ['legacy', 'etf', 'etf-string', 'Starship', 'v14-string', 'import'])
   for (const [source, expected] of [
-    ['memeetf', ['etf', 'etf-string']],
+    ['memeetf', ['etf', 'etf-string', 'Starship', 'v14-string']],
     ['launch', ['legacy']],
     ['import', ['import']],
   ]) {

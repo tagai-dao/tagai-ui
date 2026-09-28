@@ -58,7 +58,7 @@ const { t } = useI18n();
 const { onCopy } = useTools();
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
-const isV13 = computed(() => chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 13)
+const isV13 = computed(() => chainStore.activeChainId === 56 && [13, 14].includes(Number(comStore.currentSelectedCommunity?.version)))
 const v13HolderLabels = ref<Record<string, HolderLabel>>({})
 let v13HolderRequest = 0
 const v13HolderLabel = (address: string) => {

@@ -356,10 +356,10 @@ function filterTagCoins(list: Community[]) {
   return list.filter((community) => {
     if (isActiveChainBStock(community)) return false
     if (tagCoinSource.value === 'all') return true
-    if (tagCoinSource.value === 'memeetf') return Number(community.version) === 13
+    if (tagCoinSource.value === 'memeetf') return [13, 14].includes(Number(community.version))
     return tagCoinSource.value === 'import'
       ? isImportedToken(community)
-      : !isImportedToken(community) && Number(community.version) !== 13
+      : !isImportedToken(community) && ![13, 14].includes(Number(community.version))
   })
 }
 

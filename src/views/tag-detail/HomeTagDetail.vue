@@ -75,7 +75,7 @@ watch(
   { immediate: true },
 )
 
-const isV13Token = computed(()=>chainStore.activeChainId===56 && Number(comStore.currentSelectedCommunity?.version)===13)
+const isV13Token = computed(()=>chainStore.activeChainId===56 && [13, 14].includes(Number(comStore.currentSelectedCommunity?.version)))
 const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 const tabOptions = computed(() => [
   { label: 'Feed', key: 'content' },
