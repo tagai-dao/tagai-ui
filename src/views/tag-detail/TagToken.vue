@@ -27,7 +27,7 @@ import { useTools } from "@/composables/useTools";
 import { useChainStore } from "@/stores/chain";
 import { useTheme } from "@/composables/useTheme";
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
-import { readCommunityDailyRewards } from '@/utils/v13/community-rewards'
+import { readCommunityDailyRewards, readCommunityRewardSchedule } from '@/utils/v13/community-rewards'
 import { readV13HolderLabels, type HolderLabel } from '@/utils/v13/holder-labels'
 
 defineProps<{ holdersOnly?: boolean }>()
@@ -102,6 +102,16 @@ const isWalletConnected = computed(() => accountStore.ethConnectState === EthWal
 
 const holdingList = ref<TokenHoldingList[]>([])
 const showDistributionModal = ref(false)
+const v13ScheduleLoading = ref(false)
+const v13ScheduleError = ref(false)
+const v13ScheduleHour = ref(0)
+let v13ScheduleRequest = 0
+watch([() => comStore.currentSelectedCommunity?.token, isV13], () => {
+  v13ScheduleRequest++
+  showDistributionModal.value = false
+  v13ScheduleLoading.value = false
+  v13ScheduleError.value = false
+})
 
 /** v9/v11：按天聚合的分发量（过去 7 天含今天 + 明日） */
 const v9HourlyAmounts = ref<number[]>([])
@@ -137,7 +147,7 @@ const marketCapText = computed(() => {
 
 /** v9 或 v10 + HourlyTickCalculator → 柱状图展示 */
 const isHourly = computed(() => {
-  if (isNativePumpNutbox.value) return true
+  if (isV13.value || isNativePumpNutbox.value) return true
   if (comStore.currentSelectedCommunity?.version === 10 && v10Distribution.value?.calculatorType === 'hourly') return true
   return false
 })
@@ -409,7 +419,7 @@ const hourlyBarSeries = computed(() => {
       forecastData.push(0)
     } else if (i === todayIdx && todayHourly.length === 24) {
       // 今天：按小时精确拆分，当前小时整小时算预测
-      const currentHour = new Date().getHours()
+      const currentHour = isV13.value ? v13ScheduleHour.value : new Date().getHours()
       let actual = 0
       let forecast = 0
       for (let h = 0; h < 24; h++) {
@@ -444,6 +454,36 @@ function formatV9ChartDayLabel(dayStartSec: number, dayIndex: number, todayIndex
   if (dayIndex === todayIndex) return `${dateStr} (${t('postView.chartToday')})`
   if (dayIndex === todayIndex + 1) return `${dateStr} (${t('postView.chartTomorrow')})`
   return dateStr
+}
+
+async function loadV13RewardSchedule() {
+  const token = comStore.currentSelectedCommunity?.token
+  if (!isV13.value || !token || !isAddress(token)) return
+  const request = ++v13ScheduleRequest
+  v13ScheduleLoading.value = true
+  v13ScheduleError.value = false
+  v9HourlyAmounts.value = []
+  v9HourlyLabels.value = []
+  v9TodayHourlyAmounts.value = []
+  try {
+    const schedule = await readCommunityRewardSchedule(token)
+    if (request !== v13ScheduleRequest || !schedule) return
+    v13ScheduleHour.value = schedule.currentHour
+    v9TodayChartIndex.value = schedule.todayIndex
+    v9HourlyAmounts.value = schedule.dailyRewards.map(r => Number(formatUnits(r, 18)))
+    v9HourlyLabels.value = schedule.dayStarts.map((ts, i) => {
+      const day = new Date(ts * 1000).toLocaleDateString([], { month: 'numeric', day: 'numeric', timeZone: 'UTC' })
+      if (i === schedule.todayIndex) return `${day} (${t('postView.chartToday')})`
+      if (i === schedule.todayIndex + 1) return `${day} (${t('postView.chartTomorrow')})`
+      return day
+    })
+    v9TodayHourlyAmounts.value = schedule.hourlyRewards.slice(schedule.todayIndex * 24, (schedule.todayIndex + 1) * 24)
+      .map(r => Number(formatUnits(r, 18)))
+  } catch {
+    if (request === v13ScheduleRequest) v13ScheduleError.value = true
+  } finally {
+    if (request === v13ScheduleRequest) v13ScheduleLoading.value = false
+  }
 }
 
 async function loadV9HourlyRewards() {
@@ -637,6 +677,11 @@ const timelineDistribution = computed(() => {
 })
 
 async function openDistributionModal() {
+  if (isV13.value) {
+    showDistributionModal.value = true
+    await loadV13RewardSchedule()
+    return
+  }
   if (isHourly.value && isNativePumpNutbox.value) {
     await loadV9HourlyRewards()
   }
@@ -815,6 +860,7 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
 onBeforeUnmount(() => {
   v13HolderRequest++
   v13RewardRequest++
+  v13ScheduleRequest++
   clearInterval(v13RewardTimer)
   holderObserver?.disconnect()
 })
@@ -911,7 +957,9 @@ onBeforeUnmount(() => {
       </template>
       <div v-if="isV13" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.rewardPerDay')}}</span>
-        <span class="text-h5 font-medium text-orange-normal" :title="$t('v13Page.dailyRewardsHelp')">{{ v13DailyRewards === undefined ? '—' : formatAmount(Number(formatUnits(v13DailyRewards, 18))) }}</span>
+        <button type="button" class="text-h5 font-medium text-orange-normal cursor-pointer underline underline-offset-2"
+                :title="$t('v13Page.dailyRewardsHelp')" :aria-label="$t(isV13 ? 'v13Page.communityRewards' : 'postView.rewardDistributionSchedule')"
+                @click="openDistributionModal">{{ v13DailyRewards === undefined ? '—' : formatAmount(Number(formatUnits(v13DailyRewards, 18))) }}</button>
       </div>
       <div v-else v-show="showNutboxInfo || rewardPerDay>-1" class="flex justify-between items-center h-6">
         <span class="text-h4 text-grey-93">{{$t('postView.rewardPerDay')}}</span>
@@ -1057,7 +1105,7 @@ onBeforeUnmount(() => {
                @opened="onDistributionModalOpened">
       <!-- 标题区域 -->
       <div class="flex justify-between items-center mb-4 pb-3 border-b border-grey-e7">
-        <h3 class="text-h2 font-semibold text-black-19">{{ $t('postView.rewardDistributionSchedule') }}</h3>
+        <h3 class="text-h2 font-semibold text-black-19">{{ $t(isV13 ? 'v13Page.communityRewards' : 'postView.rewardDistributionSchedule') }}</h3>
         <button @click="showDistributionModal = false" 
                 class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-grey-e7 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1078,7 +1126,7 @@ onBeforeUnmount(() => {
           }"
         >
           <div class="flex items-start justify-between gap-3 mb-1">
-            <div class="text-h4 font-semibold text-black-19">{{ $t('postView.hourlyDistributionTitle') }}</div>
+            <div class="text-h4 font-semibold text-black-19">{{ $t(isV13 ? 'v13Page.rewardScheduleTitle' : 'postView.hourlyDistributionTitle') }}</div>
             <button
               v-if="nutboxCommunityUrl"
               type="button"
@@ -1091,8 +1139,12 @@ onBeforeUnmount(() => {
               </svg>
             </button>
           </div>
-          <div class="text-xs text-grey-93 mb-4">{{ $t('postView.hourlyDistributionDesc') }}</div>
-          <div v-if="v9HourlyLoading || v10Loading" class="py-8 text-center text-grey-93 text-h4">{{ $t('loading') }}</div>
+          <div class="text-xs text-grey-93 mb-4">{{ $t(isV13 ? 'v13Page.rewardScheduleDesc' : 'postView.hourlyDistributionDesc') }}</div>
+          <div v-if="isV13 ? v13ScheduleLoading : (v9HourlyLoading || v10Loading)" class="py-8 text-center text-grey-93 text-h4">{{ $t('loading') }}</div>
+          <div v-else-if="isV13 && v13ScheduleError" class="py-8 text-center text-grey-93 text-h4">
+            <p>{{ $t('v13Page.rewardScheduleError') }}</p>
+            <button type="button" class="mt-2 text-orange-normal underline" @click="loadV13RewardSchedule">{{ $t('retry') }}</button>
+          </div>
           <div v-else-if="v9HourlyAmounts.length > 0">
             <component
               :is="ApexCharts"
@@ -1103,9 +1155,9 @@ onBeforeUnmount(() => {
               :series="hourlyBarSeries"
             />
             <div class="mt-3 flex justify-between text-h5 text-grey-93">
-              <span>{{ $t('postView.rewardPerDay') }}</span>
+              <span>{{ $t(isV13 ? 'v13Page.next24Hours' : 'postView.rewardPerDay') }}</span>
               <span class="font-semibold text-orange-normal">
-                {{ formatAmount(rewardPerDay) }} {{ comStore.currentSelectedCommunity?.tick }}
+                {{ isV13 ? (v13DailyRewards === undefined ? '—' : formatAmount(Number(formatUnits(v13DailyRewards, 18)))) : formatAmount(rewardPerDay) }} {{ comStore.currentSelectedCommunity?.tick }}
               </span>
             </div>
           </div>

@@ -12,6 +12,7 @@ import { useChainStore } from '@/stores/chain'
 import emitter from '@/utils/emitter'
 import { curveRefreshFrom, replaceCandleTail } from '@/utils/curveCandleTail'
 import { periodChange } from '@/utils/communityChartPeriod'
+import { klinePricePrecision } from '@/utils/klinePrecision'
 
 const { width, height } = useWindowSize();
 const props = defineProps(['tick', 'chartId', 'period', 'changeSeconds'])
@@ -32,7 +33,7 @@ type ChartData = {
 
 type FormData = {
   categoryData: string[],
-  values: (string | number)[][]
+  values: ChartData[]
 }
 const route = useRoute()
 const timeOptions = ['5min', '1h', '1d']
@@ -170,9 +171,10 @@ const applyChartTheme = () => {
 function updateChart() {
   if (props.changeSeconds) emit('change', periodChange(originalData, Number(props.changeSeconds)))
   if (!chart.value) return
-  if(activeTab.value ==='5min') chart.value.applyNewData(data5min.values);
-  else if(activeTab.value ==='1h') chart.value.applyNewData(data1h.values);
-  else if(activeTab.value ==='1d') chart.value.applyNewData(data1day.values);
+  const rows = activeTab.value === '1h' ? data1h.values
+    : activeTab.value === '1d' ? data1day.values : data5min.values
+  chart.value.setPriceVolumePrecision(klinePricePrecision(rows), 2)
+  chart.value.applyNewData(rows)
 }
 
 function setChartRows(rows: ChartData[]) {
@@ -241,7 +243,6 @@ onMounted(async () => {
     ]
   });
   applyChartTheme()
-  chart.value.setPriceVolumePrecision(6, 2)
   updateChart();
   setInter(refreshData, 3000)
   emitter.on('newTrade', refreshData)
