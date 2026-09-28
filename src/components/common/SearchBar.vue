@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import {ref, watch} from "vue";
+import {onDeactivated, onMounted, onUnmounted, ref, watch} from "vue";
 import debounce from "lodash.debounce"
-import { searchCommunity, getTweetById, getUserTweets, getTweetBySpaceId, searchMindShareByUsername, getTokenByTickOrCA } from "@/apis/api";
+import { searchCommunity, getTweetById, getTweetBySpaceId, searchMindShareByUsername, getTokenByTickOrCA } from "@/apis/api";
 import { type Community, type MindShare, type Tweet } from "@/types";
 import TagListItem from "../home/TagListItem.vue";
 import { useCommunityStore } from "@/stores/community";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
+import { useChainStore } from '@/stores/chain';
+import { handleErrorTip } from '@/utils/notify';
 import defaultAvatar from '@/assets/icons/icon-default-avatar-v2.png';
 
 type SearchResult = {
@@ -14,6 +16,7 @@ type SearchResult = {
 }
 
 const searchText = ref('')
+const searchRef = ref<HTMLElement | null>(null)
 const showSearchList = ref(false);
 const searchResult = ref<SearchResult>({
   type: 'community',
@@ -24,17 +27,14 @@ const tweetsList = ref<Tweet[]>([])
 const mindShareList = ref<MindShare[]>([])
 const comStore = useCommunityStore();
 const router = useRouter();
+const route = useRoute();
+const chainStore = useChainStore();
+let searchSequence = 0;
 const spaceRegex = /https:\/\/(twitter|x)\.com\/i\/spaces\/([0-9a-z-A-Z]+)(\/\w)?/
 const tweetRegex = /https:\/\/(twitter|x)\.com\/([a-zA-Z0-9_]+)\/status\/([0-9]+)(\/\w)?/
 const userRegex = /^@([a-zA-Z0-9_]+)/
 // 加密用户习惯：直接粘贴合约地址定位代币
 const caRegex = /^0x[0-9a-fA-F]{40}$/
-
-const onSearch = (e: any) => {
-  if(searchText.value.trim().length > 0 && e.keyCode === 13) {
-    showSearchList.value = true
-  }
-}
 
 const testSearchText = (text: string) => {
   if(caRegex.test(text)) {
@@ -76,66 +76,114 @@ const testSearchText = (text: string) => {
   }
 }
 
-const onInput = debounce(async () => {
-  list.value = []
-  tweetsList.value = []
-  if(!searchText.value.trim()) showSearchList.value = false
-  searchResult.value = testSearchText(searchText.value.trim()) as SearchResult
-  switch(searchResult.value.type) {
+const runSearch = debounce(async (text: string, sequence: number) => {
+  const result = testSearchText(text) as SearchResult
+  const isCurrent = () => sequence === searchSequence
+  try {
+    let communities: Community[] = []
+    let tweets: Tweet[] = []
+    let users: MindShare[] = []
+    switch(result.type) {
     case 'ca': {
       // 粘贴合约地址 → 命中则作为社区结果展示，点击直达 tag-detail
-      const token = await getTokenByTickOrCA(searchResult.value.id as string) as any
-      list.value = token?.tick ? [token] : []
+      const token = await getTokenByTickOrCA(result.id) as any
+      communities = token?.tick ? [token] : []
       break
     }
     case 'tweet':
-      tweetsList.value = [await getTweetById(searchResult.value.id as string) as any]
+      tweets = [await getTweetById(result.id) as any].filter(Boolean)
       break
     case 'space':
-      tweetsList.value = [await getTweetBySpaceId(searchResult.value.id as string) as any]
+      tweets = [await getTweetBySpaceId(result.id) as any].filter(Boolean)
       break
     case 'user':
-      mindShareList.value = await searchMindShareByUsername(searchResult.value.id as string) as any
+      users = await searchMindShareByUsername(result.id) as any
       break
     case 'community':
-      list.value = await searchCommunity(searchResult.value.id as string) as any
+      communities = await searchCommunity(result.id) as any
       break
+    }
+    // A dismissed panel or an older request must not reopen/replace the results.
+    if (!isCurrent()) return
+    searchResult.value = result
+    list.value = communities || []
+    tweetsList.value = tweets
+    mindShareList.value = users || []
+    showSearchList.value = true
+  } catch (error) {
+    if (isCurrent()) handleErrorTip(error)
   }
-  showSearchList.value = true
 }, 500)
 
-const clearSearchList = () => {
-  searchText.value = ''
+function dismissSearch() {
+  searchSequence++
+  runSearch.cancel()
   showSearchList.value = false
 }
 
+function onInput() {
+  dismissSearch()
+  list.value = []
+  tweetsList.value = []
+  mindShareList.value = []
+  const text = searchText.value.trim()
+  if (text) runSearch(text, searchSequence)
+}
+
+function onPointerDown(event: PointerEvent) {
+  if (searchRef.value && !event.composedPath().includes(searchRef.value)) dismissSearch()
+}
+
+onMounted(() => document.addEventListener('pointerdown', onPointerDown, true))
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', onPointerDown, true)
+  dismissSearch()
+})
+onDeactivated(dismissSearch)
+watch(() => route.fullPath, dismissSearch)
+watch(() => chainStore.activeChainId, dismissSearch)
+
+const clearSearchList = () => {
+  searchText.value = ''
+  onInput()
+}
+
 function gotoDetail(com: Community) {
+  dismissSearch()
   comStore.currentSelectedCommunity = com
   router.push(`/tag-detail/${com.tick}`)
 }
 
 function gotoTweet(tweet: Tweet) {
+  dismissSearch()
   router.push(`/post-detail/${tweet.tweetId}`)
 }
 
 function gotoProfile(username: string) {
+  dismissSearch()
   router.push(`/user/${username}`)
 }
 
 </script>
 
 <template>
-  <div class="relative flex min-w-0 flex-1 justify-end" ref="searchRef" role="search">
+  <div class="relative flex min-w-0 flex-1 justify-end" ref="searchRef" role="search" @keydown.esc="dismissSearch">
     <div class="search-bar relative flex h-12 w-full items-center gap-3 rounded-full border border-line bg-white px-5 shadow-sm transition-shadow focus-within:border-orange-normal focus-within:shadow-[0_0_0_3px_rgba(254,145,63,0.12)] dark:bg-surface-2">
       <img class="h-5 w-5 shrink-0" src="~@/assets/icons/icon-search-grey.svg" alt="">
       <input type="text" :placeholder="$t('search')"
              v-model="searchText"
              @input="onInput"
-             class="relative h-full min-w-0 flex-1 rounded-full bg-transparent text-base outline-none" >
+             @focus="onInput"
+             @keydown.enter.prevent="onInput"
+             :aria-expanded="showSearchList"
+             class="relative h-full min-w-0 flex-1 rounded-full bg-transparent pr-8 text-base outline-none" >
       <button v-if="searchText.trim().length>0"
+              type="button" :aria-label="$t('clearSearch')"
               @click="clearSearchList"
-              class="absolute right-4 bg-grey-light rounded-full">
-        <img class="w-6 h-6" src="~@/assets/icons/icon-modal-close.svg" alt="">
+              class="absolute right-4 flex h-7 w-7 items-center justify-center rounded-full border border-line bg-surface-2 text-content hover:text-orange-normal focus-visible:outline focus-visible:outline-2 focus-visible:outline-orange-normal">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </svg>
       </button>
     </div>
     <el-collapse-transition>
