@@ -294,6 +294,14 @@ const bscAssets: BasketAssetPreset[] = sortBasketAssetOptions<BasketAssetPreset>
     '/images/basket-assets/qqq.png',
   ),
   bscV3Asset(
+    '0xe614E2fc6C787035FF51f452e8E826Bfd32D5283', 'INTCB', 'Intel (bStocks)', bscContractsV3.settlementToken, 2_500,
+    '/images/basket-assets/intc.png',
+  ),
+  bscV3Asset(
+    '0x3eE4dF61bd4F867E349BEaE8bFE07bc31b4850fb', 'SNDKB', 'SanDisk (bStocks)', bscContractsV3.settlementToken, 2_500,
+    'https://assets.parqet.com/logos/symbol/SNDK?format=png',
+  ),
+  bscV3Asset(
     '0x7C8D5502b544dDAf8852Fc46D1174E34876D545C', 'BNC4', 'Cea Industries', bscContractsV3.settlementToken, 2_500,
     '/images/basket-assets/bnc.png',
   ),
