@@ -7,6 +7,7 @@ import BasketChainGate from './components/BasketChainGate.vue'
 import BasketTradePanel from './components/BasketTradePanel.vue'
 import BasketRebalanceAction from './components/BasketRebalanceAction.vue'
 import BasketPerformanceChart from './components/BasketPerformanceChart.vue'
+import BasketTake from './components/BasketTake.vue'
 import BasketAssetLogo from './components/BasketAssetLogo.vue'
 import BasketTokenLogo from './components/BasketTokenLogo.vue'
 import { getBasketDeployment } from '@/config/baskets'
@@ -288,6 +289,8 @@ onUnmounted(() => {
             </div>
           </div>
         </section>
+
+        <BasketTake :address="detail.address" :chain-id="detail.chainId" />
 
         <div class="market-grid">
           <div class="market-panel market-panel--chart">
