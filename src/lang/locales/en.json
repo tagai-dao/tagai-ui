@@ -1549,7 +1549,7 @@
   "claimSubmitted": "Claim submitted. Rewards update after confirmation."
 },
   "v14Create": {
-    "enableTradeMining": "Enable trade mining pool",
+    "enableTradeMining": "Configure social trading pool",
     "tradeHelp": "Allocate mining rewards to buys made under posts. When disabled, all pool rewards go to LP staking pools according to index weights.",
     "tradeRatio": "Trade mining reward share",
     "ratioLimit": "More than 0%, up to {max}%, with at most two decimal places.",

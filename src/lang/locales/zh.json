@@ -1552,7 +1552,7 @@
   "claimSubmitted": "领取已提交，确认后更新奖励"
 },
   "v14Create": {
-    "enableTradeMining": "配置交易挖矿矿池",
+    "enableTradeMining": "配置社交交易矿池",
     "tradeHelp": "为帖子下的买入交易分配挖矿奖励。关闭时，全部矿池奖励按指数份额分配给 LP 质押池。",
     "tradeRatio": "交易挖矿奖励占比",
     "ratioLimit": "大于 0%，最高 {max}%，最多两位小数。",
