@@ -261,7 +261,6 @@ onUnmounted(() => {
                   </h1>
                   <span class="symbol-badge">{{ detail.symbol }}</span>
                   <span class="chain-badge"><i /> {{ deployment?.networkLabel }}</span>
-                  <span class="version-badge">V{{ detail.version }}</span>
                 </div>
                 <div class="mt-5 text-[38px] web:text-[46px] leading-none font-semibold tracking-[-0.05em] text-content">
                   {{ formatUsd(detail.navPerToken, true) }}
@@ -489,11 +488,10 @@ onUnmounted(() => {
 .basket-hero__grid { position: absolute; inset: 0; opacity: .055; background-image: linear-gradient(var(--text-base) 1px, transparent 1px), linear-gradient(90deg, var(--text-base) 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(to right, transparent, #000); }
 .basket-hero__glow { position: absolute; right: -90px; top: -150px; width: 420px; height: 420px; border-radius: 50%; background: conic-gradient(from 70deg, rgba(23,184,213,.26), rgba(112,76,232,.22), rgba(197,75,183,.18), rgba(23,184,213,.26)); filter: blur(38px); opacity: .55; }
 
-.symbol-badge, .chain-badge, .version-badge, .section-count { display: inline-flex; align-items: center; flex-shrink: 0; border: 1px solid var(--border-base); border-radius: 999px; }
+.symbol-badge, .chain-badge, .section-count { display: inline-flex; align-items: center; flex-shrink: 0; border: 1px solid var(--border-base); border-radius: 999px; }
 .symbol-badge { height: 25px; padding: 0 9px; color: var(--text-muted); font-size: 10px; font-weight: 700; }
 .chain-badge { gap: 6px; height: 25px; padding: 0 10px; border-color: rgba(167,218,0,.34); background: rgba(169,230,0,.08); color: #8eaf00; font-size: 10px; font-weight: 800; letter-spacing: .13em; }
 .chain-badge i { width: 7px; height: 7px; border-radius: 50%; background: #b5ec13; box-shadow: 0 0 10px rgba(181,236,19,.65); }
-.version-badge { height: 25px; padding: 0 8px; background: var(--surface-2); color: var(--text-muted); font-size: 10px; font-weight: 800; }
 
 .hero-metrics { display: flex; gap: 10px; }
 .hero-metrics > div, .hero-metric-link { display: flex; min-width: 100px; flex-direction: column; gap: 3px; padding: 13px 15px; border: 1px solid color-mix(in srgb, var(--border-base) 80%, transparent); border-radius: 16px; background: color-mix(in srgb, var(--surface-2) 72%, transparent); text-align:left; }
