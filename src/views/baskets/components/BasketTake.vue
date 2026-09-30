@@ -10,7 +10,7 @@ type Evidence = { url: string; fact: string; asOf: string }
 type Leg = { asset: string; symbol?: string; weightBps: number; rationale: string; evidence: Evidence[] }
 type Take = {
   source: { tweetId: string; text: string }
-  take: { claim: string; falsifiers: string[] }
+  take: { claim: string; falsifiers: string[]; thesisSource?: string }
   legs: Leg[]
   creator: string
   recipient: string
@@ -61,6 +61,9 @@ watch(() => [props.chainId, props.address] as const, async ([chainId, address], 
       {{ zh ? '查看 X 原帖' : 'View original post on X' }} ↗
     </a>
     <blockquote>{{ take.source.text }}</blockquote>
+    <p v-if="take.take.thesisSource === 'agent-research'" class="text-muted">
+      {{ zh ? '以下观点由 Agent 根据原帖的调研委托形成，未经发帖者确认。' : 'The following thesis was developed by the Agent under the research request in the original post and has not been confirmed by its author.' }}
+    </p>
     <p>{{ take.take.claim }}</p>
     <div v-for="leg in take.legs" :key="leg.asset" class="take-leg">
       <h3>{{ leg.symbol || leg.asset }} · {{ (leg.weightBps / 100).toFixed(2) }}%</h3>
