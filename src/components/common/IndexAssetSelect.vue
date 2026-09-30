@@ -13,10 +13,13 @@ const selected = computed(() => props.assets.find(a => a.address.toLowerCase() =
 const logo = (a: Asset) => catalog.find(item => item.address.toLowerCase() === a.address.toLowerCase())?.logoUrl
 const excluded = (a: Asset) => props.excluded.some(address => address.toLowerCase() === a.address.toLowerCase())
 const failed = (a: Asset) => failedLogos.value.add(a.address)
+const retryLogos = (visible: boolean) => {
+  if (visible) failedLogos.value.clear()
+}
 </script>
 
 <template>
-  <ElSelect class="asset-select" :model-value="modelValue" :aria-label="label" :disabled="disabled" :placeholder="unavailableLabel" popper-class="index-asset-options" @update:model-value="emit('update:modelValue', $event)">
+  <ElSelect class="asset-select" :model-value="modelValue" :aria-label="label" :disabled="disabled" :placeholder="unavailableLabel" popper-class="index-asset-options" @visible-change="retryLogos" @update:model-value="emit('update:modelValue', $event)">
     <template #label>
       <span v-if="selected" class="asset-label"><img v-if="logo(selected) && !failedLogos.has(selected.address)" :src="logo(selected)" alt="" @error="failed(selected)" /><span v-else class="asset-avatar">{{ selected.symbol.slice(0, 2) }}</span><span>{{ selected.symbol }}</span></span>
       <span v-else>{{ unavailableLabel }}</span>

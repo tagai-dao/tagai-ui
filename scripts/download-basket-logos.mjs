@@ -17,6 +17,7 @@ const downloads = [
   { file: 'spy.png', url: 'https://assets.parqet.com/logos/symbol/SPY?format=png' },
   { file: 'qqq.png', url: 'https://assets.parqet.com/logos/symbol/QQQ?format=png' },
   { file: 'mstr.png', url: 'https://assets.parqet.com/logos/symbol/MSTR?format=png' },
+  { file: 'sndk.png', url: 'https://assets.parqet.com/logos/symbol/SNDK?format=png' },
   { file: 'spcx.svg', url: 'https://cdn.simpleicons.org/spacex/005288' },
   {
     file: 'tagagent.jpg',
