@@ -23,7 +23,7 @@ export async function quoteZap(token:Address,component:number,amount:bigint,sign
  const m={...result.d,executor:getChainDeployment(56).contracts.tradeRouter13??null} as Metadata,client=getReadOnlyClient(56)
  const gas=await quoteGasPrice(client)
  check()
- const s=await loadSnapshot(client,m,gas)
+ const s=await loadSnapshot(client,m,gas,'v13-liquidity')
  check()
  const worker=new Worker(new URL('./worker.ts',import.meta.url),{type:'module'})
  let timeout:ReturnType<typeof setTimeout>|undefined

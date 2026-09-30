@@ -66,7 +66,9 @@ export type ChainDeployment = {
   contracts: {
     pump9: `0x${string}`
     tokenImplementation9: `0x${string}`
-    /** V13 executors are configured by the frontend, never selected by API responses. */
+    /** V13/V14 ordinary trades share the multi-Pump executor; never selected by API responses. */
+    tradeRouterMultiPump?: `0x${string}`
+    /** Legacy V13 executor remains bound to the deployed liquidity helper. */
     tradeRouter13?: `0x${string}`
     liquidityRouter13?: `0x${string}`
     pump14?: `0x${string}`
@@ -159,6 +161,7 @@ export const BSC_CHAIN: ChainDeployment = {
     tokenImplementation14: '0xcC8f585593feAb2a27f9e699a6b578d46446c88C', // Reuses the V13 Token template.
     tradeCurationFactory: '0x774A48Ba391a1013Ae43289eBdf871618822CD67',
     pump13: '0x2c2f4e8D85c02a065f109c74d9b27186AE65Adfa',
+    tradeRouterMultiPump: '0xB70544BfdACaBD8718261d7A6be5208b7D2f6Ebf',
     tradeRouter13: '0x7D5480C10A98b0Feb4e5fA77aF3F01aE3a5E86F4',
     liquidityRouter13: '0x2868FDdf7F86041557257c55a79A382536401752',
     tokenImplementation13: '0xcC8f585593feAb2a27f9e699a6b578d46446c88C',

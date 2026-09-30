@@ -73,6 +73,7 @@ test('V13 main fee is three separately rounded portions, on BNB side both direct
     assert.equal(simulatePlan(m, s, false, [{ index: 0, amount: E }]).amountOut, gross - 3n * (gross * 30n / 10000n));
 });
 const reads = parseAbi([
+    'function supportsToken(address) view returns(bool)',
     'function pump() view returns(address)', 'function nutboxRouter() view returns(address)', 'function getBlockNumber() view returns(uint256)', 'function getCurrentBlockTimestamp() view returns(uint256)',
     'function listed() view returns(bool)', 'function listingPending() view returns(bool)',
     'function getReserves() view returns(uint112,uint112,uint32)',
@@ -83,7 +84,7 @@ const reads = parseAbi([
     'function routePoolCount(address,address) view returns(uint256)', 'function routePoolAt(address,address,uint256) view returns(bytes32)',
     'function pricePool(bytes32) view returns(bool,uint32,address,address,uint8,bytes)',
 ]);
-function snapshotFixture({ unknown = false, failed = false, changed = false, pending = false } = {}) {
+function snapshotFixture({ unknown = false, failed = false, changed = false, pending = false, supported = true, failedAdmission = false, wrongRouter = false } = {}) {
     const { m } = fixture();
     m.pools = [{ ...pool(0, zeroAddress, token), id: 'main', kind: 'v4', tickSpacing: 60, poolId: hash(44), words: [-1, 0], ticks: [-60, 60] }];
     m.routes = [{ index: 0, asset: token, pools: ['main'], registry: [{ id: hash(42), sourceType: 3, sourceData: '0x1234', token0: wrapped, token1: token, pool: 'main' }] }];
@@ -93,7 +94,7 @@ function snapshotFixture({ unknown = false, failed = false, changed = false, pen
             assert.equal(req.functionName, 'aggregate3');
             return req.args[0].map(call => {
                 const { functionName: f, args: a = [] } = decodeFunctionData({ abi: reads, data: call.callData });
-                if (failed && f === 'getLiquidity')
+                if ((failed && f === 'getLiquidity') || (failedAdmission && f === 'supportsToken'))
                     return { success: false, returnData: '0x' };
                 let result;
                 switch (f) {
@@ -113,7 +114,8 @@ function snapshotFixture({ unknown = false, failed = false, changed = false, pen
                         result = [2n ** 96n, 0, 0, 0];
                         break;
                     case 'pump': result=m.pump; break;
-                    case 'nutboxRouter': result=m.nutboxRouter; break;
+                    case 'supportsToken': assert.equal(a[0], m.token); result=supported; break;
+                    case 'nutboxRouter': result=wrongRouter ? address(999) : m.nutboxRouter; break;
                     case 'getLiquidity':
                         result = 10000n * E;
                         break;
@@ -148,6 +150,47 @@ test('snapshot is exactly one multicall and only reads API-listed ticks', async 
     assert.equal(s.routes.length, 1);
     assert.equal(s.executable, false);
     assert.equal(s.hashes['0:true'], routeHash(m, m.routes[0], true));
+});
+for (const version of [13, 14]) test(`V${version} multi-Pump admission and buy/sell quotes use one state batch`, async () => {
+    const { m, client, count } = snapshotFixture();
+    m.version = version; m.executor = address(90); m.pump = address(100 + version);
+    const s = await loadSnapshot(client, m, 1n);
+    assert.equal(s.executable, true);
+    assert.equal(count(), 1);
+    for (const buy of [true, false]) {
+        const plan = optimize(m, s, buy, E / 100n);
+        assert.ok(plan.amountOut > 0n);
+        assert.equal(plan.amountIn, E / 100n);
+    }
+});
+test('unsupported tokens, failed admission reads and mismatched infrastructure never enable trading', async () => {
+    for (const opts of [{ supported: false }, { failedAdmission: true }, { wrongRouter: true }]) {
+        const { m, client } = snapshotFixture(opts);
+        m.version = 14; m.executor = address(90);
+        assert.equal((await loadSnapshot(client, m, 1n)).executable, false);
+    }
+});
+test('legacy LP quotes retain single-Pump validation and reject V14 before any RPC', async () => {
+    const { m, client, count } = snapshotFixture({ failedAdmission: true });
+    m.executor = address(91);
+    assert.equal((await loadSnapshot(client, m, 1n, 'v13-liquidity')).executable, true);
+    m.version = 14;
+    await assert.rejects(loadSnapshot(client, m, 1n, 'v13-liquidity'), /V13_INVALID_METADATA/);
+    assert.equal(count(), 1);
+});
+test('V14 compares all five pools and can split both buys and sells', () => {
+    const { m, s } = fixture(); m.version = 14;
+    m.pools = Array.from({ length: 5 }, (_, i) => pool(i));
+    m.routes = m.pools.map((p, i) => ({ index: i, pools: [p.id], registry: [] }));
+    s.routes = m.routes;
+    s.pools = Object.fromEntries(m.pools.map(p => [p.id, { valid: true, reserve0: 10n * E, reserve1: 1000n * E }]));
+    for (const buy of [true, false]) {
+        const amount = (buy ? 10n : 1000n) * E;
+        const plan = optimize(m, s, buy, amount);
+        assert.equal(plan.legs.length, 5);
+        assert.equal(plan.legs.reduce((sum, leg) => sum + leg.amount, 0n), amount);
+        assert.ok(plan.amountOut > simulatePlan(m, s, buy, [{ index: 0, amount }]).amountOut);
+    }
 });
 test('unknown on-chain tick excludes route with no discovery or second multicall', async () => {
     const { m, client, count } = snapshotFixture({ unknown: true });
@@ -219,7 +262,7 @@ await build({ entryPoints: ['src/utils/v13/client.ts'], bundle: true, platform: 
                 b.onLoad({ filter: /.*/, namespace: 'test-io' }, args => ({ contents: ({
                         '@/apis/axios': 'export const get=(...a)=>globalThis.__v13Deps.get(...a)',
                         '@/config/api': "export const API_BASE_URL='http://test'",
-                        '@/config/chains': "export const getChainDeployment=()=>({contracts:{tradeRouter13:'0x000000000000000000000000000000000000005a'}})",
+                        '@/config/chains': "export const getChainDeployment=()=>({contracts:{tradeRouterMultiPump:'0x000000000000000000000000000000000000005a'}})",
                         '@/utils/wallets': 'export const getReadOnlyClient=()=>globalThis.__v13Deps.client; export const getPreparedWalletClient=async()=>globalThis.__v13Deps.wallet; export const setup=async()=>{}',
                         '@/stores/chain': 'export const useChainStore=()=>globalThis.__v13Deps.chain',
                         '@/stores/web3': 'export const useAccountStore=()=>globalThis.__v13Deps.account',

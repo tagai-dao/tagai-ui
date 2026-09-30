@@ -56,7 +56,7 @@ export function createQuoteSession() {
                         if (r?.error === 'V13_METADATA_PREPARING') throw new QuoteError('V13_METADATA_PREPARING');
                         if (r?.c !== 0 || typeof r?.d?.token !== 'string' || r.d.token.toLowerCase() !== key)
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
-                        return { ...r.d, executor: getChainDeployment(56).contracts.tradeRouter13 ?? null } as Metadata;
+                        return { ...r.d, executor: getChainDeployment(56).contracts.tradeRouterMultiPump ?? null } as Metadata;
                     })() };
             const pending = metadataPending;
             let value: Metadata;
@@ -145,7 +145,7 @@ export async function executeQuote(q: Quote, subject: Address, slippageBps: numb
         if (Date.now() - q.snapshot.fetchedAt > 60000)
             throw new QuoteError('V13_QUOTE_EXPIRED');
         if (!q.snapshot.executable || !q.metadata.executor || q.metadata.executor === zeroAddress
-            || q.metadata.executor.toLowerCase() !== getChainDeployment(56).contracts.tradeRouter13?.toLowerCase())
+            || q.metadata.executor.toLowerCase() !== getChainDeployment(56).contracts.tradeRouterMultiPump?.toLowerCase())
             throw new QuoteError('V13_EXECUTOR_UNAVAILABLE');
     };
     guard();

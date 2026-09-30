@@ -5,6 +5,7 @@ const ABI = parseAbi([
     'function getBlockNumber() view returns(uint256)', 'function getCurrentBlockTimestamp() view returns(uint256)',
     'function listed() view returns(bool)', 'function listingPending() view returns(bool)',
     'function pump() view returns(address)', 'function nutboxRouter() view returns(address)',
+    'function supportsToken(address) view returns(bool)',
     'function balanceOf(address) view returns(uint256)', 'function totalSupply() view returns(uint256)',
     'function getReserves() view returns(uint112,uint112,uint32)',
     'function slot0() view returns(uint160,int24,uint16,uint16,uint16,uint32,bool)',
@@ -28,8 +29,9 @@ export function routeHash(m: Metadata, r: Route, buy: boolean): Hex {
         hash = keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'address' }, { type: 'address' }, { type: 'uint8' }, { type: 'bytes' }], [hash, p.id, p.token0, p.token1, p.sourceType, p.sourceData]));
     return hash;
 }
-export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: bigint): Promise<Snapshot> {
-    if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || m.chainId !== 56 || m.version !== 13
+export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: bigint, admission: 'multi-pump' | 'v13-liquidity' = 'multi-pump'): Promise<Snapshot> {
+    if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || m.chainId !== 56 || ![13, 14].includes(m.version)
+        || (admission === 'v13-liquidity' && m.version !== 13)
         || m.pools.length > 25 || m.routes.length > 5 || m.pools.reduce((n, p) => n + (p.ticks?.length || 0), 0) > 512)
         throw new QuoteError('V13_INVALID_METADATA');
     for (const p of m.pools) if (p.kind !== 'v2') {
@@ -58,7 +60,10 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
     add('listed', m.token, 'listed');
     add('pending', m.token, 'listingPending');
     if (m.executor) {
-        add('pump', m.executor, 'pump');
+        // The legacy LP helper still uses its immutable V13 executor. Ordinary
+        // trades must use registry admission; a failed read never falls back to pump().
+        if (admission === 'v13-liquidity') add('pump', m.executor, 'pump');
+        else add('supported', m.executor, 'supportsToken', [m.token]);
         add('router', m.executor, 'nutboxRouter');
     }
     for (const p of m.pools) {
@@ -169,5 +174,6 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
         return true;
     });
     return { block: values.block, timestamp: Number(values.time), fetchedAt: Date.now(), gasPrice, pools, routes, hashes,
-        executable: !!m.executor && eq(values.pump, m.pump) && eq(values.router, m.nutboxRouter) };
+        executable: !!m.executor && (admission === 'v13-liquidity' ? eq(values.pump, m.pump) : values.supported === true)
+            && eq(values.router, m.nutboxRouter) };
 }

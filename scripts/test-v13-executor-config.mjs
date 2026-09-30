@@ -19,14 +19,14 @@ await build({entryPoints:['src/utils/v13/client.ts'],bundle:true,platform:'node'
 }}]})
 const {createQuoteSession,buildTrade,executeQuote}=createRequire(import.meta.url)(join(dir,'client.cjs'))
 const token='0x1111111111111111111111111111111111111111'
-const expected='0x7D5480C10A98b0Feb4e5fA77aF3F01aE3a5E86F4'
+const expected='0xB70544BfdACaBD8718261d7A6be5208b7D2f6Ebf'
 const originalWorker=globalThis.Worker
 const plan={isBuy:true,amountIn:100n,amountOut:50n,legs:[{index:0,amount:100n,intermediate:0n,output:50n}]}
 globalThis.Worker=class{terminate(){} postMessage(data){globalThis.__executor.workerTarget=data.metadata.executor;this.onmessage({data:{id:data.id,plan}})}}
 after(async()=>{globalThis.Worker=originalWorker;delete globalThis.__executor;await rm(dir,{recursive:true,force:true})})
-for(const executor of [undefined,'0x9999999999999999999999999999999999999999']){
- test(`trade snapshot and wallet target use config with ${executor?'conflicting':'missing'} API executor`,async()=>{
-  globalThis.__executor={metadata:{token,executor,listed:true,generatedAt:Date.now(),configHash:'test'}}
+for(const version of [13,14]) for(const executor of [undefined,'0x9999999999999999999999999999999999999999']){
+ test(`V${version} trade snapshot and wallet target use config with ${executor?'conflicting':'missing'} API executor`,async()=>{
+  globalThis.__executor={metadata:{version,token,executor,listed:true,generatedAt:Date.now(),configHash:'test'}}
   const q=await createQuoteSession().quote(token,true,100n)
   assert.equal(globalThis.__executor.snapshotTarget,expected)
   assert.equal(globalThis.__executor.workerTarget,expected)
