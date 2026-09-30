@@ -1368,6 +1368,8 @@
     "noAssets": "当前暂无可用于创建指数的资产，请稍后再试。",
     "connectForAssets": "连接钱包后即可选择资产并查看创建费用。",
     "unavailableAsset": "该资产当前不可用，请重新选择",
+    "searchAssets": "输入代币符号、名称或合约地址搜索",
+    "noMatchingAssets": "没有匹配的资产",
     "totalFee": "指数交易手续费",
     "totalFeeHelp": "每笔交易收取 1%–3%，创建后不可修改。",
     "allocationTitle": "手续费分配",

@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import { isAddress, parseAbi, zeroAddress, type Address } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import { getReadOnlyClient } from '@/utils/wallets'
+import creationAssets from '@/utils/v13/creation-assets.json'
 
 /**
  * Canonical BNB Chain bStocks contract addresses. RH is intentionally not
@@ -53,7 +54,11 @@ export const BSC_BSTOCK_TOKEN_ADDRESSES = [
 ] as const
 
 const BSC_BSTOCK_TOKEN_ADDRESS_SET = new Set<string>(
-  BSC_BSTOCK_TOKEN_ADDRESSES.map((address) => address.toLowerCase()),
+  [
+    ...BSC_BSTOCK_TOKEN_ADDRESSES,
+    // Reviewed stock/ETF constituents also include Ondo-issued versions.
+    ...creationAssets.filter(asset => asset.assetType === 'stock' || asset.assetType === 'etf').map(asset => asset.address),
+  ].map((address) => address.toLowerCase()),
 )
 
 export const isBscBStockToken = (address?: string | null): boolean =>

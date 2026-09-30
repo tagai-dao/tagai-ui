@@ -3,31 +3,56 @@
     "symbol": "QQQB",
     "address": "0x205812CdBed920aFf76C6580abD681a46D11efc7",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/qqq.png"
+    "logoUrl": "/images/basket-assets/qqq.png",
+    "name": "Invesco QQQ Trust",
+    "nameZh": "纳斯达克ETF",
+    "ticker": "QQQ",
+    "assetType": "etf",
+    "issuer": "bStocks"
   },
   {
     "symbol": "SPCXB",
     "address": "0xbe9D156892E55e7154BcD3cB0FEA677F9D3103E1",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/spcx.svg"
+    "logoUrl": "/images/basket-assets/spcx.svg",
+    "name": "SpaceX",
+    "nameZh": "太空探索",
+    "ticker": "SPCX",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "AAPLB",
     "address": "0x431a3BEE82E2ca41e49895CbECE5bB0F76A89b7A",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/aapl.png"
+    "logoUrl": "/images/basket-assets/aapl.png",
+    "name": "Apple",
+    "nameZh": "苹果",
+    "ticker": "AAPL",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "SKHYB",
     "address": "0xCA750eF65f295BBECd685Abf54e82CAf297BDB61",
     "decimals": 18,
-    "logoUrl": "https://cdn.dexscreener.com/cms/images/Dv6-VNcUq4Lxx9yf?width=800&height=800&quality=95&format=auto"
+    "logoUrl": "https://cdn.dexscreener.com/cms/images/Dv6-VNcUq4Lxx9yf?width=800&height=800&quality=95&format=auto",
+    "name": "SK Hynix",
+    "nameZh": "SK海力士",
+    "ticker": "SKHY",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "SPYB",
     "address": "0x7138b48df7D98D7e3cc221BfE7192D0a178182D8",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/spy.png"
+    "logoUrl": "/images/basket-assets/spy.png",
+    "name": "SPDR S&P 500 ETF",
+    "nameZh": "标普500ETF",
+    "ticker": "SPY",
+    "assetType": "etf",
+    "issuer": "bStocks"
   },
   {
     "symbol": "XAUt",
@@ -39,49 +64,89 @@
     "symbol": "NVDAB",
     "address": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/nvda.png"
+    "logoUrl": "/images/basket-assets/nvda.png",
+    "name": "NVIDIA",
+    "nameZh": "英伟达",
+    "ticker": "NVDA",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "TSLAB",
     "address": "0x5b1910eAaD6450E50f816082Aa078C41F10C292f",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/tsla.png"
+    "logoUrl": "/images/basket-assets/tsla.png",
+    "name": "Tesla",
+    "nameZh": "特斯拉",
+    "ticker": "TSLA",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "MSFTB",
     "address": "0x80106cb3EAD06659A5ad19DF39D9b4733863B9b0",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/msft.png"
+    "logoUrl": "/images/basket-assets/msft.png",
+    "name": "Microsoft",
+    "nameZh": "微软",
+    "ticker": "MSFT",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "HOODB",
     "address": "0xA394dCEa3fd3847fD793afBFd163E2e3858B7c65",
     "decimals": 18,
-    "logoUrl": "https://assets.parqet.com/logos/symbol/HOOD?format=png"
+    "logoUrl": "https://assets.parqet.com/logos/symbol/HOOD?format=png",
+    "name": "Robinhood",
+    "nameZh": "Robinhood",
+    "ticker": "HOOD",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "BABAB",
     "address": "0x4eF9d3062c7F6ebA4AAE4990c5036598C6eff4ec",
     "decimals": 18,
-    "logoUrl": "https://assets.parqet.com/logos/symbol/BABA?format=png"
+    "logoUrl": "https://assets.parqet.com/logos/symbol/BABA?format=png",
+    "name": "Alibaba",
+    "nameZh": "阿里巴巴",
+    "ticker": "BABA",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "GMEB",
     "address": "0x46cEeFDa28Dd7207059ed19B0acdc026955bb15C",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/gme.png"
+    "logoUrl": "/images/basket-assets/gme.png",
+    "name": "GameStop",
+    "nameZh": "游戏驿站",
+    "ticker": "GME",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "GOOGLB",
     "address": "0x3F53De71c126BdaBAe20f9cD64848d317f6C3238",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/googl.png"
+    "logoUrl": "/images/basket-assets/googl.png",
+    "name": "Alphabet Google",
+    "nameZh": "谷歌",
+    "ticker": "GOOGL",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "CRCLB",
     "address": "0x80f3D493EBCe97e343c53D29a137942416B4ffC0",
     "decimals": 18,
-    "logoUrl": "https://cdn.prod.website-files.com/67116d0daddc92483c812e88/683f238c7540ce089af2ff6f_Favicon32x32.png"
+    "logoUrl": "https://cdn.prod.website-files.com/67116d0daddc92483c812e88/683f238c7540ce089af2ff6f_Favicon32x32.png",
+    "name": "Circle",
+    "nameZh": "Circle",
+    "ticker": "CRCL",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "BNC4",
@@ -93,13 +158,23 @@
     "symbol": "BNCB",
     "address": "0x4902C5ebc598265Ed2212b559B042De8a5Eeec3f",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/bnc.png"
+    "logoUrl": "/images/basket-assets/bnc.png",
+    "name": "CEA Industries",
+    "nameZh": "CEA",
+    "ticker": "BNC",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "MSTRB",
     "address": "0xE87afb3076AeB0f9B14E368DE8145ae6a2826A14",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/mstr.png"
+    "logoUrl": "/images/basket-assets/mstr.png",
+    "name": "Strategy MicroStrategy",
+    "nameZh": "微策略",
+    "ticker": "MSTR",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "RDDTB",
@@ -111,25 +186,276 @@
     "symbol": "INTCB",
     "address": "0xe614E2fc6C787035FF51f452e8E826Bfd32D5283",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/intc.png"
+    "logoUrl": "/images/basket-assets/intc.png",
+    "name": "Intel",
+    "nameZh": "英特尔",
+    "ticker": "INTC",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "AMZNB",
     "address": "0x1a4b499833A79A09ad7Cf1D42D7DacF71e92eb00",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/amzn.png"
+    "logoUrl": "/images/basket-assets/amzn.png",
+    "name": "Amazon",
+    "nameZh": "亚马逊",
+    "ticker": "AMZN",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "SNDKB",
     "address": "0x3eE4dF61bd4F867E349BEaE8bFE07bc31b4850fb",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/sndk.png"
+    "logoUrl": "/images/basket-assets/sndk.png",
+    "name": "SanDisk",
+    "nameZh": "闪迪",
+    "ticker": "SNDK",
+    "assetType": "stock",
+    "issuer": "bStocks"
   },
   {
     "symbol": "METAB",
     "address": "0x7425889FE94F9d693E8daefE88BCCed6AcFEf4c0",
     "decimals": 18,
-    "logoUrl": "/images/basket-assets/meta.png"
+    "logoUrl": "/images/basket-assets/meta.png",
+    "name": "Meta Platforms",
+    "nameZh": "Meta",
+    "ticker": "META",
+    "assetType": "stock",
+    "issuer": "bStocks"
+  },
+  {
+    "symbol": "FXIon",
+    "address": "0x9b8E987e6fEc8Cf1380C4dcA7071e2C7853AEEA1",
+    "decimals": 18,
+    "name": "iShares China Large-Cap ETF",
+    "nameZh": "中国大型股ETF",
+    "ticker": "FXI",
+    "assetType": "etf",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/fxi.png"
+  },
+  {
+    "symbol": "NFLXB",
+    "address": "0xD6829Ea836b6FA224d099D40E54B31262f874631",
+    "decimals": 18,
+    "name": "Netflix",
+    "nameZh": "奈飞",
+    "ticker": "NFLX",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/nflx.png"
+  },
+  {
+    "symbol": "TSMB",
+    "address": "0xAB78b89B5bb00236Be0B4B20704cBfa04EfC711c",
+    "decimals": 18,
+    "name": "TSMC",
+    "nameZh": "台积电",
+    "ticker": "TSM",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/tsm.png"
+  },
+  {
+    "symbol": "HIMSB",
+    "address": "0xee6F4bcc88C2C8583d5a65c7D0C877b464100711",
+    "decimals": 18,
+    "name": "Hims & Hers",
+    "nameZh": "Hims医疗",
+    "ticker": "HIMS",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/hims.png"
+  },
+  {
+    "symbol": "BMNRB",
+    "address": "0x3548Da95a9eFFE481e8604664d75e95821e557F5",
+    "decimals": 18,
+    "name": "Bitmine",
+    "nameZh": "Bitmine",
+    "ticker": "BMNR",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/bmnr.png"
+  },
+  {
+    "symbol": "SOXLB",
+    "address": "0xd97d097a89113fa59b76c572E5b2Eb647E8eefaf",
+    "decimals": 18,
+    "name": "Direxion Semiconductor Bull 3X ETF",
+    "nameZh": "半导体3倍做多ETF",
+    "ticker": "SOXL",
+    "assetType": "etf",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/soxl.png"
+  },
+  {
+    "symbol": "SGOVon",
+    "address": "0xc008c5F579ec1450F20099c39F587547e27c7523",
+    "decimals": 18,
+    "name": "iShares 0-3 Month Treasury Bond ETF",
+    "nameZh": "美国短期国债ETF",
+    "ticker": "SGOV",
+    "assetType": "etf",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/sgov.png"
+  },
+  {
+    "symbol": "SQQQon",
+    "address": "0x17515B68378d86C38F394c666e79907dA05dcBA9",
+    "decimals": 18,
+    "name": "ProShares UltraPro Short QQQ ETF",
+    "nameZh": "纳斯达克3倍做空ETF",
+    "ticker": "SQQQ",
+    "assetType": "etf",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/sqqq.png"
+  },
+  {
+    "symbol": "SOXSB",
+    "address": "0xE28Cd11C99AF2df76bb8aDA4Cd0ef3904378280F",
+    "decimals": 18,
+    "name": "Direxion Semiconductor Bear 3X ETF",
+    "nameZh": "半导体3倍做空ETF",
+    "ticker": "SOXS",
+    "assetType": "etf",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/soxs.png"
+  },
+  {
+    "symbol": "MRNAB",
+    "address": "0x5fd86da9B05abE396fe9d02a4A213A7c00556503",
+    "decimals": 18,
+    "name": "Moderna",
+    "nameZh": "莫德纳",
+    "ticker": "MRNA",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/mrna.png"
+  },
+  {
+    "symbol": "DJTB",
+    "address": "0xF2ec508422174Ee564de98187db9359D318AFB6b",
+    "decimals": 18,
+    "name": "Trump Media & Technology Group",
+    "nameZh": "特朗普媒体",
+    "ticker": "DJT",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/djt.png"
+  },
+  {
+    "symbol": "FLNCB",
+    "address": "0x4af1D41cd9dD950dcA43984b43aaA2A8702714Ac",
+    "decimals": 18,
+    "name": "Fluence Energy",
+    "nameZh": "Fluence储能",
+    "ticker": "FLNC",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/flnc.png"
+  },
+  {
+    "symbol": "TQQQB",
+    "address": "0x462B5F13B7C7748279358962925c5De83BB9E598",
+    "decimals": 18,
+    "name": "ProShares UltraPro QQQ ETF",
+    "nameZh": "纳斯达克3倍做多ETF",
+    "ticker": "TQQQ",
+    "assetType": "etf",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/tqqq.png"
+  },
+  {
+    "symbol": "TLTon",
+    "address": "0xf69e40069aC227C11459E3f4e8a446b3401616b6",
+    "decimals": 18,
+    "name": "iShares 20+ Year Treasury Bond ETF",
+    "nameZh": "美国长期国债ETF",
+    "ticker": "TLT",
+    "assetType": "etf",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/tlt.png"
+  },
+  {
+    "symbol": "AMCB",
+    "address": "0x96e7d606e229448eF817A7f35fd7394C3E15d00C",
+    "decimals": 18,
+    "name": "AMC Entertainment",
+    "nameZh": "AMC院线",
+    "ticker": "AMC",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/amc.png"
+  },
+  {
+    "symbol": "PDDon",
+    "address": "0xF3e82EA164CB344B2b11Bad4c24b0Ea4F7BA4714",
+    "decimals": 18,
+    "name": "PDD Holdings",
+    "nameZh": "拼多多",
+    "ticker": "PDD",
+    "assetType": "stock",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/pdd.png"
+  },
+  {
+    "symbol": "SQQQB",
+    "address": "0x25e572B466D152604D9E6C3e53B432B978825342",
+    "decimals": 18,
+    "name": "ProShares UltraPro Short QQQ ETF",
+    "nameZh": "纳斯达克3倍做空ETF",
+    "ticker": "SQQQ",
+    "assetType": "etf",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/sqqq.png"
+  },
+  {
+    "symbol": "NOKB",
+    "address": "0x7c4d7a180D737Dd5A70d8065a90E6746a69C37EA",
+    "decimals": 18,
+    "name": "Nokia",
+    "nameZh": "诺基亚",
+    "ticker": "NOK",
+    "assetType": "stock",
+    "issuer": "bStocks",
+    "logoUrl": "/images/basket-assets/nok.png"
+  },
+  {
+    "symbol": "DISon",
+    "address": "0xeEe9eeE593cB8f7946260B4066CBa7907f40ACFa",
+    "decimals": 18,
+    "name": "The Walt Disney Company",
+    "nameZh": "迪士尼",
+    "ticker": "DIS",
+    "assetType": "stock",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/dis.png"
+  },
+  {
+    "symbol": "GMEon",
+    "address": "0xdABb9afF4cf02f26D2014e4cA9f94aC6fe6572a3",
+    "decimals": 18,
+    "name": "GameStop",
+    "nameZh": "游戏驿站",
+    "ticker": "GME",
+    "assetType": "stock",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/gme.png"
+  },
+  {
+    "symbol": "BILIon",
+    "address": "0x91fc7371d6dE682A1e8CFcB4EB7dA693312A03a4",
+    "decimals": 18,
+    "name": "Bilibili",
+    "nameZh": "哔哩哔哩B站",
+    "ticker": "BILI",
+    "assetType": "stock",
+    "issuer": "Ondo",
+    "logoUrl": "/images/basket-assets/bili.png"
   },
   {
     "symbol": "ETH",

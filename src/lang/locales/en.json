@@ -1365,6 +1365,8 @@
     "noAssets": "No assets are currently available for index creation. Please try again later.",
     "connectForAssets": "Connect your wallet to choose assets and see creation fees.",
     "unavailableAsset": "Asset unavailable — choose another",
+    "searchAssets": "Type to search by symbol, name, or contract address",
+    "noMatchingAssets": "No matching assets",
     "totalFee": "Index trading fee",
     "totalFeeHelp": "1%–3% per trade, fixed after creation.",
     "allocationTitle": "Fee distribution",
