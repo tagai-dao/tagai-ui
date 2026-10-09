@@ -126,6 +126,7 @@ const isMultiPool = computed(() => chainStore.activeChainId === 56 && [13, 14].i
 const v13Session = createQuoteSession()
 const v13Quote = shallowRef<Quote>()
 const curveQuote = shallowRef<CurveQuote>()
+const poolMetadataError = ref(false)
 const v13Error = ref('')
 const v13Message = computed(() => {
   if (v13Error.value === 'V13_LISTING_PENDING') return t('v13Trade.pending')
@@ -149,7 +150,7 @@ const isWalletConnected = computed(() =>
   isAddress(accStore.ethConnectAddress ?? '')
 )
 watch([() => comStore.currentSelectedCommunity?.token, () => chainStore.activeChainId, () => accStore.ethConnectAddress], () => {
-  v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''
+  v13Session.reset(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''; poolMetadataError.value = false
   buyQuoteSeq++; sellQuoteSeq++; receiveAmount.value = ''; receiveEth.value = ''; calculating.value = false
 })
 const tradeType = ref('buy')
@@ -240,7 +241,7 @@ watch(() => tradeType.value, () => {
 
 watch(payEth, (val: any) => {
   buyQuoteSeq++; receiveAmount.value = ''
-  if (isMultiPool.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
+  if (isMultiPool.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''; poolMetadataError.value = false }
   calculating.value = true
   willListing = false
   updateBuyAmount(val)
@@ -248,7 +249,7 @@ watch(payEth, (val: any) => {
 
 watch(sellAmount, (val: any) => {
   sellQuoteSeq++; receiveEth.value = ''
-  if (isMultiPool.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = '' }
+  if (isMultiPool.value) { v13Session.cancel(); v13Quote.value = undefined; curveQuote.value = undefined; v13Error.value = ''; poolMetadataError.value = false }
   // 手动改数量后脱离进度条比例，避免余额刷新时覆盖输入
   if (!sellAmountSyncingFromPercent.value && percentage.value > 0) {
     percentage.value = 0
@@ -368,6 +369,7 @@ function setMaxBuy() {
 }
 
 const updateBuyAmount = debounce(async (val: any) => {
+  poolMetadataError.value = false
   const seq = ++buyQuoteSeq
   const str = normalizeAmountStr(val)
   if (!tradeReady.value || !comStore.currentSelectedCommunity) {
@@ -439,8 +441,8 @@ const updateBuyAmount = debounce(async (val: any) => {
   } else if (listed.value) {
     if (usesListedV4Quote(community)) {
       if (chainStore.deployment.dex.kind !== 'pancake') {
-        const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
-        if (!poolKey) throw new Error('invalid RH V4 PoolKey')
+        const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair, community)
+        if (!poolKey) throw new Error('RH_V4_POOL_KEY_UNAVAILABLE')
         receive = await quoteRhV4(poolKey, amount, true, !usesDirectRhV4Trade(community),
           Boolean(community.isImport && Number(community.version) < 11))
         const poolId = resolveV4PoolId(community!.pair)
@@ -498,6 +500,7 @@ const updateBuyAmount = debounce(async (val: any) => {
     if (seq !== buyQuoteSeq) return
     if ((error as Error)?.message === 'V13_QUOTE_CANCELLED') return
     if (isMultiPool.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined; curveQuote.value = undefined }
+    poolMetadataError.value = (error as Error)?.message === 'RH_V4_POOL_KEY_UNAVAILABLE'
     console.warn('Buy quote failed', error)
     // Empty means unavailable; zero is reserved for a successful quote that
     // cannot cross the pool and must not mask RPC/encoding failures.
@@ -509,6 +512,7 @@ const updateBuyAmount = debounce(async (val: any) => {
 }, 500)
 
 const updateSellAmount = debounce(async (val: any) => {
+  poolMetadataError.value = false
   const seq = ++sellQuoteSeq
   try {
     const str = normalizeAmountStr(val)
@@ -571,8 +575,8 @@ const updateSellAmount = debounce(async (val: any) => {
     } else if (listed.value) {
       if (usesListedV4Quote(community)) {
         if (chainStore.deployment.dex.kind !== 'pancake') {
-          const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair)
-          if (!poolKey) throw new Error('invalid RH V4 PoolKey')
+          const poolKey = await resolveRhV4PoolKeyForTrade(community!.pair, community)
+          if (!poolKey) throw new Error('RH_V4_POOL_KEY_UNAVAILABLE')
           receive = await quoteRhV4(poolKey, amount, false, !usesDirectRhV4Trade(community),
             Boolean(community.isImport && Number(community.version) < 11))
           const poolId = resolveV4PoolId(community!.pair)
@@ -622,6 +626,7 @@ const updateSellAmount = debounce(async (val: any) => {
     if (seq !== sellQuoteSeq) return
     if ((error as Error)?.message === 'V13_QUOTE_CANCELLED') return
     if (isMultiPool.value) { v13Error.value = (error as Error)?.message || 'V13_QUOTE_FAILED'; v13Quote.value = undefined; curveQuote.value = undefined }
+    poolMetadataError.value = (error as Error)?.message === 'RH_V4_POOL_KEY_UNAVAILABLE'
     console.warn('Sell quote failed', error)
     receiveEth.value = ''
     quoteSpotPrice.value = null
@@ -661,7 +666,7 @@ async function checkTweet() {
 }
 
 async function confirm() {
-  if (!tradeReady.value || trading.value || calculating.value) return
+  if (!tradeReady.value || trading.value || calculating.value || poolMetadataError.value) return
   // 交易只要求链上钱包，不要求 TagAI / Twitter 登录。社交登录仅用于
   // Log in、Wallet、Profile 和发帖等账户功能，不能拦截纯链上交易。
   if (!isWalletConnected.value) {
@@ -796,7 +801,7 @@ async function confirm() {
       } else if (usesListedV4Quote(token) && listed.value && !(token.isImport && Number(token.version) === 10)) {
         const ethAmount = parseEther(payEth.value.toString());
         if (chainStore.deployment.dex.kind === 'uniswap') {
-          const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
+          const poolKey = await resolveRhV4PoolKeyForTrade(token.pair, token)
           if (!poolKey || !receiveAmount.value) throw new Error('RH V4 PoolKey or quote is unavailable')
           const sellsman = resolvedSellsman
           hash = usesDirectRhV4Trade(token)
@@ -857,7 +862,7 @@ async function confirm() {
         hash = await executeQuote(q, resolvedSellsman as `0x${string}`, Math.ceil(maxSlippage.value * 100))
       } else if (usesListedV4Quote(token) && listed.value && !(token.isImport && Number(token.version) === 10)) {
         if (chainStore.deployment.dex.kind === 'uniswap') {
-          const poolKey = await resolveRhV4PoolKeyForTrade(token.pair)
+          const poolKey = await resolveRhV4PoolKeyForTrade(token.pair, token)
           if (!poolKey || !receiveEth.value) throw new Error('RH V4 PoolKey or quote is unavailable')
           const sellsman = resolvedSellsman
           hash = usesDirectRhV4Trade(token)
@@ -912,7 +917,7 @@ function refreshV13Quote() {
   updateBuyAmount.cancel(); updateSellAmount.cancel()
   v13Session.reset()
   v13Quote.value = undefined; curveQuote.value = undefined
-  v13Error.value = ''
+  v13Error.value = ''; poolMetadataError.value = false
   receiveAmount.value = ''
   receiveEth.value = ''
   buyQuoteSeq++
@@ -952,6 +957,7 @@ async function loadTradeCommunity() {
   const load = ++communityLoad
   tradeReady.value = false
   tradeLoadError.value = false
+  poolMetadataError.value = false
   updateBuyAmount.cancel(); updateSellAmount.cancel()
   buyQuoteSeq++; sellQuoteSeq++
   receiveAmount.value = ''; receiveEth.value = ''
@@ -1085,7 +1091,7 @@ onUnmounted(() => {
             <span class="text-h5"
               >{{$t('receive')}} ${{ comStore.currentSelectedCommunity?.tick }}</span
             >
-            <span class="text-h3 tabular-nums">{{ formatAmount(receiveAmount?.toString() / 1e18) }}</span>
+            <span class="text-h3 tabular-nums">{{ poolMetadataError ? '—' : formatAmount(receiveAmount?.toString() / 1e18) }}</span>
           </div>
           <div v-if="isBuyLiquidityInsufficient" class="text-sm text-orange-normal px-1">
             {{ $t('buyAndSell.insufficientLiquidity') }}
@@ -1132,7 +1138,7 @@ onUnmounted(() => {
             class="border-[1px] border-grey-c9 rounded-xl px-4 h-9 web:h-11 gap-4 text-content flex items-center justify-between"
           >
             <span class="text-h5">{{ $t('receive') }} ${{ nativeSymbol }}</span>
-            <span class="text-h3 tabular-nums">{{ formatAmount(receiveEth?.toString() / 1e18) }}</span>
+            <span class="text-h3 tabular-nums">{{ poolMetadataError ? '—' : formatAmount(receiveEth?.toString() / 1e18) }}</span>
           </div>
           <div v-if="isSellLiquidityInsufficient" class="text-sm text-orange-normal px-1">
             {{ $t('buyAndSell.insufficientLiquidity') }}
@@ -1225,6 +1231,10 @@ onUnmounted(() => {
             </el-radio>
           </el-radio-group>
         </div>
+        <div v-if="poolMetadataError" class="text-sm text-orange-normal" role="alert">
+          {{ $t('buyAndSell.poolMetadataUnavailable') }}
+          <button class="underline" :disabled="calculating" @click="refreshV13Quote">{{ $t('v13Trade.refresh') }}</button>
+        </div>
         <div v-if="isMultiPool" class="text-sm space-y-1">
           <p v-if="v13Message" role="status" class="text-orange-normal">{{ v13Message }}</p>
           <template v-if="v13Quote">
@@ -1237,7 +1247,7 @@ onUnmounted(() => {
         <button v-else
           class="min-w-0 flex-1 min-h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="!tradeReady || (isWalletConnected && isMultiPool && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :disabled="!tradeReady || poolMetadataError || (isWalletConnected && isMultiPool && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
             !isWalletConnected

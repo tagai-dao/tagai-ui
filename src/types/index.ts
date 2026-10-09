@@ -358,6 +358,9 @@ export type OnchainTokenInfo = {
   isImport?: boolean;
   price?: number;
   pair?: string;
+  poolId?: string;
+  poolKey?: import('@/utils/rhV4PoolKey').RhV4PoolKey | null;
+  poolKeyError?: string;
   listedDayNumber?: number | null | undefined;
   distributionEnded?: boolean | null | undefined;
   dexVersion?: number | null | undefined;

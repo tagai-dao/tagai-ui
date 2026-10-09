@@ -343,6 +343,7 @@
     "socialDistEnabled": "Social distribution enabled!"
   },
   "buyAndSell": {
+    "poolMetadataUnavailable": "Pool metadata is unavailable. Refresh and try again.",
     "setMaxSlippage": "Set max. slippage (%)",
     "tweetTip": "You must create social account to tweet.",
     "blinkTip": "You can make blink to Twitter if you have created IPShare, user trade tag from your blink can bring you reward.",

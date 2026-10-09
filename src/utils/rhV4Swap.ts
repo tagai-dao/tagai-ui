@@ -4,7 +4,6 @@ import {
   isAddress,
   keccak256,
   maxUint256,
-  parseAbiItem,
   toHex,
   zeroAddress,
   type Hex,
@@ -15,15 +14,11 @@ import { readContract, resolveContractAddress, writeContract } from './contract'
 import { getReadOnlyClient, getPreparedWalletClient, waitForTx } from './wallets'
 import { encodeHookData, sqrtPriceX96ToBnbPerToken } from './pcsV4Swap'
 import errCode from '@/errCode'
+import { createRhV4PoolKeyReader, normalizeRhV4PoolKey, verifyRhV4PoolKey, type RhV4PoolKey } from './rhV4PoolKey'
+import { get } from '@/apis/axios'
+import { BACKEND_API_URL } from '@/config'
 
-/** Uniswap v4 PoolKey; intentionally separate from Pancake Infinity PoolKey. */
-export type RhV4PoolKey = {
-  currency0: `0x${string}`
-  currency1: `0x${string}`
-  fee: number
-  tickSpacing: number
-  hooks: `0x${string}`
-}
+export type { RhV4PoolKey } from './rhV4PoolKey'
 
 /**
  * Uniswap v4 PoolManager 没有 PCS 的 getSlot0(bytes32)。
@@ -123,63 +118,35 @@ export const buildRhV4SqrtPriceMulticall = (
   returns: [[returnKey, (val: any) => decodeRhV4Slot0(val).sqrtPriceX96]],
 })
 
-const isUint24 = (value: number) => Number.isInteger(value) && value >= 0 && value <= 0xffffff
-const isInt24 = (value: number) => Number.isInteger(value) && value >= -0x800000 && value <= 0x7fffff
-
 export const resolveRhV4PoolKey = (pair: string | null | undefined): RhV4PoolKey | null => {
   if (!pair?.trim().startsWith('{')) return null
-  try {
-    const value = JSON.parse(pair) as Partial<RhV4PoolKey>
-    if (!value.currency0 || !value.currency1 || !value.hooks) return null
-    if (!isAddress(value.currency0) || !isAddress(value.currency1) || !isAddress(value.hooks)) return null
-    if (!isUint24(Number(value.fee)) || !isInt24(Number(value.tickSpacing))) return null
-    return {
-      currency0: value.currency0,
-      currency1: value.currency1,
-      fee: Number(value.fee),
-      tickSpacing: Number(value.tickSpacing),
-      hooks: value.hooks,
-    }
-  } catch {
-    return null
-  }
+  try { return normalizeRhV4PoolKey(JSON.parse(pair)) } catch { return null }
 }
 
-const initializeEvent = parseAbiItem(
-  'event Initialize(bytes32 indexed id, address indexed currency0, address indexed currency1, uint24 fee, int24 tickSpacing, address hooks, uint160 sqrtPriceX96, int24 tick)'
-)
+const readPoolMetadata = createRhV4PoolKeyReader((chainId, poolId) =>
+  get(`${BACKEND_API_URL}/community/v4PoolKey`, { poolId }, {
+    headers: { 'X-Chain-Id': String(chainId) }, publicDisplay: true, timeout: 10000,
+  }))
 
-/** Standard Uniswap v4 stores the full PoolKey in Initialize logs, keyed by poolId. */
+/** Ask the backend for verified metadata; no frontend contract discovery or history lookup. */
 export const getRhV4PoolKeyByPoolId = async (poolId: `0x${string}`): Promise<RhV4PoolKey> => {
-  const { deployment } = requireRhV4()
-  const logs = await getReadOnlyClient().getLogs({
-    address: deployment.dex.v4PoolManager,
-    event: initializeEvent,
-    args: { id: poolId },
-    fromBlock: 0n,
-    toBlock: 'latest',
-    strict: true,
-  })
-  const args = logs.at(-1)?.args
-  if (!args?.currency0 || !args.currency1 || args.fee === undefined ||
-      args.tickSpacing === undefined || !args.hooks) {
-    throw new Error(`PoolKey not found for poolId ${poolId}`)
-  }
-  return {
-    currency0: args.currency0,
-    currency1: args.currency1,
-    fee: Number(args.fee),
-    tickSpacing: Number(args.tickSpacing),
-    hooks: args.hooks,
-  }
+  const deployment = requireRhV4PoolManager()
+  return readPoolMetadata(deployment.chainId, poolId)
 }
 
-export const resolveRhV4PoolKeyForTrade = async (pair: string | null | undefined): Promise<RhV4PoolKey | null> => {
+export const resolveRhV4PoolKeyForTrade = async (
+  pair: string | null | undefined,
+  community?: { token?: string; poolKey?: RhV4PoolKey | null; poolId?: string },
+): Promise<RhV4PoolKey | null> => {
   const embedded = resolveRhV4PoolKey(pair)
-  if (embedded) return embedded
+  if (embedded) {
+    if (community?.poolId) return verifyRhV4PoolKey(community.poolId, embedded, community.token)
+    return embedded
+  }
   const value = pair?.trim()
-  if (value?.startsWith('0x') && value.length === 66) {
-    return getRhV4PoolKeyByPoolId(value as `0x${string}`)
+  if (value && /^0x[0-9a-f]{64}$/i.test(value)) {
+    if (community?.poolKey) return verifyRhV4PoolKey(value, community.poolKey, community.token)
+    return verifyRhV4PoolKey(value, await getRhV4PoolKeyByPoolId(value as `0x${string}`), community?.token)
   }
   return null
 }

@@ -343,6 +343,7 @@
     "socialDistEnabled": "社交分发已开启！"
   },
   "buyAndSell": {
+    "poolMetadataUnavailable": "交易池参数暂不可用，请刷新后重试。",
     "setMaxSlippage": "设置最大滑点 %",
     "tweetTip": "您必须创建社交账户才能发布推文",
     "blinkTip": "如果您已经创建了IPShare，您可以通过Blink与Twitter互动。您在Blink上的交易标签可以为您带来奖励",
