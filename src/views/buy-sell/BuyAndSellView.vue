@@ -54,6 +54,7 @@ import { OP_CONSUME, usesThirdPartyMarketCap } from "@/config";
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
 import AmountProgressBar from "@/views/buy-sell/AmountProgressBar.vue";
+import { useDexScreenerPair } from '@/composables/useDexScreenerPair'
 import Kline from "@/views/buy-sell/Kline.vue";
 import { getDexScreenerEmbedPath, usesDirectRhV4Trade, usesListedV4Quote } from '@/utils/pumpVersion'
 import { isAddress, parseEther, zeroAddress } from "viem";
@@ -139,10 +140,16 @@ const v13Message = computed(() => {
 })
 
 onUnmounted(() => v13Session.reset())
-/** 有 tick 且非嵌入模式时展示桌面 K 线：未 list 用自建图，已 list 用 DexScreener */
+/** 有 tick 且非嵌入模式时展示桌面 K 线：优先使用已收录的 DexScreener 交易池，否则使用自建图 */
 const showDesktopChart = computed(() =>
   props.showChart && !!comStore.currentSelectedCommunity?.tick && !props.tick
 )
+const { pair: dexPair, useDexScreener, onEmbedError } = useDexScreenerPair(() => ({
+  chain: dexScreenerChain.value,
+  token: comStore.currentSelectedCommunity?.token,
+  preferred: getDexScreenerEmbedPath(comStore.currentSelectedCommunity),
+  enabled: showDesktopChart.value && !!comStore.currentSelectedCommunity?.listed,
+}))
 const accStore = useAccountStore()
 const modalStore = useModalStore()
 const isWalletConnected = computed(() =>
@@ -1026,9 +1033,9 @@ onUnmounted(() => {
       <div v-if="showDesktopChart"
            class="w-full hidden web:flex min-w-[320px] flex-1 gap-3"
            :class="$slots['token-info'] ? 'min-h-[360px] self-stretch' : 'h-[360px]'">
-        <Kline v-if="!comStore.currentSelectedCommunity?.listed" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
-        <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${getDexScreenerEmbedPath(comStore.currentSelectedCommunity)}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
-        frameborder="0" class="w-full h-full"></iframe>
+        <Kline v-if="!useDexScreener" :key="`${chainStore.activeChainId}:${comStore.currentSelectedCommunity?.token}`" :tick="comStore.currentSelectedCommunity?.tick" chart-id="k-line-chart1"/>
+        <iframe v-else :src="`https://dexscreener.com/${dexScreenerChain}/${dexPair?.pairAddress}?embed=1&loadChartSettings=0&trades=0&tabs=0&chartLeftToolbar=0&chartTimeframesToolbar=0&info=1&loadChartSettings=0&chartDefaultOnMobile=1&chartTheme=${dexTheme}&theme=${dexTheme}&chartStyle=1&chartType=usd&interval=15`"
+        @error="onEmbedError" frameborder="0" class="w-full h-full"></iframe>
 
       </div>
       <div v-if="comStore.currentSelectedCommunity?.tick && comStore.currentSelectedCommunity?.tick !== '币安小说'"

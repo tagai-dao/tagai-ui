@@ -3,7 +3,7 @@ import {useStateStore} from "@/stores/common";
 import {formatKChartDate} from "@/utils/helper";
 import {onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
-import {init} from "klinecharts";
+import {init, dispose} from "klinecharts";
 import { useInterval } from "@/composables/useTools";
 import { useWindowSize } from '@vant/use';
 import { useRoute } from "vue-router";
@@ -22,6 +22,7 @@ const { isDark } = useTheme()
 const chainStore = useChainStore()
 let tick = ref('');
 let lastTimestamp = 0;
+let disposed = false;
 type ChartData = {
   timestamp: number,
   open: number,
@@ -192,7 +193,7 @@ async function getNewData() {
   const requestedChain = chainStore.activeChainId
   try {
     const rows: any = await getTokenTradeData(requestedTick, undefined, true)
-    if (requestedTick === props.tick && requestedChain === chainStore.activeChainId && Array.isArray(rows)) setChartRows(rows)
+    if (!disposed && requestedTick === props.tick && requestedChain === chainStore.activeChainId && Array.isArray(rows)) setChartRows(rows)
   } catch (_) {}
 }
 
@@ -205,7 +206,7 @@ async function refreshData() {
   const from = requestedChain === 56 ? curveRefreshFrom(originalData) : lastTimestamp
   try {
     const rows: any = await getTokenTradeData(requestedTick, from || undefined, true)
-    if (requestedTick !== props.tick || requestedChain !== chainStore.activeChainId || !Array.isArray(rows)) return
+    if (disposed || requestedTick !== props.tick || requestedChain !== chainStore.activeChainId || !Array.isArray(rows)) return
     setChartRows(requestedChain === 56 ? replaceCandleTail(originalData, rows, from) : originalData.concat(rows))
     updateChart()
   } catch (error) { console.warn('Chart refresh failed', error) }
@@ -222,12 +223,16 @@ onActivated(async () => {
   }
 })
 
-onUnmounted(() => emitter.off('newTrade', refreshData))
+onUnmounted(() => {
+  disposed = true
+  emitter.off('newTrade', refreshData)
+  if (chart.value) dispose(chart.value)
+})
 
 onMounted(async () => {
   tick.value = route.params.id as string
   await getNewData()
-  if (!chartRef.value) return;
+  if (disposed || !chartRef.value) return;
   chart.value = init(chartRef.value,  {
     decimalFoldThreshold: 4,
     layout: [
@@ -259,7 +264,7 @@ watch(() => props.changeSeconds, () => {
 })
 
 watch(() => width.value, () => {
-  chart.value.resize()
+  chart.value?.resize()
 })
 
 watch(() => isDark.value, () => {
