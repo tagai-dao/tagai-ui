@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth";
 import { privyEmailLogin } from "../apis/api.ts";
 
+import { useAccountStore } from "@/stores/web3";
 import emitter from "@/utils/emitter.ts";
 import debounce from "lodash.debounce";
 import { clearBlinkLoginReturn } from '@/utils/blinkLoginReturn.ts';
@@ -82,6 +83,9 @@ export default function LoginWithEmail() {
   }, [code])
 
   const handleLoginSuccess = useCallback(async (loginParams) => {
+    const accStore = useAccountStore();
+    const session = accStore.sessionVersion;
+    if (!accStore.isSessionCurrent(session)) return;
     const { user, isNewUser, wasAlreadyAuthenticated, loginMethod, loginAccount } = loginParams;
 
     // 根据用户状态执行不同的逻辑
@@ -95,12 +99,14 @@ export default function LoginWithEmail() {
     }
 
     const accessToken = await getAccessToken();
+    if (!accStore.isSessionCurrent(session)) return;
     if (!accessToken) {
       throw new Error("Failed to get Privy access token");
     }
 
     const loginEmail = email.trim().toLowerCase();
     const userInfo = await privyEmailLogin(accessToken, loginEmail);
+    if (!accStore.isSessionCurrent(session)) return;
 
     // LoginWithEmail lives inside the login modal and is unmounted as soon as
     // authSuccess closes it. Hand wallet creation/binding to the persistent

@@ -22,6 +22,35 @@ export const usePrivyStore = defineStore("privy", () => {
     currentChain.value = getChainById(useChainStore().activeChainId);
   }
 
+  // Registered by AuthLoading, which stays mounted across route changes.
+  let sdkLogout: (() => Promise<void>) | null = null;
+  let signOutInFlight: Promise<void> | null = null;
+  function registerLogout(handler: () => Promise<void>) {
+    sdkLogout = handler;
+    return () => { if (sdkLogout === handler) sdkLogout = null; };
+  }
+
+  function signOut(): Promise<void> {
+    if (signOutInFlight) return signOutInFlight;
+    if (!sdkLogout) return Promise.reject(new Error('Privy is not ready'));
+    const accStore = useAccountStore();
+    const handler = sdkLogout;
+    accStore.loggingOut = true;
+    accStore.sessionVersion++;
+    signOutInFlight = (async () => {
+      try {
+        await Promise.resolve().then(handler);
+        await logout();
+        accStore.clear();
+        localStorage.removeItem('lastLoginTime');
+      } finally {
+        accStore.loggingOut = false;
+        signOutInFlight = null;
+      }
+    })();
+    return signOutInFlight;
+  }
+
   // Switch to a different chain（同步产品 activeChain）
   async function switchChain(chainId: number): Promise<void> {
     try {
@@ -79,6 +108,10 @@ export const usePrivyStore = defineStore("privy", () => {
   }
 
   async function initWallet() {
+    const accStore = useAccountStore();
+    const session = accStore.sessionVersion;
+    const provider = ethersProvider.value;
+    if (!accStore.isSessionCurrent(session)) return;
     try {
       if (!ethersProvider.value) {
         throw new Error('Ethers provider is not initialized');
@@ -91,8 +124,9 @@ export const usePrivyStore = defineStore("privy", () => {
       })
       currentChain.value = chain
 
-      const accStore = useAccountStore();
-      accStore.ethConnectAddress = (await viemWalletClient.value.getAddresses())[0];
+      const addresses = await viemWalletClient.value.getAddresses();
+      if (!accStore.isSessionCurrent(session) || provider !== ethersProvider.value) return;
+      accStore.ethConnectAddress = addresses[0];
       console.log('privy address inited', accStore.ethConnectAddress)
       accStore.ethConnectState = EthWalletState.Connected;
       accStore.ethWalletType = 'privy';
@@ -100,7 +134,7 @@ export const usePrivyStore = defineStore("privy", () => {
     } catch (error) {
       // Wallet readiness is independent from the application login session.
       // A temporarily unavailable provider must never sign the user out.
-      const accStore = useAccountStore();
+      if (!accStore.isSessionCurrent(session) || provider !== ethersProvider.value) return;
       accStore.ethConnectState = EthWalletState.Disconnect;
       accStore.ethConnectAddress = '';
       accStore.ethWalletType = 'none';
@@ -116,6 +150,8 @@ export const usePrivyStore = defineStore("privy", () => {
     walletBinding: Ref<boolean>;
     initWallet: () => Promise<void>;
     logout: () => Promise<void>;
+    signOut: () => Promise<void>;
+    registerLogout: (handler: () => Promise<void>) => () => void;
     switchChain: (chainId: number) => Promise<void>;
     getChainId: () => number;
   };
@@ -127,6 +163,8 @@ export const usePrivyStore = defineStore("privy", () => {
     walletBinding,
     initWallet,
     logout,
+    signOut,
+    registerLogout,
     switchChain,
     getChainId
   } as PrivyStore;

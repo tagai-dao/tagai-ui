@@ -88,6 +88,7 @@ onMounted(async () => {
   }
   const { referee } = route.query;
   const account = useAccountStore().getAccountInfo
+  const session = useAccountStore().sessionVersion
   if (referee) {
     stateStore.referee = referee as string;
     if (!account?.twitterId) {
@@ -100,6 +101,7 @@ onMounted(async () => {
   // update userinfo
   if (account?.twitterId) {
     getUserProfile(account.twitterId).then(async (acc: any) => {
+      if (!useAccountStore().isSessionCurrent(session)) return
       useAccountStore().setAccount({
         ...account,
         ...acc

@@ -54,12 +54,15 @@ export const useAccount = () => {
             const accStore = useAccountStore()
             const privyStore = usePrivyStore()
             const accInfo = accStore.getAccountInfo;
+            const session = accStore.sessionVersion;
+            if (!accStore.isSessionCurrent(session)) return false;
 
             // Privy publishes the embedded-wallet provider asynchronously. The
             // caller will retry when it becomes available.
             if (!accInfo?.twitterId || !privyStore.ethersProvider) return false
 
             await privyStore.initWallet()
+            if (!accStore.isSessionCurrent(session)) return false;
 
             accStore.setAccount({
               ...accInfo,
@@ -68,12 +71,14 @@ export const useAccount = () => {
 
             // bind ethAddr for new login user
             const signature = await signMessage(BondEthMessage);
+            if (!accStore.isSessionCurrent(session)) return false;
             if (!signature) {
               throw new Error('Signature is null')
             }
 
             console.log('new bond address')
             await bondEth(accStore.ethConnectAddress, accInfo.twitterId, signature, BondEthMessage)
+            if (!accStore.isSessionCurrent(session)) return false;
 
             accStore.setAccount({
               ...accInfo,
@@ -102,8 +107,10 @@ export const useAccount = () => {
 
     const refreshToken = async () => {
         const acc = useAccountStore().getAccountInfo;
+        const session = useAccountStore().sessionVersion;
         if (acc?.twitterId) {
             const token: any = await twitterRefreshAccessToken(acc.twitterId)
+            if (!useAccountStore().isSessionCurrent(session)) return false;
             useAccountStore().setAccount({
                 ...acc,
                 ...token
@@ -115,10 +122,13 @@ export const useAccount = () => {
     }
 
     const updateVPOP = async () => {
+        const session = useAccountStore().sessionVersion;
+        if (!useAccountStore().isSessionCurrent(session)) return;
         const account = useAccountStore().getAccountInfo
         if (account && account.twitterId) {
             try {
                 const vpop: any = await getVPOP(account.twitterId)
+                if (!useAccountStore().isSessionCurrent(session)) return;
                 useAccountStore().setAccount({
                     ...account,
                     ...vpop
@@ -165,9 +175,11 @@ export const useAccount = () => {
     }
 
     const setMessageReaded = async () => {
+        const session = useAccountStore().sessionVersion;
         const account = useAccountStore().getAccountInfo
         if (account?.twitterId) {
             readAllMessage(account.twitterId).then((messages: any) => {
+                if (!useAccountStore().isSessionCurrent(session)) return;
                 useAccountStore().setAccount({
                     ...account,
                     lastReadMessageTime: formatDate()

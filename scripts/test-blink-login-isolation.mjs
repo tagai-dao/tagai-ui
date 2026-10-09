@@ -25,6 +25,7 @@ const built = await build({
       '@/utils/native.ts': `export const runNativeBrowserOAuth = start => start();`,
       '@/utils/emitter.ts': `export default {emit:(...args)=>globalThis.calls.push(args)};`,
       '../apis/api.ts': `export const privyEmailLogin = async () => ({});`,
+      '@/stores/web3': `export const useAccountStore = () => ({sessionVersion:0,isSessionCurrent:()=>true});`,
       'lodash.debounce': `export default fn => fn;`,
     }
     build.onResolve({filter: /^@\/utils\/blinkLoginReturn\.ts$/}, () => ({path:resolve('src/utils/blinkLoginReturn.ts')}))

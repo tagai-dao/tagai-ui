@@ -1,4 +1,5 @@
 {
+  "session": {"logout": "退出登录", "logoutFailed": "退出登录失败，请重试。"},
   "network": {
     "unavailable": "网络连接暂时不可用，请检查网络后重试。",
     "retry": "加载失败，点击重试"

@@ -11,12 +11,20 @@ export enum EthWalletState {
 // user related
 export const useAccountStore = defineStore('account', {
     actions: {
+        isSessionCurrent(version: number) {
+            return version === this.sessionVersion && !this.loggingOut
+        },
         clear() {
-            if (this.getAccountInfo?.twitterId) {
+            this.sessionVersion++
+            // Background auth cleanup also runs for wallet-only visitors.
+            // Preserve their manually connected external wallet.
+            if (this.getAccountInfo || this.ethWalletType === 'privy') {
                 this.ethWalletType = 'none' // metamask, okx, privy, none
                 this.ethConnectState = EthWalletState.Disconnect
                 this.ethConnectAddress = '';
             }
+            this.transactionLimit = 0;
+            this.dailyLimit = 0;
             this.setAccount(null);
             this.tokenHoldingList = [];// ref<TokenHoldingList[]>([])
             this.tweetsList = [];
@@ -33,7 +41,14 @@ export const useAccountStore = defineStore('account', {
         }
     },
     state() {
-        const account = ref<Account | null>(null);
+        // Restore once into reactive state. Reading storage from the getter can
+        // leave a cached account after clear() writes null to an already-null ref.
+        let restored: Account | null = null;
+        try {
+            const saved = localStorage.getItem('accountInfo');
+            if (saved) restored = JSON.parse(saved);
+        } catch { localStorage.removeItem('accountInfo'); }
+        const account = ref<Account | null>(restored);
         let tokenHoldingList = ref<TokenHoldingList[]>([]);
         const setAccount = (acc: Account | null) => {
             account.value = acc;
@@ -46,6 +61,8 @@ export const useAccountStore = defineStore('account', {
         
         return {
             account,
+            sessionVersion: 0,
+            loggingOut: false,
             tokenHoldingList,
             tweetsList: [] as Tweet[],
             blinksList: [] as Tweet[],
@@ -69,14 +86,7 @@ export const useAccountStore = defineStore('account', {
     },
     getters:{
         getAccountInfo(state) {
-            let acc = state.account;
-            if (!acc) {
-                let accStr = localStorage.getItem('accountInfo')
-                if (accStr){
-                    acc = typeof(accStr) === 'string' ? JSON.parse(accStr) : accStr
-                }
-            }
-            return acc as Account
+            return state.account as Account
         },
         getWalletType(state) {
             const account = this.getAccountInfo;

@@ -1,7 +1,7 @@
 import {useLoginWithOAuth, useOAuthTokens, useWallets, usePrivy, useCreateWallet} from "@privy-io/react-auth";
 import {privyLogin} from "../apis/api.ts";
 import emitter from "../utils/emitter.ts";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import { bondEthByPrivyAccToken } from '@/apis/api.ts';
 import { useAccountStore } from "@/stores/web3";
 import {usePrivyStore} from "@/stores/privy";
@@ -11,10 +11,13 @@ import {findConnectedEmbeddedWallet, ensureConnectedEmbeddedWallet} from './embe
 export default function AuthLoading() {
     const { state, loading, initOAuth } = useLoginWithOAuth();
     const {wallets, ready} = useWallets()
-    const { getAccessToken } = usePrivy();
+    const { getAccessToken, logout, ready: authReady } = usePrivy();
     const { createWallet } = useCreateWallet();
     const accStore = useAccountStore();
     const privyStore = usePrivyStore();
+    useLayoutEffect(() => {
+        if (authReady) return privyStore.registerLogout(logout);
+    }, [authReady, logout]);
     const walletsRef = useRef(wallets);
     walletsRef.current = wallets;
 
@@ -27,9 +30,9 @@ export default function AuthLoading() {
 
     useEffect(() => {
         const handleWalletBindingRequest = (request) => {
-            if (!request?.identity || ![0, 1].includes(request.accountType)) return;
+            if (accStore.loggingOut || !request?.identity || ![0, 1].includes(request.accountType)) return;
             privyStore.walletBinding = true;
-            setPendingWalletBinding(request);
+            setPendingWalletBinding({ ...request, session: accStore.sessionVersion });
         };
 
         emitter.on('privyWalletBindingRequested', handleWalletBindingRequest);
@@ -46,6 +49,9 @@ export default function AuthLoading() {
             return;
         }
 
+        const request = pendingWalletBinding;
+        const isCurrent = () => accStore.isSessionCurrent(request.session);
+        if (!isCurrent()) { setPendingWalletBinding(null); return; }
         walletBindingInFlightRef.current = true;
         (async () => {
             try {
@@ -53,11 +59,13 @@ export default function AuthLoading() {
                     () => walletsRef.current, createWallet,
                 );
 
+                if (!isCurrent()) return;
                 if (!wallet?.address) {
                     throw new Error('Privy did not return an embedded Ethereum wallet');
                 }
 
                 const provider = await wallet.getEthereumProvider();
+                if (!isCurrent()) return;
                 privyStore.ethersProvider = provider;
                 emitter.emit('walletProvider', provider);
 
@@ -69,6 +77,7 @@ export default function AuthLoading() {
 
                 if (needsBinding) {
                     const privyAccessToken = await getAccessToken();
+                    if (!isCurrent()) return;
                     if (!privyAccessToken) {
                         throw new Error('Failed to get Privy access token for wallet binding');
                     }
@@ -78,6 +87,7 @@ export default function AuthLoading() {
                     // window while keeping the binding server-verified.
                     let bindingError;
                     for (let attempt = 0; attempt < 5; attempt += 1) {
+                        if (!isCurrent()) return;
                         try {
                             await bondEthByPrivyAccToken(identity, wallet.address, privyAccessToken);
                             bindingError = null;
@@ -92,6 +102,7 @@ export default function AuthLoading() {
                     if (bindingError) throw bindingError;
                 }
 
+                if (!isCurrent()) return;
                 accStore.setAccount({
                     ...accStore.getAccountInfo,
                     ethAddr: wallet.address,
@@ -100,12 +111,13 @@ export default function AuthLoading() {
                 });
                 await privyStore.initWallet();
             } catch (error) {
+                if (!isCurrent()) return;
                 console.error('Failed to create or bind embedded wallet:', error);
                 emitter.emit('walletError', error);
             } finally {
-                privyStore.walletBinding = false;
+                if (isCurrent()) privyStore.walletBinding = false;
                 walletBindingInFlightRef.current = false;
-                setPendingWalletBinding(null);
+                setPendingWalletBinding(current => current === request ? null : current);
             }
         })();
     }, [pendingWalletBinding, ready, wallets, getAccessToken, createWallet]);
@@ -131,7 +143,10 @@ export default function AuthLoading() {
     // }, [user])
 
     useEffect(() => {
+        let cancelled = false;
+        const session = accStore.sessionVersion;
         async function getWalletProvider() {
+            if (!accStore.isSessionCurrent(session) || !accStore.getAccountInfo) return;
             if(ready) {
                 console.log('wallets', wallets)
                 if (wallets.length === 0) {
@@ -147,6 +162,7 @@ export default function AuthLoading() {
                 }
                 try {
                     const provider = await wallet.getEthereumProvider()
+                    if (cancelled || !accStore.isSessionCurrent(session) || !accStore.getAccountInfo) return;
                     // Persist provider state directly as well as emitting the legacy
                     // event, so Vue initialization cannot miss a one-shot event.
                     privyStore.ethersProvider = provider
@@ -154,6 +170,7 @@ export default function AuthLoading() {
 
                     // Never request a diagnostic signature on login/session restoration.
                 } catch (error) {
+                    if (cancelled || !accStore.isSessionCurrent(session)) return;
                     privyStore.walletBinding = false
                     console.error('Failed to initialize embedded wallet provider:', error)
                     emitter.emit('walletError', error)
@@ -162,6 +179,7 @@ export default function AuthLoading() {
 
         }
         getWalletProvider()
+        return () => { cancelled = true; };
     }, [ready, wallets, pendingWalletBinding]);
 
     useEffect(() => {
@@ -174,8 +192,11 @@ export default function AuthLoading() {
 
     const {reauthorize} = useOAuthTokens({
         onOAuthTokenGrant: async ({oAuthTokens, user}) => {
+            const session = accStore.sessionVersion;
+            if (!accStore.isSessionCurrent(session)) return;
             try {
                 const privyAccessToken = await getAccessToken()
+                if (!accStore.isSessionCurrent(session)) return;
                 if (!privyAccessToken) {
                     console.error('Failed to get Privy access token')
                     emitter.emit('authError', 'Failed to get Privy access token')
@@ -183,6 +204,7 @@ export default function AuthLoading() {
                 }
                 
                 const userInfo = await privyLogin(privyAccessToken, oAuthTokens.accessToken, oAuthTokens.refreshToken)
+                if (!accStore.isSessionCurrent(session)) return;
                 
                 if (!userInfo) {
                     console.error('privyLogin returned null or undefined')
@@ -200,10 +222,12 @@ export default function AuthLoading() {
                         identity: String(userInfo.twitterId),
                         accountType: 0,
                         userInfo,
+                        session,
                     });
                 }
                 emitter.emit('authSuccess', userInfo)
             } catch (error) {
+                if (!accStore.isSessionCurrent(session)) return;
                 console.error('Twitter OAuth token grant error:', error)
                 emitter.emit('authError', error)
             }

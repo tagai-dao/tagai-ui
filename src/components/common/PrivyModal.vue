@@ -11,6 +11,8 @@ import { transferEthTo } from '@/utils/wallets'
 import { parseEther } from 'viem'
 import { notify } from '@/utils/notify'
 import { useRouter } from 'vue-router'
+import { usePrivyStore } from '@/stores/privy'
+import { useI18n } from 'vue-i18n'
 import { useChainStore } from '@/stores/chain'
 
 const { profile, replaceEmptyProfile, gotoTwitter, updateBalance } = useAccount();
@@ -21,6 +23,7 @@ const emit = defineEmits(['close'])
 // 状态管理
 const modalStore = useModalStore()
 const accStore = useAccountStore()
+const { t } = useI18n()
 const router = useRouter()
 const chainStore = useChainStore()
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
@@ -106,11 +109,15 @@ const handleWithdraw = () => {
 }
 
 const handleDisconnectWallet = async () => {
-  // 处理断开钱包逻辑
-  console.log('断开钱包')
-  useAccount().logout();
-  router.replace('/');
-  closeModal()
+  if (accStore.loggingOut) return;
+  try {
+    await usePrivyStore().signOut();
+    closeModal();
+    await router.replace('/');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    notify({ type: 'error', message: t('session.logoutFailed') });
+  }
 }
 
 const handleConfirmWithdraw = async () => {
@@ -217,6 +224,8 @@ onUnmounted(() => {
             <!-- 断开钱包按钮 -->
             <button 
               @click="handleDisconnectWallet"
+              :disabled="accStore.loggingOut"
+              :aria-busy="accStore.loggingOut"
               class="w-full h-12 bg-grey-f0 rounded-full text-grey-normal font-medium hover:bg-grey-e6 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
             >
               {{ $t('web3.disconnect') }}

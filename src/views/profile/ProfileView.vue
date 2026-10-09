@@ -14,8 +14,9 @@ import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { useRoute, useRouter } from "vue-router";
-import {applyPureReactInVue} from "veaury";
-import LogoutOAuth from '@/react_app/Logout.jsx'
+import { usePrivyStore } from "@/stores/privy";
+import { useI18n } from "vue-i18n";
+import { notify } from "@/utils/notify";
 import { formatAddress, formatAmount, formatPrice } from "@/utils/helper";
 import { getIPshareSupplies, getIPshareBalances, getIPshareStaked } from "@/utils/ipshareAsset";
 import { getIPShareFee, getCapturedFee } from "@/apis/api";
@@ -26,7 +27,18 @@ import { useChainStore } from "@/stores/chain";
 import ProfileFinancePanel from '@/components/profile/ProfileFinancePanel.vue'
 import { useProfileScroll } from '@/composables/useProfileScroll'
 
-const ReactLogoutOAuth = applyPureReactInVue(LogoutOAuth);
+const { t } = useI18n();
+const privyStore = usePrivyStore();
+async function handleLogout() {
+  if (accStore.loggingOut) return;
+  try {
+    await privyStore.signOut();
+    await router.replace('/');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    notify({ type: 'error', message: t('session.logoutFailed') });
+  }
+}
 
 const accStore = useAccountStore()
 const ipshareStore = useIpshareData()
@@ -37,7 +49,7 @@ const tabOptions = ['post', 'blinksTweet', 'createCoin']
 const activeTab = ref('post')
 const { profileScroller, profileTabs, profileContent } = useProfileScroll(activeTab)
 const { onCopy } = useTools()
-const { profile, replaceEmptyProfile, gotoTwitter, vp, op, logout, updateBalance } = useAccount();
+const { profile, replaceEmptyProfile, gotoTwitter, vp, op, updateBalance } = useAccount();
 const { setInter } = useInterval()
 const router = useRouter()
 
@@ -195,7 +207,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div ref="profileScroller" class="profile-scroll-page" data-testid="profile-scroll">
+  <div v-if="accStore.getAccountInfo" ref="profileScroller" class="profile-scroll-page" data-testid="profile-scroll">
     <div class="bg-white py-3 px-3 rounded-2xl mx-3">
       <div class="flex gap-2 items-center">
         <div class="relative w-14 h-14 min-w-14">
@@ -265,12 +277,11 @@ onMounted(() => {
           <span>{{ accStore.getAccountInfo.followings }} {{ $t('profileView.followings') }}</span>
           <span>{{ accStore.getAccountInfo.followers }} {{ $t('profileView.followers') }}</span>
         </div>
-<!--        <button @click="logout();$router.replace('/')">-->
-<!--          <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">-->
-<!--        </button>-->
-        <div @click="logout();$router.replace('/')">
-          <ReactLogoutOAuth/>
-        </div>
+        <button type="button" @click.stop="handleLogout" :disabled="accStore.loggingOut"
+                :aria-label="$t('session.logout')" :aria-busy="accStore.loggingOut" class="p-2 disabled:opacity-50">
+          <i-ep-loading v-if="accStore.loggingOut" class="w-4 h-4 animate-spin"/>
+          <img v-else class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-logout.svg" alt="">
+        </button>
       </div>
       <div v-if="accStore.getAccountInfo.farcasterName && accStore.getAccountInfo.isAuthFarcaster" class="pl-14 flex justify-start items-center gap-3a mt-2">
         <img class="w-4 h-4" src="~@/assets/icons/icon-farcaster.svg" alt="">

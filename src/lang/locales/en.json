@@ -1,4 +1,5 @@
 {
+  "session": {"logout": "Log out", "logoutFailed": "Logout failed. Please try again."},
   "network": {
     "unavailable": "Connection temporarily unavailable. Check your network and retry.",
     "retry": "Loading failed. Tap to retry."

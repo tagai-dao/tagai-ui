@@ -33,6 +33,7 @@ const modalStore = useModalStore()
 const WrappedReactComponent = applyPureReactInVue(ReactApp);
 
 const handleReactLoginSuccess = async (accInfo: any) => {
+  if (accStore.loggingOut) return
   // Email completion can arrive after another login was started. It must never
   // consume a Twitter-only Blinks return target.
   if (Number(accInfo.accountType) === 1) clearBlinkLoginReturn()
@@ -83,6 +84,8 @@ const finishNewLoginIfNeeded = () => {
 
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
 const setWallet = async () => {
+  const session = accStore.sessionVersion
+  if (!accStore.isSessionCurrent(session)) return
   if (!accStore.getAccountInfo?.twitterId || !privyStore.ethersProvider) return
   // The login coordinator creates and verifies the embedded wallet before
   // publishing its address. Do not start a competing signature-based bind.
@@ -113,6 +116,7 @@ const setWallet = async () => {
     const accounts = await privyStore.ethersProvider.request({
       method: 'eth_requestAccounts'
     });
+    if (!accStore.isSessionCurrent(session) || !accStore.getAccountInfo) return
     // await 期间用户可能已用插件连上，再次保护
     if (isPluginWalletConnected()) return
 
@@ -129,11 +133,12 @@ const setWallet = async () => {
       await privyStore.initWallet()
     }
   } catch (error) {
+      if (!accStore.isSessionCurrent(session)) return
       console.error('Failed to set wallet:', error)
       handleErrorTip(error)
       await sleep(3)
   } finally {
-    finishNewLoginIfNeeded()
+    if (accStore.isSessionCurrent(session)) finishNewLoginIfNeeded()
   }
 }
 
@@ -155,7 +160,7 @@ const handleReactLoginError = async (error?: any) => {
 }
 
 const handleWalletProvider = async (provider: any) => {
-  console.log('init privy provider', provider)
+  if (accStore.loggingOut || !accStore.getAccountInfo) return
   usePrivyStore().ethersProvider = provider
 }
 
