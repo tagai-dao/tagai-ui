@@ -15,10 +15,10 @@ function setup(fetcher, initial = {}) {
     () => vue, exports, fetcher,
     (fn, ms) => { timers.set(fn, ms); return fn }, fn => timers.delete(fn),
     fn => { intervals.set(fn, true); return fn }, fn => intervals.delete(fn))
-  const input = vue.reactive({ chain: 'robinhood', token: '0xToken', preferred: '0xPreferred', enabled: true, ...initial })
+  const input = vue.ref({ chain: 'robinhood', token: '0xToken', preferred: '0xPreferred', enabled: true, ...initial })
   const scope = vue.effectScope()
-  const state = scope.run(() => exports.useDexScreenerPair(() => ({ ...input })))
-  return { ...state, input, scope, timers, intervals, poll: () => [...intervals.keys()][0]?.() }
+  const state = scope.run(() => exports.useDexScreenerPair(() => ({ ...input.value })))
+  return { ...state, get input() { return input.value }, replaceInput: value => { input.value = value }, scope, timers, intervals, poll: () => [...intervals.keys()][0]?.() }
 }
 const ok = rows => ({ ok: true, json: async () => rows })
 
@@ -43,7 +43,7 @@ test('selects the preferred pool, otherwise the most liquid matching pool, on bo
     s.scope.stop()
   }
 })
-test('HTTP and network failures fall back, and polling recovers automatically', async () => {
+test('initial HTTP and network failures fall back, but later metadata failures preserve the loaded chart', async () => {
   for (const failure of [async () => ({ ok: false }), async () => { throw new Error('offline') }]) {
     let response = failure
     const s = setup(() => response())
@@ -54,7 +54,7 @@ test('HTTP and network failures fall back, and polling recovers automatically', 
     assert.equal(s.useDexScreener.value, true)
     response = failure
     s.poll(); await flush()
-    assert.equal(s.useDexScreener.value, false)
+    assert.equal(s.useDexScreener.value, true)
     s.scope.stop()
   }
 })
@@ -96,5 +96,41 @@ test('iframe errors retain the native chart until the market changes; unlisted c
   assert.equal(s.useDexScreener.value, false)
   s.poll(); await flush()
   assert.equal(s.useDexScreener.value, false)
+  s.scope.stop()
+})
+
+test('15-second community object replacements retain the chart and do not restart discovery', async () => {
+  let calls = 0
+  const s = setup(async () => { calls++; return ok([market()]) })
+  await flush()
+  const confirmed = s.pair.value
+  const interval = [...s.intervals.keys()][0]
+  const chartTransitions = []
+  const stop = vue.watch(s.useDexScreener, value => chartTransitions.push(value), { flush: 'sync' })
+  for (let i = 0; i < 5; i++) {
+    s.replaceInput({ ...s.input, price: i, progress: i })
+    await flush()
+    assert.equal(s.pair.value, confirmed)
+  }
+  assert.equal(calls, 1)
+  assert.equal([...s.intervals.keys()][0], interval)
+  assert.deepEqual(chartTransitions, [])
+  stop()
+  s.scope.stop()
+})
+test('polling updates market metrics without switching pools or clearing a confirmed chart', async () => {
+  let rows = [market('robinhood', '0xToken', '0xFirst', 20)]
+  const s = setup(async () => ok(rows))
+  await flush()
+  rows = [{ ...market('robinhood', '0xToken', '0xFirst', 1), priceChange: { h24: 5 } }, market('robinhood', '0xToken', '0xSecond', 50)]
+  s.poll(); await flush()
+  assert.equal(s.pair.value.pairAddress, '0xFirst')
+  assert.equal(s.pair.value.priceChange.h24, 5)
+  for (const missing of [[], [market('robinhood', '0xToken', '0xSecond', 50)]]) {
+    rows = missing
+    s.poll(); await flush()
+    assert.equal(s.pair.value.pairAddress, '0xFirst')
+    assert.equal(s.useDexScreener.value, true)
+  }
   s.scope.stop()
 })

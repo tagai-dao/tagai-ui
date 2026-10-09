@@ -19,7 +19,15 @@ export function useDexScreenerPair(options: () => {
   const embedFailed = ref(false)
   const useDexScreener = computed(() => !!pair.value && !embedFailed.value)
 
-  watch(options, ({ chain, token, preferred, enabled }, _, cleanup) => {
+  // Community polling replaces its object. Compare primitive market identity
+  // so a price/progress refresh cannot unmount an already loaded iframe.
+  const context = computed(options)
+  watch([
+    () => context.value.chain,
+    () => context.value.token,
+    () => context.value.preferred,
+    () => context.value.enabled,
+  ] as const, ([chain, token, preferred, enabled], _, cleanup) => {
     pair.value = null
     embedFailed.value = false
     if (!enabled || !token) return
@@ -37,11 +45,15 @@ export function useDexScreenerPair(options: () => {
         const eligible: Pair[] = Array.isArray(rows) ? rows.filter(p =>
           p?.chainId === chain && typeof p.pairAddress === 'string' && p.pairAddress.trim()
           && typeof p.baseToken?.address === 'string' && p.baseToken.address.toLowerCase() === token!.toLowerCase()) : []
-        const next = eligible.find(p => p.pairAddress.toLowerCase() === preferred?.toLowerCase())
+        // Keep the confirmed pool for this market. Liquidity changes and
+        // metadata outages must not reset the chart's viewport or indicators.
+        const next = pair.value
+          ? eligible.find(p => p.pairAddress.toLowerCase() === pair.value!.pairAddress.toLowerCase()) || pair.value
+          : eligible.find(p => p.pairAddress.toLowerCase() === preferred?.toLowerCase())
           || eligible.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0] || null
         if (!disposed) pair.value = next
       } catch {
-        if (!disposed) pair.value = null
+        // A failed metadata lookup does not mean the loaded embed has failed.
       } finally {
         clearTimeout(timeout)
         controller = undefined
