@@ -1,0 +1,50 @@
+[
+  {
+    "address": "0xc9a981fee1f9dec688bb123ccdecc63d0debfc4e",
+    "ticker": "GLD",
+    "name": "GLD",
+    "logoUrl": "/images/basket-assets/gld.png"
+  },
+  {
+    "address": "0x92fd66527192e3e61d4ddd13322aa222de86f9b5",
+    "ticker": "SGOV",
+    "name": "SGOV",
+    "logoUrl": "/images/basket-assets/sgov.png"
+  },
+  {
+    "address": "0x03dfbbe0ac4e7bcdafd08ed41a400326b77d8c80",
+    "ticker": "JNJ",
+    "name": "JNJ",
+    "logoUrl": "/images/basket-assets/jnj.png"
+  },
+  {
+    "address": "0x411efb0e7f985935daec3d4c3ebaea0d0ad7d89f",
+    "ticker": "SLV",
+    "name": "SLV",
+    "logoUrl": "/images/basket-assets/slv.png"
+  },
+  {
+    "address": "0xa30fa36db767ad9ed3f7a60fc79526fb4d56d344",
+    "ticker": "USO",
+    "name": "USO",
+    "logoUrl": "/images/basket-assets/uso.png"
+  },
+  {
+    "address": "0x62fd0668e10d8b72339be2dcf7643001688ff13b",
+    "ticker": "MRVL",
+    "name": "MRVL",
+    "logoUrl": "/images/basket-assets/mrvl.png"
+  },
+  {
+    "address": "0x408c14038a04f7bd235329e26d2bf569ee20e250",
+    "ticker": "NU",
+    "name": "NU",
+    "logoUrl": "/images/basket-assets/nu.png"
+  },
+  {
+    "address": "0x5f10a1c971b69e47e059e1dc91901b59b3fb49c3",
+    "ticker": "CRWV",
+    "name": "CRWV",
+    "logoUrl": "/images/basket-assets/crwv.png"
+  }
+]

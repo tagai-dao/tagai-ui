@@ -89,7 +89,7 @@ async function createTagCoin() {
            @click="$router.replace('/')">
     </div>
     <div v-if="headerCommunity" class="flex min-w-0 flex-1 items-center gap-2 web:hidden">
-      <CommunityLogo :logo="headerCommunity.logo" size="sm" :shadow="false" class="shrink-0" />
+      <CommunityLogo :logo="headerCommunity.logo" :token="headerCommunity.token" :chain-id="headerCommunity.chainId ?? headerCommunity.chain_id" size="sm" :shadow="false" class="shrink-0" />
       <div class="min-w-0 flex-1">
         <span class="block truncate text-sm font-semibold text-content" :title="headerCommunity.tick">{{ headerCommunity.tick }}</span>
         <button type="button" class="flex max-w-full items-center gap-1 text-xs text-grey-64 py-1" :disabled="!headerCommunity.token"

@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { getCommunityLogoUrl } from '@/utils/communityLogo'
+import { stockCompanyLogo } from '@/utils/stockArtwork'
+import { useChainStore } from '@/stores/chain'
 
 type LogoSize = 'lg' | 'md' | 'sm' | 'xs'
 
 const props = withDefaults(defineProps<{
   logo?: string | null
+  token?: string | null
+  chainId?: number | null
   size?: LogoSize
   showAudio?: boolean
   shadow?: boolean
@@ -34,7 +38,10 @@ const SIZE_CONFIG: Record<LogoSize, { container: string; img: string }> = {
   },
 }
 
-const logoSrc = computed(() => getCommunityLogoUrl(props.logo))
+const chainStore = useChainStore()
+const logoChainId = computed(() => props.chainId ?? chainStore.activeChainId)
+const companyLogo = computed(() => stockCompanyLogo(logoChainId.value, props.token))
+const logoSrc = computed(() => getCommunityLogoUrl(props.logo, undefined, { chainId: logoChainId.value, token: props.token }))
 const sizeClass = computed(() => SIZE_CONFIG[props.size])
 </script>
 
@@ -49,7 +56,7 @@ const sizeClass = computed(() => SIZE_CONFIG[props.size])
     <img
       v-if="logoSrc"
       class="w-full h-full"
-      :class="sizeClass.img"
+      :class="[sizeClass.img, companyLogo ? 'object-contain p-1' : '']"
       :src="logoSrc"
       alt=""
     >

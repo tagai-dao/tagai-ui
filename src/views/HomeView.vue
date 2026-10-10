@@ -537,7 +537,7 @@ const onCreate = (type: GlobalModalType) => {
                :key="index">
             <div class="h-full pl-[10px] pr-[18px] rounded-lg shadow-sm bg-white w-full max-w-[138px] flex items-center gap-[18px]">
               <CommunityLogo
-                :logo="community.logo"
+                :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id"
                 size="sm"
                 :shadow="false"
                 class="z-30 web:!w-4 web:!h-4 web:!min-w-4 web:!min-h-4"

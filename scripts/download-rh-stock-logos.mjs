@@ -1,6 +1,9 @@
 // RH stocks use the same company artwork as BSC; only cache missing RH-only logos.
 import { access, readFile, writeFile } from 'node:fs/promises'
-const catalog = JSON.parse(await readFile(new URL('../src/utils/v14/rh-creation-assets.json', import.meta.url), 'utf8'))
+const catalog = [
+  ...JSON.parse(await readFile(new URL('../src/utils/v14/rh-creation-assets.json', import.meta.url), 'utf8')),
+  ...JSON.parse(await readFile(new URL('../src/utils/v14/rh-display-stock-assets.json', import.meta.url), 'utf8')),
+]
 const missing = []
 for (const asset of catalog) {
   if (!asset.logoUrl.startsWith('/images/basket-assets/')) continue

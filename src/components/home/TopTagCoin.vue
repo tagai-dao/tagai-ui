@@ -175,7 +175,7 @@ function gotoDetail(community: Community) {
         >
           <!-- Logo -->
           <div class="flex-shrink-0">
-            <CommunityLogo :logo="community.logo" size="md" />
+            <CommunityLogo :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" size="md" />
           </div>
           <!-- 名称 -->
           <div class="flex-1 min-w-0">

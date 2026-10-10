@@ -47,7 +47,7 @@ const change = computed(() => {
     <article class="compact-token-card flex web:hidden" role="button" tabindex="0">
       <div class="flex min-w-0 items-center gap-3">
         <div class="relative shrink-0">
-          <slot name="logo" :size="40"><CommunityLogo :logo="community.logo" size="md" :shadow="false" class="!rounded-full" /></slot>
+          <slot name="logo" :size="40"><CommunityLogo :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" size="md" :shadow="false" class="!rounded-full" /></slot>
           <div v-if="$slots['logo-badge']" class="absolute -right-1 -bottom-1 z-10" @click.stop @keydown.stop><slot name="logo-badge" /></div>
         </div>
         <div class="min-w-0">
@@ -67,7 +67,7 @@ const change = computed(() => {
     <!-- PC web: preserve the original information-rich token card. -->
     <div class="hidden web:flex bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 gap-3">
       <div class="relative w-20 h-20 min-w-20 min-h-20">
-        <slot name="logo" :size="80"><CommunityLogo :logo="community.logo" :show-audio="onlineSpace" /></slot>
+        <slot name="logo" :size="80"><CommunityLogo :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" :show-audio="onlineSpace" /></slot>
         <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
           <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
             {{ community.isImport ? $t('imported') : $t('listed') }}

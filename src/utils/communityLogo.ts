@@ -1,3 +1,5 @@
+import { stockCompanyLogo } from './stockArtwork'
+
 /** OSS 缩略图宽度，与详情页保持一致 */
 export const COMMUNITY_LOGO_OSS_WIDTH = 200
 
@@ -12,7 +14,9 @@ const COMMUNITY_LOGO_OVERRIDES: Record<string, string> = {
 }
 
 /** 社区 logo URL，tiptag OSS 图片统一加 resize 参数 */
-export function getCommunityLogoUrl(logo?: string | null, width = COMMUNITY_LOGO_OSS_WIDTH): string {
+export function getCommunityLogoUrl(logo?: string | null, width = COMMUNITY_LOGO_OSS_WIDTH, identity?: { chainId: number; token?: string | null }): string {
+  const companyLogo = identity && stockCompanyLogo(identity.chainId, identity.token)
+  if (companyLogo) return companyLogo
   if (!logo) return ''
   const resolvedLogo = COMMUNITY_LOGO_OVERRIDES[logo] ?? logo
   if (resolvedLogo.startsWith('https://tiptag')) {

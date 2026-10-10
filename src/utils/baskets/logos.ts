@@ -2,6 +2,7 @@ import type { Address } from 'viem'
 import { getBasketDeployment } from '@/config/baskets'
 import creationAssets from '@/utils/v13/creation-assets.json'
 import rhCreationAssets from '@/utils/v14/rh-creation-assets.json'
+import { stockCompanyLogo } from '@/utils/stockArtwork'
 
 type DexPair = {
   baseToken?: { address?: string }
@@ -20,6 +21,8 @@ const chainSlug = (chainId: number) => chainId === 56 ? 'bsc' : chainId === 4663
 
 export function presetBasketAssetLogo(chainId: number, address: string): string | null {
   const normalized = address.toLowerCase()
+  const companyLogo = stockCompanyLogo(chainId, normalized)
+  if (companyLogo) return companyLogo
   const catalog = chainId === 56 ? creationAssets : chainId === 4663 ? rhCreationAssets : []
   const creationLogo = catalog.find(asset => asset.address.toLowerCase() === normalized)?.logoUrl
   if (creationLogo) return creationLogo

@@ -551,6 +551,8 @@ onBeforeRouteLeave((to, from, next) => {
               <TokenFavoriteButton :token="comStore.currentSelectedCommunity" class="self-center" />
               <CommunityLogo
                 :logo="comStore.currentSelectedCommunity?.logo"
+                :token="comStore.currentSelectedCommunity?.token"
+                :chain-id="comStore.currentSelectedCommunity?.chainId ?? comStore.currentSelectedCommunity?.chain_id"
                 :show-audio="!!onlineSpace"
               >
                 <div v-if="comStore.currentSelectedCommunity?.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm
