@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {computed, onMounted, onUnmounted, ref} from "vue";
+import { readRhIndexTrades } from '@/utils/v14/history'
 import { getTokenTradeList } from "@/apis/api";
 import { useCommunityStore } from "@/stores/community";
 import type { TokenTrade } from "@/types";
@@ -48,11 +49,12 @@ const replaceEmptyProfile = (event: Event) => {
   image.src = emptyProfile
 }
 
+const loadTrades=(page=0)=>{const c=comStore.currentSelectedCommunity!;return chainStore.activeChainId===4663&&Number(c.version)===14?readRhIndexTrades(c.token,c.tick,page):getTokenTradeList(c.token,page)}
 const onLoad = async () => {
   if(finished.value || loading.value || listData.value.length == 0) return
   loading.value = true
   try{
-    const list = (await getTokenTradeList(comStore.currentSelectedCommunity!.token, Math.floor((listData.value.length - 1) / 30) + 1)) as TokenTrade[]
+    const list = (await loadTrades(Math.floor((listData.value.length - 1) / 30) + 1)) as TokenTrade[]
     listData.value = listData.value.concat(list)
     if (list.length < 30) {
       finished.value = true
@@ -72,7 +74,7 @@ const onRefresh = async () => {
     }
 
     finished.value = false;
-    const list = await getTokenTradeList(comStore.currentSelectedCommunity!.token)
+    const list = await loadTrades()
     listData.value = list as TokenTrade[]
     if (listData.value.length < 30) {
       finished.value = true;
@@ -89,7 +91,7 @@ onMounted(() => {
   onRefresh()
   emitter.on('newTrade', onRefresh);
   refreshTimer = setInterval(() => {
-    if (chainStore.activeChainId === 56 && !loading.value && listData.value.length <= 30) void onRefresh()
+    if ([56,4663].includes(chainStore.activeChainId) && !loading.value && listData.value.length <= 30) void onRefresh()
   }, 5000)
 })
 onUnmounted(() => {

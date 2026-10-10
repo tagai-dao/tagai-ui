@@ -79,6 +79,7 @@ export type BasketPerformanceSeries = BasketPerformance & {
 }
 
 export type BasketDetail = BasketSummary & {
+  engine?: Address
   decimals: number
   totalSupply: number
   effectiveSupply: number | null

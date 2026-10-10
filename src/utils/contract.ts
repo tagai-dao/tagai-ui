@@ -1,3 +1,5 @@
+import rhPump14Abi from './v14/RHPumpV14.json'
+import rhToken14Abi from './v14/RHTokenV14.json'
 import pump14Abi from './v14/Pump14.json'
 import pump13Abi from './v13/Pump13.json'
 import token13Abi from './v13/Token13.json'
@@ -119,9 +121,9 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
 
 /** V11 保持 V9 的现有调用 ABI；只替换部署地址。 */
 const resolveContractAbi = (contractName: string) => {
-    if (contractName === 'Pump14') return pump14Abi as Abi
+    if (contractName === 'Pump14') return (useChainStore().activeChainId === 4663 ? rhPump14Abi : pump14Abi) as Abi
     if (contractName === 'Pump13') return pump13Abi as Abi
-    if (contractName === 'Token13' || contractName === 'Token14') return token13Abi as Abi
+    if (contractName === 'Token13' || contractName === 'Token14') return (useChainStore().activeChainId === 4663 ? rhToken14Abi : token13Abi) as Abi
     const aliases: Record<string, keyof typeof abis> = {
         Pump11: 'Pump9',
         Token11: 'Token9',

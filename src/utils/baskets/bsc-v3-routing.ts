@@ -8,7 +8,7 @@ import {
   type Address,
   type Hex,
 } from 'viem'
-import { getBasketDeployment, getBasketProtocol, toContractPoolKey, type BasketPoolKey } from '@/config/baskets'
+import { getBasketDeployment, getBasketProtocol, toContractPoolKey, type BasketContracts, type BasketPoolKey } from '@/config/baskets'
 import { getChainDeployment } from '@/config/chains'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { pancakePoolManagerStateAbi, pancakeV4QuoterAbi, v3QuoterAbi, v4QuoterAbi } from './abis'
@@ -58,11 +58,13 @@ const quoteV4ExactInput = async (
   amountIn: bigint,
   chainId = 56,
   version = 3,
+  blockNumber?: bigint,
 ): Promise<bigint> => {
   const { result } = await getReadOnlyClient(chainId).simulateContract({
     address: getChainDeployment(chainId).dex.v4Quoter,
     abi: chainId === 56 ? pancakeV4QuoterAbi : v4QuoterAbi,
     functionName: 'quoteExactInputSingle',
+    blockNumber,
     args: [{
       poolKey: toContractPoolKey(pool, chainId),
       zeroForOne: sameAddress(pool.currency0, tokenIn),
@@ -80,12 +82,14 @@ const quoteV3ExactInput = async (
   fee: number,
   chainId = 56,
   version = 3,
+  blockNumber?: bigint,
 ): Promise<bigint> => {
   const deployment = getBasketDeployment(chainId)
   const { result } = await getReadOnlyClient(chainId).simulateContract({
     address: deployment.v3Quoter,
     abi: v3QuoterAbi,
     functionName: 'quoteExactInputSingle',
+    blockNumber,
     args: [{ tokenIn, tokenOut, amountIn, fee, sqrtPriceLimitX96: 0n }],
   })
   return result[0]
@@ -99,6 +103,7 @@ const quoteV2ExactInput = async (
   expectedPair?: Address,
   chainId = 56,
   version = 3,
+  blockNumber?: bigint,
 ): Promise<bigint> => {
   const client = getReadOnlyClient(chainId)
   const pair = await client.readContract({
@@ -106,14 +111,13 @@ const quoteV2ExactInput = async (
     abi: v2FactoryAbi,
     functionName: 'getPair',
     args: [tokenIn, tokenOut],
+    blockNumber,
   })
   if (sameAddress(pair, zeroAddress) || (expectedPair && !sameAddress(pair, expectedPair))) {
     throw new Error('Pancake V2 route is unavailable')
   }
-  const [token0, reserves] = await Promise.all([
-    client.readContract({ address: pair, abi: v2PairAbi, functionName: 'token0' }),
-    client.readContract({ address: pair, abi: v2PairAbi, functionName: 'getReserves' }),
-  ])
+  const fixedBlock=blockNumber??await client.getBlockNumber()
+  const [token0,reserves]=await client.multicall({blockNumber:fixedBlock,allowFailure:false,contracts:['token0','getReserves'].map(functionName=>({address:pair,abi:v2PairAbi,functionName}))}) as [Address,readonly [bigint,bigint,number]]
   const zeroForOne = sameAddress(token0, tokenIn)
   const reserveIn = BigInt(zeroForOne ? reserves[0] : reserves[1])
   const reserveOut = BigInt(zeroForOne ? reserves[1] : reserves[0])
@@ -129,38 +133,16 @@ type NutboxPool = {
   sourceData: Hex
 }
 
-const readNutboxPools = async (tokenIn: Address, tokenOut: Address, chainId = 56, version = 3): Promise<NutboxPool[]> => {
-  const protocol = getBasketProtocol(chainId, version)
-  if (!protocol.nutboxRouter) throw new Error('NutboxRouter is not configured')
-  const client = getReadOnlyClient(chainId)
-  const count = Number(await client.readContract({
-    address: protocol.nutboxRouter,
-    abi: nutboxRouterAbi,
-    functionName: 'routePoolCount',
-    args: [tokenIn, tokenOut],
-  }))
-  if (!count) throw new Error('Nutbox route is unavailable')
-  const ids = await Promise.all(Array.from({ length: count }, (_, index) => client.readContract({
-    address: protocol.nutboxRouter!,
-    abi: nutboxRouterAbi,
-    functionName: 'routePoolAt',
-    args: [tokenIn, tokenOut, BigInt(index)],
-  })))
-  return Promise.all(ids.map(async (id) => {
-    const row = await client.readContract({
-      address: protocol.nutboxRouter!,
-      abi: nutboxRouterAbi,
-      functionName: 'pricePool',
-      args: [id],
-    })
-    if (!row[0]) throw new Error('Nutbox route pool is disabled')
-    return {
-      token0: getAddress(row[2]),
-      token1: getAddress(row[3]),
-      sourceType: Number(row[4]),
-      sourceData: row[5],
-    }
-  }))
+type NutboxReadOptions={protocol?:BasketContracts;blockNumber?:bigint}
+const readNutboxPools = async (tokenIn:Address,tokenOut:Address,chainId=56,version=3,options: NutboxReadOptions={}):Promise<NutboxPool[]> => {
+ const protocol=options.protocol??getBasketProtocol(chainId,version),client=getReadOnlyClient(chainId)
+ if(!protocol.nutboxRouter)throw new Error('NutboxRouter is not configured')
+ const blockNumber=options.blockNumber??await client.getBlockNumber()
+ const count=Number(await client.readContract({address:protocol.nutboxRouter,abi:nutboxRouterAbi,functionName:'routePoolCount',args:[tokenIn,tokenOut],blockNumber}))
+ if(count<1||count>8)throw new Error('Nutbox route is unavailable')
+ const ids=await client.multicall({blockNumber,allowFailure:false,contracts:Array.from({length:count},(_,index)=>({address:protocol.nutboxRouter!,abi:nutboxRouterAbi,functionName:'routePoolAt',args:[tokenIn,tokenOut,BigInt(index)]}))}) as Hex[]
+ const rows=await client.multicall({blockNumber,allowFailure:false,contracts:ids.map(id=>({address:protocol.nutboxRouter!,abi:nutboxRouterAbi,functionName:'pricePool',args:[id]}))}) as readonly (readonly [boolean,number,Address,Address,number,Hex])[]
+ return rows.map(row=>{if(!row[0])throw new Error('Nutbox route pool is disabled');return {token0:getAddress(row[2]),token1:getAddress(row[3]),sourceType:Number(row[4]),sourceData:row[5]}})
 }
 
 const nextRouteToken = (
@@ -205,26 +187,29 @@ export const quoteNutboxExactInput = async (
   amountIn: bigint,
   chainId = 56,
   version = 3,
+  options: NutboxReadOptions = {},
 ): Promise<bigint> => {
   if (sameAddress(tokenIn, tokenOut)) return amountIn
   const deployment = getBasketDeployment(chainId)
-  const protocol = getBasketProtocol(chainId, version)
-  const pools = await readNutboxPools(tokenIn, tokenOut, chainId, version)
+  const protocol = options.protocol ?? getBasketProtocol(chainId, version)
+  const blockNumber=options.blockNumber??await getReadOnlyClient(chainId).getBlockNumber()
+  const pools = await readNutboxPools(tokenIn, tokenOut, chainId, version,{...options,blockNumber})
   let current = normalizeEndpoint(tokenIn, protocol.wrappedNative)
   let amount = amountIn
   for (const pool of pools) {
     const next = nextRouteToken(current, pool, protocol.wrappedNative)
     if (pool.sourceType === 0) {
       const [factory, pair] = decodeAbiParameters([{ type: 'address' }, { type: 'address' }], pool.sourceData)
-      amount = await quoteV2ExactInput(current, next, amount, factory, pair, chainId)
+      amount = await quoteV2ExactInput(current, next, amount, factory, pair, chainId,version,blockNumber)
     } else if (pool.sourceType === 1) {
       const [, v3Pool] = decodeAbiParameters([{ type: 'address' }, { type: 'address' }], pool.sourceData)
       const fee = await getReadOnlyClient(chainId).readContract({
         address: v3Pool,
         abi: v3PoolMetaAbi,
         functionName: 'fee',
+        blockNumber,
       })
-      amount = await quoteV3ExactInput(current, next, amount, Number(fee), chainId)
+      amount = await quoteV3ExactInput(current, next, amount, Number(fee), chainId,version,blockNumber)
     } else if (pool.sourceType === 2) {
       const [source] = decodeAbiParameters([{
         type: 'tuple', components: [
@@ -239,7 +224,7 @@ export const quoteNutboxExactInput = async (
       }
       const actualInput = sameAddress(normalizeEndpoint(source.currency0, protocol.wrappedNative), current)
         ? source.currency0 : source.currency1
-      amount = await quoteV4ExactInput(sourcePool, actualInput, amount, chainId)
+      amount = await quoteV4ExactInput(sourcePool, actualInput, amount, chainId,version,blockNumber)
     } else if (pool.sourceType === 3) {
       const source = decodePancakeV4Source(pool.sourceData)
       const sourcePool: BasketPoolKey = {
@@ -254,7 +239,7 @@ export const quoteNutboxExactInput = async (
       const actualInput = sameAddress(normalizeEndpoint(source.currency0, protocol.wrappedNative), current)
         ? source.currency0
         : source.currency1
-      amount = await quoteV4ExactInput(sourcePool, actualInput, amount, chainId)
+      amount = await quoteV4ExactInput(sourcePool, actualInput, amount, chainId,version,blockNumber)
     } else {
       // No Uniswap V4 quoter is configured on BSC. Reject instead of creating
       // an unsafe minOut from a fee-free spot quote.
@@ -281,8 +266,9 @@ const quoteDirect = async (
   amountIn: bigint,
   chainId = 56,
   version = 3,
+  options: NutboxReadOptions = {},
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, version)
+  const protocol = options.protocol ?? getBasketProtocol(chainId, version)
   if (route.venue === 0) return quoteV4ExactInput(route.v4Pool, tokenIn, amountIn, chainId)
   if (route.venue === 1) return quoteV3ExactInput(tokenIn, tokenOut, amountIn, route.v3Fee, chainId)
   if (route.venue === 2) {

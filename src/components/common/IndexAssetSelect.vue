@@ -5,6 +5,7 @@ import { ElSelect, ElOption } from 'element-plus'
 import 'element-plus/es/components/select/style/css'
 import type { CreationOptions } from '@/utils/v13/creation'
 import catalog from '@/utils/v13/creation-assets.json'
+import rhCatalog from '@/utils/v14/rh-creation-assets.json'
 
 type Asset = CreationOptions['assets'][number]
 const props = defineProps<{ modelValue: string; assets: Asset[]; excluded: string[]; label: string; unavailableLabel: string; disabled?: boolean }>()
@@ -12,7 +13,7 @@ const emit = defineEmits<{ (e: 'update:modelValue', address: `0x${string}`): voi
 const { t } = useI18n()
 const failedLogos = ref(new Set<string>())
 const query = ref('')
-const catalogByAddress = new Map(catalog.map(asset => [asset.address.toLowerCase(), asset]))
+const catalogByAddress = new Map([...catalog,...rhCatalog].map(asset => [asset.address.toLowerCase(), asset]))
 const metadata = (asset: Asset) => catalogByAddress.get(asset.address.toLowerCase())
 const filteredAssets = computed(() => {
   const search = query.value.trim().toLowerCase()

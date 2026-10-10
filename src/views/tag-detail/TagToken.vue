@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isIndexToken } from '@/utils/v14/chain'
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { useCommunityStore } from "@/stores/community";
 import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch, nextTick } from "vue";
@@ -11,7 +12,8 @@ import { handleErrorTip } from "@/utils/notify";
 import { TotalSupply, SocialSupply, ListSupply, PUMP9_VERSION, PUMP11_VERSION, TipTagSwapHook9, TipTagSwapHook11, PCSCLPoolManager, PCSVault } from '@/config'
 import UserAvatar from "@/components/common/UserAvatar.vue";
 import SafeAvatar from '@/components/common/SafeAvatar.vue'
-import { getBlockNumber } from "@/utils/wallets";
+import { abis } from '@/utils/abis'
+import { getReadOnlyClient, getBlockNumber } from "@/utils/wallets";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract5, PumpContract6, PumpContract7 } from "@/config";
 import { getV9DailyRewards, getV10DistributionInfo, type V10DistributionInfo, injectTokens } from "@/utils/pump";
 import { readContract } from "@/utils/contract";
@@ -19,7 +21,7 @@ import { useAccountStore } from "@/stores/web3";
 import { useModalStore } from "@/stores/common";
 import { GlobalModalType } from "@/types";
 import { EthWalletState } from "@/stores/web3";
-import { parseUnits, formatUnits, isAddress, zeroAddress } from "viem";
+import { parseUnits, formatUnits, isAddress, zeroAddress, type Abi } from "viem";
 import VueApexCharts from "vue3-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { useI18n } from "vue-i18n";
@@ -58,7 +60,7 @@ const { t } = useI18n();
 const { onCopy } = useTools();
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
-const isV13 = computed(() => chainStore.activeChainId === 56 && [13, 14].includes(Number(comStore.currentSelectedCommunity?.version)))
+const isV13 = computed(() => isIndexToken(chainStore.activeChainId, comStore.currentSelectedCommunity?.version))
 const v13HolderLabels = ref<Record<string, HolderLabel>>({})
 let v13HolderRequest = 0
 const v13HolderLabel = (address: string) => {
@@ -259,10 +261,8 @@ async function loadV9HolderAddresses() {
 
   try {
     const tokenAddr = token as `0x${string}`
-    const [community, socialPool] = await Promise.all([
-      readContract('Token9', 'nutboxCommunity', [], tokenAddr) as Promise<string>,
-      readContract('Token9', 'nutboxSocialPool', [], tokenAddr) as Promise<string>,
-    ])
+    const client=getReadOnlyClient(chainStore.activeChainId),blockNumber=await client.getBlockNumber()
+    const [community,socialPool]=await client.multicall({blockNumber,allowFailure:false,contracts:['nutboxCommunity','nutboxSocialPool'].map(functionName=>({address:tokenAddr,abi:abis.Token9 as Abi,functionName}))}) as [string,string]
     v9NutboxCommunityAddr.value = community && community !== zeroAddress ? community : ''
     v9SocialPoolAddr.value = socialPool && socialPool !== zeroAddress ? socialPool : ''
 

@@ -11,13 +11,15 @@ export type Pool = {
     taxedToken?: Address;
     hookFeeBps?: number;
     poolId?: Hex;
+    v4Protocol?: 'uniswap-v4' | 'pancake-v4';
     key?: {
         currency0: Address;
         currency1: Address;
         hooks: Address;
-        poolManager: Address;
+        poolManager?: Address;
         fee: number;
-        parameters: Hex;
+        parameters?: Hex;
+        tickSpacing?: number;
     };
     coverageLower?: number;
     coverageUpper?: number;

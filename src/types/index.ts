@@ -485,6 +485,9 @@ export type CommunityCredit = {
 }
 
 export type TokenTrade = {
+  amountRaw?: string,
+  nativeAmountRaw?: string,
+  transactionHash?: string,
   tick: string,
   trader: string,
   username?: string | null,

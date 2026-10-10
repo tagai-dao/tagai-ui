@@ -1,3 +1,4 @@
+import { getIndexDeployment } from '../v14/chain';
 import { getChainDeployment } from '@/config/chains';
 import { get } from '@/apis/axios';
 import { API_BASE_URL } from '@/config/api';
@@ -19,6 +20,7 @@ export type Quote = {
 export function createQuoteSession() {
     let metadata: Metadata | undefined, snapshot: Snapshot | undefined, previous: Plan | undefined, worker: Worker | undefined;
     let generation = 0;
+    let sessionChainId: number | undefined;
     let metadataController = new AbortController();
     let rejectPending: ((reason: Error) => void) | undefined;
     let metadataPending: {
@@ -31,6 +33,8 @@ export function createQuoteSession() {
     const cancel = () => { generation++; worker?.terminate(); worker = undefined; rejectPending?.(new QuoteError('V13_QUOTE_CANCELLED')); rejectPending = undefined; };
     const reset = () => { cancel(); metadataController.abort(); metadataController = new AbortController(); metadata = undefined; snapshot = undefined; previous = undefined; metadataPending = undefined; snapshotPending = undefined; };
     async function quote(token: Address, isBuy: boolean, amount: bigint): Promise<Quote> {
+        const chainId=useChainStore().activeChainId;
+        if(sessionChainId!==chainId){reset();sessionChainId=chainId;}
         cancel();
         const id = generation;
         if (metadata && metadata.token.toLowerCase() !== token.toLowerCase()) {
@@ -46,7 +50,7 @@ export function createQuoteSession() {
                         try {
                             const signal = metadataController.signal;
                             r = await requestMetadata(() => get(`${API_BASE_URL}/pump/v13/metadata/${token}`, {}, {
-                                headers: { 'X-Chain-Id': '56' }, timeout: 10_000, signal, 'axios-retry': { retries: 0 },
+                                headers: { 'X-Chain-Id': String(chainId) }, timeout: 10_000, signal, 'axios-retry': { retries: 0 },
                             }), signal);
                         } catch (error: any) {
                             if ((error as Error).message === 'V13_QUOTE_CANCELLED') throw error;
@@ -56,7 +60,10 @@ export function createQuoteSession() {
                         if (r?.error === 'V13_METADATA_PREPARING') throw new QuoteError('V13_METADATA_PREPARING');
                         if (r?.c !== 0 || typeof r?.d?.token !== 'string' || r.d.token.toLowerCase() !== key)
                             throw new QuoteError('V13_METADATA_UNAVAILABLE');
-                        return { ...r.d, executor: getChainDeployment(56).contracts.tradeRouterMultiPump ?? null } as Metadata;
+                        const profile=getIndexDeployment(chainId,r.d.version);
+                        if(r.d.chainId!==chainId || r.d.pump?.toLowerCase()!==profile.pump?.toLowerCase() || r.d.nutboxRouter?.toLowerCase()!==profile.nutboxRouter?.toLowerCase() || r.d.multicall?.toLowerCase()!==profile.deployment.multiConfig.multicallAddress.toLowerCase()) throw new QuoteError('V13_INVALID_METADATA');
+                        if(r.d.pools?.some((p:any)=>p.kind==='v4' && (p.address?.toLowerCase()!==profile.deployment.dex.v4PoolManager.toLowerCase() || (p.token0?.toLowerCase()===r.d.token.toLowerCase() || p.token1?.toLowerCase()===r.d.token.toLowerCase()) && p.key?.hooks?.toLowerCase()!==profile.hook?.toLowerCase()))) throw new QuoteError('V13_INVALID_METADATA');
+                        return { ...r.d, executor: profile.executor ?? null } as Metadata;
                     })() };
             const pending = metadataPending;
             let value: Metadata;
@@ -68,17 +75,17 @@ export function createQuoteSession() {
                     metadataPending = undefined;
                 throw e;
             }
-            if (id !== generation)
+            if (id !== generation || useChainStore().activeChainId !== chainId)
                 throw new QuoteError('V13_QUOTE_CANCELLED');
             metadata = value;
             snapshot = undefined;
             if (metadataPending === pending)
                 metadataPending = undefined;
         }
-        if (id !== generation)
+        if (id !== generation || useChainStore().activeChainId !== chainId)
             throw new QuoteError('V13_QUOTE_CANCELLED');
         if (!snapshot || Date.now() - snapshot.fetchedAt > 10000) {
-            const client = getReadOnlyClient(56);
+            const client = getReadOnlyClient(chainId);
             const key = metadata.configHash;
             if (!snapshotPending || snapshotPending.key !== key)
                 snapshotPending = { key, promise: ((m: Metadata) => Promise.all([quoteGasPrice(client), loadSnapshot(client, m, 0n)])
@@ -97,13 +104,13 @@ export function createQuoteSession() {
                 }
                 throw e;
             }
-            if (id !== generation)
+            if (id !== generation || useChainStore().activeChainId !== chainId)
                 throw new QuoteError('V13_QUOTE_CANCELLED');
             snapshot = value;
             if (snapshotPending === pending)
                 snapshotPending = undefined;
         }
-        if (id !== generation)
+        if (id !== generation || useChainStore().activeChainId !== chainId)
             throw new QuoteError('V13_QUOTE_CANCELLED');
         const m = metadata, s = snapshot;
         worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
@@ -116,7 +123,7 @@ export function createQuoteSession() {
         });
         worker?.terminate();
         worker = undefined;
-        if (id !== generation)
+        if (id !== generation || useChainStore().activeChainId !== chainId)
             throw new QuoteError('V13_QUOTE_CANCELLED');
         previous = plan;
         return { metadata: m, snapshot: s, plan };
@@ -140,16 +147,16 @@ export async function executeQuote(q: Quote, subject: Address, slippageBps: numb
     const guard = () => {
         if (!isAddress(account ?? ''))
             throw new QuoteError('V13_ACCOUNT_CHANGED');
-        if (useChainStore().activeChainId !== 56 || useAccountStore().ethConnectAddress?.toLowerCase() !== account.toLowerCase())
+        if (useChainStore().activeChainId !== q.metadata.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== account.toLowerCase())
             throw new QuoteError('V13_ACCOUNT_CHANGED');
         if (Date.now() - q.snapshot.fetchedAt > 60000)
             throw new QuoteError('V13_QUOTE_EXPIRED');
         if (!q.snapshot.executable || !q.metadata.executor || q.metadata.executor === zeroAddress
-            || q.metadata.executor.toLowerCase() !== getChainDeployment(56).contracts.tradeRouterMultiPump?.toLowerCase())
+            || q.metadata.executor.toLowerCase() !== getIndexDeployment(q.metadata.chainId,q.metadata.version).executor?.toLowerCase())
             throw new QuoteError('V13_EXECUTOR_UNAVAILABLE');
     };
     guard();
-    const client = getReadOnlyClient(56), wallet = await getPreparedWalletClient(56);
+    const client = getReadOnlyClient(q.metadata.chainId), wallet = await getPreparedWalletClient(q.metadata.chainId);
     if (!wallet)
         throw new QuoteError('V13_ACCOUNT_CHANGED');
     guard();

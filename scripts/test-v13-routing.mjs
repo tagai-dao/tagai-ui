@@ -17,7 +17,7 @@ const pool = (id, a = wrapped, b = token) => ({ id, address: address(10 + id), k
 function fixture() {
     const pools = [pool(0), pool(1)];
     const routes = pools.map((p, i) => ({ index: i, asset: token, pools: [p.id], registry: [] }));
-    const m = { schemaVersion: 1, abiVersion: 'ipshare-subject-v1', chainId: 56, version: 13, token, wrappedNative: wrapped, pump: address(4), nutboxRouter: address(5), multicall: address(6), executor: null, pools, routes };
+    const m = { schemaVersion: 1, abiVersion: 'ipshare-subject-v1', chainId: 56, version: 13, token, wrappedNative: wrapped, pump: address(4), nutboxRouter:'0x72dc4F38A7E4159e97d826a6ab594748C6b68f17',multicall:'0xcA11bde05977b3631167028862bE2a173976CA11', executor: null, pools, routes };
     const s = { block: 1n, timestamp: 1, fetchedAt: Date.now(), gasPrice: 0n, pools: Object.fromEntries(pools.map(p => [p.id, { valid: true, reserve0: 10n * E, reserve1: 1000n * E }])), routes, hashes: {}, executable: false };
     return { m, s };
 }
@@ -86,10 +86,10 @@ const reads = parseAbi([
 ]);
 function snapshotFixture({ unknown = false, failed = false, changed = false, pending = false, supported = true, failedAdmission = false, wrongRouter = false } = {}) {
     const { m } = fixture();
-    m.pools = [{ ...pool(0, zeroAddress, token), id: 'main', kind: 'v4', tickSpacing: 60, poolId: hash(44), words: [-1, 0], ticks: [-60, 60] }];
+    m.pools = [{ ...pool(0, zeroAddress, token), id: 'main',address:'0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b',key:{hooks:'0xaC29EaEb5764A83f7Ed03240EA2aF54018210cc1'},kind: 'v4', tickSpacing: 60, poolId: hash(44), words: [-1, 0], ticks: [-60, 60] }];
     m.routes = [{ index: 0, asset: token, pools: ['main'], registry: [{ id: hash(42), sourceType: 3, sourceData: '0x1234', token0: wrapped, token1: token, pool: 'main' }] }];
     let calls = 0;
-    const client = { readContract: async (req) => {
+    const client = { getBlockNumber:async()=>100n,readContract: async (req) => {
             calls++;
             assert.equal(req.functionName, 'aggregate3');
             return req.args[0].map(call => {
@@ -262,9 +262,9 @@ await build({ entryPoints: ['src/utils/v13/client.ts'], bundle: true, platform: 
                 b.onLoad({ filter: /.*/, namespace: 'test-io' }, args => ({ contents: ({
                         '@/apis/axios': 'export const get=(...a)=>globalThis.__v13Deps.get(...a)',
                         '@/config/api': "export const API_BASE_URL='http://test'",
-                        '@/config/chains': "export const getChainDeployment=()=>({contracts:{tradeRouterMultiPump:'0x000000000000000000000000000000000000005a'}})",
+                        '@/config/chains': "export const getChainDeployment=()=>({contracts:{pump13:'0x0000000000000000000000000000000000000004',tradeRouterMultiPump:'0x000000000000000000000000000000000000005a'},multiConfig:{multicallAddress:'0xcA11bde05977b3631167028862bE2a173976CA11'},dex:{v4PoolManager:'0xa0FfB9c1CE1Fe56963B0321B32E7A0302114058b'}})",
                         '@/utils/wallets': 'export const getReadOnlyClient=()=>globalThis.__v13Deps.client; export const getPreparedWalletClient=async()=>globalThis.__v13Deps.wallet; export const setup=async()=>{}',
-                        '@/stores/chain': 'export const useChainStore=()=>globalThis.__v13Deps.chain',
+                        '@/stores/chain': 'export const useChainStore=()=>globalThis.__v13Deps.chain??{activeChainId:56}',
                         '@/stores/web3': 'export const useAccountStore=()=>globalThis.__v13Deps.account',
                     })[args.path], loader: 'js' }));
             } }] });
@@ -319,7 +319,7 @@ test('stale server ticks discard local metadata so the next quote fetches fresh 
     const stale=snapshotFixture({unknown:true}),fresh=snapshotFixture();let bad=true,getCount=0;
     for(const f of [stale,fresh]){f.m.generatedAt=Date.now();f.m.configHash=hash(77);f.m.tickDiscovery='server'}
     globalThis.__v13Deps={get:async()=>{getCount++;return {c:0,d:bad?stale.m:fresh.m}},
-        client:{getGasPrice:async()=>1n,readContract:req=>(bad?stale.client:fresh.client).readContract(req)}};
+        client:{getGasPrice:async()=>1n,getBlockNumber:async()=>100n,readContract:req=>(bad?stale.client:fresh.client).readContract(req)}};
     const session=createQuoteSession();
     await assert.rejects(session.quote(token,false,E),/V13_METADATA_PREPARING/);
     assert.equal(stale.count(),1);assert.equal(getCount,1);

@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { creationFeeAllocation, creationFeeExample, creatorPercentToBps } from '@/utils/v13/creation-fees'
 
-const props = defineProps<{ feeBps: number; creatorBps: number; disabled?: boolean }>()
+const props = defineProps<{ feeBps: number; creatorBps: number; quoteSymbol?:string; nativeSymbol?:string; disabled?: boolean }>()
 const emit = defineEmits<{ (e: 'update:feeBps', value: number): void; (e: 'update:creatorBps', value: number): void }>()
 const { t, locale } = useI18n()
 const allocation = computed(() => creationFeeAllocation(props.creatorBps))
@@ -31,9 +31,9 @@ const money = (value: number) => new Intl.NumberFormat(locale.value, { maximumFr
     <ul class="allocation-legend">
       <li v-for="part in parts" :key="part.key"><span class="legend-dot" :class="part.key" /><span>{{ t(`v13Create.allocation${part.key[0].toUpperCase()}${part.key.slice(1)}`) }}<b>{{ number(part.value) }}%</b></span></li>
     </ul>
-    <p v-if="validFee" class="fee-summary" aria-live="polite">{{ t('v13Create.compactFeeExample', { fee: money(example.fee), creator: money(example.creator) }) }}</p>
+    <p v-if="validFee" class="fee-summary" aria-live="polite">{{ t('v13Create.compactFeeExample', { fee: money(example.fee), creator: money(example.creator), currency: quoteSymbol ?? 'USDT' }) }}</p>
     <p v-else class="fee-warning" role="status">{{ t('v13Create.totalFeeRange') }}</p>
-    <details class="allocation-details"><summary>{{ t('v13Create.feeDetails') }}</summary><p>{{ t('v13Create.allocationRules') }}</p><p>{{ t('v13Create.feeSettlement') }}</p></details>
+    <details class="allocation-details"><summary>{{ t('v13Create.feeDetails') }}</summary><p>{{ t('v13Create.allocationRules') }}</p><p>{{ t('v13Create.feeSettlement',{currency:nativeSymbol ?? 'WBNB'}) }}</p></details>
   </div>
 </template>
 

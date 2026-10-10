@@ -72,12 +72,13 @@ const cacheKey = (chainId: number, address: string) => `${chainId}:${address.toL
 const isFresh = (at: number) => Date.now() - at < CACHE_TTL_MS
 const ok = <T>(row: MulticallRow | undefined): T | null => row?.status === 'success' ? row.result as T : null
 
-const multicall = async (client: PublicClient, contracts: MulticallContract[]): Promise<MulticallRow[]> => {
+const multicall = async (client: PublicClient, contracts: MulticallContract[], blockNumber?:bigint): Promise<MulticallRow[]> => {
   if (!contracts.length) return []
   return client.multicall({
     contracts: contracts as Parameters<PublicClient['multicall']>[0]['contracts'],
     allowFailure: true,
     multicallAddress: MULTICALL3,
+    blockNumber,
   }) as Promise<MulticallRow[]>
 }
 
@@ -283,6 +284,8 @@ export const getBasketDetail = async (
   if (!options.force && cached && isFresh(cached.at)) return cached.data
 
   const client = getReadOnlyClient(chainId)
+  const blockNumber=await client.getBlockNumber()
+  const fixedRead=(contracts:MulticallContract[])=>multicall(client,contracts,blockNumber)
   let registered: RegisteredBasket | null = null
   try {
     registered = await getRegisteredBasket(address, chainId)
@@ -291,7 +294,8 @@ export const getBasketDetail = async (
   }
 
   if (registered) {
-    const contractsConfig = getBasketProtocol(chainId, registered.version)
+    const tokenEngine=await client.readContract({address,abi:getBasketTokenAbi(chainId,registered.version),functionName:'engine',blockNumber}) as Address
+    const contractsConfig = getBasketProtocol(chainId, registered.version,tokenEngine)
     const tokenAbi = getBasketTokenAbi(chainId, registered.version)
     const executorAbi = getRebalanceExecutorAbi(chainId, registered.version)
     const bscV3 = isBscBasketV3(chainId, registered.version)
@@ -336,7 +340,7 @@ export const getBasketDetail = async (
     })
     if (!bscV3) contracts.push(hubStateContract(deployment))
 
-    const rows = await multicall(client, contracts)
+    const rows = await fixedRead(contracts)
     const creatorPayout = ok<Address>(rows[0])
     const launcher = ok<Address>(rows[1])
     const totalSupplyRaw = ok<bigint>(rows[2]) ?? 0n
@@ -410,13 +414,14 @@ export const getBasketDetail = async (
       createdAt: registered.createdAt,
       lastRebalanceAt: Number(ok<bigint>(rows[4]) ?? 0n),
       holdings,
+      engine,
       updatedAt: new Date().toISOString(),
     }
     detailCache.set(key, { at: Date.now(), data: detail })
     return detail
   }
 
-  const meta = await multicall(client, [
+  const meta = await fixedRead([
     { address, abi: defaultTokenAbi, functionName: 'name' },
     { address, abi: defaultTokenAbi, functionName: 'symbol' },
     { address, abi: defaultTokenAbi, functionName: 'decimals' },
@@ -447,7 +452,7 @@ export const getBasketDetail = async (
   const effectiveSupplyRaw = ok<bigint>(meta[9]) ?? 0n
   const creator = ok<Address>(meta[10])
   const version = Number(ok<number>(meta[11]) ?? 0)
-  const contractsConfig = getBasketProtocol(chainId, version)
+  const contractsConfig = getBasketProtocol(chainId, version,ok<Address>(meta[14]) ?? undefined)
   const tokenAbi = getBasketTokenAbi(chainId, version)
   const executorAbi = getRebalanceExecutorAbi(chainId, version)
   const bscV3 = isBscBasketV3(chainId, version)
@@ -459,7 +464,7 @@ export const getBasketDetail = async (
     throw new Error('This Basket belongs to an unsupported protocol deployment')
   }
 
-  const legs = await multicall(client, [
+  const legs = await fixedRead([
     ...Array.from({ length }, (_, index) => ({
       address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(index)],
     })),
@@ -511,7 +516,7 @@ export const getBasketDetail = async (
     }
     assetMetaReads.push({ symbolIndex, decimalsIndex, quoteIndex })
   })
-  const assetMeta = await multicall(client, assetMetaContracts)
+  const assetMeta = await fixedRead(assetMetaContracts)
   const hubSqrtPrice = bscV3 ? 0n : await getHubSqrtPrice(client, deployment)
 
   const holdings: BasketHolding[] = assets.map((leg, index) => {
@@ -573,6 +578,7 @@ export const getBasketDetail = async (
     createdAt,
     lastRebalanceAt,
     holdings,
+      engine,
     updatedAt: new Date().toISOString(),
   }
   detailCache.set(key, { at: Date.now(), data: detail })
@@ -640,8 +646,11 @@ export const listBaskets = async (
     reads.push(read)
   }
 
+  const valuationBlock=await client.getBlockNumber()
+  const engines=await multicall(client,registered.map(basket=>({address:basket.address,abi:getBasketTokenAbi(chainId,basket.version),functionName:'engine'})),valuationBlock)
+
   registered.forEach((basket, basketIndex) => {
-    const contractsConfig = getBasketProtocol(chainId, basket.version)
+    const contractsConfig = getBasketProtocol(chainId,basket.version,ok<Address>(engines[basketIndex])??undefined)
     const tokenAbi = getBasketTokenAbi(chainId, basket.version)
     const executorAbi = getRebalanceExecutorAbi(chainId, basket.version)
     const bscV3 = isBscBasketV3(chainId, basket.version)
@@ -683,7 +692,7 @@ export const listBaskets = async (
     { kind: 'hubPrice' },
   )
 
-  const results = await multicall(client, contracts).catch(error => {
+  const results = await multicall(client, contracts,valuationBlock).catch(error => {
     console.warn('[baskets] live valuation unavailable; using API snapshots', error)
     return [] as MulticallRow[]
   })

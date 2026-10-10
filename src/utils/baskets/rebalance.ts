@@ -15,7 +15,7 @@ const applyInputCeiling = (amount: bigint, bps: number) =>
   amount === 0n ? 0n : (amount * BigInt(10_000 + bps) + 9_999n) / 10_000n
 
 const buildBscV3RebalanceLimits = async (detail: BasketDetail, slippageBps: number) => {
-  const protocol = getBasketProtocol(detail.chainId, detail.version)
+  const protocol = getBasketProtocol(detail.chainId, detail.version,detail.engine)
   const client = getReadOnlyClient(detail.chainId)
   const abi = getRebalanceExecutorAbi(detail.chainId, detail.version)
   const raw: any = await client.readContract({
@@ -100,7 +100,7 @@ export const buildRebalanceLimits = async (detail: BasketDetail, slippageBps: nu
     }
   }
   const deployment = getBasketDeployment(detail.chainId)
-  const protocol = getBasketProtocol(detail.chainId, detail.version)
+  const protocol = getBasketProtocol(detail.chainId, detail.version,detail.engine)
   const tokenAbi = getBasketTokenAbi(detail.chainId, detail.version)
   const executorAbi = getRebalanceExecutorAbi(detail.chainId, detail.version)
   const quoteAssetFunction = detail.chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'

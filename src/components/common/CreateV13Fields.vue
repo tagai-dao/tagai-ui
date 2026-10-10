@@ -60,7 +60,7 @@ function distribute() {
         </template>
         <div class="pool-note"><strong>{{ t('v13Create.poolTitle') }}</strong><p>{{ ready && modelValue.constituentAssets.length ? t('v13Create.poolHelp', { count: modelValue.constituentAssets.length }) : t('v13Create.poolIntro') }}</p></div>
         <TradeMiningFields :model-value="tradeRewardRatioBps ?? 0" :options="options" :index="modelValue" :disabled="disabled || !ready" @update:model-value="emit('update:tradeRewardRatioBps', $event)" />
-        <IndexFeeAllocation :fee-bps="modelValue.basketFeeBps" :creator-bps="modelValue.creatorShareBps" :disabled="disabled" @update:fee-bps="patch({ basketFeeBps: $event })" @update:creator-bps="patch({ creatorShareBps: $event })" />
+        <IndexFeeAllocation :native-symbol="options?.chainId===4663?'WETH':'WBNB'" :quote-symbol="options?.chainId===4663?'USDG':'USDT'" :fee-bps="modelValue.basketFeeBps" :creator-bps="modelValue.creatorShareBps" :disabled="disabled" @update:fee-bps="patch({ basketFeeBps: $event })" @update:creator-bps="patch({ creatorShareBps: $event })" />
       </fieldset>
     </section>
   </div>

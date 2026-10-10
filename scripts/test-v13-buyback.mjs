@@ -13,11 +13,11 @@ await build({ entryPoints: ['src/utils/v13/buyback.ts'], bundle: true, platform:
   b.onResolve({ filter: /^@\// }, a => a.path.endsWith('/hook-data') ? { path: join(process.cwd(), 'src/utils/baskets/hook-data.ts') } : { path: a.path, namespace: 'fixture' })
   b.onResolve({ filter: /^\.\/pools$/ }, a => a.importer.endsWith('buyback.ts') ? { path: a.path, namespace: 'fixture' } : undefined)
   b.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ loader: 'js', contents: `
-    export const getReadOnlyClient=()=>globalThis.__buyback.client;
+    export const useChainStore=()=>({activeChainId:56});export const RH_PUMP14_BASKET_PROTOCOL={};export const getReadOnlyClient=()=>globalThis.__buyback.client;
     export const getChainDeployment=()=>({contracts:{pump13:'${pump}'},multiConfig:{multicallAddress:'${addr(30)}'}});
     export const getBasketProtocol=()=>({nutboxRouter:'${nutbox}',swapRouter:'${basketRouter}',settlementToken:'${settlement}',registry:'${addr(31)}',hook:'${addr(32)}'});
     export const quoteNutboxExactInput=async()=>10000n;
-    export const walletGuard=()=>({account:globalThis.__buyback.account,check(){}});
+    export const walletGuard=()=>({chainId:56,account:globalThis.__buyback.account,check(){}});
     export const send=async(...args)=>{globalThis.__buyback.sent.push(args);return '0xhash'};
     export const BASKET_DEFAULT_SLIPPAGE_BPS=100,BASKET_MAX_SLIPPAGE_BPS=1000,BASKET_FRONTEND_FEE_WALLET='${zeroAddress}';
   ` }))
@@ -32,9 +32,10 @@ function fixture() {
   const f = { account, reserve: 100n, pending: 7n, listed: true, sent: [], simulated: [], reads: [], routerPump: pump,
     count: 2n, version: 4, engine: addr(32), initial: [10000n, 20000n], acquired: [1000n, 1800n] }
   f.client = {
+    multicall: async p=>Promise.all(p.contracts.map(c=>f.client.readContract({...c,blockNumber:p.blockNumber}))),
     getBlock: async () => ({number: 123n, timestamp: 1000n}),
     readContract: async args => { f.reads.push(args); return ({
-      listed: f.listed, indexToken: index, listingHook: hook, totalIndexRewardsNotified: 100n,
+      getPump:pump,listed: f.listed, indexToken: index, listingHook: hook, totalIndexRewardsNotified: 100n,
       pendingBuybackReward: f.pending, buybackBnbReserve: f.reserve, balanceOf: 90n, decimals: 18, symbol: 'INDEX',
       buybackRouter: router, pump: f.routerPump, nutboxRouter: nutbox, basketRouter, settlementToken: settlement,
       basketVersion: f.version, engine: f.engine, assetCount: f.count,

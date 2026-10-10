@@ -275,7 +275,7 @@ const bscAssets: BasketAssetPreset[] = sortBasketAssetOptions<BasketAssetPreset>
   ),
   bscV3Asset(
     '0xCA750eF65f295BBECd685Abf54e82CAf297BDB61', 'SKHYB', 'SK Hynix (bStocks)', bscContractsV3.settlementToken, 2_500,
-    'https://cdn.dexscreener.com/cms/images/Dv6-VNcUq4Lxx9yf?width=800&height=800&quality=95&format=auto',
+    '/images/basket-assets/skhy.png',
   ),
   bscV3Asset(
     '0x1a4b499833A79A09ad7Cf1D42D7DacF71e92eb00', 'AMZNB', 'Amazon (bStocks)', bscContractsV3.settlementToken, 2_500,
@@ -365,11 +365,22 @@ export const getBasketDeployment = (chainId: number): BasketDeployment => {
   return BASKET_DEPLOYMENTS[chainId]
 }
 
-export const getBasketProtocol = (chainId: number, version?: number): BasketContracts => {
+export const RH_PUMP14_BASKET_PROTOCOL: BasketContracts = {
+  ...rhContractsV3,
+  rebalanceExecutor: '0xE2221f18AB7BE5c830e853720966E5592f827d4D',
+  hook: '0x23627BAE70F110407A46Ee05970771Cb3b25Ea88',
+  swapRouter: '0x47Fcc4e4396bFb306e4cb60e53D366c7CaF17971',
+  nutboxRouter: '0xfc82178523687Edd56F7474d6529a14F7655Ab15',
+}
+
+export const getBasketProtocol = (chainId: number, version?: number, engine?: Address): BasketContracts => {
+  if(chainId===4663 && Number(version)===3 && engine?.toLowerCase()===RH_PUMP14_BASKET_PROTOCOL.hook.toLowerCase())return RH_PUMP14_BASKET_PROTOCOL
+
   const deployment = getBasketDeployment(chainId)
   if (!deployment.protocols) return deployment.contracts
   const protocol = deployment.protocols[Number(version)]
   if (!protocol) throw new Error(`Unsupported Basket protocol version ${version} on chain ${chainId}`)
+  if(engine && engine.toLowerCase()!==protocol.hook.toLowerCase())throw new Error('Unsupported Basket protocol engine')
   return protocol
 }
 

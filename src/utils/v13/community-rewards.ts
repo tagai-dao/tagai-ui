@@ -1,3 +1,4 @@
+import {useChainStore} from '@/stores/chain'
 import { parseAbi, zeroAddress, type Address } from 'viem'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { getChainDeployment } from '@/config/chains'
@@ -11,14 +12,11 @@ const abi = parseAbi([
 ])
 
 async function readRewardContext(token: Address) {
-  const client = getReadOnlyClient(56), block = await client.getBlock()
+  const client = getReadOnlyClient(useChainStore().activeChainId), block = await client.getBlock()
   const community = await client.readContract({ address: token, abi, functionName: 'nutboxCommunity', blockNumber: block.number })
   if (community === zeroAddress) return undefined
-  const [fee, calculator] = await Promise.all([
-    client.readContract({ address: community, abi, functionName: 'feeRatio', blockNumber: block.number }),
-    client.readContract({ address: community, abi, functionName: 'rewardCalculator', blockNumber: block.number }),
-  ])
-  if (fee > 10000 || calculator.toLowerCase() !== getChainDeployment(56).contracts.hourlyTickCalculator.toLowerCase()) {
+  const [fee, calculator] = await client.multicall({blockNumber:block.number,allowFailure:false,contracts:['feeRatio','rewardCalculator'].map(functionName=>({address:community,abi,functionName}))}) as [number,Address]
+  if (fee > 10000 || calculator.toLowerCase() !== getChainDeployment(useChainStore().activeChainId).contracts.hourlyTickCalculator.toLowerCase()) {
     throw new Error('V13_REWARD_CONFIG_UNAVAILABLE')
   }
   return { client, block, community, calculator, netRatio: BigInt(10000 - fee) }

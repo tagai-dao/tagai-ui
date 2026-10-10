@@ -14,7 +14,7 @@ await build({entryPoints:['src/utils/v13/lifecycle.ts'],bundle:true,platform:'no
  export const setup=async()=>{};
  export const useAccountStore=()=>globalThis.__life.account;
  export const useChainStore=()=>globalThis.__life.chain;
- export const getChainDeployment=()=>({contracts:{pump13:'0x2222222222222222222222222222222222222222'}});`,loader:'js'}))
+ export const getChainDeployment=()=>({contracts:{pump13:'0x2222222222222222222222222222222222222222',pump14:'0xcd4e721Fc418f4D723C04c71e8d8EcCb75C3CD34'}});`,loader:'js'}))
 }}]})
 const life=createRequire(import.meta.url)(join(dir,'life.cjs'))
 const token='0x1111111111111111111111111111111111111111',user='0x3333333333333333333333333333333333333333'

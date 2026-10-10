@@ -74,6 +74,11 @@ export type ChainDeployment = {
     pump14?: `0x${string}`
     tokenImplementation14?: `0x${string}`
     tradeCurationFactory?: `0x${string}`
+    tradeRouter14?: `0x${string}`
+    liquidityRouter14?: `0x${string}`
+    buybackRouter14?: `0x${string}`
+    nutboxRouter14?: `0x${string}`
+    tipTagSwapHook14?: `0x${string}`
     pump13?: `0x${string}`
     tokenImplementation13?: `0x${string}`
     pump11: `0x${string}`
@@ -192,7 +197,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
   key: 'rh',
   name: 'Robinhood',
   chainId: 4663,
-  latestPumpVersion: 11,
+  latestPumpVersion: 14,
   symbol: 'ETH',
   decimals: 18,
   browser: 'https://robinhoodchain.blockscout.com/',
@@ -229,6 +234,14 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     v4Quoter: '0x8dc178efb8111bb0973dd9d722ebeff267c98f94',
   },
   contracts: {
+    pump14: '0xD72826378Cb53182319f7a8B2882de4997fFC896',
+    tokenImplementation14: '0x321744384beDaF31cF53f727595b028bE4c1f9A5',
+    tradeCurationFactory: '0x73cb7A6Ad01686659F72011eb952fBa53fe6212B',
+    tradeRouter14: '0xf64b0e841a756B32E0848b609e9A0d1646ec00d9',
+    liquidityRouter14: '0x37176232FBE6CBB87643308350c2AC8265Ba2719',
+    buybackRouter14: '0xC6E2BDa3b0a3E014701B36CE1dfEFE46A7e02690',
+    nutboxRouter14: '0xfc82178523687Edd56F7474d6529a14F7655Ab15',
+    tipTagSwapHook14: '0x3e1d75Fba24037123235f937a2bD19af135C60cc',
     pump9: '0x6C75E165E52E9c1661a75041650be2D919eE02A1',
     tokenImplementation9: '0x95c62F6A3AC1A3b7D08d866eeBDc74700aB954D6',
     pump11: '0x7686CbaF2dFc7000eb9b0D6DE81E48c1211d2655',

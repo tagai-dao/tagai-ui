@@ -1,10 +1,11 @@
 import type { CreateCommunity } from '@/types'
 
-export type RegistrationForm = CreateCommunity & { createHash: string; chainId: 56; version: 13 | 14 }
+export type RegistrationForm = CreateCommunity & { createHash: string; chainId: 56 | 4663; version: 13 | 14 }
 type Entry = { form: RegistrationForm; attempts: number; nextAttempt: number }
 type Dependencies = {
   storage: Storage
   scope: string
+  chainId?: 56 | 4663
   now?: () => number
   receipt: (hash: string) => Promise<{ status: string }>
   register: (form: RegistrationForm) => Promise<unknown>
@@ -14,6 +15,7 @@ type Dependencies = {
 // One record per transaction: a later creation must never overwrite an earlier
 // upload. The scope separates API environments and fork chains on the same origin.
 export function createRegistrationQueue(deps: Dependencies) {
+  const chainId = deps.chainId ?? 56
   const prefix = `v13-registration:${encodeURIComponent(deps.scope)}:`
   const memory = new Map<string, Entry>()
   const now = deps.now ?? Date.now
@@ -27,17 +29,17 @@ export function createRegistrationQueue(deps: Dependencies) {
     memory.delete(key)
   }
   function enqueue(form: RegistrationForm) {
-    if (form.chainId !== 56 || ![13, 14].includes(form.version) || !/^0x[\da-f]{64}$/i.test(form.createHash)) throw new Error('Invalid creation registration')
+    if (form.chainId !== chainId || ![13, 14].includes(form.version) || (chainId === 4663 && form.version !== 14) || !/^0x[\da-f]{64}$/i.test(form.createHash)) throw new Error('Invalid creation registration')
     const key = prefix + form.createHash.toLowerCase()
     // Snapshot metadata so edits in another creation form cannot change it.
     save(key, { form: JSON.parse(JSON.stringify(form)), attempts: 0, nextAttempt: 0 })
   }
   function migrate() {
     for (const key of Object.keys(deps.storage)) {
-      if (!key.startsWith('createTokenForm:56:') && key !== 'createTokenForm') continue
+      if (!key.startsWith(`createTokenForm:${chainId}:`) && key !== 'createTokenForm') continue
       try {
         const form = JSON.parse(deps.storage.getItem(key)!)
-        if (![13, 14].includes(form.version) || form.chainId !== 56) continue
+        if (![13, 14].includes(form.version) || form.chainId !== chainId || (chainId === 4663 && form.version !== 14)) continue
         enqueue(form)
         // Remove the old record only after its replacement was persisted.
         if (deps.storage.getItem(prefix + form.createHash.toLowerCase())) deps.storage.removeItem(key)

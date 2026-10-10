@@ -23,7 +23,7 @@ await build({entryPoints:['src/utils/v13/pools.ts'],bundle:true,platform:'node',
 const {claimAllPoolRewards}=createRequire(import.meta.url)(join(dir,'pools.cjs'))
 function fixture(pending=[1n,0n,2n,3n]){
  const f={account:user,calls:[],writes:0,mismatch:false,changeWallet:false,fail:false}
- f.client={multicall:async({allowFailure,contracts})=>{
+ f.client={getBlockNumber:async()=>123n,multicall:async({allowFailure,contracts})=>{
   assert.equal(allowFailure,false);if(f.fail)throw Error('RPC failed');if(f.changeWallet)f.account=addr(999)
   return contracts.map(({functionName,args,address})=>{
    const i=functionName==='componentAt'?Number(args[0]):components.findIndex(c=>c.staking_pool===(functionName==='getPoolPendingRewards'?args[0]:address))

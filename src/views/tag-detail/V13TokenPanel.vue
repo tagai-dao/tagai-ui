@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import {getIndexDeployment} from '@/utils/v14/chain'
 import {getChainDeployment} from '@/config/chains'
 import {ref,computed,watch,onUnmounted} from 'vue'
 import {useI18n} from 'vue-i18n'
@@ -17,7 +18,7 @@ import V13PoolCard from './V13PoolCard.vue'
 import {notify} from '@/utils/notify'
 import {poolOperationErrorKey} from '@/utils/v13/operation-error'
 import {readMiningPools,type MiningPools} from '@/utils/v13/mining'
-const liquidityRouter=getChainDeployment(56).contracts.liquidityRouter13??null
+const liquidityRouter=computed(()=>getIndexDeployment(chain.activeChainId,Number(store.currentSelectedCommunity?.version)).liquidityRouter??null)
 const props=defineProps<{mining?:boolean}>()
 const {t,locale}=useI18n(),store=useCommunityStore(),account=useAccountStore(),chain=useChainStore()
 const token=computed(()=>store.currentSelectedCommunity?.token as Address),symbol=computed(()=>store.currentSelectedCommunity?.tick||'Token')
@@ -29,7 +30,7 @@ const pools=computed(()=>data.value?{community:data.value.config.community,compo
 const connected=computed(()=>!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress)
 const modal=useModalStore()
 const connectWallet=()=>modal.setModalVisible(true,GlobalModalType.ChoseWallet)
-const canClaimAll=computed(()=>chain.activeChainId===56&&connected.value&&!!pools.value?.components.length&&!claimingAll.value&&!Object.values(poolBusy.value).some(Boolean))
+const canClaimAll=computed(()=>[56,4663].includes(chain.activeChainId)&&connected.value&&!!pools.value?.components.length&&!claimingAll.value&&!Object.values(poolBusy.value).some(Boolean))
 async function claimAll(){
  if(!canClaimAll.value||!pools.value)return
  claimingAll.value=true
@@ -58,7 +59,7 @@ async function refresh(){
   state.value=s
   if(!s.listed){burned.value=undefined;burnUnavailable.value=false}
   else if(props.mining){
-   try{const value=await getReadOnlyClient(56).readContract({address:currentToken,abi:tokenAbi as Abi,functionName:'balanceOf',args:[burnAddress]});if(current()){burned.value=value as bigint;burnUnavailable.value=false}}
+   try{const value=await getReadOnlyClient(chain.activeChainId).readContract({address:currentToken,abi:tokenAbi as Abi,functionName:'balanceOf',args:[burnAddress]});if(current()){burned.value=value as bigint;burnUnavailable.value=false}}
    catch(cause){if(current()){burnUnavailable.value=true;console.warn('[V13 burned balance]',cause)}}
   }
  }
@@ -67,13 +68,13 @@ async function refresh(){
   catch(cause){
    if(!current())return
    if(!props.mining)throw cause
-   const fallback=await readMiningPools(getReadOnlyClient(56),currentToken)
+   const fallback=await readMiningPools(getReadOnlyClient(chain.activeChainId),currentToken)
    if(current()){data.value=undefined;chainPools.value=fallback;console.warn('[V13 detail unavailable; verified on-chain pools]',cause)}
   }
  }
  const rewards=async()=>{
   if(props.mining||!currentAccount)return
-  const value=await getReadOnlyClient(56).readContract({address:currentToken,abi:tokenAbi as Abi,functionName:'pendingBuybackReward',args:[currentAccount]}).catch(()=>undefined)
+  const value=await getReadOnlyClient(chain.activeChainId).readContract({address:currentToken,abi:tokenAbi as Abi,functionName:'pendingBuybackReward',args:[currentAccount]}).catch(()=>undefined)
   if(current()&&account.ethConnectAddress===currentAccount)pending.value=value as bigint|undefined
  }
  const results=await Promise.allSettled([lifecycle(),detail(),rewards()])
@@ -81,11 +82,11 @@ async function refresh(){
 }
 async function claim(){busy.value=true;try{const guard=walletGuard();await send(token.value,tokenAbi as Abi,'claimBuybackReward',[guard.account],0n,guard);await refresh()}catch(e){error.value=e instanceof Error?e.message:String(e)}finally{busy.value=false}}
 watch([token,()=>chain.activeChainId],()=>{burned.value=undefined;burnUnavailable.value=false})
-watch([token,()=>chain.activeChainId],()=>{seq++;data.value=undefined;chainPools.value=undefined;state.value=undefined;pending.value=undefined;error.value='';poolBusy.value={};if(token.value&&chain.activeChainId===56)void refresh()},{immediate:true})
+watch([token,()=>chain.activeChainId],()=>{seq++;data.value=undefined;chainPools.value=undefined;state.value=undefined;pending.value=undefined;error.value='';poolBusy.value={};if(token.value&&[56,4663].includes(chain.activeChainId))void refresh()},{immediate:true})
 // Wallet changes do not change pool identity. Keep children mounted; each card
 // refreshes its own account data without resetting the public pool or form.
-watch(()=>account.ethConnectAddress,()=>{pending.value=undefined;if(!props.mining&&token.value&&chain.activeChainId===56)void refresh()})
-const timer=setInterval(()=>{if(!loading.value&&!busy.value&&token.value&&chain.activeChainId===56)void refresh()},15000)
+watch(()=>account.ethConnectAddress,()=>{pending.value=undefined;if(!props.mining&&token.value&&[56,4663].includes(chain.activeChainId))void refresh()})
+const timer=setInterval(()=>{if(!loading.value&&!busy.value&&token.value&&[56,4663].includes(chain.activeChainId))void refresh()},15000)
 onUnmounted(()=>{disposed=true;seq++;clearInterval(timer)})
 </script>
 <template>
@@ -106,22 +107,22 @@ onUnmounted(()=>{disposed=true;seq++;clearInterval(timer)})
    <section v-if="!mining" class="summary">
     <h3>{{ data.config.name }} ({{ data.config.symbol }})</h3>
     <div>{{ t('v13Create.fee') }}: {{ data.config.basket_fee_bps/100 }}% · {{ t('v13Create.share') }}: {{ data.config.creator_share_bps/100 }}%</div>
-    <div>{{ t('postView.price') }}: {{ formatPrice(store.currentSelectedCommunity?.price || 0) }} BNB</div>
-    <div>{{ t('postView.cap') }}: {{ formatAmount(store.currentSelectedCommunity?.marketCap || 0) }} BNB</div>
+    <div>{{ t('postView.price') }}: {{ formatPrice(store.currentSelectedCommunity?.price || 0) }} {{ chain.symbol }}</div>
+    <div>{{ t('postView.cap') }}: {{ formatAmount(store.currentSelectedCommunity?.marketCap || 0) }} {{ chain.symbol }}</div>
     <div>{{ t('v13Page.components') }}: {{ data.components.length }}</div>
     <p>{{ data.config.retain_community_ownership?t('v13Create.ownerHelp'):t('v13Create.renounceHelp') }}</p>
-    <a :href="`https://bscscan.com/address/${data.config.community}`" target="_blank" rel="noopener">{{ t('v13Page.community') }} ↗</a>
-    <a v-if="state?.indexToken && state.indexToken!==zeroAddress" :href="`/bsc/baskets/${state.indexToken}`">{{ t('v13Page.index') }} ↗</a>
+    <a :href="`${chain.browser}address/${data.config.community}`" target="_blank" rel="noopener">{{ t('v13Page.community') }} ↗</a>
+    <a v-if="state?.indexToken && state.indexToken!==zeroAddress" :href="`/${chain.deployment.key}/baskets/${state.indexToken}`">{{ t('v13Page.index') }} ↗</a>
     <div>{{ t('v13Page.dividend') }}: {{ pending===undefined?'—':formatUnits(pending,18) }} {{ data.config.symbol }}</div>
     <button :disabled="busy||!pending" @click="claim">{{ t('v13Page.claim') }}</button>
    </section>
    <section v-if="!mining && data.buyback" class="summary"><h3>{{ t('v13Page.buyback') }}</h3>
-    <div>{{ t('v13Page.buybackReserve') }}: {{ formatUnits(BigInt(data.buyback.bnb_reserve),18) }} BNB</div>
-    <div>{{ t('v13Page.buybackSpent') }}: {{ formatUnits(BigInt(data.buyback.total_bnb_spent),18) }} BNB</div>
+    <div>{{ t('v13Page.buybackReserve') }}: {{ formatUnits(BigInt(data.buyback.native_reserve ?? data.buyback.bnb_reserve ?? '0'),18) }} {{ chain.symbol }}</div>
+    <div>{{ t('v13Page.buybackSpent') }}: {{ formatUnits(BigInt(data.buyback.total_native_spent ?? data.buyback.total_bnb_spent ?? '0'),18) }} {{ chain.symbol }}</div>
     <div>{{ t('v13Page.indexBought') }}: {{ formatUnits(BigInt(data.buyback.total_index_bought),18) }} {{ data.config.symbol }}</div>
     <p>{{ t('v13Page.indexDelay') }}</p>
    </section>
-   <section v-if="!mining" class="summary"><h3>{{ t('v13Page.components') }}</h3><div v-for="leg in data.components" :key="leg.asset" class="component"><a :href="`https://bscscan.com/address/${leg.asset}`" target="_blank" rel="noopener">{{ leg.asset_symbol || `${leg.asset.slice(0,8)}…${leg.asset.slice(-6)}` }}</a><span>{{ t('v13Create.weight') }} {{ leg.target_weight/100 }}%</span><a :href="`https://bscscan.com/address/${leg.pair}`" target="_blank" rel="noopener">V2 ↗</a></div><p>{{ t('v13Page.poolsHelp') }}</p></section>
+   <section v-if="!mining" class="summary"><h3>{{ t('v13Page.components') }}</h3><div v-for="leg in data.components" :key="leg.asset" class="component"><a :href="`${chain.browser}address/${leg.asset}`" target="_blank" rel="noopener">{{ leg.asset_symbol || `${leg.asset.slice(0,8)}…${leg.asset.slice(-6)}` }}</a><span>{{ t('v13Create.weight') }} {{ leg.target_weight/100 }}%</span><a :href="`${chain.browser}address/${leg.pair}`" target="_blank" rel="noopener">V2 ↗</a></div><p>{{ t('v13Page.poolsHelp') }}</p></section>
   </template>
  </div>
 </template>

@@ -26,7 +26,7 @@ const component={asset,pair,staking_pool:staking,position:1}
 function fixture(offset){
   const f={timestamp:BigInt(Math.floor(Date.now()/1000))+offset,events:[],calls:[],estimates:[],writes:[],failBlock:false,account,chainId:56,gas:1809599n}
   f.client={
-    chain:{id:56},
+    chain:{id:56},getBlockNumber:async()=>123n,multicall:async p=>Promise.all(p.contracts.map(c=>f.client.readContract({...c,blockNumber:p.blockNumber}))),
     readContract:async({functionName})=>({pump,tradeRouter:trade,componentAt:[asset,2500n,pair],stakeToken:pair,community,
       getUserStakedAmount:0n,getTotalStakedAmount:1000n,getPoolPendingRewards:0n,balanceOf:10n**24n,
       symbol:'STOCK',decimals:18,getReserves:[10n**21n,10n**21n,0],token0:token,totalSupply:10n**21n,

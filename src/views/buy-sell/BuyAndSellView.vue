@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isIndexToken } from '@/utils/v14/chain'
 import { prepareTradeAttribution } from '@/utils/tradeCuration'
 import { curveTradeReports } from '@/utils/curveTradeReport'
 import { getReadOnlyClient } from '@/utils/wallets'
@@ -123,7 +124,7 @@ const getTradeSellsman = async (onVerifiedSource?: (id: string) => void) => {
 }
 const dexScreenerChain = computed(() => chainStore.deployment.key === 'rh' ? 'robinhood' : 'bsc')
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
-const isMultiPool = computed(() => chainStore.activeChainId === 56 && [13, 14].includes(Number(comStore.currentSelectedCommunity?.version)))
+const isMultiPool = computed(() => isIndexToken(chainStore.activeChainId, comStore.currentSelectedCommunity?.version))
 const v13Session = createQuoteSession()
 const v13Quote = shallowRef<Quote>()
 const curveQuote = shallowRef<CurveQuote>()

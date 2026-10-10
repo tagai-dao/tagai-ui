@@ -47,7 +47,7 @@ let quoteTimer:ReturnType<typeof setTimeout>|undefined,quoteAbort:AbortControlle
 const slippageBps=computed(()=>Math.round(Number(slippage.value)*100))
 const validSlippage=computed(()=>Number.isInteger(slippageBps.value)&&slippageBps.value>=1&&slippageBps.value<=1000)
 let quoteSequence=0
-const connected=computed(()=>chain.activeChainId===56&&!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress)
+const connected=computed(()=>[56,4663].includes(chain.activeChainId)&&!!account.ethConnectAddress&&account.ethConnectAddress!==zeroAddress)
 const accountKey=computed(()=>(account.ethConnectAddress||zeroAddress).toLowerCase())
 const stateAccount=ref<string>()
 const userReady=computed(()=>connected.value&&stateAccount.value===accountKey.value)
@@ -59,9 +59,9 @@ const compact=(n:bigint,decimals=18)=>new Intl.NumberFormat(locale.value,{notati
 const assetSymbol=computed(()=>state.value?.symbol||props.leg.asset_symbol||`${props.leg.asset.slice(0,6)}…`)
 const assetLogo=ref<string|null>(null)
 watch(()=>props.leg.asset,async asset=>{
- assetLogo.value=presetBasketAssetLogo(56,asset)
+ assetLogo.value=presetBasketAssetLogo(chain.activeChainId,asset)
  if(assetLogo.value)return
- const resolved=await resolveBasketAssetLogo(56,asset)
+ const resolved=await resolveBasketAssetLogo(chain.activeChainId,asset)
  if(!disposed&&props.leg.asset===asset)assetLogo.value=resolved
 },{immediate:true})
 const accent=computed(()=>['#fe913f','#7f9bfa','#5bbdaa','#c393ed'][props.leg.position%4])
@@ -84,7 +84,7 @@ const stockInput=computed({
 })
 const estimatedLp=computed(()=>action.value==='add'?addPreview.value?.lp:action.value==='bnb'&&zap.value?.amount===units.value?zap.value.zap.lp:undefined)
 const minimumLp=computed(()=>{if(!estimatedLp.value||!validSlippage.value)return undefined;const value=estimatedLp.value*BigInt(10000-slippageBps.value)/10000n;return value>0n?value:1n})
-const inputSymbol=computed(()=>action.value==='bnb'?'BNB':action.value==='add'?props.symbol:'LP')
+const inputSymbol=computed(()=>action.value==='bnb'?chain.symbol:action.value==='add'?props.symbol:'LP')
 const inputBalance=computed(()=>{const s=state.value;return !s||!userReady.value?0n:action.value==='bnb'?s.nativeBalance:action.value==='add'?s.tokenBalance:action.value==='withdraw'?s.staked:s.lpBalance})
 const assetShort=computed(()=>userReady.value&&!!state.value&&(inputSide.value==='asset'?assetUnits.value:(addPreview.value?.assetAmount??0n))>state.value.assetBalance)
 const inputShort=computed(()=>userReady.value&&!!state.value&&units.value>inputBalance.value)
@@ -111,7 +111,7 @@ function cancelQuote(clear=true){
  if(clear)zap.value=undefined
  quoting.value=false;quoteError.value=''
 }
-const canQuote=()=>expanded.value&&!disposed&&!busy.value&&chain.activeChainId===56&&action.value==='bnb'&&units.value>0n&&!!state.value?.supply
+const canQuote=()=>expanded.value&&!disposed&&!busy.value&&[56,4663].includes(chain.activeChainId)&&action.value==='bnb'&&units.value>0n&&!!state.value?.supply
 async function previewZap(){
  cancelQuote(false);if(!canQuote())return
  const id=quoteSequence,controller=new AbortController();quoteAbort=controller;quoting.value=true
@@ -134,16 +134,16 @@ async function operate(claim=false){
   else if(action.value==='bnb'){if(!zap.value||zap.value.amount!==units.value||!props.liquidityRouter)throw new Error(t('v13Page.refresh'));await executeZap(zap.value,props.liquidityRouter,zap.value.quote.metadata.subject,Math.round(slippage.value*100))}
   else if(action.value==='add'||action.value==='remove'){if(!props.liquidityRouter)throw new Error(t('v13Page.routerPending'));await liquidity(props.token,props.community,props.leg,action.value,units.value,Math.round(slippage.value*100),props.liquidityRouter,action.value==='add'?(inputSide.value==='asset'?assetUnits.value:addPreview.value?.assetAmount):undefined)}
   else await operatePool(props.token,props.community,props.leg,action.value,units.value)
-  if(!disposed&&chain.activeChainId===56&&accountKey.value===currentAccount&&props.token===currentToken&&props.leg.staking_pool===currentPool){amount.value='';returnToFront();void refresh()}
+  if(!disposed&&[56,4663].includes(chain.activeChainId)&&accountKey.value===currentAccount&&props.token===currentToken&&props.leg.staking_pool===currentPool){amount.value='';returnToFront();void refresh()}
  }catch(e){console.warn('[V13 pool operation]',e);if(!disposed){const key=poolOperationErrorKey(e);notify({title:t('v13Operation.title'),message:t(key),type:key==='v13Operation.cancelled'?'info':'error'})}}finally{localBusy.value=false}
 }
-watch([()=>props.token,()=>props.community,()=>props.leg.staking_pool,()=>props.leg.pair,()=>props.leg.asset,()=>chain.activeChainId],()=>{expanded.value=false;sequence++;state.value=undefined;stateAccount.value=undefined;rewards.value=undefined;aprError.value=false;error.value='';amount.value='';cancelQuote();if(chain.activeChainId===56)void refresh()},{immediate:true})
+watch([()=>props.token,()=>props.community,()=>props.leg.staking_pool,()=>props.leg.pair,()=>props.leg.asset,()=>chain.activeChainId],()=>{expanded.value=false;sequence++;state.value=undefined;stateAccount.value=undefined;rewards.value=undefined;aprError.value=false;error.value='';amount.value='';cancelQuote();if([56,4663].includes(chain.activeChainId))void refresh()},{immediate:true})
 watch(accountKey,()=>{
  // Invalidate private data and quotes, not the card, APR, reserves or user input.
  sequence++;stateAccount.value=undefined;error.value='';cancelQuote()
- if(chain.activeChainId===56)void refresh()
+ if([56,4663].includes(chain.activeChainId))void refresh()
 },{flush:'sync'})
-const timer=setInterval(()=>{if(!busy.value&&!loading.value&&chain.activeChainId===56)void refresh();if(canQuote()&&!quoting.value)void previewZap()},20000)
+const timer=setInterval(()=>{if(!busy.value&&!loading.value&&[56,4663].includes(chain.activeChainId))void refresh();if(canQuote()&&!quoting.value)void previewZap()},20000)
 defineExpose({refresh})
 onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clearInterval(timer)})
 </script>
@@ -155,7 +155,7 @@ onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clear
    <div class="pair-identity"><div class="pair-icons" aria-hidden="true"><SafeAvatar class="pair-logo" :src="tokenLogo" :seed="token" :alt="symbol" /><SafeAvatar class="pair-logo" :src="assetLogo" :seed="leg.asset" :alt="assetSymbol" /></div><div class="pair-name"><h3>{{ symbol }} <span>/</span> {{ assetSymbol }}</h3><div class="pair-meta"><span>V2 LP</span><span v-if="state" class="pool-status" :class="{'is-closed':!state.active}">{{ t(state.active?'v13Page.active':'v13Page.inactive') }}</span></div></div></div>
    <div class="ratio-badge"><strong>{{ poolRatio/100 }}<small>%</small></strong></div>
   </header>
-  <div class="addresses"><a :href="`https://bscscan.com/address/${leg.pair}`" target="_blank" rel="noopener">V2 Pair ↗</a><a :href="`https://bscscan.com/address/${leg.staking_pool}`" target="_blank" rel="noopener">{{ t('v13Page.pool') }} ↗</a></div>
+  <div class="addresses"><a :href="`${chain.browser}address/${leg.pair}`" target="_blank" rel="noopener">V2 Pair ↗</a><a :href="`${chain.browser}address/${leg.staking_pool}`" target="_blank" rel="noopener">{{ t('v13Page.pool') }} ↗</a></div>
   <p v-if="error" class="card-error" role="alert">{{ error }}</p>
   <div v-if="!state&&loading" class="card-skeleton" aria-hidden="true"><i/><i/><i/></div>
   <button v-else-if="!state" class="secondary-button" @click="refresh">{{ t('v13Create.retry') }}</button>
@@ -181,7 +181,7 @@ onUnmounted(()=>{emit('busy',false);disposed=true;sequence++;cancelQuote();clear
    <p v-if="error" class="card-error" role="alert">{{ error }}</p>
    <div class="controls">
     <div v-if="action==='bnb'||action==='add'" class="liquidity-input-toggle" role="group" :aria-label="t('v13Page.add')">
-     <button type="button" :aria-pressed="action==='bnb'" :disabled="busy" :title="t('v13Page.bnbAdd')" @click="selectLiquidityInput('bnb')">BNB</button>
+     <button type="button" :aria-pressed="action==='bnb'" :disabled="busy" :title="t('v13Page.nativeAdd',{symbol:chain.symbol})" @click="selectLiquidityInput('bnb')">{{ chain.symbol }}</button>
      <button type="button" :aria-pressed="action==='add'" :disabled="busy" :title="t('v13Page.dualAdd')" @click="selectLiquidityInput('add')">{{ symbol }} + {{ assetSymbol }}</button>
     </div>
     <div class="amount-field" :class="{'has-error':inputShort}"><label><span>{{ t('v13Page.amount') }} · {{ inputSymbol }}</span><input v-model="amount" type="text" inputmode="decimal" autocomplete="off" :disabled="busy" /></label><div class="input-footer"><button v-if="action!=='bnb'" :disabled="busy||!userReady" @click="amount=formatUnits(inputBalance,18)">MAX</button><span :title="userReady?formatUnits(inputBalance,18):''">{{ t(action==='withdraw'?'v13Page.myStake':'balance') }}: {{ userReady?f(inputBalance):'—' }} {{ inputSymbol }}</span></div></div>

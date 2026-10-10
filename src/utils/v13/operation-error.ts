@@ -18,7 +18,7 @@ export function poolOperationErrorKey(error: unknown): string {
  if(/slippage|8199f5f3|TooLittleReceived|InsufficientOutput|INSUFFICIENT_[AB]_AMOUNT/i.test(text))return 'v13Operation.slippage'
  if(/insufficient (funds|.*balance)|InsufficientBalance|exceeds balance/i.test(text))return 'v13Operation.balance'
  if(/allowance|TransferFromFailed|TRANSFER_FROM_FAILED|SafeERC20FailedOperation|TransferFailed/i.test(text))return 'v13Operation.transfer'
- if(/Wallet or chain changed|Connect a BSC wallet|Wallet unavailable|chain mismatch/i.test(text))return 'v13Operation.wallet'
+ if(/Wallet or chain changed|Connect a (?:BSC )?wallet|Wallet unavailable|chain mismatch/i.test(text))return 'v13Operation.wallet'
  if(/Pool closed/i.test(text))return 'v13Page.closed'
  if(/Pool has no liquidity|InvalidPool|V13_POOL_MISMATCH/i.test(text))return 'v13Operation.pool'
  if(/InvalidAmount|Invalid LP amount|Amount is too small/i.test(text))return 'v13Operation.amount'

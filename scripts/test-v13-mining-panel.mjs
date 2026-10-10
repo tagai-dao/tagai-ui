@@ -13,12 +13,13 @@ await build({entryPoints:['src/utils/v13/mining.ts'],bundle:true,platform:'node'
 const {readMiningPools}=require(join(dir,'mining.cjs'))
 function client(overrides={}){
  const calls=[]
- return {calls,getBlockNumber:async()=>123n,readContract:async args=>{
+ const result={calls,getBlockNumber:async()=>123n,multicall:async p=>Promise.all(p.contracts.map(c=>result.readContract({...c,blockNumber:p.blockNumber}))),readContract:async args=>{
   calls.push(args);assert.equal(args.blockNumber,123n)
   const values={nutboxCommunity:community,componentCount:1n,getCommunityToken:token,componentAt:[asset,10000,pair],createdPools:pool,stakeToken:pair,community,...overrides}
   if(!(args.functionName in values))throw Error('Unexpected call')
   return values[args.functionName]
  }}
+ return result
 }
 test('chain fallback verifies associations at one block and does not invent API metadata',async()=>{
  const c=client(),result=await readMiningPools(c,token)
@@ -37,7 +38,7 @@ await build({stdin:{contents:script.content,loader:'ts',resolveDir:process.cwd()
  b.onResolve({filter:/^(@\/|vue-i18n$|\.\/V13PoolCard.vue$)/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`
  export default {};export const useI18n=()=>({t:k=>k,locale:{value:'en'}});
- export const getChainDeployment=()=>({contracts:{liquidityRouter13:null}});
+ export const getIndexDeployment=()=>({liquidityRouter:null});export const getChainDeployment=()=>({contracts:{liquidityRouter13:null}});
  export const useAccountStore=()=>globalThis.__miningFixture.walletState;export const useChainStore=()=>({activeChainId:56});
  export const GlobalModalType={ChoseWallet:1};export const useModalStore=()=>({setModalVisible:(...args)=>globalThis.__miningFixture.modalCalls.push(args)});
  export const useCommunityStore=()=>({currentSelectedCommunity:{token:${JSON.stringify(token)},tick:'T'}});

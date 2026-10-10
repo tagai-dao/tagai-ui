@@ -1,6 +1,7 @@
 import { isAddress, parseAbi, zeroAddress, type Address, type PublicClient } from 'viem'
 import { getChainDeployment } from '@/config/chains'
-import candidates from './creation-assets.json'
+import bscCandidates from './creation-assets.json'
+import rhCandidates from '../v14/rh-creation-assets.json'
 import { sortBasketAssetOptions } from '@/utils/baskets/asset-order'
 import type { CreationOptions } from './creation'
 
@@ -22,9 +23,11 @@ const feeAbi = parseAbi([
 
 /** Bootstrap fallback only. Candidates are never offered without on-chain approval. */
 export async function readCreationOptions(client: PublicClient, creator: Address): Promise<CreationOptions> {
-  if (client.chain?.id !== 56 || !isAddress(creator)) throw new Error('Invalid creation chain or account')
-  const { pump14: pump, tradeCurationFactory: factory } = getChainDeployment(56).contracts
+  const chainId = client.chain?.id
+  if (!chainId || ![56,4663].includes(chainId) || !isAddress(creator)) throw new Error('Invalid creation chain or account')
+  const { pump14: pump, tradeCurationFactory: factory } = getChainDeployment(chainId).contracts
   if (!pump || pump === zeroAddress) throw new Error('Creation is unavailable')
+  const candidates = chainId === 4663 ? rhCandidates : bscCandidates
   const blockNumber = await client.getBlockNumber()
   const [ipshare, committee, pumpFee, implementation, ...approved] = await client.multicall({
     blockNumber, allowFailure: false,
@@ -37,7 +40,7 @@ export async function readCreationOptions(client: PublicClient, creator: Address
   if (![ipshare, committee, implementation].every(a => typeof a === 'string' && isAddress(a) && a !== zeroAddress)) {
     throw new Error('Incomplete creation contracts')
   }
-  if (String(implementation).toLowerCase() !== getChainDeployment(56).contracts.tokenImplementation14?.toLowerCase()) throw new Error('Token template changed; refresh the app')
+  if (String(implementation).toLowerCase() !== getChainDeployment(chainId).contracts.tokenImplementation14?.toLowerCase()) throw new Error('Token template changed; refresh the app')
   if (!factory) throw new Error('Trade pool factory is missing')
   const [hasShare, ipFee, communityFee, settingsFee, registration, verified] = await client.multicall({
     blockNumber, allowFailure: false,
@@ -51,7 +54,7 @@ export async function readCreationOptions(client: PublicClient, creator: Address
     ],
   })
   return {
-    chainId: 56, version: 14, pump, sourceBlock: Number(blockNumber), tokenImplementation: implementation as string,
+    chainId, version: 14, pump, sourceBlock: Number(blockNumber), tokenImplementation: implementation as string,
     tradePool: { factory, enabled: registration[2] && verified === true, maxRewardRatio: Math.min(8000, Number(registration[1])) },
     assets: sortBasketAssetOptions(candidates.filter((_, i) => approved[i] === true).map(a => ({ ...a, address: a.address as Address }))),
     pumpFee: String(pumpFee), ipshareFee: hasShare ? '0' : String(ipFee), communityFee: String(communityFee), settingsFee: String(settingsFee),

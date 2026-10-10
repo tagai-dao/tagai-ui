@@ -26,7 +26,7 @@ globalThis.Worker=class{terminate(){} postMessage(data){globalThis.__executor.wo
 after(async()=>{globalThis.Worker=originalWorker;delete globalThis.__executor;await rm(dir,{recursive:true,force:true})})
 for(const version of [13,14]) for(const executor of [undefined,'0x9999999999999999999999999999999999999999']){
  test(`V${version} trade snapshot and wallet target use config with ${executor?'conflicting':'missing'} API executor`,async()=>{
-  globalThis.__executor={metadata:{version,token,executor,listed:true,generatedAt:Date.now(),configHash:'test'}}
+  globalThis.__executor={metadata:{version,chainId:56,pump:version===14?'0xcd4e721Fc418f4D723C04c71e8d8EcCb75C3CD34':'0x2c2f4e8D85c02a065f109c74d9b27186AE65Adfa',nutboxRouter:'0x72dc4F38A7E4159e97d826a6ab594748C6b68f17',multicall:'0xcA11bde05977b3631167028862bE2a173976CA11',token,executor,listed:true,generatedAt:Date.now(),configHash:'test'}}
   const q=await createQuoteSession().quote(token,true,100n)
   assert.equal(globalThis.__executor.snapshotTarget,expected)
   assert.equal(globalThis.__executor.workerTarget,expected)

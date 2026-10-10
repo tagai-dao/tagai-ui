@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isIndexToken } from '@/utils/v14/chain'
 import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import {onMounted, ref, computed, onActivated, nextTick, onUnmounted, watch, defineAsyncComponent} from "vue";
@@ -75,7 +76,7 @@ watch(
   { immediate: true },
 )
 
-const isV13Token = computed(()=>chainStore.activeChainId===56 && [13, 14].includes(Number(comStore.currentSelectedCommunity?.version)))
+const isV13Token = computed(()=>isIndexToken(chainStore.activeChainId, comStore.currentSelectedCommunity?.version))
 const predictionEnabled = computed(() => chainStore.deployment.features.prediction)
 const tabOptions = computed(() => [
   { label: 'Feed', key: 'content' },

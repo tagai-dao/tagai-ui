@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {useI18n} from 'vue-i18n'
-defineProps<{modelValue:boolean;disabled?:boolean}>()
+defineProps<{modelValue:boolean;disabled?:boolean;chainId?:number}>()
 const emit=defineEmits<{(e:'update:modelValue',value:boolean):void}>()
 const {t}=useI18n()
 </script>
@@ -10,9 +10,9 @@ const {t}=useI18n()
   <div class="allocation-bar" aria-hidden="true"><div class="curve">65%</div><div class="lp">20%</div><div class="mining">15%</div></div>
   <div class="allocation-legend"><span><i class="curve"/>Bonding Curve</span><span><i class="lp"/>Dex</span><span><i class="mining"/>{{ t('v13Issuance.mining') }}</span></div>
   <ul class="allocation-details">
-   <li>{{ t('v13Issuance.curveDetail') }}</li>
-   <li>{{ t('v13Issuance.v4Detail') }}</li>
-   <li>{{ t('v13Issuance.v2Detail') }}</li>
+   <li>{{ t(chainId===4663?'v13Issuance.rhCurveDetail':'v13Issuance.curveDetail') }}</li>
+   <li>{{ t(chainId===4663?'v13Issuance.rhV4Detail':'v13Issuance.v4Detail') }}</li>
+   <li>{{ t(chainId===4663?'v13Issuance.rhV2Detail':'v13Issuance.v2Detail') }}</li>
    <li>{{ t('v13Issuance.miningDetail') }}
     <label class="ownership"><input type="checkbox" :checked="modelValue" :disabled="disabled" @change="emit('update:modelValue',($event.target as HTMLInputElement).checked)"/><span>{{ t('v13Issuance.retain') }}</span></label>
    </li>

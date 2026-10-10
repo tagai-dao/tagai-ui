@@ -202,7 +202,7 @@ const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
 const activeTab = ref('token');
 const chainStore = useChainStore();
-const isV14Creation = computed(() => chainStore.activeChainId === 56 && chainStore.deployment.latestPumpVersion === 14)
+const isV14Creation = computed(() => [56,4663].includes(chainStore.activeChainId) && chainStore.deployment.latestPumpVersion === 14)
 const indexTickTooLong = computed(() => isV14Creation.value && new TextEncoder().encode(createForm.tick).length > 16)
 const indexForm = ref<V13IndexConfig>({ name:'',symbol:'',constituentAssets:[],targetWeights:[],basketFeeBps:100,creatorShareBps:0,retainCommunityOwnership:false })
 const tradeRewardRatioBps = ref(0)
@@ -222,7 +222,7 @@ async function loadV13Options() {
   if (!isV14Creation.value || !isAddress(accStore.ethConnectAddress)) { v13OptionsLoading.value = false; return }
   v13OptionsLoading.value = true
   try {
-    const value = await creationOptions(accStore.ethConnectAddress)
+    const value = await creationOptions(accStore.ethConnectAddress, chainStore.activeChainId)
     if (seq !== optionsSequence) return
     value.assets = [...value.assets].sort((a, b) => {
       const rank = (symbol: string) => symbol.toUpperCase() === 'SPCXB' ? -1 : ['ETH', 'BTC', 'BTCB'].includes(symbol.toUpperCase()) ? 1 : 0
@@ -304,7 +304,8 @@ async function refreshCreateFee() {
   }
 }
 
-watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], () => {
+watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], (value, previous) => {
+  if(previous && value[1]!==previous[1]){indexForm.value.constituentAssets=[];indexForm.value.targetWeights=[];tradeRewardRatioBps.value=0}
   void loadV13Options(); void refreshCreateFee()
 }, { immediate: true })
 watch([v13Options, tradeRewardRatioBps, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
@@ -600,7 +601,7 @@ const create = async () => {
     const {createHash, token, version} = await createCoin(submittedForm, (hash, version) => {
       if (version !== 14) return
       const {initAmount,initEth,...saved} = submittedForm
-      enqueueV13Registration({...saved,createHash:hash,chainId:56,version:14,token:''})
+      enqueueV13Registration({...saved,createHash:hash,chainId:submittedForm.chainId as 56 | 4663,version:14,token:''})
     });
     Object.assign(createForm, submittedForm)
     createForm.createHash = createHash as string;
@@ -797,7 +798,7 @@ onMounted(async () => {
             />
             <div v-show="showLongDesc" class="field-error">{{ $t('createCommunity.descTooLong') }}</div>
           </div>
-          <TokenIssuanceAllocation v-if="isV14Creation" v-model="indexForm.retainCommunityOwnership" :disabled="createLoading" />
+          <TokenIssuanceAllocation :chain-id="chainStore.activeChainId" v-if="isV14Creation" v-model="indexForm.retainCommunityOwnership" :disabled="createLoading" />
         </section>
 
         <CreateV13Fields v-if="isV14Creation" v-model="indexForm" v-model:trade-reward-ratio-bps="tradeRewardRatioBps" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />

@@ -5,13 +5,15 @@ import emitter from '@/utils/emitter'
 import { registerV13 } from './creation'
 import { createRegistrationQueue, type RegistrationForm } from './registration-queue'
 
-let queue: ReturnType<typeof createRegistrationQueue> | undefined
-function getQueue() {
+const queues = new Map<number, ReturnType<typeof createRegistrationQueue>>()
+function getQueue(chainId: 56 | 4663) {
+  let queue = queues.get(chainId)
   if (!queue) {
-    const client = getReadOnlyClient(56)
+    const client = getReadOnlyClient(chainId)
     queue = createRegistrationQueue({
+      chainId,
       storage: localStorage,
-      scope: `${API_BASE_URL}:${client.chain?.id ?? 56}`,
+      scope: `${API_BASE_URL}:${chainId}`,
       receipt: hash => client.getTransactionReceipt({ hash: hash as `0x${string}` }),
       register: registerV13,
       synced: (form, result) => {
@@ -19,14 +21,15 @@ function getQueue() {
       },
     })
   }
+  queues.set(chainId, queue)
   return queue
 }
 export function enqueueV13Registration(form: RegistrationForm) {
-  getQueue().enqueue(form)
-  void getQueue().flush().catch(() => {})
+  getQueue(form.chainId).enqueue(form)
+  void getQueue(form.chainId).flush().catch(() => {})
 }
 export function startV13RegistrationSync() {
-  const sync = () => { void getQueue().flush().catch(() => {}) }
+  const sync = () => { for (const chainId of [56,4663] as const) void getQueue(chainId).flush().catch(() => {}) }
   const visible = () => { if (document.visibilityState === 'visible') sync() }
   const timer = window.setInterval(sync, 5_000)
   window.addEventListener('online', sync)

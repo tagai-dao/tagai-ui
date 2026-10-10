@@ -33,6 +33,7 @@ const symbol = (i: number) => props.options?.assets.find(a => a.address.toLowerC
   <div class="trade-mining">
     <label class="toggle"><input type="checkbox" :checked="enabled" :disabled="disabled || (!available && !enabled)" @change="toggle" /><span>{{ t('v14Create.enableTradeMining') }}</span></label>
     <p>{{ t('v14Create.tradeHelp') }}</p>
+    <p v-if="options?.chainId===4663" class="warning">{{ t('v14Create.rhPending') }}</p>
     <p v-if="!available" class="warning">{{ t('v14Create.unavailable') }}</p>
     <template v-if="enabled">
       <label class="ratio-label" for="trade-mining-ratio">{{ t('v14Create.tradeRatio') }}<span class="ratio-input"><input id="trade-mining-ratio" v-model="input" type="number" min="0.01" :max="max" step="0.01" inputmode="decimal" :disabled="disabled" :aria-invalid="!valid" aria-describedby="trade-mining-limit" @input="change" /><span>%</span></span></label>

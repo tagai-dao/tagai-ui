@@ -2,8 +2,8 @@ import { getChainDeployment } from '@/config/chains'
 import { IndexConfigValidationError } from '../v13/index-config'
 import type { CreationOptions } from '../v13/creation'
 
-export function validTradePool(value: any): value is CreationOptions['tradePool'] {
-  return typeof value?.factory === 'string' && value.factory.toLowerCase() === getChainDeployment(56).contracts.tradeCurationFactory?.toLowerCase()
+export function validTradePool(value: any, chainId = 56): value is CreationOptions['tradePool'] {
+  return typeof value?.factory === 'string' && value.factory.toLowerCase() === getChainDeployment(chainId).contracts.tradeCurationFactory?.toLowerCase()
     && typeof value.enabled === 'boolean' && Number.isInteger(value.maxRewardRatio)
     && value.maxRewardRatio >= 0 && value.maxRewardRatio <= 8000
     && (!value.enabled || value.maxRewardRatio > 0)
@@ -15,7 +15,7 @@ export function tradePoolConfig(ratio: number, options?: CreationOptions) {
     throw new IndexConfigValidationError('tradeRatio', 'Trade mining share must be 0.01–80%')
   }
   if (ratio === 0) return []
-  if (!options || !validTradePool(options.tradePool) || !options.tradePool.enabled) {
+  if (!options || !validTradePool(options.tradePool, options.chainId ?? 56) || !options.tradePool.enabled) {
     throw new IndexConfigValidationError('tradeUnavailable', 'Trade mining is currently unavailable')
   }
   if (ratio > options.tradePool.maxRewardRatio) {

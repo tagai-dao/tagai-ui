@@ -16,7 +16,7 @@ import { poolOperationErrorKey } from '@/utils/v13/operation-error'
 const { t, locale } = useI18n(), store = useCommunityStore(), chain = useChainStore(), wallet = useAccountStore()
 const token = computed(() => store.currentSelectedCommunity?.token as Address | undefined)
 const account = computed(() => isAddress(wallet.ethConnectAddress || '') ? wallet.ethConnectAddress as Address : zeroAddress)
-const connected = computed(() => account.value !== zeroAddress && chain.activeChainId === 56)
+const connected = computed(() => account.value !== zeroAddress && [56,4663].includes(chain.activeChainId))
 const detail = ref<V13Detail>(), state = ref<BuybackState>(), quote = ref<BuybackQuote>()
 const listed = ref<boolean>()
 const loading = ref(false), quoting = ref(false), busy = ref<'buyback' | 'claim' | ''>(''), error = ref(''), loadError = ref(''), success = ref('')
@@ -32,13 +32,13 @@ const assets = computed(() => detail.value?.components.map(c => ({ address: c.as
 const f = (value: bigint | undefined, decimals = state.value?.decimals ?? 18) => value === undefined ? '—' : Number(formatUnits(value, decimals)).toLocaleString(locale.value, { maximumFractionDigits: 6 })
 let generation = 0, previewGeneration = 0, disposed = false
 async function load() {
-  if (!token.value || chain.activeChainId !== 56) return
+  if (!token.value || ![56,4663].includes(chain.activeChainId)) return
   const id = ++generation; loading.value = true
   const currentToken = token.value, currentAccount = account.value
   try {
     // Inner-curve tokens have no index yet. Do not depend on index metadata or
     // reward reads just to explain when it will be created (including pendinglist).
-    const value = await getReadOnlyClient(56).readContract({ address: currentToken, abi: buybackAbi, functionName: 'listed' })
+    const value = await getReadOnlyClient(chain.activeChainId).readContract({ address: currentToken, abi: buybackAbi, functionName: 'listed' })
     if (id !== generation || disposed) return
     listed.value = value; loadError.value = ''
     if (!value) { detail.value = undefined; state.value = undefined; quote.value = undefined; return }
@@ -53,7 +53,7 @@ async function load() {
 function message(cause: unknown) {
   const code = cause instanceof Error ? cause.message : ''
   if (code === 'V13_BUYBACK_EXPIRED') return t('v13Index.expired')
-  if (code === 'V13_BUYBACK_EMPTY') return t('v13Index.emptyReserve')
+  if (code === 'V13_BUYBACK_EMPTY') return t('v13Index.emptyReserve',{currency:chain.symbol})
   if (code === 'V13_BUYBACK_ROUTER') return t('v13Index.routerUnavailable')
   if (code === 'V13_BUYBACK_TOO_SMALL') return t('v13Index.tooSmall')
   return t(poolOperationErrorKey(cause))
@@ -97,8 +97,8 @@ onUnmounted(() => { disposed = true; generation++; previewGeneration++; clearInt
   <section class="index-rewards">
     <header class="index-header">
       <div class="index-identity">
-        <BasketTokenLogo v-if="assets.length" :chain-id="56" :address="index" :symbol="symbol" :assets="assets" :size="48" />
-        <div><span class="eyebrow">{{ t('v13Page.linkedIndex') }}</span><h2><RouterLink v-if="indexReady" :to="`/bsc/baskets/${index}`">{{ displayName }} ↗</RouterLink><span v-else>{{ displayName }}</span></h2></div>
+        <BasketTokenLogo v-if="assets.length" :chain-id="chain.activeChainId" :address="index" :symbol="symbol" :assets="assets" :size="48" />
+        <div><span class="eyebrow">{{ t('v13Page.linkedIndex') }}</span><h2><RouterLink v-if="indexReady" :to="`/${chain.deployment.key}/baskets/${index}`">{{ displayName }} ↗</RouterLink><span v-else>{{ displayName }}</span></h2></div>
       </div>
       <button class="text-button" :disabled="loading || !!busy || quoting" @click="load">{{ t('v13Page.refresh') }}</button>
     </header>
@@ -108,7 +108,7 @@ onUnmounted(() => { disposed = true; generation++; previewGeneration++; clearInt
     <template v-if="indexReady">
     <div v-if="assets.length" class="index-assets"><span v-for="asset in assets" :key="asset.address">{{ asset.symbol }} <b>{{ asset.weightPct }}%</b></span></div>
     <div class="index-stats">
-      <div><span>{{ t('v13Page.buybackReserve') }}</span><strong>{{ f(state?.reserve, 18) }} <small>BNB</small></strong></div>
+      <div><span>{{ t('v13Page.buybackReserve') }}</span><strong>{{ f(state?.reserve, 18) }} <small>{{ chain.symbol }}</small></strong></div>
       <div><span>{{ t('v13Index.totalBought') }}</span><strong>{{ f(state?.notified) }} <small>{{ displaySymbol }}</small></strong></div>
       <div><span>{{ t('v13Index.rewardBalance') }}</span><strong>{{ f(state?.rewardBalance) }} <small>{{ displaySymbol }}</small></strong></div>
     </div>
@@ -122,11 +122,11 @@ onUnmounted(() => { disposed = true; generation++; previewGeneration++; clearInt
       </article>
       <article class="action-card buyback-card">
         <h3>{{ t('v13Index.buybackTitle') }}</h3>
-        <p>{{ t('v13Index.buybackHelp') }}</p>
+        <p>{{ t('v13Index.buybackHelp',{currency:chain.symbol}) }}</p>
         <div class="estimate data-row"><span>{{ t('v13Index.estimatedIndex') }}</span><strong>{{ f(quote?.amountOut) }} {{ displaySymbol }}</strong></div>
         <label class="data-row"><span>{{ t('v13Page.slippage') }} %</span><input v-model.number="slippage" type="number" min="0.01" max="10" step="0.01" :disabled="!!busy || quoting" /></label>
         <div v-if="quote" class="data-row minimum"><span>{{ t('v13Index.minimumIndex') }}</span><span>{{ f(quote.minOut) }} {{ displaySymbol }}</span></div>
-        <p v-if="state && !state.reserve && indexReady">{{ t('v13Index.emptyReserve') }}</p>
+        <p v-if="state && !state.reserve && indexReady">{{ t('v13Index.emptyReserve',{currency:chain.symbol}) }}</p>
         <div class="buyback-buttons">
           <button class="secondary" :disabled="!!busy || quoting || !validSlippage || !indexReady || !state?.reserve" @click="preview">{{ quoting ? t('baskets.quoting') : quote ? t('v13Trade.refresh') : t('v13Index.preview') }}</button>
           <button class="primary" :disabled="!!busy || quoting || (connected && (!quote || !validSlippage))" @click="operate('buyback')">{{ !connected ? t('connect') : busy === 'buyback' ? t('v13Page.wait') : t('v13Index.execute') }}</button>

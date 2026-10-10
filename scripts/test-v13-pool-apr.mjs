@@ -8,8 +8,8 @@ import {createRequire} from 'node:module'
 const dir=await mkdtemp(join(tmpdir(),'v13-apr-'))
 const calculator='0x1111111111111111111111111111111111111111'
 await build({entryPoints:['src/utils/v13/pool-apr.ts'],bundle:true,platform:'node',format:'cjs',outfile:join(dir,'apr.cjs'),logLevel:'silent',plugins:[{name:'read-only-fixture',setup(b){
- b.onResolve({filter:/^(@\/utils\/wallets|@\/config\/chains)$/},a=>({path:a.path,namespace:'fixture'}))
- b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`export const getReadOnlyClient=()=>globalThis.__aprClient;export const getChainDeployment=()=>({contracts:{hourlyTickCalculator:'${calculator}'}});`}))
+ b.onResolve({filter:/^(@\/utils\/wallets|@\/config\/chains|@\/stores\/chain)$/},a=>({path:a.path,namespace:'fixture'}))
+ b.onLoad({filter:/.*/,namespace:'fixture'},()=>({loader:'js',contents:`export const useChainStore=()=>({activeChainId:56});export const getReadOnlyClient=()=>globalThis.__aprClient;export const getChainDeployment=()=>({contracts:{hourlyTickCalculator:'${calculator}'}});`}))
 }}]})
 const {poolAprBps,readPoolRewards,annualizeRewards}=createRequire(import.meta.url)(join(dir,'apr.cjs'))
 after(async()=>{delete globalThis.__aprClient;await rm(dir,{recursive:true,force:true})})
@@ -29,7 +29,7 @@ test('large token supplies use integer arithmetic with no loss from JS numbers',
 })
 function fixture(ratio=8000n){
  const requests=[]
- globalThis.__aprClient={getBlock:async()=>({number:123n,timestamp:36123n}),getStorageAt:async p=>{requests.push(p);return '0x'+ratio.toString(16).padStart(64,'0')},readContract:async p=>{requests.push(p);return p.functionName==='feeRatio'?1000:p.functionName==='rewardCalculator'?calculator:p.args[2]-p.args[1]===3600n?10n:1000n}}
+ globalThis.__aprClient={multicall:async p=>Promise.all(p.contracts.map(c=>globalThis.__aprClient.readContract({...c,blockNumber:p.blockNumber}))),getBlock:async()=>({number:123n,timestamp:36123n}),getStorageAt:async p=>{requests.push(p);return '0x'+ratio.toString(16).padStart(64,'0')},readContract:async p=>{requests.push(p);return p.functionName==='feeRatio'?1000:p.functionName==='rewardCalculator'?calculator:p.args[2]-p.args[1]===3600n?10n:1000n}}
  return requests
 }
 const community='0x2222222222222222222222222222222222222222',pool='0x3333333333333333333333333333333333333333'

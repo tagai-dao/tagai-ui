@@ -1,3 +1,5 @@
+import {isIndexToken} from './v14/chain'
+import {readIndexTokenStates} from './v14/token-state'
 import { tradePoolConfig } from './v14/creation-config'
 import { readLifecycle } from './v13/lifecycle'
 import { validateIndexConfig, creationOptions, creationFee } from './v13/creation'
@@ -294,7 +296,7 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
     const createPump = getCreatePumpDeployment();
     if (createPump.chainId === 56 && createPump.version !== 14) throw new Error('New BSC tokens require Pump14');
     if (createPump.version === 14) validateIndexConfig(createParms.indexConfig);
-    const options = createPump.version === 14 ? await creationOptions(userAddress) : undefined;
+    const options = createPump.version === 14 ? await creationOptions(userAddress, createPump.chainId) : undefined;
     const optionalPools = options ? tradePoolConfig(createParms.tradeRewardRatioBps ?? 0, options) : [];
     if (options && createParms.indexConfig!.constituentAssets.some(asset => !options.assets.some(a => a.address.toLowerCase() === asset.toLowerCase()))) throw new Error('Constituent approval changed');
     // Salt search verifies the predicted suffix and current on-chain occupancy.
@@ -331,7 +333,7 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
 export const getCreatePumpFee = async (userAddress: `0x${string}`, componentCount = 1): Promise<bigint> => {
     if (getCreatePumpDeployment().version === 14) {
         if (!Number.isInteger(componentCount) || componentCount < 1 || componentCount > 4) throw new Error('Choose 1–4 components');
-        return creationFee(await creationOptions(userAddress), componentCount);
+        return creationFee(await creationOptions(userAddress, useChainStore().activeChainId), componentCount);
     }
     const { contractName } = getCreatePumpDeployment();
     const [pumpFee, commFee, settingsFee, ipshareCreated] = await Promise.all([
@@ -1773,23 +1775,13 @@ export const getTokenOnchainInfo = async (
     socialPoolMap: Record<string, string> = {},
 ) => {
     if (tokens.length === 0) return []
-    const v13Info: Record<string, any> = {}
-    const v13Tokens = _.union(tokens).filter(token => useChainStore().activeChainId === 56 && [13, 14].includes(Number(versions[token])))
-    await Promise.all(v13Tokens.map(async token => {
-        try {
-            const state = await readLifecycle(token as `0x${string}`)
-            let price: number | undefined
-            if (!state.listed) {
-                const raw = await readContract('Pump13','getPrice',[state.supply,parseEther('1')]) as bigint
-                price = Number(raw)/1e18
-            } else {
-                const poolId = await readContract('Token13','v4PoolId',[],token as `0x${string}`) as `0x${string}`
-                const slot = await readContract('PCSCLPoolManager','getSlot0',[poolId]) as any
-                price = sqrtPriceX96ToBnbPerToken(BigInt(slot[0]))
-            }
-            v13Info[token] = {bondingCurveSupply:state.supply,listed:state.listed,listingPending:state.pending,price}
-        } catch { /* Preserve the last known indexed state when RPC is unavailable. */ }
-    }))
+    let v13Info: Record<string, any> = {}
+    const chainId=useChainStore().activeChainId
+    const v13Tokens = _.union(tokens).filter(token => isIndexToken(chainId,versions[token]))
+    if(v13Tokens.length) {
+        try { v13Info=await readIndexTokenStates(getReadOnlyClient(chainId),chainId,v13Tokens,versions) }
+        catch { /* Preserve the last known indexed state on a failed Multicall. */ }
+    }
     tokens = _.union(tokens).filter(token => !v13Tokens.includes(token))
     if (tokens.length === 0) return v13Info
     let calls: any[] = []

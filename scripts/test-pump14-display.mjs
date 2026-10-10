@@ -1,17 +1,27 @@
-import { test } from 'node:test'
+import { test,after } from 'node:test'
+import {build} from 'esbuild'
+import {mkdtemp,rm} from 'node:fs/promises'
+import {tmpdir} from 'node:os'
+import {join} from 'node:path'
+import {createRequire} from 'node:module'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { computed } from 'vue'
 import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
 
+const dir=await mkdtemp(join(tmpdir(),'pump14-display-'))
+await build({entryPoints:['src/utils/v14/chain.ts'],alias:{'@':join(process.cwd(),'src')},bundle:true,platform:'node',format:'cjs',outfile:join(dir,'chain.cjs'),define:{'import.meta.env':'{}'},logLevel:'silent'})
+const {isIndexToken}=createRequire(import.meta.url)(join(dir,'chain.cjs'))
+after(()=>rm(dir,{recursive:true,force:true}))
+
 for (const [file, name] of [['HomeTagDetail.vue','isV13Token'], ['TagToken.vue','isV13']]) {
   const source = readFileSync(new URL(`../src/views/tag-detail/${file}`, import.meta.url), 'utf8')
   const line = source.split('\n').find(line => line.startsWith(`const ${name} = computed(`))
-  test(`${file}: shared index panels include Pump14 without enabling legacy/RH tokens`, () => {
-    const evaluate = new Function('computed', 'chainStore', 'comStore', `${line}; return ${name}.value`)
-    for (const version of [13, '13', 14, '14']) assert.equal(evaluate(computed, { activeChainId:56 }, {currentSelectedCommunity:{version}}), true)
-    for (const version of [undefined, 9, 10, 11, 12, 15]) assert.equal(evaluate(computed, { activeChainId:56 }, {currentSelectedCommunity:{version}}), false)
-    assert.equal(evaluate(computed, { activeChainId:4663 }, {currentSelectedCommunity:{version:14}}), false)
+  test(`${file}: shared index panels include BSC/RH Pump14 without enabling legacy tokens`, () => {
+    const evaluate = new Function('isIndexToken','computed', 'chainStore', 'comStore', `${line}; return ${name}.value`)
+    for (const version of [13, '13', 14, '14']) assert.equal(evaluate(isIndexToken,computed, { activeChainId:56 }, {currentSelectedCommunity:{version}}), true)
+    for (const version of [undefined, 9, 10, 11, 12, 15]) assert.equal(evaluate(isIndexToken,computed, { activeChainId:56 }, {currentSelectedCommunity:{version}}), false)
+    assert.equal(evaluate(isIndexToken,computed, { activeChainId:4663 }, {currentSelectedCommunity:{version:14}}), true)
   })
   test(`${file}: template compiles with the updated display gate`, () => {
     const {descriptor,errors} = parse(source,{filename:file})

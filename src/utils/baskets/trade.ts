@@ -115,8 +115,9 @@ export const getTradeAllowance = async (
   owner: Address,
   chainId: number,
   version?: number,
+  engine?: Address,
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, version)
+  const protocol = getBasketProtocol(chainId, version,engine)
   return getReadOnlyClient(chainId).readContract({
     address: token,
     abi: erc20Abi,
@@ -131,8 +132,9 @@ export const approveBasketTrade = async (
   account: Address,
   chainId: number,
   version?: number,
+  engine?: Address,
 ): Promise<Hex> => {
-  const protocol = getBasketProtocol(chainId, version)
+  const protocol = getBasketProtocol(chainId, version,engine)
   const wallet = getWalletClient()
   if (!wallet) throw new Error('Wallet not connected')
   const publicClient = getReadOnlyClient(chainId)
@@ -155,8 +157,9 @@ export const quoteWethToAsset = (
   amount: bigint,
   chainId: number,
   version?: number,
+  engine?: Address,
 ): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, version)
+  const protocol = getBasketProtocol(chainId, version,engine)
   return getReadOnlyClient(chainId).readContract({
     address: protocol.rebalanceExecutor,
     abi: getRebalanceExecutorAbi(chainId, version) as any,
@@ -239,9 +242,9 @@ export const quoteAssetToWethForSwap = (
   }).then(({ result }) => result[0])
 }
 
-const selfPoolKey = async (basket: Address, chainId: number, version?: number): Promise<BasketPoolKey> => {
+const selfPoolKey = async (basket: Address, chainId: number, version?: number, engine?:Address): Promise<BasketPoolKey> => {
   const deployment = getBasketDeployment(chainId)
-  const protocol = getBasketProtocol(chainId, version)
+  const protocol = getBasketProtocol(chainId, version,engine)
   if (chainId === 56) {
     const raw: any = await getReadOnlyClient(chainId).readContract({
       address: protocol.hook,
@@ -398,7 +401,7 @@ export const quoteBasketSwap = async ({
   const amountText = normalizeBasketAmount(amount, decimals)
   const amountRaw = parseUnits(amountText, decimals)
   if (amountRaw <= 0n || amountRaw >= 2n ** 128n) throw new Error('Invalid amount')
-  const key = await selfPoolKey(detail.address, detail.chainId, detail.version)
+  const key = await selfPoolKey(detail.address, detail.chainId, detail.version,detail.engine)
   if (detail.chainId === 56 && Number(detail.version) >= 4) {
     if (!Number.isInteger(slippageBps) || slippageBps < 1 || slippageBps > BASKET_MAX_SLIPPAGE_BPS) throw new Error('Invalid slippage')
     const client = getReadOnlyClient(detail.chainId)
@@ -519,7 +522,7 @@ export const executeBasketSwap = async ({
     firstMint,
     legMins: quote.legMins,
   })
-  const protocol = getBasketProtocol(detail.chainId, detail.version)
+  const protocol = getBasketProtocol(detail.chainId, detail.version,detail.engine)
   const functionName = side === 'buy'
     ? (detail.chainId === 56 ? 'buyExactSettlement' : 'buyExactUsdg')
     : 'sellExactBasket'

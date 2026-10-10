@@ -1,3 +1,5 @@
+import {useChainStore} from '@/stores/chain'
+import {RH_PUMP14_BASKET_PROTOCOL} from '@/config/baskets'
 import { decodeFunctionResult, encodeAbiParameters, encodeFunctionData, parseAbi, zeroAddress, type Address, type Hex } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import { getBasketProtocol } from '@/config/baskets'
@@ -7,6 +9,7 @@ import { encodeBasketTradeData } from '@/utils/baskets/hook-data'
 import { send, walletGuard } from './pools'
 
 export const buybackAbi = parseAbi([
+  'function getPump() view returns(address)',
   'function listed() view returns(bool)',
   'function indexToken() view returns(address)',
   'function listingHook() view returns(address)',
@@ -32,30 +35,28 @@ const buybackMulticallAbi = parseAbi([
   'function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns((bool success,bytes returnData)[] returnData)',
 ])
 export type BuybackState = {
-  token: Address; account: Address; index: Address; hook: Address; listed: boolean;
+  chainId:number; pump:Address; token: Address; account: Address; index: Address; hook: Address; listed: boolean;
   reserve: bigint; notified: bigint; pending: bigint; rewardBalance: bigint;
   walletIndex: bigint; decimals: number; symbol: string; timestamp: bigint; blockNumber: bigint;
 }
 export async function readBuybackState(token: Address, account: Address = zeroAddress): Promise<BuybackState> {
-  const client = getReadOnlyClient(56), block = await client.getBlock()
-  const at = { abi: buybackAbi, blockNumber: block.number }
-  const [listed, index, hook, notified, pending] = await Promise.all([
-    client.readContract({ ...at, address: token, functionName: 'listed' }),
-    client.readContract({ ...at, address: token, functionName: 'indexToken' }),
-    client.readContract({ ...at, address: token, functionName: 'listingHook' }),
-    client.readContract({ ...at, address: token, functionName: 'totalIndexRewardsNotified' }),
-    account === zeroAddress ? 0n : client.readContract({ ...at, address: token, functionName: 'pendingBuybackReward', args: [account] }),
-  ])
-  const state: BuybackState = { token, account, listed, index, hook, notified, pending, reserve: 0n, rewardBalance: 0n, walletIndex: 0n, decimals: 18, symbol: '', timestamp: block.timestamp, blockNumber: block.number }
-  if (index === zeroAddress || !listed) return state
-  const [reserve, rewardBalance, walletIndex, decimals, symbol] = await Promise.all([
-    client.readContract({ ...at, address: hook, functionName: 'buybackBnbReserve', args: [token] }),
-    client.readContract({ ...at, address: index, functionName: 'balanceOf', args: [token] }),
-    account === zeroAddress ? 0n : client.readContract({ ...at, address: index, functionName: 'balanceOf', args: [account] }),
-    client.readContract({ ...at, address: index, functionName: 'decimals' }),
-    client.readContract({ ...at, address: index, functionName: 'symbol' }),
-  ])
-  return { ...state, reserve, rewardBalance, walletIndex, decimals, symbol }
+  const chainId=useChainStore().activeChainId,client = getReadOnlyClient(chainId), block = await client.getBlock()
+  const values=await client.multicall({blockNumber:block.number,allowFailure:false,contracts:[
+    ...['listed','indexToken','listingHook','totalIndexRewardsNotified','getPump'].map(functionName=>({address:token,abi:buybackAbi,functionName})),
+    ...(account===zeroAddress?[]:[{address:token,abi:buybackAbi,functionName:'pendingBuybackReward',args:[account]}]),
+  ]})
+  const [listed,index,hook,notified,pump]=values as [boolean,Address,Address,bigint,Address]
+  const pending=account===zeroAddress?0n:values[5] as bigint
+  const state:BuybackState={chainId,pump,token,account,listed,index,hook,notified,pending,reserve:0n,rewardBalance:0n,walletIndex:0n,decimals:18,symbol:'',timestamp:block.timestamp,blockNumber:block.number}
+  if(index===zeroAddress||!listed)return state
+  const [reserve,rewardBalance,walletIndex,decimals,symbol]=await client.multicall({blockNumber:block.number,allowFailure:false,contracts:[
+    {address:hook,abi:buybackAbi,functionName:'buybackBnbReserve',args:[token]},
+    {address:index,abi:buybackAbi,functionName:'balanceOf',args:[token]},
+    {address:index,abi:buybackAbi,functionName:'balanceOf',args:[account]},
+    {address:index,abi:buybackAbi,functionName:'decimals'},
+    {address:index,abi:buybackAbi,functionName:'symbol'},
+  ]}) as [bigint,bigint,bigint,number,string]
+  return {...state,reserve,rewardBalance,walletIndex:account===zeroAddress?0n:walletIndex,decimals,symbol}
 }
 
 export function buybackMinimum(amount: bigint, bps: number): bigint {
@@ -68,36 +69,38 @@ export type BuybackQuote = {
   state: BuybackState; amountOut: bigint; minOut: bigint; minSettlement: bigint;
   data: Hex; deadline: bigint; fetchedAt: number; bps: number;
 }
-async function checkBuybackRouter(blockNumber?: bigint) {
-  const client = getReadOnlyClient(56), pump = getChainDeployment(56).contracts.pump13!
-  const router = await client.readContract({ address: pump, abi: buybackAbi, functionName: 'buybackRouter', blockNumber })
-  if (router === zeroAddress) throw new Error('V13_BUYBACK_ROUTER')
-  const protocol = getBasketProtocol(56, 4)
-  const actual = await Promise.all((['pump', 'nutboxRouter', 'basketRouter', 'settlementToken'] as const).map(functionName => client.readContract({ address: router, abi: buybackAbi, functionName, blockNumber })))
-  const expected = [pump, protocol.nutboxRouter, protocol.swapRouter, protocol.settlementToken]
-  if (actual.some((a, i) => a.toLowerCase() !== expected[i]?.toLowerCase())) throw new Error('V13_BUYBACK_ROUTER')
+async function checkBuybackRouter(state:BuybackState) {
+  const {chainId,pump,blockNumber}=state,client=getReadOnlyClient(chainId),deployment=getChainDeployment(chainId)
+  if(![deployment.contracts.pump13,deployment.contracts.pump14].some(a=>a?.toLowerCase()===pump.toLowerCase()))throw new Error('V13_BUYBACK_ROUTER')
+  const router=await client.readContract({address:pump,abi:buybackAbi,functionName:'buybackRouter',blockNumber})
+  if(router===zeroAddress || chainId===4663&&router.toLowerCase()!==deployment.contracts.buybackRouter14?.toLowerCase())throw new Error('V13_BUYBACK_ROUTER')
+  const protocol=chainId===4663?RH_PUMP14_BASKET_PROTOCOL:getBasketProtocol(56,4)
+  const actual=await client.multicall({blockNumber,allowFailure:false,contracts:['pump','nutboxRouter','basketRouter','settlementToken'].map(functionName=>({address:router,abi:buybackAbi,functionName}))}) as Address[]
+  const expected=[pump,protocol.nutboxRouter,protocol.swapRouter,protocol.settlementToken]
+  if(actual.some((a,i)=>a.toLowerCase()!==expected[i]?.toLowerCase()))throw new Error('V13_BUYBACK_ROUTER')
 }
 export async function quoteBuyback(token: Address, account: Address, bps: number): Promise<BuybackQuote> {
   buybackMinimum(10000n, bps)
   const state = await readBuybackState(token, account)
   if (!state.listed || state.index === zeroAddress) throw new Error('V13_BUYBACK_PENDING')
   if (state.reserve <= 0n) throw new Error('V13_BUYBACK_EMPTY')
-  const client = getReadOnlyClient(56), protocol = getBasketProtocol(56, 4)
+  const chainId=state.chainId,basketVersion=chainId===4663?3:4
+  const client = getReadOnlyClient(chainId), protocol = chainId===4663?RH_PUMP14_BASKET_PROTOCOL:getBasketProtocol(56,4)
   const at = { abi: buybackAbi, blockNumber: state.blockNumber }
-  await checkBuybackRouter(state.blockNumber)
+  await checkBuybackRouter(state)
   // Read execution metadata on chain; stale API metadata must not define the legs.
-  const [version, engine, count] = await Promise.all([
-    client.readContract({ ...at, address: protocol.registry, functionName: 'basketVersion', args: [state.index] }),
-    client.readContract({ ...at, address: state.index, functionName: 'engine' }),
-    client.readContract({ ...at, address: state.index, functionName: 'assetCount' }),
-  ])
+  const [version,engine,count]=await client.multicall({blockNumber:state.blockNumber,allowFailure:false,contracts:[
+    {address:protocol.registry,abi:buybackAbi,functionName:'basketVersion',args:[state.index]},
+    {address:state.index,abi:buybackAbi,functionName:'engine'},
+    {address:state.index,abi:buybackAbi,functionName:'assetCount'},
+  ]}) as [number,Address,bigint]
   // BasketToken.MAX_ASSETS = 10.
-  if (version !== 4 || engine.toLowerCase() !== protocol.hook.toLowerCase() || count < 1n || count > 10n) throw new Error('V13_BUYBACK_ROUTER')
+  if (version !== basketVersion || engine.toLowerCase() !== protocol.hook.toLowerCase() || count < 1n || count > 10n) throw new Error('V13_BUYBACK_ROUTER')
   const legCount = Number(count)
-  const settlement = await quoteNutboxExactInput(zeroAddress, getBasketProtocol(56, 4).settlementToken, state.reserve, 56, 4)
+  const settlement=await quoteNutboxExactInput(zeroAddress,protocol.settlementToken,state.reserve,chainId,basketVersion,{protocol,blockNumber:state.blockNumber})
   const minSettlement = buybackMinimum(settlement, bps)
   const payload = (minimum: bigint, legMins: bigint[]) => encodeAbiParameters([{ type: 'uint256' }, { type: 'bytes' }], [minSettlement,
-    encodeBasketTradeData({ chainId: 56, version: 4, side: 'buy', minOut: minimum, legCount, legMins, frontend: zeroAddress }),
+    encodeBasketTradeData({ chainId, version: basketVersion, side: 'buy', minOut: minimum, legCount, legMins, frontend: zeroAddress }),
   ])
   const deadline = state.timestamp + 180n
   const reserveReads = Array.from({ length: legCount }, (_, i) => ({
@@ -110,7 +113,7 @@ export async function quoteBuyback(token: Address, account: Address, bps: number
   // These permissive discovery bounds and Multicall calldata are NEVER returned
   // to the wallet path. Any failed/malformed result aborts; there is no fallback.
   const preview = await client.simulateContract({
-    address: getChainDeployment(56).multiConfig.multicallAddress, abi: buybackMulticallAbi,
+    address: getChainDeployment(chainId).multiConfig.multicallAddress, abi: buybackMulticallAbi,
     functionName: 'aggregate3', account, blockNumber: state.blockNumber,
     args: [[...reserveReads, {
       target: state.hook, allowFailure: false,
@@ -135,11 +138,11 @@ export async function quoteBuyback(token: Address, account: Address, bps: number
 }
 export async function executeBuyback(quote: BuybackQuote) {
   const guard = walletGuard()
-  if (guard.account.toLowerCase() !== quote.state.account.toLowerCase()) throw new Error('V13_ACCOUNT_CHANGED')
+  if (guard.chainId!==quote.state.chainId || guard.account.toLowerCase() !== quote.state.account.toLowerCase()) throw new Error('V13_ACCOUNT_CHANGED')
   const current = await readBuybackState(quote.state.token, guard.account)
   if (Date.now() - quote.fetchedAt > 60000 || current.timestamp >= quote.deadline || current.reserve !== quote.state.reserve
     || current.index.toLowerCase() !== quote.state.index.toLowerCase() || current.hook.toLowerCase() !== quote.state.hook.toLowerCase()) throw new Error('V13_BUYBACK_EXPIRED')
-  await checkBuybackRouter()
+  await checkBuybackRouter(current)
   // Reserve is paid by the Hook; the connected wallet sends zero BNB.
   return send(current.hook, buybackAbi, 'executeBuyback', [current.token, quote.minOut, quote.deadline, quote.data], 0n, guard)
 }

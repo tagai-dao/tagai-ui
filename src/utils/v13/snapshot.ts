@@ -1,5 +1,6 @@
 import { parseAbi, encodeFunctionData, decodeFunctionResult, encodeAbiParameters, keccak256, zeroAddress, type PublicClient, type Address, type Hex } from 'viem';
 import { QuoteError, type Metadata, type Snapshot, type PoolState, type Route } from './types';
+import { stateSlot, liquiditySlot, tickSlot, bitmapSlot, decodeSlot0, decodeTick } from '../v14/uniswap-state';
 const MULTI = parseAbi(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[] returnData)']);
 const ABI = parseAbi([
     'function getBlockNumber() view returns(uint256)', 'function getCurrentBlockTimestamp() view returns(uint256)',
@@ -16,6 +17,7 @@ const ABI = parseAbi([
     'function getLiquidity(bytes32) view returns(uint128)',
     'function getPoolTickInfo(bytes32,int24) view returns((uint128 liquidityGross,int128 liquidityNet,uint256 feeGrowthOutside0X128,uint256 feeGrowthOutside1X128))',
     'function getPoolBitmapInfo(bytes32,int16) view returns(uint256)',
+    'function extsload(bytes32) view returns(bytes32)',
     'function routePoolCount(address,address) view returns(uint256)',
     'function routePoolAt(address,address,uint256) view returns(bytes32)',
     'function pricePool(bytes32) view returns(bool,uint32,address,address,uint8,bytes)',
@@ -24,14 +26,15 @@ const eq = (a: unknown, b: unknown) => String(a).toLowerCase() === String(b).toL
 export function routeHash(m: Metadata, r: Route, buy: boolean): Hex {
     const input = buy ? zeroAddress : r.asset, output = buy ? r.asset : zeroAddress;
     const pools = buy ? r.registry : [...r.registry].reverse();
-    let hash = keccak256(encodeAbiParameters([{ type: 'uint256' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }], [56n, m.nutboxRouter, input, output, BigInt(pools.length)]));
+    let hash = keccak256(encodeAbiParameters([{ type: 'uint256' }, { type: 'address' }, { type: 'address' }, { type: 'address' }, { type: 'uint256' }], [BigInt(m.chainId), m.nutboxRouter, input, output, BigInt(pools.length)]));
     for (const p of pools)
         hash = keccak256(encodeAbiParameters([{ type: 'bytes32' }, { type: 'bytes32' }, { type: 'address' }, { type: 'address' }, { type: 'uint8' }, { type: 'bytes' }], [hash, p.id, p.token0, p.token1, p.sourceType, p.sourceData]));
     return hash;
 }
 export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: bigint, admission: 'multi-pump' | 'v13-liquidity' = 'multi-pump'): Promise<Snapshot> {
-    if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || m.chainId !== 56 || ![13, 14].includes(m.version)
-        || (admission === 'v13-liquidity' && m.version !== 13)
+    if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || ![56,4663].includes(m.chainId) || ![13, 14].includes(m.version)
+        || (m.chainId === 4663 && m.version !== 14) || (client.chain && client.chain.id !== m.chainId)
+        || (admission === 'v13-liquidity' && m.chainId === 56 && m.version !== 13)
         || m.pools.length > 25 || m.routes.length > 5 || m.pools.reduce((n, p) => n + (p.ticks?.length || 0), 0) > 512)
         throw new QuoteError('V13_INVALID_METADATA');
     for (const p of m.pools) if (p.kind !== 'v2') {
@@ -50,10 +53,14 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
     }> = [], names: Array<{
         key: string;
         fn: string;
+        decode?: (raw: Hex) => unknown;
     }> = [];
     const add = (key: string, target: Address, fn: string, args: unknown[] = []) => {
         names.push({ key, fn });
         calls.push({ target, allowFailure: true, callData: encodeFunctionData({ abi: ABI, functionName: fn, args } as any) });
+    };
+    const storage = (key: string, target: Address, slot: Hex, decode: (raw: Hex) => unknown) => {
+        add(key,target,'extsload',[slot]); names[names.length-1].decode=decode;
     };
     add('block', m.multicall, 'getBlockNumber');
     add('time', m.multicall, 'getCurrentBlockTimestamp');
@@ -62,7 +69,7 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
     if (m.executor) {
         // The legacy LP helper still uses its immutable V13 executor. Ordinary
         // trades must use registry admission; a failed read never falls back to pump().
-        if (admission === 'v13-liquidity') add('pump', m.executor, 'pump');
+        if (admission === 'v13-liquidity' && m.chainId === 56) add('pump', m.executor, 'pump');
         else add('supported', m.executor, 'supportsToken', [m.token]);
         add('router', m.executor, 'nutboxRouter');
     }
@@ -74,6 +81,14 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
             add(p.id + ':b1', p.token1, 'balanceOf', [p.address]);
         }
         else {
+            if (p.kind === 'v4' && m.chainId === 4663) {
+                if (p.v4Protocol !== 'uniswap-v4' || !p.poolId) throw new QuoteError('V13_INVALID_METADATA');
+                storage(p.id,p.address,stateSlot(p.poolId),decodeSlot0);
+                storage(p.id+':liquidity',p.address,liquiditySlot(p.poolId),raw=>BigInt(raw)&((1n<<128n)-1n));
+                for (const t of p.ticks!) storage(p.id+':t:'+t,p.address,tickSlot(p.poolId,t),decodeTick);
+                for (const w of p.words!) storage(p.id+':w:'+w,p.address,bitmapSlot(p.poolId,w),raw=>BigInt(raw));
+                continue;
+            }
             const prefix = p.kind === 'v4' ? [p.poolId] : [];
             add(p.id, p.address, p.kind === 'v4' ? 'getSlot0' : 'slot0', prefix);
             add(p.id + ':liquidity', p.address, p.kind === 'v4' ? 'getLiquidity' : 'liquidity', prefix);
@@ -93,14 +108,22 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
             r.registry.forEach((_, i) => add(key + ':' + i, m.nutboxRouter, 'routePoolAt', [a, b, i]));
         }
     // Final round: all quote state and cache/route validation share one block.
-    const raw = await client.readContract({ address: m.multicall, abi: MULTI, functionName: 'aggregate3', args: [calls] } as any) as unknown as Array<{
+    const blockNumber = await client.getBlockNumber();
+    const raw: Array<{
         success: boolean;
         returnData: Hex;
-    }>;
+    }> = [];
+    for (let offset=0;offset<calls.length;offset+=100) {
+        const chunk=calls.slice(offset,offset+100);
+        const rows=await client.readContract({address:m.multicall,abi:MULTI,functionName:'aggregate3',args:[chunk],blockNumber} as any) as typeof raw;
+        if(rows.length!==chunk.length)throw new QuoteError('V13_STATE_UNAVAILABLE');
+        raw.push(...rows);
+    }
     const values: Record<string, any> = {};
     raw.forEach((r, i) => { if (r.success) {
         try {
             values[names[i].key] = decodeFunctionResult({ abi: ABI, functionName: names[i].fn, data: r.returnData } as any);
+            if (names[i].decode) values[names[i].key]=names[i].decode!(values[names[i].key]);
         }
         catch { /* invalidate only dependent routes */ }
     } });
@@ -174,6 +197,6 @@ export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: 
         return true;
     });
     return { block: values.block, timestamp: Number(values.time), fetchedAt: Date.now(), gasPrice, pools, routes, hashes,
-        executable: !!m.executor && (admission === 'v13-liquidity' ? eq(values.pump, m.pump) : values.supported === true)
+        executable: !!m.executor && (admission === 'v13-liquidity' && m.chainId === 56 ? eq(values.pump, m.pump) : values.supported === true)
             && eq(values.router, m.nutboxRouter) };
 }

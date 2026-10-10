@@ -26,7 +26,7 @@ function fixture(kind='v4') {
  const p={id:String(id),address:a(id),kind,token0:a(1),token1:a(2),poolId:h(id),tickSpacing:60,feePips:2500,decimals0:18,decimals1:18,words:[-2,-1,0,1,2],ticks:[0]};
  const m={schemaVersion:1,abiVersion:'ipshare-subject-v1',chainId:56,version:13,token:a(2),nutboxRouter:a(3),multicall:a(4),executor:null,
   tickDiscovery:'server',pools:[p],routes:[{index:0,asset:a(2),pools:[p.id],registry:[]}]};
- const client={readContract:async req=>{
+ const client={getBlockNumber:async()=>77n,readContract:async req=>{
   assert.equal(req.functionName,'aggregate3');calls.push(req);
   return req.args[0].map(call=>{
    const {functionName:f,args=[]}=decodeFunctionData({abi:ABI,data:call.callData});
@@ -49,7 +49,7 @@ for(const kind of ['v3','v4'])test(`${kind}: cold and warm quotes each use one l
  const {m,p,client,calls}=fixture(kind);
  const cold=await loadSnapshot(client,m,1n);
  assert.equal(cold.pools[p.id].valid,true);assert.equal(cold.routes.length,1);assert.equal(calls.length,1);
- assert.equal(calls[0].blockNumber,undefined);
+ assert.equal(calls[0].blockNumber,77n);
  await loadSnapshot(client,structuredClone(m),1n);assert.equal(calls.length,2);
 });
 test('V2-only metadata needs one state multicall on first quote',async()=>{

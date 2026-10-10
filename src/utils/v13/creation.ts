@@ -8,16 +8,16 @@ export type CreationOptions = { chainId: number; version: number; pump: string; 
   pumpFee: string; ipshareFee: string; communityFee: string; settingsFee: string; tradePool: { factory: `0x${string}`; enabled: boolean; maxRewardRatio: number } }
 import { validTradePool } from '../v14/creation-config'
 export { validateIndexConfig } from './index-config'
-export async function creationOptions(creator: string): Promise<CreationOptions> {
+export async function creationOptions(creator: string, chainId = 56): Promise<CreationOptions> {
   if (!isAddress(creator)) throw new Error('Connect a wallet to load creation settings')
   try {
     const r: any = await get(`${API_BASE_URL}/pump/v14/creation/${creator}`, {}, {
-      headers: {'X-Chain-Id':'56'}, timeout: 8000, 'axios-retry': { retries: 0 },
+      headers: {'X-Chain-Id':String(chainId)}, timeout: 8000, 'axios-retry': { retries: 0 },
     })
-    if (r?.c !== 0 || r.d?.chainId !== 56 || r.d?.version !== 14 ||
-        r.d?.pump?.toLowerCase() !== getChainDeployment(56).contracts.pump14?.toLowerCase() ||
-        !validTradePool(r.d?.tradePool) ||
-        r.d?.tokenImplementation?.toLowerCase() !== getChainDeployment(56).contracts.tokenImplementation14?.toLowerCase() ||
+    if (r?.c !== 0 || r.d?.chainId !== chainId || r.d?.version !== 14 ||
+        r.d?.pump?.toLowerCase() !== getChainDeployment(chainId).contracts.pump14?.toLowerCase() ||
+        !validTradePool(r.d?.tradePool, chainId) ||
+        r.d?.tokenImplementation?.toLowerCase() !== getChainDeployment(chainId).contracts.tokenImplementation14?.toLowerCase() ||
         !Number.isSafeInteger(r.d?.sourceBlock) || !isAddress(r.d?.tokenImplementation ?? '') ||
         !Array.isArray(r.d?.assets) || !r.d.assets.every((a: CreationOptions['assets'][number]) =>
           isAddress(a?.address ?? '') && typeof a.symbol === 'string' && a.symbol.length > 0 && Number.isInteger(a.decimals) && a.decimals >= 0 && a.decimals <= 255) ||
@@ -29,15 +29,17 @@ export async function creationOptions(creator: string): Promise<CreationOptions>
     const [{ getReadOnlyClient }, { readCreationOptions }] = await Promise.all([
       import('@/utils/wallets'), import('./creation-chain'),
     ])
-    return readCreationOptions(getReadOnlyClient(56), creator as Address)
+    return readCreationOptions(getReadOnlyClient(chainId), creator as Address)
   }
 }
 export const creationFee = (o: CreationOptions, count: number) => BigInt(o.pumpFee)+BigInt(o.ipshareFee)+BigInt(o.communityFee)+BigInt(o.settingsFee)*BigInt(count)
-export async function registerV13(form: { version?: number }) {
+export async function registerV13(form: { version?: number; chainId?: number }) {
   const version = Number(form.version)
+  const chainId = form.chainId ?? 56
+  if (![56,4663].includes(chainId) || (chainId === 4663 && version !== 14)) throw new Error('Unsupported registration chain')
   if (![13, 14].includes(version)) throw new Error('Unsupported registration version')
   // V13 is retained only for already-submitted receipt recovery. New creation uses V14.
-  const r: any = await post(`${API_BASE_URL}/pump/v${version}/register`, form, {headers:{'X-Chain-Id':'56'}, timeout: 10_000, 'axios-retry': { retries: 0 }})
+  const r: any = await post(`${API_BASE_URL}/pump/v${version}/register`, form, {headers:{'X-Chain-Id':String(chainId)}, timeout: 10_000, 'axios-retry': { retries: 0 }})
   if (r?.c !== 0 || !r.d) throw new Error('Token registration unavailable')
   return r.d
 }

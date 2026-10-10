@@ -1,3 +1,5 @@
+import { useChainStore } from '@/stores/chain'
+import { getIndexDeployment } from '../v14/chain'
 import {getChainDeployment} from '@/config/chains'
 import {get} from '@/apis/axios'
 import {API_BASE_URL} from '@/config/api'
@@ -12,15 +14,18 @@ import {send,walletGuard,validateLiquidityRouter} from './pools'
 import abi from './LiquidityRouter.json'
 export type ZapQuote={quote:Quote;zap:ZapPlan;amount:bigint;component:number}
 export async function quoteZap(token:Address,component:number,amount:bigint,signal?:AbortSignal):Promise<ZapQuote>{
- const check=()=>{if(signal?.aborted)throw new Error('V13_QUOTE_CANCELLED')}
+ const chainId=useChainStore().activeChainId
+ const check=()=>{if(signal?.aborted||useChainStore().activeChainId!==chainId)throw new Error('V13_QUOTE_CANCELLED')}
  check()
  let result:any
- try { result=await get(`${API_BASE_URL}/pump/v13/metadata/${token}`,{},{headers:{'X-Chain-Id':'56'},signal,timeout:10000,'axios-retry':{retries:0}}) }
+ try { result=await get(`${API_BASE_URL}/pump/v13/metadata/${token}`,{},{headers:{'X-Chain-Id':String(chainId)},signal,timeout:10000,'axios-retry':{retries:0}}) }
  catch(error:any){if(error?.data?.error==='V13_METADATA_PREPARING')throw new Error('V13_METADATA_PREPARING');throw error}
  check()
  if(result?.error==='V13_METADATA_PREPARING')throw new Error('V13_METADATA_PREPARING')
  if(result?.c!==0)throw new Error('V13_METADATA_UNAVAILABLE')
- const m={...result.d,executor:getChainDeployment(56).contracts.tradeRouter13??null} as Metadata,client=getReadOnlyClient(56)
+ const profile=getIndexDeployment(chainId,result.d?.version)
+ if(result.d?.chainId!==chainId||result.d?.pump?.toLowerCase()!==profile.pump?.toLowerCase())throw new Error('V13_INVALID_METADATA')
+ const m={...result.d,executor:profile.liquidityExecutor??null} as Metadata,client=getReadOnlyClient(chainId)
  const gas=await quoteGasPrice(client)
  check()
  const s=await loadSnapshot(client,m,gas,'v13-liquidity')
@@ -42,10 +47,10 @@ export async function quoteZap(token:Address,component:number,amount:bigint,sign
  }finally{clearTimeout(timeout);if(abort)signal?.removeEventListener('abort',abort);worker.terminate()}
 }
 export async function executeZap(q:ZapQuote,router:Address,subject:Address,bps:number){
- const guard=walletGuard();await validateLiquidityRouter(router)
- if(!q.quote.snapshot.executable||!q.quote.metadata.executor||q.quote.metadata.executor.toLowerCase()!==getChainDeployment(56).contracts.tradeRouter13?.toLowerCase())throw new Error('V13_EXECUTOR_UNAVAILABLE')
+ const guard=walletGuard();if(guard.chainId!==q.quote.metadata.chainId)throw new Error('Wallet or chain changed');await validateLiquidityRouter(router)
+ if(!q.quote.snapshot.executable||!q.quote.metadata.executor||q.quote.metadata.executor.toLowerCase()!==getIndexDeployment(q.quote.metadata.chainId,q.quote.metadata.version).liquidityExecutor?.toLowerCase())throw new Error('V13_EXECUTOR_UNAVAILABLE')
  if(!Number.isInteger(bps)||bps<1||bps>1000)throw new Error('Invalid slippage')
- const bound=await getReadOnlyClient(56).readContract({address:router,abi:abi as Abi,functionName:'tradeRouter'})
+ const bound=await getReadOnlyClient(guard.chainId).readContract({address:router,abi:abi as Abi,functionName:'tradeRouter'})
  if(String(bound).toLowerCase()!==q.quote.metadata.executor.toLowerCase())throw new Error('V13_EXECUTOR_MISMATCH')
  if(Date.now()-q.quote.snapshot.fetchedAt>45000)throw new Error('V13_QUOTE_EXPIRED')
  const min=(n:bigint)=>{const x=n*BigInt(10000-bps)/10000n;return x>0n?x:1n}
