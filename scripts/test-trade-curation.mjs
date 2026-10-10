@@ -22,7 +22,7 @@ test('anonymous buy requests a transaction attribution without a login id or ext
  assert.equal(calls[0][2].headers['X-Chain-Id'],'56')
 })
 test('other chains and buys outside posts do not register an intent',async()=>{
- globalThis.__tc.chain.activeChainId=4663
+ globalThis.__tc.chain.activeChainId=1
  assert.equal(await api.prepareTradeAttribution(input),null)
  globalThis.__tc.chain.activeChainId=56
  assert.equal(await api.prepareTradeAttribution({...input,tweetId:undefined}),null)
@@ -55,4 +55,15 @@ test('trade-card attribution survives unchanged and cannot silently move to the 
  assert.equal(calls[0][1].tweetId,source)
  globalThis.__tc.post=async()=>({c:0,d:{...input,dataSuffix:suffix}})
  await assert.rejects(api.prepareTradeAttribution({...input,tweetId:source}),/INVALID_TRADE_ATTRIBUTION/)
+})
+
+test('RH attribution binds the active chain and rejects mismatched or changed-chain responses',async()=>{
+ globalThis.__tc.chain.activeChainId=4663
+ globalThis.__tc.post=async(...args)=>{calls.push(args);return {c:0,d:{...input,chainId:4663,dataSuffix:suffix}}}
+ assert.equal((await api.prepareTradeAttribution(input)).dataSuffix,suffix)
+ assert.equal(calls[0][2].headers['X-Chain-Id'],'4663')
+ globalThis.__tc.post=async()=>({c:0,d:{...input,chainId:56,dataSuffix:suffix}})
+ await assert.rejects(api.prepareTradeAttribution(input),/CHAIN_MISMATCH/)
+ globalThis.__tc.post=async()=>{globalThis.__tc.chain.activeChainId=56;return {c:0,d:{...input,chainId:4663,dataSuffix:suffix}}}
+ await assert.rejects(api.prepareTradeAttribution(input),/CHAIN_CHANGED/)
 })

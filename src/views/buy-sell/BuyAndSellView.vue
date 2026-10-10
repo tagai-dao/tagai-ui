@@ -765,7 +765,7 @@ async function confirm() {
     const resolvedSellsman = await getTradeSellsman(id => { sourceCommerceId = id })
     const attributionContext = { path: route.fullPath, post: props.tweetId, commerce: props.commerceId,
       wallet: accStore.ethConnectAddress, side: tradeType.value }
-    const rewardSource = tradeType.value === 'buy' && tradeChainId === 56
+    const rewardSource = tradeType.value === 'buy' && [56,4663].includes(tradeChainId)
       ? await prepareTradeAttribution({ token: token.token!, wallet: accStore.ethConnectAddress,
           tweetId: props.tweetId || (route.name === 'post-detail' ? String(route.params.id) : undefined),
           commerceId: sourceCommerceId }) : null

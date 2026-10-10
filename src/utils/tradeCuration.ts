@@ -2,14 +2,18 @@ import { get, post } from '@/apis/axios'
 import { BACKEND_API_URL } from '@/config'
 import { useChainStore } from '@/stores/chain'
 import type { Address, Hex } from 'viem'
-const headers = { 'X-Chain-Id': '56' }
+const headers = (chainId: number) => ({'X-Chain-Id':String(chainId)})
+const currentChain = () => useChainStore().activeChainId
 export type TradeAttribution = { token: string; wallet: string; tweetId: string; dataSuffix: Hex }
 /** Source is captured before the buy and authenticated by the transaction's own signature. */
 export async function prepareTradeAttribution(input: { token: string; wallet: string; tweetId?: string; commerceId?: string }): Promise<TradeAttribution | null> {
-  if (useChainStore().activeChainId !== 56 || (!input.tweetId && !input.commerceId)) return null
+  const chainId=currentChain()
+  if (![56,4663].includes(chainId) || (!input.tweetId && !input.commerceId)) return null
   try {
-    const r: any = await post(BACKEND_API_URL + '/trade-curation/intent', input, { headers })
+    const r: any = await post(BACKEND_API_URL + '/trade-curation/intent', input, { headers:headers(chainId) })
+    if(currentChain()!==chainId) throw new Error('TRADE_CURATION_CHAIN_CHANGED')
     if (r.c !== 0) throw new Error(r.error || 'TRADE_CURATION_UNAVAILABLE')
+    if(chainId===4663 && r.d?.chainId!==chainId) throw new Error('TRADE_CURATION_CHAIN_MISMATCH')
     if (!r.d || r.d.token?.toLowerCase() !== input.token.toLowerCase() || r.d.wallet?.toLowerCase() !== input.wallet.toLowerCase()
       || (input.tweetId && r.d.tweetId !== input.tweetId)
       || !/^0x7461676169746331[0-9a-f]{64}$/.test(r.d.dataSuffix)) throw new Error('INVALID_TRADE_ATTRIBUTION')
@@ -22,14 +26,18 @@ export async function prepareTradeAttribution(input: { token: string; wallet: st
   }
 }
 export type TradeReward = { pool: Address; token: Address; tick: string; logo: string; amountRaw: string; amount: string; state: 'claimable' | 'processing' }
-export const getTradeRewards = async (twitterId: string): Promise<TradeReward[]> => {
-  const r: any = await get(BACKEND_API_URL + '/trade-curation/rewards', { twitterId }, { headers })
+export const getTradeRewards = async (twitterId: string, chainId = currentChain()): Promise<TradeReward[]> => {
+  const r: any = await get(BACKEND_API_URL + '/trade-curation/rewards', { twitterId }, { headers:headers(chainId) })
   if (r.c !== 0) throw new Error(r.error)
+  if(!Array.isArray(r.d) || (chainId===4663&&r.d.some((v:any)=>v.chainId!==chainId))) throw new Error('TRADE_CURATION_CHAIN_MISMATCH')
+  if(currentChain()!==chainId) throw new Error('TRADE_CURATION_CHAIN_CHANGED')
   return r.d
 }
-export async function getTradeClaim(twitterId: string, pool: string): Promise<{ orderId: string; pool: Address; token: Address; recipient: Address; amountRaw: string; deadline: number; signature: Hex }> {
-  const r: any = await post(BACKEND_API_URL + '/trade-curation/claim', { twitterId, pool }, { headers })
+export async function getTradeClaim(twitterId: string, pool: string, chainId = currentChain()): Promise<{ chainId: number; orderId: string; pool: Address; token: Address; recipient: Address; amountRaw: string; deadline: number; signature: Hex }> {
+  const r: any = await post(BACKEND_API_URL + '/trade-curation/claim', { twitterId, pool }, { headers:headers(chainId) })
   if (r.c !== 0) throw new Error(r.error)
+  if(currentChain()!==chainId) throw new Error('TRADE_CURATION_CHAIN_CHANGED')
+  if(chainId===4663 && r.d?.chainId!==chainId) throw new Error('TRADE_CURATION_CHAIN_MISMATCH')
   return r.d
 }
-export const confirmTradeClaim = (twitterId: string, orderId: string) => post(BACKEND_API_URL + '/trade-curation/confirm', { twitterId, orderId }, { headers })
+export const confirmTradeClaim = (twitterId: string, orderId: string, chainId = currentChain()) => post(BACKEND_API_URL + '/trade-curation/confirm', { twitterId, orderId }, { headers:headers(chainId) })

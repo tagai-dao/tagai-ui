@@ -7,8 +7,8 @@ import { join } from 'node:path'
 import { createRequire } from 'node:module'
 const dir=await mkdtemp(join(tmpdir(),'trade-cards-ui-'))
 await build({entryPoints:['src/utils/tradeCurationCards.ts'],bundle:true,platform:'node',format:'cjs',outfile:join(dir,'module.cjs'),logLevel:'silent',plugins:[{name:'fixture',setup(b){
- b.onResolve({filter:/^@\/(apis\/axios|config)$/},a=>({path:a.path,namespace:'fixture'}))
- b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:`export const BACKEND_API_URL='https://api.example';export const post=(...a)=>globalThis.__cardsPost(...a);export const get=(...a)=>globalThis.__cardsGet(...a);`,loader:'js'}))
+ b.onResolve({filter:/^@\/(apis\/axios|config|stores\/chain)$/},a=>({path:a.path,namespace:'fixture'}))
+ b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:`export const useChainStore=()=>({activeChainId:globalThis.__cardsChain??56});export const BACKEND_API_URL='https://api.example';export const post=(...a)=>globalThis.__cardsPost(...a);export const get=(...a)=>globalThis.__cardsGet(...a);`,loader:'js'}))
 }}]})
 const api=createRequire(import.meta.url)(join(dir,'module.cjs'))
 const token='0x'+'11'.repeat(20)
@@ -43,4 +43,13 @@ test('record pages use the current source and cursor, preserve raw amounts, and 
  assert.equal(calls[0][2].headers['X-Chain-Id'],'56')
  globalThis.__cardsGet=async()=>({c:1,error:'SOURCE_NOT_READY'})
  await assert.rejects(api.getTradeCurationRecords({token,tweetId:'card'}),/SOURCE_NOT_READY/)
+})
+
+test('same token/post on RH has a separate cache and never shares a BSC request batch',async()=>{
+ const calls=[]
+ globalThis.__cardsPost=async(url,body,config)=>{calls.push(config.headers['X-Chain-Id']);return {c:0,d:body.cards.map(c=>({...c,chainId:Number(config.headers['X-Chain-Id']),amount:config.headers['X-Chain-Id']}))}}
+ const bsc=api.getTradeCardReward({token,tweetId:'two-chains',chainId:56})
+ const rh=api.getTradeCardReward({token,tweetId:'two-chains',chainId:4663})
+ assert.deepEqual((await Promise.all([bsc,rh])).map(r=>r.amount),['56','4663'])
+ assert.deepEqual(calls,['56','4663'])
 })

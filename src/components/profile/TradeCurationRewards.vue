@@ -6,7 +6,7 @@ import { useChainStore } from '@/stores/chain'
 import { useModalStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
 import { getTradeRewards, getTradeClaim, confirmTradeClaim, type TradeReward } from '@/utils/tradeCuration'
-import { claimRewardV8 } from '@/utils/pump'
+import { claimTradeReward } from '@/utils/tradeCurationClaim'
 import { notify, handleErrorTip } from '@/utils/notify'
 import { formatAmount } from '@/utils/helper'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
@@ -16,7 +16,7 @@ const rewards = ref<TradeReward[]>([]), claiming = ref('')
 let generation = 0
 async function refresh() {
   const current = ++generation
-  if (chain.activeChainId !== 56 || !props.twitterId) { rewards.value = []; return }
+  if (![56,4663].includes(chain.activeChainId) || !props.twitterId) { rewards.value = []; return }
   try {
     const result = await getTradeRewards(props.twitterId)
     if (generation === current) rewards.value = result
@@ -33,25 +33,27 @@ async function claim(reward: TradeReward) {
   if (acc.ethConnectAddress?.toLowerCase() !== acc.getAccountInfo.ethAddr?.toLowerCase()) {
     notify({ message: t('web3.addressMismatch', { address: acc.getAccountInfo.ethAddr }) }); return
   }
+  const claimChainId=chain.activeChainId
   claiming.value = reward.pool
   let orderId: string | undefined
   try {
-    const order = await getTradeClaim(twitterId, reward.pool)
+    const order = await getTradeClaim(twitterId, reward.pool,claimChainId)
     orderId = order.orderId
-    if (chain.activeChainId !== 56 || order.recipient.toLowerCase() !== acc.ethConnectAddress?.toLowerCase()) throw new Error('TRADE_CURATION_WALLET_CHANGED')
-    await claimRewardV8(order.token, BigInt(order.orderId), BigInt(order.amountRaw), BigInt(order.deadline), order.signature, 14, order.pool)
-    await confirmTradeClaim(twitterId, order.orderId)
+    if(order.pool.toLowerCase()!==reward.pool.toLowerCase() || order.token.toLowerCase()!==reward.token.toLowerCase()) throw new Error('POOL_CONFIGURATION_MISMATCH')
+    if (chain.activeChainId!==claimChainId || order.recipient.toLowerCase() !== acc.ethConnectAddress?.toLowerCase()) throw new Error('TRADE_CURATION_WALLET_CHANGED')
+    await claimTradeReward(order,claimChainId)
+    await confirmTradeClaim(twitterId, order.orderId,claimChainId)
     notify({ message: t('tradeCuration.claimSubmitted') })
     await refresh()
   } catch (e) {
-    if (orderId) await confirmTradeClaim(twitterId, orderId).catch(() => {})
+    if (orderId) await confirmTradeClaim(twitterId, orderId,claimChainId).catch(() => {})
     handleErrorTip(e)
     await refresh()
   } finally { claiming.value = '' }
 }
 </script>
 <template>
-  <div v-if="chain.activeChainId === 56 && rewards.some(r => r.state === (state === 'Claimable' ? 'claimable' : 'processing'))" class="px-3 py-3">
+  <div v-if="[56,4663].includes(chain.activeChainId) && rewards.some(r => r.state === (state === 'Claimable' ? 'claimable' : 'processing'))" class="px-3 py-3">
     <div class="text-h3 mb-3">{{ t('tradeCuration.title') }}</div>
     <div class="flex gap-3 overflow-x-auto">
       <div v-for="reward in rewards.filter(r => r.state === (state === 'Claimable' ? 'claimable' : 'processing'))" :key="reward.pool" class="border border-orange-normal rounded-xl p-4 min-w-[240px]">

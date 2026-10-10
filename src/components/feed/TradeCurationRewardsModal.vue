@@ -9,7 +9,7 @@ import { formatTokenAmount, formatUsd } from '@/utils/format'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import SafeAvatar from '@/components/common/SafeAvatar.vue'
 const modal = useModalStore(), state = useStateStore(), chain = useChainStore(), { t, locale } = useI18n()
-const params = computed(() => modal.modalParams as { token: string; tweetId: string; tick?: string; price?: number } | null)
+const params = computed(() => modal.modalParams as { token: string; tweetId: string; tick?: string; price?: number; chainId?: number } | null)
 const summary = ref<TradeCardReward | null>(null), records = ref<TradeCurationRecord[]>([])
 const loading = ref(false), failed = ref(false), nextCursor = ref<string | null>(null)
 const price = computed(() => Number(params.value?.price) * state.ethPrice)
@@ -18,13 +18,14 @@ const time = (timestamp: number) => new Date(timestamp * 1000).toLocaleString(lo
 let generation = 0
 async function load(reset = false) {
   if (modal.modalType !== GlobalModalType.TradeCurationRewards) return
-  if (chain.activeChainId !== 56) { modal.setModalVisible(false); return }
+  if (![56,4663].includes(chain.activeChainId)) { modal.setModalVisible(false); return }
   const source = params.value
+  if(source?.chainId && source.chainId!==chain.activeChainId) {modal.setModalVisible(false);return}
   if (!source?.token || !source.tweetId || (!reset && (loading.value || !nextCursor.value))) return
   const current = ++generation
   loading.value = true; failed.value = false
   try {
-    const page = await getTradeCurationRecords({ token: source.token, tweetId: source.tweetId }, reset ? undefined : nextCursor.value!)
+    const page = await getTradeCurationRecords({ token: source.token, tweetId: source.tweetId,chainId:chain.activeChainId }, reset ? undefined : nextCursor.value!)
     if (current !== generation) return
     summary.value = page.summary
     records.value = reset ? page.records : [...new Map([...records.value, ...page.records].map(r => [r.twitterId, r])).values()]

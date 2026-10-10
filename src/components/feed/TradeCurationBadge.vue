@@ -10,13 +10,13 @@ const props = defineProps<{ tweetId?: string; token?: string; tick?: string; pri
 const { t } = useI18n(), chain = useChainStore(), state = useStateStore()
 const reward = ref<TradeCardReward | null>(null), failed = ref(false)
 let generation = 0
-const valid = computed(() => chain.activeChainId === 56 && props.token && props.tweetId)
+const valid = computed(() => [56,4663].includes(chain.activeChainId) && props.token && props.tweetId)
 const price = computed(() => Number(props.price) * state.ethPrice)
 const usd = (amount: string) => Number.isFinite(price.value) && price.value > 0 ? formatUsd(Number(amount) * price.value) : '—'
 function openRewards() {
   if (!valid.value) return
   useModalStore().setModalVisible(true, GlobalModalType.TradeCurationRewards, {
-    token: props.token, tweetId: props.tweetId, tick: props.tick, price: props.price,
+    chainId:chain.activeChainId, token: props.token, tweetId: props.tweetId, tick: props.tick, price: props.price,
   })
 }
 async function refresh(reset = false) {

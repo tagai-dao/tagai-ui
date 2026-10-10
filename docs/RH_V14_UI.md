@@ -104,3 +104,11 @@ Logo；BSC 首页 56 个本地图标全部加载，两链 Apple 等公司共用�
 独立 Basket V3 创建入口的 USDG 股票推荐、费用与草稿补充修复记录见
 [RH_BASKET_USDG.md](./RH_BASKET_USDG.md)。该入口使用独立 Basket 目录，
 不能仅更新 Pump V14 候选列表就认定其推荐池已同步。
+
+## RH 交易策展奖励（2026-10-10）
+
+已补齐 RH intent 后缀、帖子/交易卡片奖励、Profile 领取；请求、缓存和待发批次按链隔离。
+领取使用当前 RH 矿池实际 Committee 操作费，并 Multicall 核验工厂/社区/代币；提交前
+再次核对链和钱包。旧 RH 奖励未接入警告已移除。
+上线必须先执行 server V46 MySQL 迁移、运行 RH start-trade-curation 并更新 API，最后发布 UI。
+完整顺序和验证边界见 ../tiptag-server/docs/RH_TRADE_CURATION.md。
