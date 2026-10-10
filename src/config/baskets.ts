@@ -1,6 +1,7 @@
 import { sortBasketAssetOptions } from '@/utils/baskets/asset-order'
 import { isAddress, zeroAddress, type Address, type Hex } from 'viem'
 import { FeeAddress } from '@/config'
+import { rhUsdStockCandidates, selectRhUsdStockPresets } from '@/utils/baskets/rh-preset-catalog'
 
 export const BASKET_CHAIN_IDS = [56, 4663] as const
 export type BasketChainId = (typeof BASKET_CHAIN_IDS)[number]
@@ -37,7 +38,7 @@ export type BasketAssetPreset = {
     venue: 0 | 1 | 2 | 3
     /** BSC only: 0 = WBNB, 1 = settlement token (USDT). */
     quoteToken?: 0 | 1
-    /** BSC V3: token paired directly with the constituent. Native BNB is address(0). */
+    /** V3/V4 Basket: direct pool quote currency; native ETH/BNB is address(0). */
     poolQuoteToken?: Address
     v4Pool: BasketPoolKey
     v3Fee: number
@@ -142,11 +143,6 @@ const rhV4Asset = (
   },
 })
 
-const rhStock = (address: Address, symbol: string, name: string, fee: number, tickSpacing: number, ext = 'png') =>
-  rhV4Asset(address, symbol, name, fee, tickSpacing, zeroAddress, {
-    category: 'stock', logoUrl: `/images/basket-assets/${symbol.toLowerCase()}.${ext}`,
-  })
-
 const rhAssets: BasketAssetPreset[] = [
   rhV4Asset(
     '0x6419cE35e915Fd62199C472a41e34dB55b56b89d', 'TagAgent', 'TagAgent', 0, 60,
@@ -158,19 +154,7 @@ const rhAssets: BasketAssetPreset[] = [
     logoUrl: '/images/basket-assets/weth.svg',
     route: { venue: 2, poolQuoteToken: rhContractsV3.wrappedNative, v4Pool: emptyPool(), v3Fee: 0, defaultMaxExecutionLossBps: 100 },
   },
-  rhStock('0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC', 'NVDA', 'NVIDIA', 10_000, 200),
-  rhStock('0xe93237C50D904957Cf27E7B1133b510C669c2e74', 'MSFT', 'Microsoft', 10_000, 200),
-  rhStock('0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3', 'GOOGL', 'Alphabet Class A', 50_000, 1_000),
-  rhStock('0x12f190a9F9d7D37a250758b26824B97CE941bF54', 'AMZN', 'Amazon', 50_000, 1_000),
-  rhStock('0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35', 'META', 'Meta Platforms', 50_000, 1_000),
-  rhStock('0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8', 'NFLX', 'Netflix', 50_000, 1_000),
-  rhStock('0xb0992820E760d836549ba69BC7598b4af75dEE03', 'ORCL', 'Oracle', 50_000, 1_000),
-  rhStock('0x86923f96303D656E4aa86D9d42D1e57ad2023fdC', 'AMD', 'AMD', 50_000, 1_000),
-  rhStock('0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A', 'PLTR', 'Palantir Technologies', 50_000, 1_000),
-  rhStock('0xc72b96e0E48ecd4DC75E1e45396e26300BC39681', 'INTC', 'Intel', 50_000, 1_000),
-  rhStock('0x1b0E319c6A659F002271B69dB8A7df2F911c153E', 'GME', 'GameStop', 50_000, 1_000),
-  rhStock('0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2', 'RKLB', 'Rocket Lab', 50_000, 1_000),
-  rhStock('0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa', 'SPCX', 'SpaceX', 10_000, 200, 'svg'),
+  ...selectRhUsdStockPresets(rhUsdStockCandidates),
 ]
 
 const bscContractsV2 = {

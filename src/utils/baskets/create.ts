@@ -13,9 +13,12 @@ import {
 } from '@/config/baskets'
 import { getReadOnlyClient, getWalletClient, waitForTx } from '@/utils/wallets'
 import { basketRegistryAbi, erc20Abi, getBasketSwapRouterAbi } from './abis'
-import { getBscV3DefaultExecutionLossBps, quoteBscV3SettlementToAsset } from './bsc-v3-routing'
+import { quoteBscV3SettlementToAsset } from './bsc-v3-routing'
+import { getBasketExecutionLosses } from './execution-quote'
+import { readBasketBatch } from './read-batch'
+import { assertRhRecommendedStockDepth } from './rh-recommendations'
 import { applySlippage, encodeBasketTradeData } from './hook-data'
-import { assertBasketRouteUsable, BasketPoolValidationError } from './route-validation'
+import { assertBasketRouteUsable, assertBasketRoutesUsable, BasketPoolValidationError } from './route-validation'
 import { toContractLegRoute } from './routes'
 import {
   approveBasketTrade,
@@ -68,6 +71,11 @@ const EMPTY_POOL = {
   parameters: `0x${'0'.repeat(64)}` as Hex,
 } as const
 
+const directV4PoolKey = (asset: Address, quote: Address, fee: number, tickSpacing: number, hooks: Address): BasketPoolKey => {
+  const [currency0, currency1] = quote.toLowerCase() < asset.toLowerCase() ? [quote, asset] : [asset, quote]
+  return { currency0, currency1, fee, tickSpacing, hooks }
+}
+
 export const presetCreateLeg = (asset: BasketAssetPreset): CreateBasketLeg => ({
   asset: { address: asset.address, symbol: asset.symbol },
   route: asset.route,
@@ -97,7 +105,7 @@ export const buildCustomRoute = ({
       venue,
       ...(quoteToken === undefined ? {} : { quoteToken }),
       ...(poolQuoteToken === undefined ? {} : { poolQuoteToken }),
-      v4Pool: poolKey ?? { currency0: zeroAddress, currency1: asset, fee, tickSpacing: tickSpacing ?? 0, hooks },
+      v4Pool: poolKey ?? directV4PoolKey(asset, poolQuoteToken ?? zeroAddress, fee, tickSpacing ?? 0, hooks),
       v3Fee: 0,
     }
   : {
@@ -126,10 +134,13 @@ export const validateCustomBasketAsset = async ({
     throw new Error('This token cannot be used as a constituent')
   }
   const client = getReadOnlyClient(chainId)
-  const [code, isBasket, symbol] = await Promise.all([
-    client.getBytecode({ address }),
-    client.readContract({ address: deployment.contracts.registry, abi: basketRegistryAbi, functionName: 'isBasket', args: [address] }),
-    client.readContract({ address, abi: erc20Abi, functionName: 'symbol' }),
+  const blockNumber = await client.getBlockNumber()
+  const [code, [isBasket, symbol]] = await Promise.all([
+    client.getBytecode({ address, blockNumber }),
+    readBasketBatch([
+      { address: deployment.contracts.registry, abi: basketRegistryAbi, functionName: 'isBasket', args: [address] },
+      { address, abi: erc20Abi, functionName: 'symbol' },
+    ], chainId, blockNumber),
   ])
   if (!code || code === '0x') throw new Error('Token address is not a contract')
   if (isBasket) throw new Error('Basket tokens cannot be used as constituents')
@@ -140,9 +151,9 @@ export const validateCustomBasketAsset = async ({
     throw new Error('The selected Basket V3 route has no quote token')
   }
   try {
-    await assertBasketRouteUsable(route, address, chainId)
+    await assertBasketRouteUsable(route, address, chainId, blockNumber)
     const quote = Number(getBasketDeployment(chainId).creationVersion) >= 3
-      ? await quoteBscV3SettlementToAsset(route, address, 1_000_000_000_000_000n, chainId, deployment.creationVersion)
+      ? await quoteBscV3SettlementToAsset(route, address, 10n ** BigInt(deployment.settlementDecimals), chainId, deployment.creationVersion, blockNumber)
       : await quoteWethToAssetForSwap(route, address, 1_000_000_000_000_000n, chainId)
     if (quote <= 0n) throw new Error('The selected route has no usable price or liquidity')
   } catch (error) {
@@ -169,7 +180,6 @@ export const createBasketAndBuy = async (
     throw new Error('New Basket creation requires protocol V3 or V4')
   }
   const creationProtocol = getBasketCreationProtocol(input.chainId)
-  const presets = deployment.assetPresets
   const usdgIn = parseUnits(String(input.initialUsdg), deployment.settlementDecimals)
   if (usdgIn <= 10n ** BigInt(deployment.settlementDecimals)) {
     throw new Error(`Initial purchase must be greater than 1 ${deployment.settlementSymbol}`)
@@ -187,35 +197,16 @@ export const createBasketAndBuy = async (
     throw new Error('Asset weights must add up to 100%')
   }
 
-  if (creationVersion >= 3) {
-    const registryClient = getReadOnlyClient(input.chainId)
-    const [registrarApproved, forwarderApproved] = await Promise.all([
-      registryClient.readContract({
-        address: creationProtocol.registry,
-        abi: basketRegistryAbi,
-        functionName: 'approvedRegistrars',
-        args: [creationProtocol.hook],
-      }),
-      registryClient.readContract({
-        address: creationProtocol.registry,
-        abi: basketRegistryAbi,
-        functionName: 'approvedCreatorForwarders',
-        args: [creationProtocol.swapRouter],
-      }),
-    ])
-    if (!registrarApproved || !forwarderApproved) {
-      throw new Error('Basket V3 creation is not active on this network yet')
-    }
-  }
-
-  try {
-    const customLegs = input.legs.filter((leg) =>
-      !presets.some((preset) => preset.address.toLowerCase() === leg.asset.address.toLowerCase()))
-    await Promise.all(customLegs.map((leg) => assertBasketRouteUsable(leg.route, leg.asset.address, input.chainId)))
-  } catch (error) {
-    if (error instanceof BasketPoolValidationError) throw error
-    throw new Error(friendlyBasketError(error))
-  }
+  if (input.chainId === 4663) await assertRhRecommendedStockDepth(input.legs)
+  const validationBlock = await getReadOnlyClient(input.chainId).getBlockNumber()
+  const [registrarApproved, forwarderApproved] = await readBasketBatch([
+    { address: creationProtocol.registry, abi: basketRegistryAbi, functionName: 'approvedRegistrars', args: [creationProtocol.hook] },
+    { address: creationProtocol.registry, abi: basketRegistryAbi, functionName: 'approvedCreatorForwarders', args: [creationProtocol.swapRouter] },
+  ], input.chainId, validationBlock)
+  if (!registrarApproved || !forwarderApproved) throw new Error('Basket V3 creation is not active on this network yet')
+  // Validate presets as well as custom legs. A reviewed catalogue is not a
+  // substitute for current liquidity, canonical factory and Hook permissions.
+  await assertBasketRoutesUsable(input.legs.map(leg => ({ route: leg.route, asset: leg.asset.address })), input.chainId, validationBlock)
 
   const allowance = await getTradeAllowance(
     deployment.contracts.settlementToken,
@@ -232,12 +223,10 @@ export const createBasketAndBuy = async (
     onApproved?.()
   }
 
-  const routes = await Promise.all(input.legs.map(async (leg) => ({
-    ...leg.route,
-    defaultMaxExecutionLossBps: creationVersion >= 3
-      ? await getBscV3DefaultExecutionLossBps(leg.route, BASKET_DEFAULT_SLIPPAGE_BPS, input.chainId, creationVersion)
-      : leg.route.defaultMaxExecutionLossBps,
-  })))
+  const quoteBlock = await getReadOnlyClient(input.chainId).getBlockNumber()
+  const losses = await getBasketExecutionLosses(input.legs.map(leg => ({ route: leg.route, asset: leg.asset.address, amount: 0n })), input.chainId, creationVersion, BASKET_DEFAULT_SLIPPAGE_BPS, quoteBlock)
+  const routes = input.legs.map((leg, index) => ({ ...leg.route, defaultMaxExecutionLossBps: losses[index] }))
+
   const createParams = {
     name: input.name.trim(),
     symbol: input.symbol.trim().toUpperCase(),
@@ -259,6 +248,7 @@ export const createBasketAndBuy = async (
       chainId: input.chainId,
       version: creationVersion,
       settlementIn: usdgIn,
+      blockNumber: quoteBlock,
       basketFeeBps: input.basketFeeBps,
       legs: input.legs.map((leg) => ({ route: leg.route, asset: leg.asset.address, weightBps: leg.weightBps })),
     })

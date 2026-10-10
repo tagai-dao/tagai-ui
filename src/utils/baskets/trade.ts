@@ -19,7 +19,8 @@ import {
   v3QuoterAbi,
   v4QuoterAbi,
 } from './abis'
-import { quoteBscV3SettlementToAsset } from './bsc-v3-routing'
+import { quoteBasketSettlementLegs } from './execution-quote'
+import { readBasketBatch } from './read-batch'
 import { applySlippage, encodeBasketTradeData } from './hook-data'
 import { isBscBasketV3, toContractLegRoute } from './routes'
 import type { BasketDetail, BasketLegRoute, BasketSwapQuote, TradeSide } from './types'
@@ -275,12 +276,14 @@ export const quoteBasketBuyLegOutputs = async ({
   chainId,
   version,
   settlementIn,
+  blockNumber,
   basketFeeBps,
   legs,
 }: {
   chainId: number
   version?: number
   settlementIn: bigint
+  blockNumber?: bigint
   basketFeeBps: number
   legs: { route: BasketLegRoute; asset: Address; weightBps: number }[]
 }): Promise<bigint[]> => {
@@ -311,16 +314,15 @@ export const quoteBasketBuyLegOutputs = async ({
     const feeSettlement = (settlementIn * BigInt(basketFeeBps) + 9_999n) / 10_000n
     const netSettlement = settlementIn - feeSettlement
     let allocated = 0n
-    const outputs: bigint[] = []
-    for (let index = 0; index < legs.length; index += 1) {
-      const leg = legs[index]
-      const amountIn = index === legs.length - 1
+    const requests = legs.map((leg, index) => {
+      const amount = index === legs.length - 1
         ? netSettlement - allocated
         : netSettlement * BigInt(leg.weightBps) / 10_000n
-      allocated += amountIn
-      outputs.push(await quoteBscV3SettlementToAsset(leg.route, leg.asset, amountIn, chainId, version))
-    }
-    return outputs
+      allocated += amount
+      return { route: leg.route, asset: leg.asset, amount }
+    })
+    return quoteBasketSettlementLegs(requests, chainId, version, blockNumber)
+
   }
 
   const feeSettlement = (settlementIn * BigInt(basketFeeBps) + 9_999n) / 10_000n
@@ -429,9 +431,9 @@ export const quoteBasketSwap = async ({
     const minOutRaw = applySlippage(estimatedOutRaw, slippageBps)
     if (minOutRaw <= 0n) throw new Error('Amount is too small')
     if (side === 'buy' && !firstMint) {
-      const assets = await Promise.all(Array.from({ length: detail.basketLength }, (_, i) => client.readContract({
-        address: detail.address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(i)], blockNumber,
-      }))) as readonly (readonly [Address, number, bigint])[]
+      const assets = await readBasketBatch(Array.from({ length: detail.basketLength }, (_, i) => ({
+        address: detail.address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(i)],
+      })), detail.chainId, blockNumber) as readonly (readonly [Address, number, bigint])[]
       legMins = assets.map(([asset, , reserve], i) => {
         if (reserve <= 0n || asset.toLowerCase() !== detail.holdings[i]?.asset.toLowerCase()) throw new Error('InvalidPool')
         // floor(acquired * supply / reserve) >= minOut requires this ceiling.

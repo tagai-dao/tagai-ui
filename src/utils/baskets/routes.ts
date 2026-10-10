@@ -52,3 +52,13 @@ export const toContractLegRoute = (
     v3Fee: route.v3Fee,
   }
 }
+
+/** Labels the actual counter-currency, including native ETH versus WETH. */
+export function basketRouteQuoteSymbol(route: BasketLegRoute, chainId: number): string {
+  const deployment = getBasketDeployment(chainId)
+  const quote = getPoolQuoteToken(route, chainId, deployment.creationVersion).toLowerCase()
+  if (quote === '0x0000000000000000000000000000000000000000') return deployment.nativeSymbol
+  if (quote === deployment.contracts.settlementToken.toLowerCase()) return deployment.settlementSymbol
+  if (quote === deployment.contracts.wrappedNative.toLowerCase()) return deployment.wrappedNativeSymbol
+  return `${quote.slice(0, 8)}…${quote.slice(-6)}`
+}

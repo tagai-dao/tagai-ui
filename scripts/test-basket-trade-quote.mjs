@@ -16,11 +16,13 @@ await build({entryPoints:['src/utils/baskets/trade.ts'],bundle:true,platform:'no
  export const BASKET_DEFAULT_SLIPPAGE_BPS=100,BASKET_MAX_SLIPPAGE_BPS=500,BASKET_FRONTEND_FEE_WALLET='${addr(0)}';
  export const getBasketDeployment=()=>({settlementDecimals:18,contracts:{settlementToken:'${settlement}'}});
  export const getBasketProtocol=()=>({swapRouter:'${addr(9)}',hook:'${addr(8)}'});
- export const getChainDeployment=()=>({dex:{v4Quoter:'${addr(7)}'}});
+ export const getChainDeployment=()=>({dex:{v4Quoter:'${addr(7)}'},multiConfig:{multicallAddress:'0xcA11bde05977b3631167028862bE2a173976CA11'}});
  export const toContractPoolKey=x=>x;
  export const getReadOnlyClient=()=>globalThis.__basketQuote.client;
  export const getWalletClient=()=>({writeContract:()=>{globalThis.__basketQuote.sent++;return '0xhash'}});export const waitForTx=async()=>true;
  `}))
+ b.onResolve({filter:/^\.\/execution-quote$/},()=>({path:'execution',namespace:'execution'}))
+ b.onLoad({filter:/.*/,namespace:'execution'},()=>({contents:'export const quoteBasketSettlementLegs=async legs=>legs.map(()=>1000n);'}))
  b.onResolve({filter:/^\.\/bsc-v3-routing$/},()=>({path:'routing',namespace:'routing'}))
  b.onLoad({filter:/.*/,namespace:'routing'},()=>({contents:'export const quoteBscV3SettlementToAsset=async()=>1000n;'}))
 }}]})
@@ -28,14 +30,14 @@ const {quoteBasketSwap,executeBasketSwap,basketTradeErrorKey}=createRequire(impo
 const tuple=[{type:'tuple',components:[{type:'address'},{type:'uint256'},{type:'uint256'},{type:'uint256[]'},{type:'uint160[]'},{type:'uint160'},{type:'bool[]'}]}]
 const detail={chainId:56,version:4,address:basket,decimals:18,basketLength:2,basketFeeBps:300,effectiveSupply:0,navPerToken:1,holdings:[{asset:asset1,targetWeightPct:50,route:{}},{asset:asset2,targetWeightPct:50,route:{}}]}
 function fixture(){
- const f={supply:1000n,reserves:[1001n,2077n],output:482n*10n**18n,simulations:[],reads:[],sent:0,fail:false}
+ const f={batches:[],supply:1000n,reserves:[1001n,2077n],output:482n*10n**18n,simulations:[],reads:[],sent:0,fail:false}
  f.client={getBlockNumber:async()=>123n,readContract:async p=>{
   f.reads.push(p)
   if(p.functionName==='selfPoolKey')return {currency0:settlement,currency1:basket,hooks:addr(8),poolManager:addr(6),fee:0,parameters:'0x'+'0'.repeat(64)}
   if(p.functionName==='effectiveSupply')return f.supply
   if(p.functionName==='assetAt'){const i=Number(p.args[0]);return [detail.holdings[i].asset,5000,f.reserves[i]]}
   throw Error('Unexpected read '+p.functionName)
- },simulateContract:async p=>{f.simulations.push(p);if(f.fail)throw Error('execution reverted: 0x8199f5f3');return {result:[f.output,1n],request:p}}}
+ },multicall:async p=>{f.batches.push(p);assert.equal(p.multicallAddress.toLowerCase(),'0xca11bde05977b3631167028862be2a173976ca11');assert.equal(p.blockNumber,123n);return Promise.all(p.contracts.map(c=>f.client.readContract({...c,blockNumber:p.blockNumber})))},simulateContract:async p=>{f.simulations.push(p);if(f.fail)throw Error('execution reverted: 0x8199f5f3');return {result:[f.output,1n],request:p}}}
  globalThis.__basketQuote=f;return f
 }
 after(async()=>{delete globalThis.__basketQuote;await rm(dir,{recursive:true,force:true})})
@@ -49,7 +51,7 @@ test('V4 uses complete executable output, chain supply, and exact reserve-relati
  assert.deepEqual(q.legMins,f.reserves.map(r=>(q.minOutRaw*r+999n)/1000n))
  assert.deepEqual(protectedData[3],q.legMins)
  for(const p of [...f.simulations,...f.reads.filter(p=>p.functionName!=='selfPoolKey')])assert.equal(p.blockNumber,123n)
- assert.equal(f.sent,0)
+ assert.equal(f.sent,0);assert.ok(f.batches.some(p=>p.contracts.every(c=>c.functionName==='assetAt'&&c.address===basket)))
 })
 test('failed simulation never produces a NAV quote or sends a transaction',async()=>{
  const f=fixture();f.fail=true

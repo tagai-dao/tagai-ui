@@ -5,6 +5,7 @@ import { getRhV4PoolKeyByPoolId } from '@/utils/rhV4Swap'
 import { resolveV4PoolKeyForTrade } from '@/utils/pcsV4Swap'
 import { getReadOnlyClient } from '@/utils/wallets'
 import { buildCustomRoute } from './create'
+import { readBasketBatch } from './read-batch'
 import {
   assertBasketRouteUsable,
   BasketPoolValidationError,
@@ -86,13 +87,13 @@ const otherToken = (token0: Address, token1: Address, asset: Address): Address =
   return failDiscovery('poolTokenMismatch')
 }
 
-const quoteSymbol = async (quote: Address, chainId: number): Promise<string> => {
+const quoteSymbol = async (quote: Address, chainId: number, blockNumber: bigint): Promise<string> => {
   const deployment = getBasketDeployment(chainId)
   if (sameAddress(quote, zeroAddress)) return deployment.nativeSymbol
   if (sameAddress(quote, deployment.contracts.wrappedNative)) return deployment.wrappedNativeSymbol
   if (sameAddress(quote, deployment.contracts.settlementToken)) return deployment.settlementSymbol
-  return getReadOnlyClient(chainId).readContract({ address: quote, abi: tokenSymbolAbi, functionName: 'symbol' })
-    .then(String, () => `${quote.slice(0, 6)}…${quote.slice(-4)}`)
+  const [result] = await readBasketBatch([{ address: quote, abi: tokenSymbolAbi, functionName: 'symbol' }], chainId, blockNumber, true)
+  return result.status === 'success' ? String(result.result) : `${quote.slice(0, 6)}…${quote.slice(-4)}`
 }
 
 const resolveCandidate = async (
@@ -100,6 +101,7 @@ const resolveCandidate = async (
   asset: Address,
   assetSymbol: string,
   chainId: number,
+  blockNumber: bigint,
 ): Promise<BasketPoolCandidate | null> => {
   const deployment = getBasketDeployment(chainId)
   if (pool.dexVersion === 4) {
@@ -120,7 +122,7 @@ const resolveCandidate = async (
       failDiscovery('poolTokenMismatch', { venue: chainId === 56 ? 'Infinity' : 'V4' })
     }
     poolQuoteToken = otherToken(key.currency0, key.currency1, asset)
-    poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId)
+    poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId, blockNumber)
     const route = buildCustomRoute({
       asset,
       venue: 0,
@@ -130,7 +132,7 @@ const resolveCandidate = async (
       hooks: key.hooks,
       poolKey: { ...key, tickSpacing },
     })
-    await assertBasketRouteUsable(route, asset, chainId)
+    await assertBasketRouteUsable(route, asset, chainId, blockNumber)
     return {
       id: pool.pairAddress,
       venue: 0,
@@ -148,24 +150,19 @@ const resolveCandidate = async (
   }
   if (pool.dexVersion === 3 && isAddress(pool.pairAddress)) {
     const poolAddress = getAddress(pool.pairAddress)
-    const client = getReadOnlyClient(chainId)
-    const [fee, token0, token1] = await Promise.all([
-      client.readContract({ address: poolAddress, abi: v3PoolAbi, functionName: 'fee' }),
-      client.readContract({ address: poolAddress, abi: v3PoolAbi, functionName: 'token0' }),
-      client.readContract({ address: poolAddress, abi: v3PoolAbi, functionName: 'token1' }),
-    ])
+    const [fee, token0, token1] = await readBasketBatch(['fee', 'token0', 'token1'].map(functionName => ({ address: poolAddress, abi: v3PoolAbi, functionName })), chainId, blockNumber)
     const tokens = [token0.toLowerCase(), token1.toLowerCase()]
     if (!tokens.includes(asset.toLowerCase())) failDiscovery('poolTokenMismatch', { venue: 'V3' })
     const poolQuoteToken = otherToken(token0, token1, asset)
     const factory = getBasketProtocol(chainId, 3).v3Factory
     if (!factory) failDiscovery('v3NotConfigured')
-    const canonical = await client.readContract({
+    const [canonical] = await readBasketBatch([{
       address: factory!, abi: v3FactoryAbi, functionName: 'getPool', args: [asset, poolQuoteToken, fee],
-    })
+    }], chainId, blockNumber)
     if (!sameAddress(canonical, poolAddress)) failDiscovery('unsupportedFactory', { venue: 'V3' })
-    const poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId)
+    const poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId, blockNumber)
     const route = buildCustomRoute({ asset, venue: 1, poolQuoteToken, fee: Number(fee) })
-    await assertBasketRouteUsable(route, asset, chainId)
+    await assertBasketRouteUsable(route, asset, chainId, blockNumber)
     return {
       id: poolAddress,
       venue: 1,
@@ -183,27 +180,23 @@ const resolveCandidate = async (
   }
   if (pool.dexVersion === 2 && isAddress(pool.pairAddress)) {
     const pairAddress = getAddress(pool.pairAddress)
-    const client = getReadOnlyClient(chainId)
-    const [token0, token1] = await Promise.all([
-      client.readContract({ address: pairAddress, abi: v2PairAbi, functionName: 'token0' }),
-      client.readContract({ address: pairAddress, abi: v2PairAbi, functionName: 'token1' }),
-    ])
+    const [token0, token1] = await readBasketBatch(['token0', 'token1'].map(functionName => ({ address: pairAddress, abi: v2PairAbi, functionName })), chainId, blockNumber)
     const poolQuoteToken = otherToken(token0, token1, asset)
     const factory = getBasketProtocol(chainId, 3).v2Factory
     if (!factory) failDiscovery('v2Unsupported')
-    const canonical = await client.readContract({
+    const [canonical] = await readBasketBatch([{
       address: factory!, abi: v2FactoryAbi, functionName: 'getPair', args: [asset, poolQuoteToken],
-    })
+    }], chainId, blockNumber)
     if (!sameAddress(canonical, pairAddress)) failDiscovery('unsupportedFactory', { venue: 'V2' })
-    const poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId)
+    const poolQuoteSymbol = await quoteSymbol(poolQuoteToken, chainId, blockNumber)
     const route = buildCustomRoute({ asset, venue: 3, poolQuoteToken, fee: 0 })
-    await assertBasketRouteUsable(route, asset, chainId)
+    await assertBasketRouteUsable(route, asset, chainId, blockNumber)
     return {
       id: pairAddress,
       venue: 3,
       label: chainId === 56 ? 'Pancake V2' : 'Uniswap V2',
       pairLabel: `${assetSymbol || 'TOKEN'}/${poolQuoteSymbol}`,
-      fee: 2_500,
+      fee: chainId === 56 ? 2_500 : 3_000,
       tickSpacing: null,
       hooks: zeroAddress,
       liquidityUsd: pool.liquidityUsd,
@@ -228,8 +221,9 @@ export const discoverBasketPools = async (asset: Address, chainId: number, limit
   const result = await getTokenDexPools(asset)
   if (!result) return { candidates: [], rejectionReasons: [rejection('metadataUnavailable')] }
   const client = getReadOnlyClient(chainId)
-  const assetSymbol = await client.readContract({ address: asset, abi: tokenSymbolAbi, functionName: 'symbol' })
-    .then(String, () => result.tokenSymbol || 'TOKEN')
+  const blockNumber = await client.getBlockNumber()
+  const [symbolResult] = await readBasketBatch([{ address: asset, abi: tokenSymbolAbi, functionName: 'symbol' }], chainId, blockNumber, true)
+  const assetSymbol = symbolResult.status === 'success' ? String(symbolResult.result) : result.tokenSymbol || 'TOKEN'
   if (chainId === 56 && isUsdBasketLegSymbol(assetSymbol)) {
     return {
       candidates: [],
@@ -247,7 +241,7 @@ export const discoverBasketPools = async (asset: Address, chainId: number, limit
     }
     if (candidates.length >= limit) continue
     try {
-      const candidate = await resolveCandidate(pool, asset, assetSymbol, chainId)
+      const candidate = await resolveCandidate(pool, asset, assetSymbol, chainId, blockNumber)
       if (candidate) candidates.push(candidate)
     } catch (error) {
       console.warn('Basket pool candidate skipped', pool.pairAddress, error)

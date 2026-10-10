@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { formatUnits, getAddress, isAddress, parseUnits, zeroAddress, type Address } from 'viem'
 import { BASKET_MAX_SLIPPAGE_BPS, getBasketDeployment, isBscBasketLegAssetBlocked, isUsdBasketLegSymbol, type BasketAssetPreset } from '@/config/baskets'
 import { ROBINHOOD_CHAIN, ROBINHOOD_TIPTAG_HOOK_FEE_PIPS } from '@/config/chains'
 import {
-  buildCustomRoute,
   createBasketAndBuy,
   recoverBasketCreation,
   getBasketUsdgBalance,
@@ -21,6 +20,9 @@ import {
 } from '@/utils/baskets/pool-discovery'
 import { BasketPoolValidationError } from '@/utils/baskets/route-validation'
 import { invalidateBasketCache } from '@/utils/baskets/data'
+import { loadRhBasketStockPresets } from '@/utils/baskets/rh-recommendations'
+import { restoreBasketDraftRoute } from '@/utils/baskets/draft'
+import { basketRouteQuoteSymbol } from '@/utils/baskets/routes'
 import { registerBasketDeployment } from '@/utils/baskets/api'
 import { useAccountStore } from '@/stores/web3'
 import { useChainStore } from '@/stores/chain'
@@ -99,8 +101,31 @@ const formattedUsdgBalance = computed(() => {
     maximumFractionDigits: deployment.value.settlementDecimals,
   })
 })
+const rhStockPresets = ref<BasketAssetPreset[]>([])
+const loadingStockPresets = ref(false)
+const stockPresetsError = ref(false)
+let stockPresetsRequest: AbortController | undefined
+const loadStockPresets = async () => {
+  if (basketChainId !== 4663) return
+  stockPresetsRequest?.abort()
+  const request = new AbortController()
+  stockPresetsRequest = request
+  loadingStockPresets.value = true
+  stockPresetsError.value = false
+  rhStockPresets.value = []
+  try {
+    const assets = await loadRhBasketStockPresets(request.signal)
+    if (!request.signal.aborted && isOnBasketChain.value) rhStockPresets.value = assets
+  } catch {
+    if (!request.signal.aborted) stockPresetsError.value = true
+  } finally {
+    if (stockPresetsRequest === request) loadingStockPresets.value = false
+  }
+}
+onUnmounted(() => stockPresetsRequest?.abort())
+
 const platformAssets = computed(() => deployment.value.assetPresets.filter((asset) => asset.category === 'platform'))
-const stockAssets = computed(() => deployment.value.assetPresets.filter((asset) => asset.category === 'stock'))
+const stockAssets = computed(() => basketChainId === 4663 ? rhStockPresets.value : deployment.value.assetPresets.filter((asset) => asset.category === 'stock'))
 const primaryAssets = computed(() => basketChainId === 56 ? deployment.value.assetPresets : platformAssets.value)
 const customAssetUsdBlocked = computed(() => basketChainId === 56 && isAddress(customAssetAddress.value) &&
   isBscBasketLegAssetBlocked(getAddress(customAssetAddress.value), basketChainId))
@@ -150,15 +175,8 @@ const effectiveV4PoolFee = (fee: number, hooks: Address) =>
     : fee
 const presetPoolFee = (asset: BasketAssetPreset) => asset.route.venue === 0
   ? effectiveV4PoolFee(asset.route.v4Pool.fee, asset.route.v4Pool.hooks)
-  : asset.route.venue === 3 ? 2_500 : asset.route.v3Fee
-const routeQuoteLabel = (route: BasketAssetPreset['route']) => {
-  if (basketChainId !== 56) return deployment.value.wrappedNativeSymbol
-  const quote = route.poolQuoteToken
-  if (!quote || quote.toLowerCase() === zeroAddress) return deployment.value.nativeSymbol
-  if (quote.toLowerCase() === deployment.value.contracts.settlementToken.toLowerCase()) return deployment.value.settlementSymbol
-  if (quote.toLowerCase() === deployment.value.contracts.wrappedNative.toLowerCase()) return deployment.value.wrappedNativeSymbol
-  return shortAddress(quote)
-}
+  : asset.route.venue === 3 ? basketChainId === 56 ? 2_500 : 3_000 : asset.route.v3Fee
+const routeQuoteLabel = (route: BasketAssetPreset['route']) => basketRouteQuoteSymbol(route, basketChainId)
 const presetPoolLabel = (asset: BasketAssetPreset) =>
   asset.route.venue === 2
     ? `${deployment.value.wrappedNativeSymbol} · 1:1`
@@ -178,6 +196,8 @@ const localizedPoolError = (error: unknown) => error instanceof BasketPoolValida
 const localizedCreationError = (error: unknown) => {
   if (error instanceof BasketPoolValidationError) return localizedPoolError(error)
   const message = error instanceof Error ? error.message : String(error)
+  if (message === 'RH_STOCK_DEPTH_UNAVAILABLE') return t('baskets.stockDepthUnavailable')
+  if (message === 'RH_STOCK_DEPTH_TOO_LOW') return t('baskets.stockDepthTooLow')
   if (/Fee-on-transfer tokens|TransferTaxNotSupported|0xf0cba19a/i.test(message)) {
     return t('baskets.transferTaxUnsupported')
   }
@@ -189,7 +209,7 @@ const formatPoolDate = (value: string) => {
 }
 const legPoolFee = (leg: CreateBasketLeg) => {
   if (leg.route.venue === 2) return 0
-  if (leg.route.venue === 3) return 2_500
+  if (leg.route.venue === 3) return basketChainId === 56 ? 2_500 : 3_000
   if (leg.route.venue !== 0) return leg.route.v3Fee
   return effectiveV4PoolFee(leg.route.v4Pool.fee, leg.route.v4Pool.hooks)
 }
@@ -208,7 +228,7 @@ const toggleAsset = (address: Address) => {
   const index = selected.value.findIndex((leg) => leg.asset.address.toLowerCase() === address.toLowerCase())
   if (index >= 0) selected.value.splice(index, 1)
   else {
-    const asset = deployment.value.assetPresets.find((item) => item.address.toLowerCase() === address.toLowerCase())
+    const asset = [...platformAssets.value, ...stockAssets.value].find((item) => item.address.toLowerCase() === address.toLowerCase())
     if (asset && selected.value.length < 10) selected.value.push(presetCreateLeg(asset))
   }
   rebalanceEqual()
@@ -304,70 +324,16 @@ const restoreDraftLeg = (value: any): CreateBasketLeg | null => {
   if (!value || !isAddress(value.asset?.address) || typeof value.asset?.symbol !== 'string') return null
   const address = getAddress(value.asset.address)
   const preset = deployment.value.assetPresets.find(item => item.address.toLowerCase() === address.toLowerCase())
-  let leg: CreateBasketLeg
-  if (preset) {
-    leg = presetCreateLeg(preset)
-  } else if (value.route?.venue === 0 && value.route.v4Pool && isAddress(value.route.v4Pool.hooks)) {
-    const fee = draftNumber(value.route.v4Pool.fee, -1)
-    const tickSpacing = draftNumber(value.route.v4Pool.tickSpacing, 0)
-    const poolQuoteToken = basketChainId === 56 && isAddress(value.route.poolQuoteToken)
-      ? getAddress(value.route.poolQuoteToken)
-      : undefined
-    if (!Number.isInteger(fee) || fee < 0 || fee > 0xffffff ||
-      !Number.isInteger(tickSpacing) || tickSpacing < -0x800000 || tickSpacing > 0x7fffff ||
-      (basketChainId === 56 && !poolQuoteToken)) return null
-    leg = {
-      asset: { address, symbol: value.asset.symbol.slice(0, 32) },
-      route: buildCustomRoute({
-        asset: address,
-        venue: 0,
-        ...(poolQuoteToken === undefined ? {} : { poolQuoteToken }),
-        fee,
-        tickSpacing,
-        hooks: getAddress(value.route.v4Pool.hooks),
-        ...(basketChainId === 56 && isAddress(value.route.v4Pool.poolManager) && /^0x[\da-fA-F]{64}$/.test(value.route.v4Pool.parameters)
-          ? { poolKey: {
-              currency0: getAddress(value.route.v4Pool.currency0),
-              currency1: getAddress(value.route.v4Pool.currency1),
-              hooks: getAddress(value.route.v4Pool.hooks),
-              poolManager: getAddress(value.route.v4Pool.poolManager),
-              fee,
-              tickSpacing,
-              parameters: value.route.v4Pool.parameters,
-            } }
-          : {}),
-      }),
-      weightBps: 0,
-    }
-  } else if (value.route?.venue === 1) {
-    const fee = draftNumber(value.route.v3Fee, -1)
-    const poolQuoteToken = basketChainId === 56 && isAddress(value.route.poolQuoteToken)
-      ? getAddress(value.route.poolQuoteToken)
-      : undefined
-    if (!Number.isInteger(fee) || fee <= 0 || fee > 0xffffff ||
-      (basketChainId === 56 && !poolQuoteToken)) return null
-    leg = {
-      asset: { address, symbol: value.asset.symbol.slice(0, 32) },
-      route: buildCustomRoute({
-        asset: address,
-        venue: 1,
-        ...(poolQuoteToken === undefined ? {} : { poolQuoteToken }),
-        fee,
-      }),
-      weightBps: 0,
-    }
-  } else if (basketChainId === 56 && value.route?.venue === 3 && isAddress(value.route.poolQuoteToken)) {
-    leg = {
-      asset: { address, symbol: value.asset.symbol.slice(0, 32) },
-      route: buildCustomRoute({
-        asset: address,
-        venue: 3,
-        poolQuoteToken: getAddress(value.route.poolQuoteToken),
-        fee: 0,
-      }),
-      weightBps: 0,
-    }
-  } else return null
+  // Migrate old native-ETH stock presets; preserve every explicit USDG/custom
+  // route's full PoolKey and quote currency instead of reconstructing it.
+  const oldRhPreset = basketChainId === 4663 && preset?.category === 'stock' && value.route?.poolQuoteToken?.toLowerCase() === zeroAddress
+  const restoredRoute = restoreBasketDraftRoute(value.route, basketChainId)
+  const leg: CreateBasketLeg | undefined = oldRhPreset && preset
+    ? presetCreateLeg(preset)
+    : restoredRoute ? { asset: { address, symbol: value.asset.symbol.slice(0, 32) }, route: restoredRoute, weightBps: 0 }
+    : preset ? presetCreateLeg(preset) : undefined
+  if (!leg) return null
+
   leg.weightBps = draftNumber(value.weightBps, 0)
   if (value.slippageBps !== undefined) leg.slippageBps = draftNumber(value.slippageBps, slippageBps.value)
   return leg
@@ -536,7 +502,8 @@ watch(() => props.modelValue, async (open) => {
     draftReady.value = true
     errorMessage.value = ''
     state.value = 'idle'
-  }
+    void loadStockPresets()
+  } else { stockPresetsRequest?.abort() }
 }, { immediate: true })
 
 watch(customAssetAddress, () => {
@@ -594,11 +561,17 @@ watch([
                   @click="toggleAsset(asset.address)"
                 >
                   <i :class="{ 'has-logo': asset.logoUrl, 'platform-logo': asset.symbol === 'TagAgent' }"><img v-if="asset.logoUrl" :src="asset.logoUrl" alt=""><template v-else>{{ asset.symbol.slice(0, 2) }}</template></i>
-                  <span class="asset-option__copy"><span class="asset-option__title"><strong>{{ asset.symbol }}</strong><em>{{ presetPoolLabel(asset) }}</em></span><small>{{ asset.name }}</small></span>
+                  <span class="asset-option__copy"><span class="asset-option__title"><strong>{{ asset.symbol }}</strong><em>{{ presetPoolLabel(asset) }}</em></span><small>{{ asset.name }}<template v-if="'liquidityUsd' in asset"> · {{ $t('baskets.poolLiquidity') }} {{ formatUsd(Number(asset.liquidityUsd)) }}</template></small></span>
                   <svg v-if="isSelected(asset.address)" viewBox="0 0 20 20" fill="none"><path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
               </div>
               <div v-if="basketChainId !== 56" class="asset-group-label asset-group-label--stocks">{{ $t('baskets.stockAssets') }}</div>
+              <p v-if="basketChainId === 4663" class="stock-depth-note">{{ $t('baskets.stockDepthHint') }}</p>
+              <p v-if="basketChainId === 4663 && loadingStockPresets" class="stock-depth-note">{{ $t('baskets.loadingStockPools') }}</p>
+              <div v-else-if="basketChainId === 4663 && (stockPresetsError || !stockAssets.length)" class="stock-depth-note">
+                {{ $t('baskets.stockDepthUnavailable') }}
+                <button type="button" class="equal-button" :disabled="isBusy" @click="loadStockPresets">{{ $t('baskets.retryStockPools') }}</button>
+              </div>
               <div v-if="basketChainId !== 56" class="asset-grid asset-grid--stocks">
                 <button
                   v-for="asset in stockAssets"
@@ -610,7 +583,7 @@ watch([
                   @click="toggleAsset(asset.address)"
                 >
                   <i :class="{ 'has-logo': asset.logoUrl }"><img v-if="asset.logoUrl" :src="asset.logoUrl" alt=""><template v-else>{{ asset.symbol.slice(0, 2) }}</template></i>
-                  <span class="asset-option__copy"><span class="asset-option__title"><strong>{{ asset.symbol }}</strong><em>{{ presetPoolLabel(asset) }}</em></span><small>{{ asset.name }}</small></span>
+                  <span class="asset-option__copy"><span class="asset-option__title"><strong>{{ asset.symbol }}</strong><em>{{ presetPoolLabel(asset) }}</em></span><small>{{ asset.name }}<template v-if="'liquidityUsd' in asset"> · {{ $t('baskets.poolLiquidity') }} {{ formatUsd(Number(asset.liquidityUsd)) }}</template></small></span>
                   <svg v-if="isSelected(asset.address)" viewBox="0 0 20 20" fill="none"><path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
               </div>
@@ -621,7 +594,7 @@ watch([
               </button>
               <Transition name="advanced">
                 <div v-if="customAssetOpen" class="advanced-panel custom-asset-panel">
-                  <p>{{ $t('baskets.customAssetHint') }}</p>
+                  <p>{{ $t('baskets.customAssetHint', { dex: deployment.dexKind === 'uniswap' ? 'Uniswap' : 'PancakeSwap', settlement: deployment.settlementSymbol }) }}</p>
                   <div class="custom-search-row">
                     <label class="field custom-address"><span>{{ $t('baskets.assetAddress') }}</span><input v-model.trim="customAssetAddress" placeholder="0x…" :disabled="isBusy || searchingPools || validatingAsset" @keyup.enter="searchCustomPools"></label>
                     <button type="button" class="pool-search" :disabled="isBusy || searchingPools || validatingAsset || customAssetUsdDetected" @click="searchCustomPools">
@@ -755,6 +728,7 @@ watch([
 </template>
 
 <style scoped>
+.stock-depth-note { margin: 8px 0; color: var(--text-muted); font-size: 12px; }
 .modal-backdrop { position: fixed; z-index: 2000; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,7,12,.72); backdrop-filter: blur(12px); }
 .create-modal { display: flex; width: min(780px, 100%); max-height: min(900px, calc(100vh - 44px)); flex-direction: column; overflow: hidden; border: 1px solid var(--border-base); border-radius: 28px; background: var(--surface); box-shadow: 0 28px 100px rgba(0,0,0,.38); }
 .modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 26px 28px 22px; border-bottom: 1px solid var(--border-base); background: radial-gradient(circle at 85% 0, rgba(141,103,232,.12), transparent 46%); }
@@ -862,5 +836,6 @@ watch([
 .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin 700ms linear infinite; }
 .basket-modal-enter-active, .basket-modal-leave-active { transition: opacity 180ms ease; }.basket-modal-enter-active .create-modal, .basket-modal-leave-active .create-modal { transition: transform 180ms ease; }.basket-modal-enter-from, .basket-modal-leave-to { opacity: 0; }.basket-modal-enter-from .create-modal, .basket-modal-leave-to .create-modal { transform: translateY(12px) scale(.985); }
 @keyframes spin { to { transform: rotate(360deg); } }
-@media (max-width: 650px) { .modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate__details { grid-template-columns: 1fr 1fr; }.pool-candidate__details > span:first-child { grid-column: 1 / -1; }.weight-row { grid-template-columns: minmax(60px, 1fr) 82px 24px 28px; }.remove-asset-button { width: 28px; padding: 0; }.remove-asset-button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
+@media (max-width: 650px) { .stock-depth-note { margin: 8px 0; color: var(--text-muted); font-size: 12px; }
+.modal-backdrop { align-items: end; padding: 0; }.create-modal { max-height: 94vh; border-radius: 24px 24px 0 0; }.modal-header, .modal-body, .modal-footer { padding-right: 18px; padding-left: 18px; }.asset-grid { grid-template-columns: 1fr 1fr; }.two-cols, .custom-search-row { grid-template-columns: 1fr; }.pool-search { height: 42px; }.pool-candidate__details { grid-template-columns: 1fr 1fr; }.pool-candidate__details > span:first-child { grid-column: 1 / -1; }.weight-row { grid-template-columns: minmax(60px, 1fr) 82px 24px 28px; }.remove-asset-button { width: 28px; padding: 0; }.remove-asset-button span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } }
 </style>

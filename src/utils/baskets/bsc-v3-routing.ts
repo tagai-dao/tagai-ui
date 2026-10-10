@@ -14,6 +14,7 @@ import { getReadOnlyClient } from '@/utils/wallets'
 import { pancakePoolManagerStateAbi, pancakeV4QuoterAbi, v3QuoterAbi, v4QuoterAbi } from './abis'
 import { getPoolQuoteToken } from './routes'
 import type { BasketLegRoute } from './types'
+import { quoteBasketSettlementLegs } from './execution-quote'
 
 const nutboxRouterAbi = parseAbi([
   'function validateRoute(address tokenIn,address tokenOut) view',
@@ -282,20 +283,14 @@ const quoteDirect = async (
   throw new Error('Unsupported Basket constituent venue')
 }
 
-export const quoteBscV3SettlementToAsset = async (
+export const quoteBscV3SettlementToAsset = (
   route: BasketLegRoute,
   asset: Address,
   settlementIn: bigint,
   chainId = 56,
   version = 3,
-): Promise<bigint> => {
-  const protocol = getBasketProtocol(chainId, version)
-  const poolQuote = getPoolQuoteToken(route, chainId, version)
-  const directIn = sameAddress(poolQuote, protocol.settlementToken)
-    ? settlementIn
-    : await quoteNutboxExactInput(protocol.settlementToken, poolQuote, settlementIn, chainId, version)
-  return quoteDirect(route, asset, poolQuote, asset, directIn, chainId, version)
-}
+  blockNumber?: bigint,
+): Promise<bigint> => quoteBasketSettlementLegs([{ route, asset, amount: settlementIn }], chainId, version, blockNumber).then(rows => rows[0])
 
 export const quoteBscV3AssetToSettlement = async (
   route: BasketLegRoute,

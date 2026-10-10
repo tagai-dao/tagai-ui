@@ -1,0 +1,1549 @@
+{
+  "chainId": 4663,
+  "sourceBlock": "84825375",
+  "checkedAt": "2026-10-10T07:32:41.116Z",
+  "minLiquidityUsd": 50000,
+  "multicall": "0xcA11bde05977b3631167028862bE2a173976CA11",
+  "candidates": [
+    {
+      "address": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "symbol": "AAPL",
+      "name": "Apple",
+      "logoUrl": "/images/basket-assets/aapl.png",
+      "category": "stock",
+      "poolId": "0xAae0d815EE56e4092a5E5C2911E676Fea50B2d6D",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 328317.4604
+    },
+    {
+      "address": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "symbol": "AAPL",
+      "name": "Apple",
+      "logoUrl": "/images/basket-assets/aapl.png",
+      "category": "stock",
+      "poolId": "0xc748f4671a867db48b552f6b7650bf3255e05f80f00e3f7aad1b17ccb7898fdb",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+          "fee": 3000,
+          "tickSpacing": 60,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 609093.2187
+    },
+    {
+      "address": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+      "symbol": "AAPL",
+      "name": "Apple",
+      "logoUrl": "/images/basket-assets/aapl.png",
+      "category": "stock",
+      "poolId": "0x783C9bbB765047CFdD2b84b92b2Ca9F11D34b7Ed",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 99879.6492
+    },
+    {
+      "address": "0x05a3d1Cd21d0C88145E82600E62e7E496e0F222B",
+      "symbol": "AMC",
+      "name": "AMC Entertainment",
+      "logoUrl": "/images/basket-assets/amc.png",
+      "category": "stock",
+      "poolId": "0xaA34feA710a1A737840329051D81D3B0B7C564d5",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 437021.2878
+    },
+    {
+      "address": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+      "symbol": "AMD",
+      "name": "AMD",
+      "logoUrl": "/images/basket-assets/amd.png",
+      "category": "stock",
+      "poolId": "0x48D284A2A4d3DC1b3Da08231Fe44317e7e7Aa51f",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 174660.7887
+    },
+    {
+      "address": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+      "symbol": "AMD",
+      "name": "AMD",
+      "logoUrl": "/images/basket-assets/amd.png",
+      "category": "stock",
+      "poolId": "0xde9f85fdd9e05a943a52f2c69ffafe3064a3287df03d02c9b431bc92d4781274",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 528335.4631
+    },
+    {
+      "address": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+      "symbol": "AMZN",
+      "name": "Amazon",
+      "logoUrl": "/images/basket-assets/amzn.png",
+      "category": "stock",
+      "poolId": "0x8AC92DA74AB5F3b1d024Dc1943Ad7e15Dc4179Ef",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 730102.7468
+    },
+    {
+      "address": "0x156E175DD063a8cE274C50654eF40e0032b3fbcF",
+      "symbol": "AVGO",
+      "name": "Broadcom",
+      "logoUrl": "/images/basket-assets/avgo.png",
+      "category": "stock",
+      "poolId": "0x5B7C404f1d7d77F9f3885aB13d7764F8a173028c",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 160553.0693
+    },
+    {
+      "address": "0x4D21483a44Bf67a86b77E3dA301411880797D452",
+      "symbol": "BA",
+      "name": "Boeing",
+      "logoUrl": "/images/basket-assets/ba.png",
+      "category": "stock",
+      "poolId": "0xc6517047b189c72D3bAa9eF37D1d28F27a63638a",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 95471.0605
+    },
+    {
+      "address": "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4",
+      "symbol": "BABA",
+      "name": "Alibaba",
+      "logoUrl": "https://assets.parqet.com/logos/symbol/BABA?format=png",
+      "category": "stock",
+      "poolId": "0xa57ab582b310dd6f9e934EA1EEEa152741545E6A",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 63170.5144
+    },
+    {
+      "address": "0x822CC93fFD030293E9842c30BBD678F530701867",
+      "symbol": "BE",
+      "name": "Bloom Energy",
+      "logoUrl": "/images/basket-assets/be.png",
+      "category": "stock",
+      "poolId": "0x1baD145C8F06444E0dF81c28257cd20231Bd1f16",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 104348.9183
+    },
+    {
+      "address": "0xceF9027c7d6985b85f0BA431125073529A947A68",
+      "symbol": "BULL",
+      "name": "Webull",
+      "logoUrl": "/images/basket-assets/bull.png",
+      "category": "stock",
+      "poolId": "0xdfc620485cebd394955e7cde9e3d336ec8dabe24a7c80c4b9de71ea896208e79",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xceF9027c7d6985b85f0BA431125073529A947A68",
+          "fee": 8000,
+          "tickSpacing": 50,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 91210.2371
+    },
+    {
+      "address": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+      "symbol": "COIN",
+      "name": "Coinbase",
+      "logoUrl": "/images/basket-assets/coin.png",
+      "category": "stock",
+      "poolId": "0x007a13fa152f6dc383cad20a8eaab4e1e2538b606936eae2a424f8aa47d6db31",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 834286.9475
+    },
+    {
+      "address": "0x4EA005168D7F09a7A0Ba9D1DEf21a479950E44C2",
+      "symbol": "COST",
+      "name": "Costco",
+      "logoUrl": "/images/basket-assets/cost.png",
+      "category": "stock",
+      "poolId": "0x0a2121A50A09eD0796ae81F9c53fF9398355a398",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 587286.8039
+    },
+    {
+      "address": "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5",
+      "symbol": "CRCL",
+      "name": "Circle Internet Group",
+      "logoUrl": "https://cdn.prod.website-files.com/67116d0daddc92483c812e88/683f238c7540ce089af2ff6f_Favicon32x32.png",
+      "category": "stock",
+      "poolId": "0x654E4143e82a5824445Ade0824351C2A9ACD95a8",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 6882060.8235
+    },
+    {
+      "address": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
+      "symbol": "DELL",
+      "name": "Dell",
+      "logoUrl": "/images/basket-assets/dell.png",
+      "category": "stock",
+      "poolId": "0xc30c89cB7815A1488b7998D15eEC73961707Fc5a",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 378327.8197
+    },
+    {
+      "address": "0x1D11f0496982706C5e14A514D4E79F2e6BdE4516",
+      "symbol": "DJT",
+      "name": "Trump Media & Technology Group",
+      "logoUrl": "/images/basket-assets/djt.png",
+      "category": "stock",
+      "poolId": "0x31a89afd92F9397465649AD03226c52292fc1ae5",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 310717.976
+    },
+    {
+      "address": "0x25C288E6D899b9BC30160965aD9644c67e73bE0C",
+      "symbol": "F",
+      "name": "Ford Motor",
+      "logoUrl": "/images/basket-assets/f.png",
+      "category": "stock",
+      "poolId": "0x4dbAC19E895322ac5b93abad9008691632bFFC05",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 104706.3758
+    },
+    {
+      "address": "0x41F4267525a8AFf329540eF24fD83d9044758B33",
+      "symbol": "FIG",
+      "name": "Figma",
+      "logoUrl": "/images/basket-assets/fig.png",
+      "category": "stock",
+      "poolId": "0xca5904C0a9d42F0Ec1Bf760FDf779907877144fD",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 128431.9307
+    },
+    {
+      "address": "0x2D427692E928fa156ec22acfaBaFA0447C5805B7",
+      "symbol": "GLXY",
+      "name": "Galaxy Digital Inc.",
+      "logoUrl": "/images/basket-assets/glxy.png",
+      "category": "stock",
+      "poolId": "0xC67C2D200E0b7E5D99F4CFBede8CB09B48892f2c",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 132819.5093
+    },
+    {
+      "address": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+      "symbol": "GME",
+      "name": "GameStop",
+      "logoUrl": "/images/basket-assets/gme.png",
+      "category": "stock",
+      "poolId": "0xE2b46c905E12Ab8E2f864e4821a4325884C1B126",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 198100.9714
+    },
+    {
+      "address": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+      "symbol": "GME",
+      "name": "GameStop",
+      "logoUrl": "/images/basket-assets/gme.png",
+      "category": "stock",
+      "poolId": "0xE9713f453aDB9245B19559790c96F470a18F2fDF",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 554780.7754
+    },
+    {
+      "address": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+      "symbol": "GOOGL",
+      "name": "Alphabet Class A",
+      "logoUrl": "/images/basket-assets/googl.png",
+      "category": "stock",
+      "poolId": "0x34D0dC122CF9A8Eb296fC5e0D3A233625D7d19b7",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 1014381.3034
+    },
+    {
+      "address": "0xCceE82fE024c36fA15E1005edE3E9e4787e23D09",
+      "symbol": "HIMS",
+      "name": "Hims & Hers Health",
+      "logoUrl": "/images/basket-assets/hims.png",
+      "category": "stock",
+      "poolId": "0xC8C90d3a1c1a24967E773ac2aD0d456BA3E31F64",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 1029996.5035
+    },
+    {
+      "address": "0x980dcf6766FA79f5Cf0c4AAdb3ab477ff15a9619",
+      "symbol": "IBM",
+      "name": "IBM",
+      "logoUrl": "/images/basket-assets/ibm.png",
+      "category": "stock",
+      "poolId": "0x8cD848ce18b829C5c769AFf27164078bB52e0E97",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 216843.9906
+    },
+    {
+      "address": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+      "symbol": "INTC",
+      "name": "Intel",
+      "logoUrl": "/images/basket-assets/intc.png",
+      "category": "stock",
+      "poolId": "0x2e5a92f5013a64661A49312111be2e8aBd33F56a",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 311547.505
+    },
+    {
+      "address": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+      "symbol": "INTC",
+      "name": "Intel",
+      "logoUrl": "/images/basket-assets/intc.png",
+      "category": "stock",
+      "poolId": "0xf2e329e631d0fb315a5c563ee3a9120f24822b5ef6c502a91cb56b174d5d8c22",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 405189.6407
+    },
+    {
+      "address": "0x8005d266423c7ea827372c9c864491e5786600ea",
+      "symbol": "LLY",
+      "name": "Eli Lilly",
+      "logoUrl": "/images/basket-assets/lly.png",
+      "category": "stock",
+      "poolId": "0xF212D02146a897F5F686E9d629F6A73da534324a",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 282252.757
+    },
+    {
+      "address": "0x8005d266423c7ea827372c9c864491e5786600ea",
+      "symbol": "LLY",
+      "name": "Eli Lilly",
+      "logoUrl": "/images/basket-assets/lly.png",
+      "category": "stock",
+      "poolId": "0xF4274130137eeE20bAD928B593d992716516CEB9",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 180903.1936
+    },
+    {
+      "address": "0x329fcACEb9AD6F9580DD5F643fed0646900D043c",
+      "symbol": "LMT",
+      "name": "Lockheed",
+      "logoUrl": "/images/basket-assets/lmt.png",
+      "category": "stock",
+      "poolId": "0x0b118d2480ebdb11374d3ad2ea1b935e9458a9f704222004b3b8de07bc98f1eb",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x329fcACEb9AD6F9580DD5F643fed0646900D043c",
+          "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "fee": 5000,
+          "tickSpacing": 50,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 82009.0721
+    },
+    {
+      "address": "0x4e62068525Ab11FE768e29dfD00ef909B9803016",
+      "symbol": "LULU",
+      "name": "Lululemon",
+      "logoUrl": "/images/basket-assets/lulu.png",
+      "category": "stock",
+      "poolId": "0x0F4227D27082B3BCA6818381b9ea6460275e49f4",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 91073.6355
+    },
+    {
+      "address": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+      "symbol": "META",
+      "name": "Meta Platforms",
+      "logoUrl": "/images/basket-assets/meta.png",
+      "category": "stock",
+      "poolId": "0x5875d407a42965b0e768c8925cea290e06fa50603ef34fc99eb92a1050e6ae36",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+          "fee": 3000,
+          "tickSpacing": 60,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 3548567.6366
+    },
+    {
+      "address": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+      "symbol": "META",
+      "name": "Meta Platforms",
+      "logoUrl": "/images/basket-assets/meta.png",
+      "category": "stock",
+      "poolId": "0x107a7Cb40d8665360ba10E59471Af06150A50922",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 281323.5115
+    },
+    {
+      "address": "0x43B07D15cE533bEc5476d70C22a78a1B2B662155",
+      "symbol": "MRNA",
+      "name": "Moderna",
+      "logoUrl": "/images/basket-assets/mrna.png",
+      "category": "stock",
+      "poolId": "0xB40196272A6d2EB5edF6d93bc4DC39856AD95E0E",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 184954.3188
+    },
+    {
+      "address": "0x43B07D15cE533bEc5476d70C22a78a1B2B662155",
+      "symbol": "MRNA",
+      "name": "Moderna",
+      "logoUrl": "/images/basket-assets/mrna.png",
+      "category": "stock",
+      "poolId": "0xA34d0667334074DF2d5BfD259e79E6B9cf1fA8Bf",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 69578.765
+    },
+    {
+      "address": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+      "symbol": "MSFT",
+      "name": "Microsoft",
+      "logoUrl": "/images/basket-assets/msft.png",
+      "category": "stock",
+      "poolId": "0xeb60bCD1D920ad6E102690CCFC6fB488899E1510",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 467910.0148
+    },
+    {
+      "address": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+      "symbol": "MSTR",
+      "name": "Strategy Inc.",
+      "logoUrl": "/images/basket-assets/mstr.png",
+      "category": "stock",
+      "poolId": "0x319bac87e616a89e241c10aeb8afd4892a852cdd8b373cd9765ecddc40b87cfe",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+          "fee": 2500,
+          "tickSpacing": 25,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 2226015.09
+    },
+    {
+      "address": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+      "symbol": "MSTR",
+      "name": "Strategy Inc.",
+      "logoUrl": "/images/basket-assets/mstr.png",
+      "category": "stock",
+      "poolId": "0x17578C0e0D15da44f31677263114F71aE76653EA",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 531749.1348
+    },
+    {
+      "address": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
+      "symbol": "MU",
+      "name": "Micron Technology",
+      "logoUrl": "/images/basket-assets/mu.png",
+      "category": "stock",
+      "poolId": "0xd057B1Bc54917855BBee58eAd58647f47caB35E5",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 1214194.26
+    },
+    {
+      "address": "0x9D9c6684F596F66a64C030B93A886D51Fd4D7931",
+      "symbol": "NBIS",
+      "name": "Nebius Group",
+      "logoUrl": "/images/basket-assets/nbis.png",
+      "category": "stock",
+      "poolId": "0x7c2f9ce1214ba9baf56d1b6a1fc640c1b63e9a711172c0c7d10e5a9c4a3d4f0c",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0x9D9c6684F596F66a64C030B93A886D51Fd4D7931",
+          "fee": 9900,
+          "tickSpacing": 99,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 121388.7221
+    },
+    {
+      "address": "0xE0444EF8BF4eD74f74FD73686e2ddF4C1c5591E8",
+      "symbol": "NFLX",
+      "name": "Netflix",
+      "logoUrl": "/images/basket-assets/nflx.png",
+      "category": "stock",
+      "poolId": "0x59895C0302F41aEaa129D2fa2442CEc01E7eF45E",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 209294.8042
+    },
+    {
+      "address": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+      "symbol": "NVDA",
+      "name": "NVIDIA",
+      "logoUrl": "/images/basket-assets/nvda.png",
+      "category": "stock",
+      "poolId": "0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 2464021.5292
+    },
+    {
+      "address": "0xb0992820E760d836549ba69BC7598b4af75dEE03",
+      "symbol": "ORCL",
+      "name": "Oracle",
+      "logoUrl": "/images/basket-assets/orcl.png",
+      "category": "stock",
+      "poolId": "0xc2ce4784e1e72cf0221b51b30c8aaadf6c0b12863cf03ab3687854fb7b1d850a",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xb0992820E760d836549ba69BC7598b4af75dEE03",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 118669.9464
+    },
+    {
+      "address": "0x7066A64c24e4206CD62E83bf198c1E7EB361F51e",
+      "symbol": "PFE",
+      "name": "Pfizer",
+      "logoUrl": "/images/basket-assets/pfe.png",
+      "category": "stock",
+      "poolId": "0xC7d573Fcda6D2107C97fb582ae18411F9Db32E7f",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 70733.9594
+    },
+    {
+      "address": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+      "symbol": "PLTR",
+      "name": "Palantir Technologies",
+      "logoUrl": "/images/basket-assets/pltr.png",
+      "category": "stock",
+      "poolId": "0x851680416A4f4E1c463d45171d61ACDdBc8554c0",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 137443.803
+    },
+    {
+      "address": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+      "symbol": "PLTR",
+      "name": "Palantir Technologies",
+      "logoUrl": "/images/basket-assets/pltr.png",
+      "category": "stock",
+      "poolId": "0xee430ee1003e1985e1828a01b9a20dad67ad4302994fe2abb4a173de4ac54623",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 639734.3988
+    },
+    {
+      "address": "0x0f17206447090e464C277571124dD2688E48AEA9",
+      "symbol": "QCOM",
+      "name": "Qualcomm",
+      "logoUrl": "/images/basket-assets/qcom.png",
+      "category": "stock",
+      "poolId": "0x106af997d180cf37a574c42c04179f267b9245cf221b1c57fb3e491137915de6",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0f17206447090e464C277571124dD2688E48AEA9",
+          "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "fee": 3500,
+          "tickSpacing": 71,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 56721.8219
+    },
+    {
+      "address": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+      "symbol": "QQQ",
+      "name": "Invesco QQQ",
+      "logoUrl": "/images/basket-assets/qqq.png",
+      "category": "stock",
+      "poolId": "0xD60A5d14dB690B7Afad71F76B108071D7175597d",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 1100473.1496
+    },
+    {
+      "address": "0x59818904ab4cE163b3cE4FfB64f2D6Ca02c434B4",
+      "symbol": "QUBT",
+      "name": "Quantum Computing",
+      "logoUrl": "/images/basket-assets/qubt.png",
+      "category": "stock",
+      "poolId": "0x227Bbce9A81B3694b01754298a983Be3F9E44A93",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 106337.5891
+    },
+    {
+      "address": "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8",
+      "symbol": "RBLX",
+      "name": "Roblox",
+      "logoUrl": "/images/basket-assets/rblx.png",
+      "category": "stock",
+      "poolId": "0x1BDB8e3A79Cb1a7F228808739311E23098D33d43",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 114552.4406
+    },
+    {
+      "address": "0xF0C4BF4C582cb3836e98394b1d4e7B7281101bE8",
+      "symbol": "RBLX",
+      "name": "Roblox",
+      "logoUrl": "/images/basket-assets/rblx.png",
+      "category": "stock",
+      "poolId": "0x2ef5945cd5664876b6481FdacFaA2942995a4DA8",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 135569.5231
+    },
+    {
+      "address": "0x05b37Fb53A299a1b874A619e1c4C404D52C36F4C",
+      "symbol": "RDDT",
+      "name": "Reddit",
+      "logoUrl": "https://assets.parqet.com/logos/symbol/RDDT?format=png",
+      "category": "stock",
+      "poolId": "0xa8744E76aED23B05F0126335E7BD38f7935D19fe",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 954867.4634
+    },
+    {
+      "address": "0xB1BF26c1D20ff267A4f93550d1E0d06ac40a114B",
+      "symbol": "RIVN",
+      "name": "Rivian Automotive",
+      "logoUrl": "/images/basket-assets/rivn.png",
+      "category": "stock",
+      "poolId": "0xb30A75B200D98A600a3766869344928E35823E23",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 54356.0343
+    },
+    {
+      "address": "0x84CAb63bc87912E71ad199ff14A0bA45de68FeF8",
+      "symbol": "SKYHY",
+      "name": "SK hynix Inc. American Depositary Shares",
+      "logoUrl": "/images/basket-assets/skhy.png",
+      "category": "stock",
+      "poolId": "0x994db79a9e80b73d726171d0e834dfe6fdce7987539dcf5cceef7b2b95c5fd95",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0x84CAb63bc87912E71ad199ff14A0bA45de68FeF8",
+          "fee": 8880,
+          "tickSpacing": 89,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 70780.999
+    },
+    {
+      "address": "0xF6589F11Bc40b669e584073F428B05562F568733",
+      "symbol": "SNAP",
+      "name": "Snap",
+      "logoUrl": "/images/basket-assets/snap.png",
+      "category": "stock",
+      "poolId": "0x2e4cc4c65587faca7a08b69a13c86ca8c86599d90ad818ceaa1a875176f5fb52",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xF6589F11Bc40b669e584073F428B05562F568733",
+          "fee": 1950,
+          "tickSpacing": 20,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 93460.5907
+    },
+    {
+      "address": "0xF6589F11Bc40b669e584073F428B05562F568733",
+      "symbol": "SNAP",
+      "name": "Snap",
+      "logoUrl": "/images/basket-assets/snap.png",
+      "category": "stock",
+      "poolId": "0x0EbD4650C9e641E9745b5A508A2D46935DFE753E",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 58674.3773
+    },
+    {
+      "address": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
+      "symbol": "SNDK",
+      "name": "Sandisk Corporation",
+      "logoUrl": "/images/basket-assets/sndk.png",
+      "category": "stock",
+      "poolId": "0x2707cb88a6a40fa0f948f58958051ba097d6f6a3cf7f87929bd68ccc5becea24",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "currency1": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
+          "fee": 10000,
+          "tickSpacing": 200,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 193620.1691
+    },
+    {
+      "address": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "symbol": "SPCX",
+      "name": "Space Exploration Technologies Corp. Class A Common Stock",
+      "logoUrl": "/images/basket-assets/spcx.svg",
+      "category": "stock",
+      "poolId": "0xc61284332117c3FB23A2A56cceFFD07F7aF60029",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 1347897.7702
+    },
+    {
+      "address": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "symbol": "SPCX",
+      "name": "Space Exploration Technologies Corp. Class A Common Stock",
+      "logoUrl": "/images/basket-assets/spcx.svg",
+      "category": "stock",
+      "poolId": "0xEb07d9587eFD1778dFb9c385Ec43EF6d5F9fE401",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 746983.9247
+    },
+    {
+      "address": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+      "symbol": "SPCX",
+      "name": "Space Exploration Technologies Corp. Class A Common Stock",
+      "logoUrl": "/images/basket-assets/spcx.svg",
+      "category": "stock",
+      "poolId": "0xfbB32C09488e3fc33fe6fD84fe6aE442B4d13a31",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 62036.0738
+    },
+    {
+      "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+      "symbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust",
+      "logoUrl": "/images/basket-assets/spy.png",
+      "category": "stock",
+      "poolId": "0xa7Bb1AC63BBaB0C44316E6c8C455213441689167",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 259772.7557
+    },
+    {
+      "address": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+      "symbol": "SPY",
+      "name": "SPDR S&P 500 ETF Trust",
+      "logoUrl": "/images/basket-assets/spy.png",
+      "category": "stock",
+      "poolId": "0xfe2a80bb5618fd14984b92ca6d45bf5ba67443ddb1435e28b2e48df2fc1526cd",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+          "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "fee": 3000,
+          "tickSpacing": 60,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 3071473.8269
+    },
+    {
+      "address": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "symbol": "TSLA",
+      "name": "Tesla",
+      "logoUrl": "/images/basket-assets/tsla.png",
+      "category": "stock",
+      "poolId": "0xc4f0172D6ac8DD294Dd1137D047d5E1893760236",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 500,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 65117.4673
+    },
+    {
+      "address": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "symbol": "TSLA",
+      "name": "Tesla",
+      "logoUrl": "/images/basket-assets/tsla.png",
+      "category": "stock",
+      "poolId": "0x8517f8071ae5b831b738052f12125e8e3d6c158b78728aa44ce3b25e5104d32e",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+          "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "fee": 3000,
+          "tickSpacing": 60,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 876322.2237
+    },
+    {
+      "address": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+      "symbol": "TSLA",
+      "name": "Tesla",
+      "logoUrl": "/images/basket-assets/tsla.png",
+      "category": "stock",
+      "poolId": "0xf4ACdAEEB7022862A763C9B1B885e11191c889E3",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 413497.3816
+    },
+    {
+      "address": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
+      "symbol": "TSM",
+      "name": "Taiwan Semiconductor Manufacturing",
+      "logoUrl": "/images/basket-assets/tsm.png",
+      "category": "stock",
+      "poolId": "0x0ba5d53d2f6255f334b7c8ead4f56b6aef5af3402c5e4d11180afd38c6b85fb1",
+      "route": {
+        "venue": 0,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
+          "currency1": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+          "fee": 7500,
+          "tickSpacing": 75,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 0,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 155790.8112
+    },
+    {
+      "address": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
+      "symbol": "TSM",
+      "name": "Taiwan Semiconductor Manufacturing",
+      "logoUrl": "/images/basket-assets/tsm.png",
+      "category": "stock",
+      "poolId": "0x07e8Ea83D4C1340774c8965125e26e12bf943bf1",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 99140.0621
+    },
+    {
+      "address": "0x5e81213613b6B86EaB4c6c50d718d34359459786",
+      "symbol": "TTWO",
+      "name": "Take-Two Interactive Software",
+      "logoUrl": "/images/basket-assets/ttwo.png",
+      "category": "stock",
+      "poolId": "0xD9Ab4b7fAe6DC2f7020134Ec744A8F53Ef3E5E24",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 163441.354
+    },
+    {
+      "address": "0xf23250dac154D05Bb671CB0d0eBEf3c635c79CE2",
+      "symbol": "UPS",
+      "name": "UPS",
+      "logoUrl": "/images/basket-assets/ups.png",
+      "category": "stock",
+      "poolId": "0x3Ab74C45DceCC6A62898204Dd42143a816B44CB1",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 10000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 93126.3992
+    },
+    {
+      "address": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+      "symbol": "USAR",
+      "name": "USA Rare Earth",
+      "logoUrl": "/images/basket-assets/usar.png",
+      "category": "stock",
+      "poolId": "0x04391780F519B7d3ba59c9590459D76e23d225C4",
+      "route": {
+        "venue": 1,
+        "poolQuoteToken": "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168",
+        "v4Pool": {
+          "currency0": "0x0000000000000000000000000000000000000000",
+          "currency1": "0x0000000000000000000000000000000000000000",
+          "fee": 0,
+          "tickSpacing": 0,
+          "hooks": "0x0000000000000000000000000000000000000000"
+        },
+        "v3Fee": 3000,
+        "defaultMaxExecutionLossBps": 100
+      },
+      "liquidityUsd": 89121.1128
+    }
+  ]
+}
