@@ -85,5 +85,18 @@ chainId + token 地址选择公司 Logo；同公司复用 BSC 资源。普通社
 RH 首页 51 个股票/ETF 的 102 个桌面/移动图标全部加载，AAPL 详情显示 Apple
 Logo；BSC 首页 56 个本地图标全部加载，两链 Apple 等公司共用资源。
 本地截图为 /tmp/rh-stock-home-company-logos.png 和
-/tmp/rh-stock-detail-company-logo.png。补充提交仍需用户再次部署前端。
+/tmp/rh-stock-detail-company-logo.png。补充提交为 11bba14f，用户已再次部署前端。
 真实钱包交易验收、RH 交易奖励后台和 RH AI 发币仍待后续完成。
+
+## 补充提交上线验收（2026-10-10）
+
+线上 https://tagai.fun/rh?tab=bstocks 的 51 个股票/ETF 共 102 个桌面/移动
+公司图标全部加载成功；RH AAPL 详情显示 Apple Logo。BSC 股票首页的 62 个
+已匹配公司目录图标全部加载，同公司（例如 Apple）与 RH 使用相同资源。
+线上 RH 首页截图保存在 /tmp/rh-v14-live-company-logos.png。
+
+首次打开仍运行旧入口 index-C1T0aaCj.js，而公网 HTML 已返回 index-C9gA1snT.js。
+这是 Service Worker 保持当前页面和缓存资源同一版本的既有行为：新 worker
+等待旧页面全部关闭，不强制打断钱包确认或表单。关闭所有本站页面后重新打开，
+实际入口切换为新版本，公司图标验证通过；仅刷新旧页面可能仍停留旧版本。
+此验收只检查页面和公开数据，未执行真实创建、交易、LP 或领取操作。
