@@ -172,7 +172,7 @@ export const BSC_CHAIN: ChainDeployment = {
     tokenImplementation13: '0xcC8f585593feAb2a27f9e699a6b578d46446c88C',
     pump11: '0x8fEF5b4c0f761a0cc447800e3019B089ac306F28',
     tokenImplementation11: '0xfD40C112F39D372786265a032C546D05Feec4D66',
-    importHelper: '0xcCB0f9a9db22cCC29fDd315180F89747118ec296',
+    importHelper: (import.meta.env?.VITE_BSC_IMPORT_HELPER || '0x40BACB12D79dadf045c21C999b74484816F746F7') as `0x${string}`,
     importedTokenSwapWrapper: '0xDfFc699FB095a693708E3c15e6F0a224cbbCc98F',
     tagAiSwapWrapper: '0x0000000000000000000000000000000000000000',
     legacyTagAiSwapWrapper: '0x0000000000000000000000000000000000000000',

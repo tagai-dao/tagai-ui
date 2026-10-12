@@ -334,6 +334,8 @@
     "basicInfo": "Basic Information",
     "socialLinks": "Social Links",
     "contractAddress": "Contract Address",
+    "injectCurationRewards": "Add curation rewards",
+    "injectCurationRewardsTip": "Optional: inject tokens to fund community curation rewards. Tokens are released hourly over {days} days.",
     "enableSocialDist": "Enable Social Distribution",
     "enableSocialDistTip": "Inject tokens into the social mining pool to reward users for social interactions (likes, retweets, replies). The injected tokens will be linearly released over {days} days to the social curation pool. You can inject more tokens later, or skip this step.",
     "injectAmount": "Inject Amount",

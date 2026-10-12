@@ -246,7 +246,7 @@ watch(showAiDeployTab, (visible) => {
 
 // V10 导入代币相关
 const communityAddress = ref('');
-const socialPoolAddress = ref('');
+const curationPoolAddress = ref('');
 const injectAmount = ref<number | undefined>(undefined);
 const injectLoading = ref(false);
 const tokenBalance = ref<bigint>(0n);
@@ -480,7 +480,7 @@ const importTokenStepClick = async () => {
       // A successful ImportHelper transaction is irreversible. Persist its
       // receipt before calling the API so a timeout, API validation failure, or
       // browser restart can resume registration without sending a second tx.
-      if (!importForm.createHash || !importForm.communityAddress || !importForm.socialPoolAddress) {
+      if (!importForm.createHash || !importForm.communityAddress || !(importForm.curationPoolAddress || importForm.socialPoolAddress)) {
         // Match the server's routed-pool policy before paying the creation fee.
         // Existing chain receipts skip creation and continue idempotent recovery.
         const validation = await validateImportPool(
@@ -492,14 +492,14 @@ const importTokenStepClick = async () => {
         }
         const result = await deployNutboxCommunity(importForm.token as `0x${string}`)
         communityAddress.value = result.community
-        socialPoolAddress.value = result.pool
+        curationPoolAddress.value = result.pool
         importForm.createHash = result.txHash
         importForm.communityAddress = result.community
-        importForm.socialPoolAddress = result.pool
+        importForm.curationPoolAddress = result.pool
         savePendingImport()
       } else {
         communityAddress.value = importForm.communityAddress
-        socialPoolAddress.value = importForm.socialPoolAddress
+        curationPoolAddress.value = importForm.curationPoolAddress || importForm.socialPoolAddress || ''
       }
 
       // 调用后端 API 入库
@@ -651,7 +651,7 @@ onMounted(async () => {
       if (parsed.chainId === chainStore.activeChainId && parsed.form?.createHash) {
         Object.assign(importForm, parsed.form)
         communityAddress.value = parsed.form.communityAddress ?? ''
-        socialPoolAddress.value = parsed.form.socialPoolAddress ?? ''
+        curationPoolAddress.value = parsed.form.curationPoolAddress || parsed.form.socialPoolAddress || ''
         importStep.value = 3
       } else {
         localStorage.removeItem('importTokenForm')
@@ -1078,9 +1078,9 @@ onMounted(async () => {
 
         <!-- Inject tokens prompt -->
         <div class="bg-grey-f0 rounded-lg p-4 flex flex-col gap-3">
-          <h4 class="text-lg font-semibold text-black">{{ $t('createCommunity.enableSocialDist') }}</h4>
+          <h4 class="text-lg font-semibold text-black">{{ $t('createCommunity.injectCurationRewards') }}</h4>
           <p class="text-grey-normal text-sm leading-relaxed">
-            {{ $t('createCommunity.enableSocialDistTip', { days: 7 }) }}
+            {{ $t('createCommunity.injectCurationRewardsTip', { days: 7 }) }}
           </p>
 
           <div class="flex flex-col gap-2 mt-2">

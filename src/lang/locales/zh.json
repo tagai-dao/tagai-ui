@@ -334,6 +334,8 @@
     "basicInfo": "基本信息",
     "socialLinks": "社交链接",
     "contractAddress": "合约地址",
+    "injectCurationRewards": "补充策展奖励",
+    "injectCurationRewardsTip": "可选：注入代币，为社区策展补充奖励。注入的代币将在 {days} 天内逐小时释放。",
     "enableSocialDist": "开启社交分发",
     "enableSocialDistTip": "注入代币到社交矿池，奖励用户的社交互动（点赞、转发、回复）。注入的代币将在 {days} 天内线性释放到社交策展矿池。您可以稍后再注入更多代币，也可以跳过此步骤。",
     "injectAmount": "注入数量",

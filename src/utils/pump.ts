@@ -6,7 +6,7 @@ import { validateIndexConfig, creationOptions, creationFee } from './v13/creatio
 import type { Community, CreateCommunity, OnchainTokenInfo, Tweet } from "@/types";
 import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, TotalSupply, IPShareContract1, IPShareContract2, IPShareContract3, wrappedUniswapV2ForTagAI, PumpContract5, AIDeployer, wrappedUniswapV2ForTagAI2, PCSCLPoolManager, NutboxCommittee, usesThirdPartyMarketCap } from "@/config";
 import { getTokenBalance, getTransactionReceipt } from "./web3";
-import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, OracleDistributor, OracleDistributorV2, ImportHelper as ImportHelperAddress, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
+import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, OracleDistributor, OracleDistributorV2, LegacyBscImportHelper, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
 import { getEthPrice } from "@/apis/api";
 import { aggregateWithRpcFallback } from './multicall'
@@ -402,7 +402,17 @@ export const getImportCommunityFee = async (importer: `0x${string}`): Promise<Im
     // BSC ImportHelper 只收取 Nutbox 社区创建和设置费用；它不会在
     // 导入过程中创建 IPShare。
     if (!features.enhancedImportHelper) {
-        return { createFee, settingsFee, ipshareCreateFee: 0n, total: createFee + settingsFee, createsIPShare: false };
+        let poolCount = 1n;
+        if (useChainStore().deployment.key === 'bsc'
+            && useChainStore().deployment.contracts.importHelper.toLowerCase() !== LegacyBscImportHelper.toLowerCase()) {
+            poolCount = await getReadOnlyClient(56).readContract({
+                address: useChainStore().deployment.contracts.importHelper,
+                abi: [{type: 'function', name: 'defaultPoolCount', stateMutability: 'view', inputs: [], outputs: [{type: 'uint256'}]}],
+                functionName: 'defaultPoolCount',
+            });
+            if (poolCount < 1n || poolCount > 6n) throw new Error('Invalid default import pool count');
+        }
+        return { createFee, settingsFee, ipshareCreateFee: 0n, total: createFee + settingsFee * poolCount, createsIPShare: false };
     }
 
     const hasIPShare = await readContract('IPShare3', 'ipshareCreated', [importer]) as boolean;
@@ -416,7 +426,7 @@ export const getImportCommunityFee = async (importer: `0x${string}`): Promise<Im
     };
 }
 
-/** 创建 Nutbox Community，并使用固定 HourlyTickCalculator 建立 Social Curation 分发池。 */
+/** Create a Nutbox community and the configured helper's default curation pool. */
 export const deployNutboxCommunity = async (
     token: `0x${string}`
 ): Promise<{ community: string; pool: string; txHash: string }> => {
