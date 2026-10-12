@@ -33,7 +33,7 @@ export type ChainDeployment = {
     /** 是否开放聚合预测市场主入口；关闭后仍可从社区进入预测市场。 */
     predictionMainEntry: boolean
     auPay: boolean
-    /** 新版 ImportHelper：导入时创建 IPShare，并记录 importerOf(token) */
+    /** 仅历史 RH Helper 使用此模式；当前 BSC/RH V2 不创建 IPShare。 */
     enhancedImportHelper: boolean
   }
   /** 包装原生币（BSC=WBNB，RH=WETH） */
@@ -214,7 +214,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     multicallAddress: MULTICALL3,
     interval: 3000,
   },
-  features: { prediction: false, predictionMainEntry: false, auPay: false, enhancedImportHelper: true },
+  features: { prediction: false, predictionMainEntry: false, auPay: false, enhancedImportHelper: false },
   // Uniswap UR constructor 确认的 WETH9
   wrappedNative: '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73',
   // Global Dollar is the settlement asset used by Robinhood stock-token pools.
@@ -246,7 +246,7 @@ export const ROBINHOOD_CHAIN: ChainDeployment = {
     tokenImplementation9: '0x95c62F6A3AC1A3b7D08d866eeBDc74700aB954D6',
     pump11: '0x7686CbaF2dFc7000eb9b0D6DE81E48c1211d2655',
     tokenImplementation11: '0xcE00643B77695AD9A7a4EaBdC5b479cA0c22C016',
-    importHelper: '0xD0baaF8D314b0C6AB6bebd24ddbC86157c9c7b09',
+    importHelper: '0x70eD7C79d80dEDE1828a09B3c526df283111Cb82',
     importedTokenSwapWrapper: '0x53e65DE68A0eB7f3662579F44Eb9849Ae5cA44ab',
     tagAiSwapWrapper: '0x53e65DE68A0eB7f3662579F44Eb9849Ae5cA44ab',
     legacyTagAiSwapWrapper: '0xa12d998bff956c1034f863a4cd30f4403b6b2b4f',

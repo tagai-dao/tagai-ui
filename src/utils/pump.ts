@@ -1,3 +1,4 @@
+import { readImportFee, type ImportCommunityFee } from './import-fee'
 import {isIndexToken} from './v14/chain'
 import {readIndexTokenStates} from './v14/token-state'
 import { tradePoolConfig } from './v14/creation-config'
@@ -351,7 +352,7 @@ export const getCreatePumpFee = async (userAddress: `0x${string}`, componentCoun
 
 // ==================== ImportHelper (V10 导入代币) ====================
 
-export type ImportCommunityFee = { createFee: bigint; settingsFee: bigint; ipshareCreateFee: bigint; total: bigint; createsIPShare: boolean }
+export type { ImportCommunityFee } from './import-fee'
 
 const LEGACY_IMPORT_CREATE_ABI = [{
     type: 'function',
@@ -367,7 +368,7 @@ const LEGACY_IMPORT_CREATE_ABI = [{
     ],
 }] as const
 
-/** Robinhood does not implement the legacy two-address selector. */
+/** Historical RH helper only; current BSC/RH V2 uses the two-address selector. */
 const ENHANCED_IMPORT_CREATE_ABI = [{
     type: 'function',
     name: 'createCommunityAndPool',
@@ -393,37 +394,16 @@ const ENHANCED_IMPORT_CREATE_ABI = [{
 
 /** 与 ImportHelper 的链上费用算法保持一致；tick 仍由 API/DB 保证全局唯一。 */
 export const getImportCommunityFee = async (importer: `0x${string}`): Promise<ImportCommunityFee> => {
-    const { features } = useChainStore().deployment;
-    const [createFee, settingsFee] = await Promise.all([
-        readContract('NutboxCommittee', 'getCreateCommunityFee', []) as Promise<bigint>,
-        readContract('NutboxCommittee', 'getCommunitySettingsFee', []) as Promise<bigint>,
-    ]);
-
-    // BSC ImportHelper 只收取 Nutbox 社区创建和设置费用；它不会在
-    // 导入过程中创建 IPShare。
-    if (!features.enhancedImportHelper) {
-        let poolCount = 1n;
-        if (useChainStore().deployment.key === 'bsc'
-            && useChainStore().deployment.contracts.importHelper.toLowerCase() !== LegacyBscImportHelper.toLowerCase()) {
-            poolCount = await getReadOnlyClient(56).readContract({
-                address: useChainStore().deployment.contracts.importHelper,
-                abi: [{type: 'function', name: 'defaultPoolCount', stateMutability: 'view', inputs: [], outputs: [{type: 'uint256'}]}],
-                functionName: 'defaultPoolCount',
-            });
-            if (poolCount < 1n || poolCount > 6n) throw new Error('Invalid default import pool count');
-        }
-        return { createFee, settingsFee, ipshareCreateFee: 0n, total: createFee + settingsFee * poolCount, createsIPShare: false };
-    }
-
-    const hasIPShare = await readContract('IPShare3', 'ipshareCreated', [importer]) as boolean;
-    const ipshareCreateFee = hasIPShare ? 0n : await readContract('IPShare3', 'createFee', []) as bigint;
-    return {
-        createFee,
-        settingsFee,
-        ipshareCreateFee,
-        total: createFee + settingsFee + ipshareCreateFee,
-        createsIPShare: !hasIPShare,
-    };
+    const deployment = useChainStore().deployment;
+    return readImportFee(getReadOnlyClient(deployment.chainId), {
+        committee: deployment.contracts.nutboxCommittee,
+        helper: deployment.contracts.importHelper,
+        ipshare: deployment.contracts.ipshare3,
+        importer,
+        enhanced: deployment.features.enhancedImportHelper,
+        v2: !deployment.features.enhancedImportHelper
+            && deployment.contracts.importHelper.toLowerCase() !== LegacyBscImportHelper.toLowerCase(),
+    });
 }
 
 /** Create a Nutbox community and the configured helper's default curation pool. */
@@ -431,22 +411,31 @@ export const deployNutboxCommunity = async (
     token: `0x${string}`
 ): Promise<{ community: string; pool: string; txHash: string }> => {
     const importer = useAccountStore().ethConnectAddress as `0x${string}`;
-    const fee = await getImportCommunityFee(importer);
     const deployment = useChainStore().deployment;
+    const client = getReadOnlyClient(deployment.chainId);
+    const fee = await getImportCommunityFee(importer);
+    if (useChainStore().activeChainId !== deployment.chainId
+        || useAccountStore().ethConnectAddress?.toLowerCase() !== importer.toLowerCase()) {
+        throw new Error('Chain or account changed during import preparation');
+    }
     const args = deployment.features.enhancedImportHelper
         ? [token, deployment.contracts.hourlyTickCalculator, '0x']
         : [token, zeroAddress];
-    // Restrict the ABI as well as the arguments. The deployed Robinhood helper
-    // rejects the legacy selector with empty revert data, which otherwise
-    // surfaces as the unhelpful generic "contract function reverted" message.
+    // Use the exact selector supported by the captured deployment.
     const createAbi = deployment.features.enhancedImportHelper
         ? ENHANCED_IMPORT_CREATE_ABI
         : LEGACY_IMPORT_CREATE_ABI;
     const hash = await writeContract({
         contractName: 'ImportHelper',
+        address: deployment.contracts.importHelper,
+        beforeWrite: () => {
+            if (useChainStore().activeChainId !== deployment.chainId
+                || useAccountStore().ethConnectAddress?.toLowerCase() !== importer.toLowerCase()) {
+                throw new Error('Chain or account changed during import preparation');
+            }
+        },
         functionName: 'createCommunityAndPool',
-        // BSC deploys the fixed-calculator two-argument helper. Robinhood's
-        // enhanced helper requires the calculator and distribution policy.
+        // Current BSC/RH V2: fixed calculator, default pool allocation, no IPShare gate.
         args,
         value: fee.total,
         abi: createAbi,
@@ -454,19 +443,24 @@ export const deployNutboxCommunity = async (
     if (!hash) {
         throw errCode.TRANSACTION_INVALID;
     }
-    const tx = await getTransactionReceipt(hash as `0x${string}`);
-    const event = getCommunityCreatedEvent(tx);
-    if (!event || (event as any).creator?.toLowerCase() !== importer.toLowerCase()) {
+    const tx = await client.getTransactionReceipt({ hash: hash as `0x${string}` });
+    const event = getCommunityCreatedEvent(tx, deployment.contracts.importHelper);
+    if (tx.status !== 'success' || !event || (event as any).creator?.toLowerCase() !== importer.toLowerCase()
+        || (event as any).token?.toLowerCase() !== token.toLowerCase()) {
         throw new Error('ImportHelper receipt did not contain the expected CommunityCreated event');
     }
 
     // 仅在支持 importerOf / IPShare 的链上部署执行增强校验。
-    // BSC 以交易回执中的 CommunityCreated.creator 作为成功依据。
-    if (useChainStore().deployment.features.enhancedImportHelper) {
-        const [recordedImporter, hasIPShare] = await Promise.all([
-            readContract('ImportHelper', 'importerOf', [token]) as Promise<string>,
-            readContract('IPShare3', 'ipshareCreated', [importer]) as Promise<boolean>,
-        ]);
+    // 当前 BSC/RH V2 以可信 Helper 的 CommunityCreated 回执作为成功依据。
+    if (deployment.features.enhancedImportHelper) {
+        const [recordedImporter, hasIPShare] = await client.multicall({
+            multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',
+            blockNumber: tx.blockNumber, allowFailure: false,
+            contracts: [
+                { address: deployment.contracts.importHelper, abi: abis.ImportHelper, functionName: 'importerOf', args: [token] },
+                { address: deployment.contracts.ipshare3, abi: abis.IPShare3, functionName: 'ipshareCreated', args: [importer] },
+            ],
+        }) as [string, boolean];
         if (recordedImporter.toLowerCase() !== importer.toLowerCase() || !hasIPShare) {
             throw new Error('Imported community ownership or IPShare creation verification failed');
         }
@@ -776,11 +770,11 @@ export const injectTokens = async (
 }
 
 /** 从 receipt 解析 CommunityCreated event */
-const getCommunityCreatedEvent = (tx: { logs: Log[] }) => {
+const getCommunityCreatedEvent = (tx: { logs: Log[] }, helper: `0x${string}`) => {
     try {
         const events = parseEventLogs({
             abi: abis.ImportHelper,
-            logs: tx.logs,
+            logs: tx.logs.filter(log => log.address.toLowerCase() === helper.toLowerCase()),
         });
         for (const event of events) {
             if ((event as any).eventName === 'CommunityCreated') {
