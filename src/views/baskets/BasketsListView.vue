@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref } from 'vue'
 import { useBasketList } from '@/composables/baskets/useBasketList'
 import BasketChainGate from './components/BasketChainGate.vue'
 import BasketCard from './components/BasketCard.vue'
-import CreateBasketModal from './components/CreateBasketModal.vue'
+const CreateBasketModal = defineAsyncComponent(() => import('./components/CreateBasketModal.vue'))
 import { getBasketDeployment } from '@/config/baskets'
 import { getChainDeployment } from '@/config/chains'
 import { useChainStore } from '@/stores/chain'
@@ -129,7 +129,7 @@ onMounted(() => {
           </a>
         </template>
       </p>
-      <CreateBasketModal v-model="showCreate" @created="refresh(true)" />
+      <CreateBasketModal v-if="showCreate" v-model="showCreate" @created="refresh(true)" />
     </div>
   </div>
 </template>

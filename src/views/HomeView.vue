@@ -3,7 +3,7 @@ import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
-import {computed, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
+import {computed, defineAsyncComponent, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
 import {getCommunitiesByNew, getTokenCatalogPage, getImportedCommunityInfo, getOnlineSpaces, type TagCoinSourceFilter} from "@/apis/api";
 import {useCommunityStore} from "@/stores/community";
@@ -18,13 +18,13 @@ import {usePageScroll} from "@/composables/useTools";
 import {formatPrice} from "../utils/helper";
 import {formatUsdCompact} from "@/utils/format";
 import {useModalStore, useStateStore} from "@/stores/common";
-import HomePost from "@/views/home/HomePost.vue";
+const HomePost = defineAsyncComponent(() => import('@/views/home/HomePost.vue'))
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
-import MindShare from "@/views/mind-share/MindShare.vue";
+const MindShare = defineAsyncComponent(() => import('@/views/mind-share/MindShare.vue'))
 import {useAccountStore} from "@/stores/web3";
 import {useChainStore} from "@/stores/chain";
-import Predict from "@/views/predict/Index.vue";
-import TokenWatchlist from '@/views/home/TokenWatchlist.vue'
+const Predict = defineAsyncComponent(() => import('@/views/predict/Index.vue'))
+const TokenWatchlist = defineAsyncComponent(() => import('@/views/home/TokenWatchlist.vue'))
 import BasketsListView from '@/views/baskets/BasketsListView.vue'
 import {type HomeNewSource, TweetListType, useTweetsStore} from "@/stores/tweets";
 import {filterByActiveChain} from "@/utils/chainFilter";

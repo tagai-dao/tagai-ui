@@ -1063,6 +1063,7 @@
     "dragRangeHint": "拖动手柄调整价格区间"
   },
   "baskets": {
+    "snapshot": "缓存行情",
     "rebalancePlanChanged": "再平衡方案已随池子状态变化，请重试。",
     "rebalanceSlippageRange": "滑点请输入 0.01%–{max}%。",
     "tradeEnterAmount": "请输入数量并等待报价。",
