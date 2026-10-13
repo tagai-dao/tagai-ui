@@ -1081,6 +1081,7 @@
     "dragRangeHint": "ハンドルをドラッグして価格範囲を調整"
   },
   "baskets": {
+    "snapshot": "キャッシュ価格",
     "rebalancePlanChanged": "プールの状態変化によりリバランス計画が変わりました。再試行してください。",
     "rebalanceSlippageRange": "スリッページは 0.01%～{max}% で入力してください。",
     "tradeEnterAmount": "数量を入力して見積もりをお待ちください。",

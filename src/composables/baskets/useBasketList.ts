@@ -31,7 +31,7 @@ export const useBasketList = () => {
   }
 
   /** force=true 绕过短时缓存（刷新按钮） */
-  const refresh = async (force = true) => {
+  const refresh = async (force = false) => {
     const request = ++sequence
     const chainId = chainStore.activeChainId
     const scope = `${chainId}:basket-list:display-v1`
@@ -44,8 +44,10 @@ export const useBasketList = () => {
     try {
       const full = await listBaskets(chainId, {
         force,
-        // Shells have no AUM yet. Publishing them prematurely caused the
-        // leading indices to jump from the bottom to the top after pricing.
+        onShell: shells => {
+          if (request !== sequence || chainId !== chainStore.activeChainId || hasExistingList) return
+          baskets.value = shells
+        },
       })
       if (request !== sequence || chainId !== chainStore.activeChainId) return
       baskets.value = full

@@ -1,25 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { resolveCoinTab } from '@/utils/coinTabs'
-import HomeView from '../views/HomeView.vue'
+const HomeView = () => import('../views/HomeView.vue')
 import { useAccountStore } from '@/stores/web3'
 import { useModalStore, useStateStore } from '@/stores/common'
 import { GlobalModalType } from '@/types'
-import HomeTagDetail from '@/views/tag-detail/HomeTagDetail.vue'
-import BuyAndSellView from '@/views/buy-sell/BuyAndSellView.vue'
-import TweetSpaceDetail from '@/views/space-detail/TweetSpaceDetail.vue'
-import TweetPostDetail from '@/views/post-detail/TweetPostDetail.vue'
-import ProfileView from '@/views/profile/ProfileView.vue'
-import WalletView from '@/views/wallet/WalletView.vue'
-import NotificationView from '@/views/notification/NotificationView.vue'
-import LoginCallBack from '@/views/LoginCallBack.vue'
-import ClankerDetail from '@/views/clanker/ClankerDetail.vue'
-import TipTokenRecord from "@/views/wallet/TipTokenRecord.vue";
-import UserView from '@/views/profile/UserView.vue'
-import PredictDetail from '@/views/predict-detail/Index.vue'
-import PredictEventDetail from '@/views/predict-event-detail/Index.vue'
-import MindShareIndex from '@/views/mind-share/Index.vue'
-import AboutView from '@/views/about/AboutView.vue'
-import BuidlerView from '@/views/buidler/BuidlerView.vue'
+const HomeTagDetail = () => import('@/views/tag-detail/HomeTagDetail.vue')
+const BuyAndSellView = () => import('@/views/buy-sell/BuyAndSellView.vue')
+const TweetSpaceDetail = () => import('@/views/space-detail/TweetSpaceDetail.vue')
+const TweetPostDetail = () => import('@/views/post-detail/TweetPostDetail.vue')
+const ProfileView = () => import('@/views/profile/ProfileView.vue')
+const WalletView = () => import('@/views/wallet/WalletView.vue')
+const NotificationView = () => import('@/views/notification/NotificationView.vue')
+const LoginCallBack = () => import('@/views/LoginCallBack.vue')
+const ClankerDetail = () => import('@/views/clanker/ClankerDetail.vue')
+const TipTokenRecord = () => import('@/views/wallet/TipTokenRecord.vue')
+const UserView = () => import('@/views/profile/UserView.vue')
+const PredictDetail = () => import('@/views/predict-detail/Index.vue')
+const PredictEventDetail = () => import('@/views/predict-event-detail/Index.vue')
+const MindShareIndex = () => import('@/views/mind-share/Index.vue')
+const AboutView = () => import('@/views/about/AboutView.vue')
+const BuidlerView = () => import('@/views/buidler/BuidlerView.vue')
 import { useChainStore } from '@/stores/chain'
 import { getChainIdFromSlug, getChainPath, isProductChain } from '@/config/chains'
 

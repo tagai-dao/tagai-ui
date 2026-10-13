@@ -20,6 +20,7 @@ export type RegisteredBasketAsset = {
 }
 
 export type RegisteredBasket = {
+  performance?: BasketPerformance | null
   address: Address
   name: string
   symbol: string
@@ -135,7 +136,7 @@ export const getBasketPerformances = async (
     const response = await get(
       `${API_BASE_URL}/basket/performance`,
       { addresses: addresses.slice(offset, offset + 50).join(',') },
-      chainHeaders(chainId),
+      { ...chainHeaders(chainId), timeout: 2500, 'axios-retry': { retries: 0 } },
     ) as BasketPerformanceListResponse
     if (Array.isArray(response?.d)) result.push(...response.d)
   }

@@ -1081,6 +1081,7 @@
     "dragRangeHint": "Seret handle untuk menyesuaikan rentang harga"
   },
   "baskets": {
+    "snapshot": "Harga tersimpan",
     "rebalancePlanChanged": "Kondisi pool mengubah rencana penyeimbangan. Silakan coba lagi.",
     "rebalanceSlippageRange": "Masukkan slippage 0,01%–{max}%.",
     "tradeEnterAmount": "Masukkan jumlah dan tunggu penawaran.",

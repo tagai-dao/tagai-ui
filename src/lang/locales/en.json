@@ -1060,6 +1060,7 @@
     "dragRangeHint": "Drag handles to adjust the price range"
   },
   "baskets": {
+    "snapshot": "Cached quote",
     "rebalancePlanChanged": "Pool conditions changed the rebalance plan. Please try again.",
     "rebalanceSlippageRange": "Enter slippage from 0.01% to {max}%.",
     "tradeEnterAmount": "Enter an amount and wait for a quote.",

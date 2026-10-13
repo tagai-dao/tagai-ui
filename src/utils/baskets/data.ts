@@ -589,13 +589,12 @@ export const listBaskets = async (
   chainId: number,
   options: BasketReadOptions = {},
 ): Promise<BasketSummary[]> => {
-  const deployment = getBasketDeployment(chainId)
+  getBasketDeployment(chainId)
   const cached = listCache.get(chainId)
   if (!options.force && cached && isFresh(cached.at)) {
     options.onShell?.(cached.data)
     return cached.data
   }
-  const client = getReadOnlyClient(chainId)
   const registered = (await listRegisteredBaskets(chainId))
     .filter((basket) => isAddress(basket.address))
     .sort((a, b) => b.createdAt - a.createdAt)
@@ -625,144 +624,27 @@ export const listBaskets = async (
     listCache.set(chainId, { at: Date.now(), data: shells })
     return shells
   }
-  // Independent API snapshots and RPC valuation run in parallel.
-  const performanceRequest = getBasketPerformances(registered.map(basket => basket.address), chainId)
-    .catch(error => {
-      console.warn('[baskets] performance API unavailable', error)
-      return []
-    })
-
-  type ListRead =
-    | { kind: 'effectiveSupply'; basketIndex: number }
-    | { kind: 'reserve'; basketIndex: number; assetIndex: number }
-    | { kind: 'unitQuote'; basketIndex: number; assetIndex: number }
-    | { kind: 'spotQuote'; basketIndex: number; assetIndex: number }
-    | { kind: 'hubPrice' }
-
-  const contracts: MulticallContract[] = []
-  const reads: ListRead[] = []
-  const addRead = (contract: MulticallContract, read: ListRead) => {
-    contracts.push(contract)
-    reads.push(read)
+  // Listing is display-only: worker snapshots avoid one RPC batch per visitor.
+  // Older API deployments remain compatible through a bounded performance request.
+  let performance = registered.flatMap(basket => basket.performance ? [basket.performance] : [])
+  if (registered.some(basket => basket.performance === undefined)) {
+    performance = await getBasketPerformances(registered.map(basket => basket.address), chainId).catch(() => [])
   }
-
-  const valuationBlock=await client.getBlockNumber()
-  const engines=await multicall(client,registered.map(basket=>({address:basket.address,abi:getBasketTokenAbi(chainId,basket.version),functionName:'engine'})),valuationBlock)
-
-  registered.forEach((basket, basketIndex) => {
-    const contractsConfig = getBasketProtocol(chainId,basket.version,ok<Address>(engines[basketIndex])??undefined)
-    const tokenAbi = getBasketTokenAbi(chainId, basket.version)
-    const executorAbi = getRebalanceExecutorAbi(chainId, basket.version)
-    const bscV3 = isBscBasketV3(chainId, basket.version)
-    const quoteAssetFunction = bscV3 ? 'quoteAssetToQuote' : chainId === 56 ? 'quoteAssetToWbnb' : 'quoteAssetToWeth'
-    addRead({ address: basket.address, abi: tokenAbi, functionName: 'effectiveSupply' }, { kind: 'effectiveSupply', basketIndex })
-    basket.assets.forEach((asset, assetIndex) => {
-      addRead(
-        { address: basket.address, abi: tokenAbi, functionName: 'assetAt', args: [BigInt(asset.position)] },
-        { kind: 'reserve', basketIndex, assetIndex },
-      )
-      if (bscV3) {
-        addRead(
-          {
-            address: contractsConfig.rebalanceExecutor,
-            abi: executorAbi,
-            functionName: quoteAssetFunction,
-            args: [toContractLegRoute(asset.route, chainId, basket.version), asset.address, 10n ** BigInt(asset.decimals)],
-          },
-          { kind: 'unitQuote', basketIndex, assetIndex },
-        )
-      } else if (chainId === 56) {
-        const spotContract = bscSpotQuoteContract(deployment, asset.address, asset.route)
-        if (spotContract) addRead(spotContract, { kind: 'spotQuote', basketIndex, assetIndex })
-      } else {
-        addRead(
-          {
-            address: contractsConfig.rebalanceExecutor,
-            abi: executorAbi,
-            functionName: quoteAssetFunction,
-            args: [toContractLegRoute(asset.route, chainId, basket.version), asset.address, 10n ** BigInt(asset.decimals)],
-          },
-          { kind: 'unitQuote', basketIndex, assetIndex },
-        )
-      }
-    })
-  })
-  addRead(
-    hubStateContract(deployment),
-    { kind: 'hubPrice' },
-  )
-
-  const results = await multicall(client, contracts,valuationBlock).catch(error => {
-    console.warn('[baskets] live valuation unavailable; using API snapshots', error)
-    return [] as MulticallRow[]
-  })
-  const effectiveSupplies = registered.map(() => 0n)
-  const reserves = registered.map((basket) => basket.assets.map(() => 0n))
-  const unitQuotes = registered.map((basket) => basket.assets.map(() => 0n))
-  const spotQuotes = registered.map((basket) => basket.assets.map(() => null as unknown))
-  let hubSqrtPrice = 0n
-  reads.forEach((read, index) => {
-    const result = results[index]
-    if (result?.status !== 'success') return
-    if (read.kind === 'effectiveSupply') effectiveSupplies[read.basketIndex] = result.result as bigint
-    else if (read.kind === 'reserve') {
-      const raw: any = result.result
-      reserves[read.basketIndex][read.assetIndex] = BigInt(raw?.activeReserve ?? raw?.[2] ?? 0)
-    } else if (read.kind === 'unitQuote') unitQuotes[read.basketIndex][read.assetIndex] = result.result as bigint
-    else if (read.kind === 'spotQuote') spotQuotes[read.basketIndex][read.assetIndex] = result.result
-    else hubSqrtPrice = parseHubSqrtPrice(result.result, chainId)
-  })
-
-  const baskets = registered.map((basket, basketIndex): BasketSummary => {
-    let aumRaw = 0n
-    let pricedCount = 0
-    basket.assets.forEach((asset, assetIndex) => {
-      const reserve = reserves[basketIndex][assetIndex]
-      const bscV3 = isBscBasketV3(chainId, basket.version)
-      const unitValue = reserve * unitQuotes[basketIndex][assetIndex] / (10n ** BigInt(asset.decimals))
-      const wethValue = bscV3
-        ? 0n
-        : chainId === 56
-          ? bscSpotAssetToWbnb(deployment, asset.address, asset.route, reserve, spotQuotes[basketIndex][assetIndex], hubSqrtPrice)
-          : unitValue
-      const settlementValue = bscV3
-        ? unitValue
-        : hubSqrtPrice > 0n ? wethToUsdgRaw(wethValue, hubSqrtPrice) : 0n
-      if (reserve > 0n && settlementValue > 0n) pricedCount += 1
-      aumRaw += settlementValue
-    })
-    const aumUsd = Number(formatUnits(aumRaw, deployment.settlementDecimals))
-    const effectiveSupply = Number(formatUnits(effectiveSupplies[basketIndex], basket.decimals))
+  const byAddress = new Map(performance.map(item => [item.address.toLowerCase(), item]))
+  const baskets = shells.map(basket => {
+    const item = byAddress.get(basket.address.toLowerCase())
+    const nav = Number(item?.currentNav)
+    const aum = Number(item?.aumUsd)
     return {
-      ...shells[basketIndex],
-      aumUsd,
-      navPerToken: effectiveSupply > 0 ? aumUsd / effectiveSupply : 0,
-      pricedCount,
+      ...basket,
+      navPerToken: item?.currentNav != null && Number.isFinite(nav) && nav > 0 ? nav : 0,
+      aumUsd: item?.aumUsd != null && Number.isFinite(aum) && aum >= 0 ? aum : 0,
+      currentNavAsOf: item?.asOf ?? null,
+      toDatePct: item?.toDatePct ?? null,
+      dataQuality: item?.dataQuality ?? 'unavailable',
+      launchTimeQuality: item?.launchTimeQuality ?? 'unavailable',
     }
   })
-  try {
-    const performance = await performanceRequest
-    const byAddress = new Map(performance.map((item) => [item.address.toLowerCase(), item]))
-    baskets.forEach((basket) => {
-      const item = byAddress.get(basket.address.toLowerCase())
-      if (!item) return
-      const currentNav = Number(item.currentNav)
-      const currentAum = Number(item.aumUsd)
-      if (item.dataQuality === 'complete' && Number.isFinite(currentNav) && currentNav > 0) {
-        basket.navPerToken = currentNav
-        if (Number.isFinite(currentAum) && currentAum >= 0) basket.aumUsd = currentAum
-      }
-      basket.launchNav = 1
-      basket.currentNavAsOf = item.asOf
-      basket.toDatePct = item.toDatePct ?? null
-      basket.dataQuality = item.dataQuality
-      basket.launchTimeQuality = item.launchTimeQuality
-    })
-  } catch (error) {
-    // NAV history is deployed independently; current on-chain valuation remains usable
-    // while the snapshot migration or worker is not available yet.
-    console.warn('[baskets] performance API unavailable', error)
-  }
   listCache.set(chainId, { at: Date.now(), data: baskets })
   return baskets
 }

@@ -1080,6 +1080,7 @@
     "dragRangeHint": "핸들을 드래그하여 가격 범위 조정"
   },
   "baskets": {
+    "snapshot": "캐시된 시세",
     "rebalancePlanChanged": "풀 상태가 변경되어 리밸런싱 계획이 달라졌습니다. 다시 시도해 주세요.",
     "rebalanceSlippageRange": "슬리피지를 0.01%~{max}%로 입력해 주세요.",
     "tradeEnterAmount": "수량을 입력하고 견적을 기다려 주세요.",

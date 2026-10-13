@@ -1081,6 +1081,7 @@
     "dragRangeHint": "Arrastra los controles para ajustar el rango de precios"
   },
   "baskets": {
+    "snapshot": "Cotización guardada",
     "rebalancePlanChanged": "El estado del pool cambió el plan de reequilibrio. Inténtalo de nuevo.",
     "rebalanceSlippageRange": "Introduce un deslizamiento entre 0,01% y {max}%.",
     "tradeEnterAmount": "Introduce una cantidad y espera la cotización.",
