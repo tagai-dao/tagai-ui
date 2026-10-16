@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
 import { isMemeEtf } from '@/utils/coinCategory'
-import OnlineSpace from "@/components/common/OnlineSpace.vue";
-import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, defineAsyncComponent, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
-import {getCommunitiesByNew, getTokenCatalogPage, getImportedCommunityInfo, getOnlineSpaces, type TagCoinSourceFilter} from "@/apis/api";
+import {getTokenCatalogPage, getImportedCommunityInfo, getOnlineSpaces, type TagCoinSourceFilter} from "@/apis/api";
 import {useCommunityStore} from "@/stores/community";
 import {useCurationStore} from '@/stores/curation'
 import {handleErrorTip} from '@/utils/notify'
@@ -16,8 +14,6 @@ import SearchBar from "@/components/common/SearchBar.vue";
 import LanguageSwitcher from "@/components/common/LanguageSwitcher.vue";
 import emitter from "@/utils/emitter";
 import {usePageScroll} from "@/composables/useTools";
-import {formatPrice} from "../utils/helper";
-import {formatUsdCompact} from "@/utils/format";
 import {useModalStore, useStateStore} from "@/stores/common";
 const HomePost = defineAsyncComponent(() => import('@/views/home/HomePost.vue'))
 import PostTypeOption from "@/views/home/PostTypeOption.vue";
@@ -37,6 +33,7 @@ const listType = ref(ListType.Trending)
 const mindShareType = ref<MindShareType>(MindShareType.Project) // 1: project, 0: user
 const typePopoverVisible = ref(false)
 const comStore = useCommunityStore();
+const curationStore = useCurationStore();
 // Page rankings belong to this route and filter. Other widgets may refresh the
 // shared community store, but must never replace the selected ranking.
 const coinLists = reactive({
@@ -44,9 +41,7 @@ const coinLists = reactive({
   newCommunities: [] as Community[],
   trendingCommunities: [] as Community[],
 })
-const recentCommunities = ref<Community[]>([])
 let pageActive = true
-const curationStore = useCurationStore();
 const tweetsStore = useTweetsStore();
 const refreshing = ref(false);
 // Only a user pull should move the list to reveal the refresh indicator.
@@ -97,7 +92,6 @@ const isActiveChainBStock = (community: Community) =>
   isBStockCommunity(community, chainStore.activeChainId)
 
 let backgroundIntervals: ReturnType<typeof setInterval>[] = []
-let tickerSequence = 0
 
 watch(listType, () => { void refresh() })
 watch(activeTab, (val) => {
@@ -220,23 +214,6 @@ async function getSpaces() {
     }
   } catch(e) {
     // handleErrorTip(e)
-  }
-}
-
-async function getNewCommunities() {
-  if (!pageActive) return
-  const chainId = chainStore.activeChainId
-  const sequence = ++tickerSequence
-  const isCurrent = () => pageActive && sequence === tickerSequence && chainId === chainStore.activeChainId
-  try {
-    const communities = await getCommunitiesByNew(0, 'all') as Community[]
-    if (!isCurrent()) return
-    recentCommunities.value = communities.slice(0, 10)
-    void getTokenInfo(recentCommunities.value).then(rows => {
-      if (isCurrent()) recentCommunities.value = rows
-    }).catch(error => console.warn('[Token] ticker metrics unavailable', error))
-  } catch (error) {
-    if (isCurrent()) console.warn('[Token] ticker refresh failed; retaining last list', error)
   }
 }
 
@@ -398,14 +375,13 @@ function switchCoinTab(tab: 'watchlist' | 'tagCoin' | 'baskets' | 'bStocks') {
 
 function startBackgroundRefresh() {
   if (backgroundIntervals.length) return
+  // Still used by community live-Space indicators, not just the removed ticker.
   void getSpaces()
-  void getNewCommunities()
   backgroundIntervals = [
     setInterval(getSpaces, 20000),
     setInterval(() => {
       if (activeMainMenu.value === 'coin' && coinSubMenu.value === 'bStocks') void loadBStocks()
     }, 60000),
-    setInterval(getNewCommunities, 60000),
   ]
 }
 
@@ -415,7 +391,6 @@ function stopBackgroundRefresh() {
   backgroundIntervals = []
   pageActive = false
   listRefreshSequence++
-  tickerSequence++
   refreshing.value = false
   loading.value = false
 }
@@ -449,9 +424,6 @@ watch([activeMainMenu, coinSubMenu], () => {
 
 watch(() => chainStore.activeChainId, () => {
   clearCoinLists()
-  tickerSequence++
-  recentCommunities.value = []
-  if (pageActive) void getNewCommunities()
   bStockCommunities.value = []
   bStocksLoaded.value = false
   ensureCoinListLoaded()
@@ -472,46 +444,6 @@ onUnmounted(() => {
   emitter.off('newCommunity', retryVisibleList)
 })
 
-const duration = computed(() => {
-  const totalWidth = curationStore.allSpaces.length * 320
-  return (totalWidth / 80) * 1000
-})
-
-const contentWidth = computed(() => {
-  return curationStore.allSpaces.length * 320;
-})
-
-const scrollContainer = ref()
-const needScroll = ref(true)
-watch([() => contentWidth.value, () => scrollContainer.value], () => {
-  if(!scrollContainer.value) return
-  needScroll.value = contentWidth.value>scrollContainer.value.clientWidth
-  })
-  
-  const scrollNewCommunities = computed(() => {
-  return recentCommunities.value
-})
-
-const newComDuration = computed(() => {
-  // 移动端卡片宽度是 180px（360px / 2），PC 端是 120px
-  const cardWidth = 180 // 移动端缩小到1/2
-  const totalWidth = scrollNewCommunities.value.length * cardWidth
-  // 速度降低到1/2，意味着动画时间需要增加2倍
-  return (totalWidth / cardWidth) * 1000 * 2
-})
-
-const newComContentWidth = computed(() => {
-  // 移动端卡片宽度是 180px（360px / 2），PC 端是 120px
-  const cardWidth = 180 // 移动端缩小到1/2
-  return scrollNewCommunities.value.length * cardWidth;
-})
-
-const newComNeedScroll = ref(true)
-watch([() => newComContentWidth.value, () => scrollContainer.value], () => {
-  if(!scrollContainer.value) return
-  newComNeedScroll.value = newComContentWidth.value>scrollContainer.value.clientWidth
-})
-
 const accStore = useAccountStore();
 // Session restoration must not replace the default Coin tab or an explicit tab.
 const modalStore = useModalStore()
@@ -528,57 +460,6 @@ const onCreate = (type: GlobalModalType) => {
 <template>
   <div class="h-full min-h-0 overflow-hidden pb-2 flex flex-col gap-3 pt-2 w-full">
     <PageDataStatus :paths="['/community/communit', '/community/getImportedCommunityInfo']" @retry="retryVisibleList" @updated="!refreshing && retryVisibleList()" />
-    <!-- 新社区列表（TagCoin 滚动条）- 移动端显示在 Space 滚动条上方，PC 端隐藏（PC 端在右侧显示 Top TagCoin） -->
-    <div v-if="activeMainMenu==='tag'" class="h-[42px] web:h-[16px] web:hidden px-3 pb-2 flex-shrink-0">
-      <div class="w-full overflow-x-hidden whitespace-nowrap relative h-full">
-        <div class="flex h-full" :class="newComNeedScroll?'scroll-content':''"
-             :style="{ width: `${newComContentWidth}px`, animationDuration: `${newComDuration}ms`, animationDelay: '2s' }">
-          <div class="w-[144px] min-w-[144px] flex justify-end h-full" @click="gotoDetail(community)"
-               v-for="(community, index) in (newComNeedScroll?scrollNewCommunities.concat(scrollNewCommunities):scrollNewCommunities)"
-               :key="index">
-            <div class="h-full pl-[10px] pr-[18px] rounded-lg shadow-sm bg-white w-full max-w-[138px] flex items-center gap-[18px]">
-              <CommunityLogo
-                :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id"
-                size="sm"
-                :shadow="false"
-                class="z-30 web:!w-4 web:!h-4 web:!min-w-4 web:!min-h-4"
-              />
-              <div class="flex flex-col items-start justify-center gap-0.5 flex-1 min-w-0">
-                <div class="text-sm font-bold leading-tight truncate w-full" :class="community.listed ? 'text-orange-normal' : 'text-black'">{{community.tick}}</div>
-                <span class="text-sm font-bold text-black truncate w-full">{{ formatUsdCompact(parseFloat(community.marketCap as any) * stateStore.ethPrice) }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-red-normal w-[90px] h-[12px] web:w-[80px] web:h-[10px] flex justify-center items-center
-                absolute top-[3px] left-[12px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
-                whitespace-nowrap">
-          <div class="blinking-text text-white text-[12px] web:text-[10px] font-bold leading-none">New</div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- Space 滚动条 - 仅在移动端显示 -->
-    <div v-if="activeMainMenu==='tag'" class="web:hidden px-3">
-      <div class="relative flex overflow-hidden">
-        <div class="w-full overflow-x-hidden whitespace-nowrap relative">
-          <div class="flex" :class="needScroll?'scroll-content':''"
-               :style="{ width: `${contentWidth}px`, animationDuration: `${duration}ms`, animationDelay: '2s' }">
-            <div class="w-[320px] min-w-[320px] flex justify-end"
-                 v-for="(space, index) in (needScroll?curationStore.allSpaces.concat(curationStore.allSpaces):curationStore.allSpaces)"
-                 :key="index">
-              <OnlineSpace @click="$router.push('/space-detail/' + space.tweetId)" :space/>
-            </div>
-          </div>
-        </div>
-        <div class="bg-black w-[100px] h-[14px] flex justify-center items-center
-                  absolute top-[15px] left-[15px] transform -translate-x-1/2 -translate-y-1/2 -rotate-45
-                  whitespace-nowrap">
-          <div class="blinking-text text-white text-xs font-bold">Space</div>
-        </div>
-      </div>
-    </div>
-    
     <!-- Home Feed：New 优先，并在 New 下按内容来源筛选 -->
     <div v-if="activeMainMenu==='tag'" class="px-3 web:px-3 w-full web:max-w-[1240px] web:mx-auto flex flex-col gap-2">
       <div class="flex gap-2">
