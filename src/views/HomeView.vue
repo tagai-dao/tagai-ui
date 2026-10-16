@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
+import { isMemeEtf } from '@/utils/coinCategory'
 import OnlineSpace from "@/components/common/OnlineSpace.vue";
 import CommunityLogo from "@/components/common/CommunityLogo.vue";
 import TagListItem from "@/components/home/TagListItem.vue";
@@ -356,10 +357,10 @@ function filterTagCoins(list: Community[]) {
   return list.filter((community) => {
     if (isActiveChainBStock(community)) return false
     if (tagCoinSource.value === 'all') return true
-    if (tagCoinSource.value === 'memeetf') return [13, 14].includes(Number(community.version))
+    if (tagCoinSource.value === 'memeetf') return isMemeEtf(community, chainStore.activeChainId)
     return tagCoinSource.value === 'import'
       ? isImportedToken(community)
-      : !isImportedToken(community) && ![13, 14].includes(Number(community.version))
+      : !isImportedToken(community) && !isMemeEtf(community, chainStore.activeChainId)
   })
 }
 
@@ -702,12 +703,7 @@ const onCreate = (type: GlobalModalType) => {
     <HomePost v-if="activeMainMenu==='tag'"/>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
       <div class="flex-1 min-h-0 px-3 mobile-scroll-container no-scroll-bar" ref="pageScrollRef" @scroll="pageScroll(pageScrollRef)">
-        <div v-if="chainStore.deployment.key === 'rh' && tagCoinSource === 'memeetf'"
-             class="flex min-h-[280px] items-center justify-center py-16 text-xl font-semibold text-content/60"
-             role="status">
-          Coming soon
-        </div>
-        <van-pull-refresh v-else v-model="pullRefreshing" @refresh="onPullRefresh"
+        <van-pull-refresh v-model="pullRefreshing" @refresh="onPullRefresh"
                           class="min-h-full web:max-w-[1240px] web:mx-auto"
                           :loading-text="$t('loading')"
                           :lpulling-text="$t('pullToRefreshData')"
