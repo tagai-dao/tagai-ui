@@ -226,22 +226,6 @@ const handleWalletClick = (e?: Event) => {
         <span class="hidden desk:inline text-h4 text-content">{{ accStore.getAccountInfo ? ($t('profile') || 'Profile') : ($t('login') || 'Log in') }}</span>
       </div>
 
-      <!-- 7. About -->
-      <router-link
-        to="/about"
-        class="flex items-center justify-center desk:justify-start px-0 desk:px-4 py-3 rounded-lg cursor-pointer transition-colors mb-2"
-        :class="isActive('/about') ? 'bg-surface-2 font-semibold' : 'hover:bg-surface-2'"
-      >
-        <img 
-          class="w-6 h-6 mr-0 desk:mr-3 transition-all"
-          :class="isActive('/about') ? '' : inactiveIconCls"
-          :style="isActive('/about') ? activeIconFilter : undefined"
-          src="~@/assets/icons/icon-docs.svg" 
-          alt=""
-        >
-        <span class="hidden desk:inline text-h4 text-content">{{ $t('about') || 'About' }}</span>
-      </router-link>
-
       <DownloadAppButton sidebar />
 
       <!-- 8. More -->

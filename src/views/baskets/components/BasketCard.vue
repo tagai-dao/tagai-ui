@@ -133,10 +133,6 @@ const formatPerformance = (value: number | null | undefined) => {
           <div class="mt-1.5 text-sm text-muted">
             {{ $t('baskets.aum') }} {{ basket.dataQuality === 'unavailable' ? '—' : formatUsd(basket.aumUsd) }}
           </div>
-          <div v-if="basket.currentNavAsOf" class="mt-1 text-xs text-muted">
-            {{ new Date(basket.currentNavAsOf * 1000).toLocaleTimeString() }}
-            <span v-if="basket.dataQuality !== 'complete'"> · {{ $t('baskets.snapshot') }}</span>
-          </div>
         </div>
         <div
           class="performance"
