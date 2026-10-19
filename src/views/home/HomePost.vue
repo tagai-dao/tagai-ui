@@ -391,9 +391,6 @@ onActivated(() => {
               <li>{{ $t('onboard.step2') }}</li>
               <li>{{ $t('onboard.step3') }}</li>
             </ol>
-            <router-link to="/about" class="inline-block mt-2 text-sm text-orange-normal font-semibold hover:underline">
-              {{ $t('onboard.learnMore') }} →
-            </router-link>
           </div>
           <van-list
               :loading="loading"

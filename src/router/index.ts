@@ -18,7 +18,6 @@ const UserView = () => import('@/views/profile/UserView.vue')
 const PredictDetail = () => import('@/views/predict-detail/Index.vue')
 const PredictEventDetail = () => import('@/views/predict-event-detail/Index.vue')
 const MindShareIndex = () => import('@/views/mind-share/Index.vue')
-const AboutView = () => import('@/views/about/AboutView.vue')
 const BuidlerView = () => import('@/views/buidler/BuidlerView.vue')
 import { useChainStore } from '@/stores/chain'
 import { getChainIdFromSlug, getChainPath, isProductChain } from '@/config/chains'
@@ -149,9 +148,8 @@ const router = createRouter({
     },
     {
       path: `${chainPrefix}/about`,
-      name: 'about',
-      component: AboutView,
-      meta: { tabBar: true, topBar: true }
+      // Retired page: preserve the chain for bookmarks and shared links.
+      redirect: to => ({ name: 'home', params: { chain: to.params.chain } })
     },
     {
       path: `${chainPrefix}/baskets`,
