@@ -53,15 +53,24 @@ async function claim(reward: TradeReward) {
 }
 </script>
 <template>
-  <div v-if="[56,4663].includes(chain.activeChainId) && rewards.some(r => r.state === (state === 'Claimable' ? 'claimable' : 'processing'))" class="px-3 py-3">
-    <div class="text-h3 mb-3">{{ t('tradeCuration.title') }}</div>
-    <div class="flex gap-3 overflow-x-auto">
-      <div v-for="reward in rewards.filter(r => r.state === (state === 'Claimable' ? 'claimable' : 'processing'))" :key="reward.pool" class="border border-orange-normal rounded-xl p-4 min-w-[240px]">
-        <div class="flex items-center gap-2"><CommunityLogo :logo="reward.logo" size="xs" /><strong>#{{ reward.tick }}</strong></div>
-        <div class="mt-2">{{ formatAmount(Number(reward.amount)) }}</div>
-        <button v-if="isProfile" class="bg-gradient-primary text-white rounded-full w-full h-10 mt-3" :disabled="!!claiming || reward.state !== 'claimable'" @click="claim(reward)">
-          {{ claiming === reward.pool ? t('tradeCuration.claiming') : reward.state === 'claimable' ? t('claim') : t('pendingSettled') }}
-        </button>
+  <div v-if="[56,4663].includes(chain.activeChainId) && rewards.some(r => r.state === (state === 'Claimable' ? 'claimable' : 'processing'))">
+    <div class="font-normal text-sm px-3">{{ t('tradeCuration.title') }}</div>
+    <div class="my-3 bg-white rounded-xl py-3 mx-3">
+      <div class="w-full flex gap-3 scroll-pl-3 overflow-x-auto overflow-y-auto no-scroll-bar mt-1 snap-x">
+        <div v-for="reward in rewards.filter(r => r.state === (state === 'Claimable' ? 'claimable' : 'processing'))" :key="reward.pool" class="snap-start shrink-0 first:pl-3 last:pr-3" :class="{ 'pb-5': state === 'Claimable' }">
+          <div class="bg-white px-4 py-5 rounded-xl border border-[#FF7A00] w-[260px]">
+            <div class="flex items-center gap-2">
+              <CommunityLogo :logo="reward.logo" size="xs" />
+              <div class="flex flex-col gap-2">
+                <div class="text-h3">#{{ reward.tick }}</div>
+                <div class="text-h5">{{ formatAmount(Number(reward.amount)) }}</div>
+              </div>
+            </div>
+            <button v-if="isProfile" class="flex items-center justify-center bg-gradient-primary h-10 rounded-full w-full text-white text-h3 mt-4" :disabled="!!claiming || reward.state !== 'claimable'" @click="claim(reward)">
+              {{ claiming === reward.pool ? t('tradeCuration.claiming') : reward.state === 'claimable' ? t('claim') : t('pendingSettled') }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
