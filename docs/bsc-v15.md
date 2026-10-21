@@ -35,3 +35,7 @@ API 的收据入库和内盘成交上报支持 V15；Graph/Substreams 对 V15 �
 - 本次相关 UI 回归共 96 通过、0 失败（原组合 95 项，以及新增的裸 revert selector 提示测试）。
 - `node --test scripts/test-v15-eligibility.mjs`：真实 viem transport 验证 eth_call 目标仅为 Multicall、子调用集合及固定区块、空/非空 handle、必需读取失败和创建广播回调持久化。
 - 相关创建、队列、salt、生命周期、历史版本/RH、回购、路由及成交回报回归见本次运行记录。
+
+## 推送前合入远端更新
+
+已合入远端 main 的 `7510d32b` 回购修复：BSC 按可信 Pump 注册表识别 Token，不调用不存在的 Token.getPump()。候选集同时包含 V13/V14/V15，全部通过固定区块 Multicall 读取，并拒绝未知或归属不唯一的代币；RH 保留独立 getPump ABI。

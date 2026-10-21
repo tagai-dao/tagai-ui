@@ -42,14 +42,14 @@ export type BuybackState = {
 }
 export async function readBuybackState(token: Address, account: Address = zeroAddress): Promise<BuybackState> {
   const chainId=useChainStore().activeChainId,client = getReadOnlyClient(chainId), block = await client.getBlock()
-  // BSC Token13 (also used by Pump14) keeps its manager private and has no
+  // BSC Token13/Token15 keeps its manager private and has no
   // getPump() getter. Resolve ownership from the trusted on-chain registries,
   // not API metadata or a guessed latest protocol. RH Token14 exposes getPump.
   const deployment = getChainDeployment(chainId)
   const readAt = { blockNumber: block.number, allowFailure: false as const,
     multicallAddress: deployment.multiConfig.multicallAddress as Address }
   const candidates = chainId === 56
-    ? [...new Set([deployment.contracts.pump13, deployment.contracts.pump14])]
+    ? [...new Set([deployment.contracts.pump13, deployment.contracts.pump14, deployment.contracts.pump15])]
       .filter((address): address is Address => !!address && isAddress(address) && address !== zeroAddress)
     : []
   if (chainId === 56 && !candidates.length) throw new Error('V13_BUYBACK_ROUTER')
