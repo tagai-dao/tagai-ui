@@ -2,7 +2,7 @@
  * Baskets 列表
  * - 渐进加载：meta 到了先出卡片，成分 top 后台补
  */
-import { ref, watch } from 'vue'
+import { onUnmounted, ref, watch } from 'vue'
 import { listBaskets } from '@/utils/baskets/data'
 import type { BasketSummary } from '@/utils/baskets/types'
 import { useChainStore } from '@/stores/chain'
@@ -18,6 +18,8 @@ export const useBasketList = () => {
   /** 卡片已出、成分权重仍在补 */
   const isEnriching = ref(false)
   let sequence = 0
+  let retryTimer: ReturnType<typeof setTimeout> | undefined
+  let retries = 0
 
   const filteredBaskets = () => {
     const q = searchQuery.value.trim().toLowerCase()
@@ -32,6 +34,7 @@ export const useBasketList = () => {
 
   /** force=true 绕过短时缓存（刷新按钮） */
   const refresh = async (force = false) => {
+    clearTimeout(retryTimer)
     const request = ++sequence
     const chainId = chainStore.activeChainId
     const scope = `${chainId}:basket-list:display-v1`
@@ -44,6 +47,7 @@ export const useBasketList = () => {
     try {
       const full = await listBaskets(chainId, {
         force,
+        previous: baskets.value,
         onShell: shells => {
           if (request !== sequence || chainId !== chainStore.activeChainId || hasExistingList) return
           baskets.value = shells
@@ -52,11 +56,19 @@ export const useBasketList = () => {
       if (request !== sequence || chainId !== chainStore.activeChainId) return
       baskets.value = full
       writePublicSnapshot(scope, full)
+      if (full.some(item => item.dataQuality === 'unavailable' || item.dataQuality === 'stale') && retries < 3) {
+        retries += 1
+        retryTimer = setTimeout(() => { void refresh(true) }, retries * 5000)
+      }
     } catch (e) {
       if (request !== sequence) return
       hasError.value = true
       errorMessage.value = e instanceof Error ? e.message : 'Failed to load baskets'
       if (!hasExistingList) baskets.value = []
+      if (retries < 3) {
+        retries += 1
+        retryTimer = setTimeout(() => { void refresh(true) }, retries * 5000)
+      }
     } finally {
       if (request === sequence) {
         isLoading.value = false
@@ -65,9 +77,11 @@ export const useBasketList = () => {
     }
   }
   watch(() => chainStore.activeChainId, () => {
+    retries = 0
     baskets.value = []
     void refresh()
   })
+  onUnmounted(() => { sequence += 1; clearTimeout(retryTimer) })
 
   return {
     baskets,

@@ -28,6 +28,7 @@ const tradesError = ref('')
 let copiedTimer: ReturnType<typeof setTimeout> | null = null
 let copiedLegTimer: ReturnType<typeof setTimeout> | null = null
 let tradesRequestId = 0
+let tradesTimer: ReturnType<typeof setInterval> | undefined
 
 const address = computed(() => String(route.params.address || ''))
 const deployment = computed(() => detail.value ? getBasketDeployment(detail.value.chainId) : null)
@@ -168,6 +169,11 @@ onMounted(() => {
   // TopBar is mounted before the route view; defer the Teleport until then.
   headerMounted.value = true
   void refreshDetail()
+  // Fee buybacks can happen outside this page. Refresh only the lightweight
+  // indexed history, not wallet balances or on-chain quote batches.
+  tradesTimer = setInterval(() => {
+    if (document.visibilityState === 'visible' && !tradesLoading.value) void loadTrades()
+  }, 30_000)
 })
 watch(address, () => {
   tradesRequestId += 1
@@ -177,6 +183,8 @@ watch(address, () => {
   void refreshDetail()
 })
 onUnmounted(() => {
+  tradesRequestId += 1
+  clearInterval(tradesTimer)
   if (copiedTimer) clearTimeout(copiedTimer)
   if (copiedLegTimer) clearTimeout(copiedLegTimer)
 })
