@@ -1,5 +1,7 @@
 # tiptag-ui-vue
 
+BSC V15 的创建、内盘注册资格和发布边界见 [docs/bsc-v15.md](docs/bsc-v15.md)。本次代码接入不代表生产发布已执行。
+
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup

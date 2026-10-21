@@ -131,6 +131,8 @@ const curveQuote = shallowRef<CurveQuote>()
 const poolMetadataError = ref(false)
 const v13Error = ref('')
 const v13Message = computed(() => {
+  if (v13Error.value === 'V15_HANDLE_NOT_REGISTERED') return t('v15Trade.registrationRequired')
+  if (v13Error.value === 'V15_HANDLE_UNAVAILABLE') return t('v15Trade.registrationUnavailable')
   if (v13Error.value === 'V13_LISTING_PENDING') return t('v13Trade.pending')
   if (v13Error.value === 'V13_NOT_LISTED') return t('v13Trade.notListed')
   if (v13Error.value === 'V13_METADATA_UNAVAILABLE') return t('v13Trade.metadataUnavailable')
@@ -417,7 +419,7 @@ const updateBuyAmount = debounce(async (val: any) => {
   if (isMultiPool.value && !listed.value) {
     const q = await quoteCurve(community!.token as `0x${string}`, true, amount, Number(community!.version))
     if (seq !== buyQuoteSeq || payEth.value.trim() !== str || tradeType.value !== 'buy') return
-    curveQuote.value=q; receive=q.amountOut; willListing=false
+    curveQuote.value=q; receive=q.amountOut; v13Error.value=''; willListing=false
   } else if (isMultiPool.value) {
     try {
       const q = await v13Session.quote(community!.token as `0x${string}`, true, amount)
@@ -1244,6 +1246,7 @@ onUnmounted(() => {
           <button class="underline" :disabled="calculating" @click="refreshV13Quote">{{ $t('v13Trade.refresh') }}</button>
         </div>
         <div v-if="isMultiPool" class="text-sm space-y-1">
+          <p v-if="chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 15 && !listed && tradeType === 'buy'" role="note" class="text-grey-64">{{ $t('v15Trade.innerBuyRule') }}</p>
           <p v-if="v13Message" role="status" class="text-orange-normal">{{ v13Message }}</p>
           <template v-if="v13Quote">
             <div class="flex justify-between text-grey-64"><span>{{ $t('v13Trade.estimatedGas') }}</span><span>{{ Number(v13Quote.plan.gas * v13Quote.snapshot.gasPrice) / 1e18 }} BNB</span></div>

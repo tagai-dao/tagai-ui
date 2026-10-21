@@ -71,7 +71,7 @@ export type BuybackQuote = {
 }
 async function checkBuybackRouter(state:BuybackState) {
   const {chainId,pump,blockNumber}=state,client=getReadOnlyClient(chainId),deployment=getChainDeployment(chainId)
-  if(![deployment.contracts.pump13,deployment.contracts.pump14].some(a=>a?.toLowerCase()===pump.toLowerCase()))throw new Error('V13_BUYBACK_ROUTER')
+  if(![deployment.contracts.pump13,deployment.contracts.pump14,deployment.contracts.pump15].some(a=>a?.toLowerCase()===pump.toLowerCase()))throw new Error('V13_BUYBACK_ROUTER')
   const router=await client.readContract({address:pump,abi:buybackAbi,functionName:'buybackRouter',blockNumber})
   if(router===zeroAddress || chainId===4663&&router.toLowerCase()!==deployment.contracts.buybackRouter14?.toLowerCase())throw new Error('V13_BUYBACK_ROUTER')
   const protocol=chainId===4663?RH_PUMP14_BASKET_PROTOCOL:getBasketProtocol(56,4)

@@ -42,6 +42,7 @@ const pumpContract = [
 const getActivePumpAddress = (version: number): string | undefined => {
     const deployment = useChainStore().deployment
     if (version === 9) return deployment.contracts.pump9
+    if (version === 15) return deployment.contracts.pump15
     if (version === 14) return deployment.contracts.pump14
     if (version === 13) return deployment.contracts.pump13
     if (version === 11) return deployment.contracts.pump11
@@ -295,24 +296,20 @@ export const checkTickUsed = async (tick: string) => {
 export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (hash: string, version: number) => void) => {
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
     const createPump = getCreatePumpDeployment();
-    if (createPump.chainId === 56 && createPump.version !== 14) throw new Error('New BSC tokens require Pump14');
-    if (createPump.version === 14) validateIndexConfig(createParms.indexConfig);
-    const options = createPump.version === 14 ? await creationOptions(userAddress, createPump.chainId) : undefined;
+    if (createPump.chainId === 56 && createPump.version !== 15) throw new Error('New BSC tokens require Pump15');
+    if ([14, 15].includes(createPump.version)) validateIndexConfig(createParms.indexConfig);
+    const options = [14, 15].includes(createPump.version) ? await creationOptions(userAddress, createPump.chainId) : undefined;
     const optionalPools = options ? tradePoolConfig(createParms.tradeRewardRatioBps ?? 0, options) : [];
     if (options && createParms.indexConfig!.constituentAssets.some(asset => !options.assets.some(a => a.address.toLowerCase() === asset.toLowerCase()))) throw new Error('Constituent approval changed');
-    // Salt search verifies the predicted suffix and current on-chain occupancy.
-    // Independent fee / initial-buy reads need not wait for that computation.
-    const [salt, createFee, initEth] = await Promise.all([
-        findPumpDeploySalt(userAddress),
-        options ? Promise.resolve(creationFee(options, createParms.indexConfig!.constituentAssets.length + optionalPools.length)) : getCreatePumpFee(userAddress),
-        createParms.initAmount ? calculateInitEth(createParms.initAmount) : Promise.resolve(0n),
-    ]);
+    const salt = await findPumpDeploySalt(userAddress);
+    const createFee = options ? creationFee(options, createParms.indexConfig!.constituentAssets.length + optionalPools.length) : await getCreatePumpFee(userAddress);
+    const initEth = createParms.initAmount ? await calculateInitEth(createParms.initAmount) : 0n;
     if (useChainStore().activeChainId !== createPump.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Wallet or chain changed');
 
     let hash = await writeContract({
         contractName: createPump.contractName,
         functionName: 'createToken',
-        args: createPump.version === 14
+        args: [14, 15].includes(createPump.version)
             ? optionalPools.length ? [createParms.tick, salt, createParms.indexConfig, optionalPools] : [createParms.tick, salt, createParms.indexConfig]
             : [createParms.tick, salt],
         value: initEth + createFee,
@@ -332,7 +329,7 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
 
 /** 当前链最新 Pump 创建固定费用：Pump + Nutbox Committee + 可选 IPShare 创建费。 */
 export const getCreatePumpFee = async (userAddress: `0x${string}`, componentCount = 1): Promise<bigint> => {
-    if (getCreatePumpDeployment().version === 14) {
+    if ([14, 15].includes(getCreatePumpDeployment().version)) {
         if (!Number.isInteger(componentCount) || componentCount < 1 || componentCount > 4) throw new Error('Choose 1–4 components');
         return creationFee(await creationOptions(userAddress, useChainStore().activeChainId), componentCount);
     }

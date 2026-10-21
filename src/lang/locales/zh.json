@@ -1,4 +1,9 @@
 {
+  "v15Trade": {
+  "registrationRequired": "当前钱包尚未注册身份 NFT，暂时无法参与内盘买入。注册后请刷新报价。",
+  "registrationUnavailable": "暂时无法确认钱包注册状态，请稍后重试。",
+  "innerBuyRule": "内盘买入需当前钱包已注册身份 NFT；仅创建代币时的预买免验证。"
+},
   "session": {"logout": "退出登录", "logoutFailed": "退出登录失败，请重试。"},
   "network": {
     "unavailable": "网络连接暂时不可用，请检查网络后重试。",

@@ -25,7 +25,9 @@ const feeAbi = parseAbi([
 export async function readCreationOptions(client: PublicClient, creator: Address): Promise<CreationOptions> {
   const chainId = client.chain?.id
   if (!chainId || ![56,4663].includes(chainId) || !isAddress(creator)) throw new Error('Invalid creation chain or account')
-  const { pump14: pump, tradeCurationFactory: factory } = getChainDeployment(chainId).contracts
+  const d = getChainDeployment(chainId), version = d.latestPumpVersion
+  const pump = (version === 15 ? d.contracts.pump15 : d.contracts.pump14)
+  const { tradeCurationFactory: factory } = d.contracts
   if (!pump || pump === zeroAddress) throw new Error('Creation is unavailable')
   const candidates = chainId === 4663 ? rhCandidates : bscCandidates
   const blockNumber = await client.getBlockNumber()
@@ -40,7 +42,7 @@ export async function readCreationOptions(client: PublicClient, creator: Address
   if (![ipshare, committee, implementation].every(a => typeof a === 'string' && isAddress(a) && a !== zeroAddress)) {
     throw new Error('Incomplete creation contracts')
   }
-  if (String(implementation).toLowerCase() !== getChainDeployment(chainId).contracts.tokenImplementation14?.toLowerCase()) throw new Error('Token template changed; refresh the app')
+  if (String(implementation).toLowerCase() !== (version === 15 ? d.contracts.tokenImplementation15 : d.contracts.tokenImplementation14)?.toLowerCase()) throw new Error('Token template changed; refresh the app')
   if (!factory) throw new Error('Trade pool factory is missing')
   const [hasShare, ipFee, communityFee, settingsFee, registration, verified] = await client.multicall({
     blockNumber, allowFailure: false,
@@ -53,8 +55,17 @@ export async function readCreationOptions(client: PublicClient, creator: Address
       { address: committee as Address, abi: feeAbi, functionName: 'verifyContract', args: [factory] },
     ],
   })
+  if (version === 15) {
+    const abi = parseAbi(['function operators(address) view returns(bool)', 'function approvedCreatorForwarders(address) view returns(bool)'])
+    if (!d.contracts.nutboxRouter15 || !d.contracts.basketRegistry15) throw new Error('V15_CREATION_NOT_READY')
+    const [operator, forwarder] = await client.multicall({blockNumber, allowFailure:false, contracts:[
+      {address:d.contracts.nutboxRouter15,abi,functionName:'operators',args:[pump]},
+      {address:d.contracts.basketRegistry15,abi,functionName:'approvedCreatorForwarders',args:[pump]},
+    ]})
+    if (!operator || !forwarder) throw new Error('V15_CREATION_NOT_READY')
+  }
   return {
-    chainId, version: 14, pump, sourceBlock: Number(blockNumber), tokenImplementation: implementation as string,
+    chainId, version, pump, sourceBlock: Number(blockNumber), tokenImplementation: implementation as string,
     tradePool: { factory, enabled: registration[2] && verified === true, maxRewardRatio: Math.min(8000, Number(registration[1])) },
     assets: sortBasketAssetOptions(candidates.filter((_, i) => approved[i] === true).map(a => ({ ...a, address: a.address as Address }))),
     pumpFee: String(pumpFee), ipshareFee: hasShare ? '0' : String(ipFee), communityFee: String(communityFee), settingsFee: String(settingsFee),

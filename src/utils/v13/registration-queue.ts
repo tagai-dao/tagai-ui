@@ -1,6 +1,6 @@
 import type { CreateCommunity } from '@/types'
 
-export type RegistrationForm = CreateCommunity & { createHash: string; chainId: 56 | 4663; version: 13 | 14 }
+export type RegistrationForm = CreateCommunity & { createHash: string; chainId: 56 | 4663; version: 13 | 14 | 15 }
 type Entry = { form: RegistrationForm; attempts: number; nextAttempt: number }
 type Dependencies = {
   storage: Storage
@@ -29,7 +29,7 @@ export function createRegistrationQueue(deps: Dependencies) {
     memory.delete(key)
   }
   function enqueue(form: RegistrationForm) {
-    if (form.chainId !== chainId || ![13, 14].includes(form.version) || (chainId === 4663 && form.version !== 14) || !/^0x[\da-f]{64}$/i.test(form.createHash)) throw new Error('Invalid creation registration')
+    if (form.chainId !== chainId || ![13, 14, 15].includes(form.version) || (chainId === 4663 && form.version !== 14) || !/^0x[\da-f]{64}$/i.test(form.createHash)) throw new Error('Invalid creation registration')
     const key = prefix + form.createHash.toLowerCase()
     // Snapshot metadata so edits in another creation form cannot change it.
     save(key, { form: JSON.parse(JSON.stringify(form)), attempts: 0, nextAttempt: 0 })
@@ -39,7 +39,7 @@ export function createRegistrationQueue(deps: Dependencies) {
       if (!key.startsWith(`createTokenForm:${chainId}:`) && key !== 'createTokenForm') continue
       try {
         const form = JSON.parse(deps.storage.getItem(key)!)
-        if (![13, 14].includes(form.version) || form.chainId !== chainId || (chainId === 4663 && form.version !== 14)) continue
+        if (![13, 14, 15].includes(form.version) || form.chainId !== chainId || (chainId === 4663 && form.version !== 14)) continue
         enqueue(form)
         // Remove the old record only after its replacement was persisted.
         if (deps.storage.getItem(prefix + form.createHash.toLowerCase())) deps.storage.removeItem(key)

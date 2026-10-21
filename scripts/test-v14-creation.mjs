@@ -57,11 +57,11 @@ test('V14 pending registration survives reload alongside V13 historical recovery
   const registered = []
   const deps = { storage, scope: 'https://example.invalid:56', now: () => time, receipt: async () => ({ status: 'success' }), register: async f => { if (fail) throw Error('offline'); registered.push(f) }, synced() {} }
   const q = createRegistrationQueue(deps)
-  for (const version of [13, 14]) q.enqueue({ version, chainId: 56, createHash: '0x' + String(version).repeat(32), tick: 'TEST', logoUrl: 'logo', tradeRewardRatioBps: version === 14 ? 8000 : undefined })
+  for (const version of [13, 14, 15]) q.enqueue({ version, chainId: 56, createHash: '0x' + String(version).repeat(32), tick: 'TEST', logoUrl: 'logo', tradeRewardRatioBps: version === 14 ? 8000 : undefined })
   await q.flush(); assert.equal(registered.length, 0)
   fail = false; time = 5001
   await createRegistrationQueue(deps).flush()
-  assert.deepEqual(registered.map(f => f.version), [13, 14])
+  assert.deepEqual(registered.map(f => f.version), [13, 14, 15])
   assert.equal(registered[1].tradeRewardRatioBps, 8000)
-  await createRegistrationQueue(deps).flush(); assert.equal(registered.length, 2)
+  await createRegistrationQueue(deps).flush(); assert.equal(registered.length, 3)
 })

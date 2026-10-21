@@ -143,3 +143,5 @@ docs/*
 
 # Local fork state and logs (never production data)
 .local-fork/
+
+!docs/bsc-v15.md

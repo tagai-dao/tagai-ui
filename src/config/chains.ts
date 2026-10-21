@@ -10,7 +10,7 @@ export type ChainDeployment = {
   name: string
   chainId: number
   /** 当前链新创建社区代币使用的 Pump 版本。 */
-  latestPumpVersion: 9 | 11 | 13 | 14
+  latestPumpVersion: 9 | 11 | 13 | 14 | 15
   symbol: string
   decimals: number
   browser: string
@@ -71,6 +71,13 @@ export type ChainDeployment = {
     /** Legacy V13 executor remains bound to the deployed liquidity helper. */
     tradeRouter13?: `0x${string}`
     liquidityRouter13?: `0x${string}`
+    pump15?: `0x${string}`
+    tokenImplementation15?: `0x${string}`
+    tipTagSwapHook15?: `0x${string}`
+    buybackRouter15?: `0x${string}`
+    handleRegistry15?: `0x${string}`
+    basketRegistry15?: `0x${string}`
+    nutboxRouter15?: `0x${string}`
     pump14?: `0x${string}`
     tokenImplementation14?: `0x${string}`
     tradeCurationFactory?: `0x${string}`
@@ -119,7 +126,7 @@ export const BSC_CHAIN: ChainDeployment = {
   key: 'bsc',
   name: 'BSC',
   chainId: 56,
-  latestPumpVersion: 14,
+  latestPumpVersion: 15,
   symbol: 'BNB',
   decimals: 18,
   browser: 'https://bscscan.com/',
@@ -162,6 +169,13 @@ export const BSC_CHAIN: ChainDeployment = {
   contracts: {
     pump9: '0x327a473c763bcf0d60CCd6811F832332939110D5',
     tokenImplementation9: '0x69B1B0635220e5f16A36Ad44c3B2B1FB9ca65e16',
+    pump15: '0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D',
+    tokenImplementation15: '0x8851D281f76951d41C9ff5c820D2D387f820f073',
+    tipTagSwapHook15: '0x9A60808605f291e632e9AdbBAb4E4343f43A0CC1',
+    buybackRouter15: '0x5375010a9ea81293FbfbB95853Ae4305429beEa0',
+    handleRegistry15: '0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F',
+    basketRegistry15: '0x5B45ad2c3A2B8b8989579162C4faE2D64598Cefe',
+    nutboxRouter15: '0x72dc4F38A7E4159e97d826a6ab594748C6b68f17',
     pump14: '0xcd4e721Fc418f4D723C04c71e8d8EcCb75C3CD34',
     tokenImplementation14: '0xcC8f585593feAb2a27f9e699a6b578d46446c88C', // Reuses the V13 Token template.
     tradeCurationFactory: '0x774A48Ba391a1013Ae43289eBdf871618822CD67',
@@ -298,6 +312,6 @@ export const getChainPath = (chainId: number, path = ''): string => {
 /** TagAI 自有合约是否已在该链部署（非零地址） */
 export const hasTagAiContracts = (chainId: number): boolean => {
   const { contracts, latestPumpVersion } = getChainDeployment(chainId)
-  const activePump = latestPumpVersion === 14 ? contracts.pump14 : latestPumpVersion === 13 ? contracts.pump13 : latestPumpVersion === 11 ? contracts.pump11 : contracts.pump9
+  const activePump = latestPumpVersion === 15 ? contracts.pump15 : latestPumpVersion === 14 ? contracts.pump14 : latestPumpVersion === 13 ? contracts.pump13 : latestPumpVersion === 11 ? contracts.pump11 : contracts.pump9
   return !!activePump && activePump !== ZERO && contracts.ipshare3 !== ZERO
 }

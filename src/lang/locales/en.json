@@ -1,4 +1,9 @@
 {
+  "v15Trade": {
+  "registrationRequired": "This wallet has not registered its identity NFT. Register before buying on the bonding curve, then refresh the quote.",
+  "registrationUnavailable": "Wallet registration could not be checked. Please try again.",
+  "innerBuyRule": "Bonding-curve buys require a registered identity NFT for this wallet. Only the initial buy during token creation is exempt."
+},
   "session": {"logout": "Log out", "logoutFailed": "Logout failed. Please try again."},
   "network": {
     "unavailable": "Connection temporarily unavailable. Check your network and retry.",

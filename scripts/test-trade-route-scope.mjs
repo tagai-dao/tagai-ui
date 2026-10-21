@@ -22,7 +22,7 @@ function fixture({tick=null,name='tag-detail',detail=async()=>({...metadata}),in
     readTradeListing:async c=>{listings.push(c);return false},updateUserTokenInfo:()=>{},refreshV13Quote:()=>{},
     handleErrorTip:e=>errors.push(e),updateBuyAmount:{cancel(){}},updateSellAmount:{cancel(){}},
     v13Session:{reset(){}}}
-  for(const name of ['tradeReady','tradeLoadError','receiveAmount','receiveEth','calculating','tokenBalance','tokenOriginalBalance','ethBalance','listed','v13Quote','curveQuote','v13Error']) env[name]=ref()
+  for(const name of ['tradeReady','tradeLoadError','receiveAmount','receiveEth','calculating','tokenBalance','tokenOriginalBalance','ethBalance','listed','v13Quote','curveQuote','v13Error','poolMetadataError']) env[name]=ref()
   let stop
   env.watch=(...args)=>{stop=watch(...args)}
   const load=new Function(...Object.keys(env),`let buyQuoteSeq=0,sellQuoteSeq=0,willListing=false;${loader};return loadTradeCommunity`)(...Object.values(env))

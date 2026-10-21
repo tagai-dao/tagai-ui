@@ -15,8 +15,8 @@ const VANITY_SUFFIX = '3333'
 
 type CreatePumpDeployment = {
     chainId: number
-    version: 9 | 11 | 13 | 14
-    contractName: 'Pump9' | 'Pump11' | 'Pump13' | 'Pump14'
+    version: 9 | 11 | 13 | 14 | 15
+    contractName: 'Pump9' | 'Pump11' | 'Pump13' | 'Pump14' | 'Pump15'
     pump: `0x${string}`
     tokenImplementation: `0x${string}`
 }
@@ -24,10 +24,10 @@ type CreatePumpDeployment = {
 export function getCreatePumpDeployment(): CreatePumpDeployment {
     const deployment = useChainStore().deployment
     const version = deployment.latestPumpVersion
-    const pump = version === 14 ? deployment.contracts.pump14 : version === 13 ? deployment.contracts.pump13 : version === 11
+    const pump = version === 15 ? deployment.contracts.pump15 : version === 14 ? deployment.contracts.pump14 : version === 13 ? deployment.contracts.pump13 : version === 11
         ? deployment.contracts.pump11
         : deployment.contracts.pump9
-    const tokenImplementation = version === 14 ? deployment.contracts.tokenImplementation14 : version === 13 ? deployment.contracts.tokenImplementation13 : version === 11
+    const tokenImplementation = version === 15 ? deployment.contracts.tokenImplementation15 : version === 14 ? deployment.contracts.tokenImplementation14 : version === 13 ? deployment.contracts.tokenImplementation13 : version === 11
         ? deployment.contracts.tokenImplementation11
         : deployment.contracts.tokenImplementation9
 
@@ -37,7 +37,7 @@ export function getCreatePumpDeployment(): CreatePumpDeployment {
     return {
         chainId: deployment.chainId,
         version,
-        contractName: `Pump${version}` as 'Pump9' | 'Pump11' | 'Pump13' | 'Pump14',
+        contractName: `Pump${version}` as 'Pump9' | 'Pump11' | 'Pump13' | 'Pump14' | 'Pump15',
         pump,
         tokenImplementation,
     }

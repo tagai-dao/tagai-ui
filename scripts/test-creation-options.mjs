@@ -21,13 +21,14 @@ const { creationOptions, creationFee, registerV13 } = createRequire(import.meta.
 await rm(dir, { recursive: true, force: true })
 const creator = '0x' + '11'.repeat(20)
 const committee = '0x' + '22'.repeat(20)
-const implementation = '0xcC8f585593feAb2a27f9e699a6b578d46446c88C'
+const implementation = '0x8851D281f76951d41C9ff5c820D2D387f820f073'
 const assets = JSON.parse(await readFile('src/utils/v13/creation-assets.json', 'utf8'))
 function client(hasShare = false, noAssets = false) {
   const calls = []
   return { calls, chain: { id: 56 }, getBlockNumber: async () => 123456n, async multicall(request) {
     calls.push(request)
     if (calls.length === 1) return [creator, committee, 123n, implementation, ...assets.map((_, i) => !noAssets && i % 2 === 0)]
+    if (calls.length === 3) return [true, true]
     return [hasShare, 200n, 300n, 400n, ['Trade Curation', 8000, true], true]
   } }
 }
@@ -37,7 +38,7 @@ test('fallback returns only approved candidates and snapshots all reads at one b
   assert.equal(result.ipshareFee, '200'); assert.equal(result.pumpFee, '123')
   assert.equal(result.communityFee, '300'); assert.equal(result.settingsFee, '400')
   assert.equal(result.tokenImplementation, implementation); assert.equal(result.sourceBlock, 123456)
-  assert.equal(c.calls.length, 2)
+  assert.equal(c.calls.length, 3)
   for (const call of c.calls) { assert.equal(call.blockNumber, 123456n); assert.equal(call.allowFailure, false) }
   assert.deepEqual(c.calls[1].contracts[0].args, [creator])
 })
@@ -72,7 +73,7 @@ test('missing API route falls back to the chain with one bounded API attempt', a
     assert.equal(config.headers['X-Chain-Id'], '56'); throw { status: 404 }
   } }
   assert.equal((await creationOptions(creator)).assets.length, assets.filter((_, i) => i % 2 === 0).length)
-  assert.equal(attempts, 1); assert.equal(c.calls.length, 2)
+  assert.equal(attempts, 1); assert.equal(c.calls.length, 3)
 })
 test('malformed API asset data falls back instead of crashing the selector', async () => {
   const data = await readCreationOptions(client(), creator)
@@ -144,7 +145,7 @@ test('BNC4 stays unavailable until Pump approves it, then appears before ETH/BTC
 })
 
 
-test('V14 optional pool charges one extra settings fee, preserving raw wei precision', async () => {
+test('V15 optional pool charges one extra settings fee, preserving raw wei precision', async () => {
   const o = await readCreationOptions(client(), creator)
   o.pumpFee = '900719925474099312345'
   assert.equal(creationFee(o, 5) - creationFee(o, 4), 400n)
@@ -152,9 +153,9 @@ test('V14 optional pool charges one extra settings fee, preserving raw wei preci
 })
 test('obsolete API V13 config cannot downgrade new creation', async () => {
   const data = await readCreationOptions(client(), creator)
-  const c = client(); globalThis.creationTest = { client: c, get: async url => { assert.match(url, /pump\/v14\/creation/); return { c: 0, d: { ...data, version: 13 } } } }
-  assert.equal((await creationOptions(creator)).version, 14)
-  assert.equal(c.calls.length, 2)
+  const c = client(); globalThis.creationTest = { client: c, get: async url => { assert.match(url, /pump\/v15\/creation/); return { c: 0, d: { ...data, version: 13 } } } }
+  assert.equal((await creationOptions(creator)).version, 15)
+  assert.equal(c.calls.length, 3)
 })
 test('receipt registration sends V14 to V14 and historical V13 to V13', async () => {
   const urls = []

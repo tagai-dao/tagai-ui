@@ -11,13 +11,14 @@ export { validateIndexConfig } from './index-config'
 export async function creationOptions(creator: string, chainId = 56): Promise<CreationOptions> {
   if (!isAddress(creator)) throw new Error('Connect a wallet to load creation settings')
   try {
-    const r: any = await get(`${API_BASE_URL}/pump/v14/creation/${creator}`, {}, {
+    const d = getChainDeployment(chainId), version = d.latestPumpVersion
+    const r: any = await get(`${API_BASE_URL}/pump/v${version}/creation/${creator}`, {}, {
       headers: {'X-Chain-Id':String(chainId)}, timeout: 8000, 'axios-retry': { retries: 0 },
     })
-    if (r?.c !== 0 || r.d?.chainId !== chainId || r.d?.version !== 14 ||
-        r.d?.pump?.toLowerCase() !== getChainDeployment(chainId).contracts.pump14?.toLowerCase() ||
+    if (r?.c !== 0 || r.d?.chainId !== chainId || r.d?.version !== version ||
+        r.d?.pump?.toLowerCase() !== d.contracts[`pump${version}` as keyof typeof d.contracts]?.toLowerCase() ||
         !validTradePool(r.d?.tradePool, chainId) ||
-        r.d?.tokenImplementation?.toLowerCase() !== getChainDeployment(chainId).contracts.tokenImplementation14?.toLowerCase() ||
+        r.d?.tokenImplementation?.toLowerCase() !== d.contracts[`tokenImplementation${version}` as keyof typeof d.contracts]?.toLowerCase() ||
         !Number.isSafeInteger(r.d?.sourceBlock) || !isAddress(r.d?.tokenImplementation ?? '') ||
         !Array.isArray(r.d?.assets) || !r.d.assets.every((a: CreationOptions['assets'][number]) =>
           isAddress(a?.address ?? '') && typeof a.symbol === 'string' && a.symbol.length > 0 && Number.isInteger(a.decimals) && a.decimals >= 0 && a.decimals <= 255) ||
@@ -37,8 +38,8 @@ export async function registerV13(form: { version?: number; chainId?: number }) 
   const version = Number(form.version)
   const chainId = form.chainId ?? 56
   if (![56,4663].includes(chainId) || (chainId === 4663 && version !== 14)) throw new Error('Unsupported registration chain')
-  if (![13, 14].includes(version)) throw new Error('Unsupported registration version')
-  // V13 is retained only for already-submitted receipt recovery. New creation uses V14.
+  if (![13, 14, 15].includes(version)) throw new Error('Unsupported registration version')
+  // Historical receipts retain their own endpoints; new BSC creation uses V15 and RH uses V14.
   const r: any = await post(`${API_BASE_URL}/pump/v${version}/register`, form, {headers:{'X-Chain-Id':String(chainId)}, timeout: 10_000, 'axios-retry': { retries: 0 }})
   if (r?.c !== 0 || !r.d) throw new Error('Token registration unavailable')
   return r.d
