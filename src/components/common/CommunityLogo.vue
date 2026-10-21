@@ -3,6 +3,8 @@ import { computed } from 'vue'
 import { getCommunityLogoUrl } from '@/utils/communityLogo'
 import { stockCompanyLogo } from '@/utils/stockArtwork'
 import { useChainStore } from '@/stores/chain'
+import AgentOnlyBadge from './AgentOnlyBadge.vue'
+import { isAgentOnlyCurveToken, type AgentOnlyTokenMetadata } from '@/utils/agentOnlyToken'
 
 type LogoSize = 'lg' | 'md' | 'sm' | 'xs'
 
@@ -13,6 +15,7 @@ const props = withDefaults(defineProps<{
   size?: LogoSize
   showAudio?: boolean
   shadow?: boolean
+  community?: AgentOnlyTokenMetadata | null
 }>(), {
   size: 'lg',
   showAudio: false,
@@ -43,6 +46,7 @@ const logoChainId = computed(() => props.chainId ?? chainStore.activeChainId)
 const companyLogo = computed(() => stockCompanyLogo(logoChainId.value, props.token))
 const logoSrc = computed(() => getCommunityLogoUrl(props.logo, undefined, { chainId: logoChainId.value, token: props.token }))
 const sizeClass = computed(() => SIZE_CONFIG[props.size])
+const agentOnly = computed(() => isAgentOnlyCurveToken(props.community, logoChainId.value))
 </script>
 
 <template>
@@ -63,5 +67,6 @@ const sizeClass = computed(() => SIZE_CONFIG[props.size])
     <slot v-else name="fallback" />
     <img v-if="showAudio" class="absolute -top-1 -left-1" src="~@/assets/icons/icon-audio.svg" alt="">
     <slot />
+    <AgentOnlyBadge v-if="agentOnly" />
   </div>
 </template>

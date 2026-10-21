@@ -550,6 +550,7 @@ onBeforeRouteLeave((to, from, next) => {
             <div class="border-[1px] border-line bg-grey-fa rounded-2xl py-5 px-3.5 flex gap-3 overflow-hide">
               <TokenFavoriteButton :token="comStore.currentSelectedCommunity" class="self-center" />
               <CommunityLogo
+                :community="comStore.currentSelectedCommunity"
                 :logo="comStore.currentSelectedCommunity?.logo"
                 :token="comStore.currentSelectedCommunity?.token"
                 :chain-id="comStore.currentSelectedCommunity?.chainId ?? comStore.currentSelectedCommunity?.chain_id"

@@ -91,7 +91,7 @@ function openDetails() {
       <TradeCurationBadge :tweet-id="trade.curationSourceId" :token="trade.token" :tick="trade.tick" :price="trade.price" />
     </div>
     <button class="mt-3 flex w-full items-center justify-between rounded-xl border bg-surface-2 p-3" @click.stop="openDetails">
-      <div class="flex min-w-0 items-center gap-2.5"><CommunityLogo :logo="trade.logo" size="xs" :shadow="false" class="!rounded-full" /><div class="text-left"><strong class="block text-sm text-content">{{ trade.name || trade.tick }}</strong><span class="text-xs text-grey-64">{{ formatTokenAmount(trade.amount) }} {{ trade.tick }}</span></div></div>
+      <div class="flex min-w-0 items-center gap-2.5"><CommunityLogo :community="trade" :logo="trade.logo" size="xs" :shadow="false" class="!rounded-full" /><div class="text-left"><strong class="block text-sm text-content">{{ trade.name || trade.tick }}</strong><span class="text-xs text-grey-64">{{ formatTokenAmount(trade.amount) }} {{ trade.tick }}</span></div></div>
       <div class="text-right"><strong class="block text-sm tabular-nums text-content">{{ formatUsd(usdAmount) }}</strong><span v-if="marketCap" class="text-xs text-grey-64">{{ formatUsdCompact(marketCap) }} MC</span></div>
     </button>
   </article>
