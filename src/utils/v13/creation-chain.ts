@@ -22,10 +22,11 @@ const feeAbi = parseAbi([
 ])
 
 /** Bootstrap fallback only. Candidates are never offered without on-chain approval. */
-export async function readCreationOptions(client: PublicClient, creator: Address): Promise<CreationOptions> {
+export async function readCreationOptions(client: PublicClient, creator: Address, selectedVersion?: 14 | 15): Promise<CreationOptions> {
   const chainId = client.chain?.id
   if (!chainId || ![56,4663].includes(chainId) || !isAddress(creator)) throw new Error('Invalid creation chain or account')
-  const d = getChainDeployment(chainId), version = d.latestPumpVersion
+  const d = getChainDeployment(chainId), version = selectedVersion ?? d.latestPumpVersion
+  if (![14, 15].includes(version) || (chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
   const pump = (version === 15 ? d.contracts.pump15 : d.contracts.pump14)
   const { tradeCurationFactory: factory } = d.contracts
   if (!pump || pump === zeroAddress) throw new Error('Creation is unavailable')

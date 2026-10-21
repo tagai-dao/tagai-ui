@@ -1,9 +1,15 @@
 {
+  "v15Create": {
+    "binanceWalletOnly": "Only Binance Wallet users can buy during the bonding curve phase",
+    "binanceWalletOnlyHint": "Requires a registered Binance Wallet Handle. The purchase made during token creation is exempt; all later bonding curve buys require registration. This choice is permanent."
+  },
   "v15Trade": {
-  "registrationRequired": "This wallet has not registered its identity NFT. Register before buying on the bonding curve, then refresh the quote.",
-  "registrationUnavailable": "Wallet registration could not be checked. Please try again.",
-  "innerBuyRule": "Bonding-curve buys require a registered identity NFT for this wallet. Only the initial buy during token creation is exempt."
-},
+    "registrationRequired": "This wallet has not registered its identity NFT. Register before buying on the bonding curve, then refresh the quote.",
+    "registrationUnavailable": "Wallet registration could not be checked. Please try again.",
+    "innerBuyRule": "Bonding-curve buys require a registered identity NFT for this wallet. Only the initial buy during token creation is exempt.",
+    "binanceOnly": "Only Binance Wallet can buy during the bonding curve phase",
+    "checkingRegistration": "Checking wallet purchase eligibility…"
+  },
   "session": {"logout": "Log out", "logoutFailed": "Logout failed. Please try again."},
   "network": {
     "unavailable": "Connection temporarily unavailable. Check your network and retry.",

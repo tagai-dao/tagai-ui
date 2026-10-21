@@ -134,8 +134,10 @@ test('RH history keeps uint256 quantities as strings, with ETH units and chain h
 test('RH curve quote uses its Pump and refuses a wallet transaction after chain changes during simulation',async()=>{
  const reads=[],writes=[]
  globalThis.__rhUi.client={getBlockNumber:async()=>123n,multicall:async req=>{
-  assert.equal(req.blockNumber,123n);return [false,false,100n,0n,[100n,100n],creator,committee,zeroAddress]
- },readContract:async req=>{reads.push(req);return 50n},simulateContract:async request=>{globalThis.__rhUi.chainId=56;return {request}},waitForTransactionReceipt:async()=>({status:'success'})}
+  assert.equal(req.blockNumber,123n);assert.equal(req.allowFailure,false)
+  if(req.contracts[0].functionName==='getBuyAmountByValue'){reads.push({...req.contracts[0],blockNumber:req.blockNumber});return [50n]}
+  return [false,false,100n,0n,[100n,100n],creator,committee,zeroAddress]
+ },simulateContract:async request=>{globalThis.__rhUi.chainId=56;return {request}},waitForTransactionReceipt:async()=>({status:'success'})}
  globalThis.__rhUi.wallet={writeContract:async req=>{writes.push(req);return 'hash'}}
  const q=await ui.quoteCurve(creator,true,10000n,14)
  assert.equal(q.state.chainId,4663);assert.equal(reads[0].address,profile.pump);assert.equal(reads[0].blockNumber,123n)

@@ -6,6 +6,7 @@ import { BACKEND_API_URL, RegisterSteemMessage, BondingCurveSupply } from "@/con
 import { EthWalletState, useAccountStore } from "@/stores/web3";
 import CreateV13Fields from './CreateV13Fields.vue'
 import TokenIssuanceAllocation from './TokenIssuanceAllocation.vue'
+import { creationVersionForMode } from '@/utils/v14/creation-mode'
 import { tradePoolConfig } from '@/utils/v14/creation-config'
 import { creationOptions, creationFee, validateIndexConfig, type CreationOptions } from '@/utils/v13/creation'
 import { enqueueV13Registration } from '@/utils/v13/registration-sync'
@@ -203,6 +204,8 @@ const showLongDesc = ref(false);
 const activeTab = ref('token');
 const chainStore = useChainStore();
 const isIndexCreation = computed(() => [56,4663].includes(chainStore.activeChainId) && [14, 15].includes(chainStore.deployment.latestPumpVersion))
+const binanceWalletOnly = ref(false)
+const creationVersion = computed(() => creationVersionForMode(chainStore.activeChainId, chainStore.activeChainId === 56 && binanceWalletOnly.value))
 const indexTickTooLong = computed(() => isIndexCreation.value && new TextEncoder().encode(createForm.tick).length > 16)
 const indexForm = ref<V13IndexConfig>({ name:'',symbol:'',constituentAssets:[],targetWeights:[],basketFeeBps:100,creatorShareBps:0,retainCommunityOwnership:false })
 const tradeRewardRatioBps = ref(0)
@@ -222,7 +225,7 @@ async function loadV13Options() {
   if (!isIndexCreation.value || !isAddress(accStore.ethConnectAddress)) { v13OptionsLoading.value = false; return }
   v13OptionsLoading.value = true
   try {
-    const value = await creationOptions(accStore.ethConnectAddress, chainStore.activeChainId)
+    const value = await creationOptions(accStore.ethConnectAddress, chainStore.activeChainId, creationVersion.value)
     if (seq !== optionsSequence) return
     value.assets = [...value.assets].sort((a, b) => {
       const rank = (symbol: string) => symbol.toUpperCase() === 'SPCXB' ? -1 : ['ETH', 'BTC', 'BTCB'].includes(symbol.toUpperCase()) ? 1 : 0
@@ -258,8 +261,8 @@ const savePendingImport = () => localStorage.setItem('importTokenForm', JSON.str
 } satisfies PendingImport))
 
 const accStore = useAccountStore();
-watch(() => [accStore.ethConnectAddress, chainStore.activeChainId, chainStore.deployment.latestPumpVersion], () => {
-  if (isAddress(accStore.ethConnectAddress)) void preparePumpDeploySalt(accStore.ethConnectAddress as `0x${string}`).catch(() => {})
+watch(() => [accStore.ethConnectAddress, chainStore.activeChainId, creationVersion.value], () => {
+  if (isAddress(accStore.ethConnectAddress)) void preparePumpDeploySalt(accStore.ethConnectAddress as `0x${string}`, creationVersion.value).catch(() => {})
 }, {immediate:true})
 const inputTag = ref("");
 const addTagTip = ref("");
@@ -304,13 +307,13 @@ async function refreshCreateFee() {
   }
 }
 
-watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId], (value, previous) => {
-  if(previous && value[1]!==previous[1]){indexForm.value.constituentAssets=[];indexForm.value.targetWeights=[];tradeRewardRatioBps.value=0}
+watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId, creationVersion], (value, previous) => {
+  if(previous && value[1]!==previous[1]){binanceWalletOnly.value=false;indexForm.value.constituentAssets=[];indexForm.value.targetWeights=[];tradeRewardRatioBps.value=0}
   void loadV13Options(); void refreshCreateFee()
 }, { immediate: true })
 watch([v13Options, tradeRewardRatioBps, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
 
-watch(() => showingInitAmount.value, debounce(async (val: number) => {
+watch([showingInitAmount, creationVersion, () => chainStore.activeChainId], debounce(async ([val, version, chainId]: [number | undefined, 14 | 15, number]) => {
   if (val && val > 0) {
     if (val > BondingCurveSupply) {
       showMaxAmount.value = true
@@ -320,8 +323,14 @@ watch(() => showingInitAmount.value, debounce(async (val: number) => {
     }
     showMaxAmount.value = false
     createForm.initAmount = parseEther(val.toString())
-    createForm.initEth = await calculateInitEth(createForm.initAmount)
-    showingInitEth.value = formatPrice((createForm.initEth as any).toString() / 1e18)
+    try {
+      const initEth = await calculateInitEth(createForm.initAmount, version)
+      if (val !== showingInitAmount.value || version !== creationVersion.value || chainId !== chainStore.activeChainId) return
+      createForm.initEth = initEth
+      showingInitEth.value = formatPrice(Number(initEth) / 1e18)
+    } catch {
+      if (val === showingInitAmount.value && version === creationVersion.value && chainId === chainStore.activeChainId) showingInitEth.value = '--'
+    }
   }else {
     createForm.initAmount = 0n
     createForm.initEth = 0n
@@ -586,7 +595,7 @@ const create = async () => {
       return;
     }
     if (isIndexCreation.value) {
-      if (!v13Options.value?.assets.length || v13OptionsLoading.value) throw new Error(t('v13Create.loadError'))
+      if (!v13Options.value?.assets.length || v13Options.value.version !== creationVersion.value || v13OptionsLoading.value) throw new Error(t('v13Create.loadError'))
       indexForm.value = { ...indexForm.value, name: createForm.tick, symbol: createForm.tick }
       validateIndexConfig(indexForm.value)
       if (indexForm.value.constituentAssets.some(asset => !v13Options.value!.assets.some(a=>a.address.toLowerCase()===asset.toLowerCase()))) throw new Error(t('v13Create.loadError'))
@@ -595,6 +604,8 @@ const create = async () => {
       createForm.indexConfig = JSON.parse(JSON.stringify(indexForm.value))
     } else { delete createForm.indexConfig; delete createForm.tradeRewardRatioBps }
     if (showMaxAmount.value) return
+    createForm.binanceWalletOnly = chainStore.activeChainId === 56 && binanceWalletOnly.value
+    createForm.version = creationVersion.value
     createForm.chainId = chainStore.activeChainId
     createForm.ethAddr = connetctedEthAddr
     const submittedForm = {...createForm, indexConfig:createForm.indexConfig ? JSON.parse(JSON.stringify(createForm.indexConfig)) : undefined}
@@ -799,6 +810,14 @@ onMounted(async () => {
             <div v-show="showLongDesc" class="field-error">{{ $t('createCommunity.descTooLong') }}</div>
           </div>
           <TokenIssuanceAllocation :chain-id="chainStore.activeChainId" v-if="isIndexCreation" v-model="indexForm.retainCommunityOwnership" :disabled="createLoading" />
+        </section>
+
+        <section v-if="isIndexCreation && chainStore.activeChainId === 56" class="form-section">
+          <label class="binance-buy-option" for="binance-wallet-only">
+            <input id="binance-wallet-only" v-model="binanceWalletOnly" type="checkbox" :disabled="createLoading" aria-describedby="binance-wallet-only-hint">
+            <span>{{ $t('v15Create.binanceWalletOnly') }}</span>
+          </label>
+          <p id="binance-wallet-only-hint" class="binance-buy-option__hint">{{ $t('v15Create.binanceWalletOnlyHint') }}</p>
         </section>
 
         <CreateV13Fields v-if="isIndexCreation" v-model="indexForm" v-model:trade-reward-ratio-bps="tradeRewardRatioBps" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />
@@ -1216,6 +1235,9 @@ onMounted(async () => {
 .social-section[open] > summary { margin-bottom: 18px; }
 .social-section .social-chevron { margin-left: auto; background: none; border: 0; font-size: 18px; color: var(--text-muted); transition: transform .15s; }
 .social-section[open] .social-chevron { transform: rotate(180deg); }
+.binance-buy-option { display: flex; align-items: center; gap: 10px; color: var(--text-base); font-size: 13px; cursor: pointer; }
+.binance-buy-option input { width: 16px; height: 16px; flex-shrink: 0; accent-color: #f0782a; }
+.binance-buy-option__hint { margin-top: 8px; color: var(--text-muted); font-size: 11px; line-height: 1.6; }
 .token-form { display: flex; flex-direction: column; gap: 14px; }
 .form-section { padding: 20px; border: 1px solid var(--border-base); border-radius: 20px; background: color-mix(in srgb, var(--surface) 94%, transparent); }
 .section-title { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 18px; }

@@ -1,4 +1,12 @@
 {
+  "v15Trade": {
+    "binanceOnly": "Hanya Binance Wallet yang dapat membeli selama fase bonding curve",
+    "checkingRegistration": "Memeriksa kelayakan pembelian dompet…"
+  },
+  "v15Create": {
+    "binanceWalletOnly": "Hanya Binance Wallet yang dapat membeli selama fase bonding curve",
+    "binanceWalletOnlyHint": "Alamat pembeli harus memiliki Handle Binance Wallet terdaftar. Pembelian saat pembuatan token dikecualikan; pembelian berikutnya memerlukan pendaftaran. Pilihan ini tidak dapat diubah setelah token dibuat."
+  },
   "v13Index": {
     "createdOnList": "Keranjang indeks akan dibuat otomatis saat listing (List).",
     "totalBought": "Total indeks dibeli kembali",

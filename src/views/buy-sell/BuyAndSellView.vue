@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useV15BuyerEligibility } from '@/composables/useV15BuyerEligibility'
 import { isIndexToken } from '@/utils/v14/chain'
 import { prepareTradeAttribution } from '@/utils/tradeCuration'
 import { curveTradeReports } from '@/utils/curveTradeReport'
@@ -131,7 +132,7 @@ const curveQuote = shallowRef<CurveQuote>()
 const poolMetadataError = ref(false)
 const v13Error = ref('')
 const v13Message = computed(() => {
-  if (v13Error.value === 'V15_HANDLE_NOT_REGISTERED') return t('v15Trade.registrationRequired')
+  if (v13Error.value === 'V15_HANDLE_NOT_REGISTERED') return '' // Shown below the purchase button.
   if (v13Error.value === 'V15_HANDLE_UNAVAILABLE') return t('v15Trade.registrationUnavailable')
   if (v13Error.value === 'V13_LISTING_PENDING') return t('v13Trade.pending')
   if (v13Error.value === 'V13_NOT_LISTED') return t('v13Trade.notListed')
@@ -203,6 +204,18 @@ const ethBalance = ref(0)
 const tradeReady = ref(false)
 const tradeLoadError = ref(false)
 const listed = ref<boolean>(false)
+const { active: v15BuyerCheckActive, status: v15BuyerStatus, blocked: v15BuyerBlocked, refresh: refreshBuyerEligibility } = useV15BuyerEligibility(() => ({
+  chainId: chainStore.activeChainId, version: Number(comStore.currentSelectedCommunity?.version),
+  token: comStore.currentSelectedCommunity?.token, account: accStore.ethConnectAddress,
+  connected: isWalletConnected.value, listed: listed.value, ready: tradeReady.value, side: tradeType.value,
+}))
+const v15BuyerMessage = computed(() => {
+  if (!v15BuyerCheckActive.value) return ''
+  if (v15BuyerStatus.value === 'unregistered' || v13Error.value === 'V15_HANDLE_NOT_REGISTERED') return t('v15Trade.binanceOnly')
+  if (v15BuyerStatus.value === 'checking') return t('v15Trade.checkingRegistration')
+  if (v15BuyerStatus.value === 'unavailable') return t('v15Trade.registrationUnavailable')
+  return ''
+})
 const readTradeListing = (community: Community) => resolveTradeListing(community,
   () => readContract('Token1', 'listed', [], community.token as `0x${string}`))
 
@@ -676,7 +689,7 @@ async function checkTweet() {
 }
 
 async function confirm() {
-  if (!tradeReady.value || trading.value || calculating.value || poolMetadataError.value) return
+  if (!tradeReady.value || trading.value || calculating.value || poolMetadataError.value || v15BuyerBlocked.value) return
   // 交易只要求链上钱包，不要求 TagAI / Twitter 登录。社交登录仅用于
   // Log in、Wallet、Profile 和发帖等账户功能，不能拦截纯链上交易。
   if (!isWalletConnected.value) {
@@ -917,6 +930,7 @@ async function confirm() {
 }
 
 function refreshV13Quote() {
+  if (v15BuyerStatus.value !== 'checking') void refreshBuyerEligibility()
   if (!tradeReady.value) {
     void loadTradeCommunity()
     return
@@ -1258,7 +1272,8 @@ onUnmounted(() => {
         <button v-else
           class="min-w-0 flex-1 min-h-12 rounded-full bg-gradient-primary text-white text-h5 flex items-center justify-center gap-2"
           @click="confirm"
-          :disabled="!tradeReady || poolMetadataError || (isWalletConnected && isMultiPool && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
+          :aria-describedby="v15BuyerMessage ? 'v15-buyer-message' : undefined"
+          :disabled="!tradeReady || v15BuyerBlocked || poolMetadataError || (isWalletConnected && isMultiPool && (!curveQuote && (!v13Quote || !v13Quote.snapshot.executable))) || trading || (invalidToken && tradeType === 'buy') || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress) || isV8PreListNoTrade || (tradeType === 'buy' && isBuyLiquidityInsufficient) || (tradeType === 'sell' && isSellLiquidityInsufficient)"
         >
           <span>{{
             !isWalletConnected
@@ -1270,6 +1285,10 @@ onUnmounted(() => {
           <i-ep-loading v-show="trading || calculating || (accStore.ethConnectState == EthWalletState.Connecting && !!accStore.ethConnectAddress)" class="animate-spin" />
         </button>
         </div>
+
+        <p v-if="v15BuyerMessage" id="v15-buyer-message" role="status" aria-live="polite" class="text-sm text-orange-normal text-center">
+          {{ v15BuyerMessage }}
+        </p>
 
         <div v-if="tradeType === 'buy' && willListing" class="text-green-500 text-sm text-center mt-1">
             Maybe listing

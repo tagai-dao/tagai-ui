@@ -1,9 +1,15 @@
 {
+  "v15Create": {
+    "binanceWalletOnly": "内盘仅限 Binance 钱包购买",
+    "binanceWalletOnlyHint": "买入地址需已注册 Binance 钱包 Handle。创建代币时的首笔买入豁免，之后所有内盘买入均需验证；创建后不可更改。"
+  },
   "v15Trade": {
-  "registrationRequired": "当前钱包尚未注册身份 NFT，暂时无法参与内盘买入。注册后请刷新报价。",
-  "registrationUnavailable": "暂时无法确认钱包注册状态，请稍后重试。",
-  "innerBuyRule": "内盘买入需当前钱包已注册身份 NFT；仅创建代币时的预买免验证。"
-},
+    "registrationRequired": "当前钱包尚未注册身份 NFT，暂时无法参与内盘买入。注册后请刷新报价。",
+    "registrationUnavailable": "暂时无法确认钱包注册状态，请稍后重试。",
+    "innerBuyRule": "内盘买入需当前钱包已注册身份 NFT；仅创建代币时的预买免验证。",
+    "binanceOnly": "只有Binance钱包可以在内盘购买",
+    "checkingRegistration": "正在检查钱包购买资格…"
+  },
   "session": {"logout": "退出登录", "logoutFailed": "退出登录失败，请重试。"},
   "network": {
     "unavailable": "网络连接暂时不可用，请检查网络后重试。",

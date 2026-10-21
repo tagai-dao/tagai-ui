@@ -21,9 +21,10 @@ type CreatePumpDeployment = {
     tokenImplementation: `0x${string}`
 }
 
-export function getCreatePumpDeployment(): CreatePumpDeployment {
+export function getCreatePumpDeployment(requestedVersion?: 14 | 15): CreatePumpDeployment {
     const deployment = useChainStore().deployment
-    const version = deployment.latestPumpVersion
+    const version = requestedVersion ?? deployment.latestPumpVersion
+    if (requestedVersion != null && (![14, 15].includes(requestedVersion) || (deployment.chainId !== 56 && requestedVersion !== 14))) throw new Error('Unsupported creation version')
     const pump = version === 15 ? deployment.contracts.pump15 : version === 14 ? deployment.contracts.pump14 : version === 13 ? deployment.contracts.pump13 : version === 11
         ? deployment.contracts.pump11
         : deployment.contracts.pump9
@@ -89,8 +90,8 @@ function preparation(config: CreatePumpDeployment, deployer: `0x${string}`) {
 }
 
 /** Only local computation: opening a form never requests a signature or uses a salt. */
-export function preparePumpDeploySalt(deployer: `0x${string}`): Promise<`0x${string}`> {
-    return preparation(getCreatePumpDeployment(), deployer)
+export function preparePumpDeploySalt(deployer: `0x${string}`, version?: 14 | 15): Promise<`0x${string}`> {
+    return preparation(getCreatePumpDeployment(version), deployer)
 }
 
 /** 与当前 Pump.predictTokenAddress(deployer, userSalt) 一致。 */
@@ -110,17 +111,19 @@ function predictPumpTokenAddressWithConfig(
 
 export function predictPumpTokenAddress(
     deployer: `0x${string}`,
-    userSalt: `0x${string}`
+    userSalt: `0x${string}`,
+    version?: 14 | 15
 ): `0x${string}` {
-    return predictPumpTokenAddressWithConfig(getCreatePumpDeployment(), deployer, userSalt)
+    return predictPumpTokenAddressWithConfig(getCreatePumpDeployment(version), deployer, userSalt)
 }
 
 /** 部署前校验：本地预测 + 单次链上 createdTokens 检查。 */
 export async function verifyPumpSaltVanity(
     deployer: `0x${string}`,
-    userSalt: `0x${string}`
+    userSalt: `0x${string}`,
+    version?: 14 | 15
 ): Promise<`0x${string}`> {
-    const config = getCreatePumpDeployment()
+    const config = getCreatePumpDeployment(version)
     const predicted = predictPumpTokenAddressWithConfig(config, deployer, userSalt)
     if (!addressEndsWithVanity(predicted)) {
         throw new Error(`Pump V${config.version} salt vanity check failed: predicted ${predicted}`)
@@ -133,18 +136,18 @@ export async function verifyPumpSaltVanity(
 }
 
 /** 搜索可用于当前链最新 Pump.createToken 的 salt。 */
-export async function findPumpDeploySalt(deployer: `0x${string}`): Promise<`0x${string}`> {
-    const config = getCreatePumpDeployment()
+export async function findPumpDeploySalt(deployer: `0x${string}`, version?: 14 | 15): Promise<`0x${string}`> {
+    const config = getCreatePumpDeployment(version)
     const key = getSaltStorageKey(config, deployer)
     let candidate = preparation(config, deployer)
     for (let attempt = 0; attempt < 16; attempt++) {
         const userSalt = await candidate
-        if (getSaltStorageKey(getCreatePumpDeployment(), deployer) !== key) throw new Error('Creation chain changed')
+        if (getSaltStorageKey(getCreatePumpDeployment(version), deployer) !== key) throw new Error('Creation chain changed')
         const predicted = predictPumpTokenAddressWithConfig(config, deployer, userSalt)
         if (!addressEndsWithVanity(predicted)) throw new Error('Pump salt vanity check failed')
         // Re-check warmed candidates at submission: another tab may have used it.
         const created = await readContract(config.contractName, 'createdTokens', [predicted]) as boolean
-        if (getSaltStorageKey(getCreatePumpDeployment(), deployer) !== key) throw new Error('Creation chain changed')
+        if (getSaltStorageKey(getCreatePumpDeployment(version), deployer) !== key) throw new Error('Creation chain changed')
         saveLastSaltNum(config, deployer, BigInt(userSalt))
         if (prepared?.key === key) prepared = undefined
         if (created) { candidate = searchInWorker({...config, deployer}, BigInt(userSalt)); continue }

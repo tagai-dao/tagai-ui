@@ -22,6 +22,7 @@ import { useChainStore } from '@/stores/chain';
 import { getReadOnlyClient } from "./wallets";
 import { buyTokenV4, sellTokenV4, poolKeyToPoolId, resolveV4PoolId, resolveV4PoolKeyForTrade, sqrtPriceX96ToBnbPerToken } from "./pcsV4Swap";
 import { buildRhV4SqrtPriceMulticall, getRhV4SpotPrice, resolveRhV4PoolKeyForTrade } from "./rhV4Swap";
+import { creationVersionForMode } from "./v14/creation-mode";
 import { findPumpDeploySalt, getCreatePumpDeployment } from "./pumpSalt";
 import { isPcsV4Version, usesNutboxSocialPool, hasPumpTotalClaimedSocialRewards } from "./pumpVersion";
 import { CHAINS } from '@/config/chains'
@@ -295,15 +296,15 @@ export const checkTickUsed = async (tick: string) => {
 
 export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (hash: string, version: number) => void) => {
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
-    const createPump = getCreatePumpDeployment();
-    if (createPump.chainId === 56 && createPump.version !== 15) throw new Error('New BSC tokens require Pump15');
+    const version = creationVersionForMode(useChainStore().activeChainId, createParms.binanceWalletOnly ?? false);
+    const createPump = getCreatePumpDeployment(version);
     if ([14, 15].includes(createPump.version)) validateIndexConfig(createParms.indexConfig);
-    const options = [14, 15].includes(createPump.version) ? await creationOptions(userAddress, createPump.chainId) : undefined;
+    const options = [14, 15].includes(createPump.version) ? await creationOptions(userAddress, createPump.chainId, version) : undefined;
     const optionalPools = options ? tradePoolConfig(createParms.tradeRewardRatioBps ?? 0, options) : [];
     if (options && createParms.indexConfig!.constituentAssets.some(asset => !options.assets.some(a => a.address.toLowerCase() === asset.toLowerCase()))) throw new Error('Constituent approval changed');
-    const salt = await findPumpDeploySalt(userAddress);
+    const salt = await findPumpDeploySalt(userAddress, version);
     const createFee = options ? creationFee(options, createParms.indexConfig!.constituentAssets.length + optionalPools.length) : await getCreatePumpFee(userAddress);
-    const initEth = createParms.initAmount ? await calculateInitEth(createParms.initAmount) : 0n;
+    const initEth = createParms.initAmount ? await calculateInitEth(createParms.initAmount, version) : 0n;
     if (useChainStore().activeChainId !== createPump.chainId || useAccountStore().ethConnectAddress?.toLowerCase() !== userAddress.toLowerCase()) throw new Error('Wallet or chain changed');
 
     let hash = await writeContract({
@@ -1369,8 +1370,8 @@ export const transferToken = async (token: string, to: string, amount: bigint, i
     return hash;
 }
 
-export const calculateInitEth = async (amount: bigint) => {
-    const { contractName } = getCreatePumpDeployment()
+export const calculateInitEth = async (amount: bigint, version?: 14 | 15) => {
+    const { contractName } = getCreatePumpDeployment(version)
     return await readContract(contractName, 'getBuyPriceAfterFee', [0n, amount]) as bigint
 }
 
