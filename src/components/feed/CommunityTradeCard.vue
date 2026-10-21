@@ -57,7 +57,7 @@ function openDetails() {
 <template>
   <button type="button" class="mt-3 flex w-full items-center justify-between rounded-xl border bg-surface-2 px-3 py-2.5" @click.stop="openDetails">
     <div class="flex min-w-0 items-center gap-2.5">
-      <CommunityLogo :logo="tweet.logo" size="xs" :shadow="false" class="!rounded-full" />
+      <CommunityLogo :community="tweet" :logo="tweet.logo" size="xs" :shadow="false" class="!rounded-full" />
       <div class="min-w-0 text-left"><span class="block text-xs text-grey-64">Community token</span><strong class="block truncate text-sm text-content">{{ tweet.tick }}</strong></div>
     </div>
     <div class="ml-3 text-right">
