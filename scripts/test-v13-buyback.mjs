@@ -13,8 +13,8 @@ await build({ entryPoints: ['src/utils/v13/buyback.ts'], bundle: true, platform:
   b.onResolve({ filter: /^@\// }, a => a.path.endsWith('/hook-data') ? { path: join(process.cwd(), 'src/utils/baskets/hook-data.ts') } : { path: a.path, namespace: 'fixture' })
   b.onResolve({ filter: /^\.\/pools$/ }, a => a.importer.endsWith('buyback.ts') ? { path: a.path, namespace: 'fixture' } : undefined)
   b.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ loader: 'js', contents: `
-    export const useChainStore=()=>({activeChainId:56});export const RH_PUMP14_BASKET_PROTOCOL={};export const getReadOnlyClient=()=>globalThis.__buyback.client;
-    export const getChainDeployment=()=>({contracts:{pump13:'${pump}'},multiConfig:{multicallAddress:'${addr(30)}'}});
+    export const useChainStore=()=>({activeChainId:globalThis.__buyback.chainId??56});export const RH_PUMP14_BASKET_PROTOCOL={};export const getReadOnlyClient=()=>globalThis.__buyback.client;
+    export const getChainDeployment=()=>({contracts:{pump13:'${pump}',pump14:'${addr(33)}'},multiConfig:{multicallAddress:'${addr(30)}'}});
     export const getBasketProtocol=()=>({nutboxRouter:'${nutbox}',swapRouter:'${basketRouter}',settlementToken:'${settlement}',registry:'${addr(31)}',hook:'${addr(32)}'});
     export const quoteNutboxExactInput=async()=>10000n;
     export const walletGuard=()=>({chainId:56,account:globalThis.__buyback.account,check(){}});
@@ -29,13 +29,13 @@ function decodePayload(encoded) {
   return { minimum, data }
 }
 function fixture() {
-  const f = { account, reserve: 100n, pending: 7n, listed: true, sent: [], simulated: [], reads: [], routerPump: pump,
+  const f = { account, reserve: 100n, pending: 7n, listed: true, sent: [], simulated: [], reads: [], batches: [], routerPump: pump, createdPump: pump,
     count: 2n, version: 4, engine: addr(32), initial: [10000n, 20000n], acquired: [1000n, 1800n] }
   f.client = {
-    multicall: async p=>Promise.all(p.contracts.map(c=>f.client.readContract({...c,blockNumber:p.blockNumber}))),
+    multicall: async p=>{f.batches.push(p);return Promise.all(p.contracts.map(c=>f.client.readContract({...c,blockNumber:p.blockNumber})))},
     getBlock: async () => ({number: 123n, timestamp: 1000n}),
     readContract: async args => { f.reads.push(args); return ({
-      getPump:pump,listed: f.listed, indexToken: index, listingHook: hook, totalIndexRewardsNotified: 100n,
+      getPump:pump,createdTokens:f.createdPump==='both'||args.address.toLowerCase()===f.createdPump?.toLowerCase(),listed: f.listed, indexToken: index, listingHook: hook, totalIndexRewardsNotified: 100n,
       pendingBuybackReward: f.pending, buybackBnbReserve: f.reserve, balanceOf: 90n, decimals: 18, symbol: 'INDEX',
       buybackRouter: router, pump: f.routerPump, nutboxRouter: nutbox, basketRouter, settlementToken: settlement,
       basketVersion: f.version, engine: f.engine, assetCount: f.count,
@@ -139,4 +139,32 @@ test('small amounts and invalid slippage cannot silently become a one-wei minimu
 })
 test('disconnected read loads public data without another account rewards', async () => {
   fixture();const state=await readBuybackState(token);assert.equal(state.pending,0n);assert.equal(state.walletIndex,0n);assert.equal(state.reserve,100n)
+})
+test('BSC V13/V14 resolve their canonical registry without calling the nonexistent token getPump getter', async () => {
+  for (const creator of [pump, addr(33)]) {
+    const f=fixture();f.createdPump=creator
+    const state=await readBuybackState(token,account)
+    assert.equal(state.pump,creator);assert.equal(state.index,index);assert.equal(state.pending,7n)
+    assert.equal(f.reads.some(r=>r.functionName==='getPump'),false)
+    const identities=f.reads.filter(r=>r.functionName==='createdTokens')
+    assert.deepEqual(identities.map(r=>r.address),[pump,addr(33)])
+    assert.ok(identities.every(r=>r.args[0]===token))
+    assert.ok(f.batches.every(b=>b.blockNumber===123n&&b.allowFailure===false&&b.multicallAddress===addr(30)))
+    assert.ok(f.reads.every(r=>r.blockNumber===123n))
+  }
+})
+test('unknown or ambiguous BSC Pump ownership fails closed without enabling operations', async () => {
+  for(const creator of [addr(99),'both']){
+    const f=fixture();f.createdPump=creator
+    await assert.rejects(()=>readBuybackState(token,account),/V13_BUYBACK_ROUTER/)
+    assert.equal(f.sent.length,0);assert.equal(f.batches.length,1)
+  }
+})
+test('Robinhood keeps its supported token getPump ABI and same-block reward reads', async () => {
+  const f=fixture();f.chainId=4663
+  const state=await readBuybackState(token,account)
+  assert.equal(state.pump,pump);assert.equal(state.chainId,4663);assert.equal(state.pending,7n)
+  assert.ok(f.reads.some(r=>r.address===token&&r.functionName==='getPump'))
+  assert.equal(f.reads.some(r=>r.functionName==='createdTokens'),false)
+  assert.ok(f.batches.every(b=>b.blockNumber===123n&&b.multicallAddress===addr(30)))
 })

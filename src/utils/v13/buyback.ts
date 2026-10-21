@@ -1,6 +1,6 @@
 import {useChainStore} from '@/stores/chain'
 import {RH_PUMP14_BASKET_PROTOCOL} from '@/config/baskets'
-import { decodeFunctionResult, encodeAbiParameters, encodeFunctionData, parseAbi, zeroAddress, type Address, type Hex } from 'viem'
+import { decodeFunctionResult, encodeAbiParameters, encodeFunctionData, isAddress, parseAbi, zeroAddress, type Address, type Hex } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import { getBasketProtocol } from '@/config/baskets'
 import { getReadOnlyClient } from '@/utils/wallets'
@@ -10,6 +10,7 @@ import { send, walletGuard } from './pools'
 
 export const buybackAbi = parseAbi([
   'function getPump() view returns(address)',
+  'function createdTokens(address) view returns(bool)',
   'function listed() view returns(bool)',
   'function indexToken() view returns(address)',
   'function listingHook() view returns(address)',
@@ -41,15 +42,33 @@ export type BuybackState = {
 }
 export async function readBuybackState(token: Address, account: Address = zeroAddress): Promise<BuybackState> {
   const chainId=useChainStore().activeChainId,client = getReadOnlyClient(chainId), block = await client.getBlock()
-  const values=await client.multicall({blockNumber:block.number,allowFailure:false,contracts:[
-    ...['listed','indexToken','listingHook','totalIndexRewardsNotified','getPump'].map(functionName=>({address:token,abi:buybackAbi,functionName})),
+  // BSC Token13 (also used by Pump14) keeps its manager private and has no
+  // getPump() getter. Resolve ownership from the trusted on-chain registries,
+  // not API metadata or a guessed latest protocol. RH Token14 exposes getPump.
+  const deployment = getChainDeployment(chainId)
+  const readAt = { blockNumber: block.number, allowFailure: false as const,
+    multicallAddress: deployment.multiConfig.multicallAddress as Address }
+  const candidates = chainId === 56
+    ? [...new Set([deployment.contracts.pump13, deployment.contracts.pump14])]
+      .filter((address): address is Address => !!address && isAddress(address) && address !== zeroAddress)
+    : []
+  if (chainId === 56 && !candidates.length) throw new Error('V13_BUYBACK_ROUTER')
+  const identityCalls = chainId === 56
+    ? candidates.map(address => ({ address, abi: buybackAbi, functionName: 'createdTokens', args: [token] }))
+    : [{ address: token, abi: buybackAbi, functionName: 'getPump' }]
+  const values=await client.multicall({...readAt,contracts:[
+    ...['listed','indexToken','listingHook','totalIndexRewardsNotified'].map(functionName=>({address:token,abi:buybackAbi,functionName})),
+    ...identityCalls,
     ...(account===zeroAddress?[]:[{address:token,abi:buybackAbi,functionName:'pendingBuybackReward',args:[account]}]),
   ]})
-  const [listed,index,hook,notified,pump]=values as [boolean,Address,Address,bigint,Address]
-  const pending=account===zeroAddress?0n:values[5] as bigint
+  const [listed,index,hook,notified]=values as [boolean,Address,Address,bigint]
+  const matches = candidates.filter((_, i) => values[4 + i] === true)
+  if (chainId === 56 && matches.length !== 1) throw new Error('V13_BUYBACK_ROUTER')
+  const pump = chainId === 56 ? matches[0] : values[4] as Address
+  const pending=account===zeroAddress?0n:values[4 + identityCalls.length] as bigint
   const state:BuybackState={chainId,pump,token,account,listed,index,hook,notified,pending,reserve:0n,rewardBalance:0n,walletIndex:0n,decimals:18,symbol:'',timestamp:block.timestamp,blockNumber:block.number}
   if(index===zeroAddress||!listed)return state
-  const [reserve,rewardBalance,walletIndex,decimals,symbol]=await client.multicall({blockNumber:block.number,allowFailure:false,contracts:[
+  const [reserve,rewardBalance,walletIndex,decimals,symbol]=await client.multicall({...readAt,contracts:[
     {address:hook,abi:buybackAbi,functionName:'buybackBnbReserve',args:[token]},
     {address:index,abi:buybackAbi,functionName:'balanceOf',args:[token]},
     {address:index,abi:buybackAbi,functionName:'balanceOf',args:[account]},
