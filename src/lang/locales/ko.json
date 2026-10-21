@@ -4,8 +4,7 @@
     "checkingRegistration": "지갑 구매 자격 확인 중…"
   },
   "v15Create": {
-    "binanceWalletOnly": "본딩 커브 기간에는 Binance Wallet만 구매 허용",
-    "binanceWalletOnlyHint": "구매 주소에 Binance Wallet Handle이 등록되어 있어야 합니다. 토큰 생성 시 구매는 예외이며 이후 모든 구매에는 등록이 필요합니다. 생성 후에는 변경할 수 없습니다."
+    "binanceWalletOnly": "Bonding Curve 단계: AI Agent(Binance Agentic Wallet)만 구매할 수 있습니다."
   },
   "v13Index": {
     "createdOnList": "인덱스 바스켓은 상장(List) 시 자동으로 생성됩니다.",

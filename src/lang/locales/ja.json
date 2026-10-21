@@ -4,8 +4,7 @@
     "checkingRegistration": "ウォレットの購入資格を確認中…"
   },
   "v15Create": {
-    "binanceWalletOnly": "ボンディングカーブ期間の購入をBinance Walletに限定",
-    "binanceWalletOnlyHint": "購入アドレスにBinance Wallet Handleの登録が必要です。トークン作成時の購入のみ対象外で、それ以降の購入には登録が必要です。作成後は変更できません。"
+    "binanceWalletOnly": "Bonding Curve期間：AI Agent（Binance Agentic Wallet）のみ購入できます。"
   },
   "v13Index": {
     "createdOnList": "インデックスバスケットは上場（List）時に自動作成されます。",

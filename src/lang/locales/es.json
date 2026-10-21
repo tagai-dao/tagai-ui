@@ -4,8 +4,7 @@
     "checkingRegistration": "Comprobando si la cartera puede comprar…"
   },
   "v15Create": {
-    "binanceWalletOnly": "Solo Binance Wallet puede comprar durante la curva de vinculación",
-    "binanceWalletOnlyHint": "La dirección debe tener un Handle de Binance Wallet registrado. La compra al crear el token está exenta; las compras posteriores requieren registro. Esta opción no se puede cambiar después."
+    "binanceWalletOnly": "Fase Bonding Curve: solo los AI Agents (Binance Agentic Wallet) pueden comprar."
   },
   "v13Index": {
     "createdOnList": "La cesta de índice se creará automáticamente al cotizar (List).",

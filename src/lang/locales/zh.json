@@ -1,7 +1,6 @@
 {
   "v15Create": {
-    "binanceWalletOnly": "内盘仅限 Binance 钱包购买",
-    "binanceWalletOnlyHint": "买入地址需已注册 Binance 钱包 Handle。创建代币时的首笔买入豁免，之后所有内盘买入均需验证；创建后不可更改。"
+    "binanceWalletOnly": "Bonding Curve（内盘）阶段：仅 AI Agent（Binance Agentic Wallet）可购买。"
   },
   "v15Trade": {
     "registrationRequired": "当前钱包尚未注册身份 NFT，暂时无法参与内盘买入。注册后请刷新报价。",

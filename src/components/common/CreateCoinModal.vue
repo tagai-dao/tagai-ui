@@ -814,10 +814,9 @@ onMounted(async () => {
 
         <section v-if="isIndexCreation && chainStore.activeChainId === 56" class="form-section">
           <label class="binance-buy-option" for="binance-wallet-only">
-            <input id="binance-wallet-only" v-model="binanceWalletOnly" type="checkbox" :disabled="createLoading" aria-describedby="binance-wallet-only-hint">
+            <input id="binance-wallet-only" v-model="binanceWalletOnly" type="checkbox" :disabled="createLoading">
             <span>{{ $t('v15Create.binanceWalletOnly') }}</span>
           </label>
-          <p id="binance-wallet-only-hint" class="binance-buy-option__hint">{{ $t('v15Create.binanceWalletOnlyHint') }}</p>
         </section>
 
         <CreateV13Fields v-if="isIndexCreation" v-model="indexForm" v-model:trade-reward-ratio-bps="tradeRewardRatioBps" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />
@@ -1237,7 +1236,6 @@ onMounted(async () => {
 .social-section[open] .social-chevron { transform: rotate(180deg); }
 .binance-buy-option { display: flex; align-items: center; gap: 10px; color: var(--text-base); font-size: 13px; cursor: pointer; }
 .binance-buy-option input { width: 16px; height: 16px; flex-shrink: 0; accent-color: #f0782a; }
-.binance-buy-option__hint { margin-top: 8px; color: var(--text-muted); font-size: 11px; line-height: 1.6; }
 .token-form { display: flex; flex-direction: column; gap: 14px; }
 .form-section { padding: 20px; border: 1px solid var(--border-base); border-radius: 20px; background: color-mix(in srgb, var(--surface) 94%, transparent); }
 .section-title { display: flex; align-items: flex-start; gap: 11px; margin-bottom: 18px; }
