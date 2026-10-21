@@ -37,6 +37,7 @@ import type { BasketDetail, BasketHolding, BasketLegRoute, BasketSummary } from 
 export type BasketReadOptions = {
   force?: boolean
   onShell?: (shell: BasketSummary[]) => void
+  previous?: BasketSummary[]
 }
 
 type CacheEntry<T> = { at: number; data: T }
@@ -626,13 +627,25 @@ export const listBaskets = async (
   }
   // Listing is display-only: worker snapshots avoid one RPC batch per visitor.
   // Older API deployments remain compatible through a bounded performance request.
-  let performance = registered.flatMap(basket => basket.performance ? [basket.performance] : [])
-  if (registered.some(basket => basket.performance === undefined)) {
-    performance = await getBasketPerformances(registered.map(basket => basket.address), chainId).catch(() => [])
+  const usable = (item: RegisteredBasket['performance']) => item?.currentNav != null
+    && Number.isFinite(Number(item.currentNav)) && Number(item.currentNav) > 0
+    && item.aumUsd != null && Number.isFinite(Number(item.aumUsd)) && Number(item.aumUsd) >= 0
+  const performance = registered.flatMap(basket => usable(basket.performance) ? [basket.performance!] : [])
+  const missing = registered.filter(basket => !usable(basket.performance))
+  if (missing.length) {
+    performance.push(...(await getBasketPerformances(missing.map(basket => basket.address), chainId).catch(() => [])))
   }
   const byAddress = new Map(performance.map(item => [item.address.toLowerCase(), item]))
+  const previous = new Map([...(cached?.data ?? []), ...(options.previous ?? [])]
+    .filter(item => item.chainId === chainId).map(item => [item.address.toLowerCase(), item]))
   const baskets = shells.map(basket => {
     const item = byAddress.get(basket.address.toLowerCase())
+    const lastGood = previous.get(basket.address.toLowerCase())
+    if (!usable(item) && lastGood && lastGood.navPerToken > 0 && lastGood.currentNavAsOf) {
+      return { ...basket, navPerToken: lastGood.navPerToken, aumUsd: lastGood.aumUsd,
+        currentNavAsOf: lastGood.currentNavAsOf, toDatePct: lastGood.toDatePct,
+        dataQuality: 'stale' as const, launchTimeQuality: lastGood.launchTimeQuality }
+    }
     const nav = Number(item?.currentNav)
     const aum = Number(item?.aumUsd)
     return {
@@ -645,7 +658,8 @@ export const listBaskets = async (
       launchTimeQuality: item?.launchTimeQuality ?? 'unavailable',
     }
   })
-  listCache.set(chainId, { at: Date.now(), data: baskets })
+  // Incomplete responses must remain retryable, never become a fresh empty quote.
+  listCache.set(chainId, { at: missing.length ? 0 : Date.now(), data: baskets })
   return baskets
 }
 
