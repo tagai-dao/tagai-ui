@@ -24,7 +24,7 @@ export const customBsc = {
 } as Chain
 
 /** Robinhood Chain（Arbitrum Orbit L2） */
-export const customRobinhood = defineChain({
+export const customRobinhood: Chain = defineChain({
   id: ROBINHOOD_CHAIN.chainId,
   name: ROBINHOOD_CHAIN.name,
   nativeCurrency: {
