@@ -102,3 +102,8 @@ test('real view puts the exact localized warning below the disabled purchase but
  assert.match(source,/:disabled="!tradeReady \|\| v15BuyerBlocked/)
  assert.match(source,/poolMetadataError.value \|\| v15BuyerBlocked.value\) return/)
 })
+
+for(const version of [15,16])test(`V${version} eligibility refreshes across account and listing changes`,async()=>{
+ const ui=mount({version},async()=>false);await tick();assert.equal(ui.active.value,true);assert.equal(ui.blocked.value,true);assert.equal(ui.status.value,'unregistered');
+ ui.c.listed=true;assert.equal(ui.active.value,false);assert.equal(ui.blocked.value,false);ui.scope.stop()
+})

@@ -9,7 +9,7 @@ import ts from 'typescript'
 import {createPublicClient,custom,parseAbi,decodeFunctionData,encodeFunctionResult,zeroAddress} from 'viem'
 import {bsc} from 'viem/chains'
 const dir=await mkdtemp(join(tmpdir(),'creation-mode-'))
-await build({stdin:{contents:`export * from './src/utils/v14/creation-mode.ts';export * from './src/utils/v13/creation.ts';export * from './src/utils/v13/creation-chain.ts';export * from './src/utils/pumpSalt.ts';export * from './src/config/chains.ts';`,resolveDir:process.cwd()},alias:{'@':join(process.cwd(),'src')},bundle:true,platform:'node',format:'cjs',outfile:join(dir,'test.cjs'),define:{'import.meta.env':'{}'},logLevel:'silent',plugins:[{name:'boundaries',setup(b){
+await build({stdin:{contents:`export * from './src/utils/v14/creation-mode.ts';export * from './src/utils/v13/creation.ts';export * from './src/utils/v13/creation-chain.ts';export * from './src/utils/pumpSalt.ts';export * from './src/config/chains.ts';export * from './src/utils/v14/chain.ts';`,resolveDir:process.cwd()},alias:{'@':join(process.cwd(),'src')},bundle:true,platform:'node',format:'cjs',outfile:join(dir,'test.cjs'),define:{'import.meta.env':'{}'},logLevel:'silent',plugins:[{name:'boundaries',setup(b){
  b.onResolve({filter:/^@\/(stores\/chain|apis\/axios|config\/api|utils\/wallets)$|^\.\/contract$/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:a.path.endsWith('chain')?'export const useChainStore=()=>globalThis.__mode.store':a.path.endsWith('axios')?'export const get=(...a)=>globalThis.__mode.get(...a);export const post=(...a)=>globalThis.__mode.post(...a)':a.path.endsWith('api')?'export const API_BASE_URL="https://api.invalid"':a.path.endsWith('wallets')?'export const getReadOnlyClient=()=>globalThis.__mode.client':'export const readContract=()=>{throw Error("No direct contract read expected")}' }))
 }}]})
@@ -33,7 +33,7 @@ function optionsClient(version,failMethod){
    if(f.functionName==='ipshareCreated'){assert.equal(c.target.toLowerCase(),creator.toLowerCase());assert.deepEqual(f.args,[creator])}
    if(f.functionName==='optionalPoolFactories'||f.functionName==='verifyContract')assert.deepEqual(f.args,[d.contracts.tradeCurationFactory])
    if(f.functionName==='createFee')assert.ok([pump.toLowerCase(),creator.toLowerCase()].includes(c.target.toLowerCase()))
-   if(['operators','approvedCreatorForwarders'].includes(f.functionName)){assert.deepEqual(f.args,[pump]);assert.equal(version,15);assert.equal(c.target,d.contracts[f.functionName==='operators'?'nutboxRouter15':'basketRegistry15'])}
+   if(['operators','approvedCreatorForwarders'].includes(f.functionName)){assert.deepEqual(f.args,[pump]);assert.ok([15,16].includes(version));assert.equal(c.target,d.contracts[f.functionName==='operators'?`nutboxRouter${version}`:`basketRegistry${version}`])}
    const value={getIPShare:creator,nutboxCommittee:committee,createFee:100n,tokenImplementation:d.contracts[`tokenImplementation${version}`],approvedConstituent:true,ipshareCreated:true,getCreateCommunityFee:200n,getCommunitySettingsFee:300n,optionalPoolFactories:['Trade',8000,true],verifyContract:true,operators:true,approvedCreatorForwarders:true}[f.functionName]
    if(f.functionName===failMethod)return {success:false,returnData:'0x'}
    return {success:true,returnData:encodeFunctionResult({abi,functionName:f.functionName,result:value})}
@@ -42,32 +42,32 @@ function optionsClient(version,failMethod){
  }},{retryCount:0})})
  return {client,requests}
 }
-test('unchecked selects V14, checked selects V15; RH remains V14',()=>{
- assert.equal(ui.creationVersionForMode(56),14);assert.equal(ui.creationVersionForMode(56,false),14);assert.equal(ui.creationVersionForMode(56,true),15)
+test('unchecked selects V14, checked selects V16; RH remains V14',()=>{
+ assert.equal(ui.creationVersionForMode(56),14);assert.equal(ui.creationVersionForMode(56,false),14);assert.equal(ui.creationVersionForMode(56,true),16)
  assert.equal(ui.creationVersionForMode(4663),14);assert.throws(()=>ui.creationVersionForMode(4663,true))
  globalThis.__mode={store:store()}
- for(const version of [14,15]){
+ for(const version of [14,15,16]){
   const d=ui.getCreatePumpDeployment(version);assert.equal(d.version,version);assert.equal(d.pump,ui.getChainDeployment(56).contracts[`pump${version}`]);assert.equal(d.tokenImplementation,ui.getChainDeployment(56).contracts[`tokenImplementation${version}`])
  }
  assert.notEqual(ui.predictPumpTokenAddress(creator,hash,14),ui.predictPumpTokenAddress(creator,hash,15))
 })
-for(const version of [14,15])test(`V${version} settings and API fallback retain the chosen Pump and one Multicall block`,async()=>{
+for(const version of [14,15,16])test(`V${version} settings and API fallback retain the chosen Pump and one Multicall block`,async()=>{
  const {client,requests}=optionsClient(version);globalThis.__mode={store:store(),client,get:async url=>{assert.match(url,new RegExp(`/pump/v${version}/creation/`));throw Error('offline')}}
  const options=await ui.creationOptions(creator,56,version)
- assert.equal(options.version,version);assert.equal(options.pump,ui.getChainDeployment(56).contracts[`pump${version}`]);assert.ok(requests.length >= (version===15?3:2))
+ assert.equal(options.version,version);assert.equal(options.pump,ui.getChainDeployment(56).contracts[`pump${version}`]);assert.ok(requests.length >= ([15,16].includes(version)?3:2))
  const decoded=requests.flat().map(c=>decodeFunctionData({abi,data:c.callData}))
  const methods=decoded.map(c=>c.functionName)
  assert.deepEqual(decoded.filter(c=>c.functionName==='approvedConstituent').map(c=>c.args[0].toLowerCase()),candidateAssets.map(a=>a.address.toLowerCase()))
  assert.equal(methods.filter(m=>m==='createFee').length,2)
  assert.equal(methods.filter(m=>m==='approvedConstituent').length,options.assets.length)
  for(const method of ['getIPShare','nutboxCommittee','tokenImplementation','ipshareCreated','optionalPoolFactories','getCreateCommunityFee','getCommunitySettingsFee','verifyContract'])assert.equal(methods.filter(m=>m===method).length,1)
- for(const method of ['operators','approvedCreatorForwarders'])assert.equal(methods.filter(m=>m===method).length,version===15?1:0)
+ for(const method of ['operators','approvedCreatorForwarders'])assert.equal(methods.filter(m=>m===method).length,[15,16].includes(version)?1:0)
  globalThis.__mode.get=async()=>({c:0,d:options});assert.equal((await ui.creationOptions(creator,56,version)).version,version)
  const other=version===14?15:14;const fallback=optionsClient(version);globalThis.__mode.client=fallback.client
  globalThis.__mode.get=async()=>({c:0,d:{...options,version:other,pump:ui.getChainDeployment(56).contracts[`pump${other}`]}})
  assert.equal((await ui.creationOptions(creator,56,version)).version,version);assert.equal(fallback.requests.length,requests.length)
 })
-for(const version of [14,15])test(`V${version} required Multicall child failure refuses creation configuration`,async()=>{
+for(const version of [14,15,16])test(`V${version} required Multicall child failure refuses creation configuration`,async()=>{
  const {client}=optionsClient(version,'getCommunitySettingsFee');globalThis.__mode={store:store(),client,get:async()=>{throw Error('offline')}}
  await assert.rejects(ui.creationOptions(creator,56,version))
 })
@@ -82,7 +82,7 @@ function actualCreate(extra={}){
  return {seen,run:new Function(...Object.keys(deps),`${js};return create`)(...Object.values(deps))}
 }
 for(const flag of [false,true])test(`actual createCoin uses selected version for configuration, salt, broadcast and receipt (flag=${flag})`,async()=>{
- const {run,seen}=actualCreate();const version=flag?15:14
+ const {run,seen}=actualCreate();const version=flag?16:14
  const result=await run({tick:'TEST',initAmount:10n,binanceWalletOnly:flag,indexConfig:{constituentAssets:[creator]}},(hash,v)=>seen.submitted.push([hash,v]))
  assert.equal(result.version,version);assert.equal(seen.writes[0].contractName,`Pump${version}`)
  assert.deepEqual(seen.versions,[['options',version],['salt',version],['premine',version],['receipt',version]])
@@ -95,7 +95,20 @@ test('changing chain during preflight prevents a deployment signature',async()=>
 })
 test('creation receipt retry keeps the selected flag and endpoint',async()=>{
  const posts=[];globalThis.__mode={post:async(url,form)=>{posts.push([url,form]);return {c:0,d:{version:form.version}}}}
- for(const flag of [false,true]){const version=flag?15:14;await ui.registerV13({chainId:56,version,binanceWalletOnly:flag})}
- assert.deepEqual(posts.map(p=>p[0]),['https://api.invalid/pump/v14/register','https://api.invalid/pump/v15/register'])
+ for(const flag of [false,true]){const version=flag?16:14;await ui.registerV13({chainId:56,version,binanceWalletOnly:flag})}
+ assert.deepEqual(posts.map(p=>p[0]),['https://api.invalid/pump/v14/register','https://api.invalid/pump/v16/register'])
  assert.deepEqual(posts.map(p=>p[1].binanceWalletOnly),[false,true])
+ await ui.registerV13({chainId:56,version:15,binanceWalletOnly:true});assert.equal(posts.at(-1)[0],'https://api.invalid/pump/v15/register')
+})
+
+for(const version of [14,15,16])test(`V${version} trading profile keeps its Pump and Hook`,()=>{
+ const d=ui.getChainDeployment(56),p=ui.getIndexDeployment(56,version);
+ assert.equal(p.pump,d.contracts[`pump${version}`]);
+ if(version>=15)assert.equal(p.hook,d.contracts[`tipTagSwapHook${version}`]);
+ assert.equal(p.tokenAbi.some(a=>a.type==='error'&&a.name==='InnerMarketTransferRestricted'),version===16);
+ assert.throws(()=>ui.getIndexDeployment(4663,version===14?16:version));
+})
+for(const method of ['operators','approvedCreatorForwarders'])test(`V16 failed activation read (${method}) cannot return creation settings`,async()=>{
+ const {client}=optionsClient(16,method);globalThis.__mode={store:store(),client,get:async()=>{throw Error('offline')}};
+ await assert.rejects(ui.creationOptions(creator,56,16));
 })

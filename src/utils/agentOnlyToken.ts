@@ -14,7 +14,7 @@ const enabled = (value: unknown) => value === true || value === 1 || value === '
 export function isAgentOnlyCurveToken(token: AgentOnlyTokenMetadata | null | undefined, fallbackChainId: number): boolean {
   if (!token) return false
   return Number(token.chainId ?? token.chain_id ?? fallbackChainId) === 56
-    && Number(token.version) === 15
+    && [15, 16].includes(Number(token.version))
     && !enabled(token.isImport)
     && !enabled(token.listed)
     && !(Number(token.listedBlock) > 0)

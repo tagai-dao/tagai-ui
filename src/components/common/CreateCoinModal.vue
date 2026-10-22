@@ -203,7 +203,7 @@ const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
 const activeTab = ref('token');
 const chainStore = useChainStore();
-const isIndexCreation = computed(() => [56,4663].includes(chainStore.activeChainId) && [14, 15].includes(chainStore.deployment.latestPumpVersion))
+const isIndexCreation = computed(() => [56,4663].includes(chainStore.activeChainId) && [14, 15, 16].includes(chainStore.deployment.latestPumpVersion))
 const binanceWalletOnly = ref(false)
 const creationVersion = computed(() => creationVersionForMode(chainStore.activeChainId, chainStore.activeChainId === 56 && binanceWalletOnly.value))
 const indexTickTooLong = computed(() => isIndexCreation.value && new TextEncoder().encode(createForm.tick).length > 16)
@@ -313,7 +313,7 @@ watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId, creatio
 }, { immediate: true })
 watch([v13Options, tradeRewardRatioBps, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
 
-watch([showingInitAmount, creationVersion, () => chainStore.activeChainId], debounce(async ([val, version, chainId]: [number | undefined, 14 | 15, number]) => {
+watch([showingInitAmount, creationVersion, () => chainStore.activeChainId], debounce(async ([val, version, chainId]: [number | undefined, 14 | 15 | 16, number]) => {
   if (val && val > 0) {
     if (val > BondingCurveSupply) {
       showMaxAmount.value = true
@@ -563,7 +563,7 @@ const create = async () => {
     showLongDesc.value = false
 
     let prevForm:any  = localStorage.getItem('createTokenForm')
-    if (prevForm && ![13, 14, 15].includes(Number(JSON.parse(prevForm).version))){
+    if (prevForm && ![13, 14, 15, 16].includes(Number(JSON.parse(prevForm).version))){
       prevForm = JSON.parse(prevForm)
       console.log('prevForm', prevForm)
       if(await checkTickUsed(prevForm.tick)){
@@ -610,7 +610,7 @@ const create = async () => {
     createForm.ethAddr = connetctedEthAddr
     const submittedForm = {...createForm, indexConfig:createForm.indexConfig ? JSON.parse(JSON.stringify(createForm.indexConfig)) : undefined}
     const {createHash, token, version} = await createCoin(submittedForm, (hash, version) => {
-      if (version !== 14 && version !== 15) return
+      if (version !== 14 && version !== 15 && version !== 16) return
       const {initAmount,initEth,...saved} = submittedForm
       enqueueV13Registration({...saved,createHash:hash,chainId:submittedForm.chainId as 56 | 4663,version,token:''})
     });
@@ -621,7 +621,7 @@ const create = async () => {
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth
-    if ([14, 15].includes(version)) {
+    if ([14, 15, 16].includes(version)) {
       // Submission already persisted the metadata. API retries belong to the
       // app worker, and must never turn a successful creation into a form error.
       modalStore.setModalCloseEnable(true)
@@ -672,7 +672,7 @@ onMounted(async () => {
     }
   }
   let prevForm:any  = localStorage.getItem('createTokenForm')
-  if (prevForm && ![13, 14, 15].includes(Number(JSON.parse(prevForm).version))){
+  if (prevForm && ![13, 14, 15, 16].includes(Number(JSON.parse(prevForm).version))){
     prevForm = JSON.parse(prevForm)
     console.log('prevForm', prevForm)
     if(await checkTickUsed(prevForm.tick)){

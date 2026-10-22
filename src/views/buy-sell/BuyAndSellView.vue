@@ -1260,7 +1260,7 @@ onUnmounted(() => {
           <button class="underline" :disabled="calculating" @click="refreshV13Quote">{{ $t('v13Trade.refresh') }}</button>
         </div>
         <div v-if="isMultiPool" class="text-sm space-y-1">
-          <p v-if="chainStore.activeChainId === 56 && Number(comStore.currentSelectedCommunity?.version) === 15 && !listed && tradeType === 'buy'" role="note" class="text-grey-64">{{ $t('v15Trade.innerBuyRule') }}</p>
+          <p v-if="chainStore.activeChainId === 56 && [15, 16].includes(Number(comStore.currentSelectedCommunity?.version)) && !listed && tradeType === 'buy'" role="note" class="text-grey-64">{{ $t('v15Trade.innerBuyRule') }}</p>
           <p v-if="v13Message" role="status" class="text-orange-normal">{{ v13Message }}</p>
           <template v-if="v13Quote">
             <div class="flex justify-between text-grey-64"><span>{{ $t('v13Trade.estimatedGas') }}</span><span>{{ Number(v13Quote.plan.gas * v13Quote.snapshot.gasPrice) / 1e18 }} BNB</span></div>

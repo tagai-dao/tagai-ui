@@ -18,7 +18,7 @@ after(async()=>{delete globalThis.__v15;await rm(dir,{recursive:true,force:true}
 const token='0x'+'11'.repeat(20),account='0x'+'22'.repeat(20),mc='0xca11bde05977b3631167028862be2a173976ca11'
 const aggregate=parseAbi(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[])'])
 const abi=parseAbi(['function listed() view returns(bool)','function listingPending() view returns(bool)','function bondingCurveSupply() view returns(uint256)','function createdAt() view returns(uint256)','function getBuyFeeRatios() view returns(uint256,uint256)','function ipshareSubject() view returns(address)','function nutboxCommunity() view returns(address)','function indexToken() view returns(address)','function getBuyAmountByValue(uint256,uint256) view returns(uint256)','function handleOf(address) view returns(string)'])
-function fixture(handle,fail=false){
+function fixture(handle,fail=false,version=15){
  const requests=[]
  const client=createPublicClient({chain:bsc,transport:custom({request:async({method,params})=>{
   if(method==='eth_blockNumber')return '0x1312d00'
@@ -27,7 +27,7 @@ function fixture(handle,fail=false){
   const rows=children.map(c=>{
    const f=decodeFunctionData({abi,data:c.callData});const values={listed:false,listingPending:false,bondingCurveSupply:100n,createdAt:0n,getBuyFeeRatios:[100n,200n],ipshareSubject:account,nutboxCommunity:token,indexToken:zeroAddress,getBuyAmountByValue:50n,handleOf:handle}
    if(f.functionName==='handleOf'){assert.equal(c.target,'0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F');assert.deepEqual(f.args,[account])}
-   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
+   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
    return {success:!(fail&&f.functionName==='handleOf'),returnData:encodeFunctionResult({abi,functionName:f.functionName,result:values[f.functionName]})}
   })
   return encodeFunctionResult({abi:aggregate,functionName:'aggregate3',result:rows})
@@ -63,4 +63,10 @@ test('registration errors produce localized copy for decoded names and raw rever
  const code=ts.transpileModule(body,{compilerOptions:{target:ts.ScriptTarget.ES2022}}).outputText
  const friendly=new Function('t',`${code};return getFriendlyRevertMessage`)(key=>key)
  for(const reason of ['V15_HANDLE_NOT_REGISTERED','HandleNotRegistered','0x64bd20bf'+'0'.repeat(64)])assert.equal(friendly(reason),'v15Trade.registrationRequired')
+})
+
+for(const handle of ['', ' ', 'registered'])test(`V16 curve quote preserves registration enforcement (${JSON.stringify(handle)})`,async()=>{
+ const calls=fixture(handle,false,16);
+ if(handle)assert.equal((await quoteCurve(token,true,1000n,16)).amountOut,50n);else await assert.rejects(quoteCurve(token,true,1000n,16),/V15_HANDLE_NOT_REGISTERED/);
+ assert.equal(calls.length,2)
 })

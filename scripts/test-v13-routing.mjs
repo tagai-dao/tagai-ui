@@ -151,7 +151,7 @@ test('snapshot is exactly one multicall and only reads API-listed ticks', async 
     assert.equal(s.executable, false);
     assert.equal(s.hashes['0:true'], routeHash(m, m.routes[0], true));
 });
-for (const version of [13, 14]) test(`V${version} multi-Pump admission and buy/sell quotes use one state batch`, async () => {
+for (const version of [13, 14, 15, 16]) test(`V${version} multi-Pump admission and buy/sell quotes use one state batch`, async () => {
     const { m, client, count } = snapshotFixture();
     m.version = version; m.executor = address(90); m.pump = address(100 + version);
     const s = await loadSnapshot(client, m, 1n);

@@ -6,7 +6,7 @@ const source = readFileSync(new URL('../src/utils/coinCategory.ts', import.meta.
 const context = { exports: {} }
 runInNewContext(ts.transpile(source, { module: ts.ModuleKind.CommonJS }), context)
 const { isMemeEtf } = context.exports
-for (const [chain, version, expected] of [[4663, 11, true], [4663, '14', true], [4663, 9, false], [4663, 13, false], [56, 11, false], [56, 13, true], [56, 14, true]]) {
+for (const [chain, version, expected] of [[4663, 11, true], [4663, '14', true], [4663, 9, false], [4663, 13, false], [56, 11, false], [56, 13, true], [56, 14, true], [56, 15, true], [56, 16, true], [4663, 16, false]]) {
   assert.equal(isMemeEtf({ version, isImport: 0 }, chain), expected)
   assert.equal(isMemeEtf({ version, isImport: 1 }, chain), false)
 }

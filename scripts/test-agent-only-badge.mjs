@@ -16,7 +16,7 @@ function check(metadata, chainId, expected) {
 check({ chainId: 56, version: 15, listedBlock: 0, listedDayNumber: 0, isImport: 0 }, 56, true) // live AIPRO shape
 check({ version: '15', listed: '0', isImport: 'false' }, 56, true)
 check({ chain_id: '56', version: 15 }, 4663, true)
-for (const version of [8, 9, 10, 11, 13, 14, 16, undefined, null]) check({ version }, 56, false)
+for (const version of [8, 9, 10, 11, 13, 14, 17, undefined, null]) check({ version }, 56, false)
 check({ version: 15 }, 4663, false)
 check({ chainId: 4663, version: 15 }, 56, false)
 for (const value of [true, 1, '1', 'true']) {
@@ -46,3 +46,7 @@ for (const path of [
   'src/components/feed/FeedTradeActivity.vue',
 ]) assert.match(readFileSync(path, 'utf8'), /:community="/)
 console.log(`${count} agent-only badge classification checks and shared UI wiring passed`)
+
+check({ chainId:56,version:16,listed:false },56,true)
+check({ chainId:56,version:16,listed:true },56,false)
+check({ chainId:4663,version:16 },56,false)

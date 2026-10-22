@@ -1,6 +1,8 @@
 import rhPump14Abi from './v14/RHPumpV14.json'
 import rhToken14Abi from './v14/RHTokenV14.json'
 import pump14Abi from './v14/Pump14.json'
+import pump16Abi from './v16/Pump16.json'
+import token16Abi from './v16/Token16.json'
 import pump15Abi from './v15/Pump15.json'
 import token15Abi from './v15/Token15.json'
 import pump13Abi from './v13/Pump13.json'
@@ -63,7 +65,7 @@ const ContractAddress = {
 
 /** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
 const CHAIN_SCOPED_CONTRACTS = new Set([
-    'Pump9', 'Pump11', 'Pump13', 'Pump14', 'Pump15', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'Pump9', 'Pump11', 'Pump13', 'Pump14', 'Pump15', 'Pump16', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
     'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
 ])
 
@@ -88,6 +90,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
         Pump13: c.pump13,
         Pump14: c.pump14,
         Pump15: c.pump15,
+        Pump16: c.pump16,
         IPShare3: c.ipshare3,
         ImportHelper: c.importHelper,
         ImportedTokenSwapWrapper: c.importedTokenSwapWrapper,
@@ -124,6 +127,10 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
 
 /** V11 保持 V9 的现有调用 ABI；只替换部署地址。 */
 const resolveContractAbi = (contractName: string) => {
+    if (contractName === 'Pump16' || contractName === 'Token16') {
+        if (useChainStore().activeChainId !== 56) throw new Error('V16 is only supported on BSC')
+        return (contractName === 'Pump16' ? pump16Abi : token16Abi) as Abi
+    }
     if (contractName === 'Pump15' || contractName === 'Token15') {
         if (useChainStore().activeChainId !== 56) throw new Error('V15 is only supported on BSC')
         return (contractName === 'Pump15' ? pump15Abi : token15Abi) as Abi
