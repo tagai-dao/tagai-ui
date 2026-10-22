@@ -453,6 +453,8 @@ export type CreateCommunity = {
 }
 
 export type TokenHoldingList = {
+  agentHandle?: string | null,
+  farcasterName?: string | null,
   decimals?: number,
   community: Community,
   ethAddr: string,
