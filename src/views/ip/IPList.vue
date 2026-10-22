@@ -11,7 +11,7 @@ import { useRouter } from 'vue-router'
 import { handleErrorTip } from '@/utils/notify'
 import IPShareTradeModal from '@/components/ipshare/IPShareTradeModal.vue'
 import { isAddress } from 'viem'
-import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 type IPShareListItem = {
@@ -41,15 +41,6 @@ const searchQuery = ref('')
 const modalVisible = ref(false)
 const selectedIP = ref<IPShareListItem | null>(null)
 const marketSummary = ref<IPShareMarketSummary | null>(null)
-
-const profile = (ip: IPShareListItem) =>
-  ip.profile?.replace('normal', '200x200') ||
-  (ip.twitterId ? `https://profile-images.heywallet.com/${ip.twitterId}` : emptyProfile)
-
-const replaceEmptyProfile = (event: Event) => {
-  const image = event.target as HTMLImageElement
-  image.src = emptyProfile
-}
 
 const formatCompact = (value: number) => {
   if (!Number.isFinite(value)) return '0'
@@ -257,10 +248,11 @@ onBeforeUnmount(() => {
             >
               <div class="card__header">
                 <div class="identity">
-                  <img :src="profile(ip)" @error="replaceEmptyProfile" alt="">
+                  <SafeAvatar :src="ip.profile" :seed="ip.twitterId || ip.twitterUsername || ip.ethAddr"
+                    :alt="ip.twitterName || ip.twitterUsername || ''" class="identity__avatar" />
                   <div>
                     <div class="identity__name">
-                      <strong>{{ ip.twitterName || 'Unknown' }}</strong>
+                      <strong>{{ ip.twitterName || ip.twitterUsername || 'Unknown' }}</strong>
                       <AccountOriginBadges :sources="ip.accountSources" :account-type="ip.accountType" :wallet-type="ip.walletType" :eth-addr="ip.ethAddr" />
                     </div>
                     <span>@{{ ip.twitterUsername || 'unknown' }}</span>
@@ -429,7 +421,7 @@ onBeforeUnmount(() => {
 .ipshare-card:hover { transform: translateY(-2px); border-color: rgba(255,122,0,.45); box-shadow: 0 14px 32px rgba(15,16,20,.08); }
 .card__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .identity { display: flex; min-width: 0; align-items: center; gap: 11px; }
-.identity img { width: 44px; height: 44px; flex: 0 0 44px; border: 1px solid var(--border-base); border-radius: 50%; object-fit: cover; }
+.identity__avatar { width: 44px; height: 44px; flex: 0 0 44px; border: 1px solid var(--border-base); border-radius: 50%; object-fit: cover; }
 .identity div { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
 .identity .identity__name { flex-direction: row; align-items: center; gap: 4px; }
 .identity strong { overflow: hidden; color: var(--text-base); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }

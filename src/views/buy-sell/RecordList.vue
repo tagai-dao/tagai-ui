@@ -9,7 +9,7 @@ import { handleErrorTip } from "@/utils/notify";
 import emitter from "@/utils/emitter";
 import { useTools } from "@/composables/useTools";
 import { useChainStore } from '@/stores/chain'
-import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 
 const chainStore = useChainStore()
@@ -29,10 +29,6 @@ function tradeTime (token: TokenTrade) {
 
 const isRegisteredTrader = (trade: TokenTrade) => Boolean(trade.twitterId)
 
-const traderAvatar = (trade: TokenTrade) =>
-  trade.profile?.replace('normal', '200x200') ||
-  (trade.twitterId ? `https://profile-images.heywallet.com/${trade.twitterId}` : emptyProfile)
-
 const traderName = (trade: TokenTrade) =>
   trade.twitterUsername ? `@${trade.twitterUsername}` : (trade.username || formatAddress(trade.trader, 5, 4))
 
@@ -41,12 +37,6 @@ const quoteSymbol = (trade: TokenTrade) => {
   if (symbol === 'WBNB' && nativeSymbol.value === 'BNB') return 'BNB'
   if (symbol === 'WETH' && nativeSymbol.value === 'ETH') return 'ETH'
   return symbol
-}
-
-const replaceEmptyProfile = (event: Event) => {
-  const image = event.target as HTMLImageElement
-  image.onerror = null
-  image.src = emptyProfile
 }
 
 const loadTrades=(page=0)=>{const c=comStore.currentSelectedCommunity!;return chainStore.activeChainId===4663&&Number(c.version)===14?readRhIndexTrades(c.token,c.tick,page):getTokenTradeList(c.token,page)}
@@ -129,14 +119,13 @@ onUnmounted(() => {
           <div v-else class="grid grid-cols-4 gap-x-2 min-h-9 items-center text-h4"
                v-for="(token, i) of listData" :key="i">
             <div class="col-span-1 truncate flex items-center gap-1 cursor-pointer" :title="token.trader" @click="onCopy(token.trader)">
-              <img
+              <SafeAvatar
                 v-if="isRegisteredTrader(token)"
                 class="h-5 w-5 min-w-5 rounded-full object-cover"
-                :src="traderAvatar(token)"
+                :src="token.profile"
+                :seed="token.twitterId || token.twitterUsername || token.trader"
                 :alt="traderName(token)"
-                referrerpolicy="no-referrer"
-                @error="replaceEmptyProfile"
-              >
+              />
               <span class="truncate">{{ traderName(token) }}</span>
               <AccountOriginBadges :sources="token.accountSources" :account-type="token.accountType" :wallet-type="token.walletType" :eth-addr="token.trader" />
             </div>

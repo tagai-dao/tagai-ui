@@ -8,7 +8,8 @@ import { useRouter } from "vue-router";
 import { getIPshareSupplies, getIPshareBalances, getIPshareStaked } from "@/utils/ipshareAsset";
 import IPShareTradeModal from "@/components/ipshare/IPShareTradeModal.vue";
 import { isAddress } from "viem";
-import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 import { useProfileScrollParent } from '@/composables/useProfileScroll'
 
 const router = useRouter()
@@ -26,19 +27,6 @@ const ipshareSupplies = computed(() => ipshareStore.ipshareSupplies)
 const ipshareBalances = computed(() => ipshareStore.ipshareBalances)
 const stakeInfos = computed(() => ipshareStore.stakeInfos)
 const scroller = useProfileScrollParent()
-
-const profile = (ip: any) => {
-  if (!ip.profile) return null
-  if (ip.profile) {
-    return ip.profile.replace('normal', '200x200')
-  } else {
-    return 'https://profile-images.heywallet.com/' + ip.twitterId
-  }
-}
-
-const replaceEmptyProfile = (e: any) => {
-  e.target.src = emptyProfile
-}
 
 async function onRefresh() {
   try {
@@ -63,6 +51,9 @@ async function onRefresh() {
         twitterUsername: accStore.getAccountInfo.twitterUsername,
         ethAddr: accStore.getAccountInfo.ethAddr,
         profile: accStore.getAccountInfo.profile,
+        accountType: accStore.getAccountInfo.accountType,
+        walletType: accStore.getAccountInfo.walletType,
+        accountSources: accStore.getAccountInfo.accountSources,
         ipShare: accStore.getAccountInfo.ipShare
       }]
     }
@@ -200,14 +191,16 @@ onMounted(() => {
           @click="gotoUserPage(ip)"
         >
           <div class="flex-1 flex items-center gap-3">
-            <img
+            <SafeAvatar
               class="w-10 h-10 min-w-10 min-h-10 rounded-full border-2 border-white cursor-pointer"
-              :src="profile(ip)"
-              @error="replaceEmptyProfile"
-              alt=""
-            >
+              :src="ip.profile"
+              :seed="ip.twitterId || ip.twitterUsername || ip.ethAddr"
+            />
             <div class="flex-1 flex flex-col gap-1">
-              <div class="text-black font-bold text-h3 leading-5 truncate">{{ ip.twitterName || 'Unknown' }}</div>
+              <div class="flex items-center gap-1 min-w-0">
+                <span class="text-black font-bold text-h3 leading-5 truncate">{{ ip.twitterName || ip.twitterUsername || 'Unknown' }}</span>
+                <AccountOriginBadges :sources="ip.accountSources" :account-type="ip.accountType" :wallet-type="ip.walletType" :eth-addr="ip.ethAddr" />
+              </div>
               <div class="text-12px leading-4 text-grey-8d">
                 IP.Share {{ $t('walletView.totalAmount') || '总供应量' }} {{ formatAmount(ipshareSupplies[ip.ipShare || ip.ethAddr] || 0) }}
               </div>

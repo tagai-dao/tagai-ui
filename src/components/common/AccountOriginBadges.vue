@@ -13,12 +13,13 @@ const props = defineProps<{
 
 const labels: Record<AccountOrigin, string> = {
   TAGAI: 'TagAI account',
+  BINANCE: 'Binance Wallet account',
   X: 'X account',
   FOMO: 'FOMO account',
   GMGN: 'GMGN account',
   PUMP: 'Pump account',
 }
-const order: AccountOrigin[] = ['TAGAI', 'X', 'FOMO', 'GMGN', 'PUMP']
+const order: AccountOrigin[] = ['TAGAI', 'BINANCE', 'X', 'FOMO', 'GMGN', 'PUMP']
 
 const origins = computed(() => {
   const values = Array.isArray(props.sources)
@@ -26,8 +27,9 @@ const origins = computed(() => {
     : String(props.sources || '').split(',')
   const selected = new Set(values.map(source => source.trim().toUpperCase()))
 
-  if (props.accountType === 0 || props.xCollected) selected.add('X')
-  if (props.walletType === 1 && props.ethAddr) selected.add('TAGAI')
+  if ((props.accountType != null && Number(props.accountType) === 0) || props.xCollected) selected.add('X')
+  if (Number(props.walletType) === 1 && props.ethAddr) selected.add('TAGAI')
+  if (Number(props.accountType) === 3 || Number(props.walletType) === 2) selected.add('BINANCE')
 
   return order.filter(origin => selected.has(origin))
 })

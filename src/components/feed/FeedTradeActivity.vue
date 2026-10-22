@@ -70,6 +70,8 @@ function openDetails() {
         :credit="trade.credit"
         :credit-factor="trade.creditFactor"
         :account-type="trade.accountType"
+        :wallet-type="trade.walletType"
+        :account-sources="trade.accountSources"
         :teleported="true"
       >
         <template #avatar-img>

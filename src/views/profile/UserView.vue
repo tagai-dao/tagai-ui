@@ -11,7 +11,8 @@ import FarcasterBtn from "@/components/login/FarcasterBtn.vue";
 import { useModalStore, useStateStore } from "@/stores/common";
 import { GlobalModalType, type Account } from "@/types";
 import { useRoute, useRouter } from "vue-router";
-import emptyProfile from '@/assets/icons/icon-default-avatar-v2.png'
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 import { getUserProfile, getIPShareFee, getCapturedFee } from '@/apis/api'
 import TipTokenRecord from "@/views/wallet/TipTokenRecord.vue";
 import { calculateIPsharePriceLocal } from "@/utils/ipshare";
@@ -71,10 +72,6 @@ const subjectFee = computed(() => {
 const valueCaptured = computed(() => {
   return formatAmount(capturedFee.value)
 })
-
-const replaceEmptyProfile = (e: any) => {
-    e.target.src = emptyProfile
-}
 
 const gotoTwitter = () => {
     window.open('https://x.com/' + userInfo.value?.twitterUsername, '__blank')
@@ -162,10 +159,13 @@ onMounted(async () => {
   <div ref="profileScroller" class="profile-scroll-page" data-testid="profile-scroll">
     <div class="bg-white py-3 px-3 rounded-2xl mx-3">
       <div class="flex gap-2 items-center">
-        <img class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-             :src="userInfo?.profile" @error="replaceEmptyProfile" alt="">
+        <SafeAvatar class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
+             :src="userInfo?.profile" :seed="userInfo?.twitterId || userInfo?.twitterUsername || userInfo?.ethAddr" />
         <div class="h-full flex-1">
-          <div class="text-h3">{{ userInfo?.twitterName }}</div>
+          <div class="text-h3 flex items-center gap-1">
+            <span>{{ userInfo?.twitterName || userInfo?.twitterUsername }}</span>
+            <AccountOriginBadges :sources="userInfo?.accountSources" :account-type="userInfo?.accountType" :wallet-type="userInfo?.walletType" :eth-addr="userInfo?.ethAddr" />
+          </div>
           <div class="flex items-center gap-1 leading-5">
             <span class="text-grey-8d">@{{ userInfo?.twitterUsername }}</span>
             <span v-if="userInfo?.accountType == 0" class="mx-4px"> · </span>

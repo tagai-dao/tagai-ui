@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import SafeAvatar from '@/components/common/SafeAvatar.vue'
+import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
 import { useTools } from "@/composables/useTools";
 import { computed, onMounted, ref } from "vue";
 import { formatAddress, formatAmount, formatPrice } from "@/utils/helper";
@@ -26,6 +27,8 @@ const props = withDefaults(defineProps<{
     credit: number | null | undefined,
     creditFactor?: string | null | undefined,
     accountType?: number | null | undefined,
+    walletType?: number | null,
+    accountSources?: string[] | string | null,
     trigger?: 'hover' | 'click' | 'focus' | 'contextmenu'
 }>(), {
     profileImg: '',
@@ -96,6 +99,9 @@ const creditFactors = computed((): number[] => {
 })
 
 const { onCopy } = useTools()
+const showTwitterLink = computed(() => Number(props.accountType) === 0
+  && Number(props.walletType) !== 2
+  && /^[a-z0-9_]{1,15}$/i.test(props.username || ''))
 
 function gotoTwitter() {
     window.open(
@@ -163,10 +169,11 @@ onMounted(() => {
           <div class="flex-1 flex flex-col gap-y-4px">
             <div class="flex items-end whitespace-nowrap items-center gap-2">
               <span class="font-semibold text-black text-lg">{{(props.name??'').substring(0, 10)}}</span>
+              <AccountOriginBadges :sources="props.accountSources" :account-type="props.accountType" :wallet-type="props.walletType" :eth-addr="props.ethAddr" />
             </div>
             <div class="flex items-end whitespace-nowrap items-center gap-2">
               <span class="text-sm italic leading-[16px]">@{{props.username??''.substring(0, 10)}}</span>
-              <button v-if="props.accountType !== 1" class="mb-6px" @click="gotoTwitter()">
+              <button v-if="showTwitterLink" class="mb-6px" @click="gotoTwitter()">
                 <img class="w-3 h-3" src="~@/assets/icons/icon-x.svg" alt="">
               </button>
             </div>

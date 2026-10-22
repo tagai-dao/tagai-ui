@@ -147,6 +147,7 @@ onUnmounted(() => {
         <UserAvatar :profile-img="profileImg" :name="tweet.twitterName" :username="tweet.twitterUsername"
                     :followers="tweet.followers" :followings="tweet.followings"
                     :eth-addr="tweet.ethAddr" :twitter-id="tweet.twitterId" :account-type="tweet.accountType"
+                    :wallet-type="tweet.walletType" :account-sources="tweet.accountSources"
                     :steem-id="tweet.steemId" :teleported="true" :credit="tweet.credit">
           <template #avatar-img>
             <SafeAvatar :src="profileImg" :seed="tweet.twitterId || tweet.twitterUsername || tweet.ethAddr"

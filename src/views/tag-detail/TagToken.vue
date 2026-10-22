@@ -1062,6 +1062,7 @@ onBeforeUnmount(() => {
           <div class="col-span-3 min-w-0 flex flex-wrap items-center gap-1">
             <span class="min-w-4">{{i + 1}}</span>
             <UserAvatar :profile-img="holder.profile" :name="holder.twitterName" :username="holder.twitterUsername"
+                    :twitter-id="holder.twitterId" :account-type="holder.accountType" :wallet-type="holder.walletType" :account-sources="holder.accountSources"
                     :followers="holder.followers" :followings="holder.followings"
                     :eth-addr="holder.ethAddr" :credit="0"
                     :steem-id="holder.steemId" :teleported="true">

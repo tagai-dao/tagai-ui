@@ -198,8 +198,8 @@ export type Account = {
   farcasterName?: string | null | undefined;
   credit?: number;
   creditFactor?: string | null | undefined;
-  walletType?: number | null | undefined; // 0: metamask, 1: privy
-  accountType?: number | null | undefined; // 0: twitter, 1: email
+  walletType?: number | null | undefined; // 0: extension, 1: Privy, 2: Binance Wallet
+  accountType?: number | null | undefined; // 0: Twitter, 1: email, 2: TagClaw, 3: Binance agent, 4: external
   accountSources?: string[] | string | null;
   isNew?: number | null | undefined; // 0: old, 1: new register
   ipShare?: string | null | undefined;
