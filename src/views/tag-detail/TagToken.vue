@@ -28,9 +28,10 @@ import { useI18n } from "vue-i18n";
 import { useTools } from "@/composables/useTools";
 import { useChainStore } from "@/stores/chain";
 import { useTheme } from "@/composables/useTheme";
-import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
+import HolderIdentityLabel from '@/components/common/HolderIdentityLabel.vue'
 import { readCommunityDailyRewards, readCommunityRewardSchedule } from '@/utils/v13/community-rewards'
 import { readV13HolderLabels, type HolderLabel } from '@/utils/v13/holder-labels'
+import { readHolderAgentHandles } from '@/utils/holderIdentity'
 
 defineProps<{ holdersOnly?: boolean }>()
 
@@ -699,6 +700,18 @@ const holderSentinelRef = ref<HTMLElement>();
 const HOLDER_PAGE_SIZE = 30;
 let holderObserver: IntersectionObserver | null = null;
 let holderRequesting = false;
+let holderIdentityRequest = 0
+
+async function enrichHolderIdentities() {
+  const request = ++holderIdentityRequest
+  const chainId = chainStore.activeChainId
+  const token = comStore.currentSelectedCommunity?.token
+  // .ai identities are registered on BSC; the same EVM address keeps that
+  // public identity when shown in a Robinhood holder list as well.
+  const handles = await readHolderAgentHandles(getReadOnlyClient(56), holdingList.value.map(holder => holder.ethAddr))
+  if (request !== holderIdentityRequest || chainId !== chainStore.activeChainId || token !== comStore.currentSelectedCommunity?.token) return
+  holdingList.value = holdingList.value.map(holder => ({ ...holder, agentHandle: handles[holder.ethAddr.toLowerCase()] || undefined }))
+}
 
 async function fetchHolderPage(page: number) {
   const community = comStore.currentSelectedCommunity
@@ -730,6 +743,7 @@ async function onRefresh() {
   try{
     const list = await fetchHolderPage(0)
     holdingList.value = mapHolderRows(list)
+    void enrichHolderIdentities()
     holderPage.value = 0
     finished.value = list.length < HOLDER_PAGE_SIZE
   } catch (e) {
@@ -759,6 +773,7 @@ async function onLoad() {
     const list = await fetchHolderPage(nextPage)
     const rows = mapHolderRows(list)
     holdingList.value = nextPage === 0 ? rows : holdingList.value.concat(rows)
+    void enrichHolderIdentities()
     holderPage.value = nextPage
     finished.value = list.length < HOLDER_PAGE_SIZE
   } catch (e) {
@@ -858,6 +873,7 @@ watch(() => comStore.currentSelectedCommunity?.pair, () => {
 })
 
 onBeforeUnmount(() => {
+  holderIdentityRequest++
   v13HolderRequest++
   v13RewardRequest++
   v13ScheduleRequest++
@@ -1074,9 +1090,8 @@ onBeforeUnmount(() => {
               </template>
             </UserAvatar>
             <!-- <img class="w-4 h-4 min-w-4" src="~@/assets/icons/icon-default-avatar-v2.png" alt=""> -->
-            <span class="whitespace-nowrap">{{ formatAddress(holder.ethAddr) }}</span>
+            <HolderIdentityLabel :holder="holder" />
             <span v-if="v13HolderLabel(holder.ethAddr)" class="max-w-full truncate text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full" :title="v13HolderLabel(holder.ethAddr)">{{ v13HolderLabel(holder.ethAddr) }}</span>
-            <AccountOriginBadges :sources="holder.accountSources" :account-type="holder.accountType" :wallet-type="holder.walletType" :eth-addr="holder.ethAddr" />
             <span v-show="isSameAddr(holder.ethAddr, comStore.currentSelectedCommunity.token)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.contract') }}</span>
             <span v-show="isSameAddr(holder.ethAddr, comStore.currentSelectedCommunity.creator)" class="text-xs bg-purple-c1 text-blue-active px-1.5 rounded-full">{{ $t('postView.deployer') }}</span>
             <!-- v9：PCS V4 流动性合约 -->
