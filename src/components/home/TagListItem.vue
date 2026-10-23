@@ -12,7 +12,7 @@ import IconLinks from '@/components/home/IconLinks.vue'
 import Sparkline from '@/components/common/Sparkline.vue'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import LaunchPlatformBadge from '@/components/common/LaunchPlatformBadge.vue'
-import { isAgentLaunch } from '@/utils/coinCategory'
+import { getLaunchPlatform } from '@/utils/coinCategory'
 import { useChainStore } from '@/stores/chain'
 
 const props = defineProps<{ community: Community; marketCapUsd?: number; priceUsd?: number; metricLabel?: string; showLaunchPlatform?: boolean }>()
@@ -21,8 +21,8 @@ const stateStore = useStateStore()
 const chainStore = useChainStore()
 // The page only requests a platform badge. The token's chain-scoped issuance
 // protocol decides its identity; imported/unknown protocols never inherit TagAI.
-const showTagaiLaunchPlatform = computed(() => props.showLaunchPlatform
-  && isAgentLaunch(props.community, chainStore.activeChainId))
+const launchPlatform = computed(() => props.showLaunchPlatform
+  ? getLaunchPlatform(props.community, chainStore.activeChainId) : null)
 
 const onlineSpace = computed(() =>
   curationStore.allSpaces.some(space => space.tick === props.community.tick),
@@ -56,7 +56,7 @@ const change = computed(() => {
       <div class="flex min-w-0 items-center gap-3">
         <div class="relative shrink-0">
           <slot name="logo" :size="40"><CommunityLogo :community="community" :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" size="md" :shadow="false" class="!rounded-full" /></slot>
-          <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
+          <LaunchPlatformBadge v-if="launchPlatform" :platform="launchPlatform" />
           <div v-if="$slots['logo-badge']" class="absolute -right-1 -bottom-1 z-10" @click.stop @keydown.stop><slot name="logo-badge" /></div>
         </div>
         <div class="min-w-0">
@@ -77,9 +77,9 @@ const change = computed(() => {
     <div class="hidden web:flex bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 gap-3">
       <div class="relative w-20 h-20 min-w-20 min-h-20">
         <slot name="logo" :size="80"><CommunityLogo :community="community" :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" :show-audio="onlineSpace" /></slot>
-        <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
+        <LaunchPlatformBadge v-if="launchPlatform" :platform="launchPlatform" />
         <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
-          <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
+          <div v-if="community.listed && !(showLaunchPlatform && community.isImport)" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
             {{ community.isImport ? $t('imported') : $t('listed') }}
           </div>
         </div>
