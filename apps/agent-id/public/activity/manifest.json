@@ -1,0 +1,104 @@
+{
+  "updatedAt": "2026-10-22T23:31:24.513090+00:00",
+  "snapshotBlock": 129215977,
+  "snapshotTime": "2026-10-22T23:13:40+00:00",
+  "chainId": 56,
+  "tokens": [
+    {
+      "symbol": "AIPRO",
+      "address": "0xfa81c13f979f0dff4a40b68c4aba147fa0723333",
+      "status": "active",
+      "internal": {
+        "status": "indexed",
+        "events": 301,
+        "agentEvents": 244,
+        "note": "按已识别的曲线成交事件统计"
+      },
+      "external": {
+        "status": "indexed",
+        "events": 50,
+        "agentEvents": 1,
+        "note": "已发现的 DEX 池；按 Swap 与 tx.from 归属"
+      },
+      "agentWallets": 92
+    },
+    {
+      "symbol": ".ai",
+      "address": "0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc",
+      "status": "active",
+      "internal": {
+        "status": "indexed",
+        "events": 54,
+        "agentEvents": 54,
+        "note": "按已识别的曲线成交事件统计"
+      },
+      "external": {
+        "status": "indexed",
+        "events": 56522,
+        "agentEvents": 407,
+        "note": "已发现的 DEX 池；按 Swap 与 tx.from 归属"
+      },
+      "agentWallets": 150
+    },
+    {
+      "symbol": "GANG",
+      "address": "0x0c6302401aa5325c2e36f170f52c00b1d220b405",
+      "status": "active",
+      "internal": {
+        "status": "indexed",
+        "events": 131,
+        "agentEvents": 131,
+        "note": "按已识别的曲线成交事件统计"
+      },
+      "external": {
+        "status": "indexed",
+        "events": 34800,
+        "agentEvents": 193,
+        "note": "已发现的 DEX 池；按 Swap 与 tx.from 归属"
+      },
+      "agentWallets": 157
+    },
+    {
+      "symbol": "Flaip",
+      "address": "0xb8fb293b3e8e3c5fd741e34ac5810dd5dc9f2c7f",
+      "status": "curve",
+      "internal": {
+        "status": "indexed",
+        "events": 340,
+        "agentEvents": 340,
+        "note": "Bought / Sold 曲线份额；计价 BNCB"
+      },
+      "external": {
+        "status": "not_discovered",
+        "events": 0,
+        "agentEvents": 0,
+        "note": "未发现外部交易池，不等于零交易"
+      },
+      "agentWallets": 128
+    }
+  ],
+  "nft": {
+    "name": "Relic NFT",
+    "contract": "0xe8c6b38b5e63377a96b268319b66638f772254bb",
+    "game": "0xb0d5f3108af164f5f7046f53ab59fd2779812d10",
+    "publicMinted": 95000,
+    "mintEvents": 39214,
+    "agentMinted": 95000,
+    "agentMintEvents": 39214,
+    "agentWallets": 24444
+  },
+  "totals": {
+    "agentCount": 24573,
+    "tokenTrades": 1370,
+    "nftMinted": 95000,
+    "nftMintEvents": 39214
+  },
+  "notes": [
+    "这是固定区块的历史快照，不是持续自动同步。代币内盘从 Agent ID 注册体系上线区块 128724651 扫描到快照区块；外盘覆盖本次发现的 6 个交易池，从各池建立时间开始。",
+    "交易按当前链上 handleOf(address) 归属回溯；不能保证交易发生时已注册该名称。地址与 X 账号的关联依然单独核验。",
+    "内盘只识别确认的成交事件；外盘按 Swap 事件计数，聚合或多跳交易可能有多条 Swap。tx.from 由代付方或中继发起时可能遗漏实际用户，未确认的收币地址不推断为交易者。",
+    "Relic 仅统计 Game 的 Minted / MintedWithBnb 事件，并核对 handleHash；不把 NFT 普通转账、二级买入或团队预留铸造计入公开铸造量。NFT 枚数与铸造交易次数分别展示。",
+    "Flaip 使用用户更正的曲线合约地址，metadata() 确认为 Flaip，报价单位 BNCB；它不是普通 ERC20，尚未发现外部池。计价金额为事件记录值，不计作当前估值或利润。",
+    "外盘共读取 91372 条 Swap；交易详情未取到的事件 0 条，歧义事件 0 条。未收录不等于没有发生。"
+  ]
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AgentIdAtlasLink from '@/components/common/AgentIdAtlasLink.vue'
 import { ref, computed } from 'vue'
 import DownloadAppButton from '@/components/common/DownloadAppButton.vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -226,6 +227,7 @@ const handleWalletClick = (e?: Event) => {
         <span class="hidden desk:inline text-h4 text-content">{{ accStore.getAccountInfo ? ($t('profile') || 'Profile') : ($t('login') || 'Log in') }}</span>
       </div>
 
+      <AgentIdAtlasLink variant="sidebar" />
       <DownloadAppButton sidebar />
 
       <!-- 8. More -->

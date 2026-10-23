@@ -122,3 +122,7 @@ npm run build
 ```sh
 npm run lint
 ```
+
+## Agent ID ATLAS 子站
+
+独立部署到 `agent-id.tagai.fun` 的源码与部署步骤见 [apps/agent-id/README.md](apps/agent-id/README.md)。子域名验收后，主站以 `VITE_AGENT_ID_ATLAS_ENABLED=true` 启用导航入口。
