@@ -345,7 +345,7 @@ function filterTagCoins(list: Community[]) {
     if (isActiveChainBStock(community)) return false
     if (tagCoinSource.value === 'all') return true
     if (tagCoinSource.value === 'agent') return isAgentLaunch(community, chainStore.activeChainId)
-      && (agentLaunchStage.value === 'all' || isGraduatedToken(community) === (agentLaunchStage.value === 'graduated'))
+      && (agentLaunchStage.value === 'all' || isGraduatedToken(community, chainStore.activeChainId) === (agentLaunchStage.value === 'graduated'))
     if (tagCoinSource.value === 'memeetf') return isMemeEtf(community, chainStore.activeChainId)
     return tagCoinSource.value === 'import'
       ? isImportedToken(community)
