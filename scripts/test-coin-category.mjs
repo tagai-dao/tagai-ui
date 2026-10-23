@@ -6,7 +6,11 @@ const source = readFileSync(new URL('../src/utils/coinCategory.ts', import.meta.
 const context = { exports: {} }
 runInNewContext(ts.transpile(source, { module: ts.ModuleKind.CommonJS }), context)
 const { isMemeEtf, isAgentLaunch, isGraduatedToken } = context.exports
-const externalAgent = { tick: '.ai', token: '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc',
+for (const [tick, token] of [
+  ['.ai', '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc'],
+  ['GANG', '0x0c6302401aa5325c2e36f170f52c00b1d220b405'],
+]) {
+const externalAgent = { tick, token,
   version: 10, isImport: 1, pair: '0x' + '1'.repeat(40), listed: '0' }
 assert.equal(isAgentLaunch(externalAgent, 56), true)
 assert.equal(isGraduatedToken(externalAgent, 56), true)
@@ -22,6 +26,7 @@ for (const pair of ['', '0x' + '0'.repeat(40), 'not-a-pool']) {
   assert.equal(isGraduatedToken({ ...externalAgent, pair }, 56), false)
 }
 assert.equal(isGraduatedToken({ ...externalAgent, pair: '0x' + '1'.repeat(64) }, 56), true)
+}
 for (const listed of [true, 1, '1', 'true']) assert.equal(isGraduatedToken({ listed }), true)
 for (const listed of [false, 0, '0', undefined]) assert.equal(isGraduatedToken({ listed }), false)
 assert.equal(isGraduatedToken({ listed: false, listedBlock: '100' }), true)
