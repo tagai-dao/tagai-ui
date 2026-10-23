@@ -52,11 +52,11 @@ const change = computed(() => {
 <template>
   <div class="contents">
     <!-- Android + narrow PWA: reviewed compact token card. -->
-    <article class="compact-token-card relative flex web:hidden" :class="showTagaiLaunchPlatform ? '!pb-8' : ''" role="button" tabindex="0">
-      <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
+    <article class="compact-token-card flex web:hidden" role="button" tabindex="0">
       <div class="flex min-w-0 items-center gap-3">
         <div class="relative shrink-0">
           <slot name="logo" :size="40"><CommunityLogo :community="community" :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" size="md" :shadow="false" class="!rounded-full" /></slot>
+          <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
           <div v-if="$slots['logo-badge']" class="absolute -right-1 -bottom-1 z-10" @click.stop @keydown.stop><slot name="logo-badge" /></div>
         </div>
         <div class="min-w-0">
@@ -74,10 +74,10 @@ const change = computed(() => {
     </article>
 
     <!-- PC web: preserve the original information-rich token card. -->
-    <div class="relative hidden web:flex bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 gap-3">
-      <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
+    <div class="hidden web:flex bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 gap-3">
       <div class="relative w-20 h-20 min-w-20 min-h-20">
         <slot name="logo" :size="80"><CommunityLogo :community="community" :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" :show-audio="onlineSpace" /></slot>
+        <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
         <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
           <div v-if="community.listed" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
             {{ community.isImport ? $t('imported') : $t('listed') }}
@@ -120,7 +120,7 @@ const change = computed(() => {
           </div>
           <slot name="default-btn"><div class="flex items-center" /></slot>
         </div>
-        <div class="flex justify-between items-center mt-2" :class="showTagaiLaunchPlatform ? 'pr-12' : ''">
+        <div class="flex justify-between items-center mt-2">
           <div class="font-extralight flex flex-wrap gap-2">
             <template v-if="communityTags.length">
               <button v-for="(tag, index) of communityTags" :key="tag" class="px-2 h-5 text-xs rounded-md" :style="getTagStyle(index)">
