@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AgentIdAtlasLink from '@/components/common/AgentIdAtlasLink.vue'
 import {computed, ref} from "vue";
 import DownloadAppButton from '@/components/common/DownloadAppButton.vue'
 import SearchModal from "@/components/common/SearchModal.vue";
@@ -150,6 +151,7 @@ async function createTagCoin() {
 <!--              <img class="w-4" src="~@/assets/icons/icon-wallet.svg" alt="">-->
 <!--              <span>{{$t('wallet')}}</span>-->
 <!--            </div>-->
+            <AgentIdAtlasLink @click="menuRef?.hide()" />
             <!-- 四语切换：当前语言打勾 -->
             <div v-for="l of SUPPORTED_LOCALES" :key="l.code"
                  @click="switchLanguage(l.code)"
