@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
-import { isAgentLaunch, isMemeEtf } from '@/utils/coinCategory'
+import { isAgentLaunch, isGraduatedToken, isMemeEtf } from '@/utils/coinCategory'
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, defineAsyncComponent, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
@@ -70,6 +70,15 @@ const tagSubMenu = computed(() => stateStore.tagSubMenu)
 const coinSubMenu = computed(() => stateStore.coinSubMenu)
 type TagCoinSource = TagCoinSourceFilter
 const tagCoinSource = ref<TagCoinSource>('all')
+type AgentLaunchStage = 'all' | 'new' | 'graduated'
+const agentLaunchStage = ref<AgentLaunchStage>('all')
+const agentLaunchStages: Array<{ value: AgentLaunchStage; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'new', label: 'New' },
+  { value: 'graduated', label: 'Graduated' },
+]
+const requestedCoinSource = (): TagCoinSource => tagCoinSource.value === 'agent' && agentLaunchStage.value !== 'all'
+  ? `agent-${agentLaunchStage.value}` : tagCoinSource.value
 const tagCoinSourceTabs: Array<{ value: TagCoinSource; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'agent', label: 'Agent Launch' },
@@ -128,11 +137,11 @@ async function refresh() {
   const sequence = ++listRefreshSequence
   const chainId = chainStore.activeChainId
   const type = listType.value
-  const source = tagCoinSource.value
+  const source = requestedCoinSource()
   const key = coinListKey(type)
   const isCurrent = () => pageActive && sequence === listRefreshSequence
     && chainId === chainStore.activeChainId
-    && source === tagCoinSource.value
+    && source === requestedCoinSource()
     && type === listType.value
   try {
     finished[type] = false
@@ -178,9 +187,9 @@ async function loadMore() {
   if (!cursor) return // Cached display rows are not a pagination cursor.
   const sequence = listRefreshSequence
   const chainId = chainStore.activeChainId
-  const source = tagCoinSource.value
+  const source = requestedCoinSource()
   const isCurrent = () => pageActive && sequence === listRefreshSequence && type === listType.value
-    && chainId === chainStore.activeChainId && source === tagCoinSource.value
+    && chainId === chainStore.activeChainId && source === requestedCoinSource()
   loading.value = true
   try {
     const result = await getTokenCatalogPage(catalogSort(type), source, cursor.page, cursor.catalogId)
@@ -336,6 +345,7 @@ function filterTagCoins(list: Community[]) {
     if (isActiveChainBStock(community)) return false
     if (tagCoinSource.value === 'all') return true
     if (tagCoinSource.value === 'agent') return isAgentLaunch(community, chainStore.activeChainId)
+      && (agentLaunchStage.value === 'all' || isGraduatedToken(community) === (agentLaunchStage.value === 'graduated'))
     if (tagCoinSource.value === 'memeetf') return isMemeEtf(community, chainStore.activeChainId)
     return tagCoinSource.value === 'import'
       ? isImportedToken(community)
@@ -347,6 +357,17 @@ function filterTagCoins(list: Community[]) {
 function switchTagCoinSource(source: TagCoinSource) {
   if (tagCoinSource.value === source) return
   tagCoinSource.value = source
+  resetCoinSourceList()
+}
+
+function switchAgentLaunchStage(stage: AgentLaunchStage) {
+  if (agentLaunchStage.value === stage) return
+  agentLaunchStage.value = stage
+  resetCoinSourceList()
+}
+
+function resetCoinSourceList() {
+  const source = requestedCoinSource()
   clearCoinLists()
   const key = coinListKey(listType.value)
   const cached = readPublicSnapshot<Community[]>(
@@ -496,7 +517,6 @@ const onCreate = (type: GlobalModalType) => {
         </button>
       </div>
     </div>
-    
     <!-- Home 菜单：TagCoin、Baskets、链对应的股票资产 -->
     <div v-if="activeMainMenu==='coin'" class="token-navigation px-3 w-full web:max-w-[1240px] web:mx-auto border-b border-line">
       <div class="token-navigation-tabs grid grid-cols-4 min-w-0" aria-label="Token categories">
@@ -583,6 +603,14 @@ const onCreate = (type: GlobalModalType) => {
     </div>
     
     
+    <div v-if="activeMainMenu === 'coin' && coinSubMenu === 'tagCoin' && tagCoinSource === 'agent'"
+      class="flex shrink-0 gap-2 px-3 pb-3" role="tablist" aria-label="Agent Launch stage">
+      <button v-for="stage in agentLaunchStages" :key="stage.value" type="button" role="tab"
+        :aria-selected="agentLaunchStage === stage.value"
+        class="rounded-full border px-4 py-1.5 text-sm font-semibold"
+        :class="agentLaunchStage === stage.value ? 'border-orange-normal bg-surface-2 text-orange-normal' : 'border-line bg-surface text-muted'"
+        @click="switchAgentLaunchStage(stage.value)">{{ stage.label }}</button>
+    </div>
     <TokenWatchlist v-if="activeMainMenu==='coin' && coinSubMenu==='watchlist'" />
     <HomePost v-if="activeMainMenu==='tag'"/>
     <template v-if="activeMainMenu==='coin' && coinSubMenu==='tagCoin'">
@@ -612,7 +640,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.Trending"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of filterTagCoins(coinLists.trendingCommunities)" :community :key="community.tick" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterTagCoins(coinLists.trendingCommunities)" :community :show-launch-platform="tagCoinSource === 'agent'" :key="community.tick" @click="gotoDetail(community)" />
             </div>
             <div v-if="listLoaded && !refreshing && !loadFailed && filterTagCoins(coinLists.newCommunities).length == 0 && !loading && listType == ListType.New"
                  class="flex justify-center py-6 w-full">
@@ -620,7 +648,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.New"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of filterTagCoins(coinLists.newCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterTagCoins(coinLists.newCommunities)" :community :show-launch-platform="tagCoinSource === 'agent'" :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
             <div v-if="listLoaded && !refreshing && !loadFailed && filterTagCoins(coinLists.marketCapCommunities).length == 0 && !loading && listType == ListType.MarketCap"
                  class="flex justify-center py-6 w-full">
@@ -628,7 +656,7 @@ const onCreate = (type: GlobalModalType) => {
             </div>
             <div v-else v-show="listType == ListType.MarketCap"
                  class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
-              <TagListItem v-for="community of filterTagCoins(coinLists.marketCapCommunities)" :community :key="community.tick + '-2'" @click="gotoDetail(community)" />
+              <TagListItem v-for="community of filterTagCoins(coinLists.marketCapCommunities)" :community :show-launch-platform="tagCoinSource === 'agent'" :key="community.tick + '-2'" @click="gotoDetail(community)" />
             </div>
           </van-list>
         </van-pull-refresh>

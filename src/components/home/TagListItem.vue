@@ -11,10 +11,18 @@ import { getTagStyle, parseTagsJson } from '@/composables/useTags'
 import IconLinks from '@/components/home/IconLinks.vue'
 import Sparkline from '@/components/common/Sparkline.vue'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
+import LaunchPlatformBadge from '@/components/common/LaunchPlatformBadge.vue'
+import { isAgentLaunch } from '@/utils/coinCategory'
+import { useChainStore } from '@/stores/chain'
 
-const props = defineProps<{ community: Community; marketCapUsd?: number; priceUsd?: number; metricLabel?: string }>()
+const props = defineProps<{ community: Community; marketCapUsd?: number; priceUsd?: number; metricLabel?: string; showLaunchPlatform?: boolean }>()
 const curationStore = useCurationStore()
 const stateStore = useStateStore()
+const chainStore = useChainStore()
+// The page only requests a platform badge. The token's chain-scoped issuance
+// protocol decides its identity; imported/unknown protocols never inherit TagAI.
+const showTagaiLaunchPlatform = computed(() => props.showLaunchPlatform
+  && isAgentLaunch(props.community, chainStore.activeChainId))
 
 const onlineSpace = computed(() =>
   curationStore.allSpaces.some(space => space.tick === props.community.tick),
@@ -44,7 +52,8 @@ const change = computed(() => {
 <template>
   <div class="contents">
     <!-- Android + narrow PWA: reviewed compact token card. -->
-    <article class="compact-token-card flex web:hidden" role="button" tabindex="0">
+    <article class="compact-token-card relative flex web:hidden" :class="showTagaiLaunchPlatform ? '!pb-8' : ''" role="button" tabindex="0">
+      <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
       <div class="flex min-w-0 items-center gap-3">
         <div class="relative shrink-0">
           <slot name="logo" :size="40"><CommunityLogo :community="community" :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" size="md" :shadow="false" class="!rounded-full" /></slot>
@@ -65,7 +74,8 @@ const change = computed(() => {
     </article>
 
     <!-- PC web: preserve the original information-rich token card. -->
-    <div class="hidden web:flex bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 gap-3">
+    <div class="relative hidden web:flex bg-grey-fa border-[1px] border-white rounded-2xl py-5 px-3.5 gap-3">
+      <LaunchPlatformBadge v-if="showTagaiLaunchPlatform" />
       <div class="relative w-20 h-20 min-w-20 min-h-20">
         <slot name="logo" :size="80"><CommunityLogo :community="community" :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" :show-audio="onlineSpace" /></slot>
         <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
@@ -110,7 +120,7 @@ const change = computed(() => {
           </div>
           <slot name="default-btn"><div class="flex items-center" /></slot>
         </div>
-        <div class="flex justify-between items-center mt-2">
+        <div class="flex justify-between items-center mt-2" :class="showTagaiLaunchPlatform ? 'pr-12' : ''">
           <div class="font-extralight flex flex-wrap gap-2">
             <template v-if="communityTags.length">
               <button v-for="(tag, index) of communityTags" :key="tag" class="px-2 h-5 text-xs rounded-md" :style="getTagStyle(index)">

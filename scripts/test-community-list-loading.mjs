@@ -135,6 +135,33 @@ test('other route/store refreshes cannot erase Launch communities', async t => {
   assert.deepEqual(f.model.filterTagCoins(f.model.currentCoinList.value).map(x => x.tick), ['launch'])
 })
 
+test('Agent stages request independent catalogues, isolate snapshots and discard stale requests', async t => {
+  const f = setup('false', 56); t.after(f.dispose)
+  const rows = [
+    { ...token('inner'), version: 15, listed: false },
+    { ...token('dex'), version: 16, listed: true },
+    { ...token('block'), version: 15, listed: false, listedBlock: 12 },
+  ]
+  f.model.switchTagCoinSource('agent')
+  f.calls.at(-1).resolve(rows); await flush()
+  assert.equal(f.model.filterTagCoins(rows).length, 3)
+  f.model.switchAgentLaunchStage('new')
+  const stale = f.calls.at(-1)
+  assert.equal(stale.source, 'agent-new')
+  assert.deepEqual(f.model.filterTagCoins(rows).map(r => r.tick), ['inner'])
+  f.model.switchAgentLaunchStage('graduated')
+  assert.equal(f.calls.at(-1).source, 'agent-graduated')
+  f.calls.at(-1).resolve(rows.slice(1)); await flush()
+  stale.resolve([rows[0]]); await flush()
+  assert.deepEqual(f.model.currentCoinList.value.map(r => r.tick), ['dex', 'block'])
+  assert.deepEqual(f.model.filterTagCoins(rows).map(r => r.tick), ['dex', 'block'])
+  f.model.switchAgentLaunchStage('all')
+  assert.equal(f.calls.at(-1).source, 'agent')
+  f.calls.at(-1).resolve(rows); await flush()
+  assert.equal(f.model.filterTagCoins(f.model.currentCoinList.value).length, 3)
+  assert.ok(f.snapshots.has(`56:token-list:${ListType.Trending}:agent-graduated`))
+})
+
 test('slow All refresh and metrics cannot overwrite the selected Launch source', async t => {
   const f = setup(); t.after(f.dispose)
   const first = f.model.refresh()
