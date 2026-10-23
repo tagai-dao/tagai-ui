@@ -74,7 +74,9 @@ const props = defineProps({
   commerceId: {type: String, default: ''},
   tweetId: {type: String, default: ''},
   showChart: {type: Boolean, default: true},
-  agentGuide: {type: Boolean, default: false},
+  // Shared by community, content, activity, Blinks and wallet trade entries.
+  // Protocol/market state, not the entry point, decides whether to show a guide.
+  agentGuide: {type: Boolean, default: true},
   sellsman: {type: String, required: false, default: null}
 })
 const { t } = useI18n()

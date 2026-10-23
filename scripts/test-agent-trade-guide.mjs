@@ -19,7 +19,14 @@ for (const version of [9, 11, 13, 14, 17]) assert.equal(eligible({ version }, 56
 
 const trade = read('src/views/buy-sell/BuyAndSellView.vue')
 const home = read('src/views/tag-detail/HomeTagDetail.vue')
-assert.match(trade, /agentGuide: \{type: Boolean, default: false\}/)
+assert.match(trade, /agentGuide: \{type: Boolean, default: true\}/)
+for (const file of ['src/components/feed/FeedTokenTradeSheet.vue', 'src/components/tweets/CommerceBtn.vue', 'src/views/wallet/TabHoldTag.vue']) {
+  const entry = read(file)
+  assert.match(entry, /<BuyAndSellView\b/)
+  assert.doesNotMatch(entry, /:agent-guide="false"/)
+}
+const sheet = read('src/components/feed/FeedTokenTradeSheet.vue')
+for (const attribution of [':tweet-id="asset.tweetId"', ':sellsman="asset.sellsman"', ':commerce-id="asset.commerceId"', ':login-return-path="asset.loginReturnPath"']) assert.ok(sheet.includes(attribution))
 assert.match(trade, /props\.agentGuide[\s\S]*isAgentOnlyCurveToken\(comStore.currentSelectedCommunity, chainStore.activeChainId\)\s*&& !listed.value/)
 assert.match(trade, /<AgentTradeGuide v-if="showAgentGuide"[^\n]*\n\s*<div v-else/)
 assert.equal((home.match(/<BuyAndSellView[^>]*agent-guide/g) || []).length, 2)
