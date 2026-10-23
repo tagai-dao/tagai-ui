@@ -12,6 +12,8 @@ const transpile = source => ts.transpileModule(source, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText
 const ListType = { MarketCap: 0, Trending: 1, New: 2 }
+const category = { exports: {} }
+new Function('exports', transpile(readFileSync(new URL('../src/utils/coinCategory.ts', import.meta.url), 'utf8')))(category.exports)
 const deferred = () => {
   let resolve, reject
   const promise = new Promise((a, b) => { resolve = a; reject = b })
@@ -22,11 +24,11 @@ const token = (id, isImport = 0) => ({ token: `0x${id}`, tick: id, isImport, mar
 
 // Run the actual SFC setup with Vue reactivity and controlled network/lifecycle
 // boundaries so old responses can be delivered in a deterministic order.
-function setup(savedDust = 'false') {
+function setup(savedDust = 'false', chainId = 4663) {
   const calls = [], hooks = {}, snapshots = new Map(), errors = []
   const scope = Vue.effectScope()
   const shared = Vue.reactive({ newCommunities: [], trendingCommunities: [], marketCapCommunities: [] })
-  const chain = Vue.reactive({ activeChainId: 4663, deployment: { key: 'bsc' } })
+  const chain = Vue.reactive({ activeChainId: chainId, deployment: { key: 'bsc' } })
   const state = Vue.reactive({ activeMainMenu: 'coin', coinSubMenu: 'tagCoin', ethPrice: 1 })
   const fixture = { hydrate: async rows => rows }
   const request = (kind, catalog = false) => (page, source) => {
@@ -35,6 +37,7 @@ function setup(savedDust = 'false') {
     return catalog ? pending.promise.then(rows => ({ rows, hasMore: rows.length >= 30, nextPage: page + 1, catalogId: 'test-catalog' })) : pending.promise
   }
   const modules = {
+    '@/utils/coinCategory': category.exports,
     vue: { ...Vue, ...Object.fromEntries(['onMounted', 'onActivated', 'onDeactivated', 'onUnmounted'].map(name => [name, fn => { hooks[name] = fn }])) },
     '@/types': { ListType, MindShareType: { Project: 1 }, GlobalModalType: {} },
     '@/apis/api': { getCommunitiesByNew: request('ticker'), getTokenCatalogPage: (sort, source, page = 0) => request(sort, true)(page, source) },
@@ -98,7 +101,7 @@ test('manual pull refresh ends on both success and failure', async t => {
 })
 
 test('category switches filter cached rows and request the selected source', async t => {
-  const f = setup(); t.after(f.dispose)
+  const f = setup('false', 56); t.after(f.dispose)
   const rows = [
     { ...token('legacy'), version: 12 },
     { ...token('etf'), version: 13 },
@@ -106,9 +109,12 @@ test('category switches filter cached rows and request the selected source', asy
     { ...token('Starship'), version: 14 },
     { ...token('v14-string'), version: '14' },
     { ...token('import', 1), version: 10 },
+    { ...token('agent'), version: 15 },
+    { ...token('agent-listed'), version: '16', listed: true },
   ]
-  assert.deepEqual(f.model.filterTagCoins(rows).map(row => row.tick), ['legacy', 'etf', 'etf-string', 'Starship', 'v14-string', 'import'])
+  assert.deepEqual(f.model.filterTagCoins(rows).map(row => row.tick), ['legacy', 'etf', 'etf-string', 'Starship', 'v14-string', 'import', 'agent', 'agent-listed'])
   for (const [source, expected] of [
+    ['agent', ['agent', 'agent-listed']],
     ['memeetf', ['etf', 'etf-string', 'Starship', 'v14-string']],
     ['launch', ['legacy']],
     ['import', ['import']],
@@ -145,16 +151,15 @@ test('slow All refresh and metrics cannot overwrite the selected Launch source',
   assert.equal(f.model.currentCoinList.value[0].tick, 'import')
 })
 
-test('New ticker refresh does not replace or append to a filtered New ranking', async t => {
+test('refresh preserves a filtered New ranking and requests only that category', async t => {
   const f = setup(); t.after(f.dispose)
   f.model.listType.value = ListType.New; await Vue.nextTick()
   f.calls[0].resolve([]); await flush()
   f.model.switchTagCoinSource('launch'); f.calls[1].resolve([token('launch')]); await flush()
-  const ticker = f.model.getNewCommunities()
-  assert.equal(f.calls[2].source, 'all')
-  f.calls[2].resolve([token('import', 1)]); await ticker; await flush()
-  assert.deepEqual(f.model.currentCoinList.value.map(x => x.tick), ['launch'])
-  assert.equal(f.model.scrollNewCommunities.value[0].tick, 'import')
+  const refresh = f.model.refresh()
+  assert.equal(f.calls[2].source, 'launch')
+  f.calls[2].resolve([token('new-launch')]); await refresh; await flush()
+  assert.deepEqual(f.model.currentCoinList.value.map(x => x.tick), ['new-launch'])
 })
 
 test('source/chain changes discard stale pagination and errors', async t => {

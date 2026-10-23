@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import PageDataStatus from '@/components/common/PageDataStatus.vue'
-import { isMemeEtf } from '@/utils/coinCategory'
+import { isAgentLaunch, isMemeEtf } from '@/utils/coinCategory'
 import TagListItem from "@/components/home/TagListItem.vue";
 import {computed, defineAsyncComponent, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
 import {type Community, GlobalModalType, ListType, MindShareType, PredictSortType, PredictType, type Space} from '@/types'
@@ -72,9 +72,10 @@ type TagCoinSource = TagCoinSourceFilter
 const tagCoinSource = ref<TagCoinSource>('all')
 const tagCoinSourceTabs: Array<{ value: TagCoinSource; label: string }> = [
   { value: 'all', label: 'All' },
+  { value: 'agent', label: 'Agent Launch' },
   { value: 'memeetf', label: 'Meme ETF' },
-  { value: 'import', label: 'Imported Token' },
   { value: 'launch', label: 'Social Launch' },
+  { value: 'import', label: 'Imported Token' },
 ]
 const bStockCommunities = ref<Community[]>([])
 const bStocksLoading = ref(false)
@@ -334,10 +335,12 @@ function filterTagCoins(list: Community[]) {
   return list.filter((community) => {
     if (isActiveChainBStock(community)) return false
     if (tagCoinSource.value === 'all') return true
+    if (tagCoinSource.value === 'agent') return isAgentLaunch(community, chainStore.activeChainId)
     if (tagCoinSource.value === 'memeetf') return isMemeEtf(community, chainStore.activeChainId)
     return tagCoinSource.value === 'import'
       ? isImportedToken(community)
       : !isImportedToken(community) && !isMemeEtf(community, chainStore.activeChainId)
+        && !isAgentLaunch(community, chainStore.activeChainId)
   })
 }
 
