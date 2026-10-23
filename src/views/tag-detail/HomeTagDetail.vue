@@ -470,7 +470,7 @@ onBeforeRouteLeave((to, from, next) => {
       :class="{ 'flex-1 overflow-hidden': isAiActive }"
     >
       <div v-if="!isAiActive && !isMobile" class="mb-3">
-        <BuyAndSellView>
+        <BuyAndSellView agent-guide>
           <template #token-info><div ref="tokenInfoTarget" /></template>
         </BuyAndSellView>
       </div>
@@ -746,7 +746,7 @@ onBeforeRouteLeave((to, from, next) => {
       <span>{{ $t('trade') }} · {{ comStore.currentSelectedCommunity?.tick }}</span>
       <button type="button" class="flex h-9 w-9 items-center justify-center rounded-full text-xl text-muted" :aria-label="$t('cancel')" @click="showTradeBox = false">×</button>
     </div>
-    <BuyAndSellView v-if="showTradeBox" :show-chart="false" class="pb-3" />
+    <BuyAndSellView v-if="showTradeBox" agent-guide :show-chart="false" class="pb-3" />
   </van-popup>
   <el-dialog v-model="showModal"
                modal-class="overlay-white"
