@@ -27,6 +27,12 @@ assert.equal((home.match(/:show-launch-platform="tagCoinSource === 'agent'"/g) |
 const card = readFileSync(new URL('../src/components/home/TagListItem.vue', import.meta.url), 'utf8')
 assert.equal((card.match(/<LaunchPlatformBadge v-if="showTagaiLaunchPlatform"/g) || []).length, 2)
 assert.match(card, /props\.showLaunchPlatform\s*&& isAgentLaunch\(props\.community, chainStore\.activeChainId\)/)
+assert.equal((card.match(/<slot name="logo"[^\n]+\n\s*<LaunchPlatformBadge/g) || []).length, 2)
+const badge = readFileSync(new URL('../src/components/common/LaunchPlatformBadge.vue', import.meta.url), 'utf8')
+assert.match(badge, /@\/assets\/logo\.png/)
+assert.match(badge, /h-5 w-5[^"\n]*rounded-full/)
+assert.match(badge, /web:h-6 web:w-6/)
+assert.match(home, /agent-stage-navigation[^"\n]*w-full[^"\n]*px-3[^"\n]*web:mx-auto[^"\n]*web:max-w-\[1240px\]/)
 for (const token of [{}, { version: 17 }, { version: 10, isImport: 1 }, { version: 15, isImport: true }]) {
   assert.equal(isAgentLaunch(token, 56), false)
 }

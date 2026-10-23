@@ -604,7 +604,7 @@ const onCreate = (type: GlobalModalType) => {
     
     
     <div v-if="activeMainMenu === 'coin' && coinSubMenu === 'tagCoin' && tagCoinSource === 'agent'"
-      class="flex shrink-0 gap-2 px-3 pb-3" role="tablist" aria-label="Agent Launch stage">
+      class="agent-stage-navigation flex w-full shrink-0 gap-2 px-3 pb-3 web:mx-auto web:max-w-[1240px]" role="tablist" aria-label="Agent Launch stage">
       <button v-for="stage in agentLaunchStages" :key="stage.value" type="button" role="tab"
         :aria-selected="agentLaunchStage === stage.value"
         class="rounded-full border px-4 py-1.5 text-sm font-semibold"
