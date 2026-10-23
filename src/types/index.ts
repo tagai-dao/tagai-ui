@@ -104,6 +104,8 @@ export type Trade = {
 };
 
 export type FeedTrade = {
+  tradeMarketCapUsd?: number | null;
+  tradeMarketCapSource?: string;
   curationSourceId?: string
   logIndex?: number | string
 
