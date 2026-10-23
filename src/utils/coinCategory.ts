@@ -14,6 +14,16 @@ function isExternalAgentLaunch(community: CoinCategory, chainId: number) {
     && (community.isImport === true || Number(community.isImport) === 1)
 }
 
+/** Launchpad provenance is distinct from Agent Launch product membership. */
+export function getLaunchPlatform(community: CoinCategory, chainId: number): 'tagai' | 'gang' | null {
+  if (Number(community.chainId ?? community.chain_id ?? chainId) !== 56) return null
+  const token = String(community.token ?? '').toLowerCase()
+  if (token === '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc') return null // independent .ai token
+  if (token === '0x0c6302401aa5325c2e36f170f52c00b1d220b405') return 'gang'
+  return [15, 16].includes(Number(community.version))
+    && community.isImport !== true && Number(community.isImport) !== 1 ? 'tagai' : null
+}
+
 export function isGraduatedToken(community: CoinCategory, chainId = 56) {
   // Imported routes are API-validated DEX pools, not TagAI bonding curves.
   const importedDex = isExternalAgentLaunch(community, chainId)

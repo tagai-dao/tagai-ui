@@ -12,9 +12,20 @@ const display = JSON.parse(await readFile('src/utils/v14/rh-display-stock-assets
 const dir = await mkdtemp(join(tmpdir(), 'stock-logos-'))
 await build({ stdin: { contents: "export * from './src/utils/baskets/logos.ts'; export * from './src/utils/communityLogo.ts'", resolveDir: process.cwd() }, alias: { '@': join(process.cwd(), 'src') },
   bundle: true, platform: 'node', format: 'cjs', outfile: join(dir, 'logos.cjs'),
+  loader: { '.png': 'dataurl' },
   define: { 'import.meta.env': '{}' }, logLevel: 'silent' })
 const { presetBasketAssetLogo, resolveBasketAssetLogo, getCommunityLogoUrl } = createRequire(import.meta.url)(join(dir, 'logos.cjs'))
 after(() => rm(dir, { recursive: true, force: true }))
+
+test('.ai uses supplied artwork only for its canonical BSC contract, even with missing API artwork', async () => {
+  const token = '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc'
+  const image = getCommunityLogoUrl('', 200, { chainId: 56, token })
+  assert.match(image, /^data:image\/png;base64,/)
+  assert.equal(image, getCommunityLogoUrl('https://example.com/old.png', 200, { chainId: 56, token: token.toUpperCase() }))
+  assert.deepEqual(Buffer.from(image.split(',')[1], 'base64'), await readFile('src/assets/ai-token-logo.png'))
+  assert.equal(getCommunityLogoUrl('custom.png', 200, { chainId: 4663, token }), 'custom.png')
+  assert.equal(getCommunityLogoUrl('custom.png', 200, { chainId: 56, token: '0x' + '1'.repeat(40) }), 'custom.png')
+})
 
 test('RH and BSC stock/ETF contracts for the same company share artwork, including ticker aliases', () => {
   const company = asset => asset.ticker ?? ({ RDDTB: 'RDDT' })[asset.symbol]

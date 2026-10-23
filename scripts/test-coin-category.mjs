@@ -5,7 +5,17 @@ import ts from 'typescript'
 const source = readFileSync(new URL('../src/utils/coinCategory.ts', import.meta.url), 'utf8')
 const context = { exports: {} }
 runInNewContext(ts.transpile(source, { module: ts.ModuleKind.CommonJS }), context)
-const { isMemeEtf, isAgentLaunch, isGraduatedToken } = context.exports
+const { isMemeEtf, isAgentLaunch, isGraduatedToken, getLaunchPlatform } = context.exports
+const gangToken = '0x0c6302401aa5325c2e36f170f52c00b1d220b405'
+const aiToken = '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc'
+assert.equal(getLaunchPlatform({ token: gangToken, isImport: 1 }, 56), 'gang')
+assert.equal(getLaunchPlatform({ token: gangToken.toUpperCase(), isImport: 1 }, 56), 'gang')
+assert.equal(getLaunchPlatform({ token: gangToken }, 4663), null)
+assert.equal(getLaunchPlatform({ token: aiToken, version: 15 }, 56), null)
+assert.equal(getLaunchPlatform({ tick: 'GANG', token: '0x' + '1'.repeat(40), isImport: 1 }, 56), null)
+assert.equal(getLaunchPlatform({ version: 15 }, 56), 'tagai')
+assert.equal(getLaunchPlatform({ version: 16, isImport: true }, 56), null)
+assert.equal(getLaunchPlatform({}, 56), null)
 for (const [tick, token] of [
   ['.ai', '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc'],
   ['GANG', '0x0c6302401aa5325c2e36f170f52c00b1d220b405'],
@@ -46,11 +56,13 @@ for (const version of [9, 11, 12, 13, 14, 17]) assert.equal(isAgentLaunch({ vers
 const home = readFileSync(new URL('../src/views/HomeView.vue', import.meta.url), 'utf8')
 assert.equal((home.match(/:show-launch-platform="tagCoinSource === 'agent'"/g) || []).length, 3)
 const card = readFileSync(new URL('../src/components/home/TagListItem.vue', import.meta.url), 'utf8')
-assert.equal((card.match(/<LaunchPlatformBadge v-if="showTagaiLaunchPlatform"/g) || []).length, 2)
-assert.match(card, /props\.showLaunchPlatform\s*&& isAgentLaunch\(props\.community, chainStore\.activeChainId\)/)
+assert.equal((card.match(/<LaunchPlatformBadge v-if="launchPlatform" :platform="launchPlatform"/g) || []).length, 2)
+assert.match(card, /props\.showLaunchPlatform\s*\? getLaunchPlatform\(props\.community, chainStore\.activeChainId\) : null/)
+assert.match(card, /community\.listed && !\(showLaunchPlatform && community\.isImport\)/)
 assert.equal((card.match(/<slot name="logo"[^\n]+\n\s*<LaunchPlatformBadge/g) || []).length, 2)
 const badge = readFileSync(new URL('../src/components/common/LaunchPlatformBadge.vue', import.meta.url), 'utf8')
 assert.match(badge, /@\/assets\/logo\.png/)
+assert.match(badge, /@\/assets\/gang-launchpad\.svg/)
 assert.match(badge, /h-5 w-5[^"\n]*rounded-full/)
 assert.match(badge, /web:h-6 web:w-6/)
 assert.match(home, /agent-stage-navigation[^"\n]*w-full[^"\n]*px-3[^"\n]*web:mx-auto[^"\n]*web:max-w-\[1240px\]/)
