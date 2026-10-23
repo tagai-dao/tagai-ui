@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useV15BuyerEligibility } from '@/composables/useV15BuyerEligibility'
+import AgentTradeGuide from '@/components/common/AgentTradeGuide.vue'
+import { isAgentOnlyCurveToken } from '@/utils/agentOnlyToken'
 import { isIndexToken } from '@/utils/v14/chain'
 import { prepareTradeAttribution } from '@/utils/tradeCuration'
 import { curveTradeReports } from '@/utils/curveTradeReport'
@@ -72,6 +74,7 @@ const props = defineProps({
   commerceId: {type: String, default: ''},
   tweetId: {type: String, default: ''},
   showChart: {type: Boolean, default: true},
+  agentGuide: {type: Boolean, default: false},
   sellsman: {type: String, required: false, default: null}
 })
 const { t } = useI18n()
@@ -79,6 +82,9 @@ const blinkLoginPath = computed(() => props.loginReturnPath || (blinkIdFromRoute
 const showBlinkLogin = useBlinkLoginPrompt()
 const comStore = useCommunityStore()
 const chainStore = useChainStore()
+const showAgentGuide = computed(() => props.agentGuide
+  && isAgentOnlyCurveToken(comStore.currentSelectedCommunity, chainStore.activeChainId)
+  && !listed.value)
 const getTradeSellsman = async (onVerifiedSource?: (id: string) => void) => {
   const chainId = chainStore.activeChainId
   const sourcePath = route.fullPath
@@ -1058,7 +1064,8 @@ onUnmounted(() => {
       <div v-if="comStore.currentSelectedCommunity?.tick && comStore.currentSelectedCommunity?.tick !== '币安小说'"
            class="flex flex-col gap-2 w-full" :class="props.tick ? '' : 'web:w-[340px] web:min-w-[340px]'">
         <slot name="token-info" />
-        <div class="bg-surface py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full">
+        <AgentTradeGuide v-if="showAgentGuide" :token="comStore.currentSelectedCommunity.token" :tick="comStore.currentSelectedCommunity.tick" />
+        <div v-else class="bg-surface py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"
         >
