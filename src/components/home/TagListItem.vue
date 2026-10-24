@@ -19,10 +19,11 @@ const props = defineProps<{ community: Community; marketCapUsd?: number; priceUs
 const curationStore = useCurationStore()
 const stateStore = useStateStore()
 const chainStore = useChainStore()
-// The page only requests a platform badge. The token's chain-scoped issuance
-// protocol decides its identity; imported/unknown protocols never inherit TagAI.
-const launchPlatform = computed(() => props.showLaunchPlatform
-  ? getLaunchPlatform(props.community, chainStore.activeChainId) : null)
+// Flap provenance remains visible in Imported Token and All as well as Agent Launch.
+const launchPlatform = computed(() => {
+  const platform = getLaunchPlatform(props.community, chainStore.activeChainId)
+  return props.showLaunchPlatform || platform === 'flap' ? platform : null
+})
 
 const onlineSpace = computed(() =>
   curationStore.allSpaces.some(space => space.tick === props.community.tick),
@@ -79,7 +80,7 @@ const change = computed(() => {
         <slot name="logo" :size="80"><CommunityLogo :community="community" :logo="community.logo" :token="community.token" :chain-id="community.chainId ?? community.chain_id" :show-audio="onlineSpace" /></slot>
         <LaunchPlatformBadge v-if="launchPlatform" :platform="launchPlatform" />
         <div class="absolute w-full h-full -right-[3px] -bottom-[3px] overflow-hidden">
-          <div v-if="community.listed && !(showLaunchPlatform && community.isImport)" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
+          <div v-if="community.listed && !((showLaunchPlatform || launchPlatform) && community.isImport)" class="absolute bg-gradient-primary text-white font-bold px-6 text-sm shadow-tag-logo transform top-[80%] left-[80%] -translate-x-1/2 -translate-y-1/2 rotate-[-45deg] whitespace-nowrap">
             {{ community.isImport ? $t('imported') : $t('listed') }}
           </div>
         </div>

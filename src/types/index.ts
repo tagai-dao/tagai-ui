@@ -369,6 +369,9 @@ export type OnchainTokenInfo = {
 }
 
 export type Community = OnchainTokenInfo & {
+  /** Server-verified issuance provenance, independent of trading ABI and import status. */
+  launchProtocol?: 'flap-id-agent-curve';
+  flapAgentMarket?: string;
   name: string;
   description: string;
   logo: string;

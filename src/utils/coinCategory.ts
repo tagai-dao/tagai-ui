@@ -1,6 +1,6 @@
 // Product grouping is independent of the ABI used to trade a token.
 type CoinCategory = { token?: unknown; version?: unknown; isImport?: unknown; chainId?: unknown; chain_id?: unknown;
-  pair?: unknown; listed?: unknown; listedBlock?: unknown; listedDayNumber?: unknown }
+  pair?: unknown; listed?: unknown; listedBlock?: unknown; listedDayNumber?: unknown; launchProtocol?: unknown }
 
 // Explicit product membership, scoped by chain and full contract, not ticker.
 const externalAgentTokens = new Set([
@@ -10,13 +10,16 @@ const externalAgentTokens = new Set([
 
 function isExternalAgentLaunch(community: CoinCategory, chainId: number) {
   return Number(community.chainId ?? community.chain_id ?? chainId) === 56
-    && externalAgentTokens.has(String(community.token ?? '').toLowerCase())
+    && (externalAgentTokens.has(String(community.token ?? '').toLowerCase())
+      || community.launchProtocol === 'flap-id-agent-curve')
     && (community.isImport === true || Number(community.isImport) === 1)
 }
 
 /** Launchpad provenance is distinct from Agent Launch product membership. */
-export function getLaunchPlatform(community: CoinCategory, chainId: number): 'tagai' | 'gang' | null {
+export function getLaunchPlatform(community: CoinCategory, chainId: number): 'tagai' | 'gang' | 'flap' | null {
   if (Number(community.chainId ?? community.chain_id ?? chainId) !== 56) return null
+  if (community.launchProtocol === 'flap-id-agent-curve'
+    && (community.isImport === true || Number(community.isImport) === 1)) return 'flap'
   const token = String(community.token ?? '').toLowerCase()
   if (token === '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc') return null // independent .ai token
   if (token === '0x0c6302401aa5325c2e36f170f52c00b1d220b405') return 'gang'
