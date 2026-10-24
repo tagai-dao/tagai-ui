@@ -14,11 +14,14 @@ import CommunityLogo from '@/components/common/CommunityLogo.vue'
 import LaunchPlatformBadge from '@/components/common/LaunchPlatformBadge.vue'
 import { getLaunchPlatform } from '@/utils/coinCategory'
 import { useChainStore } from '@/stores/chain'
+import TokenDisplayName from '@/components/common/TokenDisplayName.vue'
+import { tokenDisplayName } from '@/utils/tokenDisplayName'
 
 const props = defineProps<{ community: Community; marketCapUsd?: number; priceUsd?: number; metricLabel?: string; showLaunchPlatform?: boolean }>()
 const curationStore = useCurationStore()
 const stateStore = useStateStore()
 const chainStore = useChainStore()
+const displayName = computed(() => tokenDisplayName(props.community, chainStore.activeChainId))
 // Flap provenance remains visible in Imported Token and All as well as Agent Launch.
 const launchPlatform = computed(() => {
   const platform = getLaunchPlatform(props.community, chainStore.activeChainId)
@@ -61,7 +64,7 @@ const change = computed(() => {
           <div v-if="$slots['logo-badge']" class="absolute -right-1 -bottom-1 z-10" @click.stop @keydown.stop><slot name="logo-badge" /></div>
         </div>
         <div class="min-w-0">
-          <h3 class="truncate text-base font-semibold text-content">{{ community.name || community.tick }}</h3>
+          <h3 class="truncate text-base font-semibold text-content"><TokenDisplayName :name="displayName.suffix ? displayName.name : (community.name || community.tick)" :suffix="displayName.suffix" /></h3>
           <p class="mt-0.5 text-sm font-medium text-grey-64">{{ marketCapUsd > 0 ? formatUsdCompact(marketCapUsd) : '—' }} {{ metricLabel || 'MC' }}</p>
         </div>
       </div>
@@ -88,7 +91,7 @@ const change = computed(() => {
       </div>
       <div class="flex-1 flex flex-col justify-between truncate">
         <div class="flex gap-x-2 items-end flex-wrap">
-          <span class="text-grey-normal text-h2 font-bold leading-6" :class="community.listed ? 'text-orange-normal' : ''">{{ community.tick }}</span>
+          <TokenDisplayName class="text-grey-normal text-h2 font-bold leading-6" :class="community.listed ? 'text-orange-normal' : ''" :name="displayName.name" :suffix="displayName.suffix" />
           <div class="flex-1 flex justify-end mt-1">
             <div class="flex items-end gap-1.5">
               <span class="font-normal italic text-grey-64 leading-5 text-sm">{{ metricLabel || $t('marketCap') }}</span>
