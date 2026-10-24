@@ -8,6 +8,16 @@ runInNewContext(ts.transpile(source, { module: ts.ModuleKind.CommonJS }), contex
 const { isMemeEtf, isAgentLaunch, isGraduatedToken, getLaunchPlatform } = context.exports
 const gangToken = '0x0c6302401aa5325c2e36f170f52c00b1d220b405'
 const aiToken = '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc'
+const flapToken = { token: '0xb0e974ee58899dd77eb13c2c0a0adefeb30f7777', isImport: 1,
+  launchProtocol: 'flap-id-agent-curve', pair: '0x' + '1'.repeat(40) }
+assert.equal(isAgentLaunch(flapToken, 56), true)
+assert.equal(isGraduatedToken(flapToken, 56), true)
+assert.equal(isGraduatedToken({ ...flapToken, pair: '' }, 56), false)
+assert.equal(getLaunchPlatform(flapToken, 56), 'flap')
+assert.equal(isAgentLaunch({ ...flapToken, launchProtocol: undefined }, 56), false)
+assert.equal(isAgentLaunch(flapToken, 4663), false)
+assert.equal(getLaunchPlatform(flapToken, 4663), null)
+assert.equal(getLaunchPlatform({ ...flapToken, isImport: 0 }, 56), null)
 assert.equal(getLaunchPlatform({ token: gangToken, isImport: 1 }, 56), 'gang')
 assert.equal(getLaunchPlatform({ token: gangToken.toUpperCase(), isImport: 1 }, 56), 'gang')
 assert.equal(getLaunchPlatform({ token: gangToken }, 4663), null)
@@ -57,12 +67,14 @@ const home = readFileSync(new URL('../src/views/HomeView.vue', import.meta.url),
 assert.equal((home.match(/:show-launch-platform="tagCoinSource === 'agent'"/g) || []).length, 3)
 const card = readFileSync(new URL('../src/components/home/TagListItem.vue', import.meta.url), 'utf8')
 assert.equal((card.match(/<LaunchPlatformBadge v-if="launchPlatform" :platform="launchPlatform"/g) || []).length, 2)
-assert.match(card, /props\.showLaunchPlatform\s*\? getLaunchPlatform\(props\.community, chainStore\.activeChainId\) : null/)
-assert.match(card, /community\.listed && !\(showLaunchPlatform && community\.isImport\)/)
+assert.match(card, /getLaunchPlatform\(props\.community, chainStore\.activeChainId\)/)
+assert.match(card, /props\.showLaunchPlatform \|\| platform === 'flap' \? platform : null/)
+assert.match(card, /community\.listed && !\(\(showLaunchPlatform \|\| launchPlatform\) && community\.isImport\)/)
 assert.equal((card.match(/<slot name="logo"[^\n]+\n\s*<LaunchPlatformBadge/g) || []).length, 2)
 const badge = readFileSync(new URL('../src/components/common/LaunchPlatformBadge.vue', import.meta.url), 'utf8')
 assert.match(badge, /@\/assets\/logo\.png/)
 assert.match(badge, /@\/assets\/gang-launchpad\.svg/)
+assert.match(badge, /@\/assets\/flap-launchpad\.svg/)
 assert.match(badge, /h-5 w-5[^"\n]*rounded-full/)
 assert.match(badge, /web:h-6 web:w-6/)
 assert.match(home, /agent-stage-navigation[^"\n]*w-full[^"\n]*px-3[^"\n]*web:mx-auto[^"\n]*web:max-w-\[1240px\]/)
