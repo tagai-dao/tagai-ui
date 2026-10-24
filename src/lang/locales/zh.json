@@ -912,9 +912,9 @@
   },
   "onboard": {
     "title": "初来 TagAI？",
-    "step1": "发推带上 #TagAI + 社区标签，内容直接上链",
-    "step2": "策展优质帖子，赚取 TagCoin 奖励",
-    "step3": "交易 TagCoin，或与社区一起参与预测市场",
+    "step1": "发行多币股流动性代币，并使用 .ai Agent ID 和 Agent 购买代币",
+    "step2": "创建智能投资组合，表达你的观点",
+    "step3": "参与社交交易、币股流动性提供、社交分享，并获得奖励",
     "learnMore": "了解更多",
     "dismiss": "知道了"
   },
