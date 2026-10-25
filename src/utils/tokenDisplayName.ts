@@ -1,6 +1,6 @@
 type TokenIdentity = {
   tick?: unknown; token?: unknown; isImport?: unknown; launchProtocol?: unknown;
-  chainId?: unknown; chain_id?: unknown;
+  agentTokenSymbol?: unknown; chainId?: unknown; chain_id?: unknown;
 }
 
 // These two imported symbols were sanitized to "ai" for the unique community tick.
@@ -14,10 +14,12 @@ export function tokenDisplayName(community: TokenIdentity, activeChainId: number
   const tick = String(community.tick ?? '')
   const unchanged = { name: tick, suffix: '' }
   if (Number(community.chainId ?? community.chain_id ?? activeChainId) !== 56
-    || community.launchProtocol !== 'flap-id-agent-curve'
+    || !['flap-id-agent-curve', 'four-agent-id'].includes(String(community.launchProtocol))
     || !(community.isImport === true || Number(community.isImport) === 1)) return unchanged
   const token = String(community.token ?? '').toLowerCase()
   const parts = /^(.+)_([a-f0-9]{4,8})$/i.exec(tick)
-  if (!/^0x[a-f0-9]{40}$/.test(token) || !parts || !token.endsWith(parts[2]!.toLowerCase())) return unchanged
-  return { name: originalSymbols[token] || parts[1]!, suffix: `@${parts[2]}` }
+  if (!/^0x[a-f0-9]{40}$/.test(token)) return unchanged
+  const symbol = community.launchProtocol === 'four-agent-id' ? String(community.agentTokenSymbol || '') : ''
+  if (!parts || !token.endsWith(parts[2]!.toLowerCase())) return symbol ? { name: symbol, suffix: '' } : unchanged
+  return { name: originalSymbols[token] || (community.launchProtocol === 'four-agent-id' && String(community.agentTokenSymbol || '')) || parts[1]!, suffix: `@${parts[2]}` }
 }

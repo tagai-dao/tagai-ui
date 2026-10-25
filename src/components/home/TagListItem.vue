@@ -25,7 +25,7 @@ const displayName = computed(() => tokenDisplayName(props.community, chainStore.
 // Flap provenance remains visible in Imported Token and All as well as Agent Launch.
 const launchPlatform = computed(() => {
   const platform = getLaunchPlatform(props.community, chainStore.activeChainId)
-  return props.showLaunchPlatform || platform === 'flap' ? platform : null
+  return props.showLaunchPlatform || ['flap', 'four'].includes(platform || '') ? platform : null
 })
 
 const onlineSpace = computed(() =>

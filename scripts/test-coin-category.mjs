@@ -68,7 +68,7 @@ assert.equal((home.match(/:show-launch-platform="tagCoinSource === 'agent'"/g) |
 const card = readFileSync(new URL('../src/components/home/TagListItem.vue', import.meta.url), 'utf8')
 assert.equal((card.match(/<LaunchPlatformBadge v-if="launchPlatform" :platform="launchPlatform"/g) || []).length, 2)
 assert.match(card, /getLaunchPlatform\(props\.community, chainStore\.activeChainId\)/)
-assert.match(card, /props\.showLaunchPlatform \|\| platform === 'flap' \? platform : null/)
+assert.match(card, /props\.showLaunchPlatform \|\| \['flap', 'four'\]\.includes/)
 assert.match(card, /community\.listed && !\(\(showLaunchPlatform \|\| launchPlatform\) && community\.isImport\)/)
 assert.equal((card.match(/<slot name="logo"[^\n]+\n\s*<LaunchPlatformBadge/g) || []).length, 2)
 const badge = readFileSync(new URL('../src/components/common/LaunchPlatformBadge.vue', import.meta.url), 'utf8')
@@ -83,3 +83,11 @@ for (const token of [{}, { version: 17 }, { version: 10, isImport: 1 }, { versio
 }
 assert.match(home, /value: 'all'[\s\S]*value: 'agent'[\s\S]*value: 'memeetf'[\s\S]*value: 'launch'[\s\S]*value: 'import'/)
 console.log('Coin category chain, version and imported-token checks passed')
+
+const four = { token: '0x5f6a1ce1733fc4834a526798c0e8cf85137effff', isImport: 1, launchProtocol: 'four-agent-id', pair: '0x' + '1'.repeat(40) }
+assert.equal(isAgentLaunch(four, 56), true)
+assert.equal(isGraduatedToken(four, 56), true)
+assert.equal(getLaunchPlatform(four, 56), 'four')
+assert.equal(isAgentLaunch(four, 4663), false)
+assert.equal(getLaunchPlatform(four, 4663), null)
+assert.equal(isAgentLaunch({ ...four, launchProtocol: undefined }, 56), false)
