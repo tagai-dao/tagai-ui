@@ -82,6 +82,7 @@ function openDetails() {
         <template #avatar-img>
           <SafeAvatar
             :src="trade.profile"
+            :wallet-address="trade.trader"
             :seed="trade.twitterId || trade.twitterUsername || trade.trader"
             class="h-10 w-10 min-w-10 cursor-pointer rounded-full bg-color2A object-cover"
           />

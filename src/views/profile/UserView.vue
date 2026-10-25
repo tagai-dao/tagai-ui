@@ -160,7 +160,7 @@ onMounted(async () => {
     <div class="bg-white py-3 px-3 rounded-2xl mx-3">
       <div class="flex gap-2 items-center">
         <SafeAvatar class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-             :src="userInfo?.profile" :seed="userInfo?.twitterId || userInfo?.twitterUsername || userInfo?.ethAddr" />
+             :src="userInfo?.profile" :wallet-address="userInfo?.ethAddr" :seed="userInfo?.twitterId || userInfo?.twitterUsername || userInfo?.ethAddr" />
         <div class="h-full flex-1">
           <div class="text-h3 flex items-center gap-1">
             <span>{{ userInfo?.twitterName || userInfo?.twitterUsername }}</span>

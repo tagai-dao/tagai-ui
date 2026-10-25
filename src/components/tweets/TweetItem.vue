@@ -150,7 +150,7 @@ onUnmounted(() => {
                     :wallet-type="tweet.walletType" :account-sources="tweet.accountSources"
                     :steem-id="tweet.steemId" :teleported="true" :credit="tweet.credit">
           <template #avatar-img>
-            <SafeAvatar :src="profileImg" :seed="tweet.twitterId || tweet.twitterUsername || tweet.ethAddr"
+            <SafeAvatar :src="profileImg" :wallet-address="tweet.ethAddr" :seed="tweet.twitterId || tweet.twitterUsername || tweet.ethAddr"
               class="h-10 w-10 min-w-10 rounded-full cursor-pointer object-cover bg-color2A"
               @click.stop="onUserAvatar" />
           </template>

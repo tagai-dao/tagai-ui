@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import AgentIdAtlasLink from '@/components/common/AgentIdAtlasLink.vue'
 import { ref, computed } from 'vue'
 import DownloadAppButton from '@/components/common/DownloadAppButton.vue'
@@ -203,12 +204,14 @@ const handleWalletClick = (e?: Event) => {
         @click="handleProfileClick"
       >
         <div class="w-6 h-6 mr-0 desk:mr-3 flex items-center justify-center">
-          <img 
-            v-if="accStore.getAccountInfo?.profile" 
+          <SafeAvatar
+            v-if="accStore.getAccountInfo"
             class="w-6 h-6 rounded-full transition-all" 
-            :src="accStore.getAccountInfo.profile.replace('normal', '200x200')" 
+            :src="accStore.getAccountInfo.profile"
+            :wallet-address="accStore.getAccountInfo.ethAddr"
+            :seed="accStore.getAccountInfo.twitterId"
             alt=""
-          >
+          />
           <img 
             v-else-if="accStore.getAccountInfo"
             class="w-6 h-6 rounded-full object-cover transition-all"

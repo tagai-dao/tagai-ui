@@ -123,6 +123,7 @@ onUnmounted(() => {
                 v-if="isRegisteredTrader(token)"
                 class="h-5 w-5 min-w-5 rounded-full object-cover"
                 :src="token.profile"
+                :wallet-address="token.trader"
                 :seed="token.twitterId || token.twitterUsername || token.trader"
                 :alt="traderName(token)"
               />

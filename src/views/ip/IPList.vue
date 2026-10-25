@@ -248,7 +248,7 @@ onBeforeUnmount(() => {
             >
               <div class="card__header">
                 <div class="identity">
-                  <SafeAvatar :src="ip.profile" :seed="ip.twitterId || ip.twitterUsername || ip.ethAddr"
+                  <SafeAvatar :src="ip.profile" :wallet-address="ip.ethAddr" :seed="ip.twitterId || ip.twitterUsername || ip.ethAddr"
                     :alt="ip.twitterName || ip.twitterUsername || ''" class="identity__avatar" />
                   <div>
                     <div class="identity__name">

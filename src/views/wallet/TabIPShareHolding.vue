@@ -194,6 +194,7 @@ onMounted(() => {
             <SafeAvatar
               class="w-10 h-10 min-w-10 min-h-10 rounded-full border-2 border-white cursor-pointer"
               :src="ip.profile"
+              :wallet-address="ip.ethAddr"
               :seed="ip.twitterId || ip.twitterUsername || ip.ethAddr"
             />
             <div class="flex-1 flex flex-col gap-1">
