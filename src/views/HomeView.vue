@@ -69,7 +69,7 @@ const activeMainMenu = computed(() => stateStore.activeMainMenu)
 const tagSubMenu = computed(() => stateStore.tagSubMenu)
 const coinSubMenu = computed(() => stateStore.coinSubMenu)
 type TagCoinSource = TagCoinSourceFilter
-const tagCoinSource = ref<TagCoinSource>('all')
+const tagCoinSource = ref<TagCoinSource>(chainStore.activeChainId === 56 ? 'agent' : 'all')
 type AgentLaunchStage = 'all' | 'new' | 'graduated'
 const agentLaunchStage = ref<AgentLaunchStage>('all')
 const agentLaunchStages: Array<{ value: AgentLaunchStage; label: string }> = [
@@ -447,6 +447,8 @@ watch([activeMainMenu, coinSubMenu], () => {
 })
 
 watch(() => chainStore.activeChainId, () => {
+  tagCoinSource.value = chainStore.activeChainId === 56 ? 'agent' : 'all'
+  agentLaunchStage.value = 'all'
   clearCoinLists()
   bStockCommunities.value = []
   bStocksLoaded.value = false
