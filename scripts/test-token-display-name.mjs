@@ -28,3 +28,8 @@ check(identity, identity.tick, '', 4663)
 check({ ...identity, chainId: 56 }, 'BIBI', '@0F7777', 4663)
 assert.equal(identity.tick, 'BIBI_0F7777') // navigation/registration identity stays unchanged
 console.log('Token display names: original symbols, exact suffix identity and chain/protocol boundaries passed')
+
+check({ ...identity, launchProtocol: 'four-agent-id', token: '0x478318f7ae11140a30c6cd1940b9f9069b9f4444', tick: 'ai_9F4444', agentTokenSymbol: '.ai' }, '.ai', '@9F4444')
+check({ ...identity, launchProtocol: 'four-agent-id', token: '0x967b26d369571a8c5a035aaac1f4b1594287ffff', tick: 'BIBI_87FFFF' }, 'BIBI', '@87FFFF')
+
+check({ ...identity, launchProtocol: 'four-agent-id', tick: 'ai', agentTokenSymbol: '.ai' }, '.ai', '')
