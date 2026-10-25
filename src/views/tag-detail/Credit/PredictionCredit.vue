@@ -274,6 +274,7 @@ onBeforeUnmount(() => {
           <template #avatar-img>
             <SafeAvatar
               :src="holder.profile"
+              :wallet-address="holder.ethAddr"
               :seed="holder.twitterId || holder.twitterUsername || holder.ethAddr"
               class="w-5 h-5 min-w-5 rounded-full cursor-pointer bg-color2A"
               @click.stop="onUserAvatar"

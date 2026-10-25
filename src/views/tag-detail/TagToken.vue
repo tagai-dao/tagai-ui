@@ -1083,7 +1083,7 @@ onBeforeUnmount(() => {
                     :eth-addr="holder.ethAddr" :credit="0"
                     :steem-id="holder.steemId" :teleported="true">
               <template #avatar-img>
-                <SafeAvatar :src="holder.profile"
+                <SafeAvatar :src="holder.profile" :wallet-address="holder.ethAddr"
                  :seed="holder.twitterId || holder.twitterUsername || holder.ethAddr"
                  class="w-4 h-4 min-w-4 rounded-full cursor-pointer bg-color2A"
                  @click.stop="onUserAvatar" />

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import { ref, onMounted } from "vue";
 import { getIPShareList } from '@/apis/api'
 import { formatPrice, formatAmount } from '@/utils/helper'
@@ -203,12 +204,12 @@ onMounted(() => {
           @click="gotoUserPage(ip)"
         >
           <div class="flex-1 max-w-1/2 md:max-w-2/3 flex items-center gap-3">
-            <img
+            <SafeAvatar
               class="w-10 h-10 min-w-10 min-h-10 rounded-full border-2 border-white cursor-pointer"
               :src="profile(ip)"
-              @error="replaceEmptyProfile"
+              :wallet-address="ip.ethAddr"
               alt=""
-            >
+            />
             <div class="flex flex-col gap-1 truncate">
               <div class="text-black font-bold text-h3 leading-5 truncate">{{ ip.twitterName || 'Unknown' }}</div>
               <div class="text-12px leading-4 text-grey-8d">@{{ ip.twitterUsername || 'unknown' }}</div>

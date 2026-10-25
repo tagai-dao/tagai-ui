@@ -164,7 +164,7 @@ onMounted(() => {
             Address not registed
         </div>
         <div v-else class="flex items-center gap-x-1">
-          <SafeAvatar :src="props.profileImg" :seed="props.twitterId || props.username || props.ethAddr"
+          <SafeAvatar :src="props.profileImg" :wallet-address="props.ethAddr" :seed="props.twitterId || props.username || props.ethAddr"
             class="h-9 w-9 object-cover rounded-full cursor-pointer" @click.stop="gotoUser" />
           <div class="flex-1 flex flex-col gap-y-4px">
             <div class="flex items-end whitespace-nowrap items-center gap-2">

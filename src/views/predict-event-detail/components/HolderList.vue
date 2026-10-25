@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import { computed, onActivated, ref } from 'vue'
 import type { EventPredictData, FPMMUserHolding } from '@/types'
 import { getFPMMUserHoldings } from '@/apis/api'
@@ -183,7 +184,7 @@ onActivated(() => {
                       v-show="holder.ethAddr != market.marketMaker"
                       class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100"
                     >
-                      <img :src="holder.profile || defaultAvatar" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
+                        <SafeAvatar :src="holder.profile || defaultAvatar" :wallet-address="holder.ethAddr" class="w-8 h-8 rounded-full bg-gray-200 object-cover" />
                       <div class="flex-1 min-w-0">
                         <div v-if="holder.twitterId" class="font-bold text-sm text-gray-900 truncate">{{ holder.twitterName || holder.twitterUsername || 'Unknown' }}</div>
                         <div v-else class="text-xs text-gray-500 font-mono">{{ formatAddress(holder.ethAddr) }}</div>
@@ -201,7 +202,7 @@ onActivated(() => {
                       v-show="holder.ethAddr != market.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100">
                            <div class="relative">
-                              <img :src="holder.profile || defaultAvatar" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
+                              <SafeAvatar :src="holder.profile || defaultAvatar" :wallet-address="holder.ethAddr" class="w-8 h-8 rounded-full bg-gray-200 object-cover" />
                               <!-- <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center rounded-full font-bold border border-white">
                                   {{ idx + 1 }}
                               </div> -->
@@ -226,7 +227,7 @@ onActivated(() => {
                        v-show="holder.ethAddr != market.marketMaker"
                            class="flex items-center gap-3 p-2 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
                           <div class="relative">
-                              <img :src="holder.profile || defaultAvatar" class="w-8 h-8 rounded-full bg-gray-200 object-cover">
+                              <SafeAvatar :src="holder.profile || defaultAvatar" :wallet-address="holder.ethAddr" class="w-8 h-8 rounded-full bg-gray-200 object-cover" />
                               <!-- <div class="absolute -top-1 -right-1 w-4 h-4 bg-blue-100 text-blue-600 text-[10px] flex items-center justify-center rounded-full font-bold border border-white">
                                   {{ idx + 1 }}
                               </div> -->

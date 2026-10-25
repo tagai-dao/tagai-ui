@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import type {IpShareUser, Tweet} from "@/types";
 import {getIPShareList} from "@/apis/api";
 import {handleErrorTip} from "@/utils/notify";
@@ -93,10 +94,9 @@ onMounted(async () => {
                       :twitter-id="following.twitterId" teleported
                       @click.stop="gotoUserPage(following)">
             <template #avatar-img>
-              <img v-if="profile(following)" class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
-                   :src="profile(following) ?? ''" alt="">
-              <TagaiDefaultAvatar v-else :seed="following.twitterId || following.twitterUsername || following.ethAddr"
-                class="h-10 w-10 min-w-10 cursor-pointer" />
+              <SafeAvatar class="w-10 h-10 min-w-10 rounded-full cursor-pointer bg-color2A"
+                   :src="profile(following) ?? ''" :wallet-address="following.ethAddr"
+                   :seed="following.twitterId || following.twitterUsername || following.ethAddr" />
             </template>
           </UserAvatar>
           <div class="flex-1 max-w-[2/3] truncate">

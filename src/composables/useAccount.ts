@@ -19,6 +19,7 @@ import { getTokenOnchainInfo } from "@/utils/pump";
 import { useChainStore } from "@/stores/chain";
 import { getChainDeployment } from "@/config/chains";
 import { calculateWalletUsd } from '@/utils/walletValue.mjs'
+import { useAgentIdAvatar } from '@/composables/useAgentIdAvatar'
 
 export enum AccountAuthType {
     TWITTER,
@@ -40,9 +41,10 @@ export const useAccount = () => {
         return accStore.getAccountInfo?.ethAddr != accStore.ethConnectAddress
     })
 
+    const agentProfile = useAgentIdAvatar(computed(() => useAccountStore().getAccountInfo?.ethAddr))
     const profile = computed(() => {
         const account = useAccountStore().getAccountInfo
-        return account?.profile?.replace('normal', '200x200')
+        return agentProfile.value || account?.profile?.replace('normal', '200x200')
     })
 
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 
 import { formatAddress, formatAmount, parseTimestamp } from "@/utils/helper";
 import { onMounted, ref, type PropType } from "vue";
@@ -130,7 +131,7 @@ onMounted(() => {
                       :eth-addr="twitterTipRecord.fromEthAddr" :twitter-id="twitterTipRecord.fromTwitterId"
                       :steem-id="''" :teleported="true" :credit="0">
                       <template #avatar-img>
-                          <img class="w-7 h-7 min-w-7 rounded-full cursor-pointer bg-color2A" :src="twitterTipRecord.fromProfile" alt="">
+                          <SafeAvatar class="w-7 h-7 min-w-7 rounded-full cursor-pointer bg-color2A" :src="twitterTipRecord.fromProfile" :wallet-address="twitterTipRecord.fromEthAddr" />
                       </template>
                     </UserAvatar>
                     <UserAvatar class="-ml-[6px] z-9" :profile-img="twitterTipRecord.toProfile" :name="twitterTipRecord.toTwitterName" :username="twitterTipRecord.toTwitterUsername"
@@ -138,7 +139,7 @@ onMounted(() => {
                       :eth-addr="twitterTipRecord.toEthAddr" :twitter-id="twitterTipRecord.toTwitterId"
                       :steem-id="''" :teleported="true" :credit="0">
                       <template #avatar-img>
-                          <img class="w-7 h-7 min-w-7 rounded-full cursor-pointer bg-color2A" :src="twitterTipRecord.toProfile" alt="">
+                          <SafeAvatar class="w-7 h-7 min-w-7 rounded-full cursor-pointer bg-color2A" :src="twitterTipRecord.toProfile" :wallet-address="twitterTipRecord.toEthAddr" />
                       </template>
                     </UserAvatar>
                   </div>

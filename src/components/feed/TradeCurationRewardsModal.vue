@@ -61,7 +61,7 @@ onUnmounted(() => { generation++ })
       <div v-for="record in records" :key="record.twitterId" class="mb-2 rounded-xl bg-surface-2 p-3">
         <div class="flex items-center gap-2.5">
           <UserAvatar :twitter-id="record.twitterId" :profile-img="record.profile" :name="record.twitterName" :username="record.twitterUsername" :eth-addr="record.wallet" :steem-id="''" :followers="undefined" :followings="undefined" :credit="undefined" :teleported="true">
-            <template #avatar-img><SafeAvatar :src="record.profile" :seed="record.twitterId" class="h-8 w-8 min-w-8 rounded-full object-cover" /></template>
+            <template #avatar-img><SafeAvatar :src="record.profile" :wallet-address="record.wallet" :seed="record.twitterId" class="h-8 w-8 min-w-8 rounded-full object-cover" /></template>
           </UserAvatar>
           <div class="min-w-0 flex-1"><div class="truncate text-sm font-semibold">{{ record.twitterName || record.twitterUsername || record.twitterId }}</div><div class="truncate text-xs text-grey-64">{{ time(record.lastBuyTime) }}</div></div>
           <div class="min-w-0 max-w-[45%] text-right"><div class="text-xs text-grey-64">{{ t('tradeCuration.buyerReward') }}</div><div class="break-words text-sm font-semibold text-orange-normal" :title="record.rewardAmount">{{ formatTokenAmount(record.rewardAmount) }} {{ params?.tick }}</div><div class="text-xs text-grey-64">{{ usd(record.rewardAmount) }}</div></div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import { ref, onActivated } from 'vue'
 import { formatAddress, formatAmount, formatPrice } from '@/utils/helper'
 import { getFPMMTradeList } from '@/apis/api'
@@ -115,7 +116,7 @@ onActivated(() => {
             class="flex items-center gap-3 p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer text-sm"
           >
             <!-- Avatar -->
-            <img :src="item.profile || defaultAvatar" class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 object-cover">
+            <SafeAvatar :src="item.profile || defaultAvatar" :wallet-address="item.ethAddr" class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0 object-cover" />
             
             <!-- Main Content -->
             <div class="flex-1 min-w-0 flex flex-wrap items-center gap-1" v-if="item.opType === 1">
