@@ -66,6 +66,19 @@ function setup(savedDust = 'false', chainId = 4663) {
   return { model, calls, hooks, shared, chain, state, fixture, snapshots, errors, dispose: () => scope.stop() }
 }
 
+test('BSC defaults to Coin / Agent Launch / All; RH retains Coin / All', async t => {
+  for (const [chainId, source] of [[56, 'agent'], [4663, 'all']]) {
+    const f = setup('false', chainId); t.after(f.dispose)
+    assert.equal(f.state.activeMainMenu, 'coin')
+    assert.equal(f.state.coinSubMenu, 'tagCoin')
+    assert.equal(f.model.tagCoinSource.value, source)
+    assert.equal(f.model.agentLaunchStage.value, 'all')
+    const request = f.model.refresh()
+    assert.equal(f.calls[0].source, source)
+    f.calls[0].resolve([]); await request
+  }
+})
+
 test('small-cap tokens remain visible with a previously enabled dust filter', t => {
   const f = setup('true'); t.after(f.dispose)
   const rows = [token('small'), { ...token('zero'), marketCap: '0' }]
@@ -102,6 +115,7 @@ test('manual pull refresh ends on both success and failure', async t => {
 
 test('category switches filter cached rows and request the selected source', async t => {
   const f = setup('false', 56); t.after(f.dispose)
+  f.model.tagCoinSource.value = 'all'
   const rows = [
     { ...token('legacy'), version: 12 },
     { ...token('etf'), version: 13 },
@@ -142,8 +156,9 @@ test('Agent stages request independent catalogues, isolate snapshots and discard
     { ...token('dex'), version: 16, listed: true },
     { ...token('block'), version: 15, listed: false, listedBlock: 12 },
   ]
-  f.model.switchTagCoinSource('agent')
+  const initial = f.model.refresh()
   f.calls.at(-1).resolve(rows); await flush()
+  await initial
   assert.equal(f.model.filterTagCoins(rows).length, 3)
   f.model.switchAgentLaunchStage('new')
   const stale = f.calls.at(-1)
