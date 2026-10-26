@@ -44,6 +44,7 @@ const pumpContract = [
 const getActivePumpAddress = (version: number): string | undefined => {
     const deployment = useChainStore().deployment
     if (version === 9) return deployment.contracts.pump9
+    if (version === 17) return deployment.contracts.pump17
     if (version === 16) return deployment.contracts.pump16
     if (version === 15) return deployment.contracts.pump15
     if (version === 14) return deployment.contracts.pump14
@@ -300,8 +301,9 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
     const userAddress = useAccountStore().ethConnectAddress as `0x${string}`;
     const version = creationVersionForMode(useChainStore().activeChainId, createParms.binanceWalletOnly ?? false);
     const createPump = getCreatePumpDeployment(version);
-    if ([14, 15, 16].includes(createPump.version)) validateIndexConfig(createParms.indexConfig);
-    const options = [14, 15, 16].includes(createPump.version) ? await creationOptions(userAddress, createPump.chainId, version) : undefined;
+    if (version === 17 && (createParms.initAmount ?? 0n) > 10_000_000n * 10n ** 18n) throw new Error('V17_BUY_LIMIT_EXCEEDED');
+    if ([14, 15, 16, 17].includes(createPump.version)) validateIndexConfig(createParms.indexConfig);
+    const options = [14, 15, 16, 17].includes(createPump.version) ? await creationOptions(userAddress, createPump.chainId, version) : undefined;
     const optionalPools = options ? tradePoolConfig(createParms.tradeRewardRatioBps ?? 0, options) : [];
     if (options && createParms.indexConfig!.constituentAssets.some(asset => !options.assets.some(a => a.address.toLowerCase() === asset.toLowerCase()))) throw new Error('Constituent approval changed');
     const salt = await findPumpDeploySalt(userAddress, version);
@@ -312,7 +314,7 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
     let hash = await writeContract({
         contractName: createPump.contractName,
         functionName: 'createToken',
-        args: [14, 15, 16].includes(createPump.version)
+        args: [14, 15, 16, 17].includes(createPump.version)
             ? optionalPools.length ? [createParms.tick, salt, createParms.indexConfig, optionalPools] : [createParms.tick, salt, createParms.indexConfig]
             : [createParms.tick, salt],
         value: initEth + createFee,
@@ -332,7 +334,7 @@ export const createCoin = async (createParms: CreateCommunity, onSubmitted?: (ha
 
 /** 当前链最新 Pump 创建固定费用：Pump + Nutbox Committee + 可选 IPShare 创建费。 */
 export const getCreatePumpFee = async (userAddress: `0x${string}`, componentCount = 1): Promise<bigint> => {
-    if ([14, 15, 16].includes(getCreatePumpDeployment().version)) {
+    if ([14, 15, 16, 17].includes(getCreatePumpDeployment().version)) {
         if (!Number.isInteger(componentCount) || componentCount < 1 || componentCount > 4) throw new Error('Choose 1–4 components');
         return creationFee(await creationOptions(userAddress, useChainStore().activeChainId), componentCount);
     }
@@ -1372,8 +1374,9 @@ export const transferToken = async (token: string, to: string, amount: bigint, i
     return hash;
 }
 
-export const calculateInitEth = async (amount: bigint, version?: 14 | 15 | 16) => {
-    const { contractName } = getCreatePumpDeployment(version)
+export const calculateInitEth = async (amount: bigint, version?: 14 | 15 | 17) => {
+    const { contractName, version: selectedVersion } = getCreatePumpDeployment(version)
+    if (selectedVersion === 17 && amount > 10_000_000n * 10n ** 18n) throw new Error('V17_BUY_LIMIT_EXCEEDED')
     return await readContract(contractName, 'getBuyPriceAfterFee', [0n, amount]) as bigint
 }
 

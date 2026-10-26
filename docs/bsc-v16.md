@@ -1,5 +1,7 @@
 # BSC V16 UI 接入（2026-10-22）
 
+2026-10-26：新建 Binance 模式已切换到 [V17](bsc-v17.md)，历史 V16 交易和补登记继续保留；本文为历史接入记录。
+
 创建页的 `binanceWalletOnly` 默认 false，未勾选使用 V14；勾选“Bonding Curve（内盘）阶段：仅 AI Agent（Binance Agentic Wallet）可购买。”使用 V16。RH 保持 V14。
 
 | 合约 | BSC 地址 |

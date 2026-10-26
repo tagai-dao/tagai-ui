@@ -17,17 +17,17 @@ const {quoteCurve}=createRequire(import.meta.url)(join(dir,'test.cjs'))
 after(async()=>{delete globalThis.__v15;await rm(dir,{recursive:true,force:true})})
 const token='0x'+'11'.repeat(20),account='0x'+'22'.repeat(20),mc='0xca11bde05977b3631167028862be2a173976ca11'
 const aggregate=parseAbi(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[])'])
-const abi=parseAbi(['function listed() view returns(bool)','function listingPending() view returns(bool)','function bondingCurveSupply() view returns(uint256)','function createdAt() view returns(uint256)','function getBuyFeeRatios() view returns(uint256,uint256)','function ipshareSubject() view returns(address)','function nutboxCommunity() view returns(address)','function indexToken() view returns(address)','function getBuyAmountByValue(uint256,uint256) view returns(uint256)','function handleOf(address) view returns(string)'])
-function fixture(handle,fail=false,version=15){
+const abi=parseAbi(['function listed() view returns(bool)','function listingPending() view returns(bool)','function bondingCurveSupply() view returns(uint256)','function createdAt() view returns(uint256)','function getBuyFeeRatios() view returns(uint256,uint256)','function ipshareSubject() view returns(address)','function nutboxCommunity() view returns(address)','function indexToken() view returns(address)','function getBuyAmountByValue(uint256,uint256) view returns(uint256)','function handleOf(address) view returns(string)','function innerMarketBought(address) view returns(uint256)','function INNER_MARKET_BUY_LIMIT() view returns(uint256)'])
+function fixture(handle,fail=false,version=15,bought=0n,supply=100n){
  const requests=[]
  const client=createPublicClient({chain:bsc,transport:custom({request:async({method,params})=>{
   if(method==='eth_blockNumber')return '0x1312d00'
   assert.equal(method,'eth_call');assert.equal(params[0].to.toLowerCase(),mc);assert.equal(params[1],'0x1312d00')
   const children=decodeFunctionData({abi:aggregate,data:params[0].data}).args[0];requests.push(children)
   const rows=children.map(c=>{
-   const f=decodeFunctionData({abi,data:c.callData});const values={listed:false,listingPending:false,bondingCurveSupply:100n,createdAt:0n,getBuyFeeRatios:[100n,200n],ipshareSubject:account,nutboxCommunity:token,indexToken:zeroAddress,getBuyAmountByValue:50n,handleOf:handle}
+   const f=decodeFunctionData({abi,data:c.callData});const values={listed:false,listingPending:false,bondingCurveSupply:supply,createdAt:0n,getBuyFeeRatios:[100n,200n],ipshareSubject:account,nutboxCommunity:token,indexToken:zeroAddress,getBuyAmountByValue:50n,handleOf:handle,innerMarketBought:bought,INNER_MARKET_BUY_LIMIT:10_000_000n*10n**18n}
    if(f.functionName==='handleOf'){assert.equal(c.target,'0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F');assert.deepEqual(f.args,[account])}
-   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
+   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,version===17?'0x01B2308653c7e371B28A862444a40c12ca18b353':version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
    return {success:!(fail&&f.functionName==='handleOf'),returnData:encodeFunctionResult({abi,functionName:f.functionName,result:values[f.functionName]})}
   })
   return encodeFunctionResult({abi:aggregate,functionName:'aggregate3',result:rows})
@@ -70,3 +70,18 @@ for(const handle of ['', ' ', 'registered'])test(`V16 curve quote preserves regi
  if(handle)assert.equal((await quoteCurve(token,true,1000n,16)).amountOut,50n);else await assert.rejects(quoteCurve(token,true,1000n,16),/V15_HANDLE_NOT_REGISTERED/);
  assert.equal(calls.length,2)
 })
+
+for(const handle of ['', 'registered'])test(`V17 curve buy reads its own Pump and lifetime quota in the pinned Multicall (${handle})`,async()=>{
+ const calls=fixture(handle,false,17);
+ if(handle)assert.equal((await quoteCurve(token,true,1000n,17)).amountOut,50n);else await assert.rejects(quoteCurve(token,true,1000n,17),/V15_HANDLE_NOT_REGISTERED/);
+ assert.equal(calls.length,2);
+ assert.deepEqual(calls[1].map(c=>decodeFunctionData({abi,data:c.callData}).functionName),['getBuyAmountByValue','handleOf','innerMarketBought','INNER_MARKET_BUY_LIMIT']);
+ assert.deepEqual(calls[1].slice(2).map(c=>c.target.toLowerCase()),[token,token]);
+ assert.deepEqual(decodeFunctionData({abi,data:calls[1][2].callData}).args,[account]);
+});
+test('V17 quota allows the exact lifetime boundary and rejects overspend',async()=>{
+ const limit=10_000_000n*10n**18n;
+ fixture('registered',false,17,limit-50n);assert.equal((await quoteCurve(token,true,1000n,17)).amountOut,50n);
+ fixture('registered',false,17,limit-49n);await assert.rejects(quoteCurve(token,true,1000n,17),/V17_BUY_LIMIT_EXCEEDED/);
+ fixture('registered',false,17,limit-5n,650_000_000n*10n**18n-5n);assert.equal((await quoteCurve(token,true,1000n,17)).amountOut,5n);
+});

@@ -430,7 +430,7 @@ export type V13IndexConfig = {
 }
 
 export type CreateCommunity = {
-  binanceWalletOnly?: boolean, // BSC: false creates V14; true creates V16.
+  binanceWalletOnly?: boolean, // BSC: false creates V14; true creates V17.
   indexConfig?: V13IndexConfig,
   tradeRewardRatioBps?: number, // 0/omitted: no trade pool; otherwise 1–8000 basis points.
   chainId?: number,

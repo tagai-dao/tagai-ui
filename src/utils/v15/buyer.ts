@@ -2,7 +2,7 @@ import { parseAbi, type Address, type PublicClient } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 
 export const handleAbi = parseAbi(['function handleOf(address account) view returns (string)'])
-export const requiresBuyerHandle = (chainId: number, version: number) => chainId === 56 && [15, 16].includes(Number(version))
+export const requiresBuyerHandle = (chainId: number, version: number) => chainId === 56 && [15, 16, 17].includes(Number(version))
 export function buyerHandleCall(account: Address) {
   const address = getChainDeployment(56).contracts.handleRegistry15
   if (!address) throw new Error('V15_HANDLE_UNAVAILABLE')

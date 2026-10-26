@@ -8,14 +8,14 @@ const read = file => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8'
 const scope = { exports: {} }
 runInNewContext(ts.transpile(read('src/utils/agentOnlyToken.ts'), { module: ts.ModuleKind.CommonJS }), scope)
 const eligible = scope.exports.isAgentOnlyCurveToken
-for (const version of [15, 16, '15', '16']) {
+for (const version of [15, 16, 17, '15', '16', '17']) {
   assert.equal(eligible({ version, listed: false }, 56), true)
   for (const flag of [true, 1, '1', 'true']) assert.equal(eligible({ version, listed: flag }, 56), false)
   assert.equal(eligible({ version, listedBlock: 123 }, 56), false)
   assert.equal(eligible({ version, isImport: 1 }, 56), false)
   assert.equal(eligible({ version }, 4663), false)
 }
-for (const version of [9, 11, 13, 14, 17]) assert.equal(eligible({ version }, 56), false)
+for (const version of [9, 11, 13, 14, 18]) assert.equal(eligible({ version }, 56), false)
 
 const trade = read('src/views/buy-sell/BuyAndSellView.vue')
 const home = read('src/views/tag-detail/HomeTagDetail.vue')

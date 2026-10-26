@@ -57,15 +57,15 @@ test('V14 pending registration survives reload alongside V13 historical recovery
   const registered = []
   const deps = { storage, scope: 'https://example.invalid:56', now: () => time, receipt: async () => ({ status: 'success' }), register: async f => { if (fail) throw Error('offline'); registered.push(f) }, synced() {} }
   const q = createRegistrationQueue(deps)
-  for (const version of [13, 14, 15, 16]) q.enqueue({ version, chainId: 56, createHash: '0x' + String(version).repeat(32), tick: 'TEST', logoUrl: 'logo', binanceWalletOnly: version === 13 ? undefined : [15,16].includes(version), tradeRewardRatioBps: version === 14 ? 8000 : undefined })
+  for (const version of [13, 14, 15, 16, 17]) q.enqueue({ version, chainId: 56, createHash: '0x' + String(version).repeat(32), tick: 'TEST', logoUrl: 'logo', binanceWalletOnly: version === 13 ? undefined : [15,16,17].includes(version), tradeRewardRatioBps: version === 14 ? 8000 : undefined })
   await q.flush(); assert.equal(registered.length, 0)
   fail = false; time = 5001
   await createRegistrationQueue(deps).flush()
-  assert.deepEqual(registered.map(f => f.version), [13, 14, 15, 16])
+  assert.deepEqual(registered.map(f => f.version), [13, 14, 15, 16, 17])
   assert.equal(registered[1].tradeRewardRatioBps, 8000)
   assert.equal(registered[0].binanceWalletOnly,undefined)
   assert.equal(registered[1].binanceWalletOnly,false)
   assert.equal(registered[2].binanceWalletOnly,true)
   assert.equal(registered[3].binanceWalletOnly,true)
-  await createRegistrationQueue(deps).flush(); assert.equal(registered.length, 4)
+  await createRegistrationQueue(deps).flush(); assert.equal(registered.length, 5)
 })

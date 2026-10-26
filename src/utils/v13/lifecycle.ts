@@ -25,11 +25,13 @@ export async function quoteCurve(token:Address,isBuy:boolean,amountIn:bigint,ver
     const contracts: {address:Address;abi:Abi;functionName:string;args:readonly unknown[]}[] = [
       {address:pump,abi:deployment.pumpAbi,functionName:'getBuyAmountByValue',args:[state.supply,net]},
       ...(requiresBuyerHandle(state.chainId,version) && buyer ? [buyerHandleCall(buyer)] : []),
+      ...(version === 17 && buyer ? ['innerMarketBought','INNER_MARKET_BUY_LIMIT'].map(functionName=>({address:token,abi:deployment.tokenAbi,functionName,args:functionName==='innerMarketBought'?[buyer]:[]})) : []),
     ]
     const values = await client.multicall({blockNumber:state.blockNumber,allowFailure:false,contracts})
     amountOut = values[0] as bigint
     if (requiresBuyerHandle(state.chainId,version) && buyer) assertBuyerHandle(values[1])
     if(amountOut>CURVE_CAP-state.supply)amountOut=CURVE_CAP-state.supply
+    if(version === 17 && buyer && (values[2] as bigint) + amountOut > (values[3] as bigint)) throw new Error('V17_BUY_LIMIT_EXCEEDED')
   } else {
     if(amountIn>state.supply)throw new Error('V13_INVALID_AMOUNT')
     const [out] = await client.multicall({blockNumber:state.blockNumber,allowFailure:false,contracts:[{address:pump,abi:deployment.pumpAbi,functionName:'getSellPriceAfterFee',args:[state.supply,amountIn]}]})
