@@ -17,11 +17,11 @@ import { useChainStore } from '@/stores/chain'
 import TokenDisplayName from '@/components/common/TokenDisplayName.vue'
 import { tokenDisplayName } from '@/utils/tokenDisplayName'
 
-const props = defineProps<{ community: Community; marketCapUsd?: number; priceUsd?: number; metricLabel?: string; showLaunchPlatform?: boolean }>()
+const props = defineProps<{ community: Community; marketCapUsd?: number; priceUsd?: number; metricLabel?: string; showLaunchPlatform?: boolean; showContractSuffix?: boolean }>()
 const curationStore = useCurationStore()
 const stateStore = useStateStore()
 const chainStore = useChainStore()
-const displayName = computed(() => tokenDisplayName(props.community, chainStore.activeChainId))
+const displayName = computed(() => tokenDisplayName(props.community, chainStore.activeChainId, props.showContractSuffix))
 // Flap provenance remains visible in Imported Token and All as well as Agent Launch.
 const launchPlatform = computed(() => {
   const platform = getLaunchPlatform(props.community, chainStore.activeChainId)
