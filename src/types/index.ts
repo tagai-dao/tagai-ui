@@ -104,6 +104,11 @@ export type Trade = {
 };
 
 export type FeedTrade = {
+  eventNativeUsd?: number | null;
+  eventPriceUsd?: number | null;
+  eventMarketCapUsd?: number | null;
+  eventPriceChange24h?: number | null;
+  eventPriceTimestamp?: number | null;
   tradeMarketCapUsd?: number | null;
   tradeMarketCapSource?: string;
   curationSourceId?: string
@@ -284,6 +289,10 @@ export type Tweet = OnchainTokenInfo & Space &
     retweetId?: string | undefined | null;
     spaceId?: string | undefined | null;
     tweetTime?: string | number | Date;
+    eventPriceUsd?: number | null;
+    eventMarketCapUsd?: number | null;
+    eventPriceChange24h?: number | null;
+    eventPriceTimestamp?: number | null;
     version?: number | null | undefined;
     tick?: string;
     likeCount: number;

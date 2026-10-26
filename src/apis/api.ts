@@ -344,6 +344,12 @@ export const reportCurveTrade = (twitterId: string, report: Record<string, unkno
 export const getTradeFeed = async (pages?: number) =>
   publicRead('/community/tradeFeed', { pages })
 
+export const getEventMarketMetrics = async (events: Array<{ token: string; timestamp: number }>, chainId: number): Promise<any[]> => {
+  const rows = await readDisplay('/community/eventMarketMetrics', { events: JSON.stringify(events) }, chainId, 30000)
+  if (!Array.isArray(rows)) throw new Error('Invalid historical metrics response')
+  return rows
+}
+
 export const isTokenExist = async (tick: string) =>
   get(BACKEND_API_URL + '/community/isTokenExist', { tick, _: Date.now() })
 
