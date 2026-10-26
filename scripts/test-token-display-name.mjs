@@ -33,3 +33,24 @@ check({ ...identity, launchProtocol: 'four-agent-id', token: '0x478318f7ae11140a
 check({ ...identity, launchProtocol: 'four-agent-id', token: '0x967b26d369571a8c5a035aaac1f4b1594287ffff', tick: 'BIBI_87FFFF' }, 'BIBI', '@87FFFF')
 
 check({ ...identity, launchProtocol: 'four-agent-id', tick: 'ai', agentTokenSymbol: '.ai' }, '.ai', '')
+
+// Watchlist snapshots/detail responses may omit import/protocol metadata. Only
+// split a suffix that matches the actual contract; never change route identity.
+const saved = { tick: identity.tick, token: identity.token, chainId: 56 }
+assert.deepEqual(JSON.parse(JSON.stringify(tokenDisplayName(saved, 56, true))), { name: 'BIBI', suffix: '@0F7777' })
+for (const protocol of ['flap-id-agent-curve', 'four-agent-id']) {
+  const row = { ...identity, launchProtocol: protocol }
+  assert.equal(tokenDisplayName(row, 56, true).suffix, tokenDisplayName(row, 56).suffix)
+}
+assert.equal(tokenDisplayName({ ...saved, tick: 'BIBI_DEAD' }, 56, true).suffix, '')
+assert.equal(tokenDisplayName({ ...saved, token: '' }, 56, true).suffix, '')
+assert.equal(tokenDisplayName({ ...saved, chainId: 4663 }, 56, true).suffix, '')
+assert.equal(tokenDisplayName(saved, 56).suffix, '')
+assert.equal(saved.tick, identity.tick)
+const card = readFileSync(new URL('../src/components/home/TagListItem.vue', import.meta.url), 'utf8')
+assert.equal((card.match(/<TokenDisplayName\b/g) || []).length, 2) // mobile + desktop
+const display = readFileSync(new URL('../src/components/common/TokenDisplayName.vue', import.meta.url), 'utf8')
+assert.match(display, /font-size:\s*0\.5em/)
+const watchlist = readFileSync(new URL('../src/views/home/TokenWatchlist.vue', import.meta.url), 'utf8')
+assert.match(watchlist, /:show-contract-suffix="token.kind === 'community'"/)
+console.log('Watchlist: address-verified suffixes, shared half-size rendering and basket/chain isolation passed')

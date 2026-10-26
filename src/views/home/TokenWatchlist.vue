@@ -61,6 +61,7 @@ onActivated(() => void load())
       <div class="grid grid-cols-1 md:grid-cols-2 web:grid-cols-3 gap-2">
         <TagListItem v-for="token in favorites.entries" :key="`${token.chainId}:${token.address}`"
           :community="cardCommunity(token)"
+          :show-contract-suffix="token.kind === 'community'"
           :market-cap-usd="metricValues[token.address.toLowerCase()] || 0"
           :price-usd="(token.kind === 'basket' ? metricValues : prices)[token.address.toLowerCase()] || 0"
           :metric-label="token.kind === 'basket' ? 'NAV' : undefined"
