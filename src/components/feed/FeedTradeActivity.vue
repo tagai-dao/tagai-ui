@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { FeedTokenSheetAsset, FeedTrade } from '@/types'
 import { computed } from 'vue'
-import { useStateStore } from '@/stores/common'
 import { formatTokenAmount, formatUsd, formatUsdCompact } from '@/utils/format'
 import { formatAddress, parseTimestamp } from '@/utils/helper'
 import TradeCurationBadge from '@/components/feed/TradeCurationBadge.vue'
@@ -11,21 +10,21 @@ import UserAvatar from '@/components/common/UserAvatar.vue'
 import SafeAvatar from '@/components/common/SafeAvatar.vue'
 
 const props = defineProps<{ trade: FeedTrade }>()
-const stateStore = useStateStore()
 const emit = defineEmits<{ openDetails: [asset: FeedTokenSheetAsset] }>()
 const isBuy = computed(() => props.trade.isBuy === true || Number(props.trade.isBuy) === 1)
 const usdAmount = computed(() => {
   const indexedUsd = Number(props.trade.amountUsd ?? props.trade.quoteAmountUsd)
   return Number.isFinite(indexedUsd) && indexedUsd > 0
     ? indexedUsd
-    : Number(props.trade.ethAmount || 0) * stateStore.ethPrice
+    : props.trade.eventNativeUsd != null ? Number(props.trade.ethAmount || 0) * props.trade.eventNativeUsd : null
 })
 // Live marketCap remains available to the trading sheet, never to this
 // historical event card. An unavailable snapshot must not look like today's MC.
 const marketCap = computed(() => {
-  const value = Number(props.trade.tradeMarketCapUsd)
+  const value = Number(props.trade.tradeMarketCapUsd ?? props.trade.eventMarketCapUsd)
   return Number.isFinite(value) && value > 0 ? value : null
 })
+const change = computed(() => props.trade.eventPriceChange24h)
 const traderLabel = computed(() => props.trade.twitterName || props.trade.twitterUsername || formatAddress(props.trade.trader, 5, 4))
 const traderHandle = computed(() => props.trade.twitterUsername
   ? `@${props.trade.twitterUsername}`
@@ -100,7 +99,9 @@ function openDetails() {
     </div>
     <button class="mt-3 flex w-full items-center justify-between rounded-xl border bg-surface-2 p-3" @click.stop="openDetails">
       <div class="flex min-w-0 items-center gap-2.5"><CommunityLogo :community="trade" :logo="trade.logo" size="xs" :shadow="false" class="!rounded-full" /><div class="text-left"><strong class="block text-sm text-content">{{ trade.name || trade.tick }}</strong><span class="text-xs text-grey-64">{{ formatTokenAmount(trade.amount) }} {{ trade.tick }}</span></div></div>
-      <div class="text-right"><strong class="block text-sm tabular-nums text-content">{{ formatUsd(usdAmount) }}</strong><span class="text-xs text-grey-64" :title="marketCap ? 'Historical market cap estimated from the trade price and the native/USD price for that minute' : 'Historical market cap unavailable'">{{ marketCap ? formatUsdCompact(marketCap) : '—' }} MC</span></div>
+      <div class="text-right"><strong class="block text-sm tabular-nums text-content">{{ usdAmount != null ? formatUsd(usdAmount) : '—' }}</strong>
+        <span v-if="change != null" class="mr-2 text-xs font-semibold" :class="change >= 0 ? 'text-up' : 'text-down'">{{ change >= 0 ? '+' : '' }}{{ change.toFixed(2) }}%</span>
+        <span class="text-xs text-grey-64" :title="marketCap ? 'Historical market cap estimated from the trade price and the native/USD price for that minute' : 'Historical market cap unavailable'">{{ marketCap ? formatUsdCompact(marketCap) : '—' }} MC</span></div>
     </button>
   </article>
 </template>

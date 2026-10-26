@@ -28,6 +28,7 @@ const props = defineProps({
   tweet: {type: Object as PropType<Tweet>, required: true,},
   multiline: {type: Boolean, required: false},
   showMarketCap: {type: Boolean, required: false, default: true},
+  historicalMetrics: {type: Boolean, default: false},
   hideCommunityHashtag: {type: Boolean, default: false},
   textOnly: {type: Boolean, required: false, default: false}
 })
@@ -282,7 +283,7 @@ onUnmounted(() => {
           </div>
           <slot name="tweet-trade"></slot>
           <slot name="tweet-mint"></slot>
-          <CommunityTradeCard v-if="tweet.tick && tweet.token" :tweet="tweet" @open-details="emit('openTokenDetails', $event)" />
+          <CommunityTradeCard v-if="tweet.tick && tweet.token" :tweet="tweet" :historical="historicalMetrics" @open-details="emit('openTokenDetails', $event)" />
           <slot name="tweet-action-bar"></slot>
         </div>
       </div>

@@ -9,7 +9,8 @@ import { CreateFee, ChainConfig, WETH, uniswapV2Factory, uniswapV2Router02, Tota
 import { getTokenBalance, getTransactionReceipt } from "./web3";
 import { PumpContract1, PumpContract2, PumpContract3, PumpContract4, PumpContract6, PumpContract7, PumpContract8, PumpContract9, Ether, ClaimFee, OracleDistributor, OracleDistributorV2, LegacyBscImportHelper, HourlyTickCalculator, LinearCalculator as LinearCalculatorAddress, LinearTimeCalculator as LinearTimeCalculatorAddress } from "@/config";
 import { abis } from './abis'
-import { getEthPrice } from "@/apis/api";
+import { getEthPrice, getEventMarketMetrics } from "@/apis/api";
+import { attachEventMarketMetrics } from '@/utils/eventMarketMetrics';
 import { aggregateWithRpcFallback } from './multicall'
 import errCode from "@/errCode";
 import _ from 'lodash'
@@ -1703,7 +1704,24 @@ export const getTokenInfo = async (communities: Community[]) => {
     return communities;
 }
 
-export const getTokenInfoOfTweets = async (tweets: Tweet[]) => {
+export const getTokenInfoOfTweets = async (tweets: Tweet[], withHistory = false) => {
+    if (!withHistory) return getLiveTokenInfoOfTweets(tweets)
+    const chainId = useChainStore().activeChainId
+    const [live, historical] = await Promise.all([
+        getLiveTokenInfoOfTweets(tweets),
+        attachEventMarketMetrics(tweets, chainId, getEventMarketMetrics),
+    ])
+    const snapshots = new Map(historical.map(row => [row.tweetId, row]))
+    return live.map(row => {
+        const snapshot = snapshots.get(row.tweetId)
+        return { ...row, eventPriceUsd: snapshot?.eventPriceUsd ?? null,
+            eventMarketCapUsd: snapshot?.eventMarketCapUsd ?? null,
+            eventPriceChange24h: snapshot?.eventPriceChange24h ?? null,
+            eventPriceTimestamp: snapshot?.eventPriceTimestamp ?? null }
+    })
+}
+
+const getLiveTokenInfoOfTweets = async (tweets: Tweet[]) => {
     if (tweets.length === 0) return tweets;
     try {
         const { filterByActiveChain } = await import('@/utils/chainFilter')

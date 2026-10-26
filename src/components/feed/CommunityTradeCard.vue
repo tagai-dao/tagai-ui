@@ -7,15 +7,16 @@ import { getChainPath } from '@/config/chains'
 import { formatUsd, formatUsdCompact } from '@/utils/format'
 import CommunityLogo from '@/components/common/CommunityLogo.vue'
 
-const props = defineProps<{ tweet: Tweet }>()
+const props = defineProps<{ tweet: Tweet; historical?: boolean }>()
 const stateStore = useStateStore()
 const chainStore = useChainStore()
 const emit = defineEmits<{ openDetails: [asset: FeedTokenSheetAsset] }>()
-const price = computed(() => Number(props.tweet.price || 0) * stateStore.ethPrice)
-const marketCap = computed(() => Number(props.tweet.marketCap || 0) * stateStore.ethPrice)
+const price = computed(() => props.historical ? props.tweet.eventPriceUsd : Number(props.tweet.price || 0) * stateStore.ethPrice)
+const marketCap = computed(() => props.historical ? props.tweet.eventMarketCapUsd : Number(props.tweet.marketCap || 0) * stateStore.ethPrice)
 const change = computed<number | null>(() => {
-  if (props.tweet.priceChange24h === null || props.tweet.priceChange24h === undefined) return null
-  const value = Number(props.tweet.priceChange24h)
+  const change = props.historical ? props.tweet.eventPriceChange24h : props.tweet.priceChange24h
+  if (change === null || change === undefined) return null
+  const value = Number(change)
   return Number.isFinite(value) ? value : null
 })
 function openDetails() {
@@ -60,11 +61,11 @@ function openDetails() {
       <CommunityLogo :community="tweet" :logo="tweet.logo" size="xs" :shadow="false" class="!rounded-full" />
       <div class="min-w-0 text-left"><span class="block text-xs text-grey-64">Community token</span><strong class="block truncate text-sm text-content">{{ tweet.tick }}</strong></div>
     </div>
-    <div class="ml-3 text-right">
-      <strong class="block text-sm text-content tabular-nums">{{ formatUsd(price) }}</strong>
+    <div class="ml-3 text-right" :title="historical ? 'Historical metrics at post time; 24h change ends at that time' : undefined">
+      <strong class="block text-sm text-content tabular-nums">{{ price != null && (price > 0 || !historical) ? formatUsd(price) : '—' }}</strong>
       <span v-if="change !== null" class="text-xs font-semibold tabular-nums" :class="change >= 0 ? 'text-up' : 'text-down'">{{ change >= 0 ? '△ +' : '▽ ' }}{{ change.toFixed(2) }}%</span>
       <span v-else class="text-xs font-semibold tabular-nums text-grey-64">--</span>
-      <span v-if="marketCap" class="ml-2 text-[10px] text-grey-64">{{ formatUsdCompact(marketCap) }} MC</span>
+      <span v-if="historical || marketCap" class="ml-2 text-[10px] text-grey-64">{{ marketCap != null && marketCap > 0 ? formatUsdCompact(marketCap) : '—' }} MC</span>
     </div>
   </button>
 </template>

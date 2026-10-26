@@ -10,6 +10,7 @@ import { useStateStore } from '@/stores/common';
 import CommunityTradeCard from '@/components/feed/CommunityTradeCard.vue'
 
 const props = defineProps({
+  historicalMetrics: {type: Boolean, default: false},
   tweet: {type: Object as PropType<Tweet>, required: true,},
   multiline: {type: Boolean, required: false}
 })
@@ -183,7 +184,7 @@ const onUserAvatar = () => {
         </div>
         <div class="px-3 md:pl-12">
           <TweetSpaceCard v-if="tweet.spaceId" :tweet="tweet" />
-          <CommunityTradeCard v-if="tweet.tick && tweet.token" :tweet="tweet" @open-details="emit('openTokenDetails', $event)" />
+          <CommunityTradeCard v-if="tweet.tick && tweet.token" :tweet="tweet" :historical="historicalMetrics" @open-details="emit('openTokenDetails', $event)" />
           <slot name="tweet-mint"></slot>
           <slot name="tweet-action-bar"></slot>
         </div>

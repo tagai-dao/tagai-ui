@@ -6,7 +6,8 @@ import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
 import { useTweetsStore } from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
-import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets, getCommunityCallouts, getTokenTradeList, type ExternalCalloutSource } from "@/apis/api";
+import { getCommunityNewTweets, getCommunitySpaceTweets, getCommunityTrendingTweets, getCommunityTippedTweets, getCommunityCallouts, getTokenTradeList, getEventMarketMetrics, type ExternalCalloutSource } from "@/apis/api";
+import { attachEventMarketMetrics } from '@/utils/eventMarketMetrics'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useCommunityStore } from "@/stores/community";
 import type { FeedTokenSheetAsset, FeedTrade, Tweet } from "@/types";
@@ -14,7 +15,7 @@ import { handleErrorTip } from "@/utils/notify";
 import { getTokenInfoOfTweets as enrichTweetTokens } from "@/utils/pump";
 
 async function getTokenInfoOfTweets(rows: Tweet[]) {
-  try { return await enrichTweetTokens(rows) }
+  try { return await enrichTweetTokens(rows, true) }
   catch (error) {
     console.warn('[TagContent] optional token metrics unavailable', error)
     return rows
@@ -141,8 +142,9 @@ function restoreCommunitySnapshot(type: ListType, tick: string) {
 }
 
 function tradeIdentity(trade: FeedTrade) {
+  if (trade.curationSourceId) return `${trade.token.toLowerCase()}:${trade.curationSourceId}`
   const hash = trade.transHash?.trim().toLowerCase()
-  if (hash) return `hash:${hash}`
+  if (hash) return `hash:${hash}:${trade.token.toLowerCase()}:${trade.logIndex ?? ''}`
   return [trade.timestamp, trade.trader, trade.token, trade.isBuy, trade.amount, trade.ethAmount].join(':').toLowerCase()
 }
 
@@ -228,6 +230,7 @@ const feedItems = computed(() => {
 
 async function loadCommunityTrades(page = 0, replace = false) {
   const sequence = refreshSequence
+  const chainId = chainStore.activeChainId
   tradesLoading.value = true
   try {
     const community = comStore.currentSelectedCommunity
@@ -237,7 +240,7 @@ async function loadCommunityTrades(page = 0, replace = false) {
     // Filter account membership BEFORE pagination so public DEX traders cannot
     // displace every platform activity from the first page after graduation.
     const rows = (await getTokenTradeList(community.token, page, !community.isImport) || []) as FeedTrade[]
-    if (sequence !== refreshSequence || comStore.currentSelectedCommunity?.token !== requestedToken) return -1
+    if (sequence !== refreshSequence || chainStore.activeChainId !== chainId || comStore.currentSelectedCommunity?.token !== requestedToken) return -1
     // The token trade endpoint also serves full market history. Community
     // Feed includes only identities verified by the API (including imports).
     // Keep the raw row count below for pagination: a filtered page is not EOF.
@@ -258,6 +261,12 @@ async function loadCommunityTrades(page = 0, replace = false) {
     if (communityTrades.value.length) {
       writePublicSnapshot(communityTradeSnapshotScope(community.tick), communityTrades.value.slice(0, 120))
     }
+    void attachEventMarketMetrics(next, chainId, getEventMarketMetrics).then(enriched => {
+      if (sequence !== refreshSequence || chainStore.activeChainId !== chainId || comStore.currentSelectedCommunity?.token !== requestedToken) return
+      const byEvent = new Map(enriched.map(row => [tradeIdentity(row), row]))
+      communityTrades.value = communityTrades.value.map(row => byEvent.get(tradeIdentity(row)) ?? row)
+      writePublicSnapshot(communityTradeSnapshotScope(community.tick), communityTrades.value.slice(0, 120))
+    })
     return rows.length
   } catch (error) {
     console.warn('[TagContent] community trade feed unavailable', error)
@@ -577,6 +586,7 @@ onBeforeUnmount(() => {
             @open-details="openFeedTokenSheet"
           />
           <SpaceItem
+            historical-metrics
             v-else-if="item.tweet.spaceId"
             class="bg-white rounded-2xl"
             :tweet="item.tweet"
@@ -591,6 +601,7 @@ onBeforeUnmount(() => {
             </template>
           </SpaceItem>
           <TweetItem
+            historical-metrics
             v-else
             hide-community-hashtag
             class="bg-white rounded-2xl"

@@ -6,7 +6,8 @@ import CommerceBtn from '@/components/tweets/CommerceBtn.vue'
 import {TweetListType, useTweetsStore} from "@/stores/tweets";
 import { useAccountStore } from "@/stores/web3";
 import SpaceItem from "@/components/tweets/SpaceItem.vue";
-import { getNewTweets, getTrendingTweets, getTradeFeed } from "@/apis/api";
+import { getNewTweets, getTrendingTweets, getTradeFeed, getEventMarketMetrics } from "@/apis/api";
+import { attachEventMarketMetrics } from '@/utils/eventMarketMetrics'
 import {computed, onActivated, onMounted, onUnmounted, ref, watch} from "vue";
 import { useCommunityStore } from "@/stores/community";
 import type { Community, FeedTokenSheetAsset, FeedTrade, Tweet } from "@/types";
@@ -145,12 +146,23 @@ const feedItems = computed(() => {
 
 async function loadTrades(page = 0, replace = false) {
   const seq = enrichSeq
+  const chainId = chainStore.activeChainId
   tradeLoading.value = true
   try {
     const rows = (await getTradeFeed(page) || []) as FeedTrade[]
-    if (seq !== enrichSeq || tweetsStore.homeNewSource !== 'x') return -1
+    if (seq !== enrichSeq || chainStore.activeChainId !== chainId || tweetsStore.homeNewSource !== 'x') return -1
     trades.value = mergeUniqueTrades(replace ? [] : trades.value, rows)
     if (trades.value.length) writePublicSnapshot(tradeSnapshotScope(), trades.value.slice(0, 120))
+    void attachEventMarketMetrics(rows, chainId, getEventMarketMetrics).then(enriched => {
+      if (seq !== enrichSeq || chainStore.activeChainId !== chainId) return
+      const byEvent = new Map(enriched.map(row => [tradeIdentity(row), row]))
+      trades.value = trades.value.map(row => {
+        const event = byEvent.get(tradeIdentity(row))
+        return event ? { ...row, eventPriceUsd: event.eventPriceUsd, eventMarketCapUsd: event.eventMarketCapUsd,
+          eventPriceChange24h: event.eventPriceChange24h, eventPriceTimestamp: event.eventPriceTimestamp, eventNativeUsd: event.eventNativeUsd } : row
+      })
+      writePublicSnapshot(tradeSnapshotScope(), trades.value.slice(0, 120))
+    })
     const pseudo = rows.map(row => ({ ...row, description: '', name: row.name || row.tick, logo: row.logo || '' })) as unknown as Community[]
     // Publish API rows immediately; optional RPC metadata must not block posts.
     void getTokenInfo(pseudo).then(enriched => {
@@ -189,10 +201,11 @@ const showingTweets = computed(() => {
 /** 按 tweetId 把链上补价写回当前列表（不挡首屏） */
 const enrichHomeTweets = async (type: TweetListType, batch: Tweet[], seq: number) => {
   if (!batch.length) return
+  const chainId = chainStore.activeChainId
   try {
-    const enriched = await getTokenInfoOfTweets(batch)
+    const enriched = await getTokenInfoOfTweets(batch, true)
     // 已过期：用户切走了 Tab 或又点了刷新
-    if (seq !== enrichSeq || tweetsStore.homeTweetType !== type) return
+    if (seq !== enrichSeq || chainStore.activeChainId !== chainId || tweetsStore.homeTweetType !== type) return
     const byId = new Map(enriched.map((t) => [t.tweetId, t]))
     const merge = (rows: Tweet[]) => rows.map((t) => byId.get(t.tweetId) ?? t)
     if (type === TweetListType.New) {
@@ -408,6 +421,7 @@ onActivated(() => {
               >
                 <FeedTradeActivity v-if="item.type === 'trade'" :trade="item.trade" @open-details="openFeedTokenSheet" />
                 <SpaceItem
+                  historical-metrics
                     v-else-if="item.tweet.spaceId"
                     class="bg-white rounded-2xl"
                     :tweet="item.tweet"
@@ -422,6 +436,7 @@ onActivated(() => {
                   </template>
                 </SpaceItem>
                 <TweetItem
+                  historical-metrics
                     v-else
                     hide-community-hashtag
                     class="bg-white rounded-2xl"
