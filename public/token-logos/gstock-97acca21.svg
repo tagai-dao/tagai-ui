@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="GStock avatar from gang.fun">
+  <!-- Exact contract 0x97acca21fcf2435f1a0bfa94f9c27d412b88c1c8.
+       gang.fun renders a 48px blue G avatar, not a custom token image.
+       Colors, border, 20.16px FP Latin glyph and centering match that page. -->
+  <rect x="0.5" y="0.5" width="47" height="47" fill="#213850" stroke="#35526e"/>
+  <path fill="#c9e0f7" transform="translate(19.025 30.72) scale(0.0168 -0.0168)" d="M100 800L400 800L400 700L100 700ZM0 700L100 700L100 100L0 100ZM400 700L500 700L500 600L400 600ZM300 400L500 400L500 0L100 0L100 100L400 100L400 300L300 300Z"/>
+</svg>
