@@ -11,7 +11,7 @@ const externalAgentTokens = new Set([
 function isExternalAgentLaunch(community: CoinCategory, chainId: number) {
   return Number(community.chainId ?? community.chain_id ?? chainId) === 56
     && (externalAgentTokens.has(String(community.token ?? '').toLowerCase())
-      || ['flap-id-agent-curve', 'four-agent-id'].includes(String(community.launchProtocol)))
+      || ['flap-id-agent-curve', 'four-agent-id', 'gang-agent'].includes(String(community.launchProtocol)))
     && (community.isImport === true || Number(community.isImport) === 1)
 }
 
@@ -22,6 +22,8 @@ export function getLaunchPlatform(community: CoinCategory, chainId: number): 'ta
     && (community.isImport === true || Number(community.isImport) === 1)) return 'flap'
   if (community.launchProtocol === 'four-agent-id'
     && (community.isImport === true || Number(community.isImport) === 1)) return 'four'
+  if (community.launchProtocol === 'gang-agent'
+    && (community.isImport === true || Number(community.isImport) === 1)) return 'gang'
   const token = String(community.token ?? '').toLowerCase()
   if (token === '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc') return null // independent .ai token
   if (token === '0x0c6302401aa5325c2e36f170f52c00b1d220b405') return 'gang'

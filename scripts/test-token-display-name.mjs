@@ -54,3 +54,6 @@ assert.match(display, /font-size:\s*0\.5em/)
 const watchlist = readFileSync(new URL('../src/views/home/TokenWatchlist.vue', import.meta.url), 'utf8')
 assert.match(watchlist, /:show-contract-suffix="token.kind === 'community'"/)
 console.log('Watchlist: address-verified suffixes, shared half-size rendering and basket/chain isolation passed')
+
+check({ ...identity, launchProtocol: 'gang-agent', tick: 'bibi_0F7777', agentTokenSymbol: 'bibi' }, 'bibi', '@0F7777')
+check({ ...identity, launchProtocol: 'gang-agent', tick: 'Gangstar', agentTokenSymbol: 'Gangstar' }, 'Gangstar', '')
