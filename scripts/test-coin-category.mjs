@@ -92,3 +92,10 @@ assert.equal(getLaunchPlatform(four, 56), 'four')
 assert.equal(isAgentLaunch(four, 4663), false)
 assert.equal(getLaunchPlatform(four, 4663), null)
 assert.equal(isAgentLaunch({ ...four, launchProtocol: undefined }, 56), false)
+
+const gang = { token: '0x1e358076f379c091c0479fa0a4cd574d7a58c5dc', isImport: 1, launchProtocol: 'gang-agent', pair: '0x79be6910c2854437a0a9a41253b39c5b45f2646e' }
+assert.equal(isAgentLaunch(gang, 56), true)
+assert.equal(isGraduatedToken(gang, 56), true)
+assert.equal(getLaunchPlatform(gang, 56), 'gang')
+assert.equal(isAgentLaunch(gang, 4663), false)
+assert.equal(getLaunchPlatform({ ...gang, isImport: 0 }, 56), null)

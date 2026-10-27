@@ -379,7 +379,10 @@ export type OnchainTokenInfo = {
 
 export type Community = OnchainTokenInfo & {
   /** Server-verified issuance provenance, independent of trading ABI and import status. */
-  launchProtocol?: 'flap-id-agent-curve';
+  launchProtocol?: 'flap-id-agent-curve' | 'four-agent-id' | 'gang-agent';
+  agentTokenSymbol?: string;
+  gangLaunchpad?: string;
+  gangGraduationPair?: string;
   flapAgentMarket?: string;
   name: string;
   description: string;
