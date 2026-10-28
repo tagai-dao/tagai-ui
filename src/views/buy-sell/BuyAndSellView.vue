@@ -3,9 +3,6 @@ import { useV15BuyerEligibility } from '@/composables/useV15BuyerEligibility'
 import AgentTradeGuide from '@/components/common/AgentTradeGuide.vue'
 import { isAgentOnlyCurveToken } from '@/utils/agentOnlyToken'
 import { isIndexToken } from '@/utils/v14/chain'
-import {get as publicGet} from '@/apis/axios'
-import {BACKEND_API_URL} from '@/config'
-import {tagclawSourceHash,verifiedTagclawSource,type TagClawFollowSource} from '@/utils/tagclawFollow.mjs'
 import { prepareTradeAttribution } from '@/utils/tradeCuration'
 import { curveTradeReports } from '@/utils/curveTradeReport'
 import { getReadOnlyClient } from '@/utils/wallets'
@@ -90,23 +87,10 @@ const chainStore = useChainStore()
 const showAgentGuide = computed(() => props.agentGuide
   && isAgentOnlyCurveToken(comStore.currentSelectedCommunity, chainStore.activeChainId)
   && !listed.value)
-const tagclawFollow=shallowRef<TagClawFollowSource|null>(null)
 const getTradeSellsman = async (onVerifiedSource?: (id: string) => void) => {
   const chainId = chainStore.activeChainId
   const sourcePath = route.fullPath
   const token = comStore.currentSelectedCommunity?.token
-  tagclawFollow.value=null
-  if(route.query.tagclawSource!=null){
-    const sourceHash=tagclawSourceHash(route.query.tagclawSource)
-    if(chainId!==56||!token)throw new Error('TagClaw source requires a loaded BSC token')
-    const data:any=await publicGet(BACKEND_API_URL+'/tagclaw/trades/'+sourceHash,{}, {headers:{'X-Chain-Id':'56'}})
-    const source=verifiedTagclawSource(data,sourceHash,token,chainId)
-    if(route.fullPath!==sourcePath||chainStore.activeChainId!==chainId||comStore.currentSelectedCommunity?.token!==token)throw new Error('Trade source changed. Please refresh the quote.')
-    const requested=props.sellsman||route.params.sellsman
-    if(requested&&String(requested).toLowerCase()!==source.ipshareSubject.toLowerCase())throw new Error('TagClaw IPShare subject mismatch')
-    tagclawFollow.value=source
-    return source.ipshareSubject
-  }
   const explicitSource = props.commerceId
   const blinkId = explicitSource || blinkIdFromRoute(route)
   if (blinkId) {
@@ -802,13 +786,11 @@ async function confirm() {
     const traderId = accStore.getAccountInfo?.twitterId
     let sourceCommerceId: string | undefined
     const resolvedSellsman = await getTradeSellsman(id => { sourceCommerceId = id })
-    const capturedTagclawSource=tagclawFollow.value
-    if(route.query.tagclawSource&&!capturedTagclawSource)throw new Error('TagClaw source changed. Please retry the quote.')
     const attributionContext = { path: route.fullPath, post: props.tweetId, commerce: props.commerceId,
       wallet: accStore.ethConnectAddress, side: tradeType.value }
     const rewardSource = tradeType.value === 'buy' && [56,4663].includes(tradeChainId)
       ? await prepareTradeAttribution({ token: token.token!, wallet: accStore.ethConnectAddress,
-          tweetId: capturedTagclawSource?.sourceId || props.tweetId || (route.name === 'post-detail' ? String(route.params.id) : undefined),
+          tweetId: props.tweetId || (route.name === 'post-detail' ? String(route.params.id) : undefined),
           commerceId: sourceCommerceId }) : null
     if (disposed || tradeChainId !== chainStore.activeChainId || token !== comStore.currentSelectedCommunity) return
     if (route.fullPath !== attributionContext.path || props.tweetId !== attributionContext.post
@@ -1055,7 +1037,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="tagclawFollow" class="mx-3 my-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-content">Follow buy · {{ tagclawFollow.handle }} · IPShare {{ tagclawFollow.ipshareSubject }}</div>
   <div class="flex flex-col gap-3">
     <button v-if="tradeLoadError" class="underline text-orange-normal" @click="loadTradeCommunity">{{ $t('v13Trade.refresh') }}</button>
     <!-- <BackHeader class="px-3">
