@@ -24,9 +24,9 @@ const originalWorker=globalThis.Worker
 const plan={isBuy:true,amountIn:100n,amountOut:50n,legs:[{index:0,amount:100n,intermediate:0n,output:50n}]}
 globalThis.Worker=class{terminate(){} postMessage(data){globalThis.__executor.workerTarget=data.metadata.executor;this.onmessage({data:{id:data.id,plan}})}}
 after(async()=>{globalThis.Worker=originalWorker;delete globalThis.__executor;await rm(dir,{recursive:true,force:true})})
-for(const version of [13,14,15,16]) for(const executor of [undefined,'0x9999999999999999999999999999999999999999']){
+for(const version of [13,14,15,16,17,18]) for(const executor of [undefined,'0x9999999999999999999999999999999999999999']){
  test(`V${version} trade snapshot and wallet target use config with ${executor?'conflicting':'missing'} API executor`,async()=>{
-  globalThis.__executor={metadata:{version,chainId:56,pump:version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':version===15?'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D':version===14?'0xcd4e721Fc418f4D723C04c71e8d8EcCb75C3CD34':'0x2c2f4e8D85c02a065f109c74d9b27186AE65Adfa',nutboxRouter:'0x72dc4F38A7E4159e97d826a6ab594748C6b68f17',multicall:'0xcA11bde05977b3631167028862bE2a173976CA11',token,executor,listed:true,generatedAt:Date.now(),configHash:'test'}}
+  globalThis.__executor={metadata:{version,chainId:56,pump:version===18?'0x3B174dB24A44d7172C1f4Fb8Ab387F3931681C24':version===17?'0x01B2308653c7e371B28A862444a40c12ca18b353':version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':version===15?'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D':version===14?'0xcd4e721Fc418f4D723C04c71e8d8EcCb75C3CD34':'0x2c2f4e8D85c02a065f109c74d9b27186AE65Adfa',nutboxRouter:'0x72dc4F38A7E4159e97d826a6ab594748C6b68f17',multicall:'0xcA11bde05977b3631167028862bE2a173976CA11',token,executor,listed:true,generatedAt:Date.now(),configHash:'test'}}
   const q=await createQuoteSession().quote(token,true,100n)
   assert.equal(globalThis.__executor.snapshotTarget,expected)
   assert.equal(globalThis.__executor.workerTarget,expected)

@@ -14,7 +14,7 @@ const networkNoticeGate = createNetworkNoticeGate();
 const t = i18n.global.t;
 
 const getFriendlyRevertMessage = (reason: string): string => {
-  if (/V17_BUY_LIMIT_EXCEEDED|InnerMarketBuyLimitExceeded/.test(reason)) return t('v17Trade.purchaseLimit')
+  if (/V(?:17|18)_BUY_LIMIT_EXCEEDED|InnerMarketBuyLimitExceeded/.test(reason)) return t('v17Trade.purchaseLimit')
   if (/V15_HANDLE_NOT_REGISTERED|HandleNotRegistered|0x64bd20bf/.test(reason)) return t('v15Trade.registrationRequired')
   if (reason.includes('maximum sell amount exceeded')) {
     return '交易失败：卖出数量超过当前池子可承受上限，请减少卖出份额后重试。'
@@ -29,7 +29,7 @@ const showRevertNotify = (reason: string): string => {
 
 const matchKnownRevertMessage = (msg: string): string | null => {
   if (!msg) return null
-  if (/V17_BUY_LIMIT_EXCEEDED|InnerMarketBuyLimitExceeded/.test(msg)) return showRevertNotify('InnerMarketBuyLimitExceeded')
+  if (/V(?:17|18)_BUY_LIMIT_EXCEEDED|InnerMarketBuyLimitExceeded/.test(msg)) return showRevertNotify('InnerMarketBuyLimitExceeded')
   if (/V15_HANDLE_NOT_REGISTERED|HandleNotRegistered|0x64bd20bf/.test(msg)) return showRevertNotify('HandleNotRegistered')
   if (/V15_HANDLE_UNAVAILABLE/.test(msg)) { notify({message:t('v15Trade.registrationUnavailable'),type:'error'}); return 'V15_HANDLE_UNAVAILABLE' }
   if (msg.includes('maximum sell amount exceeded')) {

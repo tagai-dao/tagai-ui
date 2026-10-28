@@ -27,7 +27,7 @@ function fixture(handle,fail=false,version=15,bought=0n,supply=100n){
   const rows=children.map(c=>{
    const f=decodeFunctionData({abi,data:c.callData});const values={listed:false,listingPending:false,bondingCurveSupply:supply,createdAt:0n,getBuyFeeRatios:[100n,200n],ipshareSubject:account,nutboxCommunity:token,indexToken:zeroAddress,getBuyAmountByValue:50n,handleOf:handle,innerMarketBought:bought,INNER_MARKET_BUY_LIMIT:10_000_000n*10n**18n}
    if(f.functionName==='handleOf'){assert.equal(c.target,'0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F');assert.deepEqual(f.args,[account])}
-   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,version===17?'0x01B2308653c7e371B28A862444a40c12ca18b353':version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
+   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,version===18?'0x3B174dB24A44d7172C1f4Fb8Ab387F3931681C24':version===17?'0x01B2308653c7e371B28A862444a40c12ca18b353':version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
    return {success:!(fail&&f.functionName==='handleOf'),returnData:encodeFunctionResult({abi,functionName:f.functionName,result:values[f.functionName]})}
   })
   return encodeFunctionResult({abi:aggregate,functionName:'aggregate3',result:rows})
@@ -84,4 +84,19 @@ test('V17 quota allows the exact lifetime boundary and rejects overspend',async(
  fixture('registered',false,17,limit-50n);assert.equal((await quoteCurve(token,true,1000n,17)).amountOut,50n);
  fixture('registered',false,17,limit-49n);await assert.rejects(quoteCurve(token,true,1000n,17),/V17_BUY_LIMIT_EXCEEDED/);
  fixture('registered',false,17,limit-5n,650_000_000n*10n**18n-5n);assert.equal((await quoteCurve(token,true,1000n,17)).amountOut,5n);
+});
+
+for(const handle of ['', 'registered'])test(`V18 curve buy reads its own Pump and lifetime quota in the pinned Multicall (${handle})`,async()=>{
+ const calls=fixture(handle,false,18);
+ if(handle)assert.equal((await quoteCurve(token,true,1000n,18)).amountOut,50n);else await assert.rejects(quoteCurve(token,true,1000n,18),/V15_HANDLE_NOT_REGISTERED/);
+ assert.equal(calls.length,2);
+ assert.deepEqual(calls[1].map(c=>decodeFunctionData({abi,data:c.callData}).functionName),['getBuyAmountByValue','handleOf','innerMarketBought','INNER_MARKET_BUY_LIMIT']);
+ assert.deepEqual(calls[1].slice(2).map(c=>c.target.toLowerCase()),[token,token]);
+ assert.deepEqual(decodeFunctionData({abi,data:calls[1][2].callData}).args,[account]);
+});
+test('V18 quota allows the exact lifetime boundary and rejects overspend',async()=>{
+ const limit=10_000_000n*10n**18n;
+ fixture('registered',false,18,limit-50n);assert.equal((await quoteCurve(token,true,1000n,18)).amountOut,50n);
+ fixture('registered',false,18,limit-49n);await assert.rejects(quoteCurve(token,true,1000n,18),/V18_BUY_LIMIT_EXCEEDED/);
+ fixture('registered',false,18,limit-5n,650_000_000n*10n**18n-5n);assert.equal((await quoteCurve(token,true,1000n,18)).amountOut,5n);
 });

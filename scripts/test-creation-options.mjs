@@ -21,7 +21,7 @@ const { creationOptions, creationFee, registerV13 } = createRequire(import.meta.
 await rm(dir, { recursive: true, force: true })
 const creator = '0x' + '11'.repeat(20)
 const committee = '0x' + '22'.repeat(20)
-const implementation = '0x309E55BB49cE073227F8a2F67bE659dFeA3d691f'
+const implementation = '0x02DC3D9bd600C147F347e584167b58953353BDbF'
 const assets = JSON.parse(await readFile('src/utils/v13/creation-assets.json', 'utf8'))
 function client(hasShare = false, noAssets = false) {
   const calls = []
@@ -145,7 +145,7 @@ test('BNC4 stays unavailable until Pump approves it, then appears before ETH/BTC
 })
 
 
-test('V17 optional pool charges one extra settings fee, preserving raw wei precision', async () => {
+test('V18 optional pool charges one extra settings fee, preserving raw wei precision', async () => {
   const o = await readCreationOptions(client(), creator)
   o.pumpFee = '900719925474099312345'
   assert.equal(creationFee(o, 5) - creationFee(o, 4), 400n)
@@ -153,8 +153,8 @@ test('V17 optional pool charges one extra settings fee, preserving raw wei preci
 })
 test('obsolete API V13 config cannot downgrade new creation', async () => {
   const data = await readCreationOptions(client(), creator)
-  const c = client(); globalThis.creationTest = { client: c, get: async url => { assert.match(url, /pump\/v17\/creation/); return { c: 0, d: { ...data, version: 13 } } } }
-  assert.equal((await creationOptions(creator)).version, 17)
+  const c = client(); globalThis.creationTest = { client: c, get: async url => { assert.match(url, /pump\/v18\/creation/); return { c: 0, d: { ...data, version: 13 } } } }
+  assert.equal((await creationOptions(creator)).version, 18)
   assert.equal(c.calls.length, 3)
 })
 test('receipt registration sends V14 to V14 and historical V13 to V13', async () => {

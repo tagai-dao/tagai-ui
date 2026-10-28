@@ -264,7 +264,7 @@ export const getTrendingTweets = async (twitterId: string | null | undefined, pa
 
 /************************************ community **********************************/
 export const createCommunity = async (params: CreateCommunity) => 
-  [13, 14, 15, 16, 17].includes(Number(params.version)) ? registerV13(params) : post(BACKEND_API_URL + '/community/createCommunity', params)
+  [13, 14, 15, 16, 17, 18].includes(Number(params.version)) ? registerV13(params) : post(BACKEND_API_URL + '/community/createCommunity', params)
 
 export const importCommunity = async (importInfo: CreateCommunity, ethAddr: string, signature: string, infoStr: string) =>
   post(BACKEND_API_URL + '/community/importCommunity', {importInfo, ethAddr, signature, infoStr})
