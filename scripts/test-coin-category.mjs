@@ -56,14 +56,14 @@ for (const [chain, version, expected] of [[4663, 11, true], [4663, '14', true], 
   assert.equal(isMemeEtf({ version, isImport: 0 }, chain), expected)
   assert.equal(isMemeEtf({ version, isImport: 1 }, chain), false)
 }
-for (const version of [15, '15', 16, '16', 17, '17']) {
+for (const version of [15, '15', 16, '16', 17, '17', 18, '18']) {
   assert.equal(isAgentLaunch({ version }, 56), true)
   assert.equal(isAgentLaunch({ version, listed: true }, 56), true)
   assert.equal(isAgentLaunch({ version }, 4663), false)
   assert.equal(isAgentLaunch({ version, isImport: 1 }, 56), false)
   assert.equal(isAgentLaunch({ version, chainId: 4663 }, 56), false)
 }
-for (const version of [9, 11, 12, 13, 14, 18]) assert.equal(isAgentLaunch({ version }, 56), false)
+for (const version of [9, 11, 12, 13, 14, 19]) assert.equal(isAgentLaunch({ version }, 56), false)
 const home = readFileSync(new URL('../src/views/HomeView.vue', import.meta.url), 'utf8')
 assert.equal((home.match(/:show-launch-platform="tagCoinSource === 'agent'"/g) || []).length, 3)
 const card = readFileSync(new URL('../src/components/home/TagListItem.vue', import.meta.url), 'utf8')
@@ -79,7 +79,7 @@ assert.match(badge, /@\/assets\/flap-launchpad\.svg/)
 assert.match(badge, /h-5 w-5[^"\n]*rounded-full/)
 assert.match(badge, /web:h-6 web:w-6/)
 assert.match(home, /agent-stage-navigation[^"\n]*w-full[^"\n]*px-3[^"\n]*web:mx-auto[^"\n]*web:max-w-\[1240px\]/)
-for (const token of [{}, { version: 18 }, { version: 10, isImport: 1 }, { version: 15, isImport: true }]) {
+for (const token of [{}, { version: 19 }, { version: 10, isImport: 1 }, { version: 15, isImport: true }]) {
   assert.equal(isAgentLaunch(token, 56), false)
 }
 assert.match(home, /value: 'all'[\s\S]*value: 'agent'[\s\S]*value: 'memeetf'[\s\S]*value: 'launch'[\s\S]*value: 'import'/)

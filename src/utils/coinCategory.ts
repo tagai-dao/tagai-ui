@@ -27,7 +27,7 @@ export function getLaunchPlatform(community: CoinCategory, chainId: number): 'ta
   const token = String(community.token ?? '').toLowerCase()
   if (token === '0x7ffcf7b3b52adcc00c76f50ce2e37bf3c7e215dc') return null // independent .ai token
   if (token === '0x0c6302401aa5325c2e36f170f52c00b1d220b405') return 'gang'
-  return [15, 16, 17].includes(Number(community.version))
+  return [15, 16, 17, 18].includes(Number(community.version))
     && community.isImport !== true && Number(community.isImport) !== 1 ? 'tagai' : null
 }
 
@@ -43,7 +43,7 @@ export function isGraduatedToken(community: CoinCategory, chainId = 56) {
 
 export function isAgentLaunch(community: CoinCategory, chainId: number) {
   return isExternalAgentLaunch(community, chainId) || (Number(community.chainId ?? community.chain_id ?? chainId) === 56
-    && [15, 16, 17].includes(Number(community.version))
+    && [15, 16, 17, 18].includes(Number(community.version))
     && community.isImport !== true && Number(community.isImport) !== 1)
 }
 

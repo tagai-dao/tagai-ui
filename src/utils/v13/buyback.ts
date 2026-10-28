@@ -49,7 +49,7 @@ export async function readBuybackState(token: Address, account: Address = zeroAd
   const readAt = { blockNumber: block.number, allowFailure: false as const,
     multicallAddress: deployment.multiConfig.multicallAddress as Address }
   const candidates = chainId === 56
-    ? [...new Set([deployment.contracts.pump13, deployment.contracts.pump14, deployment.contracts.pump15, deployment.contracts.pump16, deployment.contracts.pump17])]
+    ? [...new Set([deployment.contracts.pump13, deployment.contracts.pump14, deployment.contracts.pump15, deployment.contracts.pump16, deployment.contracts.pump17, deployment.contracts.pump18])]
       .filter((address): address is Address => !!address && isAddress(address) && address !== zeroAddress)
     : []
   if (chainId === 56 && !candidates.length) throw new Error('V13_BUYBACK_ROUTER')
@@ -90,7 +90,7 @@ export type BuybackQuote = {
 }
 async function checkBuybackRouter(state:BuybackState) {
   const {chainId,pump,blockNumber}=state,client=getReadOnlyClient(chainId),deployment=getChainDeployment(chainId)
-  if(![deployment.contracts.pump13,deployment.contracts.pump14,deployment.contracts.pump15, deployment.contracts.pump16, deployment.contracts.pump17].some(a=>a?.toLowerCase()===pump.toLowerCase()))throw new Error('V13_BUYBACK_ROUTER')
+  if(![deployment.contracts.pump13,deployment.contracts.pump14,deployment.contracts.pump15, deployment.contracts.pump16, deployment.contracts.pump17, deployment.contracts.pump18].some(a=>a?.toLowerCase()===pump.toLowerCase()))throw new Error('V13_BUYBACK_ROUTER')
   const router=await client.readContract({address:pump,abi:buybackAbi,functionName:'buybackRouter',blockNumber})
   if(router===zeroAddress || chainId===4663&&router.toLowerCase()!==deployment.contracts.buybackRouter14?.toLowerCase())throw new Error('V13_BUYBACK_ROUTER')
   const protocol=chainId===4663?RH_PUMP14_BASKET_PROTOCOL:getBasketProtocol(56,4)

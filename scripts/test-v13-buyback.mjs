@@ -14,7 +14,7 @@ await build({ entryPoints: ['src/utils/v13/buyback.ts'], bundle: true, platform:
   b.onResolve({ filter: /^\.\/pools$/ }, a => a.importer.endsWith('buyback.ts') ? { path: a.path, namespace: 'fixture' } : undefined)
   b.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ loader: 'js', contents: `
     export const useChainStore=()=>({activeChainId:globalThis.__buyback.chainId??56});export const RH_PUMP14_BASKET_PROTOCOL={};export const getReadOnlyClient=()=>globalThis.__buyback.client;
-    export const getChainDeployment=()=>({contracts:{pump13:'${pump}',pump14:'${addr(33)}',pump15:'${addr(34)}',pump16:'${addr(35)}',pump17:'${addr(36)}'},multiConfig:{multicallAddress:'${addr(30)}'}});
+    export const getChainDeployment=()=>({contracts:{pump13:'${pump}',pump14:'${addr(33)}',pump15:'${addr(34)}',pump16:'${addr(35)}',pump17:'${addr(36)}',pump18:'${addr(37)}'},multiConfig:{multicallAddress:'${addr(30)}'}});
     export const getBasketProtocol=()=>({nutboxRouter:'${nutbox}',swapRouter:'${basketRouter}',settlementToken:'${settlement}',registry:'${addr(31)}',hook:'${addr(32)}'});
     export const quoteNutboxExactInput=async()=>10000n;
     export const walletGuard=()=>({chainId:56,account:globalThis.__buyback.account,check(){}});
@@ -140,14 +140,14 @@ test('small amounts and invalid slippage cannot silently become a one-wei minimu
 test('disconnected read loads public data without another account rewards', async () => {
   fixture();const state=await readBuybackState(token);assert.equal(state.pending,0n);assert.equal(state.walletIndex,0n);assert.equal(state.reserve,100n)
 })
-test('BSC V13/V14/V15/V16/V17 resolve their canonical registry without calling the nonexistent token getPump getter', async () => {
-  for (const creator of [pump, addr(33), addr(34), addr(35), addr(36)]) {
+test('BSC V13/V14/V15/V16/V17/V18 resolve their canonical registry without calling the nonexistent token getPump getter', async () => {
+  for (const creator of [pump, addr(33), addr(34), addr(35), addr(36), addr(37)]) {
     const f=fixture();f.createdPump=creator
     const state=await readBuybackState(token,account)
     assert.equal(state.pump,creator);assert.equal(state.index,index);assert.equal(state.pending,7n)
     assert.equal(f.reads.some(r=>r.functionName==='getPump'),false)
     const identities=f.reads.filter(r=>r.functionName==='createdTokens')
-    assert.deepEqual(identities.map(r=>r.address),[pump,addr(33),addr(34),addr(35),addr(36)])
+    assert.deepEqual(identities.map(r=>r.address),[pump,addr(33),addr(34),addr(35),addr(36),addr(37)])
     assert.ok(identities.every(r=>r.args[0]===token))
     assert.ok(f.batches.every(b=>b.blockNumber===123n&&b.allowFailure===false&&b.multicallAddress===addr(30)))
     assert.ok(f.reads.every(r=>r.blockNumber===123n))
@@ -187,6 +187,6 @@ test('buyback identifies V16 with all historical Pumps in pinned Multicalls',asy
  globalThis.__buyback={client};
  const state=await readBuybackState(token,account);assert.equal(state.pump,addr(35));assert.equal(state.pending,7n);
  assert.equal(batches.length,2);
- assert.deepEqual(batches[0].map(c=>c.target.toLowerCase()),[token,token,token,token,pump,addr(33),addr(34),addr(35),addr(36),token]);
+ assert.deepEqual(batches[0].map(c=>c.target.toLowerCase()),[token,token,token,token,pump,addr(33),addr(34),addr(35),addr(36),addr(37),token]);
  assert.deepEqual(batches[1].map(c=>c.target.toLowerCase()),[hook,index,index,index,index]);
 });

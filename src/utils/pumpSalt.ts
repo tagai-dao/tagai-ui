@@ -15,30 +15,26 @@ const VANITY_SUFFIX = '3333'
 
 type CreatePumpDeployment = {
     chainId: number
-    version: 9 | 11 | 13 | 14 | 15 | 16 | 17
-    contractName: 'Pump9' | 'Pump11' | 'Pump13' | 'Pump14' | 'Pump15' | 'Pump16' | 'Pump17'
+    version: 14 | 18
+    contractName: 'Pump14' | 'Pump18'
     pump: `0x${string}`
     tokenImplementation: `0x${string}`
 }
 
-export function getCreatePumpDeployment(requestedVersion?: 14 | 15 | 17): CreatePumpDeployment {
+export function getCreatePumpDeployment(requestedVersion?: 14 | 18): CreatePumpDeployment {
     const deployment = useChainStore().deployment
     const version = requestedVersion ?? deployment.latestPumpVersion
-    if (requestedVersion != null && (![14, 15, 17].includes(requestedVersion) || (deployment.chainId !== 56 && requestedVersion !== 14))) throw new Error('Unsupported creation version')
-    const pump = version === 17 ? deployment.contracts.pump17 : version === 16 ? deployment.contracts.pump16 : version === 15 ? deployment.contracts.pump15 : version === 14 ? deployment.contracts.pump14 : version === 13 ? deployment.contracts.pump13 : version === 11
-        ? deployment.contracts.pump11
-        : deployment.contracts.pump9
-    const tokenImplementation = version === 17 ? deployment.contracts.tokenImplementation17 : version === 16 ? deployment.contracts.tokenImplementation16 : version === 15 ? deployment.contracts.tokenImplementation15 : version === 14 ? deployment.contracts.tokenImplementation14 : version === 13 ? deployment.contracts.tokenImplementation13 : version === 11
-        ? deployment.contracts.tokenImplementation11
-        : deployment.contracts.tokenImplementation9
+    if (![14, 18].includes(version) || ![56, 4663].includes(deployment.chainId) || (deployment.chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
+    const pump = version === 18 ? deployment.contracts.pump18 : deployment.contracts.pump14
+    const tokenImplementation = version === 18 ? deployment.contracts.tokenImplementation18 : deployment.contracts.tokenImplementation14
 
     if (!pump || !tokenImplementation || pump === zeroAddress || tokenImplementation === zeroAddress) {
         throw new Error(`Pump V${version} is not deployed on ${deployment.name}`)
     }
     return {
         chainId: deployment.chainId,
-        version,
-        contractName: `Pump${version}` as 'Pump9' | 'Pump11' | 'Pump13' | 'Pump14' | 'Pump15' | 'Pump16' | 'Pump17',
+        version: version as 14 | 18,
+        contractName: `Pump${version}` as 'Pump14' | 'Pump18',
         pump,
         tokenImplementation,
     }
@@ -90,7 +86,7 @@ function preparation(config: CreatePumpDeployment, deployer: `0x${string}`) {
 }
 
 /** Only local computation: opening a form never requests a signature or uses a salt. */
-export function preparePumpDeploySalt(deployer: `0x${string}`, version?: 14 | 15 | 17): Promise<`0x${string}`> {
+export function preparePumpDeploySalt(deployer: `0x${string}`, version?: 14 | 18): Promise<`0x${string}`> {
     return preparation(getCreatePumpDeployment(version), deployer)
 }
 
@@ -112,7 +108,7 @@ function predictPumpTokenAddressWithConfig(
 export function predictPumpTokenAddress(
     deployer: `0x${string}`,
     userSalt: `0x${string}`,
-    version?: 14 | 15 | 17
+    version?: 14 | 18
 ): `0x${string}` {
     return predictPumpTokenAddressWithConfig(getCreatePumpDeployment(version), deployer, userSalt)
 }
@@ -121,7 +117,7 @@ export function predictPumpTokenAddress(
 export async function verifyPumpSaltVanity(
     deployer: `0x${string}`,
     userSalt: `0x${string}`,
-    version?: 14 | 15 | 17
+    version?: 14 | 18
 ): Promise<`0x${string}`> {
     const config = getCreatePumpDeployment(version)
     const predicted = predictPumpTokenAddressWithConfig(config, deployer, userSalt)
@@ -136,7 +132,7 @@ export async function verifyPumpSaltVanity(
 }
 
 /** 搜索可用于当前链最新 Pump.createToken 的 salt。 */
-export async function findPumpDeploySalt(deployer: `0x${string}`, version?: 14 | 15 | 17): Promise<`0x${string}`> {
+export async function findPumpDeploySalt(deployer: `0x${string}`, version?: 14 | 18): Promise<`0x${string}`> {
     const config = getCreatePumpDeployment(version)
     const key = getSaltStorageKey(config, deployer)
     let candidate = preparation(config, deployer)

@@ -32,7 +32,7 @@ export function routeHash(m: Metadata, r: Route, buy: boolean): Hex {
     return hash;
 }
 export async function loadSnapshot(client: PublicClient, m: Metadata, gasPrice: bigint, admission: 'multi-pump' | 'v13-liquidity' = 'multi-pump'): Promise<Snapshot> {
-    if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || ![56,4663].includes(m.chainId) || ![13, 14, 15, 16, 17].includes(m.version)
+    if (m.schemaVersion !== 1 || m.abiVersion !== 'ipshare-subject-v1' || ![56,4663].includes(m.chainId) || ![13, 14, 15, 16, 17, 18].includes(m.version)
         || (m.chainId === 4663 && m.version !== 14) || (client.chain && client.chain.id !== m.chainId)
         || (admission === 'v13-liquidity' && m.chainId === 56 && m.version !== 13)
         || m.pools.length > 25 || m.routes.length > 5 || m.pools.reduce((n, p) => n + (p.ticks?.length || 0), 0) > 512)
