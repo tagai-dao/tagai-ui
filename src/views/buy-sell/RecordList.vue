@@ -11,6 +11,7 @@ import { useTools } from "@/composables/useTools";
 import { useChainStore } from '@/stores/chain'
 import SafeAvatar from '@/components/common/SafeAvatar.vue'
 import AccountOriginBadges from '@/components/common/AccountOriginBadges.vue'
+import TradeNote from '@/components/common/TradeNote.vue'
 
 const chainStore = useChainStore()
 const nativeSymbol = computed(() => chainStore.nativeCurrency.symbol)
@@ -140,6 +141,7 @@ onUnmounted(() => {
                 {{ quoteSymbol(token) }}
               </span>
             </span>
+            <TradeNote class="col-span-4" :text="token.noteText" :confidence="token.noteConfidence" />
           </div>
         </van-list>
       </van-pull-refresh>

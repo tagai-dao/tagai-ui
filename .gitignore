@@ -145,3 +145,4 @@ docs/*
 .local-fork/
 
 !docs/bsc-v15.md
+!docs/TRADE_NOTES.md

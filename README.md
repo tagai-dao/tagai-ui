@@ -123,6 +123,10 @@ npm run build
 npm run lint
 ```
 
+## 交易附言与置信度
+
+交易记录及首页、社区交易动态支持展示已校验的交易附言与 Agent 提交的置信度。API 和 UI 需要配套发布，数据字段、显示规则与验证命令见 [交易附言说明](docs/TRADE_NOTES.md)。
+
 ## Agent ID ATLAS 子站
 
 独立部署到 `agent-id.tagai.fun` 的源码与部署步骤见 [apps/agent-id/README.md](apps/agent-id/README.md)。子域名验收后，主站以 `VITE_AGENT_ID_ATLAS_ENABLED=true` 启用导航入口。

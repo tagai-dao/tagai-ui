@@ -104,6 +104,8 @@ export type Trade = {
 };
 
 export type FeedTrade = {
+  noteText?: string | null;
+  noteConfidence?: number | null;
   eventNativeUsd?: number | null;
   eventPriceUsd?: number | null;
   eventMarketCapUsd?: number | null;
@@ -506,6 +508,8 @@ export type CommunityCredit = {
 }
 
 export type TokenTrade = {
+  noteText?: string | null,
+  noteConfidence?: number | null,
   amountRaw?: string,
   nativeAmountRaw?: string,
   transactionHash?: string,

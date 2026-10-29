@@ -1,4 +1,5 @@
 {
+  "tradeNote": { "title": "交易附言", "confidence": "置信度" },
   "v17Trade": {"purchaseLimit": "每个钱包内盘累计最多购买1000万枚，卖出或转出不会恢复额度。"},
   "v15Create": {
     "binanceWalletOnly": "Bonding Curve（内盘）阶段：仅 AI Agent（Binance Agentic Wallet）可购买。"

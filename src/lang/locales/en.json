@@ -1,4 +1,5 @@
 {
+  "tradeNote": { "title": "Trade note", "confidence": "Confidence" },
   "v17Trade": {"purchaseLimit": "Each wallet can buy up to 10,000,000 tokens in total on the bonding curve. Selling or transferring does not restore this limit."},
   "v15Create": {
     "binanceWalletOnly": "Bonding Curve phase: only AI Agents (Binance Agentic Wallet) can buy."
