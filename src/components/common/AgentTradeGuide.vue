@@ -98,7 +98,7 @@ onBeforeUnmount(() => { disposed = true; sequence++; clearTimeout(timer) })
 <template>
   <section class="agent-trade-guide rounded-2xl border border-line bg-surface p-4 text-content" aria-label="Agent trading guide">
     <h3 class="text-lg font-bold">{{ zh ? '使用agent完成购买' : 'Complete your purchase with an agent' }}</h3>
-    <p class="mt-2 text-xs leading-5 text-muted">{{ zh ? '填写后复制完整提示词，交给你的 Agent。预估无需连接网页钱包，实际交易由 Agent 重新报价并向你确认。' : 'Fill in the details and copy the complete prompt for your Agent. No website wallet is needed for the estimate. Your Agent refreshes the quote and asks for confirmation.' }}</p>
+    <p class="mt-2 text-xs leading-5 text-muted">{{ zh ? '填写后复制完整提示词，交给你的 Agent。实际交易由 Agent 重新报价并向你确认。' : 'Fill in the details and copy the complete prompt for your Agent. Your Agent refreshes the quote and asks for confirmation.' }}</p>
 
     <label class="mt-4 block text-sm font-semibold">
       {{ zh ? '购买金额' : 'Buy amount' }}
