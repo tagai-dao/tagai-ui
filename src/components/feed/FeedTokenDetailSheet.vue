@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TokenFavoriteButton from '@/components/common/TokenFavoriteButton.vue'
+import TradeNote from '@/components/common/TradeNote.vue'
 import { computed, onUnmounted, ref, watch } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 import type { ApexOptions } from 'apexcharts'
@@ -313,6 +314,7 @@ onUnmounted(() => { document.body.style.overflow = previousBodyOverflow })
                 <span class="truncate text-grey-64">{{ formatAddress(trade.trader, 5, 4) }} · {{ formatPastTime(trade.timestamp as number) }}</span>
                 <span :class="trade.isBuy ? 'text-up' : 'text-down'">{{ trade.isBuy ? 'Buy' : 'Sell' }}</span>
                 <span class="tabular-nums text-content">{{ formatTokenAmount(trade.amount) }}</span>
+                <TradeNote class="col-span-3" :text="trade.noteText" :confidence="trade.noteConfidence" />
               </div>
             </div>
           </div>
