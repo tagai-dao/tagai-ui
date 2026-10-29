@@ -23,7 +23,7 @@ export function agentCallout(value: string): string | undefined {
 export type AgentBuyEstimate = { chainId: number; token: Address; version: number; amountIn: bigint; amountOut: bigint; blockNumber: bigint; quotedAt: number }
 export type AgentPromptInput = {
   token: string; tick: string; name?: string; amount: string; confidence: string; callout: string
-  referralAddress?: string | null; sourceTradeHash?: string; estimate: AgentBuyEstimate; zh: boolean
+  referralAddress?: string | null; estimate: AgentBuyEstimate; zh: boolean
 }
 export function buildAgentTradePrompt(input: AgentPromptInput): string {
   const { estimate: q, zh } = input
@@ -32,13 +32,11 @@ export function buildAgentTradePrompt(input: AgentPromptInput): string {
     || q.amountIn !== amount || q.amountOut <= 0n || Date.now() - q.quotedAt > AGENT_QUOTE_TTL) throw Error('QUOTE_EXPIRED')
   const referral = input.referralAddress?.trim()
   if (referral && (!isAddress(referral) || referral.toLowerCase() === zeroAddress)) throw Error('INVALID_REFERRAL')
-  const source = input.sourceTradeHash?.trim()
-  if (source && !/^0x[0-9a-f]{64}$/i.test(source)) throw Error('INVALID_SOURCE_TRADE')
   const line = (cn: string, en: string) => zh ? cn : en
   const json = (value: string) => JSON.stringify(value)
   const lines = [
+    line('请先阅读并遵循以下 Skill 的说明：', 'First read and follow the instructions in this Skill:'), AGENT_TRADE_SKILL, '',
     line('执行下面的动作：', 'Execute the following action:'), '',
-    line('请使用以下 Skill：', 'Use this Skill:'), AGENT_TRADE_SKILL, '',
     line('交易参数：', 'Trade parameters:'),
     line('- 网络：BNB Smart Chain，Chain ID 56', '- Network: BNB Smart Chain, Chain ID 56'),
     line('- 操作：买入', '- Action: buy'),
@@ -51,8 +49,7 @@ export function buildAgentTradePrompt(input: AgentPromptInput): string {
     line('- 滑点容忍度：2%', '- Slippage tolerance: 2%'),
   ]
   if (referral) lines.push('', line('推荐归属：', 'Referral attribution:'),
-    ...(source ? [line(`- 原交易哈希：${source}`, `- Original transaction: ${source}`)] : []),
-    line(`- 推荐 IPShare 主体（原交易者的钱包）：${referral}`, `- Referral IPShare subject (original trader wallet): ${referral}`),
+    line(`- sellsman（推荐 IPShare 主体，原交易者钱包）：${referral}`, `- sellsman (referral IPShare subject, original trader wallet): ${referral}`),
     line('请使用上述钱包地址，不要替换为 IPShare 合约地址或代币创建者。', 'Use that wallet address; do not replace it with the IPShare contract or token creator.'))
   if (confidence !== undefined || callout !== undefined) {
     lines.push('', line('本笔交易附带的数据：', 'Optional data for this trade:'))

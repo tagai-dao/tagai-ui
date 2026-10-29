@@ -7,7 +7,7 @@ import { useChainStore } from '@/stores/chain'
 import { quoteAgentCurveBuy } from '@/utils/agentCurveQuote'
 import { AGENT_TRADE_SKILL, AGENT_QUOTE_TTL, agentBuyAmount, agentConfidence, agentCallout, buildAgentTradePrompt, type AgentBuyEstimate } from '@/utils/agentTradePrompt'
 
-const props = defineProps<{ token: string; tick: string; name?: string; version: number; referralAddress?: string | null; sourceTradeHash?: string }>()
+const props = defineProps<{ token: string; tick: string; name?: string; version: number; referralAddress?: string | null }>()
 const chainStore = useChainStore()
 const { locale } = useI18n()
 const zh = computed(() => String(locale.value).startsWith('zh'))
@@ -19,15 +19,14 @@ const estimate = shallowRef<AgentBuyEstimate | null>(null)
 const loading = ref(false), copying = ref(false), quoteError = ref(''), copyError = ref(false)
 const lastCopied = ref<'prompt' | 'install' | null>(null)
 let timer: ReturnType<typeof setTimeout> | undefined, sequence = 0, disposed = false
-const contextKey = computed(() => [chainStore.activeChainId, props.token.toLowerCase(), props.version, props.referralAddress || '', props.sourceTradeHash || ''].join(':'))
+const contextKey = computed(() => [chainStore.activeChainId, props.token.toLowerCase(), props.version, props.referralAddress || ''].join(':'))
 const draft = () => ({ token: props.token, tick: props.tick, name: props.name, amount: amount.value,
-  confidence: confidence.value, callout: callout.value, referralAddress: props.referralAddress, sourceTradeHash: props.sourceTradeHash, zh: zh.value })
+  confidence: confidence.value, callout: callout.value, referralAddress: props.referralAddress, zh: zh.value })
 const validationError = computed(() => {
   try {
     if (amount.value) agentBuyAmount(amount.value)
     agentConfidence(confidence.value); agentCallout(callout.value)
     if (props.referralAddress && (!isAddress(props.referralAddress) || props.referralAddress.toLowerCase() === zeroAddress)) return 'INVALID_REFERRAL'
-    if (props.sourceTradeHash && !/^0x[0-9a-f]{64}$/i.test(props.sourceTradeHash)) return 'INVALID_REFERRAL'
     return ''
   } catch (e) { return (e as Error).message }
 })

@@ -30,7 +30,7 @@ function fixture(){
   if(id==='@/utils/agentCurveQuote')return {quoteAgentCurveBuy:(token,version,amountIn)=>new Promise(resolve=>pending.push({resolve,token,version,amountIn}))}
   throw Error('Unexpected import '+id)
  },exports)
- const props=Vue.reactive({token,tick:'TEST',name:'Test',version:18,referralAddress:subject,sourceTradeHash:'0x'+'ab'.repeat(32)})
+ const props=Vue.reactive({token,tick:'TEST',name:'Test',version:18,referralAddress:subject})
  const state=exports.default.setup(props,{expose(){}})
  const result=(i,extra={})=>pending[i].resolve({chainId:56,token:pending[i].token,version:pending[i].version,amountIn:pending[i].amountIn,amountOut:parseEther('1234'),blockNumber:123n,quotedAt:Date.now(),...extra})
  return {state,props,pending,copied,chain,result,stop:()=>dispose()}
@@ -45,7 +45,7 @@ test('late quotes cannot overwrite the amount currently in the form; copy includ
   assert.equal(f.state.estimate.value.amountIn,parseEther('0.02'))
   f.state.confidence.value='0';f.state.callout.value='reason\nsecond line'
   await f.state.copyPrompt()
-  assert.equal(f.copied.length,1);assert.ok(f.copied[0].startsWith('执行下面的动作：'))
+  assert.equal(f.copied.length,1);assert.ok(f.copied[0].startsWith('请先阅读并遵循以下 Skill 的说明：'))
   assert.ok(f.copied[0].includes('0.02 BNB'));assert.ok(f.copied[0].includes('置信度：0%'));assert.ok(f.copied[0].includes(subject))
  }finally{f.stop()}
 })

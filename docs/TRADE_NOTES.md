@@ -33,9 +33,9 @@ V15–V18 的 BSC 内盘 Agent 指引改为购买表单。填写 BNB 金额后�
 
 `agentCurveQuote.ts` 不读取或要求网页钱包。BNB 输入包含交易手续费，先按当前曲线买入费扣费，再向对应版本 Pump 询价，18 位小数均用 bigint。上市/待上市、未登记的代币、超单钱包购买上限或读取失败会拒绝预估。两阶段读取全部走 BSC Multicall3，固定同一区块；用户个人 Handle、余额和已买额度留给 Agent 按实际执行钱包核验。修改金额立即清除旧报价，350ms 防抖后重新请求；报价超过 30 秒则复制时刷新。
 
-`agentTradePrompt.ts` 生成的第一行固定为“执行下面的动作：”（英文界面使用对应英文），包含 Skill、完整 CA、币名/符号、Chain ID、BNB 金额、预估数量、2% 滑点及已填写的选项。喊单和代币文本按 JSON 字符串引用，不能通过换行伪造新的交易参数。实际交易仍需要刷新报价及用户钱包确认。
+`agentTradePrompt.ts` 开头明确要求先阅读并遵循 Skill 的说明，提供 Skill 链接后再写“执行下面的动作：”（英文界面使用对应英文），包含完整 CA、币名/符号、Chain ID、BNB 金额、预估数量、2% 滑点及已填写的选项。喊单和代币文本按 JSON 字符串引用，不能通过换行伪造新的交易参数。实际交易仍需要刷新报价及用户钱包确认。
 
-从交易卡片打开时，`FeedTradeActivity → FeedTokenSheetAsset → FeedTokenTradeSheet → BuyAndSellView → AgentTradeGuide` 传递原交易哈希和 `trade.trader` 钱包。此钱包作为 IPShare 推荐主体；不使用全局 IPShare 合约、代币创建者或残留的全局 sellsman。无来源时省略推荐归属。代币/链/来源变化会清空草稿并取消过期响应，复制期间的异步报价也不能带出旧来源。
+从交易卡片打开时，`FeedTradeActivity → FeedTokenSheetAsset → FeedTokenTradeSheet → BuyAndSellView → AgentTradeGuide` 仅传递 `trade.trader` 钱包作为 `sellsman`，不传递或生成原交易哈希。此钱包作为 IPShare 推荐主体；不使用全局 IPShare 合约、代币创建者或残留的全局 sellsman。无来源时省略推荐归属。代币/链/来源变化会清空草稿并取消过期响应，复制期间的异步报价也不能带出旧来源。
 
 “仅填写置信度”需要配套 API 更新：允许空正文加有效置信度的 nonce/commitment，仍拒绝正文和置信度同时为空的附言申请。数据表与签名后缀格式不变，无新增迁移。
 
