@@ -14,14 +14,14 @@ const confidencePercent = computed(() => {
 </script>
 
 <template>
-  <section v-if="message" class="trade-note" role="note" :aria-label="t('tradeNote.title')">
+  <section v-if="message || confidencePercent !== null" class="trade-note" role="note" :aria-label="t('tradeNote.title')">
     <div class="trade-note__header">
       <span>{{ t('tradeNote.title') }}</span>
       <span v-if="confidencePercent !== null" class="trade-note__confidence">
         {{ t('tradeNote.confidence') }} <strong>{{ confidencePercent }}%</strong>
       </span>
     </div>
-    <p class="trade-note__message">{{ message }}</p>
+    <p v-if="message" class="trade-note__message">{{ message }}</p>
   </section>
 </template>
 

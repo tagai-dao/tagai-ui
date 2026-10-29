@@ -73,6 +73,7 @@ const props = defineProps({
   loginReturnPath: {type: String, default: ''},
   commerceId: {type: String, default: ''},
   tweetId: {type: String, default: ''},
+  sourceTradeHash: {type: String, default: ''},
   showChart: {type: Boolean, default: true},
   // Shared by community, content, activity, Blinks and wallet trade entries.
   // Protocol/market state, not the entry point, decides whether to show a guide.
@@ -1066,7 +1067,7 @@ onUnmounted(() => {
       <div v-if="comStore.currentSelectedCommunity?.tick && comStore.currentSelectedCommunity?.tick !== '币安小说'"
            class="flex flex-col gap-2 w-full" :class="props.tick ? '' : 'web:w-[340px] web:min-w-[340px]'">
         <slot name="token-info" />
-        <AgentTradeGuide v-if="showAgentGuide" :token="comStore.currentSelectedCommunity.token" :tick="comStore.currentSelectedCommunity.tick" />
+        <AgentTradeGuide v-if="showAgentGuide" :token="comStore.currentSelectedCommunity.token" :tick="comStore.currentSelectedCommunity.tick" :name="comStore.currentSelectedCommunity.name" :version="Number(comStore.currentSelectedCommunity.version)" :referral-address="props.sellsman || (typeof route.params.sellsman === 'string' ? route.params.sellsman : '')" :source-trade-hash="props.sourceTradeHash" />
         <div v-else class="bg-surface py-3 web:py-5 px-4 rounded-2xl flex flex-col gap-2 web:gap-3 w-full">
         <div
           class="flex rounded-full overflow-hidden h-9 text-white bg-grey-light-active text-h5"

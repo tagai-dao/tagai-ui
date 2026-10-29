@@ -33,6 +33,7 @@ const traderHandle = computed(() => props.trade.twitterUsername
 function openDetails() {
   emit('openDetails', {
     tweetId: props.trade.curationSourceId,
+    sourceTradeHash: props.trade.transHash,
     tick: props.trade.tick,
     token: props.trade.token,
     name: props.trade.name || props.trade.tick,

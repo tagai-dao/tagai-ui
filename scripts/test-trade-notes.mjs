@@ -40,7 +40,7 @@ test('accepts the percentage boundaries and serialized numeric confidence', asyn
 })
 test('does not create an empty note box on ordinary trades', async () => {
   for (const text of [undefined, null, '', '\n  ']) {
-    const html = await render({ text, confidence: 75 })
+    const html = await render({ text, confidence: null })
     assert.ok(!html.includes('<section'))
     assert.ok(!html.includes('Confidence'))
   }
@@ -66,4 +66,11 @@ test('trade history and community/home trade cards compile with the same note co
     const labels = JSON.parse(read(`src/lang/locales/${locale}.json`)).tradeNote
     assert.ok(labels.title && labels.confidence)
   }
+})
+
+test('confidence-only published trades display the supplied percentage without a fabricated message', async () => {
+  const html = await render({ text: '', confidence: 0 })
+  assert.ok(html.includes('Confidence'))
+  assert.ok(html.includes('0%'))
+  assert.ok(!html.includes('<p'))
 })
