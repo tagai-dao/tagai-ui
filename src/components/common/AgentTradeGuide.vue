@@ -5,14 +5,13 @@ import { useClipboard } from '@vueuse/core'
 import { formatUnits, isAddress, zeroAddress, type Address } from 'viem'
 import { useChainStore } from '@/stores/chain'
 import { quoteAgentCurveBuy } from '@/utils/agentCurveQuote'
-import { AGENT_TRADE_SKILL, AGENT_QUOTE_TTL, agentBuyAmount, agentConfidence, agentCallout, buildAgentTradePrompt, type AgentBuyEstimate } from '@/utils/agentTradePrompt'
+import { AGENT_QUOTE_TTL, agentBuyAmount, agentConfidence, agentCallout, buildAgentTradePrompt, type AgentBuyEstimate } from '@/utils/agentTradePrompt'
 
 const props = defineProps<{ token: string; tick: string; name?: string; version: number; referralAddress?: string | null }>()
 const chainStore = useChainStore()
 const { locale } = useI18n()
 const zh = computed(() => String(locale.value).startsWith('zh'))
 const { copy, copied, isSupported } = useClipboard({ legacy: true })
-const skillUrl = AGENT_TRADE_SKILL
 const installCommand = 'npx skills add https://tagclaw.com --skill tagclaw-onchain'
 const amount = ref(''), confidence = ref(''), callout = ref('')
 const estimate = shallowRef<AgentBuyEstimate | null>(null)
@@ -41,9 +40,12 @@ const errorLabel = computed(() => {
   return error ? (zh.value ? '暂时无法获取预估，请重试。' : 'The estimate is temporarily unavailable. Please retry.') : ''
 })
 const ready = computed(() => chainStore.activeChainId === 56 && !!amount.value && !!estimate.value && !validationError.value && !loading.value && !copying.value)
-const prompt = computed(() => {
-  if (!estimate.value || validationError.value) return ''
-  try { return buildAgentTradePrompt({ ...draft(), estimate: estimate.value }) } catch { return '' }
+const estimateFormatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 })
+const estimatedAmount = computed(() => {
+  if (!estimate.value) return '—'
+  const output = estimate.value.amountOut
+  const display = output > 0n && output < 10n ** 16n ? '<0.01' : estimateFormatter.format(Number(formatUnits(output, 18)))
+  return `${display} ${props.tick}`
 })
 async function refreshEstimate() {
   clearTimeout(timer)
@@ -95,12 +97,8 @@ onBeforeUnmount(() => { disposed = true; sequence++; clearTimeout(timer) })
 
 <template>
   <section class="agent-trade-guide rounded-2xl border border-line bg-surface p-4 text-content" aria-label="Agent trading guide">
-    <div class="flex items-start justify-between gap-3">
-      <h3 class="text-lg font-bold">{{ zh ? '让 Agent 买入' : 'Buy with your Agent' }}</h3>
-      <a :href="skillUrl" target="_blank" rel="noopener noreferrer" class="shrink-0 text-xs font-semibold text-orange-normal underline" :aria-label="zh ? '打开 TagClaw SKILL 文档（新窗口）' : 'Open TagClaw SKILL documentation (new window)'">TagClaw SKILL ↗</a>
-    </div>
+    <h3 class="text-lg font-bold">{{ zh ? '使用agent完成购买' : 'Complete your purchase with an agent' }}</h3>
     <p class="mt-2 text-xs leading-5 text-muted">{{ zh ? '填写后复制完整提示词，交给你的 Agent。预估无需连接网页钱包，实际交易由 Agent 重新报价并向你确认。' : 'Fill in the details and copy the complete prompt for your Agent. No website wallet is needed for the estimate. Your Agent refreshes the quote and asks for confirmation.' }}</p>
-    <p class="mt-3 break-all font-mono text-xs">BNB Chain · {{ tick }}<br>CA: {{ token }}</p>
 
     <label class="mt-4 block text-sm font-semibold">
       {{ zh ? '购买金额' : 'Buy amount' }}
@@ -115,7 +113,7 @@ onBeforeUnmount(() => { disposed = true; sequence++; clearTimeout(timer) })
         <span>{{ zh ? '预估接收数量' : 'Estimated tokens received' }}</span>
         <button v-if="amount && !validationError" type="button" :disabled="loading || copying" class="text-orange-normal disabled:opacity-40" @click="refreshEstimate">{{ zh ? '重新预估' : 'Refresh estimate' }}</button>
       </div>
-      <p class="mt-1 break-words text-base font-semibold tabular-nums">{{ loading ? (zh ? '预估中…' : 'Estimating…') : estimate ? `${formatUnits(estimate.amountOut, 18)} ${tick}` : '—' }}</p>
+      <p class="mt-1 break-words text-base font-semibold tabular-nums">{{ loading ? (zh ? '预估中…' : 'Estimating…') : estimatedAmount }}</p>
       <p class="mt-1 text-xs text-muted">{{ zh ? '仅供参考，最终数量以 Agent 确认的最新报价为准。' : 'Reference only; final output follows the fresh quote confirmed with your Agent.' }}</p>
     </div>
 
@@ -132,13 +130,9 @@ onBeforeUnmount(() => { disposed = true; sequence++; clearTimeout(timer) })
     </label>
     <p v-if="referralAddress" class="mt-3 break-all text-xs leading-5 text-muted">{{ zh ? '推荐 IPShare 主体（原交易者钱包）：' : 'Referral IPShare subject (original trader wallet):' }} {{ referralAddress }}</p>
     <p v-if="errorLabel" role="alert" class="mt-3 text-xs text-red-normal">{{ errorLabel }}</p>
-    <p v-if="copyError" role="alert" class="mt-3 text-xs text-red-normal">{{ zh ? '复制失败，请重试或展开下方提示词手动复制。' : 'Copy failed. Retry or copy manually from the prompt below.' }}</p>
+    <p v-if="copyError" role="alert" class="mt-3 text-xs text-red-normal">{{ zh ? '复制失败，请重试。' : 'Copy failed. Please retry.' }}</p>
     <button type="button" class="mt-4 w-full rounded-xl bg-gradient-primary px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40" :disabled="!ready || !isSupported" @click="copyPrompt">{{ copying ? (zh ? '正在生成…' : 'Preparing…') : (zh ? '复制交易 Prompt' : 'Copy trade prompt') }}</button>
     <p v-if="copied && lastCopied === 'prompt'" role="status" class="mt-2 text-xs text-orange-normal">{{ zh ? '已复制完整交易提示词，可直接交给你的 Agent。' : 'Complete trade prompt copied. Send it to your Agent.' }}</p>
-    <details v-if="prompt" class="group mt-3 rounded-xl border border-line p-3">
-      <summary class="cursor-pointer text-xs font-semibold">{{ zh ? '查看生成的 Prompt' : 'Preview generated prompt' }}</summary>
-      <pre class="mt-3 whitespace-pre-wrap break-words text-xs leading-5">{{ prompt }}</pre>
-    </details>
     <details class="group mt-4 rounded-xl border border-line p-3">
       <summary class="cursor-pointer text-xs font-semibold">{{ zh ? '安装 Skill 与默认交易设置' : 'Install Skill and trade settings' }}</summary>
       <code class="mt-3 block break-all rounded-lg border border-line bg-surface-2 p-2 text-xs">{{ installCommand }}</code>

@@ -41,12 +41,18 @@ test('late quotes cannot overwrite the amount currently in the form; copy includ
  const f=fixture();try{
   f.state.amount.value='0.01';const first=f.state.refreshEstimate()
   f.state.amount.value='0.02';const second=f.state.refreshEstimate()
-  f.result(1);await second;f.result(0);await first
+  f.result(1,{amountOut:parseEther('414160.137937445499869349')});await second;f.result(0);await first
   assert.equal(f.state.estimate.value.amountIn,parseEther('0.02'))
+  assert.equal(f.state.estimatedAmount.value,'414,160.14 TEST')
   f.state.confidence.value='0';f.state.callout.value='reason\nsecond line'
   await f.state.copyPrompt()
   assert.equal(f.copied.length,1);assert.ok(f.copied[0].startsWith('请先阅读并遵循以下 Skill 的说明：'))
   assert.ok(f.copied[0].includes('0.02 BNB'));assert.ok(f.copied[0].includes('置信度：0%'));assert.ok(f.copied[0].includes(subject))
+  assert.ok(f.copied[0].includes('414160.137937445499869349'))
+  f.state.estimate.value={...f.state.estimate.value,amountOut:1n}
+  assert.equal(f.state.estimatedAmount.value,'<0.01 TEST')
+  f.state.estimate.value={...f.state.estimate.value,amountOut:parseEther('12')}
+  assert.equal(f.state.estimatedAmount.value,'12 TEST')
  }finally{f.stop()}
 })
 test('expired estimates refresh on copy and source changes cancel the in-flight copy and clear the draft',async()=>{
