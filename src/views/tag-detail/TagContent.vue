@@ -23,7 +23,6 @@ async function getTokenInfoOfTweets(rows: Tweet[]) {
 }
 import { useCurationStore } from "@/stores/curation";
 import emitter from "@/utils/emitter";
-import FeedTokenDetailSheet from '@/components/feed/FeedTokenDetailSheet.vue'
 import FeedTokenTradeSheet from '@/components/feed/FeedTokenTradeSheet.vue'
 import FeedTradeActivity from '@/components/feed/FeedTradeActivity.vue'
 import { externalSourceLogos } from '@/assets/externalSourceLogos'
@@ -76,7 +75,6 @@ const nextPage = ref<Record<ListType, number>>({
 const loadMoreSentinel = ref<HTMLElement | null>(null)
 let loadMoreObserver: IntersectionObserver | null = null
 const selectedFeedToken = ref<FeedTokenSheetAsset | null>(null)
-const showFeedTokenSheet = ref(false)
 const showFeedTradeSheet = ref(false)
 const allCommunityTweets = ref<Tweet[]>([])
 const communityTrades = ref<FeedTrade[]>([])
@@ -160,25 +158,15 @@ function mergeUniqueTweets(existing: Tweet[], incoming: Tweet[]) {
   return [...unique.values()]
 }
 
-function openFeedTokenSheet(asset: FeedTokenSheetAsset) {
+function openFeedTradeSheet(asset: FeedTokenSheetAsset) {
   selectedFeedToken.value = asset
-  showFeedTradeSheet.value = false
-  showFeedTokenSheet.value = true
-}
-
-function openBuy() {
   showFeedTradeSheet.value = true
 }
 
 function closeFeedSheets() {
   showFeedTradeSheet.value = false
-  showFeedTokenSheet.value = false
   selectedFeedToken.value = null
 }
-
-watch(showFeedTokenSheet, visible => {
-  if (!visible) showFeedTradeSheet.value = false
-})
 
 const showingTweets = computed(() => {
   if (comStore.currentSelectedCommunity?.tick &&
@@ -583,14 +571,14 @@ onBeforeUnmount(() => {
           <FeedTradeActivity
             v-if="item.type === 'trade'"
             :trade="item.trade"
-            @open-details="openFeedTokenSheet"
+            @open-details="openFeedTradeSheet"
           />
           <SpaceItem
             historical-metrics
             v-else-if="item.tweet.spaceId"
             class="bg-white rounded-2xl"
             :tweet="item.tweet"
-            @open-token-details="openFeedTokenSheet"
+            @open-token-details="openFeedTradeSheet"
             @click.stop="curationStore.currentSelectedTweet = item.tweet;$router.push(`/space-detail/${item.tweet.tweetId}`)"
           >
             <template #tweet-action-bar>
@@ -606,7 +594,7 @@ onBeforeUnmount(() => {
             hide-community-hashtag
             class="bg-white rounded-2xl"
             :tweet="item.tweet"
-            @open-token-details="openFeedTokenSheet"
+            @open-token-details="openFeedTradeSheet"
             @click.stop="curationStore.currentSelectedTweet = item.tweet;$router.push(`/post-detail/${item.tweet.tweetId}`)"
           >
             <template #tweet-trade v-if="item.tweet.commerceId">
@@ -624,7 +612,6 @@ onBeforeUnmount(() => {
       </van-list>
     </van-pull-refresh>
   </div>
-  <FeedTokenDetailSheet v-model="showFeedTokenSheet" :asset="selectedFeedToken" @buy="openBuy" />
   <FeedTokenTradeSheet v-model="showFeedTradeSheet" :asset="selectedFeedToken" />
 </template>
 
