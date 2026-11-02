@@ -406,6 +406,7 @@ export const getImportCommunityFee = async (importer: `0x${string}`): Promise<Im
         enhanced: deployment.features.enhancedImportHelper,
         v2: !deployment.features.enhancedImportHelper
             && deployment.contracts.importHelper.toLowerCase() !== LegacyBscImportHelper.toLowerCase(),
+        expectedHelperVersion: deployment.chainId === 56 ? 3 : 2,
     });
 }
 
@@ -438,7 +439,7 @@ export const deployNutboxCommunity = async (
             }
         },
         functionName: 'createCommunityAndPool',
-        // Current BSC/RH V2: fixed calculator, default pool allocation, no IPShare gate.
+        // BSC V3 / RH V2: fixed calculator, default pool allocation, no IPShare gate.
         args,
         value: fee.total,
         abi: createAbi,
@@ -454,7 +455,7 @@ export const deployNutboxCommunity = async (
     }
 
     // 仅在支持 importerOf / IPShare 的链上部署执行增强校验。
-    // 当前 BSC/RH V2 以可信 Helper 的 CommunityCreated 回执作为成功依据。
+    // 当前 BSC V3 / RH V2 以可信 Helper 的 CommunityCreated 回执作为成功依据。
     if (deployment.features.enhancedImportHelper) {
         const [recordedImporter, hasIPShare] = await client.multicall({
             multicallAddress: '0xcA11bde05977b3631167028862bE2a173976CA11',

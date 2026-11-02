@@ -9,7 +9,7 @@ export type ImportCommunityFee = { createFee: bigint; settingsFee: bigint; ipsha
 /** One required Multicall snapshot for both chains. No per-contract RPC fallback. */
 export async function readImportFee(client: PublicClient, config: {
   committee: Address; helper: Address; ipshare: Address; importer: Address;
-  enhanced: boolean; v2: boolean;
+  enhanced: boolean; v2: boolean; expectedHelperVersion?: 2 | 3;
 }): Promise<ImportCommunityFee> {
   const blockNumber = await client.getBlockNumber()
   const contracts: any[] = ['getCreateCommunityFee', 'getCommunitySettingsFee'].map(functionName => ({ address: config.committee, abi: committeeAbi, functionName }))
@@ -20,7 +20,8 @@ export async function readImportFee(client: PublicClient, config: {
   const [createFee, settingsFee] = values as bigint[]
   let poolCount = 1n
   if (config.v2) {
-    if (values[2] !== 2n) throw new Error('Unexpected import helper version')
+    // V2/V3 share the default-pool ABI; require the version selected by this chain.
+    if (values[2] !== BigInt(config.expectedHelperVersion ?? 2)) throw new Error('Unexpected import helper version')
     poolCount = values[3] as bigint
     if (poolCount < 1n || poolCount > 6n) throw new Error('Invalid default import pool count')
   }

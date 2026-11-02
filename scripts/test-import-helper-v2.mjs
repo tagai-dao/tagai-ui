@@ -24,30 +24,32 @@ for(const chainId of [56,4663]) test(`${chainId}: actual eth_call targets Multic
     return encodeFunctionResult({abi:mc,functionName:'aggregate3',result:children.map((c,i)=>{
       assert.equal(c.target.toLowerCase(),(i<2?d.contracts.nutboxCommittee:d.contracts.importHelper).toLowerCase())
       assert.equal(decodeFunctionData({abi,data:c.callData}).functionName,names[i])
-      return {success:true,returnData:encodeFunctionResult({abi,functionName:names[i],result:[100n,20n,2n,3n][i]})}
+      return {success:true,returnData:encodeFunctionResult({abi,functionName:names[i],result:[100n,20n,chainId===56?3n:2n,3n][i]})}
     })})
   }})})
-  const fee=await readImportFee(client,{committee:d.contracts.nutboxCommittee,helper:d.contracts.importHelper,ipshare:d.contracts.ipshare3,importer:'0x'+'11'.repeat(20),enhanced:d.features.enhancedImportHelper,v2:true})
+  const fee=await readImportFee(client,{committee:d.contracts.nutboxCommittee,helper:d.contracts.importHelper,ipshare:d.contracts.ipshare3,importer:'0x'+'11'.repeat(20),enhanced:d.features.enhancedImportHelper,v2:true,expectedHelperVersion:chainId===56?3:2})
   assert.deepEqual(fee,{createFee:100n,settingsFee:20n,ipshareCreateFee:0n,total:160n,createsIPShare:false})
   assert.equal(requests.filter(r=>r.method==='eth_call').length,1)
 })
 test('failed required child or invalid helper/default count refuses fee without standalone RPC fallback',async()=>{
-  for(const values of [[100n,20n,1n,1n],[100n,20n,2n,0n],[100n,20n,2n,7n],[100n,20n,2n,null]]) {
+  for(const [chainId,expectedHelperVersion,values] of [[4663,2,[100n,20n,1n,1n]],[4663,2,[100n,20n,3n,1n]],[56,3,[100n,20n,2n,1n]],[4663,2,[100n,20n,2n,0n]],[4663,2,[100n,20n,2n,7n]],[4663,2,[100n,20n,2n,null]]]) {
     let calls=0
     const client=createPublicClient({transport:custom({request:async({method,params})=>{
       if(method==='eth_blockNumber')return '0x64'
-      assert.equal(method,'eth_call');calls++;assert.equal(params[0].to.toLowerCase(),IMPORT_MULTICALL.toLowerCase())
+      assert.equal(method,'eth_call');calls++;assert.equal(params[0].to.toLowerCase(),IMPORT_MULTICALL.toLowerCase());assert.equal(params[1],'0x64')
       return encodeFunctionResult({abi:mc,functionName:'aggregate3',result:decodeFunctionData({abi:mc,data:params[0].data}).args[0].map((c,i)=>({success:values[i]!==null,returnData:values[i]===null?'0x':encodeFunctionResult({abi,functionName:decodeFunctionData({abi,data:c.callData}).functionName,result:values[i]})}))})
     }})})
-    const d=getChainDeployment(4663)
-    await assert.rejects(readImportFee(client,{committee:d.contracts.nutboxCommittee,helper:d.contracts.importHelper,ipshare:d.contracts.ipshare3,importer:'0x'+'11'.repeat(20),enhanced:false,v2:true}))
+    const d=getChainDeployment(chainId)
+    await assert.rejects(readImportFee(client,{committee:d.contracts.nutboxCommittee,helper:d.contracts.importHelper,ipshare:d.contracts.ipshare3,importer:'0x'+'11'.repeat(20),enhanced:false,v2:true,expectedHelperVersion}))
     assert.equal(calls,1)
   }
 })
 test('RH uses deployed V2 address and exact two-address create selector',async()=>{
+  assert.equal(getChainDeployment(56).contracts.importHelper,'0xDcCc7428338Db3a7480bEcAa9dAc2965425E0EDF')
   assert.equal(getChainDeployment(4663).contracts.importHelper,'0x70eD7C79d80dEDE1828a09B3c526df283111Cb82')
   assert.equal(getChainDeployment(4663).features.enhancedImportHelper,false)
   const source=await readFile('src/utils/pump.ts','utf8')
+  assert.match(source,/expectedHelperVersion: deployment.chainId === 56 \? 3 : 2/)
   assert.match(source,/args = deployment.features.enhancedImportHelper[\s\S]*?: \[token, zeroAddress\]/)
   assert.match(source,/address: deployment.contracts.importHelper,[\s\S]*?beforeWrite:[\s\S]*?functionName: 'createCommunityAndPool'/)
   assert.match(source,/tx.logs.filter\(log => log.address.toLowerCase\(\) === helper.toLowerCase\(\)\)/)
