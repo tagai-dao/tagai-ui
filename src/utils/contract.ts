@@ -1,6 +1,8 @@
 import rhPump14Abi from './v14/RHPumpV14.json'
 import rhToken14Abi from './v14/RHTokenV14.json'
 import pump14Abi from './v14/Pump14.json'
+import pump19Abi from './v19/Pump19.json'
+import token19Abi from './v19/Token19.json'
 import pump18Abi from './v18/Pump18.json'
 import token18Abi from './v18/Token18.json'
 import pump17Abi from './v17/Pump17.json'
@@ -69,7 +71,7 @@ const ContractAddress = {
 
 /** 这些合约必须按链取址，禁止跨链回退到 BSC 常量 */
 const CHAIN_SCOPED_CONTRACTS = new Set([
-    'Pump9', 'Pump11', 'Pump13', 'Pump14', 'Pump15', 'Pump16', 'Pump17', 'Pump18', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
+    'Pump9', 'Pump11', 'Pump13', 'Pump14', 'Pump15', 'Pump16', 'Pump17', 'Pump18', 'Pump19', 'IPShare3', 'ImportHelper', 'ImportedTokenSwapWrapper', 'TagAISwapWrapper', 'LegacyTagAISwapWrapper', 'WrapSwaper', 'WrapSwaper2', 'HourlyTickCalculator',
     'NutboxCommittee', 'CoinPurse', 'WETH', 'UniswapRouter', 'UniversalRouter', 'Permit2', 'PCSCLPoolManager',
 ])
 
@@ -97,6 +99,7 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
         Pump16: c.pump16,
         Pump17: c.pump17,
         Pump18: c.pump18,
+        Pump19: c.pump19,
         IPShare3: c.ipshare3,
         ImportHelper: c.importHelper,
         ImportedTokenSwapWrapper: c.importedTokenSwapWrapper,
@@ -133,6 +136,10 @@ export const resolveContractAddress = (contractName: string): `0x${string}` | un
 
 /** V11 保持 V9 的现有调用 ABI；只替换部署地址。 */
 const resolveContractAbi = (contractName: string) => {
+    if (contractName === 'Pump19' || contractName === 'Token19') {
+        if (useChainStore().activeChainId !== 56) throw new Error('V19 is only supported on BSC')
+        return (contractName === 'Pump19' ? pump19Abi : token19Abi) as Abi
+    }
     if (contractName === 'Pump18' || contractName === 'Token18') {
         if (useChainStore().activeChainId !== 56) throw new Error('V18 is only supported on BSC')
         return (contractName === 'Pump18' ? pump18Abi : token18Abi) as Abi

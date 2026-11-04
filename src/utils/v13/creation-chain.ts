@@ -1,3 +1,4 @@
+import { creationVersionForMode } from '../v14/creation-mode'
 import { isAddress, parseAbi, zeroAddress, type Address, type PublicClient } from 'viem'
 import { getChainDeployment } from '@/config/chains'
 import bscCandidates from './creation-assets.json'
@@ -22,12 +23,12 @@ const feeAbi = parseAbi([
 ])
 
 /** Bootstrap fallback only. Candidates are never offered without on-chain approval. */
-export async function readCreationOptions(client: PublicClient, creator: Address, selectedVersion?: 14 | 18): Promise<CreationOptions> {
+export async function readCreationOptions(client: PublicClient, creator: Address, selectedVersion?: 14 | 18 | 19): Promise<CreationOptions> {
   const chainId = client.chain?.id
   if (!chainId || ![56,4663].includes(chainId) || !isAddress(creator)) throw new Error('Invalid creation chain or account')
-  const d = getChainDeployment(chainId), version = selectedVersion ?? d.latestPumpVersion
-  if (![14, 18].includes(version) || (chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
-  const pump = (version === 18 ? d.contracts.pump18 : d.contracts.pump14)
+  const d = getChainDeployment(chainId), version = selectedVersion ?? creationVersionForMode(chainId)
+  if (![14, 18, 19].includes(version) || (chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
+  const pump = (version === 19 ? d.contracts.pump19 : version === 18 ? d.contracts.pump18 : d.contracts.pump14)
   const { tradeCurationFactory: factory } = d.contracts
   if (!pump || pump === zeroAddress) throw new Error('Creation is unavailable')
   const candidates = chainId === 4663 ? rhCandidates : bscCandidates
@@ -43,7 +44,7 @@ export async function readCreationOptions(client: PublicClient, creator: Address
   if (![ipshare, committee, implementation].every(a => typeof a === 'string' && isAddress(a) && a !== zeroAddress)) {
     throw new Error('Incomplete creation contracts')
   }
-  if (String(implementation).toLowerCase() !== (version === 18 ? d.contracts.tokenImplementation18 : d.contracts.tokenImplementation14)?.toLowerCase()) throw new Error('Token template changed; refresh the app')
+  if (String(implementation).toLowerCase() !== (version === 19 ? d.contracts.tokenImplementation19 : version === 18 ? d.contracts.tokenImplementation18 : d.contracts.tokenImplementation14)?.toLowerCase()) throw new Error('Token template changed; refresh the app')
   if (!factory) throw new Error('Trade pool factory is missing')
   const [hasShare, ipFee, communityFee, settingsFee, registration, verified] = await client.multicall({
     blockNumber, allowFailure: false,
@@ -56,10 +57,10 @@ export async function readCreationOptions(client: PublicClient, creator: Address
       { address: committee as Address, abi: feeAbi, functionName: 'verifyContract', args: [factory] },
     ],
   })
-  if (version === 18) {
+  if ([18,19].includes(version)) {
     const abi = parseAbi(['function operators(address) view returns(bool)', 'function approvedCreatorForwarders(address) view returns(bool)'])
-    const router = d.contracts.nutboxRouter18
-    const registry = d.contracts.basketRegistry18
+    const router = d.contracts[`nutboxRouter${version}` as keyof typeof d.contracts]
+    const registry = d.contracts[`basketRegistry${version}` as keyof typeof d.contracts]
     if (!router || !registry) throw new Error(`V${version}_CREATION_NOT_READY`)
     const [operator, forwarder] = await client.multicall({blockNumber, allowFailure:false, contracts:[
       {address:router,abi,functionName:'operators',args:[pump]},

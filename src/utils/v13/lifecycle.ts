@@ -25,13 +25,13 @@ export async function quoteCurve(token:Address,isBuy:boolean,amountIn:bigint,ver
     const contracts: {address:Address;abi:Abi;functionName:string;args:readonly unknown[]}[] = [
       {address:pump,abi:deployment.pumpAbi,functionName:'getBuyAmountByValue',args:[state.supply,net]},
       ...(requiresBuyerHandle(state.chainId,version) && buyer ? [buyerHandleCall(buyer)] : []),
-      ...([17,18].includes(version) && buyer ? ['innerMarketBought','INNER_MARKET_BUY_LIMIT'].map(functionName=>({address:token,abi:deployment.tokenAbi,functionName,args:functionName==='innerMarketBought'?[buyer]:[]})) : []),
+      ...([17,18,19].includes(version) && buyer ? ['innerMarketBought','INNER_MARKET_BUY_LIMIT'].map(functionName=>({address:token,abi:deployment.tokenAbi,functionName,args:functionName==='innerMarketBought'?[buyer]:[]})) : []),
     ]
     const values = await client.multicall({blockNumber:state.blockNumber,allowFailure:false,contracts})
     amountOut = values[0] as bigint
     if (requiresBuyerHandle(state.chainId,version) && buyer) assertBuyerHandle(values[1])
     if(amountOut>CURVE_CAP-state.supply)amountOut=CURVE_CAP-state.supply
-    if([17,18].includes(version) && buyer && (values[2] as bigint) + amountOut > (values[3] as bigint)) throw new Error(`V${version}_BUY_LIMIT_EXCEEDED`)
+    if([17,18,19].includes(version) && buyer && (values[requiresBuyerHandle(state.chainId,version) ? 2 : 1] as bigint) + amountOut > (values[requiresBuyerHandle(state.chainId,version) ? 3 : 2] as bigint)) throw new Error(`V${version}_BUY_LIMIT_EXCEEDED`)
   } else {
     if(amountIn>state.supply)throw new Error('V13_INVALID_AMOUNT')
     const [out] = await client.multicall({blockNumber:state.blockNumber,allowFailure:false,contracts:[{address:pump,abi:deployment.pumpAbi,functionName:'getSellPriceAfterFee',args:[state.supply,amountIn]}]})
@@ -44,7 +44,7 @@ export async function executeCurve(q:CurveQuote,subject:Address,slippage:number,
   const account=useAccountStore().ethConnectAddress as Address
   const check=()=> { if(useChainStore().activeChainId!==q.state.chainId || useAccountStore().ethConnectAddress?.toLowerCase()!==account.toLowerCase() || Date.now()-q.quotedAt>30000)throw new Error('V13_QUOTE_EXPIRED') }
   check()
-  if(q.isBuy && requiresBuyerHandle(q.state.chainId,q.version ?? 13) && q.buyer?.toLowerCase() !== account?.toLowerCase()) throw new Error('V13_QUOTE_EXPIRED')
+  if(q.isBuy && (requiresBuyerHandle(q.state.chainId,q.version ?? 13) || [17,18,19].includes(q.version ?? 13)) && q.buyer?.toLowerCase() !== account?.toLowerCase()) throw new Error('V13_QUOTE_EXPIRED')
   const client=getReadOnlyClient(q.state.chainId),wallet=await getPreparedWalletClient(q.state.chainId)
   check()
   if(!wallet)throw new Error('Wallet unavailable')

@@ -1,4 +1,5 @@
 {
+  "v19Create": {"transferLocked": "内盘允许转入本代币的 Nutbox 社区，其他转账需等上市。直接转账仅增加余额，奖励分发请使用注入功能。", "policy": "普通模式：内盘任何普通钱包均可买卖，每个地址累计最多买入1000万枚。上市前允许 bonding curve 买卖及任意地址向本代币 Nutbox 社区转入代币，禁止其他转账。"},
   "tradeNote": { "title": "交易附言", "confidence": "置信度" },
   "v17Trade": {"purchaseLimit": "每个钱包内盘累计最多购买1000万枚，卖出或转出不会恢复额度。"},
   "v15Create": {

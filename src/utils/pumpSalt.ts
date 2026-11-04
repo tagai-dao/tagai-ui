@@ -1,3 +1,4 @@
+import { creationVersionForMode } from './v14/creation-mode'
 /**
  * 当前链最新 Pump 的部署 salt 搜索：
  * - 本地 OZ Clones 预测地址（零 RPC，与 Pump.predictTokenAddress 一致）
@@ -15,26 +16,26 @@ const VANITY_SUFFIX = '3333'
 
 type CreatePumpDeployment = {
     chainId: number
-    version: 14 | 18
-    contractName: 'Pump14' | 'Pump18'
+    version: 14 | 18 | 19
+    contractName: 'Pump14' | 'Pump18' | 'Pump19'
     pump: `0x${string}`
     tokenImplementation: `0x${string}`
 }
 
-export function getCreatePumpDeployment(requestedVersion?: 14 | 18): CreatePumpDeployment {
+export function getCreatePumpDeployment(requestedVersion?: 14 | 18 | 19): CreatePumpDeployment {
     const deployment = useChainStore().deployment
-    const version = requestedVersion ?? deployment.latestPumpVersion
-    if (![14, 18].includes(version) || ![56, 4663].includes(deployment.chainId) || (deployment.chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
-    const pump = version === 18 ? deployment.contracts.pump18 : deployment.contracts.pump14
-    const tokenImplementation = version === 18 ? deployment.contracts.tokenImplementation18 : deployment.contracts.tokenImplementation14
+    const version = requestedVersion ?? creationVersionForMode(deployment.chainId)
+    if (![14, 18, 19].includes(version) || ![56, 4663].includes(deployment.chainId) || (deployment.chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
+    const pump = version === 19 ? deployment.contracts.pump19 : version === 18 ? deployment.contracts.pump18 : deployment.contracts.pump14
+    const tokenImplementation = version === 19 ? deployment.contracts.tokenImplementation19 : version === 18 ? deployment.contracts.tokenImplementation18 : deployment.contracts.tokenImplementation14
 
     if (!pump || !tokenImplementation || pump === zeroAddress || tokenImplementation === zeroAddress) {
         throw new Error(`Pump V${version} is not deployed on ${deployment.name}`)
     }
     return {
         chainId: deployment.chainId,
-        version: version as 14 | 18,
-        contractName: `Pump${version}` as 'Pump14' | 'Pump18',
+        version: version as 14 | 18 | 19,
+        contractName: `Pump${version}` as 'Pump14' | 'Pump18' | 'Pump19',
         pump,
         tokenImplementation,
     }
@@ -86,7 +87,7 @@ function preparation(config: CreatePumpDeployment, deployer: `0x${string}`) {
 }
 
 /** Only local computation: opening a form never requests a signature or uses a salt. */
-export function preparePumpDeploySalt(deployer: `0x${string}`, version?: 14 | 18): Promise<`0x${string}`> {
+export function preparePumpDeploySalt(deployer: `0x${string}`, version?: 14 | 18 | 19): Promise<`0x${string}`> {
     return preparation(getCreatePumpDeployment(version), deployer)
 }
 
@@ -108,7 +109,7 @@ function predictPumpTokenAddressWithConfig(
 export function predictPumpTokenAddress(
     deployer: `0x${string}`,
     userSalt: `0x${string}`,
-    version?: 14 | 18
+    version?: 14 | 18 | 19
 ): `0x${string}` {
     return predictPumpTokenAddressWithConfig(getCreatePumpDeployment(version), deployer, userSalt)
 }
@@ -117,7 +118,7 @@ export function predictPumpTokenAddress(
 export async function verifyPumpSaltVanity(
     deployer: `0x${string}`,
     userSalt: `0x${string}`,
-    version?: 14 | 18
+    version?: 14 | 18 | 19
 ): Promise<`0x${string}`> {
     const config = getCreatePumpDeployment(version)
     const predicted = predictPumpTokenAddressWithConfig(config, deployer, userSalt)
@@ -132,7 +133,7 @@ export async function verifyPumpSaltVanity(
 }
 
 /** 搜索可用于当前链最新 Pump.createToken 的 salt。 */
-export async function findPumpDeploySalt(deployer: `0x${string}`, version?: 14 | 18): Promise<`0x${string}`> {
+export async function findPumpDeploySalt(deployer: `0x${string}`, version?: 14 | 18 | 19): Promise<`0x${string}`> {
     const config = getCreatePumpDeployment(version)
     const key = getSaltStorageKey(config, deployer)
     let candidate = preparation(config, deployer)

@@ -8,7 +8,7 @@ import { createRequire } from 'node:module'
 const dir = await mkdtemp(join(tmpdir(), 'creation-options-'))
 const outfile = join(dir, 'test.cjs')
 await build({ stdin: { contents: "export * from './src/utils/v13/creation-chain.ts';export * from './src/utils/v13/creation-fees.ts';export * from './src/config/baskets.ts';export * from './src/utils/baskets/asset-order.ts';", resolveDir: process.cwd() }, alias: { '@': join(process.cwd(), 'src') }, bundle: true, platform: 'node', format: 'cjs', outfile, logLevel: 'silent', define: { 'import.meta.env': '{}' } })
-const { readCreationOptions, creationFeeExample, creationFeeAllocation, creatorPercentToBps, BASKET_DEPLOYMENTS, sortBasketAssetOptions } = createRequire(import.meta.url)(outfile)
+const { readCreationOptions: readHistoricalCreationOptions, creationFeeExample, creationFeeAllocation, creatorPercentToBps, BASKET_DEPLOYMENTS, sortBasketAssetOptions } = createRequire(import.meta.url)(outfile)
 const apiOutfile = join(dir, 'api.cjs')
 await build({ entryPoints: ['src/utils/v13/creation.ts'], alias: { '@': join(process.cwd(), 'src') }, bundle: true, platform: 'node', format: 'cjs', outfile: apiOutfile, logLevel: 'silent', plugins: [{ name: 'creation-dependencies', setup(build) {
   build.onResolve({ filter: /^@\/(apis\/axios|config\/api|utils\/wallets)$/ }, args => ({ path: args.path, namespace: 'creation-test' }))
@@ -17,8 +17,11 @@ await build({ entryPoints: ['src/utils/v13/creation.ts'], alias: { '@': join(pro
     : args.path.endsWith('wallets') ? 'export const getReadOnlyClient=()=>globalThis.creationTest.client'
     : 'export const API_BASE_URL="https://example.invalid"' }))
 } }] })
-const { creationOptions, creationFee, registerV13 } = createRequire(import.meta.url)(apiOutfile)
+const { creationOptions: historicalCreationOptions, creationFee, registerV13 } = createRequire(import.meta.url)(apiOutfile)
 await rm(dir, { recursive: true, force: true })
+// These existing fixtures describe deployed V18, now selected explicitly.
+const readCreationOptions=(client,creator)=>readHistoricalCreationOptions(client,creator,18)
+const creationOptions=(creator)=>historicalCreationOptions(creator,56,18)
 const creator = '0x' + '11'.repeat(20)
 const committee = '0x' + '22'.repeat(20)
 const implementation = '0x02DC3D9bd600C147F347e584167b58953353BDbF'

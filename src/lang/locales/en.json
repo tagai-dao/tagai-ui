@@ -1,4 +1,5 @@
 {
+  "v19Create": {"transferLocked": "Before listing, transfers into this token’s Nutbox community are allowed. Other transfers require listing. Direct transfers only increase its balance; use Inject to schedule rewards.", "policy": "Standard mode: any ordinary wallet can trade on the bonding curve, with a lifetime purchase limit of 10 million tokens per address. Before listing, bonding curve trades and transfers from any address into this token’s Nutbox community are allowed; other transfers are disabled."},
   "tradeNote": { "title": "Trade note", "confidence": "Confidence" },
   "v17Trade": {"purchaseLimit": "Each wallet can buy up to 10,000,000 tokens in total on the bonding curve. Selling or transferring does not restore this limit."},
   "v15Create": {

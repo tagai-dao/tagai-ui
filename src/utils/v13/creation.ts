@@ -1,3 +1,4 @@
+import { creationVersionForMode } from '../v14/creation-mode'
 import { get, post } from '@/apis/axios'
 import { API_BASE_URL } from '@/config/api'
 import { isAddress, type Address } from 'viem'
@@ -8,10 +9,11 @@ export type CreationOptions = { chainId: number; version: number; pump: string; 
   pumpFee: string; ipshareFee: string; communityFee: string; settingsFee: string; tradePool: { factory: `0x${string}`; enabled: boolean; maxRewardRatio: number } }
 import { validTradePool } from '../v14/creation-config'
 export { validateIndexConfig } from './index-config'
-export async function creationOptions(creator: string, chainId = 56, selectedVersion?: 14 | 18): Promise<CreationOptions> {
+export async function creationOptions(creator: string, chainId = 56, selectedVersion?: 14 | 18 | 19): Promise<CreationOptions> {
   if (!isAddress(creator)) throw new Error('Connect a wallet to load creation settings')
-  const d = getChainDeployment(chainId), version = selectedVersion ?? d.latestPumpVersion
-  if (![14, 18].includes(version) || (chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
+  const d = getChainDeployment(chainId), version = selectedVersion ?? creationVersionForMode(chainId)
+  if (![14, 18, 19].includes(version) || (chainId !== 56 && version !== 14)) throw new Error('Unsupported creation version')
+  if (version === 19 && (!d.contracts.pump19 || !d.contracts.tokenImplementation19)) throw new Error('V19_NOT_DEPLOYED')
   try {
     const r: any = await get(`${API_BASE_URL}/pump/v${version}/creation/${creator}`, {}, {
       headers: {'X-Chain-Id':String(chainId)}, timeout: 8000, 'axios-retry': { retries: 0 },
@@ -31,7 +33,7 @@ export async function creationOptions(creator: string, chainId = 56, selectedVer
     const [{ getReadOnlyClient }, { readCreationOptions }] = await Promise.all([
       import('@/utils/wallets'), import('./creation-chain'),
     ])
-    return readCreationOptions(getReadOnlyClient(chainId), creator as Address, version as 14 | 18)
+    return readCreationOptions(getReadOnlyClient(chainId), creator as Address, version as 14 | 18 | 19)
   }
 }
 export const creationFee = (o: CreationOptions, count: number) => BigInt(o.pumpFee)+BigInt(o.ipshareFee)+BigInt(o.communityFee)+BigInt(o.settingsFee)*BigInt(count)
@@ -39,8 +41,8 @@ export async function registerV13(form: { version?: number; chainId?: number; bi
   const version = Number(form.version)
   const chainId = form.chainId ?? 56
   if (![56,4663].includes(chainId) || (chainId === 4663 && version !== 14)) throw new Error('Unsupported registration chain')
-  if (![13, 14, 15, 16, 17, 18].includes(version)) throw new Error('Unsupported registration version')
-  // Historical receipts retain their own endpoints; BSC creation selects V14 or V18; RH uses V14.
+  if (![13, 14, 15, 16, 17, 18, 19].includes(version)) throw new Error('Unsupported registration version')
+  // Historical receipts retain their own endpoints; BSC creation selects V19 or V18; RH uses V14.
   const r: any = await post(`${API_BASE_URL}/pump/v${version}/register`, form, {headers:{'X-Chain-Id':String(chainId)}, timeout: 10_000, 'axios-retry': { retries: 0 }})
   if (r?.c !== 0 || !r.d) throw new Error('Token registration unavailable')
   return r.d

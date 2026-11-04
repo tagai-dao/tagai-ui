@@ -9,11 +9,12 @@ import {createPublicClient,custom,parseAbi,decodeFunctionData,encodeFunctionResu
 import {bsc} from 'viem/chains'
 import ts from 'typescript'
 const dir=await mkdtemp(join(tmpdir(),'v15-eligibility-'))
-await build({entryPoints:['src/utils/v13/lifecycle.ts'],bundle:true,platform:'node',format:'cjs',outfile:join(dir,'test.cjs'),alias:{'@':join(process.cwd(),'src')},logLevel:'silent',plugins:[{name:'wallets',setup(b){
+await build({stdin:{contents:"export * from './src/utils/v13/lifecycle.ts';export {getChainDeployment} from './src/config/chains.ts';",resolveDir:process.cwd()},bundle:true,platform:'node',format:'cjs',outfile:join(dir,'test.cjs'),alias:{'@':join(process.cwd(),'src')},logLevel:'silent',plugins:[{name:'wallets',setup(b){
  b.onResolve({filter:/^@\/(utils\/wallets|stores\/(web3|chain))$/},a=>({path:a.path,namespace:'fixture'}))
  b.onLoad({filter:/.*/,namespace:'fixture'},()=>({contents:`export const getReadOnlyClient=()=>globalThis.__v15.client;export const getPreparedWalletClient=async()=>{throw Error('No wallet expected')};export const useAccountStore=()=>({ethConnectAddress:globalThis.__v15.account});export const useChainStore=()=>({activeChainId:56});`}))
 }}]})
-const {quoteCurve}=createRequire(import.meta.url)(join(dir,'test.cjs'))
+const {quoteCurve,getChainDeployment}=createRequire(import.meta.url)(join(dir,'test.cjs'))
+Object.assign(getChainDeployment(56).contracts,{pump19:'0x'+'91'.repeat(20),tokenImplementation19:'0x'+'92'.repeat(20),tipTagSwapHook19:'0x'+'93'.repeat(20)});
 after(async()=>{delete globalThis.__v15;await rm(dir,{recursive:true,force:true})})
 const token='0x'+'11'.repeat(20),account='0x'+'22'.repeat(20),mc='0xca11bde05977b3631167028862be2a173976ca11'
 const aggregate=parseAbi(['function aggregate3((address target,bool allowFailure,bytes callData)[] calls) payable returns ((bool success,bytes returnData)[])'])
@@ -27,7 +28,7 @@ function fixture(handle,fail=false,version=15,bought=0n,supply=100n){
   const rows=children.map(c=>{
    const f=decodeFunctionData({abi,data:c.callData});const values={listed:false,listingPending:false,bondingCurveSupply:supply,createdAt:0n,getBuyFeeRatios:[100n,200n],ipshareSubject:account,nutboxCommunity:token,indexToken:zeroAddress,getBuyAmountByValue:50n,handleOf:handle,innerMarketBought:bought,INNER_MARKET_BUY_LIMIT:10_000_000n*10n**18n}
    if(f.functionName==='handleOf'){assert.equal(c.target,'0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F');assert.deepEqual(f.args,[account])}
-   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,version===18?'0x3B174dB24A44d7172C1f4Fb8Ab387F3931681C24':version===17?'0x01B2308653c7e371B28A862444a40c12ca18b353':version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
+   if(f.functionName==='getBuyAmountByValue')assert.equal(c.target,version===19?getChainDeployment(56).contracts.pump19:version===18?'0x3B174dB24A44d7172C1f4Fb8Ab387F3931681C24':version===17?'0x01B2308653c7e371B28A862444a40c12ca18b353':version===16?'0xee8D16f44c89B5F858e223Ab77c6091E184AaDf8':'0x97f35B4631F4FFBF8050B17fAd6579D6F60A289D')
    return {success:!(fail&&f.functionName==='handleOf'),returnData:encodeFunctionResult({abi,functionName:f.functionName,result:values[f.functionName]})}
   })
   return encodeFunctionResult({abi:aggregate,functionName:'aggregate3',result:rows})
@@ -99,4 +100,19 @@ test('V18 quota allows the exact lifetime boundary and rejects overspend',async(
  fixture('registered',false,18,limit-50n);assert.equal((await quoteCurve(token,true,1000n,18)).amountOut,50n);
  fixture('registered',false,18,limit-49n);await assert.rejects(quoteCurve(token,true,1000n,18),/V18_BUY_LIMIT_EXCEEDED/);
  fixture('registered',false,18,limit-5n,650_000_000n*10n**18n-5n);assert.equal((await quoteCurve(token,true,1000n,18)).amountOut,5n);
+});
+
+test('V19 unregistered wallet quote uses exact Multicall calls without handleOf',async()=>{
+ const calls=fixture('',false,19);
+ assert.equal((await quoteCurve(token,true,1000n,19)).amountOut,50n);
+ assert.equal(calls.length,2);
+ assert.deepEqual(calls[1].map(c=>decodeFunctionData({abi,data:c.callData}).functionName),['getBuyAmountByValue','innerMarketBought','INNER_MARKET_BUY_LIMIT']);
+ assert.deepEqual(calls[1].map(c=>c.target.toLowerCase()),[getChainDeployment(56).contracts.pump19.toLowerCase(),token,token]);
+ assert.deepEqual(decodeFunctionData({abi,data:calls[1][1].callData}).args,[account]);
+});
+test('V19 no-handle quotes check correct quota offsets and actual final fill',async()=>{
+ const limit=10_000_000n*10n**18n;
+ fixture('',false,19,limit-50n);assert.equal((await quoteCurve(token,true,1000n,19)).amountOut,50n);
+ fixture('',false,19,limit-49n);await assert.rejects(quoteCurve(token,true,1000n,19),/V19_BUY_LIMIT_EXCEEDED/);
+ fixture('',false,19,limit-5n,650_000_000n*10n**18n-5n);assert.equal((await quoteCurve(token,true,1000n,19)).amountOut,5n);
 });

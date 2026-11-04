@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 import { GlobalModalType, type Community } from "@/types";
 import { isAddress, checksumAddress, parseEther, zeroAddress } from "viem";
 import { EthWalletState, useAccountStore } from "@/stores/web3";
@@ -10,6 +10,9 @@ import { transferToken } from "@/utils/pump";
 import { handleErrorTip } from '@/utils/notify';
 import { useAccount } from "@/composables/useAccount";
 import { useModalStore } from "@/stores/common";
+import { useChainStore } from '@/stores/chain';
+import { getReadOnlyClient } from '@/utils/wallets';
+import { readV19TransferState, allowsV19Transfer, type V19TransferState } from '@/utils/v19/transfer-policy';
 import QrcodeScan from "@/components/common/QrcodeScan.vue";
 
 const { t } = useI18n()
@@ -25,6 +28,11 @@ const props = defineProps<Props>()
 const accStore = useAccountStore()
 const tokenBalance = ref(0n);
 const isMax = ref(false);
+const chainStore = useChainStore();
+const v19State = ref<V19TransferState>();
+const isV19 = computed(() => Number(props.community.version) === 19);
+const innerTransferLocked = computed(() => isV19.value && !allowsV19Transfer(v19State.value, transferForm.value.toAddress.trim()));
+const showInnerTransferPolicy = computed(() => isV19.value && !v19State.value?.listed);
 const { accountMismatch } = useAccount();
 
 const qrcodeDialogVisible = ref(false);
@@ -53,7 +61,7 @@ const isFormValid = computed(() => {
          transferForm.value.amount &&
          !formErrors.value.toAddress &&
          !formErrors.value.amount &&
-         accountMismatch;
+         !accountMismatch.value;
 });
 
 // 验证转账数量
@@ -111,6 +119,7 @@ const confirmTransfer = async () => {
     modalStore.setModalVisible(true, GlobalModalType.ChoseWallet)
     return;
   }
+  if (innerTransferLocked.value || accountMismatch.value) return;
   // 最终验证
   const addressError = isAddress(transferForm.value.toAddress as `0x${string}`) ? '' : 'Invalid address';
   const amountError = validateAmount(transferForm.value.amount);
@@ -123,7 +132,21 @@ const confirmTransfer = async () => {
 
   try {
     isTransferring.value = true;
-    const hash = await transferToken(props.community.token as `0x${string}`, transferForm.value.toAddress as `0x${string}`, parseEther(transferForm.value.amount.toString()), isMax.value);
+    const context = transferContext();
+    const token = props.community.token as `0x${string}`;
+    const to = transferForm.value.toAddress.trim() as `0x${string}`;
+    const max = isMax.value;
+    let amount = parseEther(transferForm.value.amount.toString());
+    if (isV19.value) {
+      const state = await readV19TransferState(getReadOnlyClient(chainStore.activeChainId), token, accStore.ethConnectAddress as `0x${string}`);
+      if (context !== transferContext() || to !== transferForm.value.toAddress.trim()) throw new Error('V19_TRANSFER_CONTEXT_CHANGED');
+      v19State.value = state;
+      tokenBalance.value = state.balance;
+      if (!allowsV19Transfer(state, to)) { formErrors.value.general = t('v19Create.transferLocked'); return; }
+      if (max) amount = state.balance;
+      if (amount > state.balance) { formErrors.value.amount = t('profileView.tipError4'); return; }
+    }
+    const hash = await transferToken(token, to, amount, isV19.value ? false : max);
     // const balance = await getTokenBalance(props.community.token as `0x${string}`);
     // tokenBalance.value = balance;
     emit('close', true);
@@ -141,12 +164,26 @@ const scanAddress = (address: string) => {
   }
 }
 
-onMounted(async () => {
+const transferContext = () => `${chainStore.activeChainId}:${props.community.token}:${props.community.version}:${accStore.ethConnectAddress}`;
+let readSequence = 0;
+watch(transferContext, async () => {
+  const sequence = ++readSequence;
+  v19State.value = undefined;
   tokenBalance.value = props.balance;
-  // get token balance
-  const balance = await getTokenBalance(props.community.token as `0x${string}`);
-  tokenBalance.value = balance;
-})
+  try {
+    if (isV19.value) {
+      const state = await readV19TransferState(getReadOnlyClient(chainStore.activeChainId), props.community.token as `0x${string}`, accStore.ethConnectAddress as `0x${string}`);
+      if (sequence !== readSequence) return;
+      v19State.value = state;
+      tokenBalance.value = state.balance;
+    } else {
+      const balance = await getTokenBalance(props.community.token as `0x${string}`);
+      if (sequence === readSequence) tokenBalance.value = balance;
+    }
+  } catch (error) {
+    if (sequence === readSequence) formErrors.value.general = t('v13Create.loadError');
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -156,6 +193,7 @@ onMounted(async () => {
       <span class="text-h2 text-grey-normal-hover">{{ $t('web3.transfer') }}</span>
       <i-ep-close class="text-grey-normal-hover" @click="emit('close')" />
     </div>
+    <p v-if="showInnerTransferPolicy" class="text-sm text-grey-normal">{{ $t('v19Create.transferLocked') }}</p>
     <!-- 代币信息 -->
     <div class="bg-grey-f0/50 rounded-lg p-3 mb-2">
       <div class="flex items-center gap-3 mb-2">
@@ -241,7 +279,7 @@ onMounted(async () => {
       <button
         class="h-12 w-full bg-gradient-primary text-white font-bold rounded-full text-lg flex items-center justify-center gap-2 disabled:opacity-30"
         @click="confirmTransfer"
-        :disabled="!isFormValid || isTransferring || accountMismatch"
+        :disabled="innerTransferLocked || !isFormValid || isTransferring || accountMismatch"
       >
         <span>{{ $t('confirm') }}</span>
         <i-ep-loading v-if="isTransferring" class="animate-spin" />

@@ -99,3 +99,9 @@ assert.equal(isGraduatedToken(gang, 56), true)
 assert.equal(getLaunchPlatform(gang, 56), 'gang')
 assert.equal(isAgentLaunch(gang, 4663), false)
 assert.equal(getLaunchPlatform({ ...gang, isImport: 0 }, 56), null)
+
+for (const listed of [false,true]) {
+ assert.equal(isMemeEtf({version:19,listed},56),true)
+ assert.equal(isAgentLaunch({version:19,listed},56),false)
+ assert.equal(isMemeEtf({version:19,listed},4663),false)
+}

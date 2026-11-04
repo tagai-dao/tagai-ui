@@ -203,7 +203,7 @@ const showTagForbidden = ref(false);
 const showLongDesc = ref(false);
 const activeTab = ref('token');
 const chainStore = useChainStore();
-const isIndexCreation = computed(() => [56,4663].includes(chainStore.activeChainId) && [14, 18].includes(chainStore.deployment.latestPumpVersion))
+const isIndexCreation = computed(() => [56,4663].includes(chainStore.activeChainId) && [14, 18, 19].includes(chainStore.deployment.latestPumpVersion))
 const binanceWalletOnly = ref(false)
 const creationVersion = computed(() => creationVersionForMode(chainStore.activeChainId, chainStore.activeChainId === 56 && binanceWalletOnly.value))
 const indexTickTooLong = computed(() => isIndexCreation.value && new TextEncoder().encode(createForm.tick).length > 16)
@@ -313,9 +313,9 @@ watch([() => accStore.ethConnectAddress, () => chainStore.activeChainId, creatio
 }, { immediate: true })
 watch([v13Options, tradeRewardRatioBps, () => indexForm.value.constituentAssets.length], () => refreshCreateFee())
 
-watch([showingInitAmount, creationVersion, () => chainStore.activeChainId], debounce(async ([val, version, chainId]: [number | undefined, 14 | 18, number]) => {
+watch([showingInitAmount, creationVersion, () => chainStore.activeChainId], debounce(async ([val, version, chainId]: [number | undefined, 14 | 18 | 19, number]) => {
   if (val && val > 0) {
-    if (val > (version === 18 ? 10_000_000 : BondingCurveSupply)) {
+    if (val > ([18,19].includes(version) ? 10_000_000 : BondingCurveSupply)) {
       showMaxAmount.value = true
       createForm.initAmount = 0n
       createForm.initEth = 0n
@@ -563,7 +563,7 @@ const create = async () => {
     showLongDesc.value = false
 
     let prevForm:any  = localStorage.getItem('createTokenForm')
-    if (prevForm && ![13, 14, 15, 16, 17, 18].includes(Number(JSON.parse(prevForm).version))){
+    if (prevForm && ![13, 14, 15, 16, 17, 18, 19].includes(Number(JSON.parse(prevForm).version))){
       prevForm = JSON.parse(prevForm)
       console.log('prevForm', prevForm)
       if(await checkTickUsed(prevForm.tick)){
@@ -610,7 +610,7 @@ const create = async () => {
     createForm.ethAddr = connetctedEthAddr
     const submittedForm = {...createForm, indexConfig:createForm.indexConfig ? JSON.parse(JSON.stringify(createForm.indexConfig)) : undefined}
     const {createHash, token, version} = await createCoin(submittedForm, (hash, version) => {
-      if (version !== 14 && version !== 15 && version !== 16 && version !== 17 && version !== 18) return
+      if (version !== 14 && version !== 15 && version !== 16 && version !== 17 && version !== 18 && version !== 19) return
       const {initAmount,initEth,...saved} = submittedForm
       enqueueV13Registration({...saved,createHash:hash,chainId:submittedForm.chainId as 56 | 4663,version,token:''})
     });
@@ -621,7 +621,7 @@ const create = async () => {
     // upload community info
     delete createForm.initAmount
     delete createForm.initEth
-    if ([14, 15, 16, 17, 18].includes(version)) {
+    if ([14, 15, 16, 17, 18, 19].includes(version)) {
       // Submission already persisted the metadata. API retries belong to the
       // app worker, and must never turn a successful creation into a form error.
       modalStore.setModalCloseEnable(true)
@@ -672,7 +672,7 @@ onMounted(async () => {
     }
   }
   let prevForm:any  = localStorage.getItem('createTokenForm')
-  if (prevForm && ![13, 14, 15, 16, 17, 18].includes(Number(JSON.parse(prevForm).version))){
+  if (prevForm && ![13, 14, 15, 16, 17, 18, 19].includes(Number(JSON.parse(prevForm).version))){
     prevForm = JSON.parse(prevForm)
     console.log('prevForm', prevForm)
     if(await checkTickUsed(prevForm.tick)){
@@ -817,6 +817,7 @@ onMounted(async () => {
             <input id="binance-wallet-only" v-model="binanceWalletOnly" type="checkbox" :disabled="createLoading">
             <span>{{ $t('v15Create.binanceWalletOnly') }}</span>
           </label>
+          <p v-if="creationVersion === 19" class="text-sm text-grey-normal mt-2">{{ $t('v19Create.policy') }}</p>
         </section>
 
         <CreateV13Fields v-if="isIndexCreation" v-model="indexForm" v-model:trade-reward-ratio-bps="tradeRewardRatioBps" :options="v13Options" :error="v13OptionsError" :loading="v13OptionsLoading" :disabled="createLoading" @reload="loadV13Options" />
@@ -893,7 +894,7 @@ onMounted(async () => {
             >
             <span>{{ createForm.tick.trim() || 'TagCoin' }}</span>
           </div>
-          <div v-show="showMaxAmount" class="field-error">{{ creationVersion === 18 ? $t('v17Trade.purchaseLimit') : $t('createCommunity.maxAmountTip') }}</div>
+          <div v-show="showMaxAmount" class="field-error">{{ [18,19].includes(creationVersion) ? $t('v17Trade.purchaseLimit') : $t('createCommunity.maxAmountTip') }}</div>
           <div class="purchase-summary">
             <span>{{ $t('pay') }} {{ showingInitEth }} {{ nativeSymbol }}</span>
             <strong>{{ $t('createCommunity.costTopDeploy') }} <em>{{ showingCreateFee }} {{ nativeSymbol }}</em></strong>
