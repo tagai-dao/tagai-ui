@@ -21,7 +21,7 @@ test('V4 JSON and missing pairs use token; valid legacy pairs remain unchanged',
 test('community issued-token Feed requests account-filtered history, full market lists remain default', () => {
   const feed = readFileSync(new URL('../src/views/tag-detail/TagContent.vue', import.meta.url),'utf8')
   const api = readFileSync(new URL('../src/apis/api.ts', import.meta.url),'utf8')
-  assert.match(feed,/getTokenTradeList\(community.token, page, !community.isImport\)/)
+  assert.match(feed,/getTokenTradeList\(community.token, [^,\n]+, !community.isImport\)/)
   assert.match(api,/platformOnly = false/)
   assert.match(api,/platformOnly: '1'/)
   assert.match(feed,/row.isPlatformAccount === true/)
