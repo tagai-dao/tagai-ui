@@ -134,6 +134,9 @@ const applyChartTheme = () => {
   if (!chart.value) return
   const gridColor = isDark.value ? '#2A2F38' : '#EDEDED'
   const textColor = isDark.value ? '#9AA0AD' : '#76808F'
+  const palette = getComputedStyle(document.documentElement)
+  const upColor = palette.getPropertyValue('--color-up').trim() || '#16A34A'
+  const downColor = palette.getPropertyValue('--color-down').trim() || '#E6374D'
   chart.value.setStyles({
     grid: {
       show: true,
@@ -141,6 +144,11 @@ const applyChartTheme = () => {
       vertical: { show: true, color: gridColor },
     },
     candle: {
+      bar: {
+        upColor, downColor,
+        upBorderColor: upColor, downBorderColor: downColor,
+        upWickColor: upColor, downWickColor: downColor,
+      },
       priceMark: {
         high: { color: textColor },
         low: { color: textColor },

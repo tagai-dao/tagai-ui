@@ -40,6 +40,11 @@ const redBalanceBi = ref(0n);
 const willReceiveAmount = ref(0);
 const priceImpact = ref('')
 
+function impactColor(value: string) {
+  const [before, after] = value.split(' -> ').map(Number)
+  return after > before ? 'text-up' : after < before ? 'text-down' : ''
+}
+
 const calculationg = ref(false)
 const trading = ref(false)
 
@@ -329,7 +334,7 @@ onMounted(async () => {
          </div>
          <div class="flex justify-between items-center text-xs">
             <span class="text-gray-500">Price Impact</span>
-            <span class="font-mono" :class="activeTab === 'buy' ? 'text-red-500' : 'text-green-500'">{{ priceImpact }}</span>
+            <span class="font-mono" :class="impactColor(priceImpact)">{{ priceImpact }}</span>
          </div>
           <div class="flex justify-between items-center text-xs">
             <span class="text-gray-500">{{ $t('predictTrade.fee') }}</span>

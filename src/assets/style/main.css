@@ -14,7 +14,7 @@ html, body {
   touch-action: manipulation;
 }
 
-/* 涨跌语义色：默认绿涨红跌；setLocale 按 locale（zh/ko/ja 红涨）切换这两个变量 */
+/* 涨跌语义色：所有语言和主题统一绿涨红跌 */
 :root {
   --safe-area-top: 0px;
   --safe-area-right: 0px;

@@ -69,31 +69,8 @@ const SEO_DESCRIPTION: Record<LocaleCode, string> = {
   id: 'TagAI — peluncuran adil sosial dan trading di BNB Chain. Ubah tweet menjadi TagCoin, kurasi untuk dapat reward, trading dan prediksi bersama komunitas.',
 }
 
-/** 涨跌色用户偏好（默认跟随 locale，可在语言菜单手动覆盖） */
-const PRICE_COLOR_KEY = 'price-color-scheme' // 'red-up' | 'green-up' | null(跟随语言)
-
-export function getPriceColorScheme(code: LocaleCode): 'red-up' | 'green-up' {
-  const saved = localStorage.getItem(PRICE_COLOR_KEY)
-  if (saved === 'red-up' || saved === 'green-up') return saved
-  // 东亚（zh/ko/ja）交易习惯红涨绿跌，其余绿涨红跌
-  return (code === 'zh' || code === 'ko' || code === 'ja') ? 'red-up' : 'green-up'
-}
-
-export function setPriceColorScheme(scheme: 'red-up' | 'green-up' | null) {
-  if (scheme) localStorage.setItem(PRICE_COLOR_KEY, scheme)
-  else localStorage.removeItem(PRICE_COLOR_KEY)
-  applyPriceColors(getCurrentLocale())
-}
-
-function applyPriceColors(code: LocaleCode) {
-  const redUp = getPriceColorScheme(code) === 'red-up'
-  const root = document.documentElement.style
-  root.setProperty('--color-up', redUp ? '#E6374D' : '#16A34A')
-  root.setProperty('--color-down', redUp ? '#16A34A' : '#E6374D')
-}
-
 /**
- * 语言切换的副作用统一在这里：持久化、<html lang>、SEO 描述、hreflang、涨跌色。
+ * 语言切换的副作用统一在这里：持久化、<html lang>、SEO 描述、hreflang。
  */
 export function applyLocaleSideEffects(code: LocaleCode) {
   localStorage.setItem('language', code)
@@ -128,7 +105,6 @@ export function applyLocaleSideEffects(code: LocaleCode) {
   xDefault.href = base
   document.head.appendChild(xDefault)
 
-  applyPriceColors(code)
 }
 
 export function setLocale(code: LocaleCode) {
@@ -136,7 +112,7 @@ export function setLocale(code: LocaleCode) {
   applyLocaleSideEffects(code)
 }
 
-// 启动时同步一次（html lang / 涨跌色）
+// 启动时同步一次（html lang / SEO）
 applyLocaleSideEffects(detectLocale())
 
 export default i18n

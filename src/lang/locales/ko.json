@@ -937,11 +937,6 @@
     "learnMore": "더 알아보기",
     "dismiss": "알겠습니다"
   },
-  "priceColor": {
-    "label": "가격 색상",
-    "redUp": "상승 빨강",
-    "greenUp": "상승 초록"
-  },
   "rightRail": {
     "liveSpaces": "라이브 스페이스",
     "topTagCoin": "TagCoin 순위",

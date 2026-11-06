@@ -154,22 +154,22 @@ onMounted(() => {
               </div>
               <div class="min-w-[100px] max-w-[100px]">
                 <div v-if="item.delta24h>=0" class="flex gap-2 items-center">
-                  <i-ep-caret-top color="#34C759"></i-ep-caret-top>
-                  <div class="text-sm text-green-34">{{item.delta24h?.toFixed(2)||0.0}}%</div>
+                  <i-ep-caret-top class="text-up"></i-ep-caret-top>
+                  <div class="text-sm text-up">{{item.delta24h?.toFixed(2)||0.0}}%</div>
                 </div>
                 <div v-else class="flex gap-2 items-center">
-                  <i-ep-caret-bottom color="#E6374D"></i-ep-caret-bottom>
-                  <div class="text-sm text-red-e6">{{item.delta24h?.toFixed(2)||0.0}}%</div>
+                  <i-ep-caret-bottom class="text-down"></i-ep-caret-bottom>
+                  <div class="text-sm text-down">{{item.delta24h?.toFixed(2)||0.0}}%</div>
                 </div>
               </div>
               <div class="min-w-[100px] max-w-[100px]">
                 <div v-if="item.delta7d>=0" class="flex gap-2 items-center">
-                  <i-ep-caret-top color="#34C759"></i-ep-caret-top>
-                  <div class="text-sm text-green-34">{{item.delta7d?.toFixed(2)||0.0}}%</div>
+                  <i-ep-caret-top class="text-up"></i-ep-caret-top>
+                  <div class="text-sm text-up">{{item.delta7d?.toFixed(2)||0.0}}%</div>
                 </div>
                 <div v-else class="flex gap-2 items-center">
-                  <i-ep-caret-bottom color="#E6374D"></i-ep-caret-bottom>
-                  <div class="text-sm text-red-e6">{{item.delta7d?.toFixed(2)||0.0}}%</div>
+                  <i-ep-caret-bottom class="text-down"></i-ep-caret-bottom>
+                  <div class="text-sm text-down">{{item.delta7d?.toFixed(2)||0.0}}%</div>
                 </div>
               </div>
               <div class="min-w-[100px] max-w-[100px]">

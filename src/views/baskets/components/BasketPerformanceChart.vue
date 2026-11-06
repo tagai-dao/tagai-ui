@@ -113,7 +113,7 @@ const chartOptions = computed<ApexOptions>(() => ({
     toolbar: { show: false },
     zoom: { enabled: false },
   },
-  colors: [changePositive.value ? '#21cda0' : '#ef4f8d'],
+  colors: [changePositive.value ? '#16A34A' : '#E6374D'],
   stroke: { curve: 'smooth', width: 2.2 },
   fill: {
     type: 'gradient',
@@ -281,8 +281,8 @@ const series = computed(() => [{ name: 'INDEX NAV', data: points.value }])
 .performance-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .performance-card__kicker { color: var(--text-muted); font-size: 10px; font-weight: 750; letter-spacing: .14em; }
 .performance-card__change { margin-top: 5px; font-size: 24px; font-weight: 750; letter-spacing: -.035em; }
-.performance-card__change.positive { color: #20cda0; }
-.performance-card__change.negative { color: #ef4f8d; }
+.performance-card__change.positive { color: var(--color-up); }
+.performance-card__change.negative { color: var(--color-down); }
 .performance-card__change small { margin-left: 9px; color: var(--text-muted); font-size: 10px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; }
 .performance-card__controls { display: flex; align-items: center; gap: 14px; }
 .nav-mode { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 13px; border: 1px solid color-mix(in srgb, #28bfd8 60%, var(--border-base)); border-radius: 12px; color: var(--text-base); font-size: 11px; font-weight: 750; letter-spacing: .08em; }
