@@ -76,7 +76,8 @@ function toggleExpand() {
   isExpanded.value = !isExpanded.value
 }
 
-// 侧栏 Top TagCoin：先塞 API，链上补价后台跑，避免拖慢 HomePost Feed
+let active = true
+// Resolve the sidebar's metrics before publishing its first rows.
 onMounted(async () => {
   checkIsPC()
   if (typeof window !== 'undefined') {
@@ -84,21 +85,24 @@ onMounted(async () => {
   }
   
   if (!comStore.marketCapCommunities || comStore.marketCapCommunities.length === 0) {
+    const chainId = chainStore.activeChainId
     try {
       const communities = await getCommunityByMarketCap() as Array<Community>
       if (communities && communities.length > 0) {
-        comStore.marketCapCommunities = communities
+        if (!active || chainStore.activeChainId !== chainId) return
         if (chainStore.deployment.key === 'rh') {
           registerRobinhoodStockCommunities(communities)
           refreshRobinhoodBStockRegistry(communities.map((community) => community.token)).catch((error) => {
             console.error('Load RH Router-supported stocks error:', error)
           })
         }
-        getTokenInfo(communities).then((tokenInfo) => {
-          comStore.marketCapCommunities = tokenInfo
-        }).catch((e) => {
+        const tokenInfo = await getTokenInfo(communities).catch((e) => {
           console.error('Enrich market cap communities error:', e)
+          return communities
         })
+        if (active && chainStore.activeChainId === chainId && !comStore.marketCapCommunities?.length) {
+          comStore.marketCapCommunities = tokenInfo.length ? tokenInfo : communities
+        }
       }
     } catch (e) {
       console.error('Load market cap communities error:', e)
@@ -107,6 +111,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  active = false
   if (typeof window !== 'undefined') {
     window.removeEventListener('resize', checkIsPC)
   }
