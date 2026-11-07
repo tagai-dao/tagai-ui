@@ -67,7 +67,7 @@ onMounted(() => {
       line: {
         colors: {
           threshold: mindShareMid.value,
-          colorAboveThreshold: '#34C759',
+          colorAboveThreshold: '#16A34A',
           colorBelowThreshold: '#E6374D',
         },
       },

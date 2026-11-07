@@ -938,11 +938,6 @@
     "holdAmount": "en posesión",
     "stakedAmount": "en staking"
   },
-  "priceColor": {
-    "label": "Colores de precio",
-    "redUp": "Rojo al subir",
-    "greenUp": "Verde al subir"
-  },
   "rightRail": {
     "liveSpaces": "Spaces en vivo",
     "topTagCoin": "Top TagCoin",

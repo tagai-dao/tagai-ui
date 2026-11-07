@@ -22,7 +22,7 @@ test('other pages and posts without a rendered token card keep the hashtag', () 
 })
 for (const name of ['views/home/HomePost', 'views/tag-detail/TagContent']) {
   test(`${name} opts in to hiding redundant community hashtags`, () => {
-    assert.match(read(name), /<TweetItem\s+v-else\s+hide-community-hashtag/)
+    assert.match(read(name), /<TweetItem\b[^>]*\bv-else\b[^>]*\bhide-community-hashtag/)
   })
 }
 for (const name of ['components/tweets/TweetItem', 'views/home/HomePost', 'views/tag-detail/TagContent']) {

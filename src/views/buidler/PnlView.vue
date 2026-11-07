@@ -62,7 +62,7 @@ let loadedQuery = ''
 
 function pnlClass(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === '') return 'text-grey-64'
-  return Number(value || 0) >= 0 ? 'text-green-34' : 'text-red-e6'
+  return Number(value || 0) >= 0 ? 'text-up' : 'text-down'
 }
 
 function signedUsd(value: number | string | null | undefined) {

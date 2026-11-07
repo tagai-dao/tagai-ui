@@ -111,7 +111,7 @@ watch(activeTab, (val) => {
 
 let listRefreshSequence = 0
 const coinListSnapshotScope = (chainId: number, type: ListType, source: TagCoinSource) =>
-  `${chainId}:token-list:${type}:${source}`
+  `${chainId}:token-list:v2:${type}:${source}`
 
 function saveCoinListSnapshot(chainId: number, type: ListType, source: TagCoinSource, rows: Community[]) {
   if (rows.length) writePublicSnapshot(coinListSnapshotScope(chainId, type, source), rows.slice(0, 120))
@@ -127,6 +127,18 @@ function mergeCoins(existing: Community[], incoming: Community[]) {
   const rows = new Map(existing.map(row => [row.token?.toLowerCase() || row.tick, row]))
   for (const row of incoming) rows.set(row.token?.toLowerCase() || row.tick, row)
   return [...rows.values()]
+}
+
+async function resolveCoinMetrics(rows: Community[]) {
+  if (!rows.length) return rows
+  try {
+    const enriched = await getTokenInfo(rows)
+    const byToken = new Map(enriched.map(row => [row.token.toLowerCase(), row]))
+    return rows.map(row => byToken.get(row.token.toLowerCase()) ?? row)
+  } catch (error) {
+    console.warn('[Token] optional metrics unavailable', error)
+    return rows
+  }
 }
 
 async function refresh() {
@@ -146,18 +158,14 @@ async function refresh() {
   try {
     finished[type] = false
     const result = await getTokenCatalogPage(catalogSort(type), source)
-    const communities = result.rows
     if (!isCurrent()) return
-    coinLists[key] = communities || []
+    const communities = await resolveCoinMetrics(result.rows)
+    if (!isCurrent()) return
+    coinLists[key] = communities
     saveCoinListSnapshot(chainId, type, source, coinLists[key])
     listLoaded.value = true
     finished[type] = !result.hasMore
     cursors.set(type, { page: result.nextPage, catalogId: result.catalogId })
-    void getTokenInfo(communities).then(rows => {
-      if (!isCurrent()) return
-      const byToken = new Map(rows.map(row => [row.token.toLowerCase(), row]))
-      coinLists[key] = coinLists[key].map(row => byToken.get(row.token.toLowerCase()) ?? row)
-    }).catch(error => console.warn('[Token] optional metrics unavailable', error))
   } catch (error) {
     if (isCurrent()) {
       const existing = coinLists[key]
@@ -194,16 +202,13 @@ async function loadMore() {
   try {
     const result = await getTokenCatalogPage(catalogSort(type), source, cursor.page, cursor.catalogId)
     if (!isCurrent()) return
+    const rows = await resolveCoinMetrics(result.rows)
+    if (!isCurrent()) return
     const key = coinListKey(type)
-    coinLists[key] = mergeCoins(coinLists[key], result.rows)
+    coinLists[key] = mergeCoins(coinLists[key], rows)
     cursors.set(type, { page: result.nextPage, catalogId: result.catalogId })
     finished[type] = !result.hasMore
     saveCoinListSnapshot(chainId, type, source, coinLists[key])
-    void getTokenInfo(result.rows).then(rows => {
-      if (!isCurrent()) return
-      const byToken = new Map(rows.map(row => [row.token.toLowerCase(), row]))
-      coinLists[key] = coinLists[key].map(row => byToken.get(row.token.toLowerCase()) ?? row)
-    }).catch(error => console.warn('[Token] optional page metrics unavailable', error))
   } catch (error) {
     if (!isCurrent()) return
     loadFailed.value = true

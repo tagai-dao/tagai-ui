@@ -918,11 +918,6 @@
     "learnMore": "Learn more",
     "dismiss": "Got it"
   },
-  "priceColor": {
-    "label": "Price colors",
-    "redUp": "Red up",
-    "greenUp": "Green up"
-  },
   "theme": {
     "label": "Theme",
     "light": "Light",

@@ -42,6 +42,11 @@ const tradeRedBalance = ref(0);
 const tradeRedBalanceBi = ref(0n);
 const tradeWillReceiveAmount = ref(0);
 const tradePriceImpact = ref('')
+
+function impactColor(value: string) {
+  const [before, after] = value.split(' -> ').map(Number)
+  return after > before ? 'text-up' : after < before ? 'text-down' : ''
+}
 const tradeCalculating = ref(false)
 const tradeLoading = ref(false)
 const reserveA = ref(0)
@@ -434,7 +439,7 @@ function copyMarketAddress(address: `0x${string}`) {
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-gray-500">Price Impact</span>
-                    <span class="font-mono" :class="tradeActiveTab === 'buy' ? 'text-red-500' : 'text-green-500'">{{ tradePriceImpact }}</span>
+                    <span class="font-mono" :class="impactColor(tradePriceImpact)">{{ tradePriceImpact }}</span>
                 </div>
                 <div class="flex justify-between items-center text-xs">
                     <span class="text-gray-500">{{ $t('predictTrade.fee') }}</span>

@@ -174,7 +174,7 @@ test('Agent stages request independent catalogues, isolate snapshots and discard
   assert.equal(f.calls.at(-1).source, 'agent')
   f.calls.at(-1).resolve(rows); await flush()
   assert.equal(f.model.filterTagCoins(f.model.currentCoinList.value).length, 3)
-  assert.ok(f.snapshots.has(`56:token-list:${ListType.Trending}:agent-graduated`))
+  assert.ok(f.snapshots.has(`56:token-list:v2:${ListType.Trending}:agent-graduated`))
 })
 
 test('slow All refresh and metrics cannot overwrite the selected Launch source', async t => {
@@ -185,12 +185,29 @@ test('slow All refresh and metrics cannot overwrite the selected Launch source',
   f.calls[0].resolve([token('import', 1)]); await first
   assert.equal(f.model.currentCoinList.value[0].tick, 'launch')
   const metrics = deferred(); f.fixture.hydrate = () => metrics.promise
-  const refresh = f.model.refresh(); f.calls[2].resolve([token('old-launch')]); await refresh
+  const refresh = f.model.refresh(); f.calls[2].resolve([token('old-launch')]); await flush()
   f.model.switchTagCoinSource('import')
   f.fixture.hydrate = async rows => rows
   f.calls[3].resolve([token('import', 1)]); await flush()
-  metrics.resolve([token('old-launch')]); await flush()
+  metrics.resolve([token('old-launch')]); await refresh; await flush()
   assert.equal(f.model.currentCoinList.value[0].tick, 'import')
+})
+
+test('Agent All and New publish only resolved market caps and cache the same values', async t => {
+  for (const [stage, source] of [['all', 'agent'], ['new', 'agent-new']]) {
+    const f = setup('false', 56); t.after(f.dispose)
+    const metrics = deferred()
+    f.fixture.hydrate = () => metrics.promise
+    if (stage === 'new') f.model.switchAgentLaunchStage(stage)
+    else void f.model.refresh()
+    const row = { ...token('aipro'), version: 15, marketCap: '20000' }
+    assert.equal(f.calls.at(-1).source, source)
+    f.calls.at(-1).resolve([row]); await flush()
+    assert.equal(f.model.currentCoinList.value.length, 0)
+    metrics.resolve([{ ...row, marketCap: '17900' }]); await flush()
+    assert.equal(f.model.currentCoinList.value[0].marketCap, '17900')
+    assert.equal(f.snapshots.get(`56:token-list:v2:${ListType.Trending}:${source}`)[0].marketCap, '17900')
+  }
 })
 
 test('refresh preserves a filtered New ranking and requests only that category', async t => {
@@ -202,6 +219,21 @@ test('refresh preserves a filtered New ranking and requests only that category',
   assert.equal(f.calls[2].source, 'launch')
   f.calls[2].resolve([token('new-launch')]); await refresh; await flush()
   assert.deepEqual(f.model.currentCoinList.value.map(x => x.tick), ['new-launch'])
+})
+
+test('pagination retains current cards while resolving the next page, with API fallback', async t => {
+  const f = setup(); t.after(f.dispose)
+  const initial = f.model.refresh()
+  f.calls[0].resolve(Array.from({ length: 30 }, (_, i) => token(`first${i}`)))
+  await initial
+  const metrics = deferred()
+  f.fixture.hydrate = () => metrics.promise
+  const page = f.model.loadMore()
+  f.calls[1].resolve([token('next')]); await flush()
+  assert.equal(f.model.currentCoinList.value.length, 30)
+  metrics.reject(Error('metrics unavailable')); await page
+  assert.equal(f.model.currentCoinList.value.at(-1).tick, 'next')
+  assert.equal(f.model.loadFailed.value, false)
 })
 
 test('source/chain changes discard stale pagination and errors', async t => {
@@ -232,7 +264,7 @@ test('cached/deactivated page ignores responses and refresh events', async t => 
 
 test('endpoint failure keeps selected ranking instead of silently changing sort', async t => {
   const f = setup(); t.after(f.dispose)
-  f.snapshots.set('4663:token-list:0:all', [token('other-sort')])
+  f.snapshots.set('4663:token-list:v2:0:all', [token('other-sort')])
   const request = f.model.refresh()
   f.calls[0].reject(Error('offline')); await request
   assert.equal(f.model.listType.value, ListType.Trending)

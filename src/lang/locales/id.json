@@ -938,11 +938,6 @@
     "holdAmount": "dimiliki",
     "stakedAmount": "di-stake"
   },
-  "priceColor": {
-    "label": "Warna harga",
-    "redUp": "Naik merah",
-    "greenUp": "Naik hijau"
-  },
   "rightRail": {
     "liveSpaces": "Space Langsung",
     "topTagCoin": "Top TagCoin",
