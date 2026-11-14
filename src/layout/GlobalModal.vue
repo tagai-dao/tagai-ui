@@ -39,7 +39,7 @@ const modalStore = useModalStore()
     <CreateCoinModal v-if="modalStore.modalType===GlobalModalType.CreateCoin"/>
     <CreateTweetModal v-if="modalStore.modalType===GlobalModalType.CreateTweet" :default-tick="false"/>
     <CreateSpaceModal v-if="modalStore.modalType===GlobalModalType.CreateTweetSpace" :default-tick="false"/>
-    <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login"/>
+    <AuthTwitter v-if="modalStore.modalType===GlobalModalType.Login" :pokemon="modalStore.modalParams?.pokemon"/>
     <BondEthModal v-if="modalStore.modalType===GlobalModalType.BondEth"/>
     <ChoseWallet @chosedWallet="modalStore.setModalVisible(false)" v-if="modalStore.modalType === GlobalModalType.ChoseWallet"/>
     <RegisterSteem v-if="modalStore.modalType === GlobalModalType.Register"/>

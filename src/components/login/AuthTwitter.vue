@@ -3,6 +3,8 @@ import {applyPureReactInVue} from "veaury";
 import LoginWithOAuth from "@/react_app/LoginWithOAuth.jsx";
 import LoginWithEmail from "@/react_app/LoginWithEmail.jsx";
 
+defineProps<{ pokemon?: boolean }>();
+
 const ReactLoginWithOAuth = applyPureReactInVue(LoginWithOAuth);
 const ReactLoginWithEmail = applyPureReactInVue(LoginWithEmail);
 </script>
@@ -21,7 +23,7 @@ const ReactLoginWithEmail = applyPureReactInVue(LoginWithEmail);
           <!-- <el-checkbox :label="$t('loginView.authLikeTip')" v-model="authLike" />
           <el-checkbox :label="$t('loginView.authPostTip')" v-model="authPost" /> -->
         </div>
-        <ReactLoginWithOAuth/>
+        <ReactLoginWithOAuth :pokemon="pokemon"/>
         <div class="flex gap-3 items-center my-4 px-4">
           <div class="flex-1 h-[0.5px] bg-grey-light-hover"></div>
           <span class="text-center text-gray-500 ">{{ $t('or') }}</span>

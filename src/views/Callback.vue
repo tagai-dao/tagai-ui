@@ -14,6 +14,14 @@ const accStore = useAccountStore();
 let finished = false
 let fallbackTimer: ReturnType<typeof setTimeout> | null = null
 const takingLonger = ref(false)
+const pendingReturn = sessionStorage.getItem('login-redirect')
+const gameReturn = pendingReturn && /^\/(bsc|rh)\/pokemon\?state=[0-9a-f-]{36}$/.test(pendingReturn) ? pendingReturn : null
+
+function retryGameLogin() {
+  if (!gameReturn) return
+  sessionStorage.setItem('pokemon-login-failed', '1')
+  void router.replace(gameReturn)
+}
 
 const finish = () => {
   if (finished) return
@@ -58,6 +66,9 @@ onUnmounted(() => {
       <p v-if="takingLonger" class="mt-2 text-sm">
         Login is taking longer than expected. Check your connection; keep this page open to complete login.
       </p>
+      <button v-if="takingLonger && gameReturn" type="button" class="mt-2 underline" @click="retryGameLogin">
+        返回游戏登录
+      </button>
     </div>
   </div>
 

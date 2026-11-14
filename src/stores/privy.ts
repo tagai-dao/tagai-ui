@@ -23,11 +23,17 @@ export const usePrivyStore = defineStore("privy", () => {
   }
 
   // Registered by AuthLoading, which stays mounted across route changes.
+  const sdkReady = ref(false);
   let sdkLogout: (() => Promise<void>) | null = null;
   let signOutInFlight: Promise<void> | null = null;
   function registerLogout(handler: () => Promise<void>) {
     sdkLogout = handler;
-    return () => { if (sdkLogout === handler) sdkLogout = null; };
+    sdkReady.value = true;
+    return () => {
+      if (sdkLogout !== handler) return;
+      sdkLogout = null;
+      sdkReady.value = false;
+    };
   }
 
   function signOut(): Promise<void> {
@@ -148,6 +154,7 @@ export const usePrivyStore = defineStore("privy", () => {
     ethersProvider: Ref<any>;
     currentChain: Ref<Chain>;
     walletBinding: Ref<boolean>;
+    sdkReady: Ref<boolean>;
     initWallet: () => Promise<void>;
     logout: () => Promise<void>;
     signOut: () => Promise<void>;
@@ -165,6 +172,7 @@ export const usePrivyStore = defineStore("privy", () => {
     logout,
     signOut,
     registerLogout,
+    sdkReady,
     switchChain,
     getChainId
   } as PrivyStore;
