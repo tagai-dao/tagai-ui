@@ -37,6 +37,7 @@ const router = createRouter({
     {
       path: `${chainPrefix}/pokemon`,
       name: 'pokemon-entry',
+      alias: '/pokemon-login.html',
       component: () => import('@/views/PokemonEntry.vue'),
       meta: { tabBar: false, topBar: false }
     },
@@ -182,6 +183,18 @@ router.beforeEach(async (to, from, next) => {
   const routeChain = Array.isArray(to.params.chain) ? to.params.chain[0] : to.params.chain
   const routeChainId = getChainIdFromSlug(routeChain)
   const queryChainId = Number(Array.isArray(to.query.chainId) ? to.query.chainId[0] : to.query.chainId)
+
+  if (to.name === 'pokemon-entry' && to.path === '/pokemon-login.html') {
+    next()
+    return
+  }
+
+  // Older clients may have interpreted /bsc/pokemon as a short Blinks link.
+  if (to.name === 'commerce' && to.params.commerceid === 'pokemon' &&
+      typeof to.query.state === 'string' && /^[0-9a-f-]{36}$/.test(to.query.state)) {
+    next({ name: 'pokemon-entry', params: { chain: routeChain }, query: { state: to.query.state }, replace: true })
+    return
+  }
 
   // Preserve Privy's authorization parameters while the persistent SDK consumes them.
   // A pending game login returns to the existing callback page, even when Privy sends it to /.
