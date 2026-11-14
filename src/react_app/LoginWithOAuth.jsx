@@ -1,12 +1,15 @@
-import {useLoginWithOAuth} from '@privy-io/react-auth';
+import {useLoginWithOAuth, usePrivy} from '@privy-io/react-auth';
 import {useCallback, useEffect, useRef, useState} from "react";
 import emitter from "@/utils/emitter.ts";
 import {runNativeBrowserOAuth} from "@/utils/native.ts";
 import {Capacitor, registerPlugin} from '@capacitor/core';
+import {usePrivyStore} from "@/stores/privy";
 import {clearBlinkLoginReturn, saveBlinkLoginReturn} from '@/utils/blinkLoginReturn.ts';
 
-export default function LoginWithOAuth({returnPath, label = 'Log in with Twitter', compact = false}) {
+export default function LoginWithOAuth({returnPath, label = 'Log in with Twitter', compact = false, pokemon = false}) {
     const { state, loading, initOAuth } = useLoginWithOAuth();
+    const { getAccessToken } = usePrivy();
+    const privyStore = usePrivyStore();
     const [ isLoading, setIsLoading] = useState(false);
     const reportedErrorRef = useRef('');
     const startedRef = useRef(false);
@@ -51,6 +54,9 @@ export default function LoginWithOAuth({returnPath, label = 'Log in with Twitter
             if (returnPath && !saveBlinkLoginReturn(returnPath)) {
                 throw new Error('Unable to save the Blinks return page. Allow site storage and try again.');
             }
+            // Privy treats OAuth over an existing session as linking, and can skip
+            // completion entirely if X is already linked. Re-login needs a fresh flow.
+            if (pokemon && await getAccessToken()) await privyStore.signOut();
             window.localStorage.setItem('lastLoginTime', '0');
             await runNativeBrowserOAuth(() => initOAuth({ provider: 'twitter' }));
         } catch (err) {

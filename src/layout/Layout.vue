@@ -79,7 +79,8 @@ const finishNewLoginIfNeeded = () => {
   const blinkReturn = takeBlinkLoginReturn()
   const legacyReturn = localStorage.getItem('current-route')
   localStorage.removeItem('current-route')
-  router.replace(blinkReturn || guardRedirect || legacyReturn || '/')
+  const gameReturn = guardRedirect && /^\/(bsc|rh)\/pokemon\?state=[0-9a-f-]{36}$/.test(guardRedirect) ? guardRedirect : null
+  router.replace(gameReturn || blinkReturn || guardRedirect || legacyReturn || '/')
 }
 
 // 只有当推特登录和钱包准备好了才需要设置钱包或者新绑定钱包
@@ -154,6 +155,12 @@ const handleReactLoginError = async (error?: any) => {
     type: 'error'
   });
   console.error('Failed to login tip', error)
+  const gameReturn = sessionStorage.getItem('login-redirect')
+  if (gameReturn && /^\/(bsc|rh)\/pokemon\?state=[0-9a-f-]{36}$/.test(gameReturn)) {
+    sessionStorage.setItem('pokemon-login-failed', '1')
+    await router.replace(gameReturn)
+    return
+  }
   await sleep(1)
   accStore.clear();
   router.replace(takeBlinkLoginReturn() || localStorage.getItem('current-route') || '/')

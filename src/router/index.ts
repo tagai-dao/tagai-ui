@@ -183,6 +183,16 @@ router.beforeEach(async (to, from, next) => {
   const routeChainId = getChainIdFromSlug(routeChain)
   const queryChainId = Number(Array.isArray(to.query.chainId) ? to.query.chainId[0] : to.query.chainId)
 
+  // Preserve Privy's authorization parameters while the persistent SDK consumes them.
+  // A pending game login returns to the existing callback page, even when Privy sends it to /.
+  const gameReturn = sessionStorage.getItem('login-redirect')
+  if (to.name !== 'privy-callback' && gameReturn &&
+      /^\/(bsc|rh)\/pokemon\?state=[0-9a-f-]{36}$/.test(gameReturn) &&
+      to.query.privy_oauth_code && to.query.privy_oauth_state && to.query.privy_oauth_provider === 'twitter') {
+    next({ name: 'privy-callback', params: { chain: gameReturn.split('/')[1] }, query: to.query, replace: true })
+    return
+  }
+
   // 兼容旧链接：URL 路径链 > ?chainId= > 浏览器记忆，并统一重定向到 /bsc 或 /rh 前缀。
   if (!routeChainId) {
     const chainId = isProductChain(queryChainId) ? queryChainId : chainStore.activeChainId

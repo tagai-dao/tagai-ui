@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getAccessToken } from '@privy-io/react-auth'
 import { useAccountStore } from '@/stores/web3'
@@ -18,15 +18,17 @@ const flow = computed(() => typeof route.query.state === 'string' && uuid.test(r
 const account = computed(() => accounts.getAccountInfo)
 const busy = ref(false)
 const status = ref('')
+let automaticFlow = ''
+let retriedAfterBinding = false
 
 function openLogin() {
   sessionStorage.setItem('login-redirect', route.fullPath)
-  modal.setModalVisible(true, GlobalModalType.Login)
+  modal.setModalVisible(true, GlobalModalType.Login, { pokemon: true })
 }
 
 async function enterGame() {
   const player = account.value
-  if (!player?.twitterId || !player.accessToken || !flow.value || busy.value) return
+  if (!player?.twitterId || !player.accessToken || !flow.value || busy.value || wallet.walletBinding) return
   const session = accounts.sessionVersion
   busy.value = true
   status.value = '正在核对账户和钱包…'
@@ -50,11 +52,12 @@ async function enterGame() {
     } else if (reply.error === 'wallet_pending') {
       // Only request a new binding when no TagAI wallet has been registered.
       // Existing external wallets need explicit migration in the account page.
-      if (!player.ethAddr && !wallet.walletBinding && (Number(player.accountType) === 0 || Number(player.accountType) === 1)) {
+      if (!retriedAfterBinding && !player.ethAddr && !wallet.walletBinding && (Number(player.accountType) === 0 || Number(player.accountType) === 1)) {
+        retriedAfterBinding = true
         emitter.emit('privyWalletBindingRequested', {
           identity: String(player.twitterId), accountType: Number(player.accountType), userInfo: player,
         })
-        status.value = '正在准备 Privy 钱包。完成后请再次点击继续。'
+        status.value = '正在准备 Privy 钱包…'
       } else {
         status.value = 'Privy 钱包尚未完成验证，请检查 TagAI 钱包设置后重试。'
       }
@@ -69,6 +72,21 @@ async function enterGame() {
     busy.value = false
   }
 }
+
+watch(() => [flow.value, wallet.sdkReady, wallet.walletBinding, account.value?.twitterId] as const,
+  ([id, ready, binding, identity], previous) => {
+    if (!id || !ready || binding) return
+    if (automaticFlow !== id) {
+      automaticFlow = id
+      const failed = sessionStorage.getItem('pokemon-login-failed') === '1'
+      sessionStorage.removeItem('pokemon-login-failed')
+      if (failed) status.value = 'X 授权未完成，请重试或使用邮箱验证码。'
+      if (!identity || failed) openLogin()
+      else void enterGame()
+    } else if (identity && (previous?.[2] || !previous?.[3])) {
+      void enterGame()
+    }
+  }, { immediate: true, flush: 'post' })
 </script>
 
 <template>
