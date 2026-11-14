@@ -22,7 +22,7 @@ let automaticFlow = ''
 let retriedAfterBinding = false
 
 function openLogin() {
-  sessionStorage.setItem('login-redirect', route.fullPath)
+  sessionStorage.setItem('login-redirect', `/bsc/pokemon?state=${flow.value}`)
   modal.setModalVisible(true, GlobalModalType.Login, { pokemon: true })
 }
 
