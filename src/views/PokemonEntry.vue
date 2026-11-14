@@ -28,10 +28,10 @@ function openLogin() {
 
 async function enterGame() {
   const player = account.value
-  if (!player?.twitterId || !player.accessToken || !flow.value || busy.value || wallet.walletBinding) return
+  if (!player?.twitterId || !player.accessToken || !flow.value || busy.value) return
   const session = accounts.sessionVersion
   busy.value = true
-  status.value = '正在核对账户和钱包…'
+  status.value = '正在核对 TagAI 账户…'
   try {
     const privyAccessToken = await getAccessToken()
     if (!accounts.isSessionCurrent(session)) return
@@ -52,7 +52,9 @@ async function enterGame() {
     } else if (reply.error === 'wallet_pending') {
       // Only request a new binding when no TagAI wallet has been registered.
       // Existing external wallets need explicit migration in the account page.
-      if (!retriedAfterBinding && !player.ethAddr && !wallet.walletBinding && (Number(player.accountType) === 0 || Number(player.accountType) === 1)) {
+      if (wallet.walletBinding) {
+        status.value = '正在准备 Privy 钱包…'
+      } else if (!retriedAfterBinding && !player.ethAddr && !wallet.walletBinding && (Number(player.accountType) === 0 || Number(player.accountType) === 1)) {
         retriedAfterBinding = true
         emitter.emit('privyWalletBindingRequested', {
           identity: String(player.twitterId), accountType: Number(player.accountType), userInfo: player,
@@ -75,7 +77,7 @@ async function enterGame() {
 
 watch(() => [flow.value, wallet.sdkReady, wallet.walletBinding, account.value?.twitterId] as const,
   ([id, ready, binding, identity], previous) => {
-    if (!id || !ready || binding) return
+    if (!id || !ready) return
     if (automaticFlow !== id) {
       automaticFlow = id
       const failed = sessionStorage.getItem('pokemon-login-failed') === '1'
@@ -92,14 +94,14 @@ watch(() => [flow.value, wallet.sdkReady, wallet.walletBinding, account.value?.t
 <template>
   <section class="mx-auto flex h-full max-w-lg flex-col items-start justify-center gap-4 overflow-auto p-6">
     <h1 class="text-h3">Pokémon FireRed AIPRO</h1>
-    <p>使用 TagAI 账户和 Privy 钱包进入游戏。</p>
+    <p>使用 X 或邮箱登录 TagAI 后进入游戏。</p>
     <a v-if="!flow" :href="gameOrigin" class="underline">返回游戏入口</a>
     <template v-else>
-      <button v-if="account" type="button" class="rounded bg-primary px-5 py-3 text-white"
-        :disabled="busy || wallet.walletBinding" @click="enterGame">
-        {{ wallet.walletBinding ? '正在准备 Privy 钱包…' : '继续进入游戏' }}
+      <button v-if="account" type="button" class="rounded bg-gradient-primary px-5 py-3 font-semibold text-white disabled:opacity-60"
+        :disabled="busy" @click="enterGame">
+        {{ busy ? '正在验证登录…' : '继续进入游戏' }}
       </button>
-      <button v-else type="button" class="rounded bg-primary px-5 py-3 text-white" @click="openLogin">
+      <button v-else type="button" class="rounded bg-gradient-primary px-5 py-3 font-semibold text-white disabled:opacity-60" @click="openLogin">
         使用 X 或邮箱登录
       </button>
       <button v-if="account" type="button" class="underline" @click="openLogin">重新登录或切换账户</button>

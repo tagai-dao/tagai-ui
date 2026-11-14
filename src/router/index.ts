@@ -185,6 +185,8 @@ router.beforeEach(async (to, from, next) => {
   const queryChainId = Number(Array.isArray(to.query.chainId) ? to.query.chainId[0] : to.query.chainId)
 
   if (to.name === 'pokemon-entry' && to.path === '/pokemon-login.html') {
+    const bsc = getChainIdFromSlug('bsc')
+    if (bsc && chainStore.activeChainId !== bsc) chainStore.setActiveChain(bsc, { reload: false })
     next()
     return
   }

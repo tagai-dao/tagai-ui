@@ -43,7 +43,20 @@ export default function LoginWithOAuth({returnPath, label = 'Log in with Twitter
         return () => { disposed = true; handles.forEach(handle => handle.remove()); };
     }, [reportAuthError]);
 
+    useEffect(() => {
+        if (!pokemon || Capacitor.isNativePlatform()) return;
+        // Returning from X can restore the document without remounting the modal.
+        const restore = (event) => {
+            if (!event.persisted) return;
+            startedRef.current = false;
+            setIsLoading(false);
+        };
+        window.addEventListener('pageshow', restore);
+        return () => window.removeEventListener('pageshow', restore);
+    }, [pokemon]);
+
     const handleLogin = async () => {
+        if (pokemon && startedRef.current) return;
         try {
             setIsLoading(true);
             startedRef.current = true;
@@ -61,6 +74,7 @@ export default function LoginWithOAuth({returnPath, label = 'Log in with Twitter
             await runNativeBrowserOAuth(() => initOAuth({ provider: 'twitter' }));
         } catch (err) {
             console.error(err);
+            startedRef.current = false;
             reportAuthError(err);
             setIsLoading(false);
         }
@@ -70,10 +84,12 @@ export default function LoginWithOAuth({returnPath, label = 'Log in with Twitter
         console.log('state', state.status)
         console.log('loading', loading)
         if(state.status==="error" && startedRef.current) {
+            startedRef.current = false;
             reportAuthError(state.error)
             setIsLoading(false);
         }
         if(state.status==="success") {
+            startedRef.current = false;
             setIsLoading(false);
         }
     }, [state, loading, reportAuthError])
