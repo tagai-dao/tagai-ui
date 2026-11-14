@@ -35,6 +35,12 @@ const router = createRouter({
       meta: { tabBar: true, topBar: true, keepAlive: true, mainMenu: 'coin' }
     },
     {
+      path: `${chainPrefix}/pokemon`,
+      name: 'pokemon-entry',
+      component: () => import('@/views/PokemonEntry.vue'),
+      meta: { tabBar: false, topBar: false }
+    },
+    {
       path: `${chainPrefix}/feed`,
       name: 'feed',
       component: HomeView,
