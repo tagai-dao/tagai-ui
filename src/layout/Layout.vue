@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isStorageQuotaError, clearPublicSnapshots } from '@/utils/publicSnapshot'
 import {RouterView, useRouter} from "vue-router";
 import TopBar from "@/layout/TopBar.vue";
 import TabBar from "@/layout/TabBar.vue";
@@ -149,6 +150,15 @@ const handleReactLoginError = async (error?: any) => {
   const serverMsg = typeof error === 'string'
     ? error
     : error?.data?.error || error?.data?.message || error?.message
+  if (isStorageQuotaError(error) || isStorageQuotaError(serverMsg)) {
+    clearPublicSnapshots()
+    notify({ title: '登录暂未完成', message: '浏览器站点存储空间不足。请重试登录；如果仍失败，请在另一个浏览器中打开游戏，使用同一 TagAI 账号登录。', type: 'error' })
+    const gameReturn = sessionStorage.getItem('login-redirect')
+    if (gameReturn && /^\/(bsc|rh)\/pokemon\?state=[0-9a-f-]{36}$/.test(gameReturn)) {
+      await router.replace(gameReturn)
+    }
+    return
+  }
   notify({
     title: 'Login failed',
     message: serverMsg ? String(serverMsg) : 'Please try again',
