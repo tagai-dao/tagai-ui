@@ -14,6 +14,12 @@ import { VueQrcodeReader } from 'vue-qrcode-reader';
 import { initTheme } from '@/composables/useTheme'
 import { initNativeApp } from '@/utils/native'
 
+import { prepareLoginStorage } from '@/utils/publicSnapshot'
+if (/^\/(?:pokemon-login\.html|(?:bsc|rh)\/pokemon)\/?$/.test(location.pathname) ||
+    new URLSearchParams(location.search).has('privy_oauth_state')) {
+    prepareLoginStorage()
+}
+
 // 在挂载前应用主题，避免暗/亮闪烁
 initTheme()
 
