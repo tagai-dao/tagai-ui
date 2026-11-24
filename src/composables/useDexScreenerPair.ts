@@ -34,6 +34,7 @@ export function useDexScreenerPair(options: () => {
     let disposed = false
     let controller: AbortController | undefined
     async function refresh() {
+      if (typeof document !== 'undefined' && document.hidden) return
       if (controller) return
       const request = new AbortController()
       controller = request

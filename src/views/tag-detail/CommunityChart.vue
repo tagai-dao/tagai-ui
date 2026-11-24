@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, onBeforeUnmount } from 'vue'
+import { useDocumentVisibility } from '@vueuse/core'
 import { useCommunityStore } from '@/stores/community'
 import { useChainStore } from '@/stores/chain'
 import { useTheme } from '@/composables/useTheme'
@@ -12,6 +13,7 @@ const comStore = useCommunityStore()
 const chainStore = useChainStore()
 const { isDark } = useTheme()
 const period = ref<CommunityChartPeriod>('h24')
+const visibility = useDocumentVisibility()
 const selected = computed(() => communityChartPeriods.find(p => p.key === period.value)!)
 const scope = computed(() => `${chainStore.activeChainId}:${comStore.currentSelectedCommunity?.token || ''}`)
 const { pair, useDexScreener, onEmbedError } = useDexScreenerPair(() => ({
@@ -45,7 +47,7 @@ const chartUrl = computed(() => {
         class="h-9 flex-1 rounded-lg text-sm font-semibold" :class="period === option.key ? 'bg-orange-normal text-white' : 'text-muted'"
         @click="period = option.key">{{ option.label }}</button>
     </div>
-    <template v-if="comStore.currentSelectedCommunity?.tick">
+    <template v-if="visibility === 'visible' && comStore.currentSelectedCommunity?.tick">
       <Kline v-if="!useDexScreener" :key="scope" :tick="comStore.currentSelectedCommunity.tick" :period="selected.internal" :change-seconds="selected.seconds" @change="publish" chart-id="community-mobile-chart" />
       <iframe v-else :src="chartUrl" @error="onEmbedError" :title="`${comStore.currentSelectedCommunity.tick} K-line`" class="block w-full h-[360px] border-0" />
     </template>

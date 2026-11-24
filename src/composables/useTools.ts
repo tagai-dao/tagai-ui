@@ -40,9 +40,10 @@ export const useTimer = () => {
 }
 
 export const useInterval = () => {
-  const interval = ref<number|undefined>();
+  const interval = ref<ReturnType<typeof setInterval>|undefined>();
   const setInter = (cb: Function, int=1) => {
-    interval.value = setInterval(cb, int);
+    clearInterval(interval.value)
+    interval.value = setInterval(() => { if (!document.hidden) cb() }, int);
   }
   onUnmounted(() => {
     clearInterval(interval.value)

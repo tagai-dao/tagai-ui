@@ -268,10 +268,13 @@ const visibleProgressData = computed(() => isV13Token.value
   ? [{...progressData.value[1], trackWidth: 100}]
   : progressData.value)
 
+let progressRefreshing = false
 async function updateProgress() {
+  if (progressRefreshing || document.hidden) return
   const selectedCommunity = comStore.currentSelectedCommunity
   const chainId = chainStore.activeChainId
   if (!selectedCommunity) return
+  progressRefreshing = true
   try {
     const [com] = await getTokenInfo([selectedCommunity])
     // A slow refresh for the previous token must not replace the current page.
@@ -281,6 +284,8 @@ async function updateProgress() {
     }
   } catch (e) {
     console.error('Refresh token progress failed', e)
+  } finally {
+    progressRefreshing = false
   }
 }
 
