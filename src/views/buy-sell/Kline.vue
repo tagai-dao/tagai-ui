@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {useStateStore} from "@/stores/common";
 import {formatKChartDate} from "@/utils/helper";
-import {onActivated, onMounted, onUnmounted, reactive, ref, watch} from "vue";
+import {onActivated, onMounted, onUnmounted, reactive, ref, shallowRef, watch} from "vue";
 import {getTokenTradeData} from "@/apis/api";
 import {init, dispose} from "klinecharts";
 import { useInterval } from "@/composables/useTools";
@@ -13,6 +13,7 @@ import emitter from '@/utils/emitter'
 import { curveRefreshFrom, replaceCandleTail } from '@/utils/curveCandleTail'
 import { periodChange } from '@/utils/communityChartPeriod'
 import { klinePricePrecision } from '@/utils/klinePrecision'
+import { boundedCandles } from '@/utils/boundedCandles'
 
 const { width, height } = useWindowSize();
 const props = defineProps(['tick', 'chartId', 'period', 'changeSeconds'])
@@ -127,7 +128,8 @@ function splitData(rawData: (ChartData)[], interval = 60) {
   };
 }
 const chartRef = ref<HTMLElement>()
-const chart = ref()
+// Chart instances own canvases and internal caches; do not deeply proxy them.
+const chart = shallowRef()
 
 /** 暗色网格用低对比灰，避免默认 #EDEDED 在深底上刺眼 */
 const applyChartTheme = () => {
@@ -187,6 +189,7 @@ function updateChart() {
 }
 
 function setChartRows(rows: ChartData[]) {
+  rows = boundedCandles(rows)
   originalData = rows
   lastTimestamp = rows.length ? Number(rows[rows.length - 1].timestamp) : 0
   for (const [target, interval] of [[data1min,60],[data5min,300],[data1h,3600],[data1day,86400]] as const) {
@@ -207,7 +210,7 @@ async function getNewData() {
 
 let refreshing = false
 async function refreshData() {
-  if (refreshing) return
+  if (refreshing || disposed || document.hidden) return
   refreshing = true
   const requestedTick = props.tick
   const requestedChain = chainStore.activeChainId
